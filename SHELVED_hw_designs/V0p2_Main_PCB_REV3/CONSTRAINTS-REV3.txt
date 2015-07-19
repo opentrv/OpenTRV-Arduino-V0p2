@@ -1,0 +1,34 @@
+Constraints on PCB layout
+
+THERMAL:
+DHD20140208: Temperature sensor (eg TMP112) must be below all main heat sources (reg, radio, AVR) and near a vent.
+
+ELECTRICAL:
+DHD20140208: DRC must complete without error/warning for iTEAD and PMS rules with only APPROVED-REV3.txt exceptions.
+DHD20140208: Ensure ALL supply lines on normal thicker 'supply' net class.
+DHD20140208: (Optional) Use thicker tracks (net class supplyfat) between USB/FTDI and 5V/0V screw terminals, and keep short and direct, as may be carrying relay current.
+
+PHYSICAL:
+DHD20140208: Area under big red button on top surface of board must be clear of all components and pads etc. 
+DHD20140208: At least 6mm square area in corners must be kept clear to avoid snagging pillars.
+DHD20140208: All components/pads must be at least 2mm from EDGE of PCB to avoid snagging box.
+DHD20140208: LDR needs to be near board edge facing outwards (not bottom) or front, with good view of hole to get ambient light.
+DHD20140208: LDR leads to be aligned with PCB edge to allow easy 90 degree bend to face out sideways if at board edge.
+DHD20140208: LED to be above button or somewhere that won't be covered by hand during operation of any of the controls.
+DHD20140208: (Minor, optional) Suggested terminal ordering of 5V | boiler out | 3V3 | GND (eg allows omitting terminals for first two for battery-powered rad unit, all for USB-powered).
+MH20130205: Thickness of lid must match the thickness required by the dimensions of the red button (<2mm).
+MH20130205: Learn buttons far apart as possible but not so close to top or bottom that there's no room to place a thumb to pick the unit up.
+MH20130205: Pot knob if any must stay within boundaries of case so case can lay flat.
+MH20130205: FTDI needs clearance for tolerances in printing and connector ie a hole taller, wider than is obvious some FTDI are circuit boards.
+MH20130205: Leave some clearance around TMP112 for soldering when all other items already in place (should help if it is in the corner).
+MH20130205: Wires from terminal block must have a direct/reasonable path to the outside hole if terminal block not on board edge.
+
+RADIO:
+DHD20140216: Total antenna length must be kept correct (~87mm for 868MHz), board trace + wire.
+
+COST:
+DHD20140210: (Minor, optional) Vias at 0.3mm and 0.4mm make the pcb more expensive than bigger say 0.5mm and also if possible reduce number of sizes (currently 10), again a saving.
+
+OTHER:
+DHD20140208: Date, title, URL, licence URL and OW logo should be on board and readable.
+ 

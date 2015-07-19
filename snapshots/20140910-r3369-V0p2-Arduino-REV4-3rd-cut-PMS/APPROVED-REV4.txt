@@ -1,0 +1,7 @@
+This is a list of DRC "errors" that should be approved for REV2 as "by design".
+Examples include supply lines to components with small pad footprints,
+and links between distinct supply nets to allow star for wiring, etc.
+
+
+BH20130710: Track width error at SHT21; just make sure its as wide as the pad its coming from.
+BH20130710: Clearance issues on USB.; its just the gnd track going from once shield pin to the other.

@@ -1,0 +1,18 @@
+A few points to note for PCB assembly.
+
+ 1) Mode button is on flying leads (~60mm)
+    and needs to be fitted through lid (from front) before soldering up.
+
+ 2) Top of LED should be 15mm above board so as to
+    sit just behind 5mm hole in front panel.
+
+ 3) LDR should be bent 90 degrees to face out to left of board 
+    with as good illumination from external ambient light as possible
+    via slot looking out just below screw terminals
+    as near to level with (just above) the PCB as is practicable.
+
+ 4) DO NOT mount TMP112 on non-SMD (top) side of board with fat pads,
+    please mount on normal pads on SMD (reverse) side.
+
+ 5) Antenna wire should run straight, vertically out of box,
+    supporting its own weight.

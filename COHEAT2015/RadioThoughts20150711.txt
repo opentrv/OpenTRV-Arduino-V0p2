@@ -1,0 +1,88 @@
+BASICS OF RADIO ENVIRONMENT FOR COHEAT TRIAL DEPLOYMENT
+DHD20150711
+
+The starting point is the same radio carrier, modulation and encoding
+as for existing OpenTRV V0p2 as of 2015/07/09,
+ie 868.35MHz OOK 5kbps, and FS20 encoding to talk to FTH8V valve controllers.
+
+In round numbers there will be 15 Linux boxes controlling REV2 units,
+each of which will talk to about 10 REV9 units (protocol details TBD),
+each of which will talk to exactly one FHT8V valve controller (FS20).
+
+Thus there are nominally ~300 RF links being maintained,
+which even at 0.1% duty cycle is far in excess of the nominal 1/2pi capacity
+of an unslotted Aloha network (~180 TX channels at max duty cycle).
+
+See: https://en.wikipedia.org/wiki/ALOHAnet
+
+(It is assumed that all stations are in radio reach of one another,
+though adjusting transmission power of some channels may be helpful,
+eg the REV9s should all be very close to their associated FHT8V,
+and thus should be able to transmit at much reduced power,
+removing some general noise from the shared radio channel.)
+
+The FHT8V valves will go off-line if they lose sync with their controllers
+eg though not hearing their controllers' transmissions through collisions,
+and would need some kind of manual intervention to reset,
+which is highly undesirable
+
+Thus bandwidth efficiency has to be maximised in a number of ways,
+and it may be necessary to take special measures to leave the FS20
+TX slots clear and avoid them interfering with one another
+to the possible extent of coordinating across the entire device estate,
+though if at all possible fully decentralised schemes will be used.
+
+It may also be possible split the population in two, roughly,
+to reduce direct competition for bandwidth.
+The REV9 devices will need to participate in both sets of comms.
+
+Q: What simple changes could we make to the current OpenTRV RFM23B
+register settings for the non-FHT8V comms links to, for example,
+move to a more efficient modulation (not OOK) and possibly shift frequency slightly
+while staying legal but getting more total capacity and making it easy and quick
+to flip back and forth between modes?  Eg a different central frequency, and GMSK?
+
+In any case, transmissions to the FHT8Vs should be done as efficiently
+as possible with no extra 'RFM23B' header as they do not need to be overheard
+by the REV2/Linux boxes, and possibly a single transmission used
+rather than the usual double transmission.
+
+Transmissions between the REV2 and REV9 boxes should be efficiently binary encoded
+(and CRC protected) with *probably* almost all data flows from REV2/Linux to REV9
+by polling from the REV2/Linux box to that they can manage scheduling smartly,
+with probably only alerts from REV9 to REV2/Linux being unsolicited
+(eg button press, plus possibly light on/off and/or temperature out-of-bounds).
+
+It should be possible to add frame authentication/encryption (eg AES-GCM) to the
+REV2/REV9-equivalent link in future, especially once the REV9 unit has been
+extended to manage the mechanical valve drive directly,
+thus minimising insecurity at the radio layer.
+
+Note that the RFM23B radio modules in the REV2 and REV9 units
+cannot TX and RX at the same time, eg cannot do collision detection.
+
+
+
+Kevin W notes that "the 'Jeelib default' mode of FSK signalling at 50kbps around the
+house, albeit at 433 MHz, [is] reliable."
+
+FS20 frames should not have RFM23B-friendly preamble under any circumstances.
+Frames between REV9 and REV2 should have preamble,
+though may be different in each direction (or some other top-level 'addressing' may be done),
+to allow RFM23B to silently discard frames in the 'wrong' direction.
+
+Suggested leading bytes:
+  * '!' for REV9-to-REV2 alert (high bit set for authenticated/encrypted)
+  * '?' for REV9-to-REV2 poll and value set (high bit set for authenticated/encrypted)
+  * '*' for REV2-to-REV9 full poll response (high bit set for authenticated/encrypted)
+
+Note that alert could be triggered on (and alert frame sent with):
+  * Initial button pressed.
+  * Button held pressed for significant time (possibly exponential interval backoff).
+  * Light level change dark to light or vv.
+  * Temperature (moved) out of last specified allowed range.
+Status bits in response message should be set for all of these,
+and cleared after (say) 2 polls or 15 minutes whichever comes first
+to allow for frame losses.
+Frames (except possibly the minimal alert frames)
+should have sequence numbers to allow loss to be detected.

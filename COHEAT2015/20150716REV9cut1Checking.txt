@@ -1,0 +1,12 @@
+Items checked for 1st revision of REV9 board.
+
+1) OK: POST completes
+1b) FIXME: without hacks (ie the board boots) needs BOOST fixing at least
+2) OK: WINDOW SWITCH (aka BUTTON_LEARN2_L / PD3) responds (goes low) when SW inputs shorted.
+3) FIXME: AMBIENT LIGHT SENSOR. Stuck at full/255, note sense reversed (pull low rather than high) and load resistor may be wrong for higher-than-usual supply. Swap T1 and R14 and for now pls remove C7 and make R13 a short. Also suggest removing always-on power LED to avoid interference.
+4) OK: DS18B20 Seems OK with SENSOR_DS18B20_ENABLE set; will need to fix code to allow multiple, ie with SHT21 also.
+5) OK: SHT21. Probably OK, reading ~25.5C & 55%RH.
+6) OK: CUSTOMER-FACING GREEN (aka LED_UI2_L) AND RED (aka LED_HEATCALL_L) LEDS
+7) FIXME: BOOST SWITCH (aka BUTTON_MODE_L / PD5). Seems to be stuck ON (low).
+8) OK: RFM23B (visible, +RX +TX). At least visible to code and TX is working properly!
+9) FIXME: FTDI including auto-reset and load of new code. Needs RXD and TXD swapped.

@@ -1,0 +1,9 @@
+PCM CHANGES for each revision.
+
+REV2 (cut4) to REV3 (cut1):
+
+  BH20140509.1: LDR replaced with TEPT4400 phototransistor (schematic and physical and BOM)
+  BH20140509.2: RFM23B replaced with RFM69CW (schematic and physical and BOM); old IRQn link broken
+  BH20140509.3: All 5 RFM69CW DIO pins brought to pads
+  BH20140509.4: Prev AVR IRQn input brought to pad via resistor.
+  BH20140509.5: AI2, AI3, D2 brought to pads for experimenting.

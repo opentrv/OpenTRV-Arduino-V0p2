@@ -1,0 +1,14 @@
+Constraints on PCB layout
+
+
+ELECTRICAL:
+DHD20140208: DRC must complete without error/warning for iTEAD and PMS rules with only APPROVED-REV4.txt exceptions.
+
+PHYSICAL:
+
+DHD20140208: At least 6mm square area in corners must be kept clear to avoid snagging pillars.
+DHD20140208: All components/pads must be at least 2mm from EDGE of PCB to avoid snagging box.
+
+OTHER:
+DHD20140208: Date, title, URL, licence URL and OW logo should be on board and readable.
+ 

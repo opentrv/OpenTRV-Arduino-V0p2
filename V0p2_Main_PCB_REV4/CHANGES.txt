@@ -1,0 +1,7 @@
+PCM CHANGES for each revision.
+
+REV3 (cut1) to REV4 (cut1):
+
+  BH20140509.1: LDR replaced with TEPT4400 phototransistor (schematic and physical and BOM)
+  BH20140509.2: RFM69CW replaced with RFM23B  (schematic and physical and BOM)
+  BH20140509.5: AI2, AI3, D2 brought to pads for experimenting.

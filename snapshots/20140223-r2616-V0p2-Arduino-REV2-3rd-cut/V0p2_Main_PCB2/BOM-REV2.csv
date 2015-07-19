@@ -1,0 +1,29 @@
+Quantity per board,Supplier,Seller Stock No,Manufacturer,Manufacturer Part. No.,Description,Legend
+1,RS Components,714-2334,FCI,10103592-0001LF,Micro USB socket,USBPOWER
+1,RS Components,628-3661,Microchip,TC1185-3.3VCT713,3.3V Regulator,U1
+3,RS Components,741-4434,TDK,C1608X5R0J106M080AB,10 uF,"C1, C2, C13"
+1,RS Components,213-2531,TE Connectivity,CRG0603F100K,100Kohm,R1
+3,RS Components,213-2418,TE Connectivity,CRG0603F10K,10 Kohm,"R2, R4, R5"
+3,RS Components,213-2367,TE Connectivity,CRG0603F4K7,4.7Kohm,"R6, R8, R9"
+1,RS Components,213-2222,TE Connectivity,CRG0603F470R,470ohm,R7
+6,RS Components,264-4630,Kemet,C0603C104K4RAC,100nF,"C7, C9, C10, C11, C12"
+1,RS Components,464-6391,AVX,06035A101JAT2A,100pF,C4
+1,RS Components,749-2059,Murata,GRM31CR60G107ME39L,100uF,C8
+1,RS Components,667-6120,EPSON TOYOCOM,"MC-306, 32.768kHz, 20ppm, 6pF",Crystal,Q1
+2,RS Components, 220-4260,Phoenix Contact,MPT 0.5/ 2-2.54,Screw Terminal 2-way,"X1, X2"
+1,RS Components,709-8868,Texas Instruments,TMP112AIDRLT,TMP112,TMP1
+0,RS Components,709-8868,Texas Instruments,TMP112AIDRLT,TMP112 (do NOT populate),TMP2
+1,RS Components,681-2537,TE Connectivity,826947-6,FTDI 90 angle header,FTDI
+1,RS Components,674-2450,ASSMANN WSW,A 28-LC/7-T,28 pin IC Socket,IC1
+2,RS Components,251-8086,RS (generic),W81102T3825RC,Jumper pin,"JP1, JP2"
+2,RS Components,680-1461,TE Connectivity,1-881545-1,Jumper cap,"[fit to JP1, JP2]"
+1,RS Components,826-515,Avago Technologies,HLMP-K150,LED RED,LED
+1,RS Components,596-141,Silonex,NSL-19M51,LDR,LDR
+2,RS Components,758-1991,Alps,SKHHLQA010,Learn,"S1, S2"
+1,RS Components,263-3006,Alps,RK09K1110A96,Pot. Meter,R11
+1,RS Components,213-2266,TE Connectivity,CRG0603F1K0,1Kohm,R10
+1,RS Components,119-2958,Apem,1415NC RED,Mode button - connected to board by 60mm flying leads; read instructions in ASSEMBLY.TXT,"BRB1, BRB2"
+1,RS Components,696-2260,ATMEGA328P-PU,ATmega328P-PU,Bootload/program load required; files will be supplied,IC1
+1,,,,5*5cm Board,"FR4, ENIG finish",MAIN Board
+1,OpenTRV - free issue,RFM23-868-S1,HopeRF,RFM23-868-S1,Radio sub module,RFM22B
+1,RS Components,712-5320,RS (generic),White PVC equipment wire 1/0.6 100m,84mm of insulated semi-flexible antenna wire (~0.33sqmm). Pleae note that this wire is stiff enough so that it is self supporting and will stand up on its own.,ANT

@@ -1,0 +1,52 @@
+Outstanding issues with the PCB for rev 1.
+
+
+
+TODO (initials/date for who noted the issue) - FIRST STEP IS ONLY ONE ALLOWED TO BE WORKED ON SO FAR
+
+BELOW is Things to remember when sending off to fab:
+
+BH20131017 : Correct date stamp
+BH20130916 : For reflow go with ENIG finish
+DHD20130703: Send *ALL* generated Gerbers (eg including GML for milling)! 
+BH20130916 : TIP: normal I just zip up the gerbers and eagle files.. fab house did not have a problem with this last i send something off
+
+DONE (w/ optional initials/date for who fixed the issue) - First 2 are done hardware wise.... need to code it thou
+
+BH20130917 : clean up legends etc.. make sure they are easy to read and don't overlap... DONE but please check
+DHD20131017: link after reg to allow reg to be fitted even if battery power is used.
+DHD20130930: ENSURE RFM23 WIRING CORRECT and works for RX also.
+BH20130916 : If possible find a runtime replacement option for TMP112 (eg look at simple http://www.hobbytronics.co.uk/ds18b20-arduino for trivial code, though with licence issues).
+DHD20130913: Consider DS75LX as alternative to TMP112 for easier handling (note +/-2C and 13uA standby).
+MS20130702 : Since you have loads of spare IO, why not connect the RFM22B IRQ pin? (DHD: could make it an option.)  ..... its been at bottom of list.... would it bring any benefit????  Mike suggested 2 pins... i picked D9
+BH20130917 : Could we use D9 or D2-D4 for DS ?  BH20130917: Picked D2
+BH20130917 : ring of via throws DRC errors... quick fix is to remove them right before making gerbers   BH20130917: moved them just enough to not throw any DRC's
+DHD20130901: Make TTH hole pads larger for easier hand soldering. BH20130917: done... screw terminals fitted for 5/3.3V 
+DHD20130913: Add easy/extra GND reference point for logic analyser. BH20130917: done... next to boiler screw terminal
+BH20130917 : Prepped for DS chip
+DHD20130916: Allow DS18B20 to be fitted in place of TMP112 when supply is 3.3V: detect sensor at runtime.
+BH20130917 : Replaced holes for power with screw terminal... holes should still be big enough for bare wires
+DHD20130901: Double check BOM component list against schematic and keep in sorted order.
+DHD20130720: USB connector still not mating to board correctly.
+BH20131007 : USB not symmetric... who can tell what needs to be moved and by how much?
+DHD20130721: Specify Tech Supplies LDR in BOM for consistency with current kit.
+DHD20130721: Only need pad(s) for RESET as only used during dev, and only occasionally.
+DHD20130720: Extend TMP112 pads to make hand soldering easier.
+DHD20130718: Add OpenTRV.org.uk (ie official URL) to board.
+MS20130702 : You have components on both sides. Not really a problem but it will complicate assembly if you want to do a run by pick and place (because one side needs to be glued down). You could argue that the through-hole stuff could go on the top and the SMT on the bottom, but in that case the RFM22 is still on the wrong side. BH20131007: All SMD stuff should now be on one side
+DHD20130702: Fixes to USB connector layers (still asymmetry in GTS/GBS files).
+MS20130702 : Why not ground flood both sides?  DONE
+DHD20130702: Fix C13 label and remove "100nF" text.
+MS20130702 : AREF should be decoupled.  DONE (100nF)
+MS20130702 : The jumper is underneath IC1 on the same side of the board, so will be inaccessible.  The solder blob will prevent the chip from being properly seated.  (Would like to eliminate entirely.) BH20131007 replced by 2 overlapping pads, the most easy way in my eyes
+DHD20130702: Find some good way to eliminate SJ1 entirely.  See http://electronics.stackexchange.com/questions/23495/how-do-i-facilitate-keeping-multiple-grounds-i-e-agnd-dgnd-etc-separate BH20131007: replced by 2 overlapping pads, the most easy way in my eyes
+MS20130702 : What's with the AVR symbol? It looks kind of non-standard - is it some kind of weird Arduino version?  (BH hand-crafted but see http://www.cadsoftusa.com/downloads/libraries?language=en for future.)
+MS20130702 : A lot of the tracks could be thicker. If there is no need to make them thin then don't - you will get better board yield. I acknowledge that they have to be thin for connection to the TMP112, and where you pass between pads on the RFM22B (which I would have avoided). BH20131007: signal tracks are now 12 mil and supply 16 ant 86
+
+
+
+Notes for antenna track thickness:
+[10:54] DamonHD When you made the antenna track 50 ohm did you carefully choose a thickness? I've just slapped it up to 0.032 which looks vaguely right by eye. I could copy whatever you did on V0.09 board if it's critical.
+[11:02] mikestir    the width is dependent on the board material and its thickness
+[11:02] mikestir    http://www.eeweb.com/toolbox/microstrip-impedance
+[11:02] mikestir    Er for FR4 is about 4 to 4.5

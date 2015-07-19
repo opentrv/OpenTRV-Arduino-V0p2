@@ -1,0 +1,23 @@
+##############################################################
+
+# C/o tim7: http://arduino.cc/forum/index.php/topic,160647.msg1204176.html#
+
+atmega328_1mhz_4800baud.name=Optiboot 5 for bare 328P, 1MHz internal clock, fast start, 1.8V BOD, 4800baud upload, c/o tim7 20130416
+atmega328_1mhz_4800baud.upload.protocol=arduino
+atmega328_1mhz_4800baud.upload.maximum_size=32256
+atmega328_1mhz_4800baud.upload.speed=4800
+#atmega328_1mhz_4800baud.bootloader.low_fuses=0xff
+atmega328_1mhz_4800baud.bootloader.low_fuses=0x42
+atmega328_1mhz_4800baud.bootloader.high_fuses=0xde
+#atmega328_1mhz_4800baud.bootloader.extended_fuses=0x05
+atmega328_1mhz_4800baud.bootloader.extended_fuses=0x06
+#atmega328_1mhz_4800baud.bootloader.path=optiboot_v50
+atmega328_1mhz_4800baud.bootloader.path=atmega
+atmega328_1mhz_4800baud.bootloader.file=atmega328_1b.hex
+atmega328_1mhz_4800baud.bootloader.unlock_bits=0x3F
+atmega328_1mhz_4800baud.bootloader.lock_bits=0x2F
+atmega328_1mhz_4800baud.build.mcu=atmega328p
+atmega328_1mhz_4800baud.build.f_cpu=1000000L
+atmega328_1mhz_4800baud.build.core=arduino
+atmega328_1mhz_4800baud.build.variant=standard
+

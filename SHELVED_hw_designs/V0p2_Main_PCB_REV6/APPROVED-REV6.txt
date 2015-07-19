@@ -1,0 +1,8 @@
+This is a list of DRC "errors" that should be approved for REV2 as "by design".
+Examples include supply lines to components with small pad footprints,
+and links between distinct supply nets to allow star for wiring, etc.
+
+
+BH20130710: Track width error at SHT21; just make sure its as wide as the pad its coming from.
+BH20130710: Drill size on via under SHT21. Not critical. the error is there as i have set DRC to spec via's at minimum 0.5, but that is to big here, the hole serves as a mean to hand solder the pad under SHT21, but also serves as normal via
+BH20130710: Clearance issues on USB.; its just the gnd track going from once shield pin to the other.

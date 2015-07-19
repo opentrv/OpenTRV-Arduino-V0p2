@@ -1,0 +1,26 @@
+A few points to note for PCB assembly.
+
+
+ 1A)**IF YOU ARE ASSEMBLING WITH ENCLOSURE** Mode button is on flying
+    leads (~60mm) and needs to be fitted through lid (from front)
+    before soldering up to the BRB1 and BRB2 connections.
+
+ 1B)**IF YOU ARE ___NOT___ ASSEMBLING WITH ENCLOSURE There is no work
+    to do with the BRB1 and BRB2 connections to the Mode button, 
+    please leave BRB1 and BRB2 unconnected.
+
+ 2) Top of LED should be 19mm above top surface of board so as to sit
+    just behind hole in front panel.
+
+ 3) LDR should be bent 90 degrees to face out to left of board 
+    with as good illumination from external ambient light as possible
+    via slot looking out just below screw terminals
+    as near to level with (just above) the PCB as is practicable.
+
+ 4) DO NOT mount TMP2 (TMP112) on non-SMD (top) side of board with
+    enlarged pads, please mount TMP1 (TMP112) on normal pads on SMD
+    (reverse) side.
+
+ 5) Antenna wire should run straight, vertically out of box,
+    supporting its own weight (the wire is specified as single core
+    in order to be self supporting).

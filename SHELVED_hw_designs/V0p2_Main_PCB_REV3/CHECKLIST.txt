@@ -1,0 +1,10 @@
+Things to check before each board goes to manufacturing:
+
+* Suitable board finish (ENIG if using TMP112 sensor: speced when ordering, not in Eagle).
+* Standard board thickness of 1.6mm.
+* All components listed in BOM.
+* Board dimensions and mounting hole locations must match 'DD1' 5x5 standard.
+* All Gerber layers generated, eg including milling (TIP: just zip everything and fab house will have what they need)
+* Correct date stamp
+
+

@@ -1,0 +1,15 @@
+# of boards ttl,,,,5,PURPLE MEANS OK,,,
+,,,,,,,,
+,,,,,,,,
+Quantity per board,Need to order,Seller Stock No,Manufacturer,Manufacturer Part. No.,Description,Legend,Supplier,Direct Link
+1,5,714-2334,FCI,10103592-0001LF,Micro USB socket,USBPOWER,RS Components,http://uk.rs-online.com/web/p/micro-usb-connectors/7142334/
+2,10,220-4260,Phoenix Contact,MPT 0.5/ 2-2.54,Screw Terminal 2-way,"X1, X2",RS Components,http://uk.rs-online.com/web/p/pcb-terminal-blocks/2204260
+1,5,710-0104,TE Connectivity,282834-2,Screw Terminal 2-way,X3,RS Components,http://uk.rs-online.com/web/p/pcb-terminal-blocks/7100104/
+1,5,826-515,Avago Technologies,HLMP-K150,LED RED,LED,RS Components,http://uk.rs-online.com/web/p/visible-leds/0826515
+1,5,213-2222,TE Connectivity,CRG0603F470R,470ohm,R2,RS Components,http://uk.rs-online.com/web/p/surface-mount-fixed-resistors/2132222
+1,5,739-0303,Fairchild Semiconductor,MMBT3904,Transistor NPN,Q1,RS Components,http://uk.rs-online.com/web/p/bipolar-transistors/7390303/
+1,5,721-7340,Panasonic,ERJP03F1001V,1Kohm,R1,RS Components,http://uk.rs-online.com/web/p/surface-mount-fixed-resistors/7217340/
+1,5,796-9344,Taiwan Semiconductor,RS1D,Blocking Diode,D1,RS Components,http://uk.rs-online.com/web/p/rectifier-schottky-diodes/7969344/
+1,5,680-3595,TE Connectivity,PE014005,5V Non latch relay,K1,RS Components,http://uk.rs-online.com/web/p/non-latching-relays/6803593/
+,,,,,,,,
+1,5,,,,5*5cm Prototype Board,,Itead Studio,

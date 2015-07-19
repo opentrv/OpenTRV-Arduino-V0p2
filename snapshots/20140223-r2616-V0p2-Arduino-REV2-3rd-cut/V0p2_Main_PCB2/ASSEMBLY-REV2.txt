@@ -1,0 +1,36 @@
+A few points to note for PCB assembly.
+
+
+ 1A)**IF YOU ARE ASSEMBLING WITH ENCLOSURE** Mode button is on flying
+    leads (~60mm) and needs to be fitted through lid (from front)
+    before soldering up to the BRB1 and BRB2 connections.
+
+ 1B)**IF YOU ARE ___NOT___ ASSEMBLING WITH ENCLOSURE** Please solder
+    60mm flying leads to board and strip and tin 4mm of free end of
+    wires for both BRB1 and BRB2 connections. Please procure and
+    supply Mode buttons and ship them loose to us with the boards.
+
+ 2) Top of LED should be 19mm above top surface of board so as to sit
+    just behind hole in front panel.
+
+ 3) LDR should be bent 90 degrees to face out to left of board 
+    with as good illumination from external ambient light as possible
+    via slot looking out just below screw terminals
+    as near to level with (just above) the PCB as is practicable.
+
+ 4) DO NOT mount TMP2 (TMP112) on non-SMD (top) side of board with
+    enlarged pads, please mount TMP1 (TMP112) on normal pads on SMD
+    (reverse) side.
+
+ 5) Antenna wire should run straight, vertically out of box (if
+    being enclosed), supporting its own weight (the wire is specified
+    as single core in order to be self supporting).
+
+ 6) AVRs, once bootloaded and programmed, will conduct a Power On
+    Self Test when power is applied to the board. The flashes of the
+    LED will be in sequence: 1 flash, 2 flashes, 3 flashes, 4 flashes,
+    5 flashes. At this point the LED will no longer flash obviously.
+    Managing to reach 5 flashes in the sequence means that the POST
+    succeded and should be classed as a functional board. Bootloader
+    and program will be supplied.
+

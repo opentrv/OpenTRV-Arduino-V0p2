@@ -1,0 +1,22 @@
+ALL SIGNIFICANT RELEASES AND BRANCHES (and to-do)
+
+
+This document is used to record all significant releases and branches
+in the code tree.
+
+Follow agreed procedures before creating (or deleting) branches
+or release/freeze points.
+
+
+pending:
+
+
+
+20150712:
+    freezepoint name: V0.1
+    branch name: HEAD
+    Deployed where: againsty Main_V0p2.
+    Changes since last freezepoint (developer/mgr initials and brief description):
+    Previous significant freezepoint:
+    DHD20150714: COH-1: incorporates some basic radio frame type values and OTRadioLink::crc7_5B_update() with tests.
+
