@@ -23,9 +23,13 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
  */
 
 #include "RFM22_Radio.h"
+
 #include "V0p2_Board_IO_Config.h" // I/O pin allocation: include ahead of I/O module headers.
 #include "Power_Management.h"
 #include "Serial_IO.h"
+
+
+OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS> RFM23B;
 
 // RFM22 is apparently SPI mode 0 for Arduino library pov.
 
