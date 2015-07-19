@@ -166,7 +166,7 @@ static void _RFM22ClearInterrupts()
 // Typical consumption in standby 450nA (cf 15nA when shut down, 8.5mA TUNE, 18--80mA RX/TX).
 void RFM22ModeStandbyAndClearState()
   {
-  const bool neededEnable = powerUpSPIIfDisabled();
+  const bool neededEnable = OTV0P2BASE::powerUpSPIIfDisabled();
   _RFM22ModeStandby();
   // Clear RX and TX FIFOs simultaneously.
   _RFM22WriteReg8Bit(RFM22REG_OP_CTRL2, 3); // FFCLRRX | FFCLRTX
@@ -178,7 +178,7 @@ void RFM22ModeStandbyAndClearState()
   // Clear any interrupts already/still pending...
   _RFM22ClearInterrupts();
   //_RFM22WriteReg8Bit(0xd, 0x1f); // Drive GPIO2 to ground as output... (Move to general register settings.)
-  if(neededEnable) { powerDownSPI(); }
+  if(neededEnable) { OTV0P2BASE::powerDownSPI(); }
   // DEBUG_SERIAL_PRINTLN_FLASHSTRING("SCS");
 }
 
@@ -187,9 +187,9 @@ void RFM22ModeStandbyAndClearState()
 // Zero indicates no pending interrupts or other status flags set.
 uint16_t RFM22ReadStatusBoth()
   {
-  const bool neededEnable = powerUpSPIIfDisabled();
+  const bool neededEnable = OTV0P2BASE::powerUpSPIIfDisabled();
   const uint16_t result = _RFM22ReadReg16Bit(RFM22REG_INT_STATUS1);
-  if(neededEnable) { powerDownSPI(); }
+  if(neededEnable) { OTV0P2BASE::powerDownSPI(); }
   return(result);
   }
 
@@ -197,9 +197,9 @@ uint16_t RFM22ReadStatusBoth()
 // Only valid when in RX mode.
 uint8_t RFM22RSSI()
   {
-  const bool neededEnable = powerUpSPIIfDisabled();
+  const bool neededEnable = OTV0P2BASE::powerUpSPIIfDisabled();
   const uint8_t rssi = _RFM22ReadReg8Bit(RFM22REG_RSSI);
-  if(neededEnable) { powerDownSPI(); }
+  if(neededEnable) { OTV0P2BASE::powerDownSPI(); }
   return(rssi);
   }
 
@@ -221,7 +221,7 @@ uint8_t RFM22RSSI()
 // Returns true iff RFM22 (or RFM23) appears to be correctly connected.
 bool RFM22CheckConnected()
   {
-  const bool neededEnable = powerUpSPIIfDisabled();
+  const bool neededEnable = OTV0P2BASE::powerUpSPIIfDisabled();
   bool isOK = false;
   const uint8_t rType = _RFM22ReadReg8Bit(0); // May read as 0 if not connected at all.
   if(RFM22_SUPPORTED_DEVICE_TYPE == rType)
@@ -249,7 +249,7 @@ bool RFM22CheckConnected()
 #if 1 && defined(DEBUG)
   if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("RFM22 bad"); }
 #endif
-  if(neededEnable) { powerDownSPI(); }
+  if(neededEnable) { OTV0P2BASE::powerDownSPI(); }
   return(isOK);
   }
 
@@ -259,7 +259,7 @@ bool RFM22CheckConnected()
 // Could optimise case where multiple values are for successive RFM22 registers by using burst write.
 void RFM22RegisterBlockSetup(const uint8_t registerValues[][2])
   {
-  const bool neededEnable = powerUpSPIIfDisabled();
+  const bool neededEnable = OTV0P2BASE::powerUpSPIIfDisabled();
   for( ; ; )
     {
     const uint8_t reg = pgm_read_byte(&(registerValues[0][0]));
@@ -275,7 +275,7 @@ void RFM22RegisterBlockSetup(const uint8_t registerValues[][2])
     _RFM22WriteReg8Bit(reg, val);
     ++registerValues;
     }
-  if(neededEnable) { powerDownSPI(); }
+  if(neededEnable) { OTV0P2BASE::powerDownSPI(); }
   }
 
 // Transmit contents of on-chip TX FIFO: caller should revert to low-power standby mode (etc) if required.
@@ -284,7 +284,7 @@ void RFM22RegisterBlockSetup(const uint8_t registerValues[][2])
 // Note: Reliability possibly helped by early move to 'tune' mode to work other than with default (4MHz) lowish PICAXE clock speeds.
 bool RFM22TXFIFO()
   {
-  const bool neededEnable = powerUpSPIIfDisabled();
+  const bool neededEnable = OTV0P2BASE::powerUpSPIIfDisabled();
   //gosub RFM22ModeTune ; Warm up the PLL for quick transition to TX below (and ensure NOT in TX mode).
   // Enable interrupt on packet send ONLY.
   _RFM22WriteReg8Bit(RFM22REG_INT_ENABLE1, 4);
@@ -302,7 +302,7 @@ bool RFM22TXFIFO()
     if(status & 4) { result = true; break; } // Packet sent!
     }
 
-  if(neededEnable) { powerDownSPI(); }
+  if(neededEnable) { OTV0P2BASE::powerDownSPI(); }
   return(result);
   }
 
@@ -323,7 +323,7 @@ void RFM22QueueCmdToFF(uint8_t *bptr)
 #if 0 && defined(DEBUG)
   if(0 == *bptr) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("RFM22QueueCmdToFF: buffer uninitialised"); panic(); }
 #endif
-  const bool neededEnable = powerUpSPIIfDisabled();
+  const bool neededEnable = OTV0P2BASE::powerUpSPIIfDisabled();
   // Clear the TX FIFO.
   _RFM22ClearTXFIFO();
   _RFM22_SELECT();
@@ -341,13 +341,13 @@ void RFM22QueueCmdToFF(uint8_t *bptr)
   while((uint8_t)0xff != (val = *bptr++)) { _RFM22_wr(val); }
 #endif
   _RFM22_DESELECT();
-  if(neededEnable) { powerDownSPI(); }
+  if(neededEnable) { OTV0P2BASE::powerDownSPI(); }
   }
 
 // Put RFM22 into RX mode with given RX FIFO 'nearly-full' threshold and optional interrupts enabled.
 void RFM22SetUpRX(const uint8_t nearlyFullThreshold, const bool syncInt, const bool dataInt)
   {
-  const bool neededEnable = powerUpSPIIfDisabled();
+  const bool neededEnable = OTV0P2BASE::powerUpSPIIfDisabled();
 
   // Clear RX and TX FIFOs.
   _RFM22WriteReg8Bit(RFM22REG_OP_CTRL2, 3); // FFCLRTX | FFCLRTX
@@ -366,7 +366,7 @@ void RFM22SetUpRX(const uint8_t nearlyFullThreshold, const bool syncInt, const b
   // Start listening.
   _RFM22ModeRX();
 
-  if(neededEnable) { powerDownSPI(); }
+  if(neededEnable) { OTV0P2BASE::powerDownSPI(); }
   }
 
 
@@ -375,7 +375,7 @@ void RFM22SetUpRX(const uint8_t nearlyFullThreshold, const bool syncInt, const b
 // Trailing bytes (more than were actually sent) undefined.
 void RFM22RXFIFO(uint8_t *buf, const uint8_t bufSize)
   {
-  const bool neededEnable = powerUpSPIIfDisabled();
+  const bool neededEnable = OTV0P2BASE::powerUpSPIIfDisabled();
 
   _RFM22ModeStandby();
 
@@ -397,7 +397,7 @@ void RFM22RXFIFO(uint8_t *buf, const uint8_t bufSize)
   _RFM22ClearInterrupts();
   //_RFM22WriteReg8Bit(0xd, 0x1f); // Drive GPIO2 to ground as output... (Move to general register settings.)
 
-  if(neededEnable) { powerDownSPI(); }
+  if(neededEnable) { OTV0P2BASE::powerDownSPI(); }
   }
 
 

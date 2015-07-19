@@ -28,7 +28,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include "V0p2_Main.h"
 #include "V0p2_Generic_Config.h" // Config switches and module dependencies, needed for I/O config here.
 
-#include <OTV0p2Base.h>
+#include <OTV0p2Base.h> // Underlying hardware support definitions.
 
 #if !defined(V0p2_REV)
 #error Board revision not defined.
