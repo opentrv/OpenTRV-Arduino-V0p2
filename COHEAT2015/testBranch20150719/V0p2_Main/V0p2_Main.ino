@@ -32,9 +32,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // Arduino libraries imported here (even for use in other .cpp files).
 #include <SPI.h>
 #include <Wire.h>
-//#ifdef REQUIRES_ONEWIRE22_LIB // Requires V2.2 of OneWire lib.
-//#include <OneWire.h>
-//#endif
 #include <OTRadioLink.h>
 
 #include <util/crc16.h>

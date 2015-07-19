@@ -95,6 +95,9 @@ static inline void errorIfNotEqual(int expected, int actual, int delta, int line
 static void testLibVersions()
   {
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("LibVersions");
+#if !(0 == ARDUINO_LIB_OTV0P2BASE_VERSION_MAJOR) && !(1 <= ARDUINO_LIB_OTV0P2BASE_VERSION_MINOR)
+#error Wrong library version!
+#endif
 #if !(0 == ARDUINO_LIB_OTRADIOLINK_VERSION_MAJOR) && !(3 <= ARDUINO_LIB_OTRADIOLINK_VERSION_MINOR)
 #error Wrong library version!
 #endif
