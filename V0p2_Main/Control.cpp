@@ -1878,7 +1878,7 @@ void loopOpenTRV()
   // FIXME: local valve-driven boiler on does not obey normal on/off run-time rules.
 #if defined(ENABLE_BOILER_HUB)
   fastDigitalWrite(OUT_HEATCALL, ((hubModeBoilerOn || NominalRadValve.isControlledValveReallyOpen()) ? HIGH : LOW));
-#else
+#elif defined(OUT_HEATCALL) // May not be available on all boards.
   fastDigitalWrite(OUT_HEATCALL, NominalRadValve.isControlledValveReallyOpen() ? HIGH : LOW);
 #endif
 
