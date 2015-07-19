@@ -54,6 +54,8 @@ void _TEST_set_schedule_override(const _TEST_schedule_override override)
 #define MAX_COMPRESSED_MINS_AFTER_MIDNIGHT ((MINS_PER_DAY / SIMPLE_SCHEDULE_GRANULARITY_MINS) - 1)
 
 
+// If LEARN_BUTTON_AVAILABLE then what is the schedule on time?
+#ifdef LEARN_BUTTON_AVAILABLE
 // Number of minutes of schedule on time to use.
 // Will depend on eco bias.
 // TODO: make gradual.
@@ -68,6 +70,7 @@ static uint8_t onTime()
   else if(isComfortTemperature(wt)) { return(LEARNED_ON_PERIOD_COMFORT_M); }
   else { return((LEARNED_ON_PERIOD_M + LEARNED_ON_PERIOD_COMFORT_M) / 2); }
   }
+#endif
 
 // Pre-warm time before learned/scheduled WARM period.
 #define PREWARM_MINS ((SIMPLE_SCHEDULE_GRANULARITY_MINS/2) + (LEARNED_ON_PERIOD_M>>2))
@@ -89,9 +92,12 @@ uint_least16_t getSimpleScheduleOn(const uint8_t which)
   if(startMM > MAX_COMPRESSED_MINS_AFTER_MIDNIGHT) { return(~0); } // No schedule set.
   // Compute start time from stored shedule value.
   uint_least16_t startTime = SIMPLE_SCHEDULE_GRANULARITY_MINS * startMM;
+// If LEARN_BUTTON_AVAILABLE then in the absence of anything better SUPPORT_SINGLETON_SCHEDULE should be supported.
+#ifdef LEARN_BUTTON_AVAILABLE
   const uint8_t windBackM = PREWARM_MINS; // Wind back start time by about 25% of full interval.
   if(windBackM > startTime) { startTime += MINS_PER_DAY; } // Allow for wrap-around at midnight.
   startTime -= windBackM;
+#endif
   return(startTime);
   }
 
