@@ -23,9 +23,13 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
  */
 
 #include "RFM22_Radio.h"
+
 #include "V0p2_Board_IO_Config.h" // I/O pin allocation: include ahead of I/O module headers.
 #include "Power_Management.h"
 #include "Serial_IO.h"
+
+
+OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS> RFM23B;
 
 // RFM22 is apparently SPI mode 0 for Arduino library pov.
 
@@ -199,19 +203,20 @@ uint8_t RFM22RSSI()
   return(rssi);
   }
 
-// Minimal set-up of I/O (etc) after system power-up.
-// Performs a software reset and leaves the radio deselected and in a low-power and safe state.
-// Will power up SPI if needed.
-void RFM22PowerOnInit()
-  {
-#if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("RFM22 reset...");
-#endif
-  const bool neededEnable = powerUpSPIIfDisabled();
-  _RFM22WriteReg8Bit(RFM22REG_OP_CTRL1, RFM22REG_OP_CTRL1_SWRES);
-  _RFM22ModeStandby();
-  if(neededEnable) { powerDownSPI(); }
-  }
+// MOVED TO OTRFM23BLink
+//// Minimal set-up of I/O (etc) after system power-up.
+//// Performs a software reset and leaves the radio deselected and in a low-power and safe state.
+//// Will power up SPI if needed.
+//void RFM22PowerOnInit()
+//  {
+//#if 0 && defined(DEBUG)
+//  DEBUG_SERIAL_PRINTLN_FLASHSTRING("RFM22 reset...");
+//#endif
+//  const bool neededEnable = powerUpSPIIfDisabled();
+//  _RFM22WriteReg8Bit(RFM22REG_OP_CTRL1, RFM22REG_OP_CTRL1_SWRES);
+//  _RFM22ModeStandby();
+//  if(neededEnable) { powerDownSPI(); }
+//  }
 
 // Returns true iff RFM22 (or RFM23) appears to be correctly connected.
 bool RFM22CheckConnected()
