@@ -37,7 +37,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 // Production configs.
 //#define CONFIG_Trial2013Winter_Round1 // REV1
-//#define CONFIG_Trial2013Winter_Round2 // REV2 cut4
+#define CONFIG_Trial2013Winter_Round2 // REV2 cut4
 //#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
 //#define CONFIG_DORM1 // REV7 / DORM1 Winter 2014/2015 all-in-one valve unit.
@@ -52,7 +52,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_BH_TESTLAB
 //#define CONFIG_DORM1_SANS32K // REV7 / DORM1 without working 32768Hz clock.
 //#define CONFIG_REV7N // REV7 with external "Model N" valve.
-#define CONFIG_REV9 // REV9
+//#define CONFIG_REV9 // REV9
 
 
 
