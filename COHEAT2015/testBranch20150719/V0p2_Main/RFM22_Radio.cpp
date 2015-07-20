@@ -415,8 +415,8 @@ void RFM22RXFIFO(uint8_t *buf, const uint8_t bufSize)
 //   * isBinary  message type; if true then is nominally binary else text (JSON)
 //   * doubleTX  double TX to increase chance of successful reception
 // This will use whichever transmission medium/carrier/etc is available.
-#define STATS_MSG_START_OFFSET (RFM22_PREAMBLE_BYTES + RFM22_SYNC_MIN_BYTES)
-#define STATS_MSG_MAX_LEN (64 - STATS_MSG_START_OFFSET)
+//#define STATS_MSG_START_OFFSET (RFM22_PREAMBLE_BYTES + RFM22_SYNC_MIN_BYTES)
+//#define STATS_MSG_MAX_LEN (64 - STATS_MSG_START_OFFSET)
 void RFM22RawStatsTX(const bool isBinary, uint8_t * const buf, const bool doubleTX)
   {
   // Write in the preamble/sync bytes.
