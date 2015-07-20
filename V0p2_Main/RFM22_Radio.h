@@ -37,9 +37,9 @@ void RFM22ModeStandbyAndClearState();
 // Returns true iff RFM22 (or RFM23) appears to be correctly connected.
 bool RFM22CheckConnected();
 
-// Configure the radio from a list of register/value pairs in readonly PROGMEM/Flash, terminating with an 0xff register value.
-// NOTE: argument is not a pointer into SRAM, it is into PROGMEM!
-void RFM22RegisterBlockSetup(const uint8_t registerValues[][2]);
+//// Configure the radio from a list of register/value pairs in readonly PROGMEM/Flash, terminating with an 0xff register value.
+//// NOTE: argument is not a pointer into SRAM, it is into PROGMEM!
+//void RFM22RegisterBlockSetup(const uint8_t registerValues[][2]);
 
 // Transmit contents of on-chip TX FIFO: caller should revert to low-power standby mode (etc) if required.
 // Returns true if packet apparently sent correctly/fully.
