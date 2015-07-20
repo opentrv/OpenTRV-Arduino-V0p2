@@ -32,8 +32,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #if !defined(V0p2_REV)
 #error Board revision not defined.
 #endif
-#if (V0p2_REV < 0) || (V0p2_REV > 8)
-#error Board revision not defined correctly.
+#if (V0p2_REV < 0) || (V0p2_REV > 9)
+#error Board revision not defined correctly (out of range).
 #endif
 
 
@@ -81,16 +81,24 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define LED_HEATCALL_ON_ISR_SAFE() { LED_HEATCALL_ON(); }
 
 // Secondary (active-low) LED available on some boards.
+#if (V0p2_REV >= 7) && (V0p2_REV <= 9)
+#define LED_UI2_EXISTS
 #if (V0p2_REV == 7) || (V0p2_REV == 8)
-#define LED_UI2_L 13 // ATMega328P-PU PDIP pin 6, PD4.  PULL LOW TO ACTIVATE.  Not shared with SPI.
+#define LED_UI2_L 13 // ATMega328P-PU PDIP pin 19, PB5. SHARED WITH SPI DUTIES as per Arduino UNO.
+#elif (V0p2_REV == 9)
+#define LED_UI2_L 6 // ATMega328P-PU PDIP pin 6, PD4.  PULL LOW TO ACTIVATE.  Not shared with SPI.
+#endif
 #define LED_UI2_ON() { fastDigitalWrite(LED_UI2_L, LOW); }
 #define LED_UI2_OFF() { fastDigitalWrite(LED_UI2_L, HIGH); }
 #endif
 #endif
 
 // Digital output for radiator node to call for heat by wire and/or for boiler node to activate boiler.
+// NOT AVAILABLE FOR REV9 (used to drive secondary/green LED).
+#if (V0p2_REV != 9)
 #define OUT_HEATCALL 6  // ATMega328P-PU PDIP pin 12, PD6, no usable analogue input.
 #define OUT_GPIO_1 OUT_HEATCALL // Alias for GPIO pin.
+#endif
 
 // UI main 'mode' button (active/pulled low by button, pref using weak internal pull-up), digital in.
 #define BUTTON_MODE_L 5 // ATMega328P-PU PDIP pin 11, PD5, PCINT21, no analogue input.
@@ -115,7 +123,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // Ambient light sensor (eg LDR) analogue input: higher voltage means more light.
 #define LDR_SENSOR_AIN 0 // ATMega328P-PU PDIP pin 23, PC0.
 
-#if V0p2_REV >= 2
+#if (V0p2_REV >= 2) && (V0p2_REV <= 4)
 // Analogue input from pot.
 #define TEMP_POT_AIN 1 // ATMega328P-PU PDIP pin 24, PC1.
 // IF DEFINED: reverse the direction of REV2/3/4 temperature pot polarity.
@@ -133,7 +141,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#endif
 
 // REV7 motor connections.
-#if V0p2_REV == 7
+#if (V0p2_REV == 7)
 // MI: Motor Indicator (stalled current sensior) ADC6
 // MC: Motor Count from shaft encoder optical ADC7
 #define MOTOR_DRIVE_MI_AIN 6

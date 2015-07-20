@@ -37,11 +37,11 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 // Production configs.
 //#define CONFIG_Trial2013Winter_Round1 // REV1
-//#define CONFIG_Trial2013Winter_Round2 // REV2 cut4
-#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as boiler hub.
+#define CONFIG_Trial2013Winter_Round2 // REV2 cut4
+//#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
 //#define CONFIG_DORM1 // REV7 / DORM1 Winter 2014/2015 all-in-one valve unit.
-//#define CONFIG_DORM1_BOILER // REV8 / DORM1 Winter 2014/2015 bolier-control unit.
+//#define CONFIG_DORM1_BOILER // REV8 / DORM1 Winter 2014/2015 boiler-control unit.
 
 
 // One-offs and special cases.
@@ -52,6 +52,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_BH_TESTLAB
 //#define CONFIG_DORM1_SANS32K // REV7 / DORM1 without working 32768Hz clock.
 //#define CONFIG_REV7N // REV7 with external "Model N" valve.
+//#define CONFIG_REV9 // REV9
 
 
 
@@ -80,6 +81,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define ALLOW_STATS_TX
 // IF DEFINED: allow JSON stats frames alongside binary ones.
 #define ALLOW_JSON_OUTPUT
+// IF DEFINED: use active-low LEARN button(s).  Needs SUPPORT_SINGLETON_SCHEDULE.
+#define LEARN_BUTTON_AVAILABLE // OPTIONAL ON V0.09 PCB1
 // IF DEFINED: minimise boot effort and energy eg for intermittently-powered energy-harvesting applications.
 #undef MIN_ENERGY_BOOT
 
@@ -134,6 +137,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 
 
+
+// -------------------------
+// NON-STANDARD DEFINITIONS
 // -------------------------
 
 #ifdef CONFIG_DHD_TESTLAB_REV0 // DHD's test lab breadboard with TRV.
@@ -245,6 +251,29 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 // -------------------------
 
+#ifdef CONFIG_REV9 // REV9 (initial board release) derived from REV4.
+// Revision of V0.2 board.
+#define V0p2_REV 9 // REV0 covers DHD's breadboard and first V0.2 PCB.
+//// Enable use of OneWire devices.
+//#define SUPPORT_ONEWIRE
+//// Enable use of DS18B20 temp sensor.
+//#define SENSOR_DS18B20_ENABLE
+// Enable use of SHT21 RH and temp sensor.
+#define SENSOR_SHT21_ENABLE
+// Using RoHS-compliant phototransistor in place of LDR.
+#define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
+// For 1st-cust REV9 boards phototransistor was accidentally pulling down not up.
+#define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400_WRONG_WAY
+// IF UNDEFINED: this unit cannot act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
+#undef ENABLE_BOILER_HUB
+// IF UNDEFINED: no LEARN mode for REV9 boards (window sensor(s) instead).
+//#undef LEARN_BUTTON_AVAILABLE
+// Use common settings.
+#define COMMON_SETTINGS
+#endif
+
+// -------------------------
+
 
 
 
@@ -327,8 +356,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define OCCUPANCY_SUPPORT
 // IF DEFINED: use software RTC.
 #define USE_RTC_INTERNAL_SIMPLE // Provide software RTC support by default.
-// IF DEFINED: use active-low LEARN button(s).  Needs SUPPORT_SINGLETON_SCHEDULE.
-#define LEARN_BUTTON_AVAILABLE // OPTIONAL ON V0.09 PCB1
 // IF DEFINED: support one on and one off time per day (possibly in conjunction with 'learn' button).
 #define SUPPORT_SINGLETON_SCHEDULE
 // IF DEFINED: this unit can act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.

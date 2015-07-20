@@ -95,7 +95,7 @@ static inline void errorIfNotEqual(int expected, int actual, int delta, int line
 static void testLibVersions()
   {
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("LibVersions");
-#if !(0 == ARDUINO_LIB_OTRADIOLINK_VERSION_MAJOR) || !(1 <= ARDUINO_LIB_OTRADIOLINK_VERSION_MINOR)
+#if !(0 == ARDUINO_LIB_OTRADIOLINK_VERSION_MAJOR) && !(2 <= ARDUINO_LIB_OTRADIOLINK_VERSION_MINOR)
 #error Wrong library version!
 #endif
   AssertIsEqual(0, ARDUINO_LIB_OTRADIOLINK_VERSION_MAJOR);
@@ -103,6 +103,7 @@ static void testLibVersions()
   }
 
 
+#ifdef ENABLE_BOILER_HUB
 // Test simple on/off boiler-driver behaviour.
 static void testOnOffBoilerDriverLogic()
   {
@@ -122,6 +123,7 @@ static void testOnOffBoilerDriverLogic()
   OnOffBoilerDriverLogic::PerIDStatus valves1[1];
   AssertIsEqual(0, oobdl1.valvesStatus(valves1, 1, randRNG8NextBoolean()));
   }
+#endif
 
 // Test sane direct abstract motor drive behaviour.
 static void testCurrentSenseValveMotorDirect()
@@ -1544,8 +1546,9 @@ static void testSupplyVoltageMonitor()
   serialPrintlnAndFlush();
 #endif
   // During testing power supply voltage should be above ~1.7V BOD limit,
-  // and below 3.6V for V0p2 boards which is RFM22 Vss limit.
-  AssertIsTrueWithErr((mv >= 1700) && (mv <= 3600), mv);
+  // and no higher than 3.6V for V0p2 boards which is RFM22 Vss limit.
+  // Note that REV9 first boards are running at 3.6V nominal!
+  AssertIsTrueWithErr((mv >= 1700) && (mv < 3700), mv);
   }
 #endif
 
@@ -1571,7 +1574,6 @@ void loopUnitTest()
 
   // Run the tests, fastest / newest / most-fragile / most-interesting first...
   testLibVersions();
-  testOnOffBoilerDriverLogic();
   testCurrentSenseValveMotorDirect();
   testComputeRequiredTRVPercentOpen();
   testFastDigitalIOCalcs();
@@ -1592,6 +1594,11 @@ void loopUnitTest()
   testSleepUntilSubCycleTime();
   testFHTEncoding();
   testFHTEncodingHeadAndTail();
+
+  // Boiler-hub tests.
+#ifdef ENABLE_BOILER_HUB
+  testOnOffBoilerDriverLogic();
+#endif
 
   // Sensor tests.
   // May need to be disabled if, for example, running in a simulator or on a partial board.

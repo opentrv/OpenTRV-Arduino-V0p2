@@ -273,6 +273,9 @@ MinimalOneWire<PIN_OW_DQ_DATA> MinOW;
 
 #ifdef AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 #define ALREFERENCE INTERNAL // Internal 1.1V reference.
+#ifdef AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400_WRONG_WAY
+#define ALREFERENCE DEFAULT // Supply voltage as reference for REV9 first cut.  HACK HACK!
+#endif
 // If defined, then allow adaptive compression of top part of range when would otherwise max out.
 // This may be somewhat supply-voltage dependent, eg capped by the supply voltage.
 // Supply voltage is expected to be 2--3 times the bandgap reference, typically.
@@ -288,7 +291,7 @@ MinimalOneWire<PIN_OW_DQ_DATA> MinOW;
 // http://www.pocklington-trust.org.uk/Resources/Thomas%20Pocklington/Documents/PDF/Research%20Publications/GPG5.pdf
 // http://www.vishay.com/docs/84154/appnotesensors.pdf
 
-#if 7 == V0p2_REV // REV7 board uses slightly different phototransistor to TEPT4400.
+#if (7 == V0p2_REV) // REV7 board uses slightly different phototransistor to TEPT4400.
 static const int LDR_THR_LOW = 180U;
 static const int LDR_THR_HIGH = 250U;
 #else // REV4 default values.
