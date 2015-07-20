@@ -218,65 +218,65 @@ uint8_t RFM22RSSI()
 //  if(neededEnable) { powerDownSPI(); }
 //  }
 
-// Returns true iff RFM22 (or RFM23) appears to be correctly connected.
-bool RFM22CheckConnected()
-  {
-  const bool neededEnable = OTV0P2BASE::powerUpSPIIfDisabled();
-  bool isOK = false;
-  const uint8_t rType = _RFM22ReadReg8Bit(0); // May read as 0 if not connected at all.
-  if(RFM22_SUPPORTED_DEVICE_TYPE == rType)
-    {
-    const uint8_t rVersion = _RFM22ReadReg8Bit(1);
-    if(RFM22_SUPPORTED_DEVICE_VERSION == rVersion)
-      { isOK = true; }
-#if 0 && defined(DEBUG)
-    else
-      {
-      DEBUG_SERIAL_PRINT_FLASHSTRING("RFM22 bad version: ");
-      DEBUG_SERIAL_PRINTFMT(rVersion, HEX);
-      DEBUG_SERIAL_PRINTLN();
-      }
-#endif
-    }
-#if 0 && defined(DEBUG)
-  else
-    {
-    DEBUG_SERIAL_PRINT_FLASHSTRING("RFM22 bad type: ");
-    DEBUG_SERIAL_PRINTFMT(rType, HEX);
-    DEBUG_SERIAL_PRINTLN();
-    }
-#endif
-#if 1 && defined(DEBUG)
-  if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("RFM22 bad"); }
-#endif
-  if(neededEnable) { OTV0P2BASE::powerDownSPI(); }
-  return(isOK);
-  }
+//// Returns true iff RFM22 (or RFM23) appears to be correctly connected.
+//bool RFM22CheckConnected()
+//  {
+//  const bool neededEnable = OTV0P2BASE::powerUpSPIIfDisabled();
+//  bool isOK = false;
+//  const uint8_t rType = _RFM22ReadReg8Bit(0); // May read as 0 if not connected at all.
+//  if(RFM22_SUPPORTED_DEVICE_TYPE == rType)
+//    {
+//    const uint8_t rVersion = _RFM22ReadReg8Bit(1);
+//    if(RFM22_SUPPORTED_DEVICE_VERSION == rVersion)
+//      { isOK = true; }
+//#if 0 && defined(DEBUG)
+//    else
+//      {
+//      DEBUG_SERIAL_PRINT_FLASHSTRING("RFM22 bad version: ");
+//      DEBUG_SERIAL_PRINTFMT(rVersion, HEX);
+//      DEBUG_SERIAL_PRINTLN();
+//      }
+//#endif
+//    }
+//#if 0 && defined(DEBUG)
+//  else
+//    {
+//    DEBUG_SERIAL_PRINT_FLASHSTRING("RFM22 bad type: ");
+//    DEBUG_SERIAL_PRINTFMT(rType, HEX);
+//    DEBUG_SERIAL_PRINTLN();
+//    }
+//#endif
+//#if 1 && defined(DEBUG)
+//  if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("RFM22 bad"); }
+//#endif
+//  if(neededEnable) { OTV0P2BASE::powerDownSPI(); }
+//  return(isOK);
+//  }
 
 
-// Configure the radio from a list of register/value pairs in readonly PROGMEM/Flash, terminating with an 0xff register value.
-// NOTE: argument is not a pointer into SRAM, it is into PROGMEM!
-// Could optimise case where multiple values are for successive RFM22 registers by using burst write.
-void RFM22RegisterBlockSetup(const uint8_t registerValues[][2])
-  {
-  const bool neededEnable = OTV0P2BASE::powerUpSPIIfDisabled();
-  for( ; ; )
-    {
-    const uint8_t reg = pgm_read_byte(&(registerValues[0][0]));
-    const uint8_t val = pgm_read_byte(&(registerValues[0][1]));
-    if(0xff == reg) { break; }
-#if 0 && defined(DEBUG)
-    DEBUG_SERIAL_PRINT_FLASHSTRING("RFM22 reg 0x");
-    DEBUG_SERIAL_PRINTFMT(reg, HEX);
-    DEBUG_SERIAL_PRINT_FLASHSTRING(" = 0x");
-    DEBUG_SERIAL_PRINTFMT(val, HEX);
-    DEBUG_SERIAL_PRINTLN();
-#endif
-    _RFM22WriteReg8Bit(reg, val);
-    ++registerValues;
-    }
-  if(neededEnable) { OTV0P2BASE::powerDownSPI(); }
-  }
+//// Configure the radio from a list of register/value pairs in readonly PROGMEM/Flash, terminating with an 0xff register value.
+//// NOTE: argument is not a pointer into SRAM, it is into PROGMEM!
+//// Could optimise case where multiple values are for successive RFM22 registers by using burst write.
+//void RFM22RegisterBlockSetup(const uint8_t registerValues[][2])
+//  {
+//  const bool neededEnable = OTV0P2BASE::powerUpSPIIfDisabled();
+//  for( ; ; )
+//    {
+//    const uint8_t reg = pgm_read_byte(&(registerValues[0][0]));
+//    const uint8_t val = pgm_read_byte(&(registerValues[0][1]));
+//    if(0xff == reg) { break; }
+//#if 0 && defined(DEBUG)
+//    DEBUG_SERIAL_PRINT_FLASHSTRING("RFM22 reg 0x");
+//    DEBUG_SERIAL_PRINTFMT(reg, HEX);
+//    DEBUG_SERIAL_PRINT_FLASHSTRING(" = 0x");
+//    DEBUG_SERIAL_PRINTFMT(val, HEX);
+//    DEBUG_SERIAL_PRINTLN();
+//#endif
+//    _RFM22WriteReg8Bit(reg, val);
+//    ++registerValues;
+//    }
+//  if(neededEnable) { OTV0P2BASE::powerDownSPI(); }
+//  }
 
 // Transmit contents of on-chip TX FIFO: caller should revert to low-power standby mode (etc) if required.
 // Returns true if packet apparently sent correctly/fully.

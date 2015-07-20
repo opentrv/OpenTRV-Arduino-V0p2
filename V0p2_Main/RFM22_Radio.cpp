@@ -249,29 +249,29 @@ bool RFM22CheckConnected()
   }
 
 
-// Configure the radio from a list of register/value pairs in readonly PROGMEM/Flash, terminating with an 0xff register value.
-// NOTE: argument is not a pointer into SRAM, it is into PROGMEM!
-// Could optimise case where multiple values are for successive RFM22 registers by using burst write.
-void RFM22RegisterBlockSetup(const uint8_t registerValues[][2])
-  {
-  const bool neededEnable = powerUpSPIIfDisabled();
-  for( ; ; )
-    {
-    const uint8_t reg = pgm_read_byte(&(registerValues[0][0]));
-    const uint8_t val = pgm_read_byte(&(registerValues[0][1]));
-    if(0xff == reg) { break; }
-#if 0 && defined(DEBUG)
-    DEBUG_SERIAL_PRINT_FLASHSTRING("RFM22 reg 0x");
-    DEBUG_SERIAL_PRINTFMT(reg, HEX);
-    DEBUG_SERIAL_PRINT_FLASHSTRING(" = 0x");
-    DEBUG_SERIAL_PRINTFMT(val, HEX);
-    DEBUG_SERIAL_PRINTLN();
-#endif
-    _RFM22WriteReg8Bit(reg, val);
-    ++registerValues;
-    }
-  if(neededEnable) { powerDownSPI(); }
-  }
+//// Configure the radio from a list of register/value pairs in readonly PROGMEM/Flash, terminating with an 0xff register value.
+//// NOTE: argument is not a pointer into SRAM, it is into PROGMEM!
+//// Could optimise case where multiple values are for successive RFM22 registers by using burst write.
+//void RFM22RegisterBlockSetup(const uint8_t registerValues[][2])
+//  {
+//  const bool neededEnable = powerUpSPIIfDisabled();
+//  for( ; ; )
+//    {
+//    const uint8_t reg = pgm_read_byte(&(registerValues[0][0]));
+//    const uint8_t val = pgm_read_byte(&(registerValues[0][1]));
+//    if(0xff == reg) { break; }
+//#if 0 && defined(DEBUG)
+//    DEBUG_SERIAL_PRINT_FLASHSTRING("RFM22 reg 0x");
+//    DEBUG_SERIAL_PRINTFMT(reg, HEX);
+//    DEBUG_SERIAL_PRINT_FLASHSTRING(" = 0x");
+//    DEBUG_SERIAL_PRINTFMT(val, HEX);
+//    DEBUG_SERIAL_PRINTLN();
+//#endif
+//    _RFM22WriteReg8Bit(reg, val);
+//    ++registerValues;
+//    }
+//  if(neededEnable) { powerDownSPI(); }
+//  }
 
 // Transmit contents of on-chip TX FIFO: caller should revert to low-power standby mode (etc) if required.
 // Returns true if packet apparently sent correctly/fully.
