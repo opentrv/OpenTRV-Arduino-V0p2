@@ -32,9 +32,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // Arduino libraries imported here (even for use in other .cpp files).
 #include <SPI.h>
 #include <Wire.h>
-//#ifdef REQUIRES_ONEWIRE22_LIB // Requires V2.2 of OneWire lib.
-//#include <OneWire.h>
-//#endif
 #include <OTRadioLink.h>
 
 #include <util/crc16.h>
@@ -66,7 +63,8 @@ void panic()
   {
 #ifdef USE_MODULE_RFM22RADIOSIMPLE
   // Reset radio and go into low-power mode.
-  RFM22PowerOnInit();
+//  RFM22PowerOnInit();
+   RFM23B.panicShutdown();
 #endif
   // Power down almost everything else...
   minimisePowerWithoutSleep();
@@ -195,7 +193,8 @@ void optionalPOST()
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("(Using RFM22.)");
 #endif
   // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
-  RFM22PowerOnInit();
+  //RFM22PowerOnInit();
+  RFM23B.preinit(NULL);
   // Check that the radio is correctly connected; panic if not...
   if(!RFM22CheckConnected()) { panic(); }
   // Configure the radio.

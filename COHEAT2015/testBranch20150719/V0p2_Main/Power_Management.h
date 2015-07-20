@@ -323,12 +323,13 @@ bool powerUpTWIIfDisabled();
 // Power down TWI (I2C).
 void powerDownTWI();
 
-// If SPI was disabled, power it up, enable it as master and with a sensible clock speed, etc, and return true.
-// If already powered up then do nothing other than return false.
-// If this returns true then a matching powerDownSPI() may be advisable.
-bool powerUpSPIIfDisabled();
-// Power down SPI.
-void powerDownSPI();
+// NOW SUPPLIED BY LIBRARY.
+//// If SPI was disabled, power it up, enable it as master and with a sensible clock speed, etc, and return true.
+//// If already powered up then do nothing other than return false.
+//// If this returns true then a matching powerDownSPI() may be advisable.
+//bool powerUpSPIIfDisabled();
+//// Power down SPI.
+//void powerDownSPI();
 
 
 // Enable power to intermittent peripherals.
