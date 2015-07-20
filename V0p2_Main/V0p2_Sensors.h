@@ -439,7 +439,7 @@ extern HumiditySensorSHT21 RelHumidity;
 
 
 
-#if (V0p2_REV >= 2) && defined(TEMP_POT_AIN) // Only supported in REV2/3/4/7.
+#if V0p2_REV >= 2 // Only supported in REV2 onwards.
 #define TEMP_POT_AVAILABLE
 
 // Maximum 'raw' temperature pot/dial value.

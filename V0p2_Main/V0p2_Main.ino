@@ -175,7 +175,7 @@ void serialPrintlnBuildVersion()
   {
   serialPrintAndFlush(F("board V0.2 REV"));
   serialPrintAndFlush(V0p2_REV);
-  serialPrintAndFlush(F("; code $Id: V0p2_Main.ino 4341 2015-03-17 18:31:12Z damonhd $ ")); // Expect SVN to substitute the Id keyword here with svn:keywords property set.
+  serialPrintAndFlush(F("; code $Id: V0p2_Main.ino 4788 2015-07-14 17:52:27Z damonhd $ ")); // Expect SVN to substitute the Id keyword here with svn:keywords property set.
   serialPrintAndFlush(_YYYYMmmDD);
   serialPrintAndFlush(F(" " __TIME__));
   serialPrintlnAndFlush();
@@ -206,8 +206,6 @@ void optionalPOST()
 
 //  posPOST(1, F("Radio OK, checking buttons/sensors and xtal"));
 
-// Buttons should not be activated DURING boot; activated button implies fault.
-#if (9 != V0p2_REV) // Usual tests for stuck control buttons.
   // Check buttons not stuck in the activated position.
   if((fastDigitalRead(BUTTON_MODE_L) == LOW)
 #if defined(BUTTON_LEARN_L)
@@ -218,11 +216,6 @@ void optionalPOST()
 #endif
     )
     { panic(F("button stuck")); }
-#else
-    DEBUG_SERIAL_PRINT(fastDigitalRead(BUTTON_MODE_L)); DEBUG_SERIAL_PRINTLN(); // Should be BOOSTSWITCH_L for REV9.
-    DEBUG_SERIAL_PRINT(fastDigitalRead(BUTTON_LEARN_L)); DEBUG_SERIAL_PRINTLN();
-    DEBUG_SERIAL_PRINT(fastDigitalRead(BUTTON_LEARN2_L)); DEBUG_SERIAL_PRINTLN(); // AKA WINDOW SWITCH
-#endif
 
 #if defined(WAKEUP_32768HZ_XTAL)
   // Check that the 32768Hz async clock is actually running having done significant CPU-intensive work.
@@ -292,15 +285,8 @@ void setup()
 #endif
 
 #if !defined(MIN_ENERGY_BOOT)
-#ifdef LED_UI2_EXISTS
-  LED_UI2_ON();
-#endif
   serialPrintAndFlush(F("\r\nOpenTRV: ")); // Leading CRLF to clear leading junk, eg from bootloader.
     serialPrintlnBuildVersion();
-#ifdef LED_UI2_EXISTS
-  nap(WDTO_120MS); // Sleep to let UI2 LED be seen.
-  LED_UI2_OFF();
-#endif
 #endif
 
 #if !defined(MIN_ENERGY_BOOT)

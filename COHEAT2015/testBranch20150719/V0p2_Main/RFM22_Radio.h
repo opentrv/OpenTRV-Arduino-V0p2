@@ -25,14 +25,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 #include "V0p2_Main.h"
 
-#include <OTRadioLink.h>
-#include <OTRFM23BLink.h>
-
-extern OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS> RFM23B;
-
-//// Minimal set-up of I/O (etc) after system power-up.
-//// Performs a software reset and leaves the radio deselected and in a low-power and safe state.
-//void RFM22PowerOnInit();
+// Minimal set-up of I/O (etc) after system power-up.
+// Performs a software reset and leaves the radio deselected and in a low-power and safe state.
+void RFM22PowerOnInit();
 
 // Enter standby mode (consume least possible power but retain register contents).
 // FIFO state and pending interrupts are cleared.

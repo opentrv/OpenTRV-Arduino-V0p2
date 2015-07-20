@@ -21,7 +21,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include <util/crc16.h>
 
 #include <Wire.h>
-#include <OTV0p2Base.h> // Underlying hardware support definitions.
 
 #include "Power_Management.h"
 
@@ -88,7 +87,7 @@ void minimisePowerWithoutSleep()
   power_adc_disable();
 
   // Ensure that SPI is powered down.
-  OTV0P2BASE::powerDownSPI();
+  powerDownSPI();
 
   // Ensure that TWI is powered down.
   powerDownTWI();
@@ -807,53 +806,52 @@ void powerDownTWI()
   //pinMode(SCL, INPUT);
   }
 
-// NOW SUPPLIED BY LIBRARY.
-//// If SPI was disabled, power it up, enable it as master and with a sensible clock speed, etc, and return true.
-//// If already powered up then do nothing other than return false.
-//// If this returns true then a matching powerDownSPI() may be advisable.
-//bool powerUpSPIIfDisabled()
-//  {
-//  if(!(PRR & _BV(PRSPI))) { return(false); }
-//
-//  pinMode(PIN_SPI_nSS, OUTPUT); // Ensure that nSS is an output to avoid forcing SPI to slave mode by accident.
-//  fastDigitalWrite(PIN_SPI_nSS, HIGH); // Ensure that nSS is HIGH and thus any slave deselected when powering up SPI.
-//
-//  PRR &= ~_BV(PRSPI); // Enable SPI power.
-//  // Configure raw SPI to match better how it was used in PICAXE V0.09 code.
-//  // CPOL = 0, CPHA = 0
-//  // Enable SPI, set master mode, set speed.
-//  const uint8_t ENABLE_MASTER =  _BV(SPE) | _BV(MSTR);
-//#if F_CPU <= 2000000 // Needs minimum prescale (x2) with slow (<=2MHz) CPU clock.
-//  SPCR = ENABLE_MASTER; // 2x clock prescale for <=1MHz SPI clock from <=2MHz CPU clock (500kHz SPI @ 1MHz CPU).
-//  SPSR = _BV(SPI2X);
-//#elif F_CPU <= 8000000
-//  SPCR = ENABLE_MASTER; // 4x clock prescale for <=2MHz SPI clock from nominal <=8MHz CPU clock.
-//  SPSR = 0;
-//#else // Needs setting for fast (~16MHz) CPU clock.
-//  SPCR = _BV(SPR0) | ENABLE_MASTER; // 8x clock prescale for ~2MHz SPI clock from nominal ~16MHz CPU clock.
-//  SPSR = _BV(SPI2X);
-//#endif
-//  return(true);
-//  }
-//
-//// Power down SPI.
-//void powerDownSPI()
-//  {
-//  SPCR &= ~_BV(SPE); // Disable SPI.
-//  PRR |= _BV(PRSPI); // Power down...
-//
-//  pinMode(PIN_SPI_nSS, OUTPUT); // Ensure that nSS is an output to avoid forcing SPI to slave mode by accident.
-//  fastDigitalWrite(PIN_SPI_nSS, HIGH); // Ensure that nSS is HIGH and thus any slave deselected when powering up SPI.
-//
-//  // Avoid pins from floating when SPI is disabled.
-//  // Try to preserve general I/O direction and restore previous output values for outputs.
-//  pinMode(PIN_SPI_SCK, OUTPUT);
-//  pinMode(PIN_SPI_MOSI, OUTPUT);
-//  pinMode(PIN_SPI_MISO, INPUT_PULLUP);
-//
-//  // If sharing SPI SCK with LED indicator then return this pin to being an output (retaining previous value).
-//  //if(LED_HEATCALL == PIN_SPI_SCK) { pinMode(LED_HEATCALL, OUTPUT); }
-//  }
+// If SPI was disabled, power it up, enable it as master and with a sensible clock speed, etc, and return true.
+// If already powered up then do nothing other than return false.
+// If this returns true then a matching powerDownSPI() may be advisable.
+bool powerUpSPIIfDisabled()
+  {
+  if(!(PRR & _BV(PRSPI))) { return(false); }
+
+  pinMode(PIN_SPI_nSS, OUTPUT); // Ensure that nSS is an output to avoid forcing SPI to slave mode by accident.
+  fastDigitalWrite(PIN_SPI_nSS, HIGH); // Ensure that nSS is HIGH and thus any slave deselected when powering up SPI.
+
+  PRR &= ~_BV(PRSPI); // Enable SPI power.
+  // Configure raw SPI to match better how it was used in PICAXE V0.09 code.
+  // CPOL = 0, CPHA = 0
+  // Enable SPI, set master mode, set speed.
+  const uint8_t ENABLE_MASTER =  _BV(SPE) | _BV(MSTR);
+#if F_CPU <= 2000000 // Needs minimum prescale (x2) with slow (<=2MHz) CPU clock.
+  SPCR = ENABLE_MASTER; // 2x clock prescale for <=1MHz SPI clock from <=2MHz CPU clock (500kHz SPI @ 1MHz CPU).
+  SPSR = _BV(SPI2X);
+#elif F_CPU <= 8000000
+  SPCR = ENABLE_MASTER; // 4x clock prescale for <=2MHz SPI clock from nominal <=8MHz CPU clock.
+  SPSR = 0;
+#else // Needs setting for fast (~16MHz) CPU clock.
+  SPCR = _BV(SPR0) | ENABLE_MASTER; // 8x clock prescale for ~2MHz SPI clock from nominal ~16MHz CPU clock.
+  SPSR = _BV(SPI2X);
+#endif
+  return(true);
+  }
+
+// Power down SPI.
+void powerDownSPI()
+  {
+  SPCR &= ~_BV(SPE); // Disable SPI.
+  PRR |= _BV(PRSPI); // Power down...
+
+  pinMode(PIN_SPI_nSS, OUTPUT); // Ensure that nSS is an output to avoid forcing SPI to slave mode by accident.
+  fastDigitalWrite(PIN_SPI_nSS, HIGH); // Ensure that nSS is HIGH and thus any slave deselected when powering up SPI.
+
+  // Avoid pins from floating when SPI is disabled.
+  // Try to preserve general I/O direction and restore previous output values for outputs.
+  pinMode(PIN_SPI_SCK, OUTPUT);
+  pinMode(PIN_SPI_MOSI, OUTPUT);
+  pinMode(PIN_SPI_MISO, INPUT_PULLUP);
+
+  // If sharing SPI SCK with LED indicator then return this pin to being an output (retaining previous value).
+  //if(LED_HEATCALL == PIN_SPI_SCK) { pinMode(LED_HEATCALL, OUTPUT); }
+  }
 
 
 // Capture a little system entropy.
