@@ -427,16 +427,18 @@ void RFM22RawStatsTX(const bool isBinary, uint8_t * const buf, const bool double
   memset(bptr, RFM22_SYNC_BYTE, RFM22_SYNC_MIN_BYTES);
   bptr += RFM22_SYNC_MIN_BYTES;
 
-  // TODO: put in listen before TX to reduce collisions (CSMA).
-  // Send message starting will preamble.
-  // Assume RFM22/23 support for now.
-  RFM22QueueCmdToFF(buf);
-  RFM22TXFIFO(); // Send it!  Approx 1.6ms/byte.
-  if(doubleTX)
-    {
-    nap(WDTO_15MS);
-    RFM22TXFIFO(); // Re-send it!
-    }
+//  // TODO: put in listen before TX to reduce collisions (CSMA).
+//  // Send message starting with preamble.
+//  // Assume RFM22/23 support for now.
+//  RFM22QueueCmdToFF(buf);
+//  RFM22TXFIFO(); // Send it!  Approx 1.6ms/byte.
+//  if(doubleTX)
+//    {
+//    nap(WDTO_15MS);
+//    RFM22TXFIFO(); // Re-send it!
+//    }
+  RFM23B.sendRaw(buf, 64 /* FIXME */ );
+  DEBUG_SERIAL_PRINTLN_FLASHSTRING("RFM23B.sendRaw() done");
   //DEBUG_SERIAL_PRINTLN_FLASHSTRING("RS");
   }
 
