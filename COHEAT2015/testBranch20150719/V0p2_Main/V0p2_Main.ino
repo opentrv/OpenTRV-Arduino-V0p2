@@ -173,7 +173,7 @@ void serialPrintlnBuildVersion()
   {
   serialPrintAndFlush(F("board V0.2 REV"));
   serialPrintAndFlush(V0p2_REV);
-  serialPrintAndFlush(F("; code $Id: V0p2_Main.ino 4341 2015-03-17 18:31:12Z damonhd $ ")); // Expect SVN to substitute the Id keyword here with svn:keywords property set.
+  serialPrintAndFlush(F("; code $Id$ ")); // Expect SVN to substitute the Id keyword here with svn:keywords property set.
   serialPrintAndFlush(_YYYYMmmDD);
   serialPrintAndFlush(F(" " __TIME__));
   serialPrintlnAndFlush();
