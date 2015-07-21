@@ -292,7 +292,7 @@ bool RFM22TXFIFO()
   _RFM22ClearInterrupts();
   _RFM22ModeTX(); // Enable TX mode and transmit TX FIFO contents.
 
-  // Repeately nap until packet sent, with upper bound of ~120ms on TX time in case there is a problem.
+  // Repeatedly nap until packet sent, with upper bound of ~120ms on TX time in case there is a problem.
   // TX time is ~1.6ms per byte at 5000bps.
   bool result = false; // Usual case is success.
   for(int8_t i = 8; --i >= 0; )
