@@ -46,15 +46,15 @@ void RFM22ModeStandbyAndClearState();
 //// NOTE: argument is not a pointer into SRAM, it is into PROGMEM!
 //void RFM22RegisterBlockSetup(const uint8_t registerValues[][2]);
 
-// Transmit contents of on-chip TX FIFO: caller should revert to low-power standby mode (etc) if required.
-// Returns true if packet apparently sent correctly/fully.
-// Does not clear TX FIFO (so possible to re-send immediately).
-// Note: Reliability possibly helped by early move to 'tune' mode to work other than with default (4MHz) lowish PICAXE clock speeds.
-bool RFM22TXFIFO();
+//// Transmit contents of on-chip TX FIFO: caller should revert to low-power standby mode (etc) if required.
+//// Returns true if packet apparently sent correctly/fully.
+//// Does not clear TX FIFO (so possible to re-send immediately).
+//// Note: Reliability possibly helped by early move to 'tune' mode to work other than with default (4MHz) lowish PICAXE clock speeds.
+//bool RFM22TXFIFO();
 
-// Clears the RFM22 TX FIFO and queues up ready to send via the TXFIFO the 0xff-terminated bytes starting at bptr.
-// This routine does not change the command area.
-void RFM22QueueCmdToFF(uint8_t *bptr);
+//// Clears the RFM22 TX FIFO and queues up ready to send via the TXFIFO the 0xff-terminated bytes starting at bptr.
+//// This routine does not change the command area.
+//void RFM22QueueCmdToFF(uint8_t *bptr);
 
 // Put RFM22 into RX mode with given RX FIFO 'nearly-full' threshold and optional interrupts enabled.
 void RFM22SetUpRX(uint8_t nearlyFullThreshold, bool syncInt, bool dataInt);

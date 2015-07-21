@@ -439,7 +439,6 @@ void RFM22RawStatsTX(const bool isBinary, uint8_t * const buf, const bool double
 //    }
   const uint8_t buflen = OTRadioLink::frameLenFFTerminated(buf);
   RFM23B.sendRaw(buf, buflen);
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("RFM23B.sendRaw() done");
   //DEBUG_SERIAL_PRINTLN_FLASHSTRING("RS");
   }
 
