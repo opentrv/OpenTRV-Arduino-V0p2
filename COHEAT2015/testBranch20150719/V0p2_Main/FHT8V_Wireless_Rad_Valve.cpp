@@ -1357,7 +1357,7 @@ bool FHT8VCallForHeatPoll()
     debugReportRSSI(2);
 #endif
     // Capture some entropy from RSSI and timing...
-    const uint8_t rssi = RFM22RSSI();
+    const uint8_t rssi = RFM23B.getRSSI();
     // TODO adjust output power down a little if RX very loud.
     addEntropyToPool(rssi ^ (uint8_t)(status ^ (status >> 8)), 1); // Maybe ~1 real bit of entropy.
 #if 0 && defined(DEBUG)

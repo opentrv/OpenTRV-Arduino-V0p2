@@ -193,15 +193,15 @@ uint16_t RFM22ReadStatusBoth()
   return(result);
   }
 
-// Get current RSSI.
-// Only valid when in RX mode.
-uint8_t RFM22RSSI()
-  {
-  const bool neededEnable = OTV0P2BASE::powerUpSPIIfDisabled();
-  const uint8_t rssi = _RFM22ReadReg8Bit(RFM22REG_RSSI);
-  if(neededEnable) { OTV0P2BASE::powerDownSPI(); }
-  return(rssi);
-  }
+//// Get current RSSI.
+//// Only valid when in RX mode.
+//uint8_t RFM22RSSI()
+//  {
+//  const bool neededEnable = OTV0P2BASE::powerUpSPIIfDisabled();
+//  const uint8_t rssi = _RFM22ReadReg8Bit(RFM22REG_RSSI);
+//  if(neededEnable) { OTV0P2BASE::powerDownSPI(); }
+//  return(rssi);
+//  }
 
 // MOVED TO OTRFM23BLink
 //// Minimal set-up of I/O (etc) after system power-up.

@@ -64,9 +64,9 @@ void RFM22SetUpRX(uint8_t nearlyFullThreshold, bool syncInt, bool dataInt);
 // Trailing bytes (more than were actually sent) may be garbage.
 void RFM22RXFIFO(uint8_t *buf, uint8_t bufSize);
 
-// Get current RSSI.
-// Only valid when in RX mode.
-uint8_t RFM22RSSI();
+//// Get current RSSI.
+//// Only valid when in RX mode.
+//uint8_t RFM22RSSI();
 
 // Read status (both registers) and clear interrupts.
 // Status register 1 is returned in the top 8 bits, register 2 in the bottom 8 bits.
