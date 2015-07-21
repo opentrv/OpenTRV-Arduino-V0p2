@@ -173,7 +173,7 @@ void serialPrintlnBuildVersion()
   {
   serialPrintAndFlush(F("board V0.2 REV"));
   serialPrintAndFlush(V0p2_REV);
-  serialPrintAndFlush(F("; code $Id: ebf1e586609ba1370e863d4011681e8f73d1713f $ ")); // Expect SVN/git to substitute the Id keyword here with svn:keywords property set.
+  serialPrintAndFlush(F("; code $Id: b0cc1e292d3e8704dc49417ce50b532607303d40 $ ")); // Expect SVN/git to substitute the Id keyword here with svn:keywords property set.
   serialPrintAndFlush(_YYYYMmmDD);
   serialPrintAndFlush(F(" " __TIME__));
   serialPrintlnAndFlush();
