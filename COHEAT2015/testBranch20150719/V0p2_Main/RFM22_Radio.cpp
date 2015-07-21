@@ -278,71 +278,71 @@ uint8_t RFM22RSSI()
 //  if(neededEnable) { OTV0P2BASE::powerDownSPI(); }
 //  }
 
-// Transmit contents of on-chip TX FIFO: caller should revert to low-power standby mode (etc) if required.
-// Returns true if packet apparently sent correctly/fully.
-// Does not clear TX FIFO (so possible to re-send immediately).
-// Note: Reliability possibly helped by early move to 'tune' mode to work other than with default (4MHz) lowish PICAXE clock speeds.
-bool RFM22TXFIFO()
-  {
-  const bool neededEnable = OTV0P2BASE::powerUpSPIIfDisabled();
-  //gosub RFM22ModeTune ; Warm up the PLL for quick transition to TX below (and ensure NOT in TX mode).
-  // Enable interrupt on packet send ONLY.
-  _RFM22WriteReg8Bit(RFM22REG_INT_ENABLE1, 4);
-  _RFM22WriteReg8Bit(RFM22REG_INT_ENABLE2, 0);
-  _RFM22ClearInterrupts();
-  _RFM22ModeTX(); // Enable TX mode and transmit TX FIFO contents.
+//// Transmit contents of on-chip TX FIFO: caller should revert to low-power standby mode (etc) if required.
+//// Returns true if packet apparently sent correctly/fully.
+//// Does not clear TX FIFO (so possible to re-send immediately).
+//// Note: Reliability possibly helped by early move to 'tune' mode to work other than with default (4MHz) lowish PICAXE clock speeds.
+//bool RFM22TXFIFO()
+//  {
+//  const bool neededEnable = OTV0P2BASE::powerUpSPIIfDisabled();
+//  //gosub RFM22ModeTune ; Warm up the PLL for quick transition to TX below (and ensure NOT in TX mode).
+//  // Enable interrupt on packet send ONLY.
+//  _RFM22WriteReg8Bit(RFM22REG_INT_ENABLE1, 4);
+//  _RFM22WriteReg8Bit(RFM22REG_INT_ENABLE2, 0);
+//  _RFM22ClearInterrupts();
+//  _RFM22ModeTX(); // Enable TX mode and transmit TX FIFO contents.
+//
+//  // Repeatedly nap until packet sent, with upper bound of ~120ms on TX time in case there is a problem.
+//  // TX time is ~1.6ms per byte at 5000bps.
+//  bool result = false; // Usual case is success.
+//  for(int8_t i = 8; --i >= 0; )
+//    {
+//    nap(WDTO_15MS); // Sleep in low power mode for a short time waiting for bits to be sent...
+//    const uint8_t status = _RFM22ReadReg8Bit(RFM22REG_INT_STATUS1); // TODO: could use nIRQ instead if available.
+//    if(status & 4) { result = true; break; } // Packet sent!
+//    }
+//
+//  if(neededEnable) { OTV0P2BASE::powerDownSPI(); }
+//  return(result);
+//  }
 
-  // Repeatedly nap until packet sent, with upper bound of ~120ms on TX time in case there is a problem.
-  // TX time is ~1.6ms per byte at 5000bps.
-  bool result = false; // Usual case is success.
-  for(int8_t i = 8; --i >= 0; )
-    {
-    nap(WDTO_15MS); // Sleep in low power mode for a short time waiting for bits to be sent...
-    const uint8_t status = _RFM22ReadReg8Bit(RFM22REG_INT_STATUS1); // TODO: could use nIRQ instead if available.
-    if(status & 4) { result = true; break; } // Packet sent!
-    }
+//// Clear TX FIFO.
+//// SPI must already be configured and running.
+//static void _RFM22ClearTXFIFO()
+//  {
+//  _RFM22WriteReg8Bit(RFM22REG_OP_CTRL2, 1); // FFCLRTX
+//  _RFM22WriteReg8Bit(RFM22REG_OP_CTRL2, 0);
+//  }
 
-  if(neededEnable) { OTV0P2BASE::powerDownSPI(); }
-  return(result);
-  }
-
-// Clear TX FIFO.
-// SPI must already be configured and running.
-static void _RFM22ClearTXFIFO()
-  {
-  _RFM22WriteReg8Bit(RFM22REG_OP_CTRL2, 1); // FFCLRTX
-  _RFM22WriteReg8Bit(RFM22REG_OP_CTRL2, 0);
-  }
-
-// Clears the RFM22 TX FIFO and queues up ready to send via the TXFIFO the 0xff-terminated bytes starting at bptr.
-// This routine does not change the command area.
-// This uses an efficient burst write.
-// For DEBUG can abort after (over-)filling the 64-byte FIFO at no extra cost with a check before spinning waiting for SPI byte to be sent.
-void RFM22QueueCmdToFF(uint8_t *bptr)
-  {
-#if 0 && defined(DEBUG)
-  if(0 == *bptr) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("RFM22QueueCmdToFF: buffer uninitialised"); panic(); }
-#endif
-  const bool neededEnable = OTV0P2BASE::powerUpSPIIfDisabled();
-  // Clear the TX FIFO.
-  _RFM22ClearTXFIFO();
-  _RFM22_SELECT();
-  _RFM22_wr(RFM22REG_FIFO | 0x80); // Start burst write to TX FIFO.
-  uint8_t val;
-#if 0 && defined(DEBUG)
-  for(int8_t i = 64; ((uint8_t)0xff) != (val = *bptr++); )
-    {
-    // DEBUG_SERIAL_PRINTFMT(val, HEX); DEBUG_SERIAL_PRINTLN();
-    SPDR = val;
-    if(--i < 0) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("RFM22QueueCmdToFF: buffer unterminated"); panic(); }
-    while (!(SPSR & _BV(SPIF))) { }
-    }
-#else
-  while((uint8_t)0xff != (val = *bptr++)) { _RFM22_wr(val); }
-#endif
-  _RFM22_DESELECT();
-  if(neededEnable) { OTV0P2BASE::powerDownSPI(); }
-  }
+//// Clears the RFM22 TX FIFO and queues up ready to send via the TXFIFO the 0xff-terminated bytes starting at bptr.
+//// This routine does not change the command area.
+//// This uses an efficient burst write.
+//// For DEBUG can abort after (over-)filling the 64-byte FIFO at no extra cost with a check before spinning waiting for SPI byte to be sent.
+//void RFM22QueueCmdToFF(uint8_t *bptr)
+//  {
+//#if 0 && defined(DEBUG)
+//  if(0 == *bptr) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("RFM22QueueCmdToFF: buffer uninitialised"); panic(); }
+//#endif
+//  const bool neededEnable = OTV0P2BASE::powerUpSPIIfDisabled();
+//  // Clear the TX FIFO.
+//  _RFM22ClearTXFIFO();
+//  _RFM22_SELECT();
+//  _RFM22_wr(RFM22REG_FIFO | 0x80); // Start burst write to TX FIFO.
+//  uint8_t val;
+//#if 0 && defined(DEBUG)
+//  for(int8_t i = 64; ((uint8_t)0xff) != (val = *bptr++); )
+//    {
+//    // DEBUG_SERIAL_PRINTFMT(val, HEX); DEBUG_SERIAL_PRINTLN();
+//    SPDR = val;
+//    if(--i < 0) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("RFM22QueueCmdToFF: buffer unterminated"); panic(); }
+//    while (!(SPSR & _BV(SPIF))) { }
+//    }
+//#else
+//  while((uint8_t)0xff != (val = *bptr++)) { _RFM22_wr(val); }
+//#endif
+//  _RFM22_DESELECT();
+//  if(neededEnable) { OTV0P2BASE::powerDownSPI(); }
+//  }
 
 // Put RFM22 into RX mode with given RX FIFO 'nearly-full' threshold and optional interrupts enabled.
 void RFM22SetUpRX(const uint8_t nearlyFullThreshold, const bool syncInt, const bool dataInt)
@@ -439,7 +439,6 @@ void RFM22RawStatsTX(const bool isBinary, uint8_t * const buf, const bool double
 //    }
   const uint8_t buflen = OTRadioLink::frameLenFFTerminated(buf);
   RFM23B.sendRaw(buf, buflen);
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("RFM23B.sendRaw() done");
   //DEBUG_SERIAL_PRINTLN_FLASHSTRING("RS");
   }
 

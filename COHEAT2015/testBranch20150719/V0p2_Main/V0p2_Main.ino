@@ -197,15 +197,8 @@ void optionalPOST()
   // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
   //RFM22PowerOnInit();
   RFM23B.preinit(NULL);
-//  // Check that the radio is correctly connected; panic if not...
-//  if(!RFM22CheckConnected()) { panic(); }
-//  // Configure the radio.
-//  RFM22RegisterBlockSetup(FHT8V_RFM22_Reg_Values);
-//  // Put the radio in low-power standby mode.
-//  RFM22ModeStandbyAndClearState();
-  if(!RFM23B.configure(1, &RFMConfig)) { panic(); }
-  // Never expect end() to be called for this use case.
-  if(!RFM23B.begin()) { panic(F("RFM23B begin")); }
+  // Check that the radio is correctly connected; panic if not...
+  if(!RFM23B.configure(1, &RFMConfig) || !RFM23B.begin()) { panic(); }
 #endif
 
 //  posPOST(1, F("Radio OK, checking buttons/sensors and xtal"));

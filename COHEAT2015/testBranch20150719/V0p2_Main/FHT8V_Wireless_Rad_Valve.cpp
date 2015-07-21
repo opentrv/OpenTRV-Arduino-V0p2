@@ -470,15 +470,16 @@ static void FHT8VTXFHTQueueAndSendCmd(uint8_t *bptr, const bool doubleTX)
   StopEavesdropOnFHT8V(); // Unconditional cleardown of eavesdrop.
 #endif
 
-  RFM22QueueCmdToFF(bptr);
-  RFM22TXFIFO(); // Send it!  Approx 1.6ms/byte and < 80ms max.
-
-  if(doubleTX)
-    {
-    // Should nominally pause about 8--9ms or similar before retransmission...
-    sleepLowPowerMs(8);
-    RFM22TXFIFO(); // Re-send it!
-    }
+//  RFM22QueueCmdToFF(bptr);
+//  RFM22TXFIFO(); // Send it!  Approx 1.6ms/byte and < 80ms max.
+//  if(doubleTX)
+//    {
+//    // Should nominally pause about 8--9ms or similar before retransmission...
+//    sleepLowPowerMs(8);
+//    RFM22TXFIFO(); // Re-send it!
+//    }
+  const uint8_t buflen = OTRadioLink::frameLenFFTerminated(bptr);
+  RFM23B.sendRaw(bptr, buflen, doubleTX ? OTRadioLink::OTRadioLink::TXmax : OTRadioLink::OTRadioLink::TXnormal);
 
 #if defined(ENABLE_BOILER_HUB)
   if(hubMode)
