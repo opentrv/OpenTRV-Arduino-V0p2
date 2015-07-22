@@ -148,13 +148,22 @@ static void _RFM22ModeRX()
 #endif
   } // RXON | XTON
 
-// Read/discard status (both registers) to clear interrupts.
-// SPI must already be configured and running.
+//// Read/discard status (both registers) to clear interrupts.
+//// SPI must already be configured and running.
+//static void _RFM22ClearInterrupts()
+//  {
+////  _RFM22WriteReg8Bit(RFM22REG_INT_STATUS1, 0);
+////  _RFM22WriteReg8Bit(RFM22REG_INT_STATUS2, 0); // TODO: combine in burst write with previous...
+//  _RFM22WriteReg16Bit0(RFM22REG_INT_STATUS1);
+//  }
+// DHD20150722: fix for potential bug, plus a tad of optimisation too.
 static void _RFM22ClearInterrupts()
   {
-//  _RFM22WriteReg8Bit(RFM22REG_INT_STATUS1, 0);
-//  _RFM22WriteReg8Bit(RFM22REG_INT_STATUS2, 0); // TODO: combine in burst write with previous...
-  _RFM22WriteReg16Bit0(RFM22REG_INT_STATUS1);
+  _RFM22_SELECT();
+  _RFM22_io(RFM22REG_INT_STATUS1 & 0x7f); // Force to read.
+  _RFM22_io(0);
+  _RFM22_io(0);
+  _RFM22_DESELECT();
   }
 
 // Enter standby mode (consume least possible power but retain register contents).
