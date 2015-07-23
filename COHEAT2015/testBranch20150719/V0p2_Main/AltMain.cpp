@@ -127,10 +127,19 @@ void loopAlt()
   uint_fast8_t newTLSD;
   while(TIME_LSD == (newTLSD = getSecondsLT()))
     {
-    RFM23B.poll();
-    nap(WDTO_30MS);
+    nap(WDTO_15MS, true);
 //    sleepUntilInt(); // Normal long minimal-power sleep until wake-up interrupt.
 //    DEBUG_SERIAL_PRINTLN_FLASHSTRING("w"); // Wakeup.
+    RFM23B.poll();
+    while(0 != RFM23B.getRXMsgsQueued())
+      {
+      uint8_t buf[65];
+      const uint8_t msglen = RFM23B.getRXMsg(buf, sizeof(buf));
+      const bool neededWaking = powerUpSerialIfDisabled();
+      OTRadioLink::dumpRXMsg(buf, msglen);
+      flushSerialSCTSensitive();
+      if(neededWaking) { powerDownSerial(); }
+      }
     }
   TIME_LSD = newTLSD;
 
@@ -183,15 +192,6 @@ void loopAlt()
 //    DEBUG_SERIAL_PRINT(RFM23B.getMode());
 //    DEBUG_SERIAL_PRINTLN();
 //    RFM23B.poll();
-    for(uint8_t msgs; 0 != (msgs = RFM23B.getRXMsgsQueued()); )
-      {
-//      DEBUG_SERIAL_PRINT_FLASHSTRING("msgs: ");
-//      DEBUG_SERIAL_PRINT();
-//      DEBUG_SERIAL_PRINTLN();
-      uint8_t buf[65];
-      const uint8_t msglen = RFM23B.getRXMsg(buf, sizeof(buf));
-      OTRadioLink::dumpRXMsg(buf, msglen);
-      }
     for(uint8_t lastErr; 0 != (lastErr = RFM23B.getRXErr()); )
       {
       DEBUG_SERIAL_PRINT_FLASHSTRING("err ");
