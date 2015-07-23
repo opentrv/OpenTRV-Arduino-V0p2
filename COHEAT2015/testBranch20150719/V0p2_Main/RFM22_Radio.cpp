@@ -28,7 +28,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include "Power_Management.h"
 #include "Serial_IO.h"
 
-#ifdef PIN_RFM_NIRQ_XXXX
+#ifdef PIN_RFM_NIRQ
 OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, PIN_RFM_NIRQ> RFM23B;
 #else
 OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, -1> RFM23B;
