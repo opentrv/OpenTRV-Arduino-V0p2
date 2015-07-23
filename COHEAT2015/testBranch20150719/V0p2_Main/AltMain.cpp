@@ -54,14 +54,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 void POSTalt()
   {
 #if defined(USE_MODULE_RFM22RADIOSIMPLE) 
-//  // Initialise the radio, if configured, ASAP, because it can suck a lot of power until properly initialised.
-//  RFM22PowerOnInit();
-//  // Check that the radio is correctly connected; panic if not...
-//  if(!RFM22CheckConnected()) { panic(); }
-//  // Configure the radio.
-//  RFM22RegisterBlockSetup(FHT8V_RFM22_Reg_Values);
-//  // Put the radio in low-power standby mode.
-//  RFM22ModeStandbyAndClearState();
   // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
   static const OTRadioLink::OTRadioChannelConfig RFMConfig(FHT8V_RFM22_Reg_Values, true, true, true);
   RFM23B.preinit(NULL);
@@ -137,7 +129,7 @@ void loopAlt()
       const uint8_t msglen = RFM23B.getRXMsg(buf, sizeof(buf));
       const bool neededWaking = powerUpSerialIfDisabled();
       OTRadioLink::dumpRXMsg(buf, msglen);
-      flushSerialSCTSensitive();
+      Serial.flush();
       if(neededWaking) { powerDownSerial(); }
       }
     }
