@@ -28,7 +28,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include "Power_Management.h"
 #include "Serial_IO.h"
 
-#ifdef PIN_RFM_NIRQ
+#ifdef PIN_RFM_NIRQ_XXXX
 OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, PIN_RFM_NIRQ> RFM23B;
 #else
 OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, -1> RFM23B;
@@ -185,16 +185,16 @@ void RFM22ModeStandbyAndClearState()
   // DEBUG_SERIAL_PRINTLN_FLASHSTRING("SCS");
 }
 
-// Read status (both registers) and clear interrupts.
-// Status register 1 is returned in the top 8 bits, register 2 in the bottom 8 bits.
-// Zero indicates no pending interrupts or other status flags set.
-uint16_t RFM22ReadStatusBoth()
-  {
-  const bool neededEnable = OTV0P2BASE::powerUpSPIIfDisabled();
-  const uint16_t result = _RFM22ReadReg16Bit(RFM22REG_INT_STATUS1);
-  if(neededEnable) { OTV0P2BASE::powerDownSPI(); }
-  return(result);
-  }
+//// Read status (both registers) and clear interrupts.
+//// Status register 1 is returned in the top 8 bits, register 2 in the bottom 8 bits.
+//// Zero indicates no pending interrupts or other status flags set.
+//uint16_t RFM22ReadStatusBoth()
+//  {
+//  const bool neededEnable = OTV0P2BASE::powerUpSPIIfDisabled();
+//  const uint16_t result = _RFM22ReadReg16Bit(RFM22REG_INT_STATUS1);
+//  if(neededEnable) { OTV0P2BASE::powerDownSPI(); }
+//  return(result);
+//  }
 
 //// Get current RSSI.
 //// Only valid when in RX mode.
@@ -347,61 +347,61 @@ uint16_t RFM22ReadStatusBoth()
 //  if(neededEnable) { OTV0P2BASE::powerDownSPI(); }
 //  }
 
-// Put RFM22 into RX mode with given RX FIFO 'nearly-full' threshold and optional interrupts enabled.
-void RFM22SetUpRX(const uint8_t nearlyFullThreshold, const bool syncInt, const bool dataInt)
-  {
-  const bool neededEnable = OTV0P2BASE::powerUpSPIIfDisabled();
+//// Put RFM22 into RX mode with given RX FIFO 'nearly-full' threshold and optional interrupts enabled.
+//void RFM22SetUpRX(const uint8_t nearlyFullThreshold, const bool syncInt, const bool dataInt)
+//  {
+//  const bool neededEnable = OTV0P2BASE::powerUpSPIIfDisabled();
+//
+//  // Clear RX and TX FIFOs.
+//  _RFM22WriteReg8Bit(RFM22REG_OP_CTRL2, 3); // FFCLRTX | FFCLRTX
+//  _RFM22WriteReg8Bit(RFM22REG_OP_CTRL2, 0);
+//
+//  // Set FIFO RX almost-full threshold as specified.
+//  _RFM22WriteReg8Bit(RFM22REG_RX_FIFO_CTRL, min(nearlyFullThreshold, 63));
+//
+//  // Enable requested RX-related interrupts.
+//  _RFM22WriteReg8Bit(RFM22REG_INT_ENABLE1, (dataInt?0x10:0)); // enrxffafull: Enable RX FIFO Almost Full.
+//  _RFM22WriteReg8Bit(RFM22REG_INT_ENABLE2, (syncInt?0x80:0)); // enswdet: Enable Sync Word Detected.
+//
+//  // Clear any current interrupt/status.
+//  _RFM22ClearInterrupts();
+//
+//  // Start listening.
+//  _RFM22ModeRX();
+//
+//  if(neededEnable) { OTV0P2BASE::powerDownSPI(); }
+//  }
 
-  // Clear RX and TX FIFOs.
-  _RFM22WriteReg8Bit(RFM22REG_OP_CTRL2, 3); // FFCLRTX | FFCLRTX
-  _RFM22WriteReg8Bit(RFM22REG_OP_CTRL2, 0);
 
-  // Set FIFO RX almost-full threshold as specified.
-  _RFM22WriteReg8Bit(RFM22REG_RX_FIFO_CTRL, min(nearlyFullThreshold, 63));
-
-  // Enable requested RX-related interrupts.
-  _RFM22WriteReg8Bit(RFM22REG_INT_ENABLE1, (dataInt?0x10:0)); // enrxffafull: Enable RX FIFO Almost Full.
-  _RFM22WriteReg8Bit(RFM22REG_INT_ENABLE2, (syncInt?0x80:0)); // enswdet: Enable Sync Word Detected.
-
-  // Clear any current interrupt/status.
-  _RFM22ClearInterrupts();
-
-  // Start listening.
-  _RFM22ModeRX();
-
-  if(neededEnable) { OTV0P2BASE::powerDownSPI(); }
-  }
-
-
-// Put RFM22 into standby, attempt to read specified number of bytes from FIFO to buffer.
-// Leaves RFM22 in low-power standby mode.
-// Trailing bytes (more than were actually sent) undefined.
-void RFM22RXFIFO(uint8_t *buf, const uint8_t bufSize)
-  {
-  const bool neededEnable = OTV0P2BASE::powerUpSPIIfDisabled();
-
-  _RFM22ModeStandby();
-
-  _RFM22_SELECT();
-  _RFM22_io(RFM22REG_FIFO & 0x7F); // Start burst read from RX FIFO.
-//  uint8_t val;
-  for(uint8_t i = 0; i < bufSize; ++i)
-    { buf[i] = _RFM22_io(0);  }
-  _RFM22_DESELECT();
-
-  // Clear RX and TX FIFOs simultaneously.
-  _RFM22WriteReg8Bit(RFM22REG_OP_CTRL2, 3); // FFCLRRX | FFCLRTX
-  _RFM22WriteReg8Bit(RFM22REG_OP_CTRL2, 0); // Needs both writes to clear.
-  // Disable all interrupts.
-//  _RFM22WriteReg8Bit(RFM22REG_INT_ENABLE1, 0);
-//  _RFM22WriteReg8Bit(RFM22REG_INT_ENABLE2, 0); // TODO: combine in burst write with previous...
-  _RFM22WriteReg16Bit0(RFM22REG_INT_ENABLE1);
-  // Clear any interrupts already/still pending...
-  _RFM22ClearInterrupts();
-  //_RFM22WriteReg8Bit(0xd, 0x1f); // Drive GPIO2 to ground as output... (Move to general register settings.)
-
-  if(neededEnable) { OTV0P2BASE::powerDownSPI(); }
-  }
+//// Put RFM22 into standby, attempt to read specified number of bytes from FIFO to buffer.
+//// Leaves RFM22 in low-power standby mode.
+//// Trailing bytes (more than were actually sent) undefined.
+//void RFM22RXFIFO(uint8_t *buf, const uint8_t bufSize)
+//  {
+//  const bool neededEnable = OTV0P2BASE::powerUpSPIIfDisabled();
+//
+//  _RFM22ModeStandby();
+//
+//  _RFM22_SELECT();
+//  _RFM22_io(RFM22REG_FIFO & 0x7F); // Start burst read from RX FIFO.
+////  uint8_t val;
+//  for(uint8_t i = 0; i < bufSize; ++i)
+//    { buf[i] = _RFM22_io(0);  }
+//  _RFM22_DESELECT();
+//
+//  // Clear RX and TX FIFOs simultaneously.
+//  _RFM22WriteReg8Bit(RFM22REG_OP_CTRL2, 3); // FFCLRRX | FFCLRTX
+//  _RFM22WriteReg8Bit(RFM22REG_OP_CTRL2, 0); // Needs both writes to clear.
+//  // Disable all interrupts.
+////  _RFM22WriteReg8Bit(RFM22REG_INT_ENABLE1, 0);
+////  _RFM22WriteReg8Bit(RFM22REG_INT_ENABLE2, 0); // TODO: combine in burst write with previous...
+//  _RFM22WriteReg16Bit0(RFM22REG_INT_ENABLE1);
+//  // Clear any interrupts already/still pending...
+//  _RFM22ClearInterrupts();
+//  //_RFM22WriteReg8Bit(0xd, 0x1f); // Drive GPIO2 to ground as output... (Move to general register settings.)
+//
+//  if(neededEnable) { OTV0P2BASE::powerDownSPI(); }
+//  }
 
 
 

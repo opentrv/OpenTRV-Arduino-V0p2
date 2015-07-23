@@ -99,12 +99,12 @@ const uint8_t FHT8V_RFM22_Reg_Values[][2] PROGMEM =
     {0x7a,1}, // One 10kHz channel step.
 
 // RX-only
-#ifdef USE_MODULE_FHT8VSIMPLE_RX // RX-specific settings, again c/o Mike S.
+//#ifdef USE_MODULE_FHT8VSIMPLE_RX // RX-specific settings, again c/o Mike S.
     {0x1c,0xc1}, {0x1d,0x40}, {0x1e,0xa}, {0x1f,3}, {0x20,0x96}, {0x21,0}, {0x22,0xda}, {0x23,0x74}, {0x24,0}, {0x25,0xdc},
     {0x2a,0x24},
     {0x2c,0x28}, {0x2d,0xfa}, {0x2e,0x29},
     {0x69,0x60}, // AGC enable: SGIN | AGCEN
-#endif
+//#endif
 
     { 0xff, 0xff } // End of settings.
   };
@@ -481,12 +481,12 @@ static void FHT8VTXFHTQueueAndSendCmd(uint8_t *bptr, const bool doubleTX)
   const uint8_t buflen = OTRadioLink::frameLenFFTerminated(bptr);
   RFM23B.sendRaw(bptr, buflen, doubleTX ? OTRadioLink::OTRadioLink::TXmax : OTRadioLink::OTRadioLink::TXnormal);
 
-#if defined(ENABLE_BOILER_HUB)
-  if(hubMode)
-    { SetupToEavesdropOnFHT8V(); } // Revert to hub listening...
-  else
-#endif
-    { RFM22ModeStandbyAndClearState(); } // Go to standby to conserve energy.
+//#if defined(ENABLE_BOILER_HUB)
+//  if(hubMode)
+//    { SetupToEavesdropOnFHT8V(); } // Revert to hub listening...
+//  else
+//#endif
+//    { RFM22ModeStandbyAndClearState(); } // Go to standby to conserve energy.
   //DEBUG_SERIAL_PRINTLN_FLASHSTRING("SC");
   }
 
@@ -828,48 +828,48 @@ static volatile uint8_t lastRXerrno;
 // Set with such codes as FHT8VRXErr_GENERIC; never set to zero.
 static void setLastRXErr(const uint8_t err) { ATOMIC_BLOCK (ATOMIC_RESTORESTATE) { lastRXerrno = err; } }
 
+//
+//static void _SetupRFM22ToEavesdropOnFHT8V()
+//  {
+//  RFM22ModeStandbyAndClearState();
+//  RFM22SetUpRX(MIN_FHT8V_200US_BIT_STREAM_BUF_SIZE, true, true); // Set to RX longest-possible valid FS20 encoded frame.
+//#if !defined(V0p2_REV)
+//#error Board revision not defined.
+//#endif
+//#if V0p2_REV > 0
+//// TODO: hook into interrupts?
+//#endif
+//  }
 
-static void _SetupRFM22ToEavesdropOnFHT8V()
-  {
-  RFM22ModeStandbyAndClearState();
-  RFM22SetUpRX(MIN_FHT8V_200US_BIT_STREAM_BUF_SIZE, true, true); // Set to RX longest-possible valid FS20 encoded frame.
-#if !defined(V0p2_REV)
-#error Board revision not defined.
-#endif
-#if V0p2_REV > 0
-// TODO: hook into interrupts?
-#endif
-  }
+//// Set up radio to listen for remote TRV nodes calling for heat iff not already eavesdropping, else does nothing.
+//// Only done if in central hub mode.
+//// May set up interrupts/handlers.
+//// Does NOT clear flags indicating receipt of call for heat for example.
+//bool SetupToEavesdropOnFHT8V(const bool force)
+//  {
+//  // DEBUG_SERIAL_PRINTLN_FLASHSTRING("rxs");
+//  if(!force && eavesdropping) { return(false); } // Already eavesdropping.
+//  const bool wasEavesdropping = eavesdropping;
+//  eavesdropping = true;
+//  _SetupRFM22ToEavesdropOnFHT8V();
+//#if 0 && defined(DEBUG)
+//  DEBUG_SERIAL_PRINTLN_FLASHSTRING("RX start");
+//#endif
+//  return(!wasEavesdropping);
+//  }
 
-// Set up radio to listen for remote TRV nodes calling for heat iff not already eavesdropping, else does nothing.
-// Only done if in central hub mode.
-// May set up interrupts/handlers.
-// Does NOT clear flags indicating receipt of call for heat for example.
-bool SetupToEavesdropOnFHT8V(const bool force)
-  {
-  // DEBUG_SERIAL_PRINTLN_FLASHSTRING("rxs");
-  if(!force && eavesdropping) { return(false); } // Already eavesdropping.
-  const bool wasEavesdropping = eavesdropping;
-  eavesdropping = true;
-  _SetupRFM22ToEavesdropOnFHT8V();
-#if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("RX start");
-#endif
-  return(!wasEavesdropping);
-  }
-
-// Stop listening out for remote TRVs calling for heat iff currently eavesdropping, else does nothing.
-// Puts radio in standby mode.
-// DOES NOT clear flags which indicate that a call for heat has been heard.
-void StopEavesdropOnFHT8V(bool force)
-  {
-  if(!force && !eavesdropping) { return; }
-  eavesdropping = false;
-  RFM22ModeStandbyAndClearState();
-#if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("RX stop");
-#endif
-  }
+//// Stop listening out for remote TRVs calling for heat iff currently eavesdropping, else does nothing.
+//// Puts radio in standby mode.
+//// DOES NOT clear flags which indicate that a call for heat has been heard.
+//void StopEavesdropOnFHT8V(bool force)
+//  {
+//  if(!force && !eavesdropping) { return; }
+//  eavesdropping = false;
+//  RFM22ModeStandbyAndClearState();
+//#if 0 && defined(DEBUG)
+//  DEBUG_SERIAL_PRINTLN_FLASHSTRING("RX stop");
+//#endif
+//  }
 
 
 // Current decode state.
@@ -1103,289 +1103,290 @@ void debugReportRSSI(const uint8_t id)
 #else
 #define debugReportRSSI(id)
 #endif
-bool FHT8VCallForHeatPoll()
-  {
-  // Do nothing unless already in eavesdropping mode.
-  if(!eavesdropping) { return(false); }
 
-//#if defined(SAVE_RX_ENERGY)
-//  // Do nothing once call for heat has been collected and is pending action.
-//  if(FHT8VCallForHeatHeard()) { return(false); }
+//bool FHT8VCallForHeatPoll()
+//  {
+//  // Do nothing unless already in eavesdropping mode.
+//  if(!eavesdropping) { return(false); }
+//
+////#if defined(SAVE_RX_ENERGY)
+////  // Do nothing once call for heat has been collected and is pending action.
+////  if(FHT8VCallForHeatHeard()) { return(false); }
+////#endif
+//
+//#if defined(PIN_RFM_NIRQ)
+//  // If nIRQ line is available then abort if it is not active (and thus spare the SPI bus).
+//  if(fastDigitalRead(PIN_RFM_NIRQ) != LOW) { return(false); }
+//#if 0 && defined(DEBUG)
+//  DEBUG_SERIAL_PRINTLN_FLASHSTRING("RX IRQ");
 //#endif
-
-#if defined(PIN_RFM_NIRQ)
-  // If nIRQ line is available then abort if it is not active (and thus spare the SPI bus).
-  if(fastDigitalRead(PIN_RFM_NIRQ) != LOW) { return(false); }
-#if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("RX IRQ");
-#endif
-#endif
-
-  const uint16_t status = RFM22ReadStatusBoth(); // reg1:reg2, on V0.08 PICAXE tempB2:SPI_DATAB.
-
-  if(status & 0x1000) // Received frame.
-    {
-#if 0 && defined(DEBUG)
-    debugReportRSSI(1);
-#endif
-// Ensure that data from a previous frame is not trivially re-read by clearing the buffer explicitly.
-//    for(uint8_t *p = FHT8VRXHubArea + FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE; --p >= FHT8VRXHubArea; )
-//      { *p = 0; }
-    memset(FHT8VRXHubArea, 0xff, sizeof(FHT8VRXHubArea));
-    // Attempt to read the entire frame.
-    RFM22RXFIFO(FHT8VRXHubArea, sizeof(FHT8VRXHubArea));
-    uint8_t pos; // Current byte position in RX buffer...
-    // Validate FHT8V premable (zeros encoded as up to 6x 0xcc bytes), else abort/restart.
-    // Insist on at least a couple of bytes of valid preamble being present.
-    for(pos = 0; pos < 6; ++pos)
-      {
-      const uint8_t b = FHT8VRXHubArea[pos];
-      if(0xcc != b)
-        {
-        if(MSG_JSON_LEADING_CHAR == b)
-          {
-          if(adjustJSONMsgForRXAndCheckCRC((char *)(FHT8VRXHubArea + pos), sizeof(FHT8VRXHubArea)-pos) > 0)
-            {
-            recordJSONStats(false, (const char *)(FHT8VRXHubArea + pos));
-            _SetupRFM22ToEavesdropOnFHT8V(); // Reset/restart RX.
-            return(true); // Claim that something has been received.
-            }
-#if 0 && defined(DEBUG)
-          DEBUG_SERIAL_PRINTLN_FLASHSTRING("!Bad JSON msg");
-#endif
-          setLastRXErr(FHT8VRXErr_BAD_RX_STATSFRAME);
-          _SetupRFM22ToEavesdropOnFHT8V(); // Reset/restart RX.
-          return(false); // Didn't look like valid JSON.
-          }
-        else if(MESSAGING_FULL_STATS_FLAGS_HEADER_MSBS == (b & MESSAGING_FULL_STATS_FLAGS_HEADER_MASK))
-          {
-          // May be binary stats frame, so attempt to decode...
-          FullStatsMessageCore_t content;
-          // (TODO: should reject non-secure messages when expecting secure ones...)
-          const uint8_t *msg = decodeFullStatsMessageCore(FHT8VRXHubArea, sizeof(FHT8VRXHubArea)-pos, stTXalwaysAll, false, &content);
-          if(NULL != msg)
-             {
-             if(content.containsID)
-               {
-#if 0 && defined(DEBUG)
-               DEBUG_SERIAL_PRINT_FLASHSTRING("Stats msg");
-               DEBUG_SERIAL_PRINT_FLASHSTRING(" from ");
-               DEBUG_SERIAL_PRINTFMT(content.id0, HEX);
-               DEBUG_SERIAL_PRINT(' ');
-               DEBUG_SERIAL_PRINTFMT(content.id1, HEX);
-               DEBUG_SERIAL_PRINTLN();
-#endif
-               recordCoreStats(false, &content);
-               }
-             _SetupRFM22ToEavesdropOnFHT8V(); // Reset/restart RX.
-             return(true); // Received something!
-             }
-#if 0
-          else
-            {
-            setLastRXErr(FHT8VRXErr_BAD_RX_STATSFRAME);
-            seedRNG8(FHT8VRXHubArea[pos+1], FHT8VRXHubArea[pos+2], FHT8VRXHubArea[pos+3]); // Attempt to gather some entropy from RX noise. (TODO-302).
-            }
-#endif
-
-          _SetupRFM22ToEavesdropOnFHT8V(); // Reset/restart RX.
-          return(false); // Nothing valid received.
-          }
-
-        if(pos < 2)
-          {
-          setLastRXErr(FHT8VRXErr_BAD_PREAMBLE);
-#if 0 && defined(DEBUG)
-          DEBUG_SERIAL_PRINT_FLASHSTRING("RX preamble bad byte @");
-          DEBUG_SERIAL_PRINT(pos);
-          DEBUG_SERIAL_PRINT_FLASHSTRING(" value 0x");
-          DEBUG_SERIAL_PRINTFMT(FHT8VRXHubArea[pos], HEX);
-          for(int p = pos; ++p < 8; )
-            {
-            DEBUG_SERIAL_PRINT_FLASHSTRING(" 0x");
-            DEBUG_SERIAL_PRINTFMT(FHT8VRXHubArea[p], HEX);
-            }
-          DEBUG_SERIAL_PRINTLN();
-#endif
-          seedRNG8(FHT8VRXHubArea[pos], FHT8VRXHubArea[pos+2], FHT8VRXHubArea[pos+5]); // Attempt to gather some entropy from RX noise. (TODO-302).
-          _SetupRFM22ToEavesdropOnFHT8V(); // Reset/restart RX.
-          return(false);
-          }
-        break; // If enough preamble has been seen, move on to the body.
-        }
-      }
-    fht8v_msg_t command;
-    uint8_t const *lastByte = FHT8VRXHubArea + FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE - 1;
-    uint8_t const *trailer = FHT8VDecodeBitStream(FHT8VRXHubArea + pos, lastByte, &command);
-    if(NULL != trailer)
-      {
-#if 0 && defined(DEBUG) // VERY SLOW: cannot leave this enabled in normal operation.
-      DEBUG_SERIAL_PRINT_FLASHSTRING("RX raw");
-      for(uint8_t i = pos; i < FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE; ++i)
-        {
-        const uint8_t b = FHT8VRXHubArea[i];
-        DEBUG_SERIAL_PRINT_FLASHSTRING(" &");
-        DEBUG_SERIAL_PRINTFMT(b, HEX);
-        if(0 == b) { break; } // Stop after first zero (0 could contain at most 2 trailing bits of a valid code).
-        }
-      DEBUG_SERIAL_PRINTLN();
-#endif
-#if 0 && defined(DEBUG) // VERY SLOW: cannot leave this enabled in normal operation.
-      DEBUG_SERIAL_PRINT_FLASHSTRING("RX: HC");
-      DEBUG_SERIAL_PRINT(command.hc1);
-      DEBUG_SERIAL_PRINT(',');
-      DEBUG_SERIAL_PRINT(command.hc2);
-      DEBUG_SERIAL_PRINT_FLASHSTRING(" cmd ");
-      DEBUG_SERIAL_PRINT(command.command);
-      DEBUG_SERIAL_PRINT_FLASHSTRING(" ext ");
-      DEBUG_SERIAL_PRINT(command.extension);
-      DEBUG_SERIAL_PRINTLN();
-#endif
-
-#if defined(ALLOW_STATS_RX) // Only look for the trailer if supported.
-      // If whole FHT8V frame was OK then check if there is a valid stats trailer.
-
-      // Check for 'core' stats trailer.
-      if((trailer + FullStatsMessageCore_MAX_BYTES_ON_WIRE <= lastByte) && // Enough space for minimum-stats trailer.
-         (MESSAGING_FULL_STATS_FLAGS_HEADER_MSBS == (trailer[0] & MESSAGING_FULL_STATS_FLAGS_HEADER_MASK)))
-        {
-        FullStatsMessageCore_t content;
-        const uint8_t *tail = decodeFullStatsMessageCore(trailer, lastByte - trailer, stTXalwaysAll, false, &content);
-        if(NULL != tail)
-          {
-          // Received trailing stats frame!
-
-          // If ID is present then make sure it matches that implied by the FHT8V frame (else reject this trailer)
-          // else file it in from the FHT8C frame.
-          bool allGood = true;
-          if(content.containsID)
-            {
-            if((content.id0 != command.hc1) || (content.id1 != command.hc2))
-              { allGood = false; }
-            }
-          else
-            {
-            content.id0 = command.hc1;
-            content.id1 = command.hc2;
-            content.containsID = true;
-            }
-
-          // If frame looks good then capture it.
-          if(allGood) { recordCoreStats(false, &content); }
-          else { setLastRXErr(FHT8VRXErr_BAD_RX_SUBFRAME); }
-          // TODO: record error with mismatched ID.
-          }
-        // TODO: maybe scrape some entropy from damaged frame.
-        }
-#if defined(ALLOW_MINIMAL_STATS_TXRX)
-      // Check for minimum stats trailer.
-      else if((trailer + MESSAGING_TRAILING_MINIMAL_STATS_PAYLOAD_BYTES <= lastByte) && // Enough space for minimum-stats trailer.
-         (MESSAGING_TRAILING_MINIMAL_STATS_HEADER_MSBS == (trailer[0] & MESSAGING_TRAILING_MINIMAL_STATS_HEADER_MASK)))
-        {
-        if(verifyHeaderAndCRCForTrailingMinimalStatsPayload(trailer)) // Valid header and CRC.
-          {
-          trailingMinimalStatsPayload_t payload;
-          extractTrailingMinimalStatsPayload(trailer, &payload);
-          recordMinimalStats(true, command.hc1, command.hc2, &payload); // Record stats; local loopback is secure.
-#if 0 && defined(DEBUG) // VERY SLOW: cannot leave this enabled in normal operation.NominalRadValve.get
-          // Compute compound HC/ID value.
-          const uint16_t compoundHC = (command.hc1 << 8) | command.hc2;
-          DEBUG_SERIAL_PRINT_FLASHSTRING("Trailer: @");
-          DEBUG_SERIAL_PRINTFMT(compoundHC, HEX);
-          DEBUG_SERIAL_PRINT(' ');
-          if(payload.powerLow) { DEBUG_SERIAL_PRINT_FLASHSTRING("powerLow "); }
-          DEBUG_SERIAL_PRINT_FLASHSTRING("temp=");
-          DEBUG_SERIAL_PRINTFMT(payload.tempC16 >> 4, DEC);
-          DEBUG_SERIAL_PRINT('C');
-          DEBUG_SERIAL_PRINTFMT(payload.tempC16 & 0xf, HEX);
-          DEBUG_SERIAL_PRINTLN();
-#endif
-          }
-#if 0 // Optional extra tracking of error rate/type/location.
-        else // Failed to verify; deduce bad frame if header looks OK.
-          {
-          if(MESSAGING_TRAILING_MINIMAL_STATS_HEADER_MSBS == (trailer[0] & MESSAGING_TRAILING_MINIMAL_STATS_HEADER_MASK))
-            {
-            setLastRXErr(FHT8VRXErr_BAD_RX_SUBFRAME);
-            seedRNG8(trailer[0], trailer[1], trailer[2]); // Attempt to gather some entropy from the RX noise. (TODO-302).
-            }
-          }
-#endif
-        }
-#endif
-#endif
-
-      // Potentially accept as call for heat only if command is 0x26 (38)
-      // and the valve is open enough for some water flow to be likely
-      // and the housecode is accepted.
-      if(0x26 == command.command)
-        {
-        // Initial fix for TODO-520: Bad comparison screening incoming calls for heat at boiler hub.
-        const uint8_t mvro = NominalRadValve.getMinValvePcReallyOpen();
-        if((command.extension > (mvro << 1)) && // Quick approximation as filter with some false positives.
-           (command.extension >= ((255 * (int)mvro) / 100)) && // More accurate test, but slow.
-           (FHT8VHubAcceptedHouseCode(command.hc1, command.hc2))) // Accept if house code not filtered out.
-          {
-          const uint16_t compoundHC = (command.hc1 << 8) | command.hc2;
-          ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
-            { lastCallForHeatHC = compoundHC; } // Update atomically.
-//#if defined(SAVE_RX_ENERGY)
-//          StopEavesdropOnFHT8V(); // Need not eavesdrop for a while.
 //#endif
-          }
-        }
-      _SetupRFM22ToEavesdropOnFHT8V(); // Reset/restart RX.
-      return(true); // Got a valid frame.
-      }
-    else
-      {
-      setLastRXErr(FHT8VRXErr_BAD_RX_FRAME);
-#if 0 && defined(DEBUG)
-      DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bad RX frame");
-#endif
-      _SetupRFM22ToEavesdropOnFHT8V(); // Reset/restart RX.
-      return(false);
-      }
-
-    // Ensure that RX is re-enabled to avoid missing anything.
-    _SetupRFM22ToEavesdropOnFHT8V(); // Reset/restart RX.
-    return(false); // Nothing valid received.
-    }
-  else if(status & 0x80) // Got sync from incoming FHT8V message.
-    {
-#if 0 && defined(DEBUG)
-    debugReportRSSI(2);
-#endif
-    // Capture some entropy from RSSI and timing...
-    const uint8_t rssi = RFM23B.getRSSI();
-    // TODO adjust output power down a little if RX very loud.
-    addEntropyToPool(rssi ^ (uint8_t)(status ^ (status >> 8)), 1); // Maybe ~1 real bit of entropy.
-#if 0 && defined(DEBUG)
-    if(rssi > 0)
-      {
-      DEBUG_SERIAL_PRINT_FLASHSTRING("r=");
-      DEBUG_SERIAL_PRINT(rssi);
-      DEBUG_SERIAL_PRINTLN();
-      }
-#endif
-//    syncSeen = true;
-    return(true);
-    }
-  else if(status & 0x8000) // RX FIFO overflow/underflow: give up and restart...
-    {
-#if 0 && defined(DEBUG)
-    debugReportRSSI(3);
-#endif
-    setLastRXErr(FHT8VRXErr_GENERIC);
-#if 0 && defined(DEBUG)
-    DEBUG_SERIAL_PRINTLN_FLASHSTRING("RX FIFO problem");
-#endif
-    _SetupRFM22ToEavesdropOnFHT8V(); // Reset/restart RX.
-    return(false);
-    }
-
-  return(false);
-  }
+//
+//  const uint16_t status = RFM22ReadStatusBoth(); // reg1:reg2, on V0.08 PICAXE tempB2:SPI_DATAB.
+//
+//  if(status & 0x1000) // Received frame.
+//    {
+//#if 0 && defined(DEBUG)
+//    debugReportRSSI(1);
+//#endif
+//// Ensure that data from a previous frame is not trivially re-read by clearing the buffer explicitly.
+////    for(uint8_t *p = FHT8VRXHubArea + FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE; --p >= FHT8VRXHubArea; )
+////      { *p = 0; }
+//    memset(FHT8VRXHubArea, 0xff, sizeof(FHT8VRXHubArea));
+//    // Attempt to read the entire frame.
+//    RFM22RXFIFO(FHT8VRXHubArea, sizeof(FHT8VRXHubArea));
+//    uint8_t pos; // Current byte position in RX buffer...
+//    // Validate FHT8V premable (zeros encoded as up to 6x 0xcc bytes), else abort/restart.
+//    // Insist on at least a couple of bytes of valid preamble being present.
+//    for(pos = 0; pos < 6; ++pos)
+//      {
+//      const uint8_t b = FHT8VRXHubArea[pos];
+//      if(0xcc != b)
+//        {
+//        if(MSG_JSON_LEADING_CHAR == b)
+//          {
+//          if(adjustJSONMsgForRXAndCheckCRC((char *)(FHT8VRXHubArea + pos), sizeof(FHT8VRXHubArea)-pos) > 0)
+//            {
+//            recordJSONStats(false, (const char *)(FHT8VRXHubArea + pos));
+//            _SetupRFM22ToEavesdropOnFHT8V(); // Reset/restart RX.
+//            return(true); // Claim that something has been received.
+//            }
+//#if 0 && defined(DEBUG)
+//          DEBUG_SERIAL_PRINTLN_FLASHSTRING("!Bad JSON msg");
+//#endif
+//          setLastRXErr(FHT8VRXErr_BAD_RX_STATSFRAME);
+//          _SetupRFM22ToEavesdropOnFHT8V(); // Reset/restart RX.
+//          return(false); // Didn't look like valid JSON.
+//          }
+//        else if(MESSAGING_FULL_STATS_FLAGS_HEADER_MSBS == (b & MESSAGING_FULL_STATS_FLAGS_HEADER_MASK))
+//          {
+//          // May be binary stats frame, so attempt to decode...
+//          FullStatsMessageCore_t content;
+//          // (TODO: should reject non-secure messages when expecting secure ones...)
+//          const uint8_t *msg = decodeFullStatsMessageCore(FHT8VRXHubArea, sizeof(FHT8VRXHubArea)-pos, stTXalwaysAll, false, &content);
+//          if(NULL != msg)
+//             {
+//             if(content.containsID)
+//               {
+//#if 0 && defined(DEBUG)
+//               DEBUG_SERIAL_PRINT_FLASHSTRING("Stats msg");
+//               DEBUG_SERIAL_PRINT_FLASHSTRING(" from ");
+//               DEBUG_SERIAL_PRINTFMT(content.id0, HEX);
+//               DEBUG_SERIAL_PRINT(' ');
+//               DEBUG_SERIAL_PRINTFMT(content.id1, HEX);
+//               DEBUG_SERIAL_PRINTLN();
+//#endif
+//               recordCoreStats(false, &content);
+//               }
+//             _SetupRFM22ToEavesdropOnFHT8V(); // Reset/restart RX.
+//             return(true); // Received something!
+//             }
+//#if 0
+//          else
+//            {
+//            setLastRXErr(FHT8VRXErr_BAD_RX_STATSFRAME);
+//            seedRNG8(FHT8VRXHubArea[pos+1], FHT8VRXHubArea[pos+2], FHT8VRXHubArea[pos+3]); // Attempt to gather some entropy from RX noise. (TODO-302).
+//            }
+//#endif
+//
+//          _SetupRFM22ToEavesdropOnFHT8V(); // Reset/restart RX.
+//          return(false); // Nothing valid received.
+//          }
+//
+//        if(pos < 2)
+//          {
+//          setLastRXErr(FHT8VRXErr_BAD_PREAMBLE);
+//#if 0 && defined(DEBUG)
+//          DEBUG_SERIAL_PRINT_FLASHSTRING("RX preamble bad byte @");
+//          DEBUG_SERIAL_PRINT(pos);
+//          DEBUG_SERIAL_PRINT_FLASHSTRING(" value 0x");
+//          DEBUG_SERIAL_PRINTFMT(FHT8VRXHubArea[pos], HEX);
+//          for(int p = pos; ++p < 8; )
+//            {
+//            DEBUG_SERIAL_PRINT_FLASHSTRING(" 0x");
+//            DEBUG_SERIAL_PRINTFMT(FHT8VRXHubArea[p], HEX);
+//            }
+//          DEBUG_SERIAL_PRINTLN();
+//#endif
+//          seedRNG8(FHT8VRXHubArea[pos], FHT8VRXHubArea[pos+2], FHT8VRXHubArea[pos+5]); // Attempt to gather some entropy from RX noise. (TODO-302).
+//          _SetupRFM22ToEavesdropOnFHT8V(); // Reset/restart RX.
+//          return(false);
+//          }
+//        break; // If enough preamble has been seen, move on to the body.
+//        }
+//      }
+//    fht8v_msg_t command;
+//    uint8_t const *lastByte = FHT8VRXHubArea + FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE - 1;
+//    uint8_t const *trailer = FHT8VDecodeBitStream(FHT8VRXHubArea + pos, lastByte, &command);
+//    if(NULL != trailer)
+//      {
+//#if 0 && defined(DEBUG) // VERY SLOW: cannot leave this enabled in normal operation.
+//      DEBUG_SERIAL_PRINT_FLASHSTRING("RX raw");
+//      for(uint8_t i = pos; i < FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE; ++i)
+//        {
+//        const uint8_t b = FHT8VRXHubArea[i];
+//        DEBUG_SERIAL_PRINT_FLASHSTRING(" &");
+//        DEBUG_SERIAL_PRINTFMT(b, HEX);
+//        if(0 == b) { break; } // Stop after first zero (0 could contain at most 2 trailing bits of a valid code).
+//        }
+//      DEBUG_SERIAL_PRINTLN();
+//#endif
+//#if 0 && defined(DEBUG) // VERY SLOW: cannot leave this enabled in normal operation.
+//      DEBUG_SERIAL_PRINT_FLASHSTRING("RX: HC");
+//      DEBUG_SERIAL_PRINT(command.hc1);
+//      DEBUG_SERIAL_PRINT(',');
+//      DEBUG_SERIAL_PRINT(command.hc2);
+//      DEBUG_SERIAL_PRINT_FLASHSTRING(" cmd ");
+//      DEBUG_SERIAL_PRINT(command.command);
+//      DEBUG_SERIAL_PRINT_FLASHSTRING(" ext ");
+//      DEBUG_SERIAL_PRINT(command.extension);
+//      DEBUG_SERIAL_PRINTLN();
+//#endif
+//
+//#if defined(ALLOW_STATS_RX) // Only look for the trailer if supported.
+//      // If whole FHT8V frame was OK then check if there is a valid stats trailer.
+//
+//      // Check for 'core' stats trailer.
+//      if((trailer + FullStatsMessageCore_MAX_BYTES_ON_WIRE <= lastByte) && // Enough space for minimum-stats trailer.
+//         (MESSAGING_FULL_STATS_FLAGS_HEADER_MSBS == (trailer[0] & MESSAGING_FULL_STATS_FLAGS_HEADER_MASK)))
+//        {
+//        FullStatsMessageCore_t content;
+//        const uint8_t *tail = decodeFullStatsMessageCore(trailer, lastByte - trailer, stTXalwaysAll, false, &content);
+//        if(NULL != tail)
+//          {
+//          // Received trailing stats frame!
+//
+//          // If ID is present then make sure it matches that implied by the FHT8V frame (else reject this trailer)
+//          // else file it in from the FHT8C frame.
+//          bool allGood = true;
+//          if(content.containsID)
+//            {
+//            if((content.id0 != command.hc1) || (content.id1 != command.hc2))
+//              { allGood = false; }
+//            }
+//          else
+//            {
+//            content.id0 = command.hc1;
+//            content.id1 = command.hc2;
+//            content.containsID = true;
+//            }
+//
+//          // If frame looks good then capture it.
+//          if(allGood) { recordCoreStats(false, &content); }
+//          else { setLastRXErr(FHT8VRXErr_BAD_RX_SUBFRAME); }
+//          // TODO: record error with mismatched ID.
+//          }
+//        // TODO: maybe scrape some entropy from damaged frame.
+//        }
+//#if defined(ALLOW_MINIMAL_STATS_TXRX)
+//      // Check for minimum stats trailer.
+//      else if((trailer + MESSAGING_TRAILING_MINIMAL_STATS_PAYLOAD_BYTES <= lastByte) && // Enough space for minimum-stats trailer.
+//         (MESSAGING_TRAILING_MINIMAL_STATS_HEADER_MSBS == (trailer[0] & MESSAGING_TRAILING_MINIMAL_STATS_HEADER_MASK)))
+//        {
+//        if(verifyHeaderAndCRCForTrailingMinimalStatsPayload(trailer)) // Valid header and CRC.
+//          {
+//          trailingMinimalStatsPayload_t payload;
+//          extractTrailingMinimalStatsPayload(trailer, &payload);
+//          recordMinimalStats(true, command.hc1, command.hc2, &payload); // Record stats; local loopback is secure.
+//#if 0 && defined(DEBUG) // VERY SLOW: cannot leave this enabled in normal operation.NominalRadValve.get
+//          // Compute compound HC/ID value.
+//          const uint16_t compoundHC = (command.hc1 << 8) | command.hc2;
+//          DEBUG_SERIAL_PRINT_FLASHSTRING("Trailer: @");
+//          DEBUG_SERIAL_PRINTFMT(compoundHC, HEX);
+//          DEBUG_SERIAL_PRINT(' ');
+//          if(payload.powerLow) { DEBUG_SERIAL_PRINT_FLASHSTRING("powerLow "); }
+//          DEBUG_SERIAL_PRINT_FLASHSTRING("temp=");
+//          DEBUG_SERIAL_PRINTFMT(payload.tempC16 >> 4, DEC);
+//          DEBUG_SERIAL_PRINT('C');
+//          DEBUG_SERIAL_PRINTFMT(payload.tempC16 & 0xf, HEX);
+//          DEBUG_SERIAL_PRINTLN();
+//#endif
+//          }
+//#if 0 // Optional extra tracking of error rate/type/location.
+//        else // Failed to verify; deduce bad frame if header looks OK.
+//          {
+//          if(MESSAGING_TRAILING_MINIMAL_STATS_HEADER_MSBS == (trailer[0] & MESSAGING_TRAILING_MINIMAL_STATS_HEADER_MASK))
+//            {
+//            setLastRXErr(FHT8VRXErr_BAD_RX_SUBFRAME);
+//            seedRNG8(trailer[0], trailer[1], trailer[2]); // Attempt to gather some entropy from the RX noise. (TODO-302).
+//            }
+//          }
+//#endif
+//        }
+//#endif
+//#endif
+//
+//      // Potentially accept as call for heat only if command is 0x26 (38)
+//      // and the valve is open enough for some water flow to be likely
+//      // and the housecode is accepted.
+//      if(0x26 == command.command)
+//        {
+//        // Initial fix for TODO-520: Bad comparison screening incoming calls for heat at boiler hub.
+//        const uint8_t mvro = NominalRadValve.getMinValvePcReallyOpen();
+//        if((command.extension > (mvro << 1)) && // Quick approximation as filter with some false positives.
+//           (command.extension >= ((255 * (int)mvro) / 100)) && // More accurate test, but slow.
+//           (FHT8VHubAcceptedHouseCode(command.hc1, command.hc2))) // Accept if house code not filtered out.
+//          {
+//          const uint16_t compoundHC = (command.hc1 << 8) | command.hc2;
+//          ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
+//            { lastCallForHeatHC = compoundHC; } // Update atomically.
+////#if defined(SAVE_RX_ENERGY)
+////          StopEavesdropOnFHT8V(); // Need not eavesdrop for a while.
+////#endif
+//          }
+//        }
+//      _SetupRFM22ToEavesdropOnFHT8V(); // Reset/restart RX.
+//      return(true); // Got a valid frame.
+//      }
+//    else
+//      {
+//      setLastRXErr(FHT8VRXErr_BAD_RX_FRAME);
+//#if 0 && defined(DEBUG)
+//      DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bad RX frame");
+//#endif
+//      _SetupRFM22ToEavesdropOnFHT8V(); // Reset/restart RX.
+//      return(false);
+//      }
+//
+//    // Ensure that RX is re-enabled to avoid missing anything.
+//    _SetupRFM22ToEavesdropOnFHT8V(); // Reset/restart RX.
+//    return(false); // Nothing valid received.
+//    }
+//  else if(status & 0x80) // Got sync from incoming FHT8V message.
+//    {
+//#if 0 && defined(DEBUG)
+//    debugReportRSSI(2);
+//#endif
+//    // Capture some entropy from RSSI and timing...
+//    const uint8_t rssi = RFM23B.getRSSI();
+//    // TODO adjust output power down a little if RX very loud.
+//    addEntropyToPool(rssi ^ (uint8_t)(status ^ (status >> 8)), 1); // Maybe ~1 real bit of entropy.
+//#if 0 && defined(DEBUG)
+//    if(rssi > 0)
+//      {
+//      DEBUG_SERIAL_PRINT_FLASHSTRING("r=");
+//      DEBUG_SERIAL_PRINT(rssi);
+//      DEBUG_SERIAL_PRINTLN();
+//      }
+//#endif
+////    syncSeen = true;
+//    return(true);
+//    }
+//  else if(status & 0x8000) // RX FIFO overflow/underflow: give up and restart...
+//    {
+//#if 0 && defined(DEBUG)
+//    debugReportRSSI(3);
+//#endif
+//    setLastRXErr(FHT8VRXErr_GENERIC);
+//#if 0 && defined(DEBUG)
+//    DEBUG_SERIAL_PRINTLN_FLASHSTRING("RX FIFO problem");
+//#endif
+//    _SetupRFM22ToEavesdropOnFHT8V(); // Reset/restart RX.
+//    return(false);
+//    }
+//
+//  return(false);
+//  }
 
 
 // Returns true if there is a pending accepted call for heat.

@@ -1311,9 +1311,9 @@ void populateCoreStats(FullStatsMessageCore_t *const content)
 //   * force if true then force full poll on every call (ie do not internally rate-limit)
 bool pollIO(const bool force)
   {
-#if defined(ENABLE_BOILER_HUB) && defined(USE_MODULE_FHT8VSIMPLE)
-  if(inHubMode())
-    {
+//#if defined(ENABLE_BOILER_HUB) && defined(USE_MODULE_FHT8VSIMPLE)
+//  if(inHubMode())
+//    {
     static volatile uint8_t _pO_lastPoll;
 
     // Poll RX at most about every ~32ms to help approx match spil rate when called in loop with 30ms nap.
@@ -1321,11 +1321,12 @@ bool pollIO(const bool force)
     if(force || ((0 == (sct & 3)) && (sct != _pO_lastPoll)))
       {
       _pO_lastPoll = sct;
-      if(FHT8VCallForHeatPoll()) // Check if call-for-heat has been overheard.
-        { return(true); }
+//      if(FHT8VCallForHeatPoll()) // Check if call-for-heat has been overheard. // FIXME: old world
+//        { return(true); }
+      RFM23B.poll();
       }
-    }
-#endif
+//    }
+//#endif
   return(false);
   }
 
@@ -1378,13 +1379,13 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
     recordCoreStats(true, &content);
     // Send it!
     RFM22RawStatsTX(true, buf, allowDoubleTX);
-    // Resume appropriate behaviour after TX.
-#if defined(ENABLE_BOILER_HUB)
-    if(resumeRX)
-      { SetupToEavesdropOnFHT8V(true); } // Revert to hub listening... // GG suggested fix 2015/06/20 TODO-521
-    else
-#endif
-      { RFM22ModeStandbyAndClearState(); } // Go to standby to conserve energy.
+//    // Resume appropriate behaviour after TX.
+//#if defined(ENABLE_BOILER_HUB)
+//    if(resumeRX)
+//      { SetupToEavesdropOnFHT8V(true); } // Revert to hub listening... // GG suggested fix 2015/06/20 TODO-521
+//    else
+//#endif
+//      { RFM22ModeStandbyAndClearState(); } // Go to standby to conserve energy.
     }
 
 #if defined(ALLOW_JSON_OUTPUT)
@@ -1466,13 +1467,13 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
     // TODO: put in listen before TX to reduce collisions (CSMA).
     // Send it!
     RFM22RawStatsTX(false, buf, allowDoubleTX);
-    // Resume appropriate behaviour after TX.
-#if defined(ENABLE_BOILER_HUB)
-    if(resumeRX)
-      { SetupToEavesdropOnFHT8V(true); } // Revert to hub listening... // GG suggested fix 2015/06/20 TODO-521
-    else
-#endif
-      { RFM22ModeStandbyAndClearState(); } // Go to standby to conserve energy.
+//    // Resume appropriate behaviour after TX.
+//#if defined(ENABLE_BOILER_HUB)
+//    if(resumeRX)
+//      { SetupToEavesdropOnFHT8V(true); } // Revert to hub listening... // GG suggested fix 2015/06/20 TODO-521
+//    else
+//#endif
+//      { RFM22ModeStandbyAndClearState(); } // Go to standby to conserve energy.
     }
 
 #endif // defined(ALLOW_JSON_OUTPUT)
@@ -1739,7 +1740,7 @@ void loopOpenTRV()
 #if defined(USE_MODULE_FHT8VSIMPLE)
     // Final poll to to cover up to end of previous minor loop.
     // Keep time from here to following SetupToEavesdropOnFHT8V() as short as possible to avoid missing remote calls.
-    FHT8VCallForHeatPoll();
+//    FHT8VCallForHeatPoll();
 
     // Fetch and clear current pending sample house code calling for heat.
     const uint16_t hcRequest = FHT8VCallForHeatHeardGetAndClear();
@@ -1834,18 +1835,53 @@ void loopOpenTRV()
     }
 #endif
 
+
+
+
+
+
+
+// ************ HERE *************
+
+
+// EXPERIMENTAL TEST OF NEW RADIO CODE
+#if 1 && defined(DEBUG)
+//    DEBUG_SERIAL_PRINT_FLASHSTRING("listening to channel: ");
+//    DEBUG_SERIAL_PRINT(RFM23B.getListenChannel());
+//    DEBUG_SERIAL_PRINTLN();
+
+    RFM23B.listen(true);
+    RFM23B.poll();
+    static uint8_t oldDroppedRecent;
+    const uint8_t droppedRecent = RFM23B.getRXMsgsDroppedRecent();
+    if(droppedRecent != oldDroppedRecent)
+      {
+      DEBUG_SERIAL_PRINT_FLASHSTRING("?DROPPED recent: ");
+      DEBUG_SERIAL_PRINT(droppedRecent);
+      DEBUG_SERIAL_PRINTLN();
+      oldDroppedRecent = droppedRecent;
+      }
+#endif
+
+
+
+
+
+
+
 #if defined(ENABLE_BOILER_HUB)
 #if defined(USE_MODULE_FHT8VSIMPLE)
   // Act on eavesdropping need, setting up or clearing down hooks as required.
+  RFM23B.listen(needsToEavesdrop);
   if(needsToEavesdrop)
     {
     // Ensure radio is in RX mode rather than standby, and possibly hook up interrupts if available (REV1 board).
-    const bool startedRX = SetupToEavesdropOnFHT8V(second0); // Start listening (if not already so).
+    const bool startedRX = SetupToEavesdropOnFHT8V(second0); // Start listening (if not already so). // ***FIXME: old world
 #if 0 && defined(DEBUG)
     if(startedRX) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("STARTED eavesdropping"); }
 #endif
 #if 1 && defined(DEBUG)
-    const uint16_t dropped = getInboundStatsQueueOverrun();
+    const uint16_t dropped = getInboundStatsQueueOverrun();  // ***FIXME: old world
     static uint16_t oldDropped;
     if(dropped != oldDropped)
       {
@@ -1866,9 +1902,9 @@ void loopOpenTRV()
   else
     {
     // Power down and clear radio state (if currently eavesdropping).
-    StopEavesdropOnFHT8V(second0);
+    StopEavesdropOnFHT8V(second0); // ***FIXME: old world
     // Clear any RX state so that nothing stale is carried forward.
-    FHT8VCallForHeatHeardGetAndClear();
+    FHT8VCallForHeatHeardGetAndClear(); // ***FIXME: old world
     }
 #endif
 #endif
@@ -1896,39 +1932,41 @@ void loopOpenTRV()
   uint_fast8_t newTLSD;
   while(TIME_LSD == (newTLSD = getSecondsLT()))
     {
-#if defined(ENABLE_BOILER_HUB) && defined(USE_MODULE_FHT8VSIMPLE) // Deal with FHT8V eavesdropping if needed.
-    // Poll for RX of remote calls-for-heat if needed.
-    if(needsToEavesdrop) { nap30AndPoll(); continue; }
-#endif
-#if defined(USE_MODULE_RFM22RADIOSIMPLE) // Force radio to power-saving standby state if appropriate.
-    // Force radio to known-low-power state from time to time (not every time to avoid unnecessary SPI work, LED flicker, etc.)
-    if(batteryLow || second0) { RFM22ModeStandbyAndClearState(); }
-#endif
-    sleepUntilInt(); // Normal long minimal-power sleep until wake-up interrupt.
+    { nap30AndPoll(); continue; } // New world assuming that RX is required.
+//#if defined(ENABLE_BOILER_HUB) && defined(USE_MODULE_FHT8VSIMPLE) // Deal with FHT8V eavesdropping if needed.
+//    // Poll for RX of remote calls-for-heat if needed.
+//    if(needsToEavesdrop) { nap30AndPoll(); continue; }
+//#endif
+//#if defined(USE_MODULE_RFM22RADIOSIMPLE) // Force radio to power-saving standby state if appropriate.
+//    // Force radio to known-low-power state from time to time (not every time to avoid unnecessary SPI work, LED flicker, etc.)
+//    if(batteryLow || second0) { RFM22ModeStandbyAndClearState(); } // FIXME: old world
+//#endif
+//    sleepUntilInt(); // Normal long minimal-power sleep until wake-up interrupt.
     }
   TIME_LSD = newTLSD;
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("*S"); // Start-of-cycle wake.
 #endif
 
-#if defined(ENABLE_BOILER_HUB) && defined(USE_MODULE_FHT8VSIMPLE) // Deal with FHT8V eavesdropping if needed.
-  // Check RSSI...
-  if(needsToEavesdrop)
-    {
-    const uint8_t rssi = RFM22RSSI();
-    static uint8_t lastRSSI;
-    if((rssi > 0) && (lastRSSI != rssi))
-      {
-      lastRSSI = rssi;
-      addEntropyToPool(rssi, 0); // Probably some real entropy but don't assume it.
-#if 0 && defined(DEBUG)
-      DEBUG_SERIAL_PRINT_FLASHSTRING("RSSI=");
-      DEBUG_SERIAL_PRINT(rssi);
-      DEBUG_SERIAL_PRINTLN();
-#endif
-      }
-    }
-#endif
+//#if defined(ENABLE_BOILER_HUB) && defined(USE_MODULE_FHT8VSIMPLE) // Deal with FHT8V eavesdropping if needed.
+//  // Check RSSI...
+//  if(needsToEavesdrop)
+//    {
+////    const uint8_t rssi = RFM22RSSI();
+//    const uint8_t rssi = RFM23.getRSSI();
+//    static uint8_t lastRSSI;
+//    if((rssi > 0) && (lastRSSI != rssi))
+//      {
+//      lastRSSI = rssi;
+//      addEntropyToPool(rssi, 0); // Probably some real entropy but don't assume it.
+//#if 0 && defined(DEBUG)
+//      DEBUG_SERIAL_PRINT_FLASHSTRING("RSSI=");
+//      DEBUG_SERIAL_PRINT(rssi);
+//      DEBUG_SERIAL_PRINTLN();
+//#endif
+//      }
+//    }
+//#endif
 
 #if 0 && defined(DEBUG) // Show CPU cycles.
   DEBUG_SERIAL_PRINT('C');

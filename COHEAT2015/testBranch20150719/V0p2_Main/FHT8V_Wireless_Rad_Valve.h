@@ -211,30 +211,30 @@ bool FHT8VDoSafeExtraTXToHub();
 #endif
 
 
-// Set up radio to listen for remote TRV nodes calling for heat.
-// Only done if in central hub mode.
-// Returns false if was already in RX mode.
-bool SetupToEavesdropOnFHT8V(bool force = false);
+//// Set up radio to listen for remote TRV nodes calling for heat.
+//// Only done if in central hub mode.
+//// Returns false if was already in RX mode.
+//bool SetupToEavesdropOnFHT8V(bool force = false);
+//
+//// Stop listening out for remote TRVs calling for heat.
+//// Puts radio in standby mode.
+//// DOES NOT clear flags that indicate call for heat has been heard.
+//void StopEavesdropOnFHT8V(bool force = false);
 
-// Stop listening out for remote TRVs calling for heat.
-// Puts radio in standby mode.
-// DOES NOT clear flags that indicate call for heat has been heard.
-void StopEavesdropOnFHT8V(bool force = false);
+//// Polls radio for OpenTRV calls for heat once/if SetupToEavesdropOnFHT8V() is in effect.
+//// Does not misbehave (eg return false positives) even if SetupToEavesdropOnFHT8V() not set, eg has been in standby.
+//// If used instead of an interrupt then should probably called at least about once every 100ms.
+//// Returns true if any activity was detected by this call (not necessarily a full valid call),
+//// and comes out of eavesdropping mode to save energy.
+//// Does not block nor take significant time.
+//bool FHT8VCallForHeatPoll();
+//
+//// Returns true if there is a pending accepted call for heat.
+//// If so a non-~0 housecode will be returned by FHT8VCallForHeatHeardGetAndClear().
+//bool FHT8VCallForHeatHeard();
 
-// Polls radio for OpenTRV calls for heat once/if SetupToEavesdropOnFHT8V() is in effect.
-// Does not misbehave (eg return false positives) even if SetupToEavesdropOnFHT8V() not set, eg has been in standby.
-// If used instead of an interrupt then should probably called at least about once every 100ms.
-// Returns true if any activity was detected by this call (not necessarily a full valid call),
-// and comes out of eavesdropping mode to save energy.
-// Does not block nor take significant time.
-bool FHT8VCallForHeatPoll();
-
-// Returns true if there is a pending accepted call for heat.
-// If so a non-~0 housecode will be returned by FHT8VCallForHeatHeardGetAndClear().
-bool FHT8VCallForHeatHeard();
-
-// Atomically returns one housecode calling for heat heard since last call and clears, or ~0 if none.
-uint16_t FHT8VCallForHeatHeardGetAndClear();
+//// Atomically returns one housecode calling for heat heard since last call and clears, or ~0 if none.
+//uint16_t FHT8VCallForHeatHeardGetAndClear();
 
 // Error codes as returned by FHT8VLastRXErrGetAndClear(); 0 means no error.
 #define FHT8VRXErr_NONE 0 // No error.
@@ -244,8 +244,8 @@ uint16_t FHT8VCallForHeatHeardGetAndClear();
 #define FHT8VRXErr_BAD_RX_SUBFRAME 4 // CRC or similar failure in FHT8V piggyback frame.
 #define FHT8VRXErr_BAD_RX_STATSFRAME 5 // CRC or similar failure in stand-alone stats frame on FHT8V carrier.
 
-// Atomically returns and clears last (FHT8V) RX error code, or 0 if none.
-uint8_t FHT8VLastRXErrGetAndClear();
+//// Atomically returns and clears last (FHT8V) RX error code, or 0 if none.
+//uint8_t FHT8VLastRXErrGetAndClear();
 
 
 #ifdef ENABLE_BOILER_HUB

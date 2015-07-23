@@ -28,7 +28,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include <OTRadioLink.h>
 #include <OTRFM23BLink.h>
 
-#ifdef PIN_RFM_NIRQ
+#ifdef PIN_RFM_NIRQ_XXXX
 extern OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, PIN_RFM_NIRQ> RFM23B;
 #else
 extern OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, -1> RFM23B;
@@ -38,10 +38,10 @@ extern OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, -1> RFM23B;
 //// Performs a software reset and leaves the radio deselected and in a low-power and safe state.
 //void RFM22PowerOnInit();
 
-// Enter standby mode (consume least possible power but retain register contents).
-// FIFO state and pending interrupts are cleared.
-// Typical consumption in standby 450nA (cf 15nA when shut down, 8.5mA TUNE, 18--80mA RX/TX).
-void RFM22ModeStandbyAndClearState();
+//// Enter standby mode (consume least possible power but retain register contents).
+//// FIFO state and pending interrupts are cleared.
+//// Typical consumption in standby 450nA (cf 15nA when shut down, 8.5mA TUNE, 18--80mA RX/TX).
+//void RFM22ModeStandbyAndClearState();
 
 //// Returns true iff RFM22 (or RFM23) appears to be correctly connected.
 //bool RFM22CheckConnected();
@@ -60,22 +60,22 @@ void RFM22ModeStandbyAndClearState();
 //// This routine does not change the command area.
 //void RFM22QueueCmdToFF(uint8_t *bptr);
 
-// Put RFM22 into RX mode with given RX FIFO 'nearly-full' threshold and optional interrupts enabled.
-void RFM22SetUpRX(uint8_t nearlyFullThreshold, bool syncInt, bool dataInt);
+//// Put RFM22 into RX mode with given RX FIFO 'nearly-full' threshold and optional interrupts enabled.
+//void RFM22SetUpRX(uint8_t nearlyFullThreshold, bool syncInt, bool dataInt);
 
-// Put RFM22 into standby, attempt to read specified number of bytes from FIFO to buffer.
-// Leaves RFM22 in low-power standby mode.
-// Trailing bytes (more than were actually sent) may be garbage.
-void RFM22RXFIFO(uint8_t *buf, uint8_t bufSize);
+//// Put RFM22 into standby, attempt to read specified number of bytes from FIFO to buffer.
+//// Leaves RFM22 in low-power standby mode.
+//// Trailing bytes (more than were actually sent) may be garbage.
+//void RFM22RXFIFO(uint8_t *buf, uint8_t bufSize);
 
 //// Get current RSSI.
 //// Only valid when in RX mode.
 //uint8_t RFM22RSSI();
 
-// Read status (both registers) and clear interrupts.
-// Status register 1 is returned in the top 8 bits, register 2 in the bottom 8 bits.
-// Zero indicates no pending interrupts or other status flags set.
-uint16_t RFM22ReadStatusBoth();
+//// Read status (both registers) and clear interrupts.
+//// Status register 1 is returned in the top 8 bits, register 2 in the bottom 8 bits.
+//// Zero indicates no pending interrupts or other status flags set.
+//uint16_t RFM22ReadStatusBoth();
 
 #define RFM22_PREAMBLE_BYTE 0xaa // Preamble byte for RFM22/23 reception.
 #define RFM22_PREAMBLE_MIN_BYTES 4 // Minimum number of preamble bytes for reception.

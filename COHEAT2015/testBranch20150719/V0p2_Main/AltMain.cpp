@@ -49,20 +49,24 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 #if defined(ALT_MAIN_LOOP)
 
 
-
 // Called from startup() after some initial setup has been done.
 // Can abort with panic() if need be.
 void POSTalt()
   {
 #if defined(USE_MODULE_RFM22RADIOSIMPLE) 
-  // Initialise the radio, if configured, ASAP, because it can suck a lot of power until properly initialised.
-  RFM22PowerOnInit();
+//  // Initialise the radio, if configured, ASAP, because it can suck a lot of power until properly initialised.
+//  RFM22PowerOnInit();
+//  // Check that the radio is correctly connected; panic if not...
+//  if(!RFM22CheckConnected()) { panic(); }
+//  // Configure the radio.
+//  RFM22RegisterBlockSetup(FHT8V_RFM22_Reg_Values);
+//  // Put the radio in low-power standby mode.
+//  RFM22ModeStandbyAndClearState();
+  // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
+  static const OTRadioLink::OTRadioChannelConfig RFMConfig(FHT8V_RFM22_Reg_Values, true, true, true);
+  RFM23B.preinit(NULL);
   // Check that the radio is correctly connected; panic if not...
-  if(!RFM22CheckConnected()) { panic(); }
-  // Configure the radio.
-  RFM22RegisterBlockSetup(FHT8V_RFM22_Reg_Values);
-  // Put the radio in low-power standby mode.
-  RFM22ModeStandbyAndClearState();
+  if(!RFM23B.configure(1, &RFMConfig) || !RFM23B.begin()) { panic(); }
 #endif
 
   // Force initialisation into low-power state.
@@ -122,7 +126,8 @@ void loopAlt()
   uint_fast8_t newTLSD;
   while(TIME_LSD == (newTLSD = getSecondsLT()))
     {
-    sleepUntilInt(); // Normal long minimal-power sleep until wake-up interrupt.
+    nap(WDTO_30MS); RFM23B.poll();
+//    sleepUntilInt(); // Normal long minimal-power sleep until wake-up interrupt.
 //    DEBUG_SERIAL_PRINTLN_FLASHSTRING("w"); // Wakeup.
     }
   TIME_LSD = newTLSD;
@@ -135,7 +140,7 @@ void loopAlt()
   // START LOOP BODY
   // ===============
 
-  //DEBUG_SERIAL_PRINTLN_FLASHSTRING("*");
+  DEBUG_SERIAL_PRINTLN_FLASHSTRING("*");
 
   // Power up serail for the loop body.
   // May just want to turn it on in POSTalt() and leave it on...
@@ -143,8 +148,8 @@ void loopAlt()
 
 
 #if defined(USE_MODULE_FHT8VSIMPLE)
-  // Try for double TX for more robust conversation with valve.
-  const bool doubleTXForFTH8V = true;
+  // Try for double TX for more robust conversation with valve?
+  const bool doubleTXForFTH8V = false;
   // FHT8V is highest priority and runs first.
   // ---------- HALF SECOND #0 -----------
   bool useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_First(doubleTXForFTH8V); // Time for extra TX before UI.
@@ -152,18 +157,51 @@ void loopAlt()
 #endif
 
 
-// Read from serial with Serial.read() if Serial.available() > 0 to avoid blocking.
-// May need to accumulate input text over several loops...
-//
-//  // Read next character if immediately available.
-//  if(Serial.available() > 0)
-//    {
-//    int ic = Serial.read();
-//    ...
-//    }
-//
-// Write to serial with Serial.print('T') or similar.
-// Again, try to avoid blocking to avoid throwing the timing off for the Conrad valve.
+
+
+
+
+
+
+
+
+
+// EXPERIMENTAL TEST OF NEW RADIO CODE
+#if 1 && defined(DEBUG)
+//    DEBUG_SERIAL_PRINT_FLASHSTRING("listening to channel: ");
+//    DEBUG_SERIAL_PRINT(RFM23B.getListenChannel());
+//    DEBUG_SERIAL_PRINTLN();
+
+//    RFM23B.listen(false);
+//    DEBUG_SERIAL_PRINT_FLASHSTRING("MODE ");
+//    DEBUG_SERIAL_PRINT(RFM23B.getMode());
+//    DEBUG_SERIAL_PRINTLN();
+    RFM23B.listen(true);
+    DEBUG_SERIAL_PRINT_FLASHSTRING("MODE ");
+    DEBUG_SERIAL_PRINT(RFM23B.getMode());
+    DEBUG_SERIAL_PRINTLN();
+    RFM23B.poll();
+//    DEBUG_SERIAL_PRINT_FLASHSTRING("_lPS ");
+//    DEBUG_SERIAL_PRINTFMT(RFM23B.get_lastPollStatus_(), HEX);
+//    DEBUG_SERIAL_PRINTLN();
+    DEBUG_SERIAL_PRINT_FLASHSTRING("last err ");
+    DEBUG_SERIAL_PRINT(RFM23B.getRXErr());
+    DEBUG_SERIAL_PRINTLN();
+    DEBUG_SERIAL_PRINT_FLASHSTRING("RSSI ");
+    DEBUG_SERIAL_PRINT(RFM23B.getRSSI());
+    DEBUG_SERIAL_PRINTLN();
+    static uint8_t oldDroppedRecent;
+    const uint8_t droppedRecent = RFM23B.getRXMsgsDroppedRecent();
+    if(droppedRecent != oldDroppedRecent)
+      {
+      DEBUG_SERIAL_PRINT_FLASHSTRING("?DROPPED recent: ");
+      DEBUG_SERIAL_PRINT(droppedRecent);
+      DEBUG_SERIAL_PRINTLN();
+      oldDroppedRecent = droppedRecent;
+      }
+#endif
+
+
 
 
 
