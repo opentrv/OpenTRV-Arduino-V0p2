@@ -225,6 +225,7 @@ void sleepPwrSaveWithBODDisabled()
 // Sleep briefly in as lower-power mode as possible until the specified (watchdog) time expires, or another interrupt.
 //   * watchdogSleep is one of the WDTO_XX values from <avr/wdt.h>
 // May be useful to call minimsePowerWithoutSleep() first, when not needing any modules left on.
+#define NAP_ALLOW_SPURIOUS_WAKEUP_BY_DEFAULT false
 void nap(int_fast8_t watchdogSleep)
   {
   // Watchdog should (already) be disabled on entry.
@@ -237,7 +238,7 @@ void nap(int_fast8_t watchdogSleep)
   for( ; ; )
     {
     sleepPwrSaveWithBODDisabled();
-    if(0 != _watchdogFired)
+    if(NAP_ALLOW_SPURIOUS_WAKEUP_BY_DEFAULT || (0 != _watchdogFired))
       {
       wdt_disable(); // Avoid spurious wakeup later.
       return; // All done!
@@ -245,11 +246,11 @@ void nap(int_fast8_t watchdogSleep)
     }
  }
 
-#if 0
+#if 1
 // Sleep briefly in as lower-power mode as possible until the specified (watchdog) time expires, or another interrupt.
 //   * watchdogSleep is one of the WDTO_XX values from <avr/wdt.h>
 //   * allowPrematureWakeup if true then if woken before watchdog fires return false; default false
-// Returns false if the watchdog timer did not go off.
+// Returns false if the watchdog timer did not go off, true if it did.
 // May be useful to call minimsePowerWithoutSleep() first, when not needing any modules left on.
 bool nap(int_fast8_t watchdogSleep, bool allowPrematureWakeup)
   {

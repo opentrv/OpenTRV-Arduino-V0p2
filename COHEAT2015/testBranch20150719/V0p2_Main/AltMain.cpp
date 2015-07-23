@@ -91,6 +91,7 @@ void POSTalt()
 
 
 
+  RFM23B.listen(true);
 
 
   }
@@ -126,7 +127,8 @@ void loopAlt()
   uint_fast8_t newTLSD;
   while(TIME_LSD == (newTLSD = getSecondsLT()))
     {
-    nap(WDTO_30MS); RFM23B.poll();
+    RFM23B.poll();
+    nap(WDTO_30MS);
 //    sleepUntilInt(); // Normal long minimal-power sleep until wake-up interrupt.
 //    DEBUG_SERIAL_PRINTLN_FLASHSTRING("w"); // Wakeup.
     }
@@ -140,7 +142,7 @@ void loopAlt()
   // START LOOP BODY
   // ===============
 
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("*");
+//  DEBUG_SERIAL_PRINTLN_FLASHSTRING("*");
 
   // Power up serail for the loop body.
   // May just want to turn it on in POSTalt() and leave it on...
@@ -176,20 +178,26 @@ void loopAlt()
 //    DEBUG_SERIAL_PRINT_FLASHSTRING("MODE ");
 //    DEBUG_SERIAL_PRINT(RFM23B.getMode());
 //    DEBUG_SERIAL_PRINTLN();
-    RFM23B.listen(true);
+//    RFM23B.listen(true);
 //    DEBUG_SERIAL_PRINT_FLASHSTRING("MODE ");
 //    DEBUG_SERIAL_PRINT(RFM23B.getMode());
 //    DEBUG_SERIAL_PRINTLN();
 //    RFM23B.poll();
-    DEBUG_SERIAL_PRINT_FLASHSTRING("msgs: ");
-    DEBUG_SERIAL_PRINT(RFM23B.getRXMsgsQueued());
-    DEBUG_SERIAL_PRINTLN();
-    uint8_t buf[65];
-    const uint8_t msglen = RFM23B.getRXMsg(buf, sizeof(buf));
-    OTRadioLink::dumpRXMsg(buf, msglen);
-    DEBUG_SERIAL_PRINT_FLASHSTRING("last err ");
-    DEBUG_SERIAL_PRINT(RFM23B.getRXErr());
-    DEBUG_SERIAL_PRINTLN();
+    for(uint8_t msgs; 0 != (msgs = RFM23B.getRXMsgsQueued()); )
+      {
+//      DEBUG_SERIAL_PRINT_FLASHSTRING("msgs: ");
+//      DEBUG_SERIAL_PRINT();
+//      DEBUG_SERIAL_PRINTLN();
+      uint8_t buf[65];
+      const uint8_t msglen = RFM23B.getRXMsg(buf, sizeof(buf));
+      OTRadioLink::dumpRXMsg(buf, msglen);
+      }
+    for(uint8_t lastErr; 0 != (lastErr = RFM23B.getRXErr()); )
+      {
+      DEBUG_SERIAL_PRINT_FLASHSTRING("err ");
+      DEBUG_SERIAL_PRINT(lastErr);
+      DEBUG_SERIAL_PRINTLN();
+      }
     DEBUG_SERIAL_PRINT_FLASHSTRING("RSSI ");
     DEBUG_SERIAL_PRINT(RFM23B.getRSSI());
     DEBUG_SERIAL_PRINTLN();

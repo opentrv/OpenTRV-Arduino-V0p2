@@ -165,7 +165,7 @@ void nap(int_fast8_t watchdogSleep);
 // Sleep briefly in as lower-power mode as possible until the specified (watchdog) time expires, or another interrupt.
 //   * watchdogSleep is one of the WDTO_XX values from <avr/wdt.h>
 //   * allowPrematureWakeup if true then if woken before watchdog fires return false; default false
-// Returns false if the watchdog timer did not go off.
+// Returns false if the watchdog timer did not go off, true if it did.
 // May be useful to call minimsePowerWithoutSleep() first, when not needing any modules left on.
 bool nap(int_fast8_t watchdogSleep, bool allowPrematureWakeup);
 
@@ -185,7 +185,8 @@ bool idleCPU(int_fast8_t watchdogSleep);
 bool pollIO(bool force = false);
 // Nap productively polling I/O, etc, across the system while spending time in low-power mode if possible.
 // Typically sleeps for about 30ms; tries to allow earlier wakeup if interrupt is received, etc.
-static void inline nap30AndPoll() { nap(WDTO_30MS); pollIO(true); }
+// True iff watchdog timer expired; false if something else woke the CPU.
+static bool inline nap30AndPoll() { const bool wd = nap(WDTO_30MS, true); pollIO(!wd); return(wd); }
 #ifdef ENABLE_AVR_IDLE_MODE
 // Idle productively polling I/O, etc, across the system while spending time in low-power mode if possible.
 // Typically sleeps for nominally up to 30ms; tries to allow earlier wakeup if interrupt is received, etc.
@@ -214,11 +215,13 @@ static void inline tinyPause() { nap(WDTO_15MS); } // 15ms vs 18ms nominal for P
 #define SMALL_PAUSE_MS 30
 static void inline smallPause() { nap(WDTO_30MS); }
 // Medium low-power sleep to approximately match the PICAXE V0.09 routine of the same name.
+// Premature wakeups may be allowed to avoid blocking I/O polling for too long.
 #define MEDIUM_PAUSE_MS 60
-static void inline mediumPause() { nap(WDTO_60MS); } // 60ms vs 144ms nominal for PICAXE V0.09 impl.
+static void inline mediumPause() { nap(WDTO_60MS, true); } // 60ms vs 144ms nominal for PICAXE V0.09 impl.
 // Big low-power sleep to approximately match the PICAXE V0.09 routine of the same name.
+// Premature wakeups may be allowed to avoid blocking I/O polling for too long.
 #define BIG_PAUSE_MS 120
-static void inline bigPause() { nap(WDTO_120MS); } // 120ms vs 288ms nominal for PICAXE V0.09 impl.
+static void inline bigPause() { nap(WDTO_120MS, true); } // 120ms vs 288ms nominal for PICAXE V0.09 impl.
 
 #if defined(WAKEUP_32768HZ_XTAL) || 1 // FIXME: need to not use getSubCycleTime() where slow clock NOT available.
 // Get fraction of the way through the basic cycle in range [0,255].
