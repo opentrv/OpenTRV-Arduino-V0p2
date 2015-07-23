@@ -632,8 +632,15 @@ void recordMinimalStats(bool secure, uint8_t id0, uint8_t id1, const trailingMin
 // A little bit less than a power of 2
 // to enable packing along with other info.
 // A little bit smaller than typical radio module frame buffers (eg RFM23B) of 64 bytes
-// to allow other explicit preamble/postamble (such as CRC) to be added.
-#define MSG_JSON_MAX_LENGTH 55
+// to allow other explicit preamble and postamble (such as CRC) to be added,
+// and to allow time from final byte arriving to collect the data without overrun.
+//
+// Absolute maximum, eg with RFM23B / FS20 OOK carrier.
+#define MSG_JSON_ABS_MAX_LENGTH 55
+// Typical maximum.
+#define MSG_JSON_MAX_LENGTH 50
+// Maximum for frames in 'secure' format, eg with authentication and encryption wrappers.
+#define MSG_JSON_MAX_LENGTH_SECURE 31
 
 #define MSG_JSON_LEADING_CHAR ('{') // This is for a JSON object { ... }.
 

@@ -127,10 +127,10 @@ void loopAlt()
   uint_fast8_t newTLSD;
   while(TIME_LSD == (newTLSD = getSecondsLT()))
     {
-    RFM23B.poll();
-    nap(WDTO_30MS);
+    nap(WDTO_30MS, true);
 //    sleepUntilInt(); // Normal long minimal-power sleep until wake-up interrupt.
 //    DEBUG_SERIAL_PRINTLN_FLASHSTRING("w"); // Wakeup.
+    RFM23B.poll();
     }
   TIME_LSD = newTLSD;
 
