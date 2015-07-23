@@ -1932,7 +1932,7 @@ void loopOpenTRV()
   uint_fast8_t newTLSD;
   while(TIME_LSD == (newTLSD = getSecondsLT()))
     {
-    { nap30AndPoll(); continue; } // New world assuming that RX is required.
+    nap15AndPoll(); // New world assuming that RX is required.
 //#if defined(ENABLE_BOILER_HUB) && defined(USE_MODULE_FHT8VSIMPLE) // Deal with FHT8V eavesdropping if needed.
 //    // Poll for RX of remote calls-for-heat if needed.
 //    if(needsToEavesdrop) { nap30AndPoll(); continue; }

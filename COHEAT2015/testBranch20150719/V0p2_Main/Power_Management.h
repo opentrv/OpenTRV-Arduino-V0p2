@@ -186,7 +186,7 @@ bool pollIO(bool force = false);
 // Nap productively polling I/O, etc, across the system while spending time in low-power mode if possible.
 // Typically sleeps for about 30ms; tries to allow earlier wakeup if interrupt is received, etc.
 // True iff watchdog timer expired; false if something else woke the CPU.
-static bool inline nap30AndPoll() { const bool wd = nap(WDTO_30MS, true); pollIO(!wd); return(wd); }
+static bool inline nap15AndPoll() { const bool wd = nap(WDTO_15MS, true); pollIO(!wd); return(wd); }
 #ifdef ENABLE_AVR_IDLE_MODE
 // Idle productively polling I/O, etc, across the system while spending time in low-power mode if possible.
 // Typically sleeps for nominally up to 30ms; tries to allow earlier wakeup if interrupt is received, etc.

@@ -49,6 +49,19 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 #if defined(ALT_MAIN_LOOP)
 
 
+//// Mask for Port D input change interrupts.
+//#define MASK_PD_BASIC 0b00000001 // Just RX.
+//#if defined(ENABLE_VOICE_SENSOR)
+//#if VOICE_NIRQ > 7
+//#error voice interrupt on wrong port
+//#endif
+//#define VOICE_INT_MASK (1 << (VOICE_NIRQ&7))
+//#define MASK_PD (MASK_PD_BASIC | VOICE_INT_MASK)
+//#else
+//#define MASK_PD MASK_PD_BASIC // Just RX.
+//#endif
+
+
 // Called from startup() after some initial setup has been done.
 // Can abort with panic() if need be.
 void POSTalt()
@@ -80,6 +93,16 @@ void POSTalt()
   // Trailing setup for the run
   // --------------------------
 
+  // Set up async edge interrupts.
+  ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
+    {
+    //PCICR = 0x05;
+    //PCMSK0 = 0b00000011; // PB; PCINT  0--7    (LEARN1 and Radio)
+    //PCMSK1 = 0b00000000; // PC; PCINT  8--15
+    //PCMSK2 = 0b00101001; // PD; PCINT 16--24   (LEARN2 and MODE, RX)
+//    PCICR = 0x4; // 0x4 enables PD/PCMSK2.
+//    PCMSK2 = MASK_PD; // PD; PCINT 16--24 (0b1 is PCINT16/RX)
+    }
 
 
 
@@ -88,6 +111,38 @@ void POSTalt()
 
   }
 
+#if defined(ALT_MAIN_LOOP) // Do not define handlers here when alt main is in use.
+// Previous state of port D pins to help detect changes.
+static volatile uint8_t prevStatePD;
+// Interrupt service routine for PD I/O port transition changes (including RX).
+ISR(PCINT2_vect)
+  {
+//  const uint8_t pins = PIND;
+//  const uint8_t changes = pins ^ prevStatePD;
+//  prevStatePD = pins;
+//
+//#if defined(ENABLE_VOICE_SENSOR)
+////  // Voice detection is a falling edge.
+////  // Handler routine not required/expected to 'clear' this interrupt.
+////  // FIXME: ensure that Voice.handleInterruptSimple() is inlineable to minimise ISR prologue/epilogue time and space.
+////  if((changes & VOICE_INT_MASK) && !(pins & VOICE_INT_MASK))
+//  // Voice detection is a RISING edge.
+//  // Handler routine not required/expected to 'clear' this interrupt.
+//  // FIXME: ensure that Voice.handleInterruptSimple() is inlineable to minimise ISR prologue/epilogue time and space.
+//  if((changes & VOICE_INT_MASK) && (pins & VOICE_INT_MASK))
+//    { Voice.handleInterruptSimple(); }
+//#endif
+//
+//  // TODO: MODE button and other things...
+//
+//  // If an interrupt arrived from no other masked source then wake the CLI.
+//  // The will ensure that the CLI is active, eg from RX activity,
+//  // eg it is possible to wake the CLI subsystem with an extra CR or LF.
+//  // It is OK to trigger this from other things such as button presses.
+//  // FIXME: ensure that resetCLIActiveTimer() is inlineable to minimise ISR prologue/epilogue time and space.
+//  if(!(changes & MASK_PD & ~1)) { resetCLIActiveTimer(); }
+  }
+#endif
 
 
 
