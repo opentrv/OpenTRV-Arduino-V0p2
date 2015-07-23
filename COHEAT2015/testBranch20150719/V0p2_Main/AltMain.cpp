@@ -99,6 +99,7 @@ static uint8_t valvePosition = 42; // <<<<<<<< YOUR STUFF SETS THIS!
 
 
 
+
 // Called from loop().
 void loopAlt()
   {
