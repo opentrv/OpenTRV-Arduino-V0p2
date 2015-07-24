@@ -54,14 +54,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define PIN_SERIAL_RX 0 // ATMega328P-PU PDIP pin 2, PD0.
 #define PIN_SERIAL_TX 1 // ATMega328P-PU PDIP pin 2, PD1.
 // SPI: SCK (dpin 13, also LED on Arduino boards that the bootloader may 'flash'), MISO (dpin 12), MOSI (dpin 11), nSS (dpin 10).
-//#define PIN_SPI_SCK 13 // ATMega328P-PU PDIP pin 19, PB5.
-//#define PIN_SPI_MISO 12 // ATMega328P-PU PDIP pin 18, PB4.
-//#define PIN_SPI_MOSI 11 // ATMega328P-PU PDIP pin 17, PB3.
-//#define PIN_SPI_nSS 10 // ATMega328P-PU PDIP pin 16, PB2.  Active low enable.
-#define PIN_SPI_SCK (::OTV0P2BASE::V0p2_PIN_SPI_SCK) // ATMega328P-PU PDIP pin 19, PB5.
-#define PIN_SPI_MISO (::OTV0P2BASE::V0p2_PIN_SPI_MISO) // ATMega328P-PU PDIP pin 18, PB4.
-#define PIN_SPI_MOSI (::OTV0P2BASE::V0p2_PIN_SPI_MOSI) // ATMega328P-PU PDIP pin 17, PB3.
-#define PIN_SPI_nSS (::OTV0P2BASE::V0p2_PIN_SPI_nSS) // ATMega328P-PU PDIP pin 16, PB2.  Active low enable.
+#define PIN_SPI_SCK (::OTV0P2BASE::V0p2_PIN_SPI_SCK) // 13: ATMega328P-PU PDIP pin 19, PB5.
+#define PIN_SPI_MISO (::OTV0P2BASE::V0p2_PIN_SPI_MISO) // 12: ATMega328P-PU PDIP pin 18, PB4.
+#define PIN_SPI_MOSI (::OTV0P2BASE::V0p2_PIN_SPI_MOSI) // 11: ATMega328P-PU PDIP pin 17, PB3.
+#define PIN_SPI_nSS (::OTV0P2BASE::V0p2_PIN_SPI_nSS) // 10: ATMega328P-PU PDIP pin 16, PB2.  Active low enable.
 // I2C/TWI: SDA (ain 4), SCL (ain 5), interrupt (dpin3)
 #define PIN_SDA_AIN 4 // ATMega328P-PU PDIP pin 27, PC4.
 #define PIN_SCL_AIN 5 // ATMega328P-PU PDIP pin 28, PC5.

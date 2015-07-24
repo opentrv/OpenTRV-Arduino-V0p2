@@ -635,12 +635,12 @@ void recordMinimalStats(bool secure, uint8_t id0, uint8_t id1, const trailingMin
 // to allow other explicit preamble and postamble (such as CRC) to be added,
 // and to allow time from final byte arriving to collect the data without overrun.
 //
-// Absolute maximum, eg with RFM23B / FS20 OOK carrier.
+// Absolute maximum, eg with RFM23B / FS20 OOK carrier (and interrupt-serviced RX at hub).
 #define MSG_JSON_ABS_MAX_LENGTH 55
-// Typical maximum.
-#define MSG_JSON_MAX_LENGTH 50
+// Typical/recommended maximum.
+#define MSG_JSON_MAX_LENGTH 54
 // Maximum for frames in 'secure' format, eg with authentication and encryption wrappers.
-#define MSG_JSON_MAX_LENGTH_SECURE 31
+#define MSG_JSON_MAX_LENGTH_SECURE 32
 
 #define MSG_JSON_LEADING_CHAR ('{') // This is for a JSON object { ... }.
 

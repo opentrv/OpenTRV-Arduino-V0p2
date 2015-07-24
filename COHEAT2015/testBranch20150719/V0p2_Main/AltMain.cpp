@@ -86,10 +86,6 @@ void POSTalt()
   if(!RFM23B.configure(1, &RFMConfig) || !RFM23B.begin()) { panic(); }
 #endif
 
-  DEBUG_SERIAL_PRINT_FLASHSTRING("MASK_PB: ");
-  DEBUG_SERIAL_PRINT(MASK_PB);
-  DEBUG_SERIAL_PRINTLN();
-
   // Force initialisation into low-power state.
   const int heat = TemperatureC16.read();
 #if 0 && defined(DEBUG)
@@ -155,30 +151,18 @@ static volatile uint8_t prevStatePB;
 ISR(PCINT0_vect)
   {
 //  ++intCountPB;
-//  const uint8_t pins = PINB;
-//  const uint8_t changes = pins ^ prevStatePB;
-//  prevStatePB = pins;
-//
-//#if defined(ENABLE_VOICE_SENSOR)
-////  // Voice detection is a falling edge.
-////  // Handler routine not required/expected to 'clear' this interrupt.
-////  // FIXME: ensure that Voice.handleInterruptSimple() is inlineable to minimise ISR prologue/epilogue time and space.
-////  if((changes & VOICE_INT_MASK) && !(pins & VOICE_INT_MASK))
-//  // Voice detection is a RISING edge.
-//  // Handler routine not required/expected to 'clear' this interrupt.
-//  // FIXME: ensure that Voice.handleInterruptSimple() is inlineable to minimise ISR prologue/epilogue time and space.
-//  if((changes & VOICE_INT_MASK) && (pins & VOICE_INT_MASK))
-//    { Voice.handleInterruptSimple(); }
-//#endif
-//
-//  // TODO: MODE button and other things...
-//
-//  // If an interrupt arrived from no other masked source then wake the CLI.
-//  // The will ensure that the CLI is active, eg from RX activity,
-//  // eg it is possible to wake the CLI subsystem with an extra CR or LF.
-//  // It is OK to trigger this from other things such as button presses.
-//  // FIXME: ensure that resetCLIActiveTimer() is inlineable to minimise ISR prologue/epilogue time and space.
-//  if(!(changes & MASK_PD & ~1)) { resetCLIActiveTimer(); }
+  const uint8_t pins = PINB;
+  const uint8_t changes = pins ^ prevStatePB;
+  prevStatePB = pins;
+
+#if defined(RFM23B_INT_MASK)
+  // RFM23B nIRQ falling edge is of interest.
+  // Handler routine not required/expected to 'clear' this interrupt.
+  // TODO: try to ensure that OTRFM23BLink.handleInterruptSimple() is inlineable to minimise ISR prologue/epilogue time and space.
+  if((changes & RFM23B_INT_MASK) && !(pins & RFM23B_INT_MASK))
+    { RFM23B.handleInterruptSimple(); }
+#endif
+
   }
 #endif
 
