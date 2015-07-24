@@ -1076,33 +1076,33 @@ uint8_t const *FHT8VDecodeBitStream(uint8_t const *bitStream, uint8_t const *las
   return(state.bitStream + 1);
   }
 
-// Polls radio for OpenTRV calls for heat once/if SetupToEavesdropOnFHT8V() is in effect.
-// Does not misbehave (eg return false positives) even if SetupToEavesdropOnFHT8V() not set, eg has been in standby.
-// If used instead of an interrupt then should probably called at least about once every 100ms.
-// Returns true if any useful activity/progress was detected by this call (not necessarily a full valid call-for-heat).
-// Upon receipt of a valid call-for-heat this comes out of eavesdropping mode to save energy.
-// If a problem is encountered this restarts the eavesdropping process.
-// Does not block nor take significant time.
-#if 0 && defined(DEBUG)
-void debugReportRSSI(const uint8_t id)
-  {
-    /*
-    RSSI [0..255] equiv [-120..20]dB 0.5 dB Steps
-    where roughly
-    RSSI [16..230] equiv [-120..0]dB 0.5 dB Steps
-    RSSI [231] equiv [0.5..20]dB 0.5 dB Steps
-    */
-    const uint8_t rssi = RFM22RSSI();
-    DEBUG_SERIAL_TIMESTAMP();
-    DEBUG_SERIAL_PRINT(' ');
-    DEBUG_SERIAL_PRINT(id);
-    DEBUG_SERIAL_PRINT_FLASHSTRING("r=");
-    DEBUG_SERIAL_PRINT(rssi);
-    DEBUG_SERIAL_PRINTLN();
-  }
-#else
-#define debugReportRSSI(id)
-#endif
+//// Polls radio for OpenTRV calls for heat once/if SetupToEavesdropOnFHT8V() is in effect.
+//// Does not misbehave (eg return false positives) even if SetupToEavesdropOnFHT8V() not set, eg has been in standby.
+//// If used instead of an interrupt then should probably called at least about once every 100ms.
+//// Returns true if any useful activity/progress was detected by this call (not necessarily a full valid call-for-heat).
+//// Upon receipt of a valid call-for-heat this comes out of eavesdropping mode to save energy.
+//// If a problem is encountered this restarts the eavesdropping process.
+//// Does not block nor take significant time.
+//#if 0 && defined(DEBUG)
+//void debugReportRSSI(const uint8_t id)
+//  {
+//    /*
+//    RSSI [0..255] equiv [-120..20]dB 0.5 dB Steps
+//    where roughly
+//    RSSI [16..230] equiv [-120..0]dB 0.5 dB Steps
+//    RSSI [231] equiv [0.5..20]dB 0.5 dB Steps
+//    */
+//    const uint8_t rssi = RFM22RSSI();
+//    DEBUG_SERIAL_TIMESTAMP();
+//    DEBUG_SERIAL_PRINT(' ');
+//    DEBUG_SERIAL_PRINT(id);
+//    DEBUG_SERIAL_PRINT_FLASHSTRING("r=");
+//    DEBUG_SERIAL_PRINT(rssi);
+//    DEBUG_SERIAL_PRINTLN();
+//  }
+//#else
+//#define debugReportRSSI(id)
+//#endif
 
 //bool FHT8VCallForHeatPoll()
 //  {
@@ -1389,78 +1389,78 @@ void debugReportRSSI(const uint8_t id)
 //  }
 
 
-// Returns true if there is a pending accepted call for heat.
-// If so a non-~0 housecode will be returned by FHT8VCallForHeatHeardGetAndClear().
-bool FHT8VCallForHeatHeard()
-  {
-  ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
-    { return(lastCallForHeatHC != (uint16_t)~0); }
-  return(false); // Not reachable.
-  }
+//// Returns true if there is a pending accepted call for heat.
+//// If so a non-~0 housecode will be returned by FHT8VCallForHeatHeardGetAndClear().
+//bool FHT8VCallForHeatHeard()
+//  {
+//  ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
+//    { return(lastCallForHeatHC != (uint16_t)~0); }
+//  return(false); // Not reachable.
+//  }
 
-// Atomically returns and clears one housecode calling for heat heard since last call, or ~0 if none.
-uint16_t FHT8VCallForHeatHeardGetAndClear()
-  {
-  ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
-    {
-    const uint16_t result = lastCallForHeatHC;
-    lastCallForHeatHC = ~0;
-    return(result);
-    }
-    return(~0); // Not reachable.
-  }
-
-// Atomically returns and clears last (FHT8V) RX error code, or 0 if none.
-uint8_t FHT8VLastRXErrGetAndClear()
-  {
-  ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
-    {
-    const uint8_t result = lastRXerrno;
-    lastRXerrno = 0;
-    return(result);
-    }
-  return(0); // Not reachable.
-  }
-
-
+//// Atomically returns and clears one housecode calling for heat heard since last call, or ~0 if none.
+//uint16_t FHT8VCallForHeatHeardGetAndClear()
+//  {
+//  ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
+//    {
+//    const uint16_t result = lastCallForHeatHC;
+//    lastCallForHeatHC = ~0;
+//    return(result);
+//    }
+//    return(~0); // Not reachable.
+//  }
+//
+//// Atomically returns and clears last (FHT8V) RX error code, or 0 if none.
+//uint8_t FHT8VLastRXErrGetAndClear()
+//  {
+//  ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
+//    {
+//    const uint8_t result = lastRXerrno;
+//    lastRXerrno = 0;
+//    return(result);
+//    }
+//  return(0); // Not reachable.
+//  }
 
 
 
 
-// Count of house codes selectively listened for at hub.
-// If zero then calls for heat are not filtered by house code.
-#ifndef FHT8VHubListenCount
-uint8_t FHT8VHubListenCount()
-  { return(0); } // TODO
-#endif
-
-// Get remembered house code N where N < FHT8V_MAX_HUB_REMEMBERED_HOUSECODES.
-// Returns hc1:hc2 packed into a 16-bit value, with hc1 in most-significant byte.
-// Returns 0xffff if requested house code index not in use.
-#ifndef FHT8CHubListenHouseCodeAtIndex
-uint16_t FHT8CHubListenHouseCodeAtIndex(uint8_t index)
-  { return((uint16_t) ~0); } // TODO
-#endif
-
-// Remember and respond to calls for heat from hc1:hc2 when a hub.
-// Returns true if successfully remembered (or already present), else false if cannot be remembered.
-#ifndef FHT8VHubListenForHouseCode
-bool FHT8VHubListenForHouseCode(uint8_t hc1, uint8_t hc2)
-  { return(false); } // TODO
-#endif
-
-// Forget and no longer respond to calls for heat from hc1:hc2 when a hub.
-#ifndef FHT8VHubUnlistenForHouseCode
-void FHT8VHubUnlistenForHouseCode(uint8_t hc1, uint8_t hc2)
-  { } // TODO
-#endif
-
-// Returns true if given house code is a remembered one to accept calls for heat from, or if no filtering is being done.
-// Fast, and safe to call from an interrupt routine.
-#ifndef FHT8VHubAcceptedHouseCode
-bool FHT8VHubAcceptedHouseCode(uint8_t hc1, uint8_t hc2)
-  { return(true); } // TODO
-#endif
+//
+//
+//// Count of house codes selectively listened for at hub.
+//// If zero then calls for heat are not filtered by house code.
+//#ifndef FHT8VHubListenCount
+//uint8_t FHT8VHubListenCount()
+//  { return(0); } // TODO
+//#endif
+//
+//// Get remembered house code N where N < FHT8V_MAX_HUB_REMEMBERED_HOUSECODES.
+//// Returns hc1:hc2 packed into a 16-bit value, with hc1 in most-significant byte.
+//// Returns 0xffff if requested house code index not in use.
+//#ifndef FHT8CHubListenHouseCodeAtIndex
+//uint16_t FHT8CHubListenHouseCodeAtIndex(uint8_t index)
+//  { return((uint16_t) ~0); } // TODO
+//#endif
+//
+//// Remember and respond to calls for heat from hc1:hc2 when a hub.
+//// Returns true if successfully remembered (or already present), else false if cannot be remembered.
+//#ifndef FHT8VHubListenForHouseCode
+//bool FHT8VHubListenForHouseCode(uint8_t hc1, uint8_t hc2)
+//  { return(false); } // TODO
+//#endif
+//
+//// Forget and no longer respond to calls for heat from hc1:hc2 when a hub.
+//#ifndef FHT8VHubUnlistenForHouseCode
+//void FHT8VHubUnlistenForHouseCode(uint8_t hc1, uint8_t hc2)
+//  { } // TODO
+//#endif
+//
+//// Returns true if given house code is a remembered one to accept calls for heat from, or if no filtering is being done.
+//// Fast, and safe to call from an interrupt routine.
+//#ifndef FHT8VHubAcceptedHouseCode
+//bool FHT8VHubAcceptedHouseCode(uint8_t hc1, uint8_t hc2)
+//  { return(true); } // TODO
+//#endif
 
 
 
