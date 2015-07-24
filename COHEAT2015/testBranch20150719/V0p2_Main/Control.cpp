@@ -1345,7 +1345,7 @@ static SimpleStatsRotation<8> ss1; // Configured for maximum different stats.
 //       the unit will resume RX after sending the stats
 //   * allowDoubleTX  allow double TX to increase chance of successful reception
 //   * doBinary  send binary form, else JSON form if supported
-static void bareStatsTX(const bool resumeRX, const bool allowDoubleTX, const bool doBinary)
+static void bareStatsTX(const bool allowDoubleTX, const bool doBinary)
   {
 #if (FullStatsMessageCore_MAX_BYTES_ON_WIRE > STATS_MSG_MAX_LEN)
 #error FullStatsMessageCore_MAX_BYTES_ON_WIRE too big
@@ -1588,7 +1588,7 @@ void setupOpenTRV()
   // Attempt to maximise chance of reception with a double TX.
   // Assume not in hub mode yet.
   // Send all possible formats, binary first (assumed complete in one message).
-  bareStatsTX(false, true, true);
+  bareStatsTX(true, true);
   // Send JSON stats repeatedly until all values pushed out (no 'changed' values unsent).
   do
     {
@@ -1596,7 +1596,7 @@ void setupOpenTRV()
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING(" TX...");
 #endif
-    bareStatsTX(false, true, false);
+    bareStatsTX(true, false);
     } while(ss1.changedValue());
 
 #if 0 && defined(DEBUG)
@@ -1947,7 +1947,7 @@ void loopOpenTRV()
     static uint8_t oldDropped;
     if(dropped != oldDropped)
       {
-      DEBUG_SERIAL_PRINT_FLASHSTRING("!DROPPED: ");
+      DEBUG_SERIAL_PRINT_FLASHSTRING("?DROPPED: ");
       DEBUG_SERIAL_PRINT(dropped);
       DEBUG_SERIAL_PRINTLN();
       oldDropped = dropped;
@@ -2221,7 +2221,7 @@ void loopOpenTRV()
         // if this is controlling a local FHT8V on which the binary stats can be piggybacked.
         // Ie, if doesn't have a local TRV then it must send binary some of the time.
         const bool doBinary = !localFHT8VTRVEnabled() && randRNG8NextBoolean();
-        bareStatsTX(hubMode, minute1From4AfterSensors && !batteryLow && !hubMode && ss1.changedValue(), doBinary);
+        bareStatsTX(minute1From4AfterSensors && !batteryLow && !hubMode && ss1.changedValue(), doBinary);
         }
       break;
       }
