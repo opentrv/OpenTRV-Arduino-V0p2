@@ -1587,17 +1587,20 @@ void setupOpenTRV()
   // when everything else is set up and ready.
   // Attempt to maximise chance of reception with a double TX.
   // Assume not in hub mode yet.
-  // Send all possible formats.
+  // Send all possible formats, binary first (assumed complete in one message).
   bareStatsTX(false, true, true);
-  // Send stats repeatedly until all values pushed out (no 'changed' values unsent).
+  // Send JSON stats repeatedly until all values pushed out (no 'changed' values unsent).
   do
     {
     nap(WDTO_120MS); // Sleep long enough for receiver to have a chance to process previous TX.
+#if 1 && defined(DEBUG)
+  DEBUG_SERIAL_PRINTLN_FLASHSTRING(" TX...");
+#endif
     bareStatsTX(false, true, false);
     } while(ss1.changedValue());
 
 #if 1 && defined(DEBUG)
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("initial stats sent");
+  DEBUG_SERIAL_PRINTLN_FLASHSTRING("setup stats sent");
 #endif
 
 #if defined(LOCAL_TRV) && defined(DIRECT_MOTOR_DRIVE_V1)
@@ -1961,9 +1964,9 @@ void loopOpenTRV()
 //  else
 //    {
 //    // Power down and clear radio state (if currently eavesdropping).
-//    StopEavesdropOnFHT8V(second0); // ***FIXME: old world
+//    StopEavesdropOnFHT8V(second0); // ***FIXME: old world!
 //    // Clear any RX state so that nothing stale is carried forward.
-//    FHT8VCallForHeatHeardGetAndClear(); // ***FIXME: old world
+//    FHT8VCallForHeatHeardGetAndClear(); // ***FIXME: old world!
 //    }
 //#endif
 #endif
