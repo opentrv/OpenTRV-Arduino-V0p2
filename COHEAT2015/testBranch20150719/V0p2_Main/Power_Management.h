@@ -25,6 +25,7 @@ including interrupts and sleep.
 #define POWER_MANAGEMENT_H
 
 #include <avr/wdt.h>
+#include <avr/atomic.h>
 #include <avr/interrupt.h>
 #include <avr/power.h>
 #include <avr/sleep.h>
@@ -61,7 +62,9 @@ including interrupts and sleep.
 // Sleep for specified number of _delay_loop2() loops at minimum available CPU speed.
 // Each loop takes 4 cycles at that minimum speed, but entry and exit overheads may take the equivalent of a loop or two.
 // Note: inlining is prevented so as to avoid migrating anything into the section where the CPU is running slowly.
-void sleepLowPowerLoopsMinCPUSpeed(uint16_t loops) __attribute__ ((noinline));
+// Deprecated as may interact badly with interrupts if used naively (eg ISR code runs very slowly).
+// This may only be safe to use with interrupts disabled.
+void _sleepLowPowerLoopsMinCPUSpeed(uint16_t loops) __attribute__ ((noinline));
 
 // Sleep/spin for approx specified strictly-positive number of milliseconds, in as low-power mode as possible.
 // This may be achieved in part by dynamically slowing the CPU clock if possible.
@@ -69,18 +72,29 @@ void sleepLowPowerLoopsMinCPUSpeed(uint16_t loops) __attribute__ ((noinline));
 // Should be good for values up to at least 1000, ie 1 second.
 // Assumes MIN_CPU_HZ >> 4000.
 // TODO: break out to non-inlined routine where arg is not constant (__builtin_constant_p).
-static void inline sleepLowPowerMs(const uint16_t ms) { sleepLowPowerLoopsMinCPUSpeed((((MIN_CPU_HZ * (ms)) + 2000) / 4000) - ((MIN_CPU_HZ>=12000)?2:((MIN_CPU_HZ>=8000)?1:0))); }
-
+// Deprecated as may interact badly with interrupts if used naively (eg ISR code runs very slowly).
+static void inline _sleepLowPowerMs(const uint16_t ms) { _sleepLowPowerLoopsMinCPUSpeed((((MIN_CPU_HZ * (ms)) + 2000) / 4000) - ((MIN_CPU_HZ>=12000)?2:((MIN_CPU_HZ>=8000)?1:0))); }
 // Sleep/spin for (typically a little less than) strictly-positive specified number of milliseconds, in as low-power mode as possible.
 // This may be achieved in part by dynamically slowing the CPU clock if possible.
 // Macro to allow some constant folding at compile time where the sleep-time argument is constant.
 // Should be good for values up to at least 1000, ie 1 second.
-// Uses formulation likely to be quicker than sleepLowPowerMs() for non-constant argument values,
-// and that results in a somewhat shorter sleep than sleepLowPowerMs(ms).
+// Uses formulation likely to be quicker than _sleepLowPowerMs() for non-constant argument values,
+// and that results in a somewhat shorter sleep than _sleepLowPowerMs(ms).
 // Assumes MIN_CPU_HZ >> 4000.
 // TODO: break out to non-inlined routine where arg is not constant (__builtin_constant_p).
-static void inline sleepLowPowerLessThanMs(const uint16_t ms) { sleepLowPowerLoopsMinCPUSpeed(((MIN_CPU_HZ/4000) * (ms)) - ((MIN_CPU_HZ>=12000)?2:((MIN_CPU_HZ>=8000)?1:0))); }
+// Deprecated as may interact badly with interrupts if used naively (eg ISR code runs very slowly).
+static void inline _sleepLowPowerLessThanMs(const uint16_t ms) { _sleepLowPowerLoopsMinCPUSpeed(((MIN_CPU_HZ/4000) * (ms)) - ((MIN_CPU_HZ>=12000)?2:((MIN_CPU_HZ>=8000)?1:0))); }
 
+// Sleep/spin for approx specified strictly-positive number of milliseconds, in as low-power mode as possible.
+// Nap() may be more efficient for intervals of longer than 15ms.
+// Interrupts are blocked for about 1ms at a time.
+// Should be good for the full range of values and should take no time where 0ms is specified.
+static void inline sleepLowPowerMs(uint16_t ms) { while(ms-- > 0) { ATOMIC_BLOCK(ATOMIC_RESTORESTATE) { _sleepLowPowerMs(1); } } }
+// Sleep/spin for (typically a little less than) strictly-positive specified number of milliseconds, in as low-power mode as possible.
+// Nap() may be more efficient for intervals of longer than 15ms.
+// Interrupts are blocked for about 1ms at a time.
+// Should be good for the full range of values and should take no time where 0ms is specified.
+static void inline sleepLowPowerLessThanMs(uint16_t ms) { while(ms-- > 0) { ATOMIC_BLOCK(ATOMIC_RESTORESTATE) { _sleepLowPowerLessThanMs(1); } } }
 
 // Call from setup() to turn off unused modules, set up timers and interrupts, etc.
 // I/O pin setting is not done here.

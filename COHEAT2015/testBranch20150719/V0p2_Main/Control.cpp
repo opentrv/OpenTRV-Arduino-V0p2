@@ -1947,10 +1947,16 @@ void loopOpenTRV()
     static uint8_t oldDropped;
     if(dropped != oldDropped)
       {
-      DEBUG_SERIAL_PRINT_FLASHSTRING("?DROPPED: ");
+      DEBUG_SERIAL_PRINT_FLASHSTRING("!DROPPED: ");
       DEBUG_SERIAL_PRINT(dropped);
       DEBUG_SERIAL_PRINTLN();
       oldDropped = dropped;
+      }
+    for(uint8_t lastErr; 0 != (lastErr = RFM23B.getRXErr()); )
+      {
+      DEBUG_SERIAL_PRINT_FLASHSTRING("!RXerr: ");
+      DEBUG_SERIAL_PRINT(lastErr);
+      DEBUG_SERIAL_PRINTLN();
       }
 #endif
 #if 0 && defined(DEBUG)
@@ -2204,6 +2210,7 @@ void loopOpenTRV()
         pollIO(); // Deal with any pending I/O.
         // Sleep randomly up to 128ms to spread transmissions and thus help avoid collisions.
         sleepLowPowerLessThanMs(1 + (randRNG8() & 0x7f));
+//        nap(randRNG8NextBoolean() ? WDTO_60MS : WDTO_120MS); // FIXME: need a different random interval generator!
         pollIO(); // Deal with any pending I/O.
         // Send it!
         // Try for double TX for extra robustness unless:
