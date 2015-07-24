@@ -1580,7 +1580,7 @@ void setupOpenTRV()
     }
 
 #if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("ints setup");
+  DEBUG_SERIAL_PRINTLN_FLASHSTRING("int setup");
 #endif
 
   // Do early 'wake-up' stats transmission if possible
