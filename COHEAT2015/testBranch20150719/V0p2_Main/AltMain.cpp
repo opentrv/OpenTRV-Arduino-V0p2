@@ -115,6 +115,8 @@ void POSTalt()
     //PCMSK0 = PB; PCINT  0--7    (LEARN1 and Radio)
     //PCMSK1 = PC; PCINT  8--15
     //PCMSK2 = PD; PCINT 16--24   (LEARN2 and MODE, RX)
+
+    PCICR =
 #if defined(MASK_PB) && (MASK_PB != 0) // If PB interrupts required.
         1 | // 0x1 enables PB/PCMSK0.
 #endif
