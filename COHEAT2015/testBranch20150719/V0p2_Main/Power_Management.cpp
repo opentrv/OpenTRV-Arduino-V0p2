@@ -183,7 +183,9 @@ ISR(WDT_vect)
 // Note: may be dubious to run CPU clock less than 4x 32768Hz crystal speed,
 // eg at 31250Hz for 8MHz RC clock and max prescale.
 // Don't access timer 2 regs at low CPU speed, eg in ISRs.
-__attribute__ ((noinline)) void sleepLowPowerLoopsMinCPUSpeed(uint16_t loops)
+//
+// This may only be safe to use with interrupts disabled.
+__attribute__ ((noinline)) void _sleepLowPowerLoopsMinCPUSpeed(uint16_t loops)
   {
   const clock_div_t prescale = clock_prescale_get(); // Capture current prescale value.
   clock_prescale_set(MAX_CPU_PRESCALE); // Reduce clock speed (increase prescale) as far as possible.
@@ -326,10 +328,10 @@ bool sleepUntilSubCycleTime(const uint8_t sleepUntil)
     // Deal with shortest sleep specially to avoid missing target from overheads...
     if(1 == ticksLeft)
       {
-      // Take a very short sleep, less than half a tick,
+      // Take a very short sleep, much less than half a tick,
       // eg as may be some way into this tick already.
       //burnHundredsOfCyclesProductively();
-      sleepLowPowerLessThanMs(max(SUBCYCLE_TICK_MS_RD / 2, 1)); // Assumed to be a constant expression.
+      sleepLowPowerLessThanMs(1);
       continue;
       }
 

@@ -2204,6 +2204,7 @@ void loopOpenTRV()
         pollIO(); // Deal with any pending I/O.
         // Sleep randomly up to 128ms to spread transmissions and thus help avoid collisions.
         sleepLowPowerLessThanMs(1 + (randRNG8() & 0x7f));
+//        nap(randRNG8NextBoolean() ? WDTO_60MS : WDTO_120MS); // FIXME: need a different random interval generator!
         pollIO(); // Deal with any pending I/O.
         // Send it!
         // Try for double TX for extra robustness unless:
