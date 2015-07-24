@@ -1961,9 +1961,9 @@ void loopOpenTRV()
 //  else
 //    {
 //    // Power down and clear radio state (if currently eavesdropping).
-//    StopEavesdropOnFHT8V(second0); // ***FIXME: old world
+//    StopEavesdropOnFHT8V(second0); // ***FIXME: old world!
 //    // Clear any RX state so that nothing stale is carried forward.
-//    FHT8VCallForHeatHeardGetAndClear(); // ***FIXME: old world
+//    FHT8VCallForHeatHeardGetAndClear(); // ***FIXME: old world!
 //    }
 //#endif
 #endif
