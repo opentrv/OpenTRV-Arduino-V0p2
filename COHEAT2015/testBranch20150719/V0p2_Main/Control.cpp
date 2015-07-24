@@ -1947,7 +1947,7 @@ void loopOpenTRV()
     static uint8_t oldDropped;
     if(dropped != oldDropped)
       {
-      DEBUG_SERIAL_PRINT_FLASHSTRING("?DROPPED stats: ");
+      DEBUG_SERIAL_PRINT_FLASHSTRING("?DROPPED: ");
       DEBUG_SERIAL_PRINT(dropped);
       DEBUG_SERIAL_PRINTLN();
       oldDropped = dropped;
