@@ -48,6 +48,17 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 // Link in support for alternate Power On Self-Test and main loop if required.
 #if defined(ALT_MAIN_LOOP)
 
+// Mask for Port B input change interrupts.
+#define MASK_PB_BASIC 0b00000000 // Nothing.
+#ifdef PIN_RFM_NIRQ
+  #if (PIN_RFM_NIRQ < 8) || (PIN_RFM_NIRQ > 15)
+    #error PIN_RFM_NIRQ expected to be on port B
+  #endif
+  #define RFM23B_INT_MASK (1 << (PIN_RFM_NIRQ&7))
+  #define MASK_PB (MASK_PB_BASIC | RFM23B_INT_MASK)
+#else
+  #define MASK_PB MASK_PB_BASIC
+#endif
 
 //// Mask for Port D input change interrupts.
 //#define MASK_PD_BASIC 0b00000001 // Just RX.
@@ -74,6 +85,10 @@ void POSTalt()
   if(!RFM23B.configure(1, &RFMConfig) || !RFM23B.begin()) { panic(); }
 #endif
 
+  DEBUG_SERIAL_PRINT_FLASHSTRING("MASK_PB: ");
+  DEBUG_SERIAL_PRINT(MASK_PB);
+  DEBUG_SERIAL_PRINTLN();
+
   // Force initialisation into low-power state.
   const int heat = TemperatureC16.read();
 #if 0 && defined(DEBUG)
@@ -96,22 +111,89 @@ void POSTalt()
   // Set up async edge interrupts.
   ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
     {
-    //PCICR = 0x05;
-    //PCMSK0 = 0b00000011; // PB; PCINT  0--7    (LEARN1 and Radio)
-    //PCMSK1 = 0b00000000; // PC; PCINT  8--15
-    //PCMSK2 = 0b00101001; // PD; PCINT 16--24   (LEARN2 and MODE, RX)
-//    PCICR = 0x4; // 0x4 enables PD/PCMSK2.
-//    PCMSK2 = MASK_PD; // PD; PCINT 16--24 (0b1 is PCINT16/RX)
+    //PCMSK0 = PB; PCINT  0--7    (LEARN1 and Radio)
+    //PCMSK1 = PC; PCINT  8--15
+    //PCMSK2 = PD; PCINT 16--24   (LEARN2 and MODE, RX)
+#if defined(MASK_PB) && (MASK_PB != 0) // If PB interrupts required.
+        1 | // 0x1 enables PB/PCMSK0.
+#endif
+#if defined(MASK_PC) && (MASK_PC != 0) // If PC interrupts required.
+        2 | // 0x2 enables PC/PCMSK1.
+#endif
+#if defined(MASK_PD) && (MASK_PD != 0) // If PD interrupts required.
+        4 | // 0x4 enables PD/PCMSK2.
+#endif
+        0;
+
+#if defined(MASK_PB) && (MASK_PB != 0) // If PB interrupts required.
+    PCMSK0 = MASK_PB;
+#endif
+#if defined(MASK_PC) && (MASK_PC != 0) // If PC interrupts required.
+    PCMSK1 = MASK_PC;
+#endif
+#if defined(MASK_PD) && (MASK_PD != 0) // If PD interrupts required.
+    PCMSK2 = MASK_PD;
+#endif
     }
 
 
-
   RFM23B.listen(true);
-
-
   }
 
+
 #if defined(ALT_MAIN_LOOP) // Do not define handlers here when alt main is in use.
+
+#if defined(MASK_PB) && (MASK_PB != 0) // If PB interrupts required.
+// Interrupt count.  Marked volatile so safe to read without a lock as is a single byte.
+static volatile uint8_t intCountPB;
+// Previous state of port B pins to help detect changes.
+static volatile uint8_t prevStatePB;
+// Interrupt service routine for PB I/O port transition changes.
+ISR(PCINT0_vect)
+  {
+  ++intCountPB;
+//  const uint8_t pins = PINB;
+//  const uint8_t changes = pins ^ prevStatePB;
+//  prevStatePB = pins;
+//
+//#if defined(ENABLE_VOICE_SENSOR)
+////  // Voice detection is a falling edge.
+////  // Handler routine not required/expected to 'clear' this interrupt.
+////  // FIXME: ensure that Voice.handleInterruptSimple() is inlineable to minimise ISR prologue/epilogue time and space.
+////  if((changes & VOICE_INT_MASK) && !(pins & VOICE_INT_MASK))
+//  // Voice detection is a RISING edge.
+//  // Handler routine not required/expected to 'clear' this interrupt.
+//  // FIXME: ensure that Voice.handleInterruptSimple() is inlineable to minimise ISR prologue/epilogue time and space.
+//  if((changes & VOICE_INT_MASK) && (pins & VOICE_INT_MASK))
+//    { Voice.handleInterruptSimple(); }
+//#endif
+//
+//  // TODO: MODE button and other things...
+//
+//  // If an interrupt arrived from no other masked source then wake the CLI.
+//  // The will ensure that the CLI is active, eg from RX activity,
+//  // eg it is possible to wake the CLI subsystem with an extra CR or LF.
+//  // It is OK to trigger this from other things such as button presses.
+//  // FIXME: ensure that resetCLIActiveTimer() is inlineable to minimise ISR prologue/epilogue time and space.
+//  if(!(changes & MASK_PD & ~1)) { resetCLIActiveTimer(); }
+  }
+#endif
+
+#if defined(MASK_PC) && (MASK_PC != 0) // If PB interrupts required.
+// Previous state of port C pins to help detect changes.
+static volatile uint8_t prevStatePC;
+// Interrupt service routine for PC I/O port transition changes.
+ISR(PCINT1_vect)
+  {
+//  const uint8_t pins = PINC;
+//  const uint8_t changes = pins ^ prevStatePC;
+//  prevStatePC = pins;
+//
+// ...
+  }
+#endif
+
+#if defined(MASK_PD) && (MASK_PD != 0) // If PD interrupts required.
 // Previous state of port D pins to help detect changes.
 static volatile uint8_t prevStatePD;
 // Interrupt service routine for PD I/O port transition changes (including RX).
@@ -142,6 +224,8 @@ ISR(PCINT2_vect)
 //  // FIXME: ensure that resetCLIActiveTimer() is inlineable to minimise ISR prologue/epilogue time and space.
 //  if(!(changes & MASK_PD & ~1)) { resetCLIActiveTimer(); }
   }
+#endif
+
 #endif
 
 
@@ -227,6 +311,11 @@ void loopAlt()
 
 // EXPERIMENTAL TEST OF NEW RADIO CODE
 #if 1 && defined(DEBUG)
+
+    DEBUG_SERIAL_PRINT_FLASHSTRING("ints ");
+    DEBUG_SERIAL_PRINT(intCountPB);
+    DEBUG_SERIAL_PRINTLN();
+
 //    DEBUG_SERIAL_PRINT_FLASHSTRING("listening to channel: ");
 //    DEBUG_SERIAL_PRINT(RFM23B.getListenChannel());
 //    DEBUG_SERIAL_PRINTLN();
