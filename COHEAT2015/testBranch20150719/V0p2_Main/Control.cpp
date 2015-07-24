@@ -1537,7 +1537,7 @@ static uint_fast8_t TIME_LSD; // Controller's notion of seconds within major cyc
 
 void setupOpenTRV()
   {
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("Entering setup...");
 #endif
 
@@ -1545,7 +1545,7 @@ void setupOpenTRV()
   // Ignore any initial spurious RX interrupts for example.
   RFM23B.listen(false);
 
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("RFM23B.listen(false);");
 #endif
 
@@ -1579,7 +1579,7 @@ void setupOpenTRV()
 #endif
     }
 
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("ints setup");
 #endif
 
@@ -1593,13 +1593,13 @@ void setupOpenTRV()
   do
     {
     nap(WDTO_120MS); // Sleep long enough for receiver to have a chance to process previous TX.
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING(" TX...");
 #endif
     bareStatsTX(false, true, false);
     } while(ss1.changedValue());
 
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("setup stats sent");
 #endif
 
@@ -1617,7 +1617,7 @@ void setupOpenTRV()
   if(0 != (ID0 & 0x20)) { minuteCount = randRNG8() | 2; } // Start at minute 2 or 3 out of 4 for some units.
 #endif
 
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("Finishng setup...");
 #endif
 
@@ -1707,7 +1707,7 @@ ISR(PCINT2_vect)
 // Note: exiting and re-entering can take a little while, handling Arduino background tasks such as serial.
 void loopOpenTRV()
   {
-#if 1 && defined(DEBUG) // Indicate loop start.
+#if 0 && defined(DEBUG) // Indicate loop start.
   DEBUG_SERIAL_PRINT('L');
   DEBUG_SERIAL_PRINT(TIME_LSD);
   DEBUG_SERIAL_PRINTLN();
@@ -1964,9 +1964,9 @@ void loopOpenTRV()
 //  else
 //    {
 //    // Power down and clear radio state (if currently eavesdropping).
-//    StopEavesdropOnFHT8V(second0); // ***FIXME: old world!
+//    StopEavesdropOnFHT8V(second0); // ***FIXME: old world
 //    // Clear any RX state so that nothing stale is carried forward.
-//    FHT8VCallForHeatHeardGetAndClear(); // ***FIXME: old world!
+//    FHT8VCallForHeatHeardGetAndClear(); // ***FIXME: old world
 //    }
 //#endif
 #endif
@@ -2044,7 +2044,7 @@ void loopOpenTRV()
 
     }
   TIME_LSD = newTLSD;
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("*S"); // Start-of-cycle wake.
 #endif
 
