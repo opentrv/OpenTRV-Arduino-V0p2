@@ -61,24 +61,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 #endif
 
 
-
-// Mask for Port B input change interrupts.
-#define MASK_PB_BASIC 0b00000000 // Nothing.
-
-#ifdef PIN_RFM_NIRQ
-
-#if (PIN_RFM_NIRQ < 8) || (PIN_RFM_NIRQ > 15)
-#error PIN_RFM_NIRQ expected to be on port B
-#endif
-#define RFM23B_INT_MASK (1 << (PIN_RFM_NIRQ&7))
-#define MASK_PB (MASK_PB_BASIC | RFM23B_INT_MASK)
-
-#else
-
-#define MASK_PB MASK_PB_BASIC
-
-#endif
-
 //// Mask for Port D input change interrupts.
 //#define MASK_PD_BASIC 0b00000001 // Just RX.
 //#if defined(ENABLE_VOICE_SENSOR)
@@ -245,9 +227,7 @@ ISR(PCINT2_vect)
   }
 #endif
 
-#endif
-
-#endif
+#endif // ALT_MAIN
 
 
 
