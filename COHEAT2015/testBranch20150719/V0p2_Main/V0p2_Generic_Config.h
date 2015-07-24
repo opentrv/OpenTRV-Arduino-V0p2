@@ -394,6 +394,15 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #endif
 #endif
 
+
+
+// If (potentially) needing to run in some sort of continuous RX mode, define a flag true (else false).
+#if defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX)
+#define CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX true
+#else
+#define CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX false
+#endif
+
 // By default, use the RFM22/RFM23 module to talk to an FHT8V wireless radiator valve.
 #ifdef USE_MODULE_FHT8VSIMPLE
 #define USE_MODULE_RFM22RADIOSIMPLE

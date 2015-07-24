@@ -147,14 +147,14 @@ void POSTalt()
 #if defined(ALT_MAIN_LOOP) // Do not define handlers here when alt main is in use.
 
 #if defined(MASK_PB) && (MASK_PB != 0) // If PB interrupts required.
-// Interrupt count.  Marked volatile so safe to read without a lock as is a single byte.
-static volatile uint8_t intCountPB;
+//// Interrupt count.  Marked volatile so safe to read without a lock as is a single byte.
+//static volatile uint8_t intCountPB;
 // Previous state of port B pins to help detect changes.
 static volatile uint8_t prevStatePB;
 // Interrupt service routine for PB I/O port transition changes.
 ISR(PCINT0_vect)
   {
-  ++intCountPB;
+//  ++intCountPB;
 //  const uint8_t pins = PINB;
 //  const uint8_t changes = pins ^ prevStatePB;
 //  prevStatePB = pins;
@@ -262,9 +262,29 @@ void loopAlt()
   uint_fast8_t newTLSD;
   while(TIME_LSD == (newTLSD = getSecondsLT()))
     {
-    nap(WDTO_15MS, true);
-//    sleepUntilInt(); // Normal long minimal-power sleep until wake-up interrupt.
+
+// If missing h/w interrupts for anything that needs rapid response
+// then AVOID the lowest-power long sleep.
+#if CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX && !defined(PIN_RFM_NIRQ)
+#define MUST_POLL_FREQUENTLY true
+#else
+#define MUST_POLL_FREQUENTLY false
+#endif
+    if(MUST_POLL_FREQUENTLY /** && in hub mode */ )
+      {
+      // No h/w interrupt wakeup on receipt of frame,
+      // so can only sleep for a short time between explicit poll()s,
+      // though allow wake on interrupt anyway to minimise loop timing jitter.
+      nap(WDTO_15MS, true);
+      }
+    else
+      {
+      // Normal long minimal-power sleep until wake-up interrupt.
+      // Rely on interrupt to force fall through to I/O poll() below.
+      sleepUntilInt();
+      }
 //    DEBUG_SERIAL_PRINTLN_FLASHSTRING("w"); // Wakeup.
+
     RFM23B.poll();
     while(0 != RFM23B.getRXMsgsQueued())
       {
@@ -315,9 +335,9 @@ void loopAlt()
 // EXPERIMENTAL TEST OF NEW RADIO CODE
 #if 1 && defined(DEBUG)
 
-    DEBUG_SERIAL_PRINT_FLASHSTRING("ints ");
-    DEBUG_SERIAL_PRINT(intCountPB);
-    DEBUG_SERIAL_PRINTLN();
+//    DEBUG_SERIAL_PRINT_FLASHSTRING("ints ");
+//    DEBUG_SERIAL_PRINT(intCountPB);
+//    DEBUG_SERIAL_PRINTLN();
 
 //    DEBUG_SERIAL_PRINT_FLASHSTRING("listening to channel: ");
 //    DEBUG_SERIAL_PRINT(RFM23B.getListenChannel());
