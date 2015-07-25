@@ -1998,8 +1998,12 @@ void loopOpenTRV()
     // before sleep and on wakeup in case some IO needs further processing now,
     // eg work was accrued during the previous major slow/outer loop
     // or the in a previous orbit of this loop sleep or nap was terminated by an I/O interrupt.
+<<<<<<< HEAD
     // Come back and have another go if work was done, until the next tick at most.
     if(handleQueuedMessages(&Serial, true, &RFM23B)) { continue; }
+=======
+    handleQueuedMessages(&Serial, true, &RFM23B);
+>>>>>>> refs/remotes/origin/master
 
 //#if defined(USE_MODULE_RFM22RADIOSIMPLE) // Force radio to power-saving standby state if appropriate.
 //    // Force radio to known-low-power state from time to time (not every time to avoid unnecessary SPI work, LED flicker, etc.)

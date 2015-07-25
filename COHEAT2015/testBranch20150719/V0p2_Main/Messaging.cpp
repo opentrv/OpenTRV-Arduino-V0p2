@@ -1031,6 +1031,7 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uin
 // typically the Serial output (which must be running if so).
 // This will attempt to process messages in such a way
 // as to avoid internal overflows or other resource exhaustion.
+<<<<<<< HEAD
 bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadioLink *rl)
   {
   bool workDone = false;
@@ -1055,5 +1056,27 @@ bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadi
   // Turn off serial at end, if this routine woke it.
   if(neededWaking) { flushSerialProductive(); powerDownSerial(); }
   return(workDone);
+=======
+void handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadioLink *rl)
+  {
+  bool neededWaking = false; // Set true once this routine wakes Serial.
+
+  // Deal with any I/O that is queued.
+  pollIO(true);
+
+  // Check for activity on the radio link.
+  rl->poll();
+  if(0 != rl->getRXMsgsQueued())
+    {
+    if(!neededWaking && wakeSerialIfNeeded && powerUpSerialIfDisabled()) { neededWaking = true; }
+    uint8_t buf[64]; // FIXME: get correct size of buffer. // FIXME: move this large stack burden elsewhere?
+    const uint8_t msglen = rl->getRXMsg(buf, sizeof(buf));
+    // Don't currently regard anything arriving over the air as 'secure'.
+    decodeAndHandleRawRXedMessage(p, false, buf, msglen);
+    }
+
+  // Turn off serial at end, if this routine woke it.
+  if(neededWaking) { flushSerialProductive(); powerDownSerial(); }
+>>>>>>> refs/remotes/origin/master
   }
 
