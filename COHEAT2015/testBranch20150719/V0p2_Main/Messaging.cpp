@@ -1006,3 +1006,23 @@ uint8_t SimpleStatsRotationBase::writeJSON(uint8_t *const buf, const uint8_t buf
   return(bp.getSize()); // Success!
   }
 #endif
+
+
+
+// Decode and handle inbound raw message.
+// A message may contain trailing garbage at the end; the decoder/router should cope.
+// The buffer may be reused when this returns,
+// so a copy should be taken of anything that needs to be retained.
+// If secure is true then this message arrived over a secure channel.
+// Can cause I/O, eg in particular writes to Serial,
+// so should be called only where that will not intefere with other output.
+void decodeAndHandleRawMessage(const bool secure, const uint8_t * const msg, const uint8_t msglen)
+  {
+#if 1 && defined(DEBUG)
+  const bool neededWaking = powerUpSerialIfDisabled();
+  OTRadioLink::dumpRXMsg(msg, msglen);
+  Serial.flush();
+  if(neededWaking) { powerDownSerial(); }
+#endif
+  }
+

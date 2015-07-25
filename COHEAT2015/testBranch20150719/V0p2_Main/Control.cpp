@@ -1307,8 +1307,10 @@ void populateCoreStats(FullStatsMessageCore_t *const content)
 // Call this to do an I/O poll if needed; returns true if something useful happened.
 // This call should typically take << 1ms at 1MHz CPU.
 // Does not change CPU clock speeds, mess with interrupts (other than possible brief blocking), or sleep.
-// Limits actual poll rate to something like once every 32ms, unless force is true.
+// Should also does nothing that interacts with Serial.
+// Limits actual poll rate to something like once every 8ms, unless force is true.
 //   * force if true then force full poll on every call (ie do not internally rate-limit)
+// Not thread-safe, eg not to be called from within an ISR.
 bool pollIO(const bool force)
   {
 //#if defined(ENABLE_BOILER_HUB) && defined(USE_MODULE_FHT8VSIMPLE)
@@ -1316,15 +1318,13 @@ bool pollIO(const bool force)
 //    {
     static volatile uint8_t _pO_lastPoll;
 
-    // Poll RX at most about every ~32ms to help approx match spil rate when called in loop with 30ms nap.
+    // Poll RX at most about every ~8ms to help approx match spil rate when called in loop with 30ms nap.
     const uint8_t sct = getSubCycleTime();
-    if(force || ((0 == (sct & 3)) && (sct != _pO_lastPoll)))
+    if(force || (sct != _pO_lastPoll))
       {
       _pO_lastPoll = sct;
-//      if(FHT8VCallForHeatPoll()) // Check if call-for-heat has been overheard. // FIXME: old world
-//        { return(true); }
+      // Poll for inbound frames.
       RFM23B.poll();
-      // TODO: further processing of received message(s)...
       }
 //    }
 //#endif
@@ -1967,13 +1967,6 @@ void loopOpenTRV()
     DEBUG_SERIAL_PRINTLN_FLASHSTRING("m");
 #endif
     }
-//  else
-//    {
-//    // Power down and clear radio state (if currently eavesdropping).
-//    StopEavesdropOnFHT8V(second0); // ***FIXME: old world
-//    // Clear any RX state so that nothing stale is carried forward.
-//    FHT8VCallForHeatHeardGetAndClear(); // ***FIXME: old world
-//    }
 //#endif
 #endif
 
@@ -2000,16 +1993,23 @@ void loopOpenTRV()
   uint_fast8_t newTLSD;
   while(TIME_LSD == (newTLSD = getSecondsLT()))
     {
-//    nap15AndPoll(); // New world assuming that RX is required.
-//#if defined(ENABLE_BOILER_HUB) && defined(USE_MODULE_FHT8VSIMPLE) // Deal with FHT8V eavesdropping if needed.
-//    // Poll for RX of remote calls-for-heat if needed.
-//    if(needsToEavesdrop) { nap30AndPoll(); continue; }
-//#endif
+    // Poll on before sleep and on wakeup in case some IO needs further processing now,
+    // eg work was accrued during the previous major slow/outer loop
+    // or the in a previous orbit of this loop sleep or nap was terminated by an I/O interrupt.
+    pollIO(true);
+    // Process any inbound messages queued ASAP, in this otherwise idle time.
+    while(0 != RFM23B.getRXMsgsQueued())
+      {
+      uint8_t buf[RFM23B.MaxRXMsgLen]; // FIXME: move this large stack burden elsewhere?
+      const uint8_t msglen = RFM23B.getRXMsg(buf, sizeof(buf));
+      // Don't currently regard arriving anything over the air as 'secure'.
+      decodeAndHandleRawMessage(false, buf, msglen);
+      }
+
 //#if defined(USE_MODULE_RFM22RADIOSIMPLE) // Force radio to power-saving standby state if appropriate.
 //    // Force radio to known-low-power state from time to time (not every time to avoid unnecessary SPI work, LED flicker, etc.)
 //    if(batteryLow || second0) { RFM22ModeStandbyAndClearState(); } // FIXME: old world
 //#endif
-//    sleepUntilInt(); // Normal long minimal-power sleep until wake-up interrupt.
 
 // If missing h/w interrupts for anything that needs rapid response
 // then AVOID the lowest-power long sleep.
@@ -2021,33 +2021,19 @@ void loopOpenTRV()
     if(false)
 #endif
       {
-      // No h/w interrupt wakeup on receipt of frame,
-      // so can only sleep for a short time between explicit poll()s,
-      // though allow wake on interrupt anyway to minimise loop timing jitter.
+      // If there is not hardware interrupt wakeup on receipt of a frame,
+      // then this can only sleep for a short time between explicit poll()s,
+      // though in any case allow wake on interrupt to minimise loop timing jitter
+      // when the slow RTC 'end of sleep' tick arrives.
       nap(WDTO_15MS, true);
       }
     else
       {
       // Normal long minimal-power sleep until wake-up interrupt.
-      // Rely on interrupt to force fall through to I/O poll() below.
+      // Rely on interrupt to force quick loop round to I/O poll().
       sleepUntilInt();
       }
-    // Poll on wakeup in case some IO needs further processing now,
-    // eg the above sleep or nap was terminated by an I/O interrupt.
-    pollIO(true);
 //    DEBUG_SERIAL_PRINTLN_FLASHSTRING("w"); // Wakeup.
-
-    // FIXME: disperse this elsewhere...
-    while(0 != RFM23B.getRXMsgsQueued())
-      {
-      uint8_t buf[65];
-      const uint8_t msglen = RFM23B.getRXMsg(buf, sizeof(buf));
-      const bool neededWaking = powerUpSerialIfDisabled();
-      OTRadioLink::dumpRXMsg(buf, msglen);
-      Serial.flush();
-      if(neededWaking) { powerDownSerial(); }
-      }
-
     }
   TIME_LSD = newTLSD;
 #if 0 && defined(DEBUG)

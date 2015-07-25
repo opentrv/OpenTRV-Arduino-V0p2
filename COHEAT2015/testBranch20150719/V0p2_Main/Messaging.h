@@ -668,6 +668,8 @@ void getLastJSONStats(char *buf);
 // The buffer may be reused when this returns,
 // so a copy should be taken of anything that needs to be retained.
 // If secure is true then this message arrived over a secure channel.
+// Can cause I/O, eg in particular writes to Serial,
+// so should be called only where that will not intefere with other output.
 void decodeAndHandleRawMessage(bool secure, const uint8_t *msg, uint8_t msglen);
 
 #endif
