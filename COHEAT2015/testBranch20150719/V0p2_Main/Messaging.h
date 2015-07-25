@@ -343,21 +343,6 @@ static inline char hexDigit(const uint8_t value) { const uint8_t v = 0xf&value; 
 // Eg, passing in a value 0x4e sets buf[0] to '4' and buf[1] to 'e'.
 static inline void hexDigits(const uint8_t value, char * const buf) { buf[0] = hexDigit(value>>4); buf[1] = hexDigit(value); }
 
-
-//// Write a simple raw (unencrypted) JSON message in one pass directly
-//// using sprintf formatting into a MSG_JSON_MAX_LENGTH+1 buffer.
-//// Caller must take care of all syntax, escaping issues, etc.
-//// This message is expected to be one object wrapped in '{' and '}'
-//// and containing only ASCII printable characters in the range [32,126].
-//// Returns length of formatted message excluding trailing \0,
-//// else a negative value in case of any error such as an overrun.
-//// See: http://playground.arduino.cc/Main/Printf
-//#ifdef F // check to see if F() macro is available
-//int8_t sprintfRawSimpleJSONMessage(char *buf, const __FlashStringHelper *format, ...);
-//#else
-//int8_t sprintfRawSimpleJSONMessage(char *buf, const char *format, ...);
-//#endif
-
 // Returns true unless the buffer clearly does not contain a possible valid raw JSON message.
 // This message is expected to be one object wrapped in '{' and '}'
 // and containing only ASCII printable/non-control characters in the range [32,126].
