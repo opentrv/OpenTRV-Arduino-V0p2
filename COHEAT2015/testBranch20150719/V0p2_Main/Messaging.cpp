@@ -608,7 +608,7 @@ uint8_t adjustJSONMsgForTXAndComputeCRC(char * const bptr)
 // Only intended as a transitional measure!
 //#define ALLOW_RAW_JSON_RX
 
-// Extract/adjust raw RXed putative JSON message up to MSG_JSON_MAX_LENGTH chars.
+// Extract/adjust raw RXed putative JSON message up to MSG_JSON_ABS_MAX_LENGTH chars.
 // Returns length including bounding '{' and '}' iff message superficially valid
 // (essentially as checked by quickValidateRawSimpleJSONMessage() for an in-memory message)
 // and that the CRC matches as computed by adjustJSONMsgForTXAndComputeCRC(),
@@ -628,7 +628,7 @@ int8_t adjustJSONMsgForRXAndCheckCRC(char * const bptr, const uint8_t bufLen)
 #endif
   uint8_t crc = '{';
   // Scan up to maximum length for terminating '}'-with-high-bit.
-  const uint8_t ml = min(MSG_JSON_MAX_LENGTH, bufLen);
+  const uint8_t ml = min(MSG_JSON_ABS_MAX_LENGTH, bufLen);
   char *p = bptr + 1;
   for(int i = 1; i < ml; ++i)
     {
@@ -1016,11 +1016,25 @@ uint8_t SimpleStatsRotationBase::writeJSON(uint8_t *const buf, const uint8_t buf
 // If secure is true then this message arrived over a secure channel.
 // This will write any output to the supplied Print object,
 // typically the Serial output (which must be running if so).
-static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uint8_t * const msg, const uint8_t msglen)
+// This routine is allowed to alter the contents of the buffer passed
+// to help avoid extra copies, etc.
+static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, uint8_t * const msg, const uint8_t msglen)
   {
 #if 1 && defined(DEBUG)
   OTRadioLink::printRXMsg(p, msg, msglen);
 #endif
+  if(msglen < 2) { return; } // Too short to be useful, so ignore.
+  switch(msg[0])
+    {
+    case OTRADIOLINK_V0P2_FRAME_TYPE_JSON_RAW:
+      {
+      if(-1 != adjustJSONMsgForRXAndCheckCRC((char *)msg, msglen))
+        { recordJSONStats(secure, (const char *)msg); }
+      break;
+      }
+
+    // TODO
+    }
   }
 
 // Incrementally process I/O and queued messages, including from the radio link.

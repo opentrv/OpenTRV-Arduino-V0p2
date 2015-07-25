@@ -664,7 +664,6 @@ void getLastJSONStats(char *buf);
 #endif
 
 // Incrementally process I/O and queued messages, including from the radio link.
-<<<<<<< HEAD
 // Returns true if some work was done.
 // This may mean printing them to Serial (which the passed Print object usually is),
 // or adjusting system parameters,
@@ -674,16 +673,6 @@ void getLastJSONStats(char *buf);
 // This will attempt to process messages in such a way
 // as to avoid internal overflows or other resource exhaustion.
 bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadioLink *rl);
-=======
-// This may mean printing them to Serial (which the passed Print object usually is),
-// or adjusting system parameters,
-// or relaying them elsewhere, for example.
-// This will write any output to the supplied Print object,
-// typically the Serial output (which must be running if so).
-// This will attempt to process messages in such a way
-// as to avoid internal overflows or other resource exhaustion.
-void handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadioLink *rl);
->>>>>>> refs/remotes/origin/master
 
 #endif
 

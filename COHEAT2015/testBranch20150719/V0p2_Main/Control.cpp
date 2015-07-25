@@ -1342,8 +1342,6 @@ static SimpleStatsRotation<8> ss1; // Configured for maximum different stats.
 // Output should be filtered for items appropriate
 // to current channel security and sensitivity level.
 // This may be binary or JSON format.
-//   * resumeRX  if true and unit capable of running in hub/RX mode,
-//       the unit will resume RX after sending the stats
 //   * allowDoubleTX  allow double TX to increase chance of successful reception
 //   * doBinary  send binary form, else JSON form if supported
 static void bareStatsTX(const bool allowDoubleTX, const bool doBinary)
@@ -1394,7 +1392,6 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
     int8_t wrote;
 
     // Managed JSON stats.
-//    static SimpleStatsRotation<8> ss1; // Configured for maximum different stats.
     const bool maximise = true; // Make best use of available bandwidth...
     if(ss1.isEmpty())
       {
