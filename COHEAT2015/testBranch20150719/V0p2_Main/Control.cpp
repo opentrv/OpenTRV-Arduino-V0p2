@@ -1352,7 +1352,7 @@ static void bareStatsTX(const bool allowDoubleTX, const bool doBinary)
 #if (MSG_JSON_MAX_LENGTH+1 > STATS_MSG_MAX_LEN) // Allow 1 for trailing CRC.
 #error MSG_JSON_MAX_LENGTH too big
 #endif
-  
+
   // Allow space in buffer for:
   //   * buffer offset/preamble
   //   * max binary length, or max JSON length + 1 for CRC + 1 to allow detection of oversize message
