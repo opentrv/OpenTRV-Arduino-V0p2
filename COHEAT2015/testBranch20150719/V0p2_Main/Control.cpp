@@ -1376,10 +1376,11 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 #endif
       return;
       }
-    // Record stats as if remote, and treat channel as secure.
-    recordCoreStats(true, &content);
     // Send it!
     RFM22RawStatsTX(true, buf, allowDoubleTX);
+    // Record stats as if remote, and treat channel as secure.
+    recordCoreStats(true, &content);
+    handleQueuedMessages(&Serial, true, &RFM23B);
     }
 
 #if defined(ALLOW_JSON_OUTPUT)
@@ -1432,8 +1433,6 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
       return;
       }
 
-    // Record stats as if local, and treat channel as secure.
-    recordJSONStats(true, (const char *)bptr);
 #if 0 || !defined(ENABLE_BOILER_HUB) && defined(DEBUG)
     DEBUG_SERIAL_PRINT((const char *)bptr);
     DEBUG_SERIAL_PRINTLN();
@@ -1461,6 +1460,9 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
     // TODO: put in listen before TX to reduce collisions (CSMA).
     // Send it!
     RFM22RawStatsTX(false, buf, allowDoubleTX);
+    // Record stats as if local, and treat channel as secure.
+    recordJSONStats(true, (const char *)bptr);
+    handleQueuedMessages(&Serial, true, &RFM23B);
     }
 
 #endif // defined(ALLOW_JSON_OUTPUT)
@@ -1940,21 +1942,19 @@ void loopOpenTRV()
 //#if defined(USE_MODULE_FHT8VSIMPLE)
   if(needsToEavesdrop)
     {
-    // Ensure radio is in RX mode rather than standby, and possibly hook up interrupts if available (REV1 board).
-//    const bool startedRX = SetupToEavesdropOnFHT8V(second0); // Start listening (if not already so). // ***FIXME: old world
 #if 1 && defined(DEBUG)
     const uint8_t dropped = RFM23B.getRXMsgsDroppedRecent();
     static uint8_t oldDropped;
     if(dropped != oldDropped)
       {
-      DEBUG_SERIAL_PRINT_FLASHSTRING("?DROPPED: ");
+      DEBUG_SERIAL_PRINT_FLASHSTRING("?RX DROPPED: ");
       DEBUG_SERIAL_PRINT(dropped);
       DEBUG_SERIAL_PRINTLN();
       oldDropped = dropped;
       }
     for(uint8_t lastErr; 0 != (lastErr = RFM23B.getRXErr()); )
       {
-      DEBUG_SERIAL_PRINT_FLASHSTRING("!RXerr: ");
+      DEBUG_SERIAL_PRINT_FLASHSTRING("!RX err: ");
       DEBUG_SERIAL_PRINT(lastErr);
       DEBUG_SERIAL_PRINTLN();
       }
@@ -1986,25 +1986,18 @@ void loopOpenTRV()
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("*E"); // End-of-cycle sleep.
 #endif
-  // Ensure that serial I/O is off.
+  // Ensure that serial I/O is off while sleeping, by default.
   powerDownSerial();
   // Power down most stuff (except radio for hub RX).
   minimisePowerWithoutSleep();
   uint_fast8_t newTLSD;
   while(TIME_LSD == (newTLSD = getSecondsLT()))
     {
-    // Poll on before sleep and on wakeup in case some IO needs further processing now,
+    // Poll I/O and process message incrementally (in this otherwise idle time)
+    // before sleep and on wakeup in case some IO needs further processing now,
     // eg work was accrued during the previous major slow/outer loop
     // or the in a previous orbit of this loop sleep or nap was terminated by an I/O interrupt.
-    pollIO(true);
-    // Process any inbound messages queued ASAP, in this otherwise idle time.
-    while(0 != RFM23B.getRXMsgsQueued())
-      {
-      uint8_t buf[RFM23B.MaxRXMsgLen]; // FIXME: move this large stack burden elsewhere?
-      const uint8_t msglen = RFM23B.getRXMsg(buf, sizeof(buf));
-      // Don't currently regard arriving anything over the air as 'secure'.
-      decodeAndHandleRawMessage(false, buf, msglen);
-      }
+    handleQueuedMessages(&Serial, true, &RFM23B);
 
 //#if defined(USE_MODULE_RFM22RADIOSIMPLE) // Force radio to power-saving standby state if appropriate.
 //    // Force radio to known-low-power state from time to time (not every time to avoid unnecessary SPI work, LED flicker, etc.)

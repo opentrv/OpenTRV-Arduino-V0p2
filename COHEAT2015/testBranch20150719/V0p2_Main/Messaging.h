@@ -663,14 +663,15 @@ void getLastJSONStats(char *buf);
 #define getLastJSONStats(buf) {*(buf) = '\0';} // Nothing to receive.
 #endif
 
-// Decode and handle inbound raw message.
-// A message may contain trailing garbage at the end; the decoder/router should cope.
-// The buffer may be reused when this returns,
-// so a copy should be taken of anything that needs to be retained.
-// If secure is true then this message arrived over a secure channel.
-// Can cause I/O, eg in particular writes to Serial,
-// so should be called only where that will not intefere with other output.
-void decodeAndHandleRawMessage(bool secure, const uint8_t *msg, uint8_t msglen);
+// Incrementally process I/O and queued messages, including from the radio link.
+// This may mean printing them to Serial (which the passed Print object usually is),
+// or adjusting system parameters,
+// or relaying them elsewhere, for example.
+// This will write any output to the supplied Print object,
+// typically the Serial output (which must be running if so).
+// This will attempt to process messages in such a way
+// as to avoid internal overflows or other resource exhaustion.
+void handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadioLink *rl);
 
 #endif
 

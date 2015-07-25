@@ -1014,15 +1014,42 @@ uint8_t SimpleStatsRotationBase::writeJSON(uint8_t *const buf, const uint8_t buf
 // The buffer may be reused when this returns,
 // so a copy should be taken of anything that needs to be retained.
 // If secure is true then this message arrived over a secure channel.
-// Can cause I/O, eg in particular writes to Serial,
-// so should be called only where that will not intefere with other output.
-void decodeAndHandleRawMessage(const bool secure, const uint8_t * const msg, const uint8_t msglen)
+// This will write any output to the supplied Print object,
+// typically the Serial output (which must be running if so).
+static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uint8_t * const msg, const uint8_t msglen)
   {
 #if 1 && defined(DEBUG)
-  const bool neededWaking = powerUpSerialIfDisabled();
-  OTRadioLink::dumpRXMsg(msg, msglen);
-  Serial.flush();
-  if(neededWaking) { powerDownSerial(); }
+  OTRadioLink::printRXMsg(p, msg, msglen);
 #endif
+  }
+
+// Incrementally process I/O and queued messages, including from the radio link.
+// This may mean printing them to Serial (which the passed Print object usually is),
+// or adjusting system parameters,
+// or relaying them elsewhere, for example.
+// This will write any output to the supplied Print object,
+// typically the Serial output (which must be running if so).
+// This will attempt to process messages in such a way
+// as to avoid internal overflows or other resource exhaustion.
+void handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadioLink *rl)
+  {
+  bool neededWaking = false; // Set true once this routine wakes Serial.
+
+  // Deal with any I/O that is queued.
+  pollIO(true);
+
+  // Check for activity on the radio link.
+  rl->poll();
+  if(0 != rl->getRXMsgsQueued())
+    {
+    if(!neededWaking && wakeSerialIfNeeded && powerUpSerialIfDisabled()) { neededWaking = true; }
+    uint8_t buf[64]; // FIXME: get correct size of buffer. // FIXME: move this large stack burden elsewhere?
+    const uint8_t msglen = rl->getRXMsg(buf, sizeof(buf));
+    // Don't currently regard anything arriving over the air as 'secure'.
+    decodeAndHandleRawRXedMessage(p, false, buf, msglen);
+    }
+
+  // Turn off serial at end, if this routine woke it.
+  if(neededWaking) { flushSerialProductive(); powerDownSerial(); }
   }
 
