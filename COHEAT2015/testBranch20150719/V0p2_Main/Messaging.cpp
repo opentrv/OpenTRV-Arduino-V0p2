@@ -1020,6 +1020,7 @@ uint8_t SimpleStatsRotationBase::writeJSON(uint8_t *const buf, const uint8_t buf
 // to help avoid extra copies, etc.
 static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, uint8_t * const msg, const uint8_t msglen)
   {
+  // TODO: consider extracting hash of all message data (good/bad) and injecting into entropy pool.
 #if 0 && defined(DEBUG)
   OTRadioLink::printRXMsg(p, msg, msglen);
 #endif
@@ -1029,9 +1030,116 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, uint8_t *
     default:
     case OTRadioLink::FTp2_NONE:
       {
-#if 1 && defined(DEBUG)
-      OTRadioLink::printRXMsg(p, msg, min(msglen, 8));
+#if 0 && defined(DEBUG)
+      p->print(F("!RX bad msg ")); OTRadioLink::printRXMsg(p, msg, min(msglen, 8));
 #endif
+      return;
+      }
+
+    // TODO: verify that this is actually working!
+    case OTRadioLink::FTp2_FullStatsIDL: case OTRadioLink::FTp2_FullStatsIDH:
+      {
+      // May be binary stats frame, so attempt to decode...
+      FullStatsMessageCore_t content;
+      // (TODO: should reject non-secure messages when expecting secure ones...)
+      const uint8_t *msg = decodeFullStatsMessageCore(msg, msglen, stTXalwaysAll, false, &content);
+      if(NULL != msg)
+         {
+         if(content.containsID)
+           {
+#if 0 && defined(DEBUG)
+           DEBUG_SERIAL_PRINT_FLASHSTRING("Stats HC ");
+           DEBUG_SERIAL_PRINTFMT(content.id0, HEX);
+           DEBUG_SERIAL_PRINT(' ');
+           DEBUG_SERIAL_PRINTFMT(content.id1, HEX);
+           DEBUG_SERIAL_PRINTLN();
+#endif
+           recordCoreStats(false, &content);
+           }
+         }
+      return;
+      }
+
+    case OTRadioLink::FTp2_FS20_native:
+      {
+      fht8v_msg_t command;
+      uint8_t const *lastByte = msg+msglen-1;
+      uint8_t const *trailer = FHT8VDecodeBitStream(msg, lastByte, &command);
+      if(NULL != trailer)
+        {
+#if 0 && defined(DEBUG)
+p->print("FS20 msg HC "); p->print(command.hc1); p->print(' '); p->println(command.hc2);
+#endif
+#if defined(ALLOW_STATS_RX) // Only look for the trailer if supported.
+        // If whole FHT8V frame was OK then check if there is a valid stats trailer.
+  
+        // Check for 'core' stats trailer.
+        if((trailer + FullStatsMessageCore_MAX_BYTES_ON_WIRE <= lastByte) && // Enough space for minimum-stats trailer.
+           (MESSAGING_FULL_STATS_FLAGS_HEADER_MSBS == (trailer[0] & MESSAGING_FULL_STATS_FLAGS_HEADER_MASK)))
+          {
+          FullStatsMessageCore_t content;
+          const uint8_t *tail = decodeFullStatsMessageCore(trailer, lastByte-trailer+1, stTXalwaysAll, false, &content);
+          if(NULL != tail)
+            {
+            // Received trailing stats frame!
+  
+            // If ID is present then make sure it matches that implied by the FHT8V frame (else reject this trailer)
+            // else file it in from the FHT8C frame.
+            bool allGood = true;
+            if(content.containsID)
+              {
+              if((content.id0 != command.hc1) || (content.id1 != command.hc2))
+                { allGood = false; }
+              }
+            else
+              {
+              content.id0 = command.hc1;
+              content.id1 = command.hc2;
+              content.containsID = true;
+              }
+  
+            // If frame looks good then capture it.
+            if(allGood) { recordCoreStats(false, &content); }
+//            else { setLastRXErr(FHT8VRXErr_BAD_RX_SUBFRAME); }
+            // TODO: record error with mismatched ID.
+            }
+          }
+#if defined(ALLOW_MINIMAL_STATS_TXRX)
+        // Check for minimum stats trailer.
+        else if((trailer + MESSAGING_TRAILING_MINIMAL_STATS_PAYLOAD_BYTES <= lastByte) && // Enough space for minimum-stats trailer.
+           (MESSAGING_TRAILING_MINIMAL_STATS_HEADER_MSBS == (trailer[0] & MESSAGING_TRAILING_MINIMAL_STATS_HEADER_MASK)))
+          {
+          if(verifyHeaderAndCRCForTrailingMinimalStatsPayload(trailer)) // Valid header and CRC.
+            {
+            trailingMinimalStatsPayload_t payload;
+            extractTrailingMinimalStatsPayload(trailer, &payload);
+            recordMinimalStats(true, command.hc1, command.hc2, &payload); // Record stats; local loopback is secure.
+            }
+          }
+#endif
+#endif
+
+#if defined(ENABLE_BOILER_HUB)
+        // Potentially accept as call for heat only if command is 0x26 (38)
+        // and the valve is open enough for some water flow to be likely
+        // and the housecode is accepted.
+        if(0x26 == command.command)
+          {
+          // Initial fix for TODO-520: Bad comparison screening incoming calls for heat at boiler hub.
+//          const uint8_t mvro = NominalRadValve.getMinValvePcReallyOpen();
+          if(command.extension > 0) // FIXME: quick hack: filter properly by % and HC.
+//          if((command.extension > (mvro << 1)) && // Quick approximation as filter with some false positives.
+//             (command.extension >= ((255 * (int)mvro) / 100)) && // More accurate test, but slow.
+//             (FHT8VHubAcceptedHouseCode(command.hc1, command.hc2))) // Accept if house code not filtered out.
+            {
+            const uint16_t compoundHC = (command.hc1 << 8) | command.hc2;
+//            ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
+//              { lastCallForHeatHC = compoundHC; } // Update atomically.
+p->println("!RCfh dropped"); // FIXME!  Deliver to main control routine.
+            }
+          }
+#endif
+        }
       return;
       }
 

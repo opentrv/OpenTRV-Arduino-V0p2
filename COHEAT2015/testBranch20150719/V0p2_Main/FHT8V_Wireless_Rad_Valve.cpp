@@ -993,7 +993,7 @@ static uint8_t readOneByteWithParity(decode_state_t *const state)
   }
 
 // Decode raw bitstream into non-null command structure passed in; returns true if successful.
-// Will return true if OK, else false if anything obviously invalid is detected such as failing parity or checksum.
+// Will return non-null if OK, else NULL if anything obviously invalid is detected such as failing parity or checksum.
 // Finds and discards leading encoded 1 and trailing 0.
 // Returns NULL on failure, else pointer to next full byte after last decoded.
 uint8_t const *FHT8VDecodeBitStream(uint8_t const *bitStream, uint8_t const *lastByte, fht8v_msg_t *command)
