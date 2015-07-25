@@ -122,7 +122,7 @@ void FHT8VCreateValveSetCmdFrame();
 void FHT8VCreateValveSetCmdFrame(const uint8_t valvePC);
 
 // Decode raw bitstream into non-null command structure passed in; returns true if successful.
-// Will return false if anything obviously invalid is detected such as failing parity or checksum.
+// Will return non-null if OK, else NULL if anything obviously invalid is detected such as failing parity or checksum.
 // Finds and discards leading encoded 1 and trailing 0.
 // Returns NULL on failure, else pointer to next full byte after last decoded.
 uint8_t const *FHT8VDecodeBitStream(uint8_t const *bitStream, uint8_t const *lastByte, fht8v_msg_t *command);
