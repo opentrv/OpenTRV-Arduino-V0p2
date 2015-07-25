@@ -25,7 +25,6 @@ including interrupts and sleep.
 #define POWER_MANAGEMENT_H
 
 #include <avr/wdt.h>
-#include <avr/atomic.h>
 #include <avr/interrupt.h>
 #include <avr/power.h>
 #include <avr/sleep.h>

@@ -1026,7 +1026,7 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, uint8_t *
   if(msglen < 2) { return; } // Too short to be useful, so ignore.
   switch(msg[0])
     {
-    case OTRADIOLINK_V0P2_FRAME_TYPE_JSON_RAW:
+    case OTRadioLink::JSONRaw:
       {
       if(-1 != adjustJSONMsgForRXAndCheckCRC((char *)msg, msglen))
         { recordJSONStats(secure, (const char *)msg); }
