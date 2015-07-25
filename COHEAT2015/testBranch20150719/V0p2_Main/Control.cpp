@@ -1394,7 +1394,6 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
     int8_t wrote;
 
     // Managed JSON stats.
-//    static SimpleStatsRotation<8> ss1; // Configured for maximum different stats.
     const bool maximise = true; // Make best use of available bandwidth...
     if(ss1.isEmpty())
       {
