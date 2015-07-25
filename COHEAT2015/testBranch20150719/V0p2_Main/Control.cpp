@@ -1307,8 +1307,9 @@ void populateCoreStats(FullStatsMessageCore_t *const content)
 // Call this to do an I/O poll if needed; returns true if something useful happened.
 // This call should typically take << 1ms at 1MHz CPU.
 // Does not change CPU clock speeds, mess with interrupts (other than possible brief blocking), or sleep.
-// Limits actual poll rate to something like once every 32ms, unless force is true.
+// Limits actual poll rate to something like once every 8ms, unless force is true.
 //   * force if true then force full poll on every call (ie do not internally rate-limit)
+// Not thread-safe, eg not to be called from within an ISR.
 bool pollIO(const bool force)
   {
 //#if defined(ENABLE_BOILER_HUB) && defined(USE_MODULE_FHT8VSIMPLE)
@@ -1316,15 +1317,21 @@ bool pollIO(const bool force)
 //    {
     static volatile uint8_t _pO_lastPoll;
 
-    // Poll RX at most about every ~32ms to help approx match spil rate when called in loop with 30ms nap.
+    // Poll RX at most about every ~8ms to help approx match spil rate when called in loop with 30ms nap.
     const uint8_t sct = getSubCycleTime();
-    if(force || ((0 == (sct & 3)) && (sct != _pO_lastPoll)))
+    if(force || (sct != _pO_lastPoll))
       {
       _pO_lastPoll = sct;
-//      if(FHT8VCallForHeatPoll()) // Check if call-for-heat has been overheard. // FIXME: old world
-//        { return(true); }
+      // Poll for inbound frames.
       RFM23B.poll();
-      // TODO: further processing of received message(s)...
+      // Process any messages queued.
+      while(0 != RFM23B.getRXMsgsQueued())
+        {
+        uint8_t buf[64]; // FIXME: move this large stack burden elsewhere?
+        const uint8_t msglen = RFM23B.getRXMsg(buf, sizeof(buf));
+        // Don't currently regard arriving anything over the air as 'secure'.
+        decodeAndHandleRawMessage(false, buf, msglen);
+        }
       }
 //    }
 //#endif
@@ -1967,13 +1974,6 @@ void loopOpenTRV()
     DEBUG_SERIAL_PRINTLN_FLASHSTRING("m");
 #endif
     }
-//  else
-//    {
-//    // Power down and clear radio state (if currently eavesdropping).
-//    StopEavesdropOnFHT8V(second0); // ***FIXME: old world
-//    // Clear any RX state so that nothing stale is carried forward.
-//    FHT8VCallForHeatHeardGetAndClear(); // ***FIXME: old world
-//    }
 //#endif
 #endif
 
@@ -2032,22 +2032,11 @@ void loopOpenTRV()
       // Rely on interrupt to force fall through to I/O poll() below.
       sleepUntilInt();
       }
+//    DEBUG_SERIAL_PRINTLN_FLASHSTRING("w"); // Wakeup.
+
     // Poll on wakeup in case some IO needs further processing now,
     // eg the above sleep or nap was terminated by an I/O interrupt.
     pollIO(true);
-//    DEBUG_SERIAL_PRINTLN_FLASHSTRING("w"); // Wakeup.
-
-    // FIXME: disperse this elsewhere...
-    while(0 != RFM23B.getRXMsgsQueued())
-      {
-      uint8_t buf[65];
-      const uint8_t msglen = RFM23B.getRXMsg(buf, sizeof(buf));
-      const bool neededWaking = powerUpSerialIfDisabled();
-      OTRadioLink::dumpRXMsg(buf, msglen);
-      Serial.flush();
-      if(neededWaking) { powerDownSerial(); }
-      }
-
     }
   TIME_LSD = newTLSD;
 #if 0 && defined(DEBUG)
