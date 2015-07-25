@@ -1052,6 +1052,53 @@ bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadi
     workDone = true;
     }
 
+  // Look for binary-format message.
+  FullStatsMessageCore_t stats;
+  getLastCoreStats(&stats);
+  if(stats.containsID)
+    {
+    if(!neededWaking && wakeSerialIfNeeded && powerUpSerialIfDisabled()) { neededWaking = true; }
+    // Dump (remote) stats field '@<hexnodeID>;TnnCh[P;]'
+    // where the T field shows temperature in C with a hex digit after the binary point indicated by C
+    // and the optional P field indicates low power.
+    p->print(LINE_START_CHAR_RSTATS);
+    p->print((((uint16_t)stats.id0) << 8) | stats.id1, HEX);
+    if(stats.containsTempAndPower)
+      {
+      p->print(F(";T"));
+      p->print(stats.tempAndPower.tempC16 >> 4, DEC);
+      p->print('C');
+      p->print(stats.tempAndPower.tempC16 & 0xf, HEX);
+      if(stats.tempAndPower.powerLow) { p->print(F(";P")); } // Insert power-low field if needed.
+      }
+    if(stats.containsAmbL)
+      {
+      p->print(F(";L"));
+      p->print(stats.ambL);
+      }
+    if(0 != stats.occ)
+      {
+      p->print(F(";O"));
+      p->print(stats.occ);
+      }
+    p->println();
+
+    // Note that some work has been done.
+    workDone = true;
+    }
+
+  // Check for JSON/text-format message if no binary message waiting.
+  char buf[MSG_JSON_MAX_LENGTH+1]; // FIXME: move this large stack burden elsewhere?
+  getLastJSONStats(buf);
+  if('\0' != *buf)
+    {
+    if(!neededWaking && wakeSerialIfNeeded && powerUpSerialIfDisabled()) { neededWaking = true; }
+    // Dump contained JSON message as-is at start of line.
+    p->println(buf);
+    // Note that some work has been done.
+    workDone = true;
+    }
+
   // Turn off serial at end, if this routine woke it.
   if(neededWaking) { flushSerialProductive(); powerDownSerial(); }
   return(workDone);

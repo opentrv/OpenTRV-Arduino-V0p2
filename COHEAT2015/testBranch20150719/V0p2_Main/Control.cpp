@@ -1434,11 +1434,13 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
       return;
       }
 
-#if 0 || !defined(ENABLE_BOILER_HUB) && defined(DEBUG)
+#if 0 /* || !defined(ENABLE_BOILER_HUB) */ && defined(DEBUG)
     DEBUG_SERIAL_PRINT((const char *)bptr);
     DEBUG_SERIAL_PRINTLN();
 #endif
-    // Adjust JSON message for reliable transmission.
+    // Record stats as if local, and treat channel as secure.
+    recordJSONStats(true, (const char *)bptr);
+    // Adjust JSON message for transmission.
     // (Set high-bit on final '}' to make it unique, and compute and append (non-0xff) CRC.)
     const uint8_t crc = adjustJSONMsgForTXAndComputeCRC((char *)bptr);
     if(0xff == crc)
@@ -1458,11 +1460,8 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
       return;
       }
 #endif
-    // TODO: put in listen before TX to reduce collisions (CSMA).
     // Send it!
     RFM22RawStatsTX(false, buf, allowDoubleTX);
-    // Record stats as if local, and treat channel as secure.
-    recordJSONStats(true, (const char *)bptr);
     handleQueuedMessages(&Serial, true, &RFM23B);
     }
 
@@ -1752,66 +1751,12 @@ void loopOpenTRV()
   // Try if very near to end of cycle and thus causing an overrun.
   // Conversely, if not true, should have time to savely log outputs, etc.
   const uint8_t nearOverrunThreshold = GSCT_MAX - 8; // ~64ms/~32 serial TX chars of grace time...
-  bool tooNearOverrun = false; // Set flag that can be checked later.
+//  bool tooNearOverrun = false; // Set flag that can be checked later.
 
   // Is this unit currently in central hub listener mode?
   const bool hubMode = inHubMode();
 
-#if CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX
-  // Check (early) for any remote stats arriving to dump.
-  // This is designed to be easy to pick up by reading the serial output.
-  // The output is terse to avoid taking too long and possibly delaying other stuff too far.
-  // Avoid doing this at all if too near the end of the cycle and risking overrun,
-  // leaving any message queued, hoping it does not get overwritten.
-  // TODO: safely process more than one pending message if present.
-  // TODO: move to process in a batch periodically, eg when CLI is due.
-  if(getSubCycleTime() >= nearOverrunThreshold) { tooNearOverrun = true; }
-  else
-    {
-    // Look for binary-format message.
-    FullStatsMessageCore_t stats;
-    getLastCoreStats(&stats);
-    if(stats.containsID)
-      {
-      // Dump (remote) stats field '@<hexnodeID>;TnnCh[P;]'
-      // where the T field shows temperature in C with a hex digit after the binary point indicated by C
-      // and the optional P field indicates low power.
-      serialPrintAndFlush(LINE_START_CHAR_RSTATS);
-      serialPrintAndFlush((((uint16_t)stats.id0) << 8) | stats.id1, HEX);
-      if(stats.containsTempAndPower)
-        {
-        serialPrintAndFlush(F(";T"));
-        serialPrintAndFlush(stats.tempAndPower.tempC16 >> 4, DEC);
-        serialPrintAndFlush('C');
-        serialPrintAndFlush(stats.tempAndPower.tempC16 & 0xf, HEX);
-        if(stats.tempAndPower.powerLow) { serialPrintAndFlush(F(";P")); } // Insert power-low field if needed.
-        }
-      if(stats.containsAmbL)
-        {
-        serialPrintAndFlush(F(";L"));
-        serialPrintAndFlush(stats.ambL);
-        }
-      if(0 != stats.occ)
-        {
-        serialPrintAndFlush(F(";O"));
-        serialPrintAndFlush(stats.occ);
-        }
-      serialPrintlnAndFlush();
-      }
-    // Check for JSON/text-format message if no binary message waiting.
-    else
-      {
-      char buf[MSG_JSON_MAX_LENGTH+1];
-      getLastJSONStats(buf);
-      if('\0' != *buf)
-        {
-        // Dump contained JSON message as-is at start of line.
-        serialPrintAndFlush(buf);
-        serialPrintlnAndFlush();
-        }
-      }
-    }
-#endif
+//  if(getSubCycleTime() >= nearOverrunThreshold) { tooNearOverrun = true; }
 
 #if CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX
   // IF IN CENTRAL HUB MODE: listen out for OpenTRV units calling for heat.
@@ -2066,8 +2011,8 @@ void loopOpenTRV()
   // ===============
 
 
-  // Warn if too near overrun before.
-  if(tooNearOverrun) { serialPrintlnAndFlush(F("?near overrun")); }
+//  // Warn if too near overrun before.
+//  if(tooNearOverrun) { serialPrintlnAndFlush(F("?near overrun")); }
 
 
   // Get current power supply voltage.
