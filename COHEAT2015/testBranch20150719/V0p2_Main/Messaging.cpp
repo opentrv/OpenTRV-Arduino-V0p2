@@ -1125,18 +1125,11 @@ p->print("FS20 msg HC "); p->print(command.hc1); p->print(' '); p->println(comma
         // and the housecode is accepted.
         if(0x26 == command.command)
           {
-          // Initial fix for TODO-520: Bad comparison screening incoming calls for heat at boiler hub.
-//          const uint8_t mvro = NominalRadValve.getMinValvePcReallyOpen();
-          if(command.extension > 0) // FIXME: quick hack: filter properly by % and HC.
-//          if((command.extension > (mvro << 1)) && // Quick approximation as filter with some false positives.
-//             (command.extension >= ((255 * (int)mvro) / 100)) && // More accurate test, but slow.
-//             (FHT8VHubAcceptedHouseCode(command.hc1, command.hc2))) // Accept if house code not filtered out.
-            {
-            const uint16_t compoundHC = (command.hc1 << 8) | command.hc2;
-//            ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
-//              { lastCallForHeatHC = compoundHC; } // Update atomically.
-p->println("!RCfh dropped"); // FIXME!  Deliver to main control routine.
-            }
+          const uint16_t compoundHC = (command.hc1 << 8) | command.hc2;
+          remoteCallForHeatRX(compoundHC, (0 == command.extension) ? 0 : (uint8_t) ((command.extension * 100) / 255));
+#if 1 && defined(DEBUG)
+          p->println("RCfh RX");
+#endif
           }
 #endif
         }

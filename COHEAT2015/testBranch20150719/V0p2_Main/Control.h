@@ -798,6 +798,17 @@ int expandTempC16(uint8_t cTemp);
 // and may depend on stats TX security level (if collecting some sensitive items is also expensive).
 void populateCoreStats(FullStatsMessageCore_t *content);
 
+#ifdef ENABLE_BOILER_HUB
+// Raw notification of received call for heat from remote (eg FHT8V) unit.
+// This form has a 16-bit ID (eg FHT8V housecode) and percent-open value [0,100].
+// Note that this may include 0 percent values for a remote unit explcitly confirming
+// that is is not, or has stopped, calling for heat (eg instead of replying on a timeout).
+// This is not filtered, and can be delivered at any time from RX data.
+// Should be thread-/ISR- safe.
+void remoteCallForHeatRX(uint16_t id, uint8_t percentOpen);
+#endif
+
+
 
 #endif
 

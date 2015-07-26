@@ -1696,6 +1696,30 @@ ISR(PCINT2_vect)
 #endif
 
 
+#ifdef ENABLE_BOILER_HUB
+// Set true on receipt of plausible call for heat,
+// to be polled, evaluated and cleared by the main control routine.
+// Marked volatile to allow thread-safe lock-free access...
+static volatile bool receivedCallForHeat;
+
+// Raw notification of received call for heat from remote (eg FHT8V) unit.
+// This form has a 16-bit ID (eg FHT8V housecode) and percent-open value [0,100].
+// Note that this may include 0 percent values for a remote unit explcitly confirming
+// that is is not, or has stopped, calling for heat (eg instead of replying on a timeout).
+// This is not filtered, and can be delivered at any time from RX data.
+// Should be thread-/ISR- safe.
+void remoteCallForHeatRX(const uint16_t id, const uint8_t percentOpen)
+  {
+  // Initial fix for TODO-520: Bad comparison screening incoming calls for heat at boiler hub.
+  const uint8_t mvro = NominalRadValve.getMinValvePcReallyOpen(); // FIXME: ISR-safe?
+  if((command.extension > (mvro << 1)) && // Quick approximation as filter with some false positives.
+     (command.extension >= ((255 * (int)mvro) / 100)) && // More accurate test, but slow.
+     true /*(FHT8VHubAcceptedHouseCode(command.hc1, command.hc2)) */ ) // Accept if house code not filtered out.
+    {
+    receivedCallForHeat = true; // FIXME
+    }
+  }
+#endif
 
 
 
@@ -1929,7 +1953,9 @@ void loopOpenTRV()
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("*E"); // End-of-cycle sleep.
 #endif
-  // Ensure that serial I/O is off while sleeping, by default.
+//  // Ensure that serial I/O is off while sleeping, unless listening with radio.
+//  if(!needsToEavesdrop) { powerDownSerial(); } else { powerUpSerialIfDisabled(); }
+  // Ensure that serial I/O is off while sleeping.
   powerDownSerial();
   // Power down most stuff (except radio for hub RX).
   minimisePowerWithoutSleep();
