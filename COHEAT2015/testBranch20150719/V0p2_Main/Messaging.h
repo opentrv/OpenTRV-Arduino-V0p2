@@ -664,6 +664,20 @@ bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadi
 
 
 
+#ifdef ENABLE_BOILER_HUB
+// FUNCTIONALITY REQUIRED (NOT SUPPLIED) BY MESSAGING.
+// Raw notification of received call for heat from remote (eg FHT8V) unit.
+// This form has a 16-bit ID (eg FHT8V housecode) and percent-open value [0,100].
+// Note that this may include 0 percent values for a remote unit explcitly confirming
+// that is is not, or has stopped, calling for heat (eg instead of replying on a timeout).
+// This is not filtered, and can be delivered at any time from RX data, from a non-ISR thread.
+// Does not have to be thread-/ISR- safe.
+void remoteCallForHeatRX(uint16_t id, uint8_t percentOpen);
+#endif
+
+
+
+
 /* DHD20150423: messaging thoughts including integrity, see: http://www.earth.org.uk/note-on-IoT-security.html#app1
 
 The design aim is to allow transmission of (optionally secure) telemetry from low-power sensor nodes

@@ -1120,16 +1120,17 @@ p->print("FS20 msg HC "); p->print(command.hc1); p->print(' '); p->println(comma
 #endif
 
 #if defined(ENABLE_BOILER_HUB)
-        // Potentially accept as call for heat only if command is 0x26 (38)
-        // and the valve is open enough for some water flow to be likely
-        // and the housecode is accepted.
+        // Potentially accept as call for heat only if command is 0x26 (38).
+        // Later filter on the valve being open enough for some water flow to be likely
+        // (for individual valves, and in aggregate)
+        // and the housecode being accepted.
         if(0x26 == command.command)
           {
           const uint16_t compoundHC = (command.hc1 << 8) | command.hc2;
-          remoteCallForHeatRX(compoundHC, (0 == command.extension) ? 0 : (uint8_t) ((command.extension * 100) / 255));
-#if 1 && defined(DEBUG)
-          p->println("RCfh RX");
+#if 0 && defined(DEBUG)
+          p->println("FS20 0x26 RX"); // Just notes that a 'valve %' FS20 command has been overheard.
 #endif
+          remoteCallForHeatRX(compoundHC, (0 == command.extension) ? 0 : (uint8_t) ((command.extension * 100) / 255));
           }
 #endif
         }
@@ -1142,8 +1143,6 @@ p->print("FS20 msg HC "); p->print(command.hc1); p->print(' '); p->println(comma
         { recordJSONStats(secure, (const char *)msg); }
       return;
       }
-
-    // TODO
     }
   }
 
