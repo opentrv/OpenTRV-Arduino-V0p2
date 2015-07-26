@@ -1120,9 +1120,10 @@ p->print("FS20 msg HC "); p->print(command.hc1); p->print(' '); p->println(comma
 #endif
 
 #if defined(ENABLE_BOILER_HUB)
-        // Potentially accept as call for heat only if command is 0x26 (38)
-        // and the valve is open enough for some water flow to be likely
-        // and the housecode is accepted.
+        // Potentially accept as call for heat only if command is 0x26 (38).
+        // Later filter on the valve being open enough for some water flow to be likely
+        // (for individual valves, and in aggregate)
+        // and the housecode being accepted.
         if(0x26 == command.command)
           {
           const uint16_t compoundHC = (command.hc1 << 8) | command.hc2;

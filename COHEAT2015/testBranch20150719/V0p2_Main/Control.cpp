@@ -1699,24 +1699,30 @@ ISR(PCINT2_vect)
 #ifdef ENABLE_BOILER_HUB
 // Set true on receipt of plausible call for heat,
 // to be polled, evaluated and cleared by the main control routine.
-// Marked volatile to allow thread-safe lock-free access...
+// Marked volatile to allow thread-safe lock-free access.
 static volatile bool receivedCallForHeat;
+// ID of remote caller-for-heat; only valid if receivedCallForHeat is true.
+// Marked volatile to allow access from an ISR,
+// but note that access may only be safe with interrupts disabled as not a byte value.
+static volatile uint16_t receivedCallForHeatID;
 
 // Raw notification of received call for heat from remote (eg FHT8V) unit.
 // This form has a 16-bit ID (eg FHT8V housecode) and percent-open value [0,100].
 // Note that this may include 0 percent values for a remote unit explcitly confirming
 // that is is not, or has stopped, calling for heat (eg instead of replying on a timeout).
-// This is not filtered, and can be delivered at any time from RX data.
-// Should be thread-/ISR- safe.
+// This is not filtered, and can be delivered at any time from RX data, from a non-ISR thread.
+// Does not have to be thread-/ISR- safe.
 void remoteCallForHeatRX(const uint16_t id, const uint8_t percentOpen)
   {
+  // Should be filtering first by housecode
+  // then by individual and tracked aggregate valve-open pervcentage.
   // Initial fix for TODO-520: Bad comparison screening incoming calls for heat at boiler hub.
-  const uint8_t mvro = NominalRadValve.getMinValvePcReallyOpen(); // FIXME: ISR-safe?
-  if((command.extension > (mvro << 1)) && // Quick approximation as filter with some false positives.
-     (command.extension >= ((255 * (int)mvro) / 100)) && // More accurate test, but slow.
-     true /*(FHT8VHubAcceptedHouseCode(command.hc1, command.hc2)) */ ) // Accept if house code not filtered out.
+  const uint8_t mvro = NominalRadValve.getMinValvePcReallyOpen();
+  if(percentOpen >= mvro)
+    // FHT8VHubAcceptedHouseCode(command.hc1, command.hc2))) // Accept if house code OK.
     {
     receivedCallForHeat = true; // FIXME
+    receivedCallForHeatID = id;
     }
   }
 #endif
@@ -1792,17 +1798,32 @@ void loopOpenTRV()
 //#endif
   if(hubMode)
     {
-#if 0 && defined(USE_MODULE_FHT8VSIMPLE)   // ***** FIXME *******
+#if defined(ENABLE_BOILER_HUB) // && defined(USE_MODULE_FHT8VSIMPLE)   // ***** FIXME *******
     // Final poll to to cover up to end of previous minor loop.
     // Keep time from here to following SetupToEavesdropOnFHT8V() as short as possible to avoid missing remote calls.
 //    FHT8VCallForHeatPoll();
 
-    // Fetch and clear current pending sample house code calling for heat.
-    const uint16_t hcRequest = FHT8VCallForHeatHeardGetAndClear();
-    const bool heardIt = (hcRequest != ((uint16_t)~0));
+    // Check if call-for-heat has been received, and clear the flag.
+    bool _h;
+    bool _hID; // Only valid if _h is true.
+    ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
+      {
+      _h = receivedCallForHeat;
+      if(_h)
+        {
+        receivedCallForHeat = false;
+        _hID = receivedCallForHeatID;
+        }
+      }
+    const bool heardIt = _h;
+    const bool hcRequest = heardIt ? _hID : 0; // Only valid if heardIt is true.
+
+//    // Fetch and clear current pending sample house code calling for heat.
+//    const uint16_t hcRequest = FHT8VCallForHeatHeardGetAndClear();
+//    const bool heardIt = (hcRequest != ((uint16_t)~0));
     // Don't log call for hear if near overrun,
     // and leave any error queued for next time.
-    if(getSubCycleTime() >= nearOverrunThreshold) { tooNearOverrun = true; }
+    if(getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
     else
       {
       if(heardIt)
@@ -1815,17 +1836,17 @@ void loopOpenTRV()
         serialPrintAndFlush(hcRequest & 0xff);
         serialPrintlnAndFlush();
         }
-      else
-        {
-        // Check for error if nothing received.
-        const uint8_t err = FHT8VLastRXErrGetAndClear();
-        if(0 != err)
-          {
-          serialPrintAndFlush(F("!RXerr F"));
-          serialPrintAndFlush(err);
-          serialPrintlnAndFlush();
-          }
-        }
+//      else
+//        {
+//        // Check for error if nothing received.
+//        const uint8_t err = FHT8VLastRXErrGetAndClear();
+//        if(0 != err)
+//          {
+//          serialPrintAndFlush(F("!RXerr F"));
+//          serialPrintAndFlush(err);
+//          serialPrintlnAndFlush();
+//          }
+//        }
       }
 
     // Record call for heat, both to start boiler-on cycle and to defer need to listen again. 
@@ -1834,7 +1855,7 @@ void loopOpenTRV()
       {
       if(0 == boilerCountdownTicks)
         {
-        if(getSubCycleTime() >= nearOverrunThreshold) { tooNearOverrun = true; }
+        if(getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
         else { serialPrintlnAndFlush(F("RCfH1")); } // Remote call for heat on.
         }
       boilerCountdownTicks = getMinBoilerOnMinutes() * (60/MAIN_TICK_S);
@@ -1845,7 +1866,7 @@ void loopOpenTRV()
       {
       if(0 == --boilerCountdownTicks)
         {
-        if(getSubCycleTime() >= nearOverrunThreshold) { tooNearOverrun = true; }
+        if(getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
         else { serialPrintlnAndFlush(F("RCfH0")); } // Remote call for heat off
         }
       }

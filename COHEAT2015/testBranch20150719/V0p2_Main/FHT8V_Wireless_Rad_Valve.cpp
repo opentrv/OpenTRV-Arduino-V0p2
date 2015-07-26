@@ -465,9 +465,9 @@ static void FHT8VTXFHTQueueAndSendCmd(uint8_t *bptr, const bool doubleTX)
 
 #if defined(ENABLE_BOILER_HUB)
   const bool hubMode = inHubMode();
-  // Do a final poll for any call for heat that just arrived before doing TX.
-  if(hubMode) { FHT8VCallForHeatPoll(); }
-  StopEavesdropOnFHT8V(); // Unconditional cleardown of eavesdrop.
+//  // Do a final poll for any call for heat that just arrived before doing TX.
+//  if(hubMode) { FHT8VCallForHeatPoll(); }
+//  StopEavesdropOnFHT8V(); // Unconditional cleardown of eavesdrop.
 #endif
 
 //  RFM22QueueCmdToFF(bptr);
@@ -537,7 +537,7 @@ static void sleepUntilSubCycleTimeOptionalRX(const uint8_t sleepUntil)
 #endif
       // Only do nap+poll if lots of time left.
       while(sleepUntil > fmax(getSubCycleTime() + (50/SUBCYCLE_TICK_MS_RD), GSCT_MAX))
-        { nap30AndPoll(); } // Assumed ~30ms sleep max.
+        { nap15AndPoll(); } // Assumed ~15ms sleep max.
       // Poll in remaining time without nap.
       while(sleepUntil > getSubCycleTime())
         { pollIO(); }
@@ -550,10 +550,10 @@ static void sleepUntilSubCycleTimeOptionalRX(const uint8_t sleepUntil)
     // Sleep until exactly the right time.
     sleepUntilSubCycleTime(sleepUntil);
 
-#if defined(ENABLE_BOILER_HUB)
-    // Final quick poll for RX activity.
-    if(hubMode) { FHT8VCallForHeatPoll(); }
-#endif
+//#if defined(ENABLE_BOILER_HUB)
+//    // Final quick poll for RX activity.
+//    if(hubMode) { FHT8VCallForHeatPoll(); }
+//#endif
     }
 
 // Run the algorithm to get in sync with the receiver.
