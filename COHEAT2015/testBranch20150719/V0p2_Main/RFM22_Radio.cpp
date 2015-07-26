@@ -44,18 +44,23 @@ OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, -1> RFM23B;
 // The message to be sent must be written at an offset of STATS_MSG_START_OFFSET from the start of the buffer.
 // This routine will alter the content of the buffer for transmission,
 // and the buffer should not be re-used as is.
-//   * isBinary  message type; if true then is nominally binary else text (JSON)
 //   * doubleTX  double TX to increase chance of successful reception
+//   * RFM23BfriendlyPremable  if true then add an extra preamble
+//     to allow RFM23B-based receiver to RX this
 // This will use whichever transmission medium/carrier/etc is available.
 //#define STATS_MSG_START_OFFSET (RFM22_PREAMBLE_BYTES + RFM22_SYNC_MIN_BYTES)
 //#define STATS_MSG_MAX_LEN (64 - STATS_MSG_START_OFFSET)
-void RFM22RawStatsTX(const bool isBinary, uint8_t * const buf, const bool doubleTX)
+void RFM22RawStatsTX(uint8_t * const buf, const bool doubleTX, const bool RFM23BfriendlyPremable)
   {
   // Write in the preamble/sync bytes.
   uint8_t *bptr = buf;
-  // Start with RFM23-friendly preamble which ends with with the aacccccc sync word.
-  memset(bptr, RFM22_PREAMBLE_BYTE, RFM22_PREAMBLE_BYTES);
-  bptr += RFM22_PREAMBLE_BYTES;
+  if(RFM23BfriendlyPremable)
+    {
+    // Start with RFM23-friendly preamble which ends with with the aacccccc sync word.
+    memset(bptr, RFM22_PREAMBLE_BYTE, RFM22_PREAMBLE_BYTES);
+    bptr += RFM22_PREAMBLE_BYTES;
+    }
+  // Send the sync bytes.
   memset(bptr, RFM22_SYNC_BYTE, RFM22_SYNC_MIN_BYTES);
   bptr += RFM22_SYNC_MIN_BYTES;
 
@@ -70,7 +75,12 @@ void RFM22RawStatsTX(const bool isBinary, uint8_t * const buf, const bool double
 //    RFM22TXFIFO(); // Re-send it!
 //    }
   const uint8_t buflen = OTRadioLink::frameLenFFTerminated(buf);
-  RFM23B.sendRaw(buf, buflen);
+  if(!RFM23B.sendRaw(buf, buflen))
+    {
+#if 1 && defined(DEBUG)
+    DEBUG_SERIAL_PRINTLN_FLASHSTRING("!TX failed");
+#endif
+    }
   //DEBUG_SERIAL_PRINTLN_FLASHSTRING("RS");
   }
 

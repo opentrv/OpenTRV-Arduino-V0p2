@@ -1376,7 +1376,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
       return;
       }
     // Send it!
-    RFM22RawStatsTX(true, buf, allowDoubleTX);
+    RFM22RawStatsTX(buf, allowDoubleTX);
     // Record stats as if remote, and treat channel as secure.
     recordCoreStats(true, &content);
     handleQueuedMessages(&Serial, true, &RFM23B);
@@ -1433,22 +1433,25 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
 
 #if 0 /* || !defined(ENABLE_BOILER_HUB) */ && defined(DEBUG)
     DEBUG_SERIAL_PRINT((const char *)bptr);
-    DEBUG_SERIAL_PRINTLN();
+    DEBUG_SERIAL_PRINTLN(); 
 #endif
     // Record stats as if local, and treat channel as secure.
     recordJSONStats(true, (const char *)bptr);
+    handleQueuedMessages(&Serial, true, &RFM23B);
     // Adjust JSON message for transmission.
     // (Set high-bit on final '}' to make it unique, and compute and append (non-0xff) CRC.)
     const uint8_t crc = adjustJSONMsgForTXAndComputeCRC((char *)bptr);
     if(0xff == crc)
       {
-  //DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON msg bad!");
+#if 1 && defined(DEBUG)
+      DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON msg bad!");
+#endif
       return;
       }
     bptr += wrote;
     *bptr++ = crc; // Add 7-bit CRC for on-the-wire check.
     *bptr = 0xff; // Terminate message for TX.
-#if 0 && defined(DEBUG)
+#if 1 && defined(DEBUG)
     if(bptr - buf >= 64)
       {
       DEBUG_SERIAL_PRINT_FLASHSTRING("Too long for RFM2x: ");
@@ -1458,8 +1461,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
       }
 #endif
     // Send it!
-    RFM22RawStatsTX(false, buf, allowDoubleTX);
-    handleQueuedMessages(&Serial, true, &RFM23B);
+    RFM22RawStatsTX(buf, allowDoubleTX);
     }
 
 #endif // defined(ALLOW_JSON_OUTPUT)
@@ -1593,13 +1595,14 @@ void setupOpenTRV()
   // or limit reached.
   for(uint8_t i = 5; --i > 0; )
     {
-    nap(WDTO_120MS); // Sleep long enough for receiver to have a chance to process previous TX.
+    nap(WDTO_120MS, false); // Sleep long enough for receiver to have a chance to process previous TX.
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING(" TX...");
 #endif
     bareStatsTX(true, false);
     if(!ss1.changedValue()) { break; }
     }
+  nap(WDTO_120MS, false);
 
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("setup stats sent");
