@@ -55,7 +55,7 @@ extern OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, -1> RFM23B;
 //#define STATS_MSG_MAX_LEN (64 - STATS_MSG_START_OFFSET)
 #define STATS_MSG_START_OFFSET (RFM22_PREAMBLE_BYTES + RFM22_SYNC_MIN_BYTES)
 #define STATS_MSG_MAX_LEN (64 - STATS_MSG_START_OFFSET)
-void RFM22RawStatsTX(uint8_t *buf, bool doubleTX, bool RFM23BfriendlyPremable = true);
+void RFM22RawStatsTX(uint8_t *buf, bool doubleTX);
 
 
 #endif

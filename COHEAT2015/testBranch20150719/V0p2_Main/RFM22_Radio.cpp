@@ -50,16 +50,13 @@ OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, -1> RFM23B;
 // This will use whichever transmission medium/carrier/etc is available.
 //#define STATS_MSG_START_OFFSET (RFM22_PREAMBLE_BYTES + RFM22_SYNC_MIN_BYTES)
 //#define STATS_MSG_MAX_LEN (64 - STATS_MSG_START_OFFSET)
-void RFM22RawStatsTX(uint8_t * const buf, const bool doubleTX, const bool RFM23BfriendlyPremable)
+void RFM22RawStatsTX(uint8_t * const buf, const bool doubleTX)
   {
   // Write in the preamble/sync bytes.
   uint8_t *bptr = buf;
-  if(RFM23BfriendlyPremable)
-    {
-    // Start with RFM23-friendly preamble which ends with with the aacccccc sync word.
-    memset(bptr, RFM22_PREAMBLE_BYTE, RFM22_PREAMBLE_BYTES);
-    bptr += RFM22_PREAMBLE_BYTES;
-    }
+  // Start with RFM23-friendly preamble which ends with with the aacccccc sync word.
+  memset(bptr, RFM22_PREAMBLE_BYTE, RFM22_PREAMBLE_BYTES);
+  bptr += RFM22_PREAMBLE_BYTES;
   // Send the sync bytes.
   memset(bptr, RFM22_SYNC_BYTE, RFM22_SYNC_MIN_BYTES);
   bptr += RFM22_SYNC_MIN_BYTES;
@@ -75,6 +72,11 @@ void RFM22RawStatsTX(uint8_t * const buf, const bool doubleTX, const bool RFM23B
 //    RFM22TXFIFO(); // Re-send it!
 //    }
   const uint8_t buflen = OTRadioLink::frameLenFFTerminated(buf);
+#if 1 && defined(DEBUG)
+    DEBUG_SERIAL_PRINT_FLASHSTRING("buflen=");
+    DEBUG_SERIAL_PRINT(buflen);
+    DEBUG_SERIAL_PRINTLN();
+#endif
   if(!RFM23B.sendRaw(buf, buflen, 0, (doubleTX ? OTRadioLink::OTRadioLink::TXmax : OTRadioLink::OTRadioLink::TXnormal)))
     {
 #if 1 && defined(DEBUG)

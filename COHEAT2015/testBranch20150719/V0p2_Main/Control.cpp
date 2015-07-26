@@ -1439,7 +1439,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
     recordJSONStats(true, (const char *)bptr);
     handleQueuedMessages(&Serial, true, &RFM23B);
     // Adjust JSON message for transmission.
-    // (Set high-bit on final '}' to make it unique, and compute and append (non-0xff) CRC.)
+    // (Set high-bit on final '}' to make it unique, and compute (non-0xff) CRC.)
     const uint8_t crc = adjustJSONMsgForTXAndComputeCRC((char *)bptr);
     if(0xff == crc)
       {

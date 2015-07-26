@@ -246,6 +246,23 @@ void loopAlt()
   uint_fast8_t newTLSD;
   while(TIME_LSD == (newTLSD = getSecondsLT()))
     {
+    // Poll I/O and process message incrementally (in this otherwise idle time)
+    // before sleep and on wakeup in case some IO needs further processing now,
+    // eg work was accrued during the previous major slow/outer loop
+    // or the in a previous orbit of this loop sleep or nap was terminated by an I/O interrupt.
+    // Come back and have another go if work was done, until the next tick at most.
+    if(handleQueuedMessages(&Serial, true, &RFM23B)) { continue; }
+
+//    RFM23B.poll();
+//    while(0 != RFM23B.getRXMsgsQueued())
+//      {
+//      uint8_t buf[65];
+//      const uint8_t msglen = RFM23B.getRXMsg(buf, sizeof(buf));
+//      const bool neededWaking = powerUpSerialIfDisabled();
+//      OTRadioLink::dumpRXMsg(buf, msglen);
+//      Serial.flush();
+//      if(neededWaking) { powerDownSerial(); }
+//      }
 
 // If missing h/w interrupts for anything that needs rapid response
 // then AVOID the lowest-power long sleep.
@@ -269,16 +286,6 @@ void loopAlt()
       }
 //    DEBUG_SERIAL_PRINTLN_FLASHSTRING("w"); // Wakeup.
 
-    RFM23B.poll();
-    while(0 != RFM23B.getRXMsgsQueued())
-      {
-      uint8_t buf[65];
-      const uint8_t msglen = RFM23B.getRXMsg(buf, sizeof(buf));
-      const bool neededWaking = powerUpSerialIfDisabled();
-      OTRadioLink::dumpRXMsg(buf, msglen);
-      Serial.flush();
-      if(neededWaking) { powerDownSerial(); }
-      }
     }
   TIME_LSD = newTLSD;
 
@@ -354,6 +361,34 @@ void loopAlt()
       DEBUG_SERIAL_PRINTLN();
       oldDroppedRecent = droppedRecent;
       }
+#endif
+
+
+#if 1 && defined(DEBUG)
+  uint8_t buf[STATS_MSG_START_OFFSET + 65];
+  strncpy(STATS_MSG_START_OFFSET + (char *)buf, "{}", sizeof(buf)-1); // Allow for \0 to be replaced with crc and 0xff later.
+  uint8_t *bptr = buf + STATS_MSG_START_OFFSET;
+  const int wrote = strlen((char *)bptr);
+  // Adjust JSON message for transmission.
+  // (Set high-bit on final '}' to make it unique, and compute (non-0xff) CRC.)
+  const uint8_t crc = adjustJSONMsgForTXAndComputeCRC((char *)bptr);
+  if(0xff == crc)
+    {
+#if 1 && defined(DEBUG)
+    DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON msg bad!");
+#endif
+    }
+  else
+    {
+    bptr += wrote;
+    *bptr++ = crc; // Add 7-bit CRC for on-the-wire check.
+    *bptr = 0xff; // Terminate message for TX.
+    // Send it!
+    RFM22RawStatsTX(buf, false);
+#if 1 && defined(DEBUG)
+    DEBUG_SERIAL_PRINTLN_FLASHSTRING("TX");
+#endif
+    }
 #endif
 
 
