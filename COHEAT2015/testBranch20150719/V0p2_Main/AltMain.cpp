@@ -365,29 +365,32 @@ void loopAlt()
 
 
 #if 1 && defined(DEBUG)
-  uint8_t buf[STATS_MSG_START_OFFSET + 65];
-  strncpy(STATS_MSG_START_OFFSET + (char *)buf, "{}", sizeof(buf)-1); // Allow for \0 to be replaced with crc and 0xff later.
-  uint8_t *bptr = buf + STATS_MSG_START_OFFSET;
-  const int wrote = strlen((char *)bptr);
-  // Adjust JSON message for transmission.
-  // (Set high-bit on final '}' to make it unique, and compute (non-0xff) CRC.)
-  const uint8_t crc = adjustJSONMsgForTXAndComputeCRC((char *)bptr);
-  if(0xff == crc)
+  if(0 == (TIME_LSD & 3)) // TX every 4s so as not to flood the airwaves...
     {
-#if 1 && defined(DEBUG)
-    DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON msg bad!");
-#endif
-    }
-  else
-    {
-    bptr += wrote;
-    *bptr++ = crc; // Add 7-bit CRC for on-the-wire check.
-    *bptr = 0xff; // Terminate message for TX.
-    // Send it!
-    RFM22RawStatsTX(buf, false);
-#if 1 && defined(DEBUG)
-    DEBUG_SERIAL_PRINTLN_FLASHSTRING("TX");
-#endif
+    uint8_t buf[STATS_MSG_START_OFFSET + 65];
+    strncpy(STATS_MSG_START_OFFSET + (char *)buf, "{}", sizeof(buf)-1); // Allow for \0 to be replaced with crc and 0xff later.
+    uint8_t *bptr = buf + STATS_MSG_START_OFFSET;
+    const int wrote = strlen((char *)bptr);
+    // Adjust JSON message for transmission.
+    // (Set high-bit on final closing brace to make it unique, and compute (non-0xff) CRC.)
+    const uint8_t crc = adjustJSONMsgForTXAndComputeCRC((char *)bptr);
+    if(0xff == crc)
+      {
+  #if 1 && defined(DEBUG)
+      DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON msg bad!");
+  #endif
+      }
+    else
+      {
+      bptr += wrote;
+      *bptr++ = crc; // Add 7-bit CRC for on-the-wire check.
+      *bptr = 0xff; // Terminate message for TX.
+      // Send it!
+      RFM22RawStatsTX(buf, false);
+  #if 1 && defined(DEBUG)
+      DEBUG_SERIAL_PRINTLN_FLASHSTRING("TX");
+  #endif
+      }
     }
 #endif
 

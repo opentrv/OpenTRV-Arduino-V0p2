@@ -1602,7 +1602,7 @@ void setupOpenTRV()
     bareStatsTX(true, false);
     if(!ss1.changedValue()) { break; }
     }
-  nap(WDTO_120MS, false);
+//  nap(WDTO_120MS, false);
 
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("setup stats sent");
@@ -1842,17 +1842,6 @@ void loopOpenTRV()
         serialPrintAndFlush(hcRequest & 0xff);
         serialPrintlnAndFlush();
         }
-//      else
-//        {
-//        // Check for error if nothing received.
-//        const uint8_t err = FHT8VLastRXErrGetAndClear();
-//        if(0 != err)
-//          {
-//          serialPrintAndFlush(F("!RXerr F"));
-//          serialPrintAndFlush(err);
-//          serialPrintlnAndFlush();
-//          }
-//        }
       }
 
     // Record call for heat, both to start boiler-on cycle and to defer need to listen again. 
@@ -1941,14 +1930,14 @@ void loopOpenTRV()
     static uint8_t oldDropped;
     if(dropped != oldDropped)
       {
-      DEBUG_SERIAL_PRINT_FLASHSTRING("?RX DROPPED: ");
+      DEBUG_SERIAL_PRINT_FLASHSTRING("!RX DROP ");
       DEBUG_SERIAL_PRINT(dropped);
       DEBUG_SERIAL_PRINTLN();
       oldDropped = dropped;
       }
     for(uint8_t lastErr; 0 != (lastErr = RFM23B.getRXErr()); )
       {
-      DEBUG_SERIAL_PRINT_FLASHSTRING("!RX err: ");
+      DEBUG_SERIAL_PRINT_FLASHSTRING("!RX err ");
       DEBUG_SERIAL_PRINT(lastErr);
       DEBUG_SERIAL_PRINTLN();
       }
@@ -2368,7 +2357,7 @@ void loopOpenTRV()
     const uint8_t orc = 1 + ~eeprom_read_byte((uint8_t *)EE_START_OVERRUN_COUNTER);
     eeprom_smart_update_byte((uint8_t *)EE_START_OVERRUN_COUNTER, ~orc);
 #if 1 && defined(DEBUG)
-    DEBUG_SERIAL_PRINTLN_FLASHSTRING("!ERROR: loop overrun");
+    DEBUG_SERIAL_PRINTLN_FLASHSTRING("!loop overrun");
 //    DEBUG_SERIAL_PRINT(orc);
 //    DEBUG_SERIAL_PRINTLN();
 #endif

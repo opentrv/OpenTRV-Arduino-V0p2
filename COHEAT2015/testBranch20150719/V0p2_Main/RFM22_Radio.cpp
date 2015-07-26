@@ -72,17 +72,30 @@ void RFM22RawStatsTX(uint8_t * const buf, const bool doubleTX)
 //    RFM22TXFIFO(); // Re-send it!
 //    }
   const uint8_t buflen = OTRadioLink::frameLenFFTerminated(buf);
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
     DEBUG_SERIAL_PRINT_FLASHSTRING("buflen=");
     DEBUG_SERIAL_PRINT(buflen);
     DEBUG_SERIAL_PRINTLN();
 #endif
   if(!RFM23B.sendRaw(buf, buflen, 0, (doubleTX ? OTRadioLink::OTRadioLink::TXmax : OTRadioLink::OTRadioLink::TXnormal)))
     {
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
     DEBUG_SERIAL_PRINTLN_FLASHSTRING("!TX failed");
 #endif
     }
+//  if(!RFM23B.sendRaw(buf, buflen)) // , 0, (doubleTX ? OTRadioLink::OTRadioLink::TXmax : OTRadioLink::OTRadioLink::TXnormal)))
+//    {
+//#if 1 && defined(DEBUG)
+//    DEBUG_SERIAL_PRINTLN_FLASHSTRING("!TX failed");
+//#endif
+//    }
+//  if(doubleTX && !RFM23B.sendRaw(buf, buflen)) // , 0, (doubleTX ? OTRadioLink::OTRadioLink::TXmax : OTRadioLink::OTRadioLink::TXnormal)))
+//    {
+//#if 1 && defined(DEBUG)
+//    DEBUG_SERIAL_PRINTLN_FLASHSTRING("!TX2 failed");
+//#endif
+//    }
+
   //DEBUG_SERIAL_PRINTLN_FLASHSTRING("RS");
   }
 

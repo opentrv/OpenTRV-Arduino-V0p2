@@ -505,7 +505,7 @@ void setup()
   if(!ensureIDCreated())
     {
     if(!ensureIDCreated(true)) // Force reset.
-      { panic(F("!Bad ID: can't reset")); }
+      { panic(F("!Bad ID: can't fix")); }
     }
 
 
