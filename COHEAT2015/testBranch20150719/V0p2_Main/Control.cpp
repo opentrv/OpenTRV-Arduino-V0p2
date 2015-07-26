@@ -1443,7 +1443,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
     const uint8_t crc = adjustJSONMsgForTXAndComputeCRC((char *)bptr);
     if(0xff == crc)
       {
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
       DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON msg bad!");
 #endif
       return;
@@ -1451,7 +1451,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
     bptr += wrote;
     *bptr++ = crc; // Add 7-bit CRC for on-the-wire check.
     *bptr = 0xff; // Terminate message for TX.
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
     if(bptr - buf >= 64)
       {
       DEBUG_SERIAL_PRINT_FLASHSTRING("Too long for RFM2x: ");
@@ -2196,8 +2196,9 @@ void loopOpenTRV()
         // This doesn't generally/always need to send binary/both formats
         // if this is controlling a local FHT8V on which the binary stats can be piggybacked.
         // Ie, if doesn't have a local TRV then it must send binary some of the time.
+        // Any recently-changed stats value is a hint that a strong transmission might be a good idea.
         const bool doBinary = !localFHT8VTRVEnabled() && randRNG8NextBoolean();
-        bareStatsTX(minute1From4AfterSensors && !batteryLow && !hubMode && ss1.changedValue(), doBinary);
+        bareStatsTX(!batteryLow && !hubMode && ss1.changedValue(), doBinary);
         }
       break;
       }

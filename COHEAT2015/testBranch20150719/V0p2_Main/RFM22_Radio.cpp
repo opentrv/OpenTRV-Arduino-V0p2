@@ -75,7 +75,7 @@ void RFM22RawStatsTX(uint8_t * const buf, const bool doubleTX, const bool RFM23B
 //    RFM22TXFIFO(); // Re-send it!
 //    }
   const uint8_t buflen = OTRadioLink::frameLenFFTerminated(buf);
-  if(!RFM23B.sendRaw(buf, buflen))
+  if(!RFM23B.sendRaw(buf, buflen, 0, (doubleTX ? OTRadioLink::OTRadioLink::TXmax : OTRadioLink::OTRadioLink::TXnormal)))
     {
 #if 1 && defined(DEBUG)
     DEBUG_SERIAL_PRINTLN_FLASHSTRING("!TX failed");
