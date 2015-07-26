@@ -1307,25 +1307,28 @@ void populateCoreStats(FullStatsMessageCore_t *const content)
 // Call this to do an I/O poll if needed; returns true if something useful happened.
 // This call should typically take << 1ms at 1MHz CPU.
 // Does not change CPU clock speeds, mess with interrupts (other than possible brief blocking), or sleep.
-// Limits actual poll rate to something like once every 32ms, unless force is true.
+// Should also does nothing that interacts with Serial.
+// Limits actual poll rate to something like once every 8ms, unless force is true.
 //   * force if true then force full poll on every call (ie do not internally rate-limit)
+// Not thread-safe, eg not to be called from within an ISR.
 bool pollIO(const bool force)
   {
-#if defined(ENABLE_BOILER_HUB) && defined(USE_MODULE_FHT8VSIMPLE)
-  if(inHubMode())
-    {
+//#if defined(ENABLE_BOILER_HUB) && defined(USE_MODULE_FHT8VSIMPLE)
+//  if(inHubMode())
+//    {
     static volatile uint8_t _pO_lastPoll;
 
-    // Poll RX at most about every ~32ms to help approx match spil rate when called in loop with 30ms nap.
+    // Poll RX at most about every ~8ms to help approx match spil rate when called in loop with 30ms nap.
     const uint8_t sct = getSubCycleTime();
-    if(force || ((0 == (sct & 3)) && (sct != _pO_lastPoll)))
+    if(force || (sct != _pO_lastPoll))
       {
       _pO_lastPoll = sct;
-      if(FHT8VCallForHeatPoll()) // Check if call-for-heat has been overheard.
-        { return(true); }
+      // Poll for inbound frames.
+      // The will generally be little time to do this before getting an overrun or dropped frame.
+      RFM23B.poll();
       }
-    }
-#endif
+//    }
+//#endif
   return(false);
   }
 
@@ -1339,11 +1342,9 @@ static SimpleStatsRotation<8> ss1; // Configured for maximum different stats.
 // Output should be filtered for items appropriate
 // to current channel security and sensitivity level.
 // This may be binary or JSON format.
-//   * resumeRX  if true and unit capable of running in hub/RX mode,
-//       the unit will resume RX after sending the stats
 //   * allowDoubleTX  allow double TX to increase chance of successful reception
 //   * doBinary  send binary form, else JSON form if supported
-static void bareStatsTX(const bool resumeRX, const bool allowDoubleTX, const bool doBinary)
+static void bareStatsTX(const bool allowDoubleTX, const bool doBinary)
   {
 #if (FullStatsMessageCore_MAX_BYTES_ON_WIRE > STATS_MSG_MAX_LEN)
 #error FullStatsMessageCore_MAX_BYTES_ON_WIRE too big
@@ -1351,7 +1352,7 @@ static void bareStatsTX(const bool resumeRX, const bool allowDoubleTX, const boo
 #if (MSG_JSON_MAX_LENGTH+1 > STATS_MSG_MAX_LEN) // Allow 1 for trailing CRC.
 #error MSG_JSON_MAX_LENGTH too big
 #endif
-  
+
   // Allow space in buffer for:
   //   * buffer offset/preamble
   //   * max binary length, or max JSON length + 1 for CRC + 1 to allow detection of oversize message
@@ -1374,17 +1375,11 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 #endif
       return;
       }
-    // Record stats as if remote, and treat channel as secure.
-    recordCoreStats(true, &content);
     // Send it!
     RFM22RawStatsTX(true, buf, allowDoubleTX);
-    // Resume appropriate behaviour after TX.
-#if defined(ENABLE_BOILER_HUB)
-    if(resumeRX)
-      { SetupToEavesdropOnFHT8V(true); } // Revert to hub listening... // GG suggested fix 2015/06/20 TODO-521
-    else
-#endif
-      { RFM22ModeStandbyAndClearState(); } // Go to standby to conserve energy.
+    // Record stats as if remote, and treat channel as secure.
+    recordCoreStats(true, &content);
+    handleQueuedMessages(&Serial, true, &RFM23B);
     }
 
 #if defined(ALLOW_JSON_OUTPUT)
@@ -1397,7 +1392,6 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
     int8_t wrote;
 
     // Managed JSON stats.
-//    static SimpleStatsRotation<8> ss1; // Configured for maximum different stats.
     const bool maximise = true; // Make best use of available bandwidth...
     if(ss1.isEmpty())
       {
@@ -1437,13 +1431,13 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
       return;
       }
 
-    // Record stats as if local, and treat channel as secure.
-    recordJSONStats(true, (const char *)bptr);
-#if 0 || !defined(ENABLE_BOILER_HUB) && defined(DEBUG)
+#if 0 /* || !defined(ENABLE_BOILER_HUB) */ && defined(DEBUG)
     DEBUG_SERIAL_PRINT((const char *)bptr);
     DEBUG_SERIAL_PRINTLN();
 #endif
-    // Adjust JSON message for reliable transmission.
+    // Record stats as if local, and treat channel as secure.
+    recordJSONStats(true, (const char *)bptr);
+    // Adjust JSON message for transmission.
     // (Set high-bit on final '}' to make it unique, and compute and append (non-0xff) CRC.)
     const uint8_t crc = adjustJSONMsgForTXAndComputeCRC((char *)bptr);
     if(0xff == crc)
@@ -1463,16 +1457,9 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
       return;
       }
 #endif
-    // TODO: put in listen before TX to reduce collisions (CSMA).
     // Send it!
     RFM22RawStatsTX(false, buf, allowDoubleTX);
-    // Resume appropriate behaviour after TX.
-#if defined(ENABLE_BOILER_HUB)
-    if(resumeRX)
-      { SetupToEavesdropOnFHT8V(true); } // Revert to hub listening... // GG suggested fix 2015/06/20 TODO-521
-    else
-#endif
-      { RFM22ModeStandbyAndClearState(); } // Go to standby to conserve energy.
+    handleQueuedMessages(&Serial, true, &RFM23B);
     }
 
 #endif // defined(ALLOW_JSON_OUTPUT)
@@ -1520,6 +1507,21 @@ static uint8_t boilerNoCallM;
 #define TIME_CYCLE_S 60 // TIME_LSD ranges from 0 to TIME_CYCLE_S-1, also major cycle length.
 static uint_fast8_t TIME_LSD; // Controller's notion of seconds within major cycle.
 
+// Mask for Port B input change interrupts.
+#define MASK_PB_BASIC 0b00000000 // Nothing.
+#ifdef PIN_RFM_NIRQ
+  #if (PIN_RFM_NIRQ < 8) || (PIN_RFM_NIRQ > 15)
+    #error PIN_RFM_NIRQ expected to be on port B
+  #endif
+  #define RFM23B_INT_MASK (1 << (PIN_RFM_NIRQ&7))
+  #define MASK_PB (MASK_PB_BASIC | RFM23B_INT_MASK)
+#else
+  #define MASK_PB MASK_PB_BASIC
+#endif
+
+// Mask for Port C input change interrupts.
+#define MASK_PC_BASIC 0b00000000 // Nothing.
+
 // Mask for Port D input change interrupts.
 #define MASK_PD_BASIC 0b00000001 // Just RX.
 #if defined(ENABLE_VOICE_SENSOR)
@@ -1534,29 +1536,74 @@ static uint_fast8_t TIME_LSD; // Controller's notion of seconds within major cyc
 
 void setupOpenTRV()
   {
+#if 0 && defined(DEBUG)
+  DEBUG_SERIAL_PRINTLN_FLASHSTRING("Entering setup...");
+#endif
+
+  // Radio not listening to start with.
+  // Ignore any initial spurious RX interrupts for example.
+  RFM23B.listen(false);
+
+#if 0 && defined(DEBUG)
+  DEBUG_SERIAL_PRINTLN_FLASHSTRING("RFM23B.listen(false);");
+#endif
+
   // Set up async edge interrupts.
   ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
     {
-    //PCICR = 0x05;
-    //PCMSK0 = 0b00000011; // PB; PCINT  0--7    (LEARN1 and Radio)
-    //PCMSK1 = 0b00000000; // PC; PCINT  8--15
-    //PCMSK2 = 0b00101001; // PD; PCINT 16--24   (LEARN2 and MODE, RX)
-    PCICR = 0x4; // 0x4 enables PD/PCMSK2.
-    PCMSK2 = MASK_PD; // PD; PCINT 16--24 (0b1 is PCINT16/RX)
+   //PCMSK0 = PB; PCINT  0--7    (LEARN1 and Radio)
+    //PCMSK1 = PC; PCINT  8--15
+    //PCMSK2 = PD; PCINT 16--24   (LEARN2 and MODE, RX)
+
+    PCICR =
+#if defined(MASK_PB) && (MASK_PB != 0) // If PB interrupts required.
+        1 | // 0x1 enables PB/PCMSK0.
+#endif
+#if defined(MASK_PC) && (MASK_PC != 0) // If PC interrupts required.
+        2 | // 0x2 enables PC/PCMSK1.
+#endif
+#if defined(MASK_PD) && (MASK_PD != 0) // If PD interrupts required.
+        4 | // 0x4 enables PD/PCMSK2.
+#endif
+        0;
+
+#if defined(MASK_PB) && (MASK_PB != 0) // If PB interrupts required.
+    PCMSK0 = MASK_PB;
+#endif
+#if defined(MASK_PC) && (MASK_PC != 0) // If PC interrupts required.
+    PCMSK1 = MASK_PC;
+#endif
+#if defined(MASK_PD) && (MASK_PD != 0) // If PD interrupts required.
+    PCMSK2 = MASK_PD;
+#endif
     }
+
+#if 0 && defined(DEBUG)
+  DEBUG_SERIAL_PRINTLN_FLASHSTRING("int setup");
+#endif
 
   // Do early 'wake-up' stats transmission if possible
   // when everything else is set up and ready.
   // Attempt to maximise chance of reception with a double TX.
   // Assume not in hub mode yet.
-  // Send all possible formats.
-  bareStatsTX(false, true, true);
-  // Send stats repeatedly until all values pushed out (no 'changed' values unsent).
-  do
+  // Send all possible formats, binary first (assumed complete in one message).
+  bareStatsTX(true, true);
+  // Send JSON stats repeatedly (typically once or twice)
+  // until all values pushed out (no 'changed' values unsent)
+  // or limit reached.
+  for(uint8_t i = 5; --i > 0; )
     {
     nap(WDTO_120MS); // Sleep long enough for receiver to have a chance to process previous TX.
-    bareStatsTX(false, true, false);
-    } while(false); // (ss1.changedValue()); // FIXME.
+#if 0 && defined(DEBUG)
+  DEBUG_SERIAL_PRINTLN_FLASHSTRING(" TX...");
+#endif
+    bareStatsTX(true, false);
+    if(!ss1.changedValue()) { break; }
+    }
+
+#if 0 && defined(DEBUG)
+  DEBUG_SERIAL_PRINTLN_FLASHSTRING("setup stats sent");
+#endif
 
 #if defined(LOCAL_TRV) && defined(DIRECT_MOTOR_DRIVE_V1)
   // Signal some sort of life on waking up...
@@ -1572,11 +1619,53 @@ void setupOpenTRV()
   if(0 != (ID0 & 0x20)) { minuteCount = randRNG8() | 2; } // Start at minute 2 or 3 out of 4 for some units.
 #endif
 
+#if 0 && defined(DEBUG)
+  DEBUG_SERIAL_PRINTLN_FLASHSTRING("Finishng setup...");
+#endif
+
   // Set appropriate loop() values just before entering it.
   TIME_LSD = getSecondsLT();
   }
 
 #if !defined(ALT_MAIN_LOOP) // Do not define handlers here when alt main is in use.
+
+#if defined(MASK_PB) && (MASK_PB != 0) // If PB interrupts required.
+//// Interrupt count.  Marked volatile so safe to read without a lock as is a single byte.
+//static volatile uint8_t intCountPB;
+// Previous state of port B pins to help detect changes.
+static volatile uint8_t prevStatePB;
+// Interrupt service routine for PB I/O port transition changes.
+ISR(PCINT0_vect)
+  {
+//  ++intCountPB;
+  const uint8_t pins = PINB;
+  const uint8_t changes = pins ^ prevStatePB;
+  prevStatePB = pins;
+
+#if defined(RFM23B_INT_MASK)
+  // RFM23B nIRQ falling edge is of interest.
+  // Handler routine not required/expected to 'clear' this interrupt.
+  // TODO: try to ensure that OTRFM23BLink.handleInterruptSimple() is inlineable to minimise ISR prologue/epilogue time and space.
+  if((changes & RFM23B_INT_MASK) && !(pins & RFM23B_INT_MASK))
+    { RFM23B.handleInterruptSimple(); }
+#endif
+  }
+#endif
+
+#if defined(MASK_PC) && (MASK_PC != 0) // If PB interrupts required.
+// Previous state of port C pins to help detect changes.
+static volatile uint8_t prevStatePC;
+// Interrupt service routine for PC I/O port transition changes.
+ISR(PCINT1_vect)
+  {
+//  const uint8_t pins = PINC;
+//  const uint8_t changes = pins ^ prevStatePC;
+//  prevStatePC = pins;
+//
+// ...
+  }
+#endif
+
 // Previous state of port D pins to help detect changes.
 static volatile uint8_t prevStatePD;
 // Interrupt service routine for PD I/O port transition changes (including RX).
@@ -1610,6 +1699,36 @@ ISR(PCINT2_vect)
 #endif
 
 
+#ifdef ENABLE_BOILER_HUB
+// Set true on receipt of plausible call for heat,
+// to be polled, evaluated and cleared by the main control routine.
+// Marked volatile to allow thread-safe lock-free access.
+static volatile bool receivedCallForHeat;
+// ID of remote caller-for-heat; only valid if receivedCallForHeat is true.
+// Marked volatile to allow access from an ISR,
+// but note that access may only be safe with interrupts disabled as not a byte value.
+static volatile uint16_t receivedCallForHeatID;
+
+// Raw notification of received call for heat from remote (eg FHT8V) unit.
+// This form has a 16-bit ID (eg FHT8V housecode) and percent-open value [0,100].
+// Note that this may include 0 percent values for a remote unit explcitly confirming
+// that is is not, or has stopped, calling for heat (eg instead of replying on a timeout).
+// This is not filtered, and can be delivered at any time from RX data, from a non-ISR thread.
+// Does not have to be thread-/ISR- safe.
+void remoteCallForHeatRX(const uint16_t id, const uint8_t percentOpen)
+  {
+  // Should be filtering first by housecode
+  // then by individual and tracked aggregate valve-open pervcentage.
+  // Initial fix for TODO-520: Bad comparison screening incoming calls for heat at boiler hub.
+  const uint8_t mvro = NominalRadValve.getMinValvePcReallyOpen();
+  if(percentOpen >= mvro)
+    // FHT8VHubAcceptedHouseCode(command.hc1, command.hc2))) // Accept if house code OK.
+    {
+    receivedCallForHeat = true; // FIXME
+    receivedCallForHeatID = id;
+    }
+  }
+#endif
 
 
 
@@ -1662,68 +1781,14 @@ void loopOpenTRV()
   // Try if very near to end of cycle and thus causing an overrun.
   // Conversely, if not true, should have time to savely log outputs, etc.
   const uint8_t nearOverrunThreshold = GSCT_MAX - 8; // ~64ms/~32 serial TX chars of grace time...
-  bool tooNearOverrun = false; // Set flag that can be checked later.
+//  bool tooNearOverrun = false; // Set flag that can be checked later.
 
   // Is this unit currently in central hub listener mode?
   const bool hubMode = inHubMode();
 
-#if defined(ENABLE_BOILER_HUB)
-  // Check (early) for any remote stats arriving to dump.
-  // This is designed to be easy to pick up by reading the serial output.
-  // The output is terse to avoid taking too long and possibly delaying other stuff too far.
-  // Avoid doing this at all if too near the end of the cycle and risking overrun,
-  // leaving any message queued, hoping it does not get overwritten.
-  // TODO: safely process more than one pending message if present.
-  // TODO: move to process in a batch periodically, eg when CLI is due.
-  if(getSubCycleTime() >= nearOverrunThreshold) { tooNearOverrun = true; }
-  else
-    {
-    // Look for binary-format message.
-    FullStatsMessageCore_t stats;
-    getLastCoreStats(&stats);
-    if(stats.containsID)
-      {
-      // Dump (remote) stats field '@<hexnodeID>;TnnCh[P;]'
-      // where the T field shows temperature in C with a hex digit after the binary point indicated by C
-      // and the optional P field indicates low power.
-      serialPrintAndFlush(LINE_START_CHAR_RSTATS);
-      serialPrintAndFlush((((uint16_t)stats.id0) << 8) | stats.id1, HEX);
-      if(stats.containsTempAndPower)
-        {
-        serialPrintAndFlush(F(";T"));
-        serialPrintAndFlush(stats.tempAndPower.tempC16 >> 4, DEC);
-        serialPrintAndFlush('C');
-        serialPrintAndFlush(stats.tempAndPower.tempC16 & 0xf, HEX);
-        if(stats.tempAndPower.powerLow) { serialPrintAndFlush(F(";P")); } // Insert power-low field if needed.
-        }
-      if(stats.containsAmbL)
-        {
-        serialPrintAndFlush(F(";L"));
-        serialPrintAndFlush(stats.ambL);
-        }
-      if(0 != stats.occ)
-        {
-        serialPrintAndFlush(F(";O"));
-        serialPrintAndFlush(stats.occ);
-        }
-      serialPrintlnAndFlush();
-      }
-    // Check for JSON/text-format message if no binary message waiting.
-    else
-      {
-      char buf[MSG_JSON_MAX_LENGTH+1];
-      getLastJSONStats(buf);
-      if('\0' != *buf)
-        {
-        // Dump contained JSON message as-is at start of line.
-        serialPrintAndFlush(buf);
-        serialPrintlnAndFlush();
-        }
-      }
-    }
-#endif
+//  if(getSubCycleTime() >= nearOverrunThreshold) { tooNearOverrun = true; }
 
-#if defined(ENABLE_BOILER_HUB)
+#if CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX
   // IF IN CENTRAL HUB MODE: listen out for OpenTRV units calling for heat.
   // Power optimisation 1: when >> 1 TX cycle (of ~2mins) need not listen, ie can avoid enabling receiver.
   // Power optimisation 2: TODO: when (say) >>30m since last call for heat then only sample listen for (say) 3 minute in 10 (not at a TX cycle multiple).
@@ -1731,22 +1796,37 @@ void loopOpenTRV()
   // to avoid temperature over-estimates from self-heating,
   // and could be disabled if no local valve is being run to provide better response to remote nodes.
   bool hubModeBoilerOn = false; // If true then remote call for heat is in progress.
-#if defined(USE_MODULE_FHT8VSIMPLE)
+//#if defined(USE_MODULE_FHT8VSIMPLE)
   bool needsToEavesdrop = false; // By default assume no need to eavesdrop.
-#endif
+//#endif
   if(hubMode)
     {
-#if defined(USE_MODULE_FHT8VSIMPLE)
+#if defined(ENABLE_BOILER_HUB) // && defined(USE_MODULE_FHT8VSIMPLE)   // ***** FIXME *******
     // Final poll to to cover up to end of previous minor loop.
     // Keep time from here to following SetupToEavesdropOnFHT8V() as short as possible to avoid missing remote calls.
-    FHT8VCallForHeatPoll();
+//    FHT8VCallForHeatPoll();
 
-    // Fetch and clear current pending sample house code calling for heat.
-    const uint16_t hcRequest = FHT8VCallForHeatHeardGetAndClear();
-    const bool heardIt = (hcRequest != ((uint16_t)~0));
+    // Check if call-for-heat has been received, and clear the flag.
+    bool _h;
+    bool _hID; // Only valid if _h is true.
+    ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
+      {
+      _h = receivedCallForHeat;
+      if(_h)
+        {
+        receivedCallForHeat = false;
+        _hID = receivedCallForHeatID;
+        }
+      }
+    const bool heardIt = _h;
+    const bool hcRequest = heardIt ? _hID : 0; // Only valid if heardIt is true.
+
+//    // Fetch and clear current pending sample house code calling for heat.
+//    const uint16_t hcRequest = FHT8VCallForHeatHeardGetAndClear();
+//    const bool heardIt = (hcRequest != ((uint16_t)~0));
     // Don't log call for hear if near overrun,
     // and leave any error queued for next time.
-    if(getSubCycleTime() >= nearOverrunThreshold) { tooNearOverrun = true; }
+    if(getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
     else
       {
       if(heardIt)
@@ -1759,17 +1839,17 @@ void loopOpenTRV()
         serialPrintAndFlush(hcRequest & 0xff);
         serialPrintlnAndFlush();
         }
-      else
-        {
-        // Check for error if nothing received.
-        const uint8_t err = FHT8VLastRXErrGetAndClear();
-        if(0 != err)
-          {
-          serialPrintAndFlush(F("!RXerr F"));
-          serialPrintAndFlush(err);
-          serialPrintlnAndFlush();
-          }
-        }
+//      else
+//        {
+//        // Check for error if nothing received.
+//        const uint8_t err = FHT8VLastRXErrGetAndClear();
+//        if(0 != err)
+//          {
+//          serialPrintAndFlush(F("!RXerr F"));
+//          serialPrintAndFlush(err);
+//          serialPrintlnAndFlush();
+//          }
+//        }
       }
 
     // Record call for heat, both to start boiler-on cycle and to defer need to listen again. 
@@ -1778,7 +1858,7 @@ void loopOpenTRV()
       {
       if(0 == boilerCountdownTicks)
         {
-        if(getSubCycleTime() >= nearOverrunThreshold) { tooNearOverrun = true; }
+        if(getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
         else { serialPrintlnAndFlush(F("RCfH1")); } // Remote call for heat on.
         }
       boilerCountdownTicks = getMinBoilerOnMinutes() * (60/MAIN_TICK_S);
@@ -1789,7 +1869,7 @@ void loopOpenTRV()
       {
       if(0 == --boilerCountdownTicks)
         {
-        if(getSubCycleTime() >= nearOverrunThreshold) { tooNearOverrun = true; }
+        if(getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
         else { serialPrintlnAndFlush(F("RCfH0")); } // Remote call for heat off
         }
       }
@@ -1830,29 +1910,44 @@ void loopOpenTRV()
 #endif
       }
 
+#else
+      needsToEavesdrop = true; // Listen if in hub mode.
 #endif
     }
 #endif
 
-#if defined(ENABLE_BOILER_HUB)
-#if defined(USE_MODULE_FHT8VSIMPLE)
+
+
+
+
+
+
+
+
+
+
+
+#if CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX
   // Act on eavesdropping need, setting up or clearing down hooks as required.
+  RFM23B.listen(needsToEavesdrop);
+//#if defined(USE_MODULE_FHT8VSIMPLE)
   if(needsToEavesdrop)
     {
-    // Ensure radio is in RX mode rather than standby, and possibly hook up interrupts if available (REV1 board).
-    const bool startedRX = SetupToEavesdropOnFHT8V(second0); // Start listening (if not already so).
-#if 0 && defined(DEBUG)
-    if(startedRX) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("STARTED eavesdropping"); }
-#endif
 #if 1 && defined(DEBUG)
-    const uint16_t dropped = getInboundStatsQueueOverrun();
-    static uint16_t oldDropped;
+    const uint8_t dropped = RFM23B.getRXMsgsDroppedRecent();
+    static uint8_t oldDropped;
     if(dropped != oldDropped)
       {
-      DEBUG_SERIAL_PRINT_FLASHSTRING("?DROPPED stats: ");
+      DEBUG_SERIAL_PRINT_FLASHSTRING("?RX DROPPED: ");
       DEBUG_SERIAL_PRINT(dropped);
       DEBUG_SERIAL_PRINTLN();
       oldDropped = dropped;
+      }
+    for(uint8_t lastErr; 0 != (lastErr = RFM23B.getRXErr()); )
+      {
+      DEBUG_SERIAL_PRINT_FLASHSTRING("!RX err: ");
+      DEBUG_SERIAL_PRINT(lastErr);
+      DEBUG_SERIAL_PRINTLN();
       }
 #endif
 #if 0 && defined(DEBUG)
@@ -1863,14 +1958,7 @@ void loopOpenTRV()
     DEBUG_SERIAL_PRINTLN_FLASHSTRING("m");
 #endif
     }
-  else
-    {
-    // Power down and clear radio state (if currently eavesdropping).
-    StopEavesdropOnFHT8V(second0);
-    // Clear any RX state so that nothing stale is carried forward.
-    FHT8VCallForHeatHeardGetAndClear();
-    }
-#endif
+//#endif
 #endif
 
 
@@ -1889,46 +1977,75 @@ void loopOpenTRV()
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("*E"); // End-of-cycle sleep.
 #endif
-  // Ensure that serial I/O is off.
+//  // Ensure that serial I/O is off while sleeping, unless listening with radio.
+//  if(!needsToEavesdrop) { powerDownSerial(); } else { powerUpSerialIfDisabled(); }
+  // Ensure that serial I/O is off while sleeping.
   powerDownSerial();
   // Power down most stuff (except radio for hub RX).
   minimisePowerWithoutSleep();
   uint_fast8_t newTLSD;
   while(TIME_LSD == (newTLSD = getSecondsLT()))
     {
-#if defined(ENABLE_BOILER_HUB) && defined(USE_MODULE_FHT8VSIMPLE) // Deal with FHT8V eavesdropping if needed.
-    // Poll for RX of remote calls-for-heat if needed.
-    if(needsToEavesdrop) { nap30AndPoll(); continue; }
+    // Poll I/O and process message incrementally (in this otherwise idle time)
+    // before sleep and on wakeup in case some IO needs further processing now,
+    // eg work was accrued during the previous major slow/outer loop
+    // or the in a previous orbit of this loop sleep or nap was terminated by an I/O interrupt.
+    // Come back and have another go if work was done, until the next tick at most.
+    if(handleQueuedMessages(&Serial, true, &RFM23B)) { continue; }
+
+//#if defined(USE_MODULE_RFM22RADIOSIMPLE) // Force radio to power-saving standby state if appropriate.
+//    // Force radio to known-low-power state from time to time (not every time to avoid unnecessary SPI work, LED flicker, etc.)
+//    if(batteryLow || second0) { RFM22ModeStandbyAndClearState(); } // FIXME: old world
+//#endif
+
+// If missing h/w interrupts for anything that needs rapid response
+// then AVOID the lowest-power long sleep.
+#if CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX && !defined(PIN_RFM_NIRQ)
+#define MUST_POLL_FREQUENTLY true
+    if(MUST_POLL_FREQUENTLY && needsToEavesdrop)
+#else
+#define MUST_POLL_FREQUENTLY false
+    if(false)
 #endif
-#if defined(USE_MODULE_RFM22RADIOSIMPLE) // Force radio to power-saving standby state if appropriate.
-    // Force radio to known-low-power state from time to time (not every time to avoid unnecessary SPI work, LED flicker, etc.)
-    if(batteryLow || second0) { RFM22ModeStandbyAndClearState(); }
-#endif
-    sleepUntilInt(); // Normal long minimal-power sleep until wake-up interrupt.
+      {
+      // If there is not hardware interrupt wakeup on receipt of a frame,
+      // then this can only sleep for a short time between explicit poll()s,
+      // though in any case allow wake on interrupt to minimise loop timing jitter
+      // when the slow RTC 'end of sleep' tick arrives.
+      nap(WDTO_15MS, true);
+      }
+    else
+      {
+      // Normal long minimal-power sleep until wake-up interrupt.
+      // Rely on interrupt to force quick loop round to I/O poll().
+      sleepUntilInt();
+      }
+//    DEBUG_SERIAL_PRINTLN_FLASHSTRING("w"); // Wakeup.
     }
   TIME_LSD = newTLSD;
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("*S"); // Start-of-cycle wake.
 #endif
 
-#if defined(ENABLE_BOILER_HUB) && defined(USE_MODULE_FHT8VSIMPLE) // Deal with FHT8V eavesdropping if needed.
-  // Check RSSI...
-  if(needsToEavesdrop)
-    {
-    const uint8_t rssi = RFM22RSSI();
-    static uint8_t lastRSSI;
-    if((rssi > 0) && (lastRSSI != rssi))
-      {
-      lastRSSI = rssi;
-      addEntropyToPool(rssi, 0); // Probably some real entropy but don't assume it.
-#if 0 && defined(DEBUG)
-      DEBUG_SERIAL_PRINT_FLASHSTRING("RSSI=");
-      DEBUG_SERIAL_PRINT(rssi);
-      DEBUG_SERIAL_PRINTLN();
-#endif
-      }
-    }
-#endif
+//#if defined(ENABLE_BOILER_HUB) && defined(USE_MODULE_FHT8VSIMPLE) // Deal with FHT8V eavesdropping if needed.
+//  // Check RSSI...
+//  if(needsToEavesdrop)
+//    {
+////    const uint8_t rssi = RFM22RSSI();
+//    const uint8_t rssi = RFM23.getRSSI();
+//    static uint8_t lastRSSI;
+//    if((rssi > 0) && (lastRSSI != rssi))
+//      {
+//      lastRSSI = rssi;
+//      addEntropyToPool(rssi, 0); // Probably some real entropy but don't assume it.
+//#if 0 && defined(DEBUG)
+//      DEBUG_SERIAL_PRINT_FLASHSTRING("RSSI=");
+//      DEBUG_SERIAL_PRINT(rssi);
+//      DEBUG_SERIAL_PRINTLN();
+//#endif
+//      }
+//    }
+//#endif
 
 #if 0 && defined(DEBUG) // Show CPU cycles.
   DEBUG_SERIAL_PRINT('C');
@@ -1941,8 +2058,8 @@ void loopOpenTRV()
   // ===============
 
 
-  // Warn if too near overrun before.
-  if(tooNearOverrun) { serialPrintlnAndFlush(F("?near overrun")); }
+//  // Warn if too near overrun before.
+//  if(tooNearOverrun) { serialPrintlnAndFlush(F("?near overrun")); }
 
 
   // Get current power supply voltage.
@@ -2066,6 +2183,7 @@ void loopOpenTRV()
         pollIO(); // Deal with any pending I/O.
         // Sleep randomly up to 128ms to spread transmissions and thus help avoid collisions.
         sleepLowPowerLessThanMs(1 + (randRNG8() & 0x7f));
+//        nap(randRNG8NextBoolean() ? WDTO_60MS : WDTO_120MS); // FIXME: need a different random interval generator!
         pollIO(); // Deal with any pending I/O.
         // Send it!
         // Try for double TX for extra robustness unless:
@@ -2076,7 +2194,7 @@ void loopOpenTRV()
         // if this is controlling a local FHT8V on which the binary stats can be piggybacked.
         // Ie, if doesn't have a local TRV then it must send binary some of the time.
         const bool doBinary = !localFHT8VTRVEnabled() && randRNG8NextBoolean();
-        bareStatsTX(hubMode, minute1From4AfterSensors && !batteryLow && !hubMode && ss1.changedValue(), doBinary);
+        bareStatsTX(minute1From4AfterSensors && !batteryLow && !hubMode && ss1.changedValue(), doBinary);
         }
       break;
       }

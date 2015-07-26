@@ -37,9 +37,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 // Production configs.
 //#define CONFIG_Trial2013Winter_Round1 // REV1
-#define CONFIG_Trial2013Winter_Round2 // REV2 cut4
+//#define CONFIG_Trial2013Winter_Round2 // REV2 cut4
 //#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as boiler hub.
-//#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
+#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
+//#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
 //#define CONFIG_DORM1 // REV7 / DORM1 Winter 2014/2015 all-in-one valve unit.
 //#define CONFIG_DORM1_BOILER // REV8 / DORM1 Winter 2014/2015 boiler-control unit.
 
@@ -48,6 +49,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_DHD_TESTLAB_REV0 // REV0 / breadboard.
 //#define CONFIG_DHD_TESTLAB_REV1 // REV1.
 //#define CONFIG_DHD_TESTLAB_REV4 // REV4 cut2
+//#define CONFIG_DHD_TESTLAB_REV4_NOHUB // REV4 cut2, no hub.
 //#define CONFIG_BH_DHW // Bo's hot water.
 //#define CONFIG_BH_TESTLAB
 //#define CONFIG_DORM1_SANS32K // REV7 / DORM1 without working 32768Hz clock.
@@ -126,6 +128,14 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define ALLOW_STATS_RX
 #endif
 
+#ifdef CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
+#define CONFIG_Trial2013Winter_Round2 // Just like normal REV except...
+// IF DEFINED: this unit can act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
+#undef ENABLE_BOILER_HUB
+// IF DEFINED: allow RX of stats frames.
+#undef ALLOW_STATS_RX
+#endif
+
 #ifdef CONFIG_Trial2013Winter_Round2 // For trial over winter of 2013--4, second round (REV2).
 // Revision REV2 (cut4+) of V0.2 board.
 #define V0p2_REV 2
@@ -192,7 +202,15 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 // -------------------------
 
-#ifdef CONFIG_DHD_TESTLAB_REV4 // DHD's test lab with TRV on REV4 board.
+#ifdef CONFIG_DHD_TESTLAB_REV4_NOHUB // REV4 board but no listening...
+#define CONFIG_DHD_TESTLAB_REV4
+// IF DEFINED: this unit can act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
+#undef ENABLE_BOILER_HUB
+// IF DEFINED: allow RX of stats frames.
+#undef ALLOW_STATS_RX
+#endif
+
+#ifdef CONFIG_DHD_TESTLAB_REV4 // DHD's test lab with TRV on REV4 (cut2) board.
 // Revision of V0.2 board.
 #define V0p2_REV 4 // REV0 covers DHD's breadboard and first V0.2 PCB.
 // Enable use of SHT21 RH and temp sensor.
@@ -374,6 +392,15 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #ifndef SUPPORT_SINGLETON_SCHEDULE
 #define SUPPORT_SINGLETON_SCHEDULE
 #endif
+#endif
+
+
+
+// If (potentially) needing to run in some sort of continuous RX mode, define a flag true (else false).
+#if defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX)
+#define CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX true
+#else
+#define CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX false
 #endif
 
 // By default, use the RFM22/RFM23 module to talk to an FHT8V wireless radiator valve.

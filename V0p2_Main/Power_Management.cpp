@@ -21,6 +21,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include <util/crc16.h>
 
 #include <Wire.h>
+#include <OTV0p2Base.h> // Underlying hardware support definitions.
 
 #include "Power_Management.h"
 
@@ -87,7 +88,7 @@ void minimisePowerWithoutSleep()
   power_adc_disable();
 
   // Ensure that SPI is powered down.
-  powerDownSPI();
+  OTV0P2BASE::powerDownSPI();
 
   // Ensure that TWI is powered down.
   powerDownTWI();
@@ -182,7 +183,9 @@ ISR(WDT_vect)
 // Note: may be dubious to run CPU clock less than 4x 32768Hz crystal speed,
 // eg at 31250Hz for 8MHz RC clock and max prescale.
 // Don't access timer 2 regs at low CPU speed, eg in ISRs.
-__attribute__ ((noinline)) void sleepLowPowerLoopsMinCPUSpeed(uint16_t loops)
+//
+// This may only be safe to use with interrupts disabled.
+__attribute__ ((noinline)) void _sleepLowPowerLoopsMinCPUSpeed(uint16_t loops)
   {
   const clock_div_t prescale = clock_prescale_get(); // Capture current prescale value.
   clock_prescale_set(MAX_CPU_PRESCALE); // Reduce clock speed (increase prescale) as far as possible.
@@ -224,6 +227,7 @@ void sleepPwrSaveWithBODDisabled()
 // Sleep briefly in as lower-power mode as possible until the specified (watchdog) time expires, or another interrupt.
 //   * watchdogSleep is one of the WDTO_XX values from <avr/wdt.h>
 // May be useful to call minimsePowerWithoutSleep() first, when not needing any modules left on.
+#define NAP_ALLOW_SPURIOUS_WAKEUP_BY_DEFAULT false
 void nap(int_fast8_t watchdogSleep)
   {
   // Watchdog should (already) be disabled on entry.
@@ -236,7 +240,7 @@ void nap(int_fast8_t watchdogSleep)
   for( ; ; )
     {
     sleepPwrSaveWithBODDisabled();
-    if(0 != _watchdogFired)
+    if(NAP_ALLOW_SPURIOUS_WAKEUP_BY_DEFAULT || (0 != _watchdogFired))
       {
       wdt_disable(); // Avoid spurious wakeup later.
       return; // All done!
@@ -244,11 +248,11 @@ void nap(int_fast8_t watchdogSleep)
     }
  }
 
-#if 0
+#if 1
 // Sleep briefly in as lower-power mode as possible until the specified (watchdog) time expires, or another interrupt.
 //   * watchdogSleep is one of the WDTO_XX values from <avr/wdt.h>
 //   * allowPrematureWakeup if true then if woken before watchdog fires return false; default false
-// Returns false if the watchdog timer did not go off.
+// Returns false if the watchdog timer did not go off, true if it did.
 // May be useful to call minimsePowerWithoutSleep() first, when not needing any modules left on.
 bool nap(int_fast8_t watchdogSleep, bool allowPrematureWakeup)
   {
@@ -324,10 +328,10 @@ bool sleepUntilSubCycleTime(const uint8_t sleepUntil)
     // Deal with shortest sleep specially to avoid missing target from overheads...
     if(1 == ticksLeft)
       {
-      // Take a very short sleep, less than half a tick,
+      // Take a very short sleep, much less than half a tick,
       // eg as may be some way into this tick already.
       //burnHundredsOfCyclesProductively();
-      sleepLowPowerLessThanMs(max(SUBCYCLE_TICK_MS_RD / 2, 1)); // Assumed to be a constant expression.
+      sleepLowPowerLessThanMs(1);
       continue;
       }
 
@@ -806,52 +810,53 @@ void powerDownTWI()
   //pinMode(SCL, INPUT);
   }
 
-// If SPI was disabled, power it up, enable it as master and with a sensible clock speed, etc, and return true.
-// If already powered up then do nothing other than return false.
-// If this returns true then a matching powerDownSPI() may be advisable.
-bool powerUpSPIIfDisabled()
-  {
-  if(!(PRR & _BV(PRSPI))) { return(false); }
-
-  pinMode(PIN_SPI_nSS, OUTPUT); // Ensure that nSS is an output to avoid forcing SPI to slave mode by accident.
-  fastDigitalWrite(PIN_SPI_nSS, HIGH); // Ensure that nSS is HIGH and thus any slave deselected when powering up SPI.
-
-  PRR &= ~_BV(PRSPI); // Enable SPI power.
-  // Configure raw SPI to match better how it was used in PICAXE V0.09 code.
-  // CPOL = 0, CPHA = 0
-  // Enable SPI, set master mode, set speed.
-  const uint8_t ENABLE_MASTER =  _BV(SPE) | _BV(MSTR);
-#if F_CPU <= 2000000 // Needs minimum prescale (x2) with slow (<=2MHz) CPU clock.
-  SPCR = ENABLE_MASTER; // 2x clock prescale for <=1MHz SPI clock from <=2MHz CPU clock (500kHz SPI @ 1MHz CPU).
-  SPSR = _BV(SPI2X);
-#elif F_CPU <= 8000000
-  SPCR = ENABLE_MASTER; // 4x clock prescale for <=2MHz SPI clock from nominal <=8MHz CPU clock.
-  SPSR = 0;
-#else // Needs setting for fast (~16MHz) CPU clock.
-  SPCR = _BV(SPR0) | ENABLE_MASTER; // 8x clock prescale for ~2MHz SPI clock from nominal ~16MHz CPU clock.
-  SPSR = _BV(SPI2X);
-#endif
-  return(true);
-  }
-
-// Power down SPI.
-void powerDownSPI()
-  {
-  SPCR &= ~_BV(SPE); // Disable SPI.
-  PRR |= _BV(PRSPI); // Power down...
-
-  pinMode(PIN_SPI_nSS, OUTPUT); // Ensure that nSS is an output to avoid forcing SPI to slave mode by accident.
-  fastDigitalWrite(PIN_SPI_nSS, HIGH); // Ensure that nSS is HIGH and thus any slave deselected when powering up SPI.
-
-  // Avoid pins from floating when SPI is disabled.
-  // Try to preserve general I/O direction and restore previous output values for outputs.
-  pinMode(PIN_SPI_SCK, OUTPUT);
-  pinMode(PIN_SPI_MOSI, OUTPUT);
-  pinMode(PIN_SPI_MISO, INPUT_PULLUP);
-
-  // If sharing SPI SCK with LED indicator then return this pin to being an output (retaining previous value).
-  //if(LED_HEATCALL == PIN_SPI_SCK) { pinMode(LED_HEATCALL, OUTPUT); }
-  }
+// NOW SUPPLIED BY LIBRARY.
+//// If SPI was disabled, power it up, enable it as master and with a sensible clock speed, etc, and return true.
+//// If already powered up then do nothing other than return false.
+//// If this returns true then a matching powerDownSPI() may be advisable.
+//bool powerUpSPIIfDisabled()
+//  {
+//  if(!(PRR & _BV(PRSPI))) { return(false); }
+//
+//  pinMode(PIN_SPI_nSS, OUTPUT); // Ensure that nSS is an output to avoid forcing SPI to slave mode by accident.
+//  fastDigitalWrite(PIN_SPI_nSS, HIGH); // Ensure that nSS is HIGH and thus any slave deselected when powering up SPI.
+//
+//  PRR &= ~_BV(PRSPI); // Enable SPI power.
+//  // Configure raw SPI to match better how it was used in PICAXE V0.09 code.
+//  // CPOL = 0, CPHA = 0
+//  // Enable SPI, set master mode, set speed.
+//  const uint8_t ENABLE_MASTER =  _BV(SPE) | _BV(MSTR);
+//#if F_CPU <= 2000000 // Needs minimum prescale (x2) with slow (<=2MHz) CPU clock.
+//  SPCR = ENABLE_MASTER; // 2x clock prescale for <=1MHz SPI clock from <=2MHz CPU clock (500kHz SPI @ 1MHz CPU).
+//  SPSR = _BV(SPI2X);
+//#elif F_CPU <= 8000000
+//  SPCR = ENABLE_MASTER; // 4x clock prescale for <=2MHz SPI clock from nominal <=8MHz CPU clock.
+//  SPSR = 0;
+//#else // Needs setting for fast (~16MHz) CPU clock.
+//  SPCR = _BV(SPR0) | ENABLE_MASTER; // 8x clock prescale for ~2MHz SPI clock from nominal ~16MHz CPU clock.
+//  SPSR = _BV(SPI2X);
+//#endif
+//  return(true);
+//  }
+//
+//// Power down SPI.
+//void powerDownSPI()
+//  {
+//  SPCR &= ~_BV(SPE); // Disable SPI.
+//  PRR |= _BV(PRSPI); // Power down...
+//
+//  pinMode(PIN_SPI_nSS, OUTPUT); // Ensure that nSS is an output to avoid forcing SPI to slave mode by accident.
+//  fastDigitalWrite(PIN_SPI_nSS, HIGH); // Ensure that nSS is HIGH and thus any slave deselected when powering up SPI.
+//
+//  // Avoid pins from floating when SPI is disabled.
+//  // Try to preserve general I/O direction and restore previous output values for outputs.
+//  pinMode(PIN_SPI_SCK, OUTPUT);
+//  pinMode(PIN_SPI_MOSI, OUTPUT);
+//  pinMode(PIN_SPI_MISO, INPUT_PULLUP);
+//
+//  // If sharing SPI SCK with LED indicator then return this pin to being an output (retaining previous value).
+//  //if(LED_HEATCALL == PIN_SPI_SCK) { pinMode(LED_HEATCALL, OUTPUT); }
+//  }
 
 
 // Capture a little system entropy.

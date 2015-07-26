@@ -608,7 +608,7 @@ uint8_t adjustJSONMsgForTXAndComputeCRC(char * const bptr)
 // Only intended as a transitional measure!
 //#define ALLOW_RAW_JSON_RX
 
-// Extract/adjust raw RXed putative JSON message up to MSG_JSON_MAX_LENGTH chars.
+// Extract/adjust raw RXed putative JSON message up to MSG_JSON_ABS_MAX_LENGTH chars.
 // Returns length including bounding '{' and '}' iff message superficially valid
 // (essentially as checked by quickValidateRawSimpleJSONMessage() for an in-memory message)
 // and that the CRC matches as computed by adjustJSONMsgForTXAndComputeCRC(),
@@ -628,7 +628,7 @@ int8_t adjustJSONMsgForRXAndCheckCRC(char * const bptr, const uint8_t bufLen)
 #endif
   uint8_t crc = '{';
   // Scan up to maximum length for terminating '}'-with-high-bit.
-  const uint8_t ml = min(MSG_JSON_MAX_LENGTH, bufLen);
+  const uint8_t ml = min(MSG_JSON_ABS_MAX_LENGTH, bufLen);
   char *p = bptr + 1;
   for(int i = 1; i < ml; ++i)
     {
@@ -1006,3 +1006,224 @@ uint8_t SimpleStatsRotationBase::writeJSON(uint8_t *const buf, const uint8_t buf
   return(bp.getSize()); // Success!
   }
 #endif
+
+
+
+// Decode and handle inbound raw message.
+// A message may contain trailing garbage at the end; the decoder/router should cope.
+// The buffer may be reused when this returns,
+// so a copy should be taken of anything that needs to be retained.
+// If secure is true then this message arrived over a secure channel.
+// This will write any output to the supplied Print object,
+// typically the Serial output (which must be running if so).
+// This routine is allowed to alter the contents of the buffer passed
+// to help avoid extra copies, etc.
+static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, uint8_t * const msg, const uint8_t msglen)
+  {
+  // TODO: consider extracting hash of all message data (good/bad) and injecting into entropy pool.
+#if 0 && defined(DEBUG)
+  OTRadioLink::printRXMsg(p, msg, msglen);
+#endif
+  if(msglen < 2) { return; } // Too short to be useful, so ignore.
+  switch(msg[0])
+    {
+    default:
+    case OTRadioLink::FTp2_NONE:
+      {
+#if 0 && defined(DEBUG)
+      p->print(F("!RX bad msg ")); OTRadioLink::printRXMsg(p, msg, min(msglen, 8));
+#endif
+      return;
+      }
+
+    // TODO: verify that this is actually working!
+    case OTRadioLink::FTp2_FullStatsIDL: case OTRadioLink::FTp2_FullStatsIDH:
+      {
+      // May be binary stats frame, so attempt to decode...
+      FullStatsMessageCore_t content;
+      // (TODO: should reject non-secure messages when expecting secure ones...)
+      const uint8_t *msg = decodeFullStatsMessageCore(msg, msglen, stTXalwaysAll, false, &content);
+      if(NULL != msg)
+         {
+         if(content.containsID)
+           {
+#if 0 && defined(DEBUG)
+           DEBUG_SERIAL_PRINT_FLASHSTRING("Stats HC ");
+           DEBUG_SERIAL_PRINTFMT(content.id0, HEX);
+           DEBUG_SERIAL_PRINT(' ');
+           DEBUG_SERIAL_PRINTFMT(content.id1, HEX);
+           DEBUG_SERIAL_PRINTLN();
+#endif
+           recordCoreStats(false, &content);
+           }
+         }
+      return;
+      }
+
+    case OTRadioLink::FTp2_FS20_native:
+      {
+      fht8v_msg_t command;
+      uint8_t const *lastByte = msg+msglen-1;
+      uint8_t const *trailer = FHT8VDecodeBitStream(msg, lastByte, &command);
+      if(NULL != trailer)
+        {
+#if 0 && defined(DEBUG)
+p->print("FS20 msg HC "); p->print(command.hc1); p->print(' '); p->println(command.hc2);
+#endif
+#if defined(ALLOW_STATS_RX) // Only look for the trailer if supported.
+        // If whole FHT8V frame was OK then check if there is a valid stats trailer.
+  
+        // Check for 'core' stats trailer.
+        if((trailer + FullStatsMessageCore_MAX_BYTES_ON_WIRE <= lastByte) && // Enough space for minimum-stats trailer.
+           (MESSAGING_FULL_STATS_FLAGS_HEADER_MSBS == (trailer[0] & MESSAGING_FULL_STATS_FLAGS_HEADER_MASK)))
+          {
+          FullStatsMessageCore_t content;
+          const uint8_t *tail = decodeFullStatsMessageCore(trailer, lastByte-trailer+1, stTXalwaysAll, false, &content);
+          if(NULL != tail)
+            {
+            // Received trailing stats frame!
+  
+            // If ID is present then make sure it matches that implied by the FHT8V frame (else reject this trailer)
+            // else file it in from the FHT8C frame.
+            bool allGood = true;
+            if(content.containsID)
+              {
+              if((content.id0 != command.hc1) || (content.id1 != command.hc2))
+                { allGood = false; }
+              }
+            else
+              {
+              content.id0 = command.hc1;
+              content.id1 = command.hc2;
+              content.containsID = true;
+              }
+  
+            // If frame looks good then capture it.
+            if(allGood) { recordCoreStats(false, &content); }
+//            else { setLastRXErr(FHT8VRXErr_BAD_RX_SUBFRAME); }
+            // TODO: record error with mismatched ID.
+            }
+          }
+#if defined(ALLOW_MINIMAL_STATS_TXRX)
+        // Check for minimum stats trailer.
+        else if((trailer + MESSAGING_TRAILING_MINIMAL_STATS_PAYLOAD_BYTES <= lastByte) && // Enough space for minimum-stats trailer.
+           (MESSAGING_TRAILING_MINIMAL_STATS_HEADER_MSBS == (trailer[0] & MESSAGING_TRAILING_MINIMAL_STATS_HEADER_MASK)))
+          {
+          if(verifyHeaderAndCRCForTrailingMinimalStatsPayload(trailer)) // Valid header and CRC.
+            {
+            trailingMinimalStatsPayload_t payload;
+            extractTrailingMinimalStatsPayload(trailer, &payload);
+            recordMinimalStats(true, command.hc1, command.hc2, &payload); // Record stats; local loopback is secure.
+            }
+          }
+#endif
+#endif
+
+#if defined(ENABLE_BOILER_HUB)
+        // Potentially accept as call for heat only if command is 0x26 (38).
+        // Later filter on the valve being open enough for some water flow to be likely
+        // (for individual valves, and in aggregate)
+        // and the housecode being accepted.
+        if(0x26 == command.command)
+          {
+          const uint16_t compoundHC = (command.hc1 << 8) | command.hc2;
+#if 0 && defined(DEBUG)
+          p->println("FS20 0x26 RX"); // Just notes that a 'valve %' FS20 command has been overheard.
+#endif
+          remoteCallForHeatRX(compoundHC, (0 == command.extension) ? 0 : (uint8_t) ((command.extension * 100) / 255));
+          }
+#endif
+        }
+      return;
+      }
+
+    case OTRadioLink::FTp2_JSONRaw:
+      {
+      if(-1 != adjustJSONMsgForRXAndCheckCRC((char *)msg, msglen))
+        { recordJSONStats(secure, (const char *)msg); }
+      return;
+      }
+    }
+  }
+
+// Incrementally process I/O and queued messages, including from the radio link.
+// This may mean printing them to Serial (which the passed Print object usually is),
+// or adjusting system parameters,
+// or relaying them elsewhere, for example.
+// This will write any output to the supplied Print object,
+// typically the Serial output (which must be running if so).
+// This will attempt to process messages in such a way
+// as to avoid internal overflows or other resource exhaustion.
+bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadioLink *rl)
+  {
+  bool workDone = false;
+  bool neededWaking = false; // Set true once this routine wakes Serial.
+
+  // Deal with any I/O that is queued.
+  pollIO(true);
+
+  // Check for activity on the radio link.
+  rl->poll();
+  if(0 != rl->getRXMsgsQueued())
+    {
+    if(!neededWaking && wakeSerialIfNeeded && powerUpSerialIfDisabled()) { neededWaking = true; }
+    uint8_t buf[64]; // FIXME: get correct size of buffer. // FIXME: move this large stack burden elsewhere?
+    const uint8_t msglen = rl->getRXMsg(buf, sizeof(buf));
+    // Don't currently regard anything arriving over the air as 'secure'.
+    decodeAndHandleRawRXedMessage(p, false, buf, msglen);
+    // Note that some work has been done.
+    workDone = true;
+    }
+
+  // Look for binary-format message.
+  FullStatsMessageCore_t stats;
+  getLastCoreStats(&stats);
+  if(stats.containsID)
+    {
+    if(!neededWaking && wakeSerialIfNeeded && powerUpSerialIfDisabled()) { neededWaking = true; }
+    // Dump (remote) stats field '@<hexnodeID>;TnnCh[P;]'
+    // where the T field shows temperature in C with a hex digit after the binary point indicated by C
+    // and the optional P field indicates low power.
+    p->print(LINE_START_CHAR_RSTATS);
+    p->print((((uint16_t)stats.id0) << 8) | stats.id1, HEX);
+    if(stats.containsTempAndPower)
+      {
+      p->print(F(";T"));
+      p->print(stats.tempAndPower.tempC16 >> 4, DEC);
+      p->print('C');
+      p->print(stats.tempAndPower.tempC16 & 0xf, HEX);
+      if(stats.tempAndPower.powerLow) { p->print(F(";P")); } // Insert power-low field if needed.
+      }
+    if(stats.containsAmbL)
+      {
+      p->print(F(";L"));
+      p->print(stats.ambL);
+      }
+    if(0 != stats.occ)
+      {
+      p->print(F(";O"));
+      p->print(stats.occ);
+      }
+    p->println();
+
+    // Note that some work has been done.
+    workDone = true;
+    }
+
+  // Check for JSON/text-format message if no binary message waiting.
+  char buf[MSG_JSON_MAX_LENGTH+1]; // FIXME: move this large stack burden elsewhere?
+  getLastJSONStats(buf);
+  if('\0' != *buf)
+    {
+    if(!neededWaking && wakeSerialIfNeeded && powerUpSerialIfDisabled()) { neededWaking = true; }
+    // Dump contained JSON message as-is at start of line.
+    p->println(buf);
+    // Note that some work has been done.
+    workDone = true;
+    }
+
+  // Turn off serial at end, if this routine woke it.
+  if(neededWaking) { flushSerialProductive(); powerDownSerial(); }
+  return(workDone);
+  }
+

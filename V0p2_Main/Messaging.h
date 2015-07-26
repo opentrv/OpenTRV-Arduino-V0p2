@@ -343,21 +343,6 @@ static inline char hexDigit(const uint8_t value) { const uint8_t v = 0xf&value; 
 // Eg, passing in a value 0x4e sets buf[0] to '4' and buf[1] to 'e'.
 static inline void hexDigits(const uint8_t value, char * const buf) { buf[0] = hexDigit(value>>4); buf[1] = hexDigit(value); }
 
-
-//// Write a simple raw (unencrypted) JSON message in one pass directly
-//// using sprintf formatting into a MSG_JSON_MAX_LENGTH+1 buffer.
-//// Caller must take care of all syntax, escaping issues, etc.
-//// This message is expected to be one object wrapped in '{' and '}'
-//// and containing only ASCII printable characters in the range [32,126].
-//// Returns length of formatted message excluding trailing \0,
-//// else a negative value in case of any error such as an overrun.
-//// See: http://playground.arduino.cc/Main/Printf
-//#ifdef F // check to see if F() macro is available
-//int8_t sprintfRawSimpleJSONMessage(char *buf, const __FlashStringHelper *format, ...);
-//#else
-//int8_t sprintfRawSimpleJSONMessage(char *buf, const char *format, ...);
-//#endif
-
 // Returns true unless the buffer clearly does not contain a possible valid raw JSON message.
 // This message is expected to be one object wrapped in '{' and '}'
 // and containing only ASCII printable/non-control characters in the range [32,126].
@@ -632,8 +617,15 @@ void recordMinimalStats(bool secure, uint8_t id0, uint8_t id1, const trailingMin
 // A little bit less than a power of 2
 // to enable packing along with other info.
 // A little bit smaller than typical radio module frame buffers (eg RFM23B) of 64 bytes
-// to allow other explicit preamble/postamble (such as CRC) to be added.
-#define MSG_JSON_MAX_LENGTH 55
+// to allow other explicit preamble and postamble (such as CRC) to be added,
+// and to allow time from final byte arriving to collect the data without overrun.
+//
+// Absolute maximum, eg with RFM23B / FS20 OOK carrier (and interrupt-serviced RX at hub).
+#define MSG_JSON_ABS_MAX_LENGTH 55
+// Typical/recommended maximum.
+#define MSG_JSON_MAX_LENGTH 54
+// Maximum for frames in 'secure' format, eg with authentication and encryption wrappers.
+#define MSG_JSON_MAX_LENGTH_SECURE 32
 
 #define MSG_JSON_LEADING_CHAR ('{') // This is for a JSON object { ... }.
 
@@ -656,6 +648,31 @@ void getLastJSONStats(char *buf);
 #define getLastJSONStats(buf) {*(buf) = '\0';} // Nothing to receive.
 #endif
 
+// Incrementally process I/O and queued messages, including from the radio link.
+// Returns true if some work was done.
+// This may mean printing them to Serial (which the passed Print object usually is),
+// or adjusting system parameters,
+// or relaying them elsewhere, for example.
+// This will write any output to the supplied Print object,
+// typically the Serial output (which must be running if so).
+// This will attempt to process messages in such a way
+// as to avoid internal overflows or other resource exhaustion.
+bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadioLink *rl);
+
+#endif
+
+
+
+
+#ifdef ENABLE_BOILER_HUB
+// FUNCTIONALITY REQUIRED (NOT SUPPLIED) BY MESSAGING.
+// Raw notification of received call for heat from remote (eg FHT8V) unit.
+// This form has a 16-bit ID (eg FHT8V housecode) and percent-open value [0,100].
+// Note that this may include 0 percent values for a remote unit explcitly confirming
+// that is is not, or has stopped, calling for heat (eg instead of replying on a timeout).
+// This is not filtered, and can be delivered at any time from RX data, from a non-ISR thread.
+// Does not have to be thread-/ISR- safe.
+void remoteCallForHeatRX(uint16_t id, uint8_t percentOpen);
 #endif
 
 

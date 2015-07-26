@@ -27,7 +27,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 #include <Arduino.h>
 
 #include "V0p2_Main.h"
-#include "FastDigitalIO.h"
 #include "Sensor.h"
 
 

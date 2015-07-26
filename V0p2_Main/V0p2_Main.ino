@@ -32,9 +32,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // Arduino libraries imported here (even for use in other .cpp files).
 #include <SPI.h>
 #include <Wire.h>
-//#ifdef REQUIRES_ONEWIRE22_LIB // Requires V2.2 of OneWire lib.
-//#include <OneWire.h>
-//#endif
 #include <OTRadioLink.h>
 
 #include <util/crc16.h>
@@ -66,7 +63,8 @@ void panic()
   {
 #ifdef USE_MODULE_RFM22RADIOSIMPLE
   // Reset radio and go into low-power mode.
-  RFM22PowerOnInit();
+//  RFM22PowerOnInit();
+   RFM23B.panicShutdown();
 #endif
   // Power down almost everything else...
   minimisePowerWithoutSleep();
@@ -175,11 +173,13 @@ void serialPrintlnBuildVersion()
   {
   serialPrintAndFlush(F("board V0.2 REV"));
   serialPrintAndFlush(V0p2_REV);
-  serialPrintAndFlush(F("; code $Id: V0p2_Main.ino 4341 2015-03-17 18:31:12Z damonhd $ ")); // Expect SVN to substitute the Id keyword here with svn:keywords property set.
+  serialPrintAndFlush(F("; code $Id: b0cc1e292d3e8704dc49417ce50b532607303d40 $ ")); // Expect SVN/git to substitute the Id keyword here with svn:keywords property set.
   serialPrintAndFlush(_YYYYMmmDD);
   serialPrintAndFlush(F(" " __TIME__));
   serialPrintlnAndFlush();
   }
+
+static const OTRadioLink::OTRadioChannelConfig RFMConfig(FHT8V_RFM22_Reg_Values, true, true, true);
 
 // Optional Power-On Self Test routines.
 // Aborts with a call to panic() if a test fails.
@@ -195,13 +195,10 @@ void optionalPOST()
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("(Using RFM22.)");
 #endif
   // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
-  RFM22PowerOnInit();
+  //RFM22PowerOnInit();
+  RFM23B.preinit(NULL);
   // Check that the radio is correctly connected; panic if not...
-  if(!RFM22CheckConnected()) { panic(); }
-  // Configure the radio.
-  RFM22RegisterBlockSetup(FHT8V_RFM22_Reg_Values);
-  // Put the radio in low-power standby mode.
-  RFM22ModeStandbyAndClearState();
+  if(!RFM23B.configure(1, &RFMConfig) || !RFM23B.begin()) { panic(); }
 #endif
 
 //  posPOST(1, F("Radio OK, checking buttons/sensors and xtal"));

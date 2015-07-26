@@ -61,7 +61,9 @@ including interrupts and sleep.
 // Sleep for specified number of _delay_loop2() loops at minimum available CPU speed.
 // Each loop takes 4 cycles at that minimum speed, but entry and exit overheads may take the equivalent of a loop or two.
 // Note: inlining is prevented so as to avoid migrating anything into the section where the CPU is running slowly.
-void sleepLowPowerLoopsMinCPUSpeed(uint16_t loops) __attribute__ ((noinline));
+// Deprecated as may interact badly with interrupts if used naively (eg ISR code runs very slowly).
+// This may only be safe to use with interrupts disabled.
+void _sleepLowPowerLoopsMinCPUSpeed(uint16_t loops) __attribute__ ((noinline));
 
 // Sleep/spin for approx specified strictly-positive number of milliseconds, in as low-power mode as possible.
 // This may be achieved in part by dynamically slowing the CPU clock if possible.
@@ -69,18 +71,29 @@ void sleepLowPowerLoopsMinCPUSpeed(uint16_t loops) __attribute__ ((noinline));
 // Should be good for values up to at least 1000, ie 1 second.
 // Assumes MIN_CPU_HZ >> 4000.
 // TODO: break out to non-inlined routine where arg is not constant (__builtin_constant_p).
-static void inline sleepLowPowerMs(const uint16_t ms) { sleepLowPowerLoopsMinCPUSpeed((((MIN_CPU_HZ * (ms)) + 2000) / 4000) - ((MIN_CPU_HZ>=12000)?2:((MIN_CPU_HZ>=8000)?1:0))); }
-
+// Deprecated as may interact badly with interrupts if used naively (eg ISR code runs very slowly).
+static void inline _sleepLowPowerMs(const uint16_t ms) { _sleepLowPowerLoopsMinCPUSpeed((((MIN_CPU_HZ * (ms)) + 2000) / 4000) - ((MIN_CPU_HZ>=12000)?2:((MIN_CPU_HZ>=8000)?1:0))); }
 // Sleep/spin for (typically a little less than) strictly-positive specified number of milliseconds, in as low-power mode as possible.
 // This may be achieved in part by dynamically slowing the CPU clock if possible.
 // Macro to allow some constant folding at compile time where the sleep-time argument is constant.
 // Should be good for values up to at least 1000, ie 1 second.
-// Uses formulation likely to be quicker than sleepLowPowerMs() for non-constant argument values,
-// and that results in a somewhat shorter sleep than sleepLowPowerMs(ms).
+// Uses formulation likely to be quicker than _sleepLowPowerMs() for non-constant argument values,
+// and that results in a somewhat shorter sleep than _sleepLowPowerMs(ms).
 // Assumes MIN_CPU_HZ >> 4000.
 // TODO: break out to non-inlined routine where arg is not constant (__builtin_constant_p).
-static void inline sleepLowPowerLessThanMs(const uint16_t ms) { sleepLowPowerLoopsMinCPUSpeed(((MIN_CPU_HZ/4000) * (ms)) - ((MIN_CPU_HZ>=12000)?2:((MIN_CPU_HZ>=8000)?1:0))); }
+// Deprecated as may interact badly with interrupts if used naively (eg ISR code runs very slowly).
+static void inline _sleepLowPowerLessThanMs(const uint16_t ms) { _sleepLowPowerLoopsMinCPUSpeed(((MIN_CPU_HZ/4000) * (ms)) - ((MIN_CPU_HZ>=12000)?2:((MIN_CPU_HZ>=8000)?1:0))); }
 
+// Sleep/spin for approx specified strictly-positive number of milliseconds, in as low-power mode as possible.
+// Nap() may be more efficient for intervals of longer than 15ms.
+// Interrupts are blocked for about 1ms at a time.
+// Should be good for the full range of values and should take no time where 0ms is specified.
+static void inline sleepLowPowerMs(uint16_t ms) { while(ms-- > 0) { ATOMIC_BLOCK(ATOMIC_RESTORESTATE) { _sleepLowPowerMs(1); } } }
+// Sleep/spin for (typically a little less than) strictly-positive specified number of milliseconds, in as low-power mode as possible.
+// Nap() may be more efficient for intervals of longer than 15ms.
+// Interrupts are blocked for about 1ms at a time.
+// Should be good for the full range of values and should take no time where 0ms is specified.
+static void inline sleepLowPowerLessThanMs(uint16_t ms) { while(ms-- > 0) { ATOMIC_BLOCK(ATOMIC_RESTORESTATE) { _sleepLowPowerLessThanMs(1); } } }
 
 // Call from setup() to turn off unused modules, set up timers and interrupts, etc.
 // I/O pin setting is not done here.
@@ -165,7 +178,7 @@ void nap(int_fast8_t watchdogSleep);
 // Sleep briefly in as lower-power mode as possible until the specified (watchdog) time expires, or another interrupt.
 //   * watchdogSleep is one of the WDTO_XX values from <avr/wdt.h>
 //   * allowPrematureWakeup if true then if woken before watchdog fires return false; default false
-// Returns false if the watchdog timer did not go off.
+// Returns false if the watchdog timer did not go off, true if it did.
 // May be useful to call minimsePowerWithoutSleep() first, when not needing any modules left on.
 bool nap(int_fast8_t watchdogSleep, bool allowPrematureWakeup);
 
@@ -184,11 +197,12 @@ bool idleCPU(int_fast8_t watchdogSleep);
 // NOTE: implementation may not be in power-management module.
 bool pollIO(bool force = false);
 // Nap productively polling I/O, etc, across the system while spending time in low-power mode if possible.
-// Typically sleeps for about 30ms; tries to allow ealier wakeup if interrupt is received, etc.
-static void inline nap30AndPoll() { nap(WDTO_30MS); pollIO(true); }
+// Typically sleeps for about 30ms; tries to allow earlier wakeup if interrupt is received, etc.
+// True iff watchdog timer expired; false if something else woke the CPU.
+static bool inline nap15AndPoll() { const bool wd = nap(WDTO_15MS, true); pollIO(!wd); return(wd); }
 #ifdef ENABLE_AVR_IDLE_MODE
 // Idle productively polling I/O, etc, across the system while spending time in low-power mode if possible.
-// Typically sleeps for nominally up to 30ms; tries to allow ealier wakeup if interrupt is received, etc.
+// Typically sleeps for nominally up to 30ms; tries to allow earlier wakeup if interrupt is received, etc.
 // (Will often be prematurely woken by timer0 with ~16ms interval.)
 // True iff watchdog timer expired; false if something else woke the CPU.
 static bool inline idle15AndPoll() { const bool wd = idleCPU(WDTO_15MS); pollIO(!wd); return(wd); }
@@ -214,11 +228,13 @@ static void inline tinyPause() { nap(WDTO_15MS); } // 15ms vs 18ms nominal for P
 #define SMALL_PAUSE_MS 30
 static void inline smallPause() { nap(WDTO_30MS); }
 // Medium low-power sleep to approximately match the PICAXE V0.09 routine of the same name.
+// Premature wakeups may be allowed to avoid blocking I/O polling for too long.
 #define MEDIUM_PAUSE_MS 60
-static void inline mediumPause() { nap(WDTO_60MS); } // 60ms vs 144ms nominal for PICAXE V0.09 impl.
+static void inline mediumPause() { nap(WDTO_60MS, true); } // 60ms vs 144ms nominal for PICAXE V0.09 impl.
 // Big low-power sleep to approximately match the PICAXE V0.09 routine of the same name.
+// Premature wakeups may be allowed to avoid blocking I/O polling for too long.
 #define BIG_PAUSE_MS 120
-static void inline bigPause() { nap(WDTO_120MS); } // 120ms vs 288ms nominal for PICAXE V0.09 impl.
+static void inline bigPause() { nap(WDTO_120MS, true); } // 120ms vs 288ms nominal for PICAXE V0.09 impl.
 
 #if defined(WAKEUP_32768HZ_XTAL) || 1 // FIXME: need to not use getSubCycleTime() where slow clock NOT available.
 // Get fraction of the way through the basic cycle in range [0,255].
@@ -323,12 +339,13 @@ bool powerUpTWIIfDisabled();
 // Power down TWI (I2C).
 void powerDownTWI();
 
-// If SPI was disabled, power it up, enable it as master and with a sensible clock speed, etc, and return true.
-// If already powered up then do nothing other than return false.
-// If this returns true then a matching powerDownSPI() may be advisable.
-bool powerUpSPIIfDisabled();
-// Power down SPI.
-void powerDownSPI();
+// NOW SUPPLIED BY LIBRARY.
+//// If SPI was disabled, power it up, enable it as master and with a sensible clock speed, etc, and return true.
+//// If already powered up then do nothing other than return false.
+//// If this returns true then a matching powerDownSPI() may be advisable.
+//bool powerUpSPIIfDisabled();
+//// Power down SPI.
+//void powerDownSPI();
 
 
 // Enable power to intermittent peripherals.
