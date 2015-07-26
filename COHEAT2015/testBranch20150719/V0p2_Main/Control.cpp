@@ -1588,15 +1588,18 @@ void setupOpenTRV()
   // Assume not in hub mode yet.
   // Send all possible formats, binary first (assumed complete in one message).
   bareStatsTX(true, true);
-  // Send JSON stats repeatedly until all values pushed out (no 'changed' values unsent).
-  do
+  // Send JSON stats repeatedly (typically once or twice)
+  // until all values pushed out (no 'changed' values unsent)
+  // or limit reached.
+  for(uint8_t i = 5; --i > 0; )
     {
     nap(WDTO_120MS); // Sleep long enough for receiver to have a chance to process previous TX.
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING(" TX...");
 #endif
     bareStatsTX(true, false);
-    } while(ss1.changedValue());
+    if(!ss1.changedValue()) { break; }
+    }
 
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("setup stats sent");
