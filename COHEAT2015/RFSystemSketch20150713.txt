@@ -1,0 +1,9 @@
+Notes to go with RFSystemSketch20150713.odp.
+
+Links as numbered on diagram and traffic on them.
+
+1) Link between RPi and REV2 'hub', 1-to-1, bidirectional, serial/USB.
+
+2) Link between REV2 and REV9 'relay', 1-to-many, bidirectional, FS20 carrier (868.35MHz, OOK, 5kbps) custom protocol (not FS20),
+
+3) Link between REV9 and FHT8V valve, 1-to-1, FHT8V is RX only, FS20 (868.35MHz, OOK).
