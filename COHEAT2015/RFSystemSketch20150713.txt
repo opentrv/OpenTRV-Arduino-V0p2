@@ -42,3 +42,8 @@ For (2) and (3), in part to be compatible with existing custom use of FS20 carri
   e) The 7-bit CRC will follow, arranged to never be 0x00 or 0xff.
   f) For the secure forms the message type and length and the house code will be part of the authenticated data.
 
+  * Format of hub/relay messages: type len body-body-body crc7
+
+
+Note 1: The hub/relay protocol may be upgraded to something better
+    (eg faster, different channel, tweaked format that better suits native handling in the RFM23Bs).
