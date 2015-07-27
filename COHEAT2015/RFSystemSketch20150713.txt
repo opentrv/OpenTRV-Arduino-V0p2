@@ -15,7 +15,6 @@ Links as numbered on diagram and traffic on them.
     1-to-1, unidirectional (FHT8V is RX only), FS20 (868.35MHz, OOK).
 
 
-
 For (2) and (3), in part to be compatible with existing custom use of FS20 carrier, the following will hold:
 
   a) The first byte will be one of '!', '?' or '*' to indicate the message type for the initial forms.
