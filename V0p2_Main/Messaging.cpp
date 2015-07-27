@@ -196,7 +196,7 @@ void recordJSONStats(bool secure, const char *json)
     {
     if('\0' != *jsonStats) { ++inboundStatsQueueOverrun; } // Dropped a frame.
     // Atomically overwrite existing buffer with new non-empty stats message.
-    strncpy(jsonStats, json, MSG_JSON_MAX_LENGTH+1);
+    strncpy(jsonStats, json, MSG_JSON_MAX_LENGTH+1); // FIXME: will pad redundantly with trailing nulls.
     // Drop over-length message,
     if('\0' != jsonStats[sizeof(jsonStats) - 1]) { *jsonStats = '\0'; }
     }

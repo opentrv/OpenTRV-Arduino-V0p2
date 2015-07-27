@@ -47,12 +47,15 @@ extern OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, -1> RFM23B;
 // The message to be sent must be written at an offset of STATS_MSG_START_OFFSET from the start of the buffer.
 // This routine will alter the content of the buffer for transmission,
 // and the buffer should not be re-used as is.
-//   * isBinary  message type; if true then is nominally binary else text (JSON)
 //   * doubleTX  double TX to increase chance of successful reception
+//   * RFM23BfriendlyPremable  if true then add an extra preamble
+//     to allow RFM23B-based receiver to RX this
 // This will use whichever transmission medium/carrier/etc is available.
+//#define STATS_MSG_START_OFFSET (RFM22_PREAMBLE_BYTES + RFM22_SYNC_MIN_BYTES)
+//#define STATS_MSG_MAX_LEN (64 - STATS_MSG_START_OFFSET)
 #define STATS_MSG_START_OFFSET (RFM22_PREAMBLE_BYTES + RFM22_SYNC_MIN_BYTES)
 #define STATS_MSG_MAX_LEN (64 - STATS_MSG_START_OFFSET)
-void RFM22RawStatsTX(const bool isBinary, uint8_t * const buf, const bool doubleTX);
+void RFM22RawStatsTX(uint8_t *buf, bool doubleTX);
 
 
 #endif

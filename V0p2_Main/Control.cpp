@@ -1376,7 +1376,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
       return;
       }
     // Send it!
-    RFM22RawStatsTX(true, buf, allowDoubleTX);
+    RFM22RawStatsTX(buf, allowDoubleTX);
     // Record stats as if remote, and treat channel as secure.
     recordCoreStats(true, &content);
     handleQueuedMessages(&Serial, true, &RFM23B);
@@ -1433,16 +1433,19 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
 
 #if 0 /* || !defined(ENABLE_BOILER_HUB) */ && defined(DEBUG)
     DEBUG_SERIAL_PRINT((const char *)bptr);
-    DEBUG_SERIAL_PRINTLN();
+    DEBUG_SERIAL_PRINTLN(); 
 #endif
     // Record stats as if local, and treat channel as secure.
     recordJSONStats(true, (const char *)bptr);
+    handleQueuedMessages(&Serial, true, &RFM23B);
     // Adjust JSON message for transmission.
-    // (Set high-bit on final '}' to make it unique, and compute and append (non-0xff) CRC.)
+    // (Set high-bit on final '}' to make it unique, and compute (non-0xff) CRC.)
     const uint8_t crc = adjustJSONMsgForTXAndComputeCRC((char *)bptr);
     if(0xff == crc)
       {
-  //DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON msg bad!");
+#if 0 && defined(DEBUG)
+      DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON msg bad!");
+#endif
       return;
       }
     bptr += wrote;
@@ -1458,8 +1461,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
       }
 #endif
     // Send it!
-    RFM22RawStatsTX(false, buf, allowDoubleTX);
-    handleQueuedMessages(&Serial, true, &RFM23B);
+    RFM22RawStatsTX(buf, allowDoubleTX);
     }
 
 #endif // defined(ALLOW_JSON_OUTPUT)
@@ -1593,13 +1595,14 @@ void setupOpenTRV()
   // or limit reached.
   for(uint8_t i = 5; --i > 0; )
     {
-    nap(WDTO_120MS); // Sleep long enough for receiver to have a chance to process previous TX.
+    nap(WDTO_120MS, false); // Sleep long enough for receiver to have a chance to process previous TX.
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING(" TX...");
 #endif
     bareStatsTX(true, false);
     if(!ss1.changedValue()) { break; }
     }
+//  nap(WDTO_120MS, false);
 
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("setup stats sent");
@@ -1839,17 +1842,6 @@ void loopOpenTRV()
         serialPrintAndFlush(hcRequest & 0xff);
         serialPrintlnAndFlush();
         }
-//      else
-//        {
-//        // Check for error if nothing received.
-//        const uint8_t err = FHT8VLastRXErrGetAndClear();
-//        if(0 != err)
-//          {
-//          serialPrintAndFlush(F("!RXerr F"));
-//          serialPrintAndFlush(err);
-//          serialPrintlnAndFlush();
-//          }
-//        }
       }
 
     // Record call for heat, both to start boiler-on cycle and to defer need to listen again. 
@@ -1938,14 +1930,14 @@ void loopOpenTRV()
     static uint8_t oldDropped;
     if(dropped != oldDropped)
       {
-      DEBUG_SERIAL_PRINT_FLASHSTRING("?RX DROPPED: ");
+      DEBUG_SERIAL_PRINT_FLASHSTRING("!RX DROP ");
       DEBUG_SERIAL_PRINT(dropped);
       DEBUG_SERIAL_PRINTLN();
       oldDropped = dropped;
       }
     for(uint8_t lastErr; 0 != (lastErr = RFM23B.getRXErr()); )
       {
-      DEBUG_SERIAL_PRINT_FLASHSTRING("!RX err: ");
+      DEBUG_SERIAL_PRINT_FLASHSTRING("!RX err ");
       DEBUG_SERIAL_PRINT(lastErr);
       DEBUG_SERIAL_PRINTLN();
       }
@@ -2193,8 +2185,9 @@ void loopOpenTRV()
         // This doesn't generally/always need to send binary/both formats
         // if this is controlling a local FHT8V on which the binary stats can be piggybacked.
         // Ie, if doesn't have a local TRV then it must send binary some of the time.
+        // Any recently-changed stats value is a hint that a strong transmission might be a good idea.
         const bool doBinary = !localFHT8VTRVEnabled() && randRNG8NextBoolean();
-        bareStatsTX(minute1From4AfterSensors && !batteryLow && !hubMode && ss1.changedValue(), doBinary);
+        bareStatsTX(!batteryLow && !hubMode && ss1.changedValue(), doBinary);
         }
       break;
       }
@@ -2364,7 +2357,7 @@ void loopOpenTRV()
     const uint8_t orc = 1 + ~eeprom_read_byte((uint8_t *)EE_START_OVERRUN_COUNTER);
     eeprom_smart_update_byte((uint8_t *)EE_START_OVERRUN_COUNTER, ~orc);
 #if 1 && defined(DEBUG)
-    DEBUG_SERIAL_PRINTLN_FLASHSTRING("!ERROR: loop overrun");
+    DEBUG_SERIAL_PRINTLN_FLASHSTRING("!loop overrun");
 //    DEBUG_SERIAL_PRINT(orc);
 //    DEBUG_SERIAL_PRINTLN();
 #endif

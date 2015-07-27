@@ -479,7 +479,7 @@ static void FHT8VTXFHTQueueAndSendCmd(uint8_t *bptr, const bool doubleTX)
 //    RFM22TXFIFO(); // Re-send it!
 //    }
   const uint8_t buflen = OTRadioLink::frameLenFFTerminated(bptr);
-  RFM23B.sendRaw(bptr, buflen, doubleTX ? OTRadioLink::OTRadioLink::TXmax : OTRadioLink::OTRadioLink::TXnormal);
+  RFM23B.sendRaw(bptr, buflen, 0, doubleTX ? OTRadioLink::OTRadioLink::TXmax : OTRadioLink::OTRadioLink::TXnormal);
 
 //#if defined(ENABLE_BOILER_HUB)
 //  if(hubMode)
