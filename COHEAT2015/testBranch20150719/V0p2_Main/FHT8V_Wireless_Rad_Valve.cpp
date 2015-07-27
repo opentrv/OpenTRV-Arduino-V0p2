@@ -35,7 +35,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include "EEPROM_Utils.h"
 #include "RFM22_Radio.h"
 #include "Messaging.h"
-#include "PRNG.h"
 #include "Power_Management.h"
 #include "Security.h"
 #include "Serial_IO.h"
@@ -809,7 +808,7 @@ bool FHT8VDoSafeExtraTXToHub()
 #error frame too big for RFM22/RFM23
 #endif
 
-static uint8_t FHT8VRXHubArea[FHT8V_MAX_FRAME_SIZE]; // Allow for trailing 0xff terminator.
+//static uint8_t FHT8VRXHubArea[FHT8V_MAX_FRAME_SIZE]; // Allow for trailing 0xff terminator.
 
 // True while eavesdropping for OpenTRV calls for heat.
 static volatile bool eavesdropping;

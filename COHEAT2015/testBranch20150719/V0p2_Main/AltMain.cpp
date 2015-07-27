@@ -36,7 +36,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 #include "FHT8V_Wireless_Rad_Valve.h"
 #include "RTC_Support.h"
 #include "Power_Management.h"
-#include "PRNG.h"
 #include "RFM22_Radio.h"
 #include "Security.h"
 #include "Serial_IO.h"

@@ -27,7 +27,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 #include "EEPROM_Utils.h"
 #include "FHT8V_Wireless_Rad_Valve.h"
-#include "PRNG.h"
 #include "Power_Management.h"
 #include "RFM22_Radio.h"
 #include "RTC_Support.h"
@@ -1012,7 +1011,7 @@ uint8_t smoothStatsValue(const uint8_t oldSmoothed, const uint8_t newValue)
   if(oldSmoothed == newValue) { return(oldSmoothed); } // Optimisation: smoothed value is unchanged if new value is the same as extant.
   // Compute and update with new stochastically-rounded exponentially-smoothed ("Brown's simple exponential smoothing") value.
   // Stochastic rounding allows sub-lsb values to have an effect over time.
-  const uint8_t stocAdd = randRNG8() & ((1 << STATS_SMOOTH_SHIFT) - 1); // Allows sub-lsb values to have an effect over time.
+  const uint8_t stocAdd = OTV0P2BASE::randRNG8() & ((1 << STATS_SMOOTH_SHIFT) - 1); // Allows sub-lsb values to have an effect over time.
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINT_FLASHSTRING("stocAdd=");
   DEBUG_SERIAL_PRINT(stocAdd);
@@ -1618,8 +1617,8 @@ void setupOpenTRV()
   // but without (eg) breaking any of the logic about what order things will be run first time through.
   // Offsets based on whatever noise is in the simple PRNG plus some from the unique ID.
   const uint8_t ID0 = eeprom_read_byte((uint8_t *)EE_START_ID);
-  localTicks = (randRNG8() ^ ID0) & 0x1f; // Start within bottom half of minute (or close to).
-  if(0 != (ID0 & 0x20)) { minuteCount = randRNG8() | 2; } // Start at minute 2 or 3 out of 4 for some units.
+  localTicks = (OTV0P2BASE::randRNG8() ^ ID0) & 0x1f; // Start within bottom half of minute (or close to).
+  if(0 != (ID0 & 0x20)) { minuteCount = OTV0P2BASE::randRNG8() | 2; } // Start at minute 2 or 3 out of 4 for some units.
 #endif
 
 #if 0 && defined(DEBUG)
@@ -2154,7 +2153,7 @@ void loopOpenTRV()
       }
 
     // Churn/reseed PRNG(s) a little to improve unpredictability in use: should be lightweight.
-    case 2: { if(runAll) { seedRNG8(minuteCount ^ cycleCountCPU() ^ (uint8_t)Supply_mV.get(), _getSubCycleTime() ^ AmbLight.get(), (uint8_t)TemperatureC16.get()); } break; }
+    case 2: { if(runAll) { OTV0P2BASE::seedRNG8(minuteCount ^ cycleCountCPU() ^ (uint8_t)Supply_mV.get(), _getSubCycleTime() ^ AmbLight.get(), (uint8_t)TemperatureC16.get()); } break; }
     // Force read of supply/battery voltage; measure and recompute status (etc) less often when already thought to be low, eg when conserving.
     case 4: { if(runAll) { Supply_mV.read(); } break; }
 
@@ -2170,11 +2169,11 @@ void loopOpenTRV()
 
       // Generally only attempt stats TX in the minute after all sensors should have been polled (so that readings are fresh).
       if(minute1From4AfterSensors ||
-        (!batteryLow && (0 == (0x24 & randRNG8())))) // Occasional additional TX when not conserving power.
+        (!batteryLow && (0 == (0x24 & OTV0P2BASE::randRNG8())))) // Occasional additional TX when not conserving power.
         {
         pollIO(); // Deal with any pending I/O.
         // Sleep randomly up to 128ms to spread transmissions and thus help avoid collisions.
-        sleepLowPowerLessThanMs(1 + (randRNG8() & 0x7f));
+        sleepLowPowerLessThanMs(1 + (OTV0P2BASE::randRNG8() & 0x7f));
 //        nap(randRNG8NextBoolean() ? WDTO_60MS : WDTO_120MS); // FIXME: need a different random interval generator!
         pollIO(); // Deal with any pending I/O.
         // Send it!
@@ -2186,7 +2185,7 @@ void loopOpenTRV()
         // if this is controlling a local FHT8V on which the binary stats can be piggybacked.
         // Ie, if doesn't have a local TRV then it must send binary some of the time.
         // Any recently-changed stats value is a hint that a strong transmission might be a good idea.
-        const bool doBinary = !localFHT8VTRVEnabled() && randRNG8NextBoolean();
+        const bool doBinary = !localFHT8VTRVEnabled() && OTV0P2BASE::randRNG8NextBoolean();
         bareStatsTX(!batteryLow && !hubMode && ss1.changedValue(), doBinary);
         }
       break;

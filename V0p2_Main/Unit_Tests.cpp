@@ -46,7 +46,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include "FHT8V_Wireless_Rad_Valve.h"
 #include "Messaging.h"
 #include "Power_Management.h"
-#include "PRNG.h"
 #include "RFM22_Radio.h"
 #include "RTC_Support.h"
 #include "Schedule.h"
@@ -95,15 +94,15 @@ static inline void errorIfNotEqual(int expected, int actual, int delta, int line
 static void testLibVersions()
   {
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("LibVersions");
-#if !(0 == ARDUINO_LIB_OTV0P2BASE_VERSION_MAJOR) || !(2 <= ARDUINO_LIB_OTV0P2BASE_VERSION_MINOR)
+#if !(0 == ARDUINO_LIB_OTV0P2BASE_VERSION_MAJOR) || !(5 <= ARDUINO_LIB_OTV0P2BASE_VERSION_MINOR)
 #error Wrong library version!
 #endif
-#if !(0 == ARDUINO_LIB_OTRADIOLINK_VERSION_MAJOR) || !(4 <= ARDUINO_LIB_OTRADIOLINK_VERSION_MINOR)
+#if !(0 == ARDUINO_LIB_OTRADIOLINK_VERSION_MAJOR) || !(5 <= ARDUINO_LIB_OTRADIOLINK_VERSION_MINOR)
 #error Wrong library version!
 #endif
 //  AssertIsEqual(0, ARDUINO_LIB_OTRADIOLINK_VERSION_MAJOR);
 //  AssertIsTrue(1 <= ARDUINO_LIB_OTRADIOLINK_VERSION_MINOR); // Minimum acceptable minor version.
-#if !(0 == ARDUINO_LIB_OTRFM23BLINK_VERSION_MAJOR) || !(4 <= ARDUINO_LIB_OTRFM23BLINK_VERSION_MINOR)
+#if !(0 == ARDUINO_LIB_OTRFM23BLINK_VERSION_MAJOR) || !(5 <= ARDUINO_LIB_OTRFM23BLINK_VERSION_MINOR)
 #error Wrong library version!
 #endif
   }
@@ -155,16 +154,16 @@ static void testComputeRequiredTRVPercentOpen()
   static const int maxFullTravelMins = 25;
 //  DEBUG_SERIAL_PRINTLN_FLASHSTRING("open...");
   ModelledRadValveInputState is0(0);
-  is0.targetTempC = randRNG8NextBoolean() ? FROST : WARM;
+  is0.targetTempC = OTV0P2BASE::randRNG8NextBoolean() ? FROST : WARM;
   ModelledRadValveState rs0;
-  const uint8_t valvePCOpenInitial0 = randRNG8() % 100;
+  const uint8_t valvePCOpenInitial0 = OTV0P2BASE::randRNG8() % 100;
   volatile uint8_t valvePCOpen = valvePCOpenInitial0;
   for(int i = maxFullTravelMins; --i >= 0; ) // Must fully open in reasonable time.
     {
     // Simulates one minute on each iteration.
     // Futz some input parameters that should not matter.
-    is0.widenDeadband = randRNG8NextBoolean();
-    is0.hasEcoBias = randRNG8NextBoolean();
+    is0.widenDeadband = OTV0P2BASE::randRNG8NextBoolean();
+    is0.hasEcoBias = OTV0P2BASE::randRNG8NextBoolean();
     const uint8_t oldValvePos = valvePCOpen;
     rs0.tick(valvePCOpen, is0);
     const uint8_t newValvePos = valvePCOpen;
@@ -186,10 +185,10 @@ static void testComputeRequiredTRVPercentOpen()
   // Also check for some correct initialisation and 'velocity'/smoothing behaviour.
 //  DEBUG_SERIAL_PRINTLN_FLASHSTRING("close...");
   ModelledRadValveInputState is1(100<<4);
-  is1.targetTempC = randRNG8NextBoolean() ? FROST : WARM;
+  is1.targetTempC = OTV0P2BASE::randRNG8NextBoolean() ? FROST : WARM;
   ModelledRadValveState rs1;
   AssertIsTrue(!rs1.initialised); // Initialisation not yet complete.
-  const uint8_t valvePCOpenInitial1 = 1 + (randRNG8() % 100);
+  const uint8_t valvePCOpenInitial1 = 1 + (OTV0P2BASE::randRNG8() % 100);
   valvePCOpen = valvePCOpenInitial1;
   const bool lookForLinger = (valvePCOpenInitial1 >= is1.minPCOpen);
   bool hitLinger = false; // True if the linger value was hit.
@@ -198,8 +197,8 @@ static void testComputeRequiredTRVPercentOpen()
     {
     // Simulates one minute on each iteration.
     // Futz some input parameters that should not matter.
-    is1.widenDeadband = randRNG8NextBoolean();
-    is1.hasEcoBias = randRNG8NextBoolean();
+    is1.widenDeadband = OTV0P2BASE::randRNG8NextBoolean();
+    is1.hasEcoBias = OTV0P2BASE::randRNG8NextBoolean();
     const uint8_t oldValvePos = valvePCOpen;
     rs1.tick(valvePCOpen, is1);
     const uint8_t newValvePos = valvePCOpen;
@@ -524,7 +523,7 @@ static void testTargetComputation()
 #endif
       {
 #ifndef OMIT_MODULE_LDROCCUPANCYDETECTION
-      AmbLight._TEST_set_multi_((j != 0) ? 1023 : 0, j != 0, 15 + (randRNG8() & 0x7f));
+      AmbLight._TEST_set_multi_((j != 0) ? 1023 : 0, j != 0, 15 + (OTV0P2BASE::randRNG8() & 0x7f));
 #endif
       // Systematically work through all schedule states, ending at 0 (no override).
       for(int k = _TEST_schedule_override_MAX+1; --k >= 0; )
@@ -550,7 +549,7 @@ static void testTargetComputation()
         // ENERGY SAVING RULE TEST (TODO-442 1b: "Never a higher pre-warm than WARM target.")
         // Check that in the the target temperature is never higher in FROST than WARM.
         // Perturb the other implicit parameters.
-        Occupancy._TEST_set_(randRNG8NextBoolean());
+        Occupancy._TEST_set_(OTV0P2BASE::randRNG8NextBoolean());
         setWarmModeDebounced(false);
         NominalRadValve.computeTargetTemperature();
         const uint8_t tTF = NominalRadValve.getTargetTempC();
@@ -636,12 +635,12 @@ static void testSensorMocking()
   // Ambient light
   for(uint8_t i = 0; i < 2; ++i)
     {
-    const uint8_t nal = randRNG8();
-    const bool nil = randRNG8NextBoolean();
-    AmbLight._TEST_set_multi_(((uint16_t)nal)<<2, nil, randRNG8());
+    const uint8_t nal = OTV0P2BASE::randRNG8();
+    const bool nil = OTV0P2BASE::randRNG8NextBoolean();
+    AmbLight._TEST_set_multi_(((uint16_t)nal)<<2, nil, OTV0P2BASE::randRNG8());
     AssertIsEqual(nal, AmbLight.get());
     AssertIsTrue(nil == AmbLight.isRoomLit());
-    const uint8_t nal2 = randRNG8();
+    const uint8_t nal2 = OTV0P2BASE::randRNG8();
     AmbLight._TEST_set_(nal2);
     AssertIsEqual(nal2, AmbLight.get());
     }
@@ -748,37 +747,37 @@ static void testJSONStats()
   //AssertIsTrue(0 == ss1.writeJSON(NULL, randRNG8(), randRNG8(), randRNG8NextBoolean()));
   char buf[MSG_JSON_MAX_LENGTH + 2]; // Allow for trailing '\0' and spare byte.
   // Create minimal JSON message with no data content. just the (supplied) ID.
-  const uint8_t l1 = ss1.writeJSON((uint8_t*)buf, sizeof(buf), randRNG8(), randRNG8NextBoolean());
+  const uint8_t l1 = ss1.writeJSON((uint8_t*)buf, sizeof(buf), OTV0P2BASE::randRNG8(), OTV0P2BASE::randRNG8NextBoolean());
 //serialPrintAndFlush(buf); serialPrintlnAndFlush();
   AssertIsEqual(12, l1);
   const char PROGMEM *t1 = (const char PROGMEM *)F("{\"@\":\"1234\"}");
   AssertIsTrue(0 == strcmp_P(buf, t1));
   ss1.enableCount(false);
-  AssertIsEqual(12, ss1.writeJSON((uint8_t*)buf, sizeof(buf), randRNG8(), randRNG8NextBoolean()));
+  AssertIsEqual(12, ss1.writeJSON((uint8_t*)buf, sizeof(buf), OTV0P2BASE::randRNG8(), OTV0P2BASE::randRNG8NextBoolean()));
   AssertIsTrue(0 == strcmp_P(buf, t1));
   // Check that count works.
   ss1.enableCount(true);
   AssertIsEqual(0, ss1.size());
-  AssertIsEqual(18, ss1.writeJSON((uint8_t*)buf, sizeof(buf), randRNG8(), randRNG8NextBoolean()));
+  AssertIsEqual(18, ss1.writeJSON((uint8_t*)buf, sizeof(buf), OTV0P2BASE::randRNG8(), OTV0P2BASE::randRNG8NextBoolean()));
 //serialPrintAndFlush(buf); serialPrintlnAndFlush();
   AssertIsTrue(0 == strcmp_P(buf, (const char PROGMEM *)F("{\"@\":\"1234\",\"+\":2}")));
   // Turn count off for rest of tests.
   ss1.enableCount(false);
-  AssertIsEqual(12, ss1.writeJSON((uint8_t*)buf, sizeof(buf), randRNG8(), randRNG8NextBoolean()));
+  AssertIsEqual(12, ss1.writeJSON((uint8_t*)buf, sizeof(buf), OTV0P2BASE::randRNG8(), OTV0P2BASE::randRNG8NextBoolean()));
   // Check that removal of absent entry does nothing.
   AssertIsTrue(!ss1.remove("bogus"));
   AssertIsEqual(0, ss1.size());
   // Check that new item can be added/put (with no/default properties).
   ss1.put("f1", 42);
   AssertIsEqual(1, ss1.size());
-  AssertIsEqual(20, ss1.writeJSON((uint8_t*)buf, sizeof(buf), 0, randRNG8NextBoolean()));
+  AssertIsEqual(20, ss1.writeJSON((uint8_t*)buf, sizeof(buf), 0, OTV0P2BASE::randRNG8NextBoolean()));
 #if 0 // Short of Flash space!
 //serialPrintAndFlush(buf); serialPrintlnAndFlush();
   AssertIsTrue(0 == strcmp_P(buf, (const char PROGMEM *)F("{\"@\":\"1234\",\"f1\":42}")));
 #endif
   ss1.put("f1", -111);
   AssertIsEqual(1, ss1.size());
-  AssertIsEqual(22, ss1.writeJSON((uint8_t*)buf, sizeof(buf), 0, randRNG8NextBoolean()));
+  AssertIsEqual(22, ss1.writeJSON((uint8_t*)buf, sizeof(buf), 0, OTV0P2BASE::randRNG8NextBoolean()));
   AssertIsTrue(0 == strcmp_P(buf, (const char PROGMEM *)F("{\"@\":\"1234\",\"f1\":-111}")));
 #endif
   }
@@ -890,19 +889,6 @@ static void testEEPROM()
     }
   if(eeprom_smart_clear_bits((uint8_t*)EE_START_TEST_LOC2, eaTestPattern)) { panic(); } // Should not need write nor attempt one.
   }
-
-//// Do some basic testing of CRC routines.
-//static void testCRC()
-//  {
-//  DEBUG_SERIAL_PRINTLN_FLASHSTRING("CRC");
-//  // Test the 7-bit CRC (0x5b) routine at a few points.
-//  const uint8_t crc0 = OTRadioLink::crc7_5B_update(0, 0); // Minimal stats payload with normal power and minimum temperature.
-//  AssertIsTrueWithErr((0 == crc0), crc0); 
-//  const uint8_t crc1 = OTRadioLink::crc7_5B_update(0x40, 0); // Minimal stats payload with normal power and minimum temperature.
-//  AssertIsTrueWithErr((0x1a == crc1), crc1); 
-//  const uint8_t crc2 = OTRadioLink::crc7_5B_update(0x50, 40); // Minimal stats payload with low power and 20C temperature.
-//  AssertIsTrueWithErr((0x7b == crc2), crc2); 
-//  }
 
 // Test of FHT8V bitstream encoding and decoding.
 static void testFHTEncoding()
@@ -1056,10 +1042,10 @@ static void testFHTEncodingHeadAndTail()
   FullStatsMessageCore_t fullStats;
   clearFullStatsMessageCore(&fullStats);
   captureEntropy1(); // Try stir a little noise into the PRNG before using it.
-  const bool powerLow = !(randRNG8() & 0x40); // Random value.
+  const bool powerLow = !(OTV0P2BASE::randRNG8() & 0x40); // Random value.
   fullStats.containsTempAndPower = true;
   fullStats.tempAndPower.powerLow = powerLow;
-  const int tempC16 = (randRNG8()&0xff) + (10 << 16); // Random value in range [10C, 25C[.
+  const int tempC16 = (OTV0P2BASE::randRNG8()&0xff) + (10 << 16); // Random value in range [10C, 25C[.
   fullStats.tempAndPower.tempC16 = tempC16;
   memset(buf, 0xff, sizeof(buf));
   result1 = FHT8VCreateValveSetCmdFrameHT_r(buf, true, &command, 0, &fullStats);
@@ -1107,7 +1093,7 @@ static void testFHTEncodingHeadAndTail()
   AssertIsEqual(tempC16, statsDecoded.tempC16);
 #else
   FullStatsMessageCore_t statsDecoded;
-  AssertIsTrue(NULL != decodeFullStatsMessageCore(afterBody, sizeof(buf) - (afterBody - buf), (stats_TX_level)randRNG8(), randRNG8NextBoolean(), &statsDecoded));
+  AssertIsTrue(NULL != decodeFullStatsMessageCore(afterBody, sizeof(buf) - (afterBody - buf), (stats_TX_level)OTV0P2BASE::randRNG8(), OTV0P2BASE::randRNG8NextBoolean(), &statsDecoded));
   AssertIsEqual(powerLow, statsDecoded.tempAndPower.powerLow);
   AssertIsEqual(tempC16, statsDecoded.tempAndPower.tempC16);
 #endif
@@ -1157,7 +1143,7 @@ static void testFHTEncodingHeadAndTail()
   AssertIsEqual(powerLow, statsDecoded.powerLow);
   AssertIsEqual(tempC16, statsDecoded.tempC16);
 #else
-  AssertIsTrue(NULL != decodeFullStatsMessageCore(afterBody, sizeof(buf) - (afterBody - buf), (stats_TX_level)randRNG8(), randRNG8NextBoolean(), &statsDecoded));
+  AssertIsTrue(NULL != decodeFullStatsMessageCore(afterBody, sizeof(buf) - (afterBody - buf), (stats_TX_level)OTV0P2BASE::randRNG8(), OTV0P2BASE::randRNG8NextBoolean(), &statsDecoded));
   AssertIsEqual(powerLow, statsDecoded.tempAndPower.powerLow);
   AssertIsEqual(tempC16, statsDecoded.tempAndPower.tempC16);
 #endif
@@ -1175,12 +1161,12 @@ static void testFullStatsMessageCoreEncDec()
   // Ensure that with null buffer/content encode and decode fail regardless of other arguments.
   uint8_t buf[FullStatsMessageCore_MAX_BYTES_ON_WIRE + 1];
   FullStatsMessageCore_t content;
-  AssertIsTrue(NULL == encodeFullStatsMessageCore(NULL, randRNG8(), stTXalwaysAll, randRNG8NextBoolean(), NULL));
-  AssertIsTrue(NULL == decodeFullStatsMessageCore(NULL, randRNG8(), stTXalwaysAll, randRNG8NextBoolean(), NULL));
-  AssertIsTrue(NULL == encodeFullStatsMessageCore(NULL, FullStatsMessageCore_MAX_BYTES_ON_WIRE+1, stTXalwaysAll, randRNG8NextBoolean(), &content));
-  AssertIsTrue(NULL == encodeFullStatsMessageCore(buf, FullStatsMessageCore_MAX_BYTES_ON_WIRE+1, stTXalwaysAll, randRNG8NextBoolean(), NULL));
-  AssertIsTrue(NULL == decodeFullStatsMessageCore(NULL, FullStatsMessageCore_MIN_BYTES_ON_WIRE+1, stTXalwaysAll, randRNG8NextBoolean(), &content));
-  AssertIsTrue(NULL == decodeFullStatsMessageCore(buf, FullStatsMessageCore_MIN_BYTES_ON_WIRE+1, stTXalwaysAll, randRNG8NextBoolean(), NULL));
+  AssertIsTrue(NULL == encodeFullStatsMessageCore(NULL, OTV0P2BASE::randRNG8(), stTXalwaysAll, OTV0P2BASE::randRNG8NextBoolean(), NULL));
+  AssertIsTrue(NULL == decodeFullStatsMessageCore(NULL, OTV0P2BASE::randRNG8(), stTXalwaysAll, OTV0P2BASE::randRNG8NextBoolean(), NULL));
+  AssertIsTrue(NULL == encodeFullStatsMessageCore(NULL, FullStatsMessageCore_MAX_BYTES_ON_WIRE+1, stTXalwaysAll, OTV0P2BASE::randRNG8NextBoolean(), &content));
+  AssertIsTrue(NULL == encodeFullStatsMessageCore(buf, FullStatsMessageCore_MAX_BYTES_ON_WIRE+1, stTXalwaysAll, OTV0P2BASE::randRNG8NextBoolean(), NULL));
+  AssertIsTrue(NULL == decodeFullStatsMessageCore(NULL, FullStatsMessageCore_MIN_BYTES_ON_WIRE+1, stTXalwaysAll, OTV0P2BASE::randRNG8NextBoolean(), &content));
+  AssertIsTrue(NULL == decodeFullStatsMessageCore(buf, FullStatsMessageCore_MIN_BYTES_ON_WIRE+1, stTXalwaysAll, OTV0P2BASE::randRNG8NextBoolean(), NULL));
 
   // Prepare a minimal (empty) non-secure message.
   memset(buf, 0, sizeof(buf));
@@ -1407,7 +1393,7 @@ void testSleepUntilSubCycleTime()
 #if 0x3f > GSCT_MAX/4
 #error
 #endif
-  const uint8_t sleepTicks = 2 + (randRNG8() & 0x3f);
+  const uint8_t sleepTicks = 2 + (OTV0P2BASE::randRNG8() & 0x3f);
   const uint8_t target = start + sleepTicks;
   AssertIsTrue(target > start);
   AssertIsTrue(target < GSCT_MAX);
@@ -1436,27 +1422,6 @@ static void testSmoothStatsValue()
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("SmoothStatsValue");
   // Covers the key cases 0 and 254 in particular.
   for(int i = 256; --i >= 0; ) { AssertIsTrue((uint8_t)i == smoothStatsValue((uint8_t)i, (uint8_t)i)); }
-  }
-
-// Test for expected behaviour of RNG8 PRNG starting from a known state.
-static void testRNG8()
-  {
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("RNG8");
-  // Reset to known state; API not normally exposed and only exists for unit tests.
-  resetRNG8();
-  // Extract and check a few initial values.
-  const uint8_t v1 = randRNG8();
-  const uint8_t v2 = randRNG8();
-  const uint8_t v3 = randRNG8();
-  const uint8_t v4 = randRNG8();
-  //DEBUG_SERIAL_PRINT(v1); DEBUG_SERIAL_PRINTLN();
-  //DEBUG_SERIAL_PRINT(v2); DEBUG_SERIAL_PRINTLN();
-  //DEBUG_SERIAL_PRINT(v3); DEBUG_SERIAL_PRINTLN();
-  //DEBUG_SERIAL_PRINT(v4); DEBUG_SERIAL_PRINTLN();
-  AssertIsTrue(1 == v1);
-  AssertIsTrue(0 == v2);
-  AssertIsTrue(3 == v3);
-  AssertIsTrue(14 == v4);
   }
 
 
@@ -1584,14 +1549,11 @@ void loopUnitTest()
   testComputeRequiredTRVPercentOpen();
   testFastDigitalIOCalcs();
   testTargetComputation();
-  testSensorMocking();
   testModeControls();
   testJSONStats();
   testJSONForTX();
   testFullStatsMessageCoreEncDec();
-//  testCRC();
   testTempCompand();
-  testRNG8();
   testEntropyGathering();
   testRTCPersist();
   testEEPROM();
@@ -1600,6 +1562,7 @@ void loopUnitTest()
   testSleepUntilSubCycleTime();
   testFHTEncoding();
   testFHTEncodingHeadAndTail();
+  testSensorMocking();
 
   // Boiler-hub tests.
 #ifdef ENABLE_BOILER_HUB
