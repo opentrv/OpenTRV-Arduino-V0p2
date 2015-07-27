@@ -25,7 +25,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 #include "Security.h"
 
 #include "EEPROM_Utils.h"
-#include "PRNG.h"
 #include "Power_Management.h"
 
 
@@ -76,7 +75,7 @@ uint8_t getSecureRandomByte(const bool whiten)
   w1 ^= (w1 >> 4); // Mix.
   if(whiten)
     {
-    w1 ^= randRNG8(); // Whiten.
+    w1 ^= OTV0P2BASE::randRNG8(); // Whiten.
     w1 ^= (w1 << 3); // Mix.
     w1 ^= _crc_ibutton_update(cycleCountCPU() ^ (uint8_t)(intptr_t)&v1, ++count8 - (uint8_t)(intptr_t)&v2); // Whiten.
     }
@@ -91,5 +90,5 @@ uint8_t getSecureRandomByte(const bool whiten)
 void addEntropyToPool(uint8_t data, uint8_t estBits)
   {
   // TODO: no real entropy pool yet.
-  seedRNG8(data, cycleCountCPU(), getSubCycleTime());
+  OTV0P2BASE::seedRNG8(data, cycleCountCPU(), getSubCycleTime());
   }

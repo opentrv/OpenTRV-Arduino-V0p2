@@ -25,7 +25,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 #include "Power_Management.h"
 
-#include "PRNG.h"
 #include "RFM22_Radio.h"
 #include "RTC_Support.h"
 #include "Serial_IO.h"
@@ -303,7 +302,7 @@ bool idleCPU(const int_fast8_t watchdogSleep)
 // May capture some entropy in secure and non-secure PRNGs.
 void burnHundredsOfCyclesProductivelyAndPoll()
   {
-  if(pollIO()) { seedRNG8(cycleCountCPU(), _watchdogFired, _getSubCycleTime()); }
+  if(pollIO()) { OTV0P2BASE::seedRNG8(cycleCountCPU(), _watchdogFired, _getSubCycleTime()); }
   else { captureEntropy1(); }
   }
 
@@ -864,7 +863,7 @@ void powerDownTWI()
 // Does not change CPU clock speeds, mess with interrupts (other than possible brief blocking), or do I/O, or sleep.
 // Should inject some noise into secure (TBD) and non-secure (RNG8) PRNGs.
 void captureEntropy1()
-  { seedRNG8(_getSubCycleTime() ^ _adcNoise, cycleCountCPU() ^ Supply_mV.get(), _watchdogFired); }
+  { OTV0P2BASE::seedRNG8(_getSubCycleTime() ^ _adcNoise, cycleCountCPU() ^ Supply_mV.get(), _watchdogFired); }
 
 
 // Capture a little entropy from clock jitter between CPU and WDT clocks; possibly one bit of entropy captured.
