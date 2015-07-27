@@ -49,5 +49,5 @@ For (2) and (3), in part to be compatible with existing custom use of FS20 carri
   * General byte-level format of the hub/relay messages: type len body* crc7
 
 
-Note 1: The hub/relay protocol may be upgraded to something better
+Note 1: The hub/relay protocol may be upgraded to something better for this particular application
     (eg faster, different channel, tweaked format that better suits native handling in the RFM23Bs).
