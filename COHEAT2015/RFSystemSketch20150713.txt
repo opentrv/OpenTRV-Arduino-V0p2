@@ -4,10 +4,10 @@ Links as numbered on diagram and traffic on them.
 
  1) Link between RPi and REV2 'hub'.
 
-    1-to-1, bidirectional, serial/USB.
+    1-to-1, bidirectional, serial/USB (4800 baud).
 
-    RPi sends CLI commands (including text-encoded '?') commands to the hub.
-    RPi receives status and decoded messages (including text-encoded '!' and '*') from the hub.
+    RPi sends CLI commands (including text-encoded '?' commands to forward) to the hub.
+    RPi receives status and decoded messages (including text-encoded '!' and '*' messages) from the hub.
 
  2) Link between REV2 'hub' and REV9 'relay'.
  
@@ -23,7 +23,7 @@ Links as numbered on diagram and traffic on them.
     (and all outbound '?' messages delivered over the CLI)
     leaving the less-constrained RPi to decide which to handle and which to ignore.
 
-    The hub sends '?' messages to the relay to poll it and set state (expecting '*' sync responses with data).
+    The hub sends '?' messages to the relay to poll/command it (expecting '*' sync responses with data).
     The hub receives '!' and '*' messages from the relay, the '!' being an async alert.
 
  3) Link between REV9 'relay' and FHT8V valve driver.
@@ -46,7 +46,7 @@ For (2) and (3), in part to be compatible with existing custom use of FS20 carri
   e) The 7-bit CRC will follow, arranged to never be 0x00 or 0xff.
   f) For the secure forms the message type and length and the house code will be part of the authenticated data.
 
-  * Format of hub/relay messages: type len body-body-body crc7
+  * General byte-level format of the hub/relay messages: type len body* crc7
 
 
 Note 1: The hub/relay protocol may be upgraded to something better
