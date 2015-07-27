@@ -6,7 +6,10 @@ Links as numbered on diagram and traffic on them.
 
     1-to-1, bidirectional, serial/USB.
 
- 2) Link between REV2 and REV9 'relay'.
+    RPi sends CLI commands (including text-encoded '?') commands to the hub.
+    RPi receives status and decoded messages (including text-encoded '!' and '*') from the hub.
+
+ 2) Link between REV2 'hub' and REV9 'relay'.
  
     1-to-many, bidirectional, FS20 carrier (868.35MHz, OOK, 5kbps) custom protocol (not FS20).
 
@@ -16,7 +19,10 @@ Links as numbered on diagram and traffic on them.
 
     The relay will ignore all inbound messages except those with its house code and in custom format.
 
- 3) Link between REV9 and FHT8V valve.
+    The hub sends '?' messages to the relay to poll it and set state (expecting '*' sync responses with data).
+    The hub receives '!' and '*' messages from the relay, the '!' being an async alert.
+
+ 3) Link between REV9 'relay' and FHT8V valve driver.
  
     1-to-1, unidirectional (FHT8V is RX only), FS20 (868.35MHz, OOK).
 
@@ -24,6 +30,8 @@ Links as numbered on diagram and traffic on them.
 
     The FHT8V will ignore all inbound messages except those with its house code and in FS20 format.
 
+    The FHT8V sends nothing.
+    The FHT8V receives FS20 (0x26 valve position) commands from the relay.
 
 For (2) and (3), in part to be compatible with existing custom use of FS20 carrier, the following will hold:
 
