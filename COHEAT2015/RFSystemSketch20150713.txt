@@ -59,3 +59,4 @@ the following will hold:
   e) The 7-bit CRC follows, arranged to never be 0x00 or 0xff.
   f) For the secure forms the message type and length and the house code will be part of the authenticated data.
 
+
