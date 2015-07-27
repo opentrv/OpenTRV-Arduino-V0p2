@@ -2,8 +2,26 @@ Notes to go with RFSystemSketch20150713.odp.
 
 Links as numbered on diagram and traffic on them.
 
-1) Link between RPi and REV2 'hub', 1-to-1, bidirectional, serial/USB.
+ 1) Link between RPi and REV2 'hub'.
 
-2) Link between REV2 and REV9 'relay', 1-to-many, bidirectional, FS20 carrier (868.35MHz, OOK, 5kbps) custom protocol (not FS20),
+    1-to-1, bidirectional, serial/USB.
 
-3) Link between REV9 and FHT8V valve, 1-to-1, FHT8V is RX only, FS20 (868.35MHz, OOK).
+ 2) Link between REV2 and REV9 'relay'.
+ 
+    1-to-many, bidirectional, FS20 carrier (868.35MHz, OOK, 5kbps) custom protocol (not FS20),
+
+ 3) Link between REV9 and FHT8V valve.
+ 
+    1-to-1, unidirectional (FHT8V is RX only), FS20 (868.35MHz, OOK).
+
+
+
+For (2) and (3), in part to be compatible with existing custom use of FS20 carrier, the following will hold:
+
+  a) The first byte will be one of '!', '?' or '*' to indicate the message type for the initial forms.
+  b) The first byte will later be one of '!', '?' or '*' ORed with '0x80' to indicate a secure message variant.
+  c) The second byte will be a length byte (nn) of the rest of the frame excluding CRC.
+  d) nn bytes of data will follow of which the first two bytes will be the house code.
+  e) The 7-bit CRC will follow.
+  f) For the secure forms the message type and length and the house code will be part of the authenticated data.
+
