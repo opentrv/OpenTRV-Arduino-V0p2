@@ -6,6 +6,9 @@ Links as numbered on diagram and traffic on them.
 
     1-to-1, bidirectional, serial/USB.
 
+    RPi sends CLI commands (including encapsulated '?') commands to REV2/hub.
+    RPi receives status and decoded messages (including '!' and '*') from REV2/hub.
+
  2) Link between REV2 and REV9 'relay'.
  
     1-to-many, bidirectional, FS20 carrier (868.35MHz, OOK, 5kbps) custom protocol (not FS20).
@@ -15,6 +18,9 @@ Links as numbered on diagram and traffic on them.
     This house code will need to be set to match the FHT8V's, via the CLI ('H' command).
 
     The relay will ignore all inbound messages except those with its house code and in custom format.
+
+    REV9/relay sends '!' and '*' messages to REV2/hub.
+    REV9/relay receives '?' messages from REV2/hub.
 
  3) Link between REV9 and FHT8V valve.
  
