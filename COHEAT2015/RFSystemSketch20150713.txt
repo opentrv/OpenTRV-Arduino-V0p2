@@ -41,3 +41,4 @@ For (2) and (3), in part to be compatible with existing custom use of FS20 carri
   d) nn bytes of data will follow of which the first two bytes will be the house code.
   e) The 7-bit CRC will follow, arranged to never be 0x00 or 0xff.
   f) For the secure forms the message type and length and the house code will be part of the authenticated data.
+
