@@ -8,12 +8,21 @@ Links as numbered on diagram and traffic on them.
 
  2) Link between REV2 and REV9 'relay'.
  
-    1-to-many, bidirectional, FS20 carrier (868.35MHz, OOK, 5kbps) custom protocol (not FS20),
+    1-to-many, bidirectional, FS20 carrier (868.35MHz, OOK, 5kbps) custom protocol (not FS20).
+
+    The relay uses the associated FHT8V housecode, acting as its proxy.
+
+    This house code will need to be set to match the FHT8V's, via the CLI ('H' command).
+
+    The relay will ignore all inbound messages except those with its house code and in custom format.
 
  3) Link between REV9 and FHT8V valve.
  
     1-to-1, unidirectional (FHT8V is RX only), FS20 (868.35MHz, OOK).
 
+    The FHT8V has a two byte housecode, each byte ranging from [0,99], factory set.
+
+    The FHT8V will ignore all inbound messages except those with its house code and in FS20 format.
 
 
 For (2) and (3), in part to be compatible with existing custom use of FS20 carrier, the following will hold:
