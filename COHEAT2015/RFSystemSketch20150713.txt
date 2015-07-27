@@ -19,6 +19,10 @@ Links as numbered on diagram and traffic on them.
 
     The relay will ignore all inbound messages except those with its house code and in custom format.
 
+    The hub may do no particular filtering and pass on all inbound '!' and '*' messages
+    (and all outbound '?' messages delivered over the CLI)
+    leaving the less-constrained RPi to decide which to handle and which to ignore.
+
     The hub sends '?' messages to the relay to poll it and set state (expecting '*' sync responses with data).
     The hub receives '!' and '*' messages from the relay, the '!' being an async alert.
 
@@ -42,3 +46,8 @@ For (2) and (3), in part to be compatible with existing custom use of FS20 carri
   e) The 7-bit CRC will follow, arranged to never be 0x00 or 0xff.
   f) For the secure forms the message type and length and the house code will be part of the authenticated data.
 
+  * Format of hub/relay messages: type len body-body-body crc7
+
+
+Note 1: The hub/relay protocol may be upgraded to something better
+    (eg faster, different channel, tweaked format that better suits native handling in the RFM23Bs).
