@@ -59,3 +59,8 @@ the following will hold:
   e) The 7-bit CRC follows, arranged to never be 0x00 or 0xff.
   f) For the secure forms the message type and length and the house code will be part of the authenticated data.
 
+Use 7-bit CRC with Polynomial 0x5B (1011011, Koopman) = (x+1)(x^6 + x^5 + x^3 + x^2 + 1) = 0x37 (0110111, Normal).
+See: http://users.ece.cmu.edu/~koopman/roses/dsn04/koopman04_crc_poly_embedded.pdf
+Should detect all 3-bit errors in up to 7 bytes of payload,
+see: http://users.ece.cmu.edu/~koopman/crc/0x5b.txt
+For 2 or 3 byte payloads this should have a Hamming distance of 4 and be within a factor of 2 of optimal error detection.
