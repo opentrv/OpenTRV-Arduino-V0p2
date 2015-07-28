@@ -38,7 +38,7 @@ Links as numbered on diagram and traffic on them.
     The FHT8V receives FS20 (0x26 valve position) commands from the relay.
 
 Note 1: The hub/relay protocol may be upgraded to something better for this particular application
-    (eg faster, different channel, tweaked format that better suits native handling in the RFM23Bs).
+    (eg faster, different channel(s), tweaked format, eg length first, that better suits native handling in the RFM23Bs).
 
 
 ============
@@ -47,7 +47,7 @@ Note 1: The hub/relay protocol may be upgraded to something better for this part
 
 FRAME/MESSAGE FORMAT BETWEEN HUB AND RELAY
 
-General byte-level format of the hub/relay messages: type len body* crc7nz
+General byte-level format of the hub/relay messages: type len HC1 HC2 body* crc7nz
 
 In part to be compatible with existing custom use of the FS20 carrier (but not encoding),
 the following will hold:
@@ -58,5 +58,4 @@ the following will hold:
   d) nn bytes of data follow, of which the first two bytes will be the house code.
   e) The 7-bit CRC follows, arranged to never be 0x00 or 0xff.
   f) For the secure forms the message type and length and the house code will be part of the authenticated data.
-
 
