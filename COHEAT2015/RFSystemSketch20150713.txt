@@ -54,7 +54,7 @@ the following will hold:
 
   a) The first byte is one of '!', '?' or '*' to indicate the message type for the initial forms.
   b) (The first byte will later be one of '!', '?' or '*' ORed with '0x80' to indicate a secure message variant.)
-  c) The second byte is a length byte (nn) of the rest of the frame excluding CRC.
+  c) Length is implicit and always 7 bytes excluding the CRC.
   d) nn bytes of data follow, of which the first two bytes will be the house code.
   e) The 7-bit CRC follows, arranged to never be 0x00 or 0xff.
   f) For the secure forms the message type and length and the house code will be part of the authenticated data.
