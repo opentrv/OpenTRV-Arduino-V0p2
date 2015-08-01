@@ -25,6 +25,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 
 // Arduino libraries.
 //#include <Wire.h>
+#ifdef ALLOW_CC1_SUPPORT
+#include <OTProtocolCC.h>
+#endif
 
 #include "V0p2_Main.h"
 

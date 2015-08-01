@@ -40,7 +40,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_Trial2013Winter_Round2 // REV2 cut4
 //#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
-#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
+//#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
+//#define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
+#define CONFIG_Trial2013Winter_Round2_CC1RELAY // REV2 cut4 as CC1 relay.
 //#define CONFIG_DORM1 // REV7 / DORM1 Winter 2014/2015 all-in-one valve unit.
 //#define CONFIG_DORM1_BOILER // REV8 / DORM1 Winter 2014/2015 boiler-control unit.
 
@@ -134,6 +136,17 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #undef ENABLE_BOILER_HUB
 // IF DEFINED: allow RX of stats frames.
 #undef ALLOW_STATS_RX
+#endif
+
+#ifdef CONFIG_Trial2013Winter_Round2_CC1RELAY // REV2 cut4 as CC1 relay.
+#define CONFIG_Trial2013Winter_Round2 // Just like normal REV except...
+// IF DEFINED: this unit can act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
+#undef ENABLE_BOILER_HUB
+// IF DEFINED: allow RX of stats frames.
+#undef ALLOW_STATS_RX
+// IF DEFINED: act as CC1 simple relay node.
+#define ALLOW_CC1_SUPPORT
+#define ALLOW_CC1_SUPPORT_RELAY
 #endif
 
 #ifdef CONFIG_Trial2013Winter_Round2 // For trial over winter of 2013--4, second round (REV2).

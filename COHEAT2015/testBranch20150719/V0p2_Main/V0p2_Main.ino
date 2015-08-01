@@ -34,6 +34,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include <Wire.h>
 #include <OTRadioLink.h>
 
+#ifdef ALLOW_CC1_SUPPORT
+#include <OTProtocolCC.h>
+#endif
+
 #include <util/crc16.h>
 #include <avr/eeprom.h>
 
