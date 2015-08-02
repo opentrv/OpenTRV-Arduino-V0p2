@@ -1121,6 +1121,14 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, uint8_t *
       return;
       }
 
+#ifdef ALLOW_CC1_SUPPORT_RELAY
+    case: OTRadioLink::FTp2_CC1Alert // Handle inbound alert message.
+      {
+      OTRadioLink::printRXMsg(p, msg, min(msglen, 8));
+      return;
+      }
+#endif
+
 #ifdef ALLOW_STATS_RX
     // TODO: verify that this is actually working!
     case OTRadioLink::FTp2_FullStatsIDL: case OTRadioLink::FTp2_FullStatsIDH:
