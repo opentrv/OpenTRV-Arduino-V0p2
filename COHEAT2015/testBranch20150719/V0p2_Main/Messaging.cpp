@@ -20,6 +20,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
  Generic messaging support for OpenTRV.
  */
 
+#include "Messaging.h"
+
 #include <OTRadioLink.h>
 #ifdef ALLOW_CC1_SUPPORT
 #include <OTProtocolCC.h>
@@ -27,7 +29,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 
 #include <util/atomic.h>
 
-#include "Messaging.h"
 #include "EEPROM_Utils.h"
 #include "Power_Management.h"
 #include "Security.h"
@@ -1143,10 +1144,11 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, uint8_t *
     case OTRadioLink::FTp2_CC1Alert: // Handle inbound alert message.
       {
       //OTRadioLink::printRXMsg(p, msg, min(msglen, 8));
-      OTProtocolCC::CC1Alert a = OTProtocolCC::CC1Alert::decodeAlert(bufAlert0, sizeof(bufAlert0));
+      OTProtocolCC::CC1Alert a = OTProtocolCC::CC1Alert::decodeAlert(msg, msglen);
       // After decode instance should be valid and with correct house code.
-      if(a2.isValid())
+      if(a.isValid())
         {
+        // Pass message to host to deal with as "! hc1 hc2" after prefix indicating relayed (CC1 alert) message.
         p->print(F("+CC1 ! ")); p->print(a.getHC1()); p->print(' '); p->println(a.getHC2());
         }
       return;
