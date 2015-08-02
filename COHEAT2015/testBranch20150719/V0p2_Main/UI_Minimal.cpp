@@ -498,7 +498,7 @@ void serialStatusReport()
 #endif
 
   // *C* section: central hub values.
-#if defined(ENABLE_BOILER_HUB)
+#if defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX)
   // Print optional hub boiler-on-time section if apparently set (non-zero) and thus in hub mode.
   const uint8_t boilerOnMinutes = getMinBoilerOnMinutes();
   if(boilerOnMinutes != 0)

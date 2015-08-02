@@ -481,7 +481,7 @@ bool enableTrailingStatsPayload();
 #define MESSAGING_FULL_STATS_HEADER_MASK 0x70
 #define MESSAGING_FULL_STATS_HEADER_BITS_ID_PRESENT 4
 #define MESSAGING_FULL_STATS_HEADER_BITS_ID_HIGH 2
-#define MESSAGING_FULL_STATS_HEADER_BITS_ID_SECURE 1
+#define MESSAGING_FULL_STATS_HEADER_BITS_ID_SECURE 0x80
 
 // ?ID: node ID if present (IDP==1)
 //             |  0  |            ID0                          |   7 lsbits of first ID byte, unencrypted

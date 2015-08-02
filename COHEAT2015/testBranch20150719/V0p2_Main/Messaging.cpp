@@ -476,7 +476,9 @@ uint8_t *encodeFullStatsMessageCore(uint8_t * const buf, const uint8_t buflen, c
 const uint8_t *decodeFullStatsMessageCore(const uint8_t * const buf, const uint8_t buflen, const stats_TX_level secLevel, const bool secureChannel,
     FullStatsMessageCore_t * const content)
   {
+//DEBUG_SERIAL_PRINTLN_FLASHSTRING("dFSMC");
   if(NULL == buf) { return(NULL); } // Could be an assert/panic instead at a pinch.
+//DEBUG_SERIAL_PRINTLN_FLASHSTRING(" chk c");
   if(NULL == content) { return(NULL); } // Could be an assert/panic instead at a pinch.
   if(buflen < FullStatsMessageCore_MIN_BYTES_ON_WIRE)
     {
@@ -488,6 +490,7 @@ const uint8_t *decodeFullStatsMessageCore(const uint8_t * const buf, const uint8
     return(NULL); // Not long enough for even a minimal message to be present...
     }
 
+//DEBUG_SERIAL_PRINTLN_FLASHSTRING(" clr");
   // Conservatively clear the result completely.
   clearFullStatsMessageCore(content);
 
@@ -500,17 +503,21 @@ const uint8_t *decodeFullStatsMessageCore(const uint8_t * const buf, const uint8
   // Deonstruct the header.
   // * byte 0 :  |  0  |  1  |  1  |  1  |  R0 | IDP | IDH | SEC |   header, 1x reserved 0 bit, ID Present, ID High, SECure
 //#define MESSAGING_FULL_STATS_HEADER_MSBS 0x70
-//#define MESSAGING_FULL_STATS_HEADER_MASK 0xf0
+//#define MESSAGING_FULL_STATS_HEADER_MASK 0x70
 //#define MESSAGING_FULL_STATS_HEADER_BITS_ID_PRESENT 4
 //#define MESSAGING_FULL_STATS_HEADER_BITS_ID_HIGH 2
-//#define MESSAGING_FULL_STATS_HEADER_BITS_ID_SECURE 1
+//#define MESSAGING_FULL_STATS_HEADER_BITS_ID_SECURE 0x80
+//DEBUG_SERIAL_PRINTLN_FLASHSTRING(" chk msb");
   if(MESSAGING_FULL_STATS_HEADER_MSBS != (header & MESSAGING_FULL_STATS_HEADER_MASK)) { return(NULL); } // Bad header.
+//DEBUG_SERIAL_PRINTLN_FLASHSTRING(" chk sec");
   if(0 != (header & MESSAGING_FULL_STATS_HEADER_BITS_ID_SECURE)) { return(NULL); } // TODO: cannot do secure messages yet.
   // Extract ID if present.
+//DEBUG_SERIAL_PRINTLN_FLASHSTRING(" chk ID");
   const bool containsID = (0 != (header & MESSAGING_FULL_STATS_HEADER_BITS_ID_PRESENT));
   if(containsID)
     {
     content->containsID = true;
+//DEBUG_SERIAL_PRINTLN_FLASHSTRING(" containsID");
     const uint8_t idHigh = ((0 != (header & MESSAGING_FULL_STATS_HEADER_BITS_ID_HIGH)) ? 0x80 : 0);
     content->id0 = *b++ | idHigh;
     content->id1 = *b++ | idHigh;
@@ -519,6 +526,7 @@ const uint8_t *decodeFullStatsMessageCore(const uint8_t * const buf, const uint8
   // If next header is temp/power then extract it, else must be the flags header.
   if(MESSAGING_TRAILING_MINIMAL_STATS_HEADER_MSBS == (*b & MESSAGING_TRAILING_MINIMAL_STATS_HEADER_MASK))
     {
+//DEBUG_SERIAL_PRINTLN_FLASHSTRING(" chk msh");
     if(0 != (0x80 & b[1])) { return(NULL); } // Following byte does not have msb correctly cleared.
     extractTrailingMinimalStatsPayload(b, &(content->tempAndPower));
     b += 2;
@@ -527,6 +535,7 @@ const uint8_t *decodeFullStatsMessageCore(const uint8_t * const buf, const uint8
 
   // If next header is flags then extract it.
   // FIXME: risk of misinterpretting CRC.
+//DEBUG_SERIAL_PRINTLN_FLASHSTRING(" chk flg");
   if(MESSAGING_FULL_STATS_FLAGS_HEADER_MSBS != (*b & MESSAGING_FULL_STATS_FLAGS_HEADER_MASK)) { return(NULL); } // Corrupt message.
   const uint8_t flagsHeader = *b++;
   content->occ = flagsHeader & 3;
@@ -534,6 +543,7 @@ const uint8_t *decodeFullStatsMessageCore(const uint8_t * const buf, const uint8
   if(containsAmbL)
     {
     const uint8_t ambL = *b++;
+//DEBUG_SERIAL_PRINTLN_FLASHSTRING(" chk aml");
     if((0 == ambL) || (ambL == (uint8_t)0xff)) { return(NULL); } // Illegal value.
     content->ambL = ambL;
     content->containsAmbL = true;
@@ -543,6 +553,7 @@ const uint8_t *decodeFullStatsMessageCore(const uint8_t * const buf, const uint8
   // Assumes that b now points just beyond the end of the payload.
   uint8_t crc = MESSAGING_FULL_STATS_CRC_INIT; // Initialisation.
   for(const uint8_t *p = buf; p < b; ) { crc = OTRadioLink::crc7_5B_update(crc, *p++); }
+//DEBUG_SERIAL_PRINTLN_FLASHSTRING(" chk CRC");
   if(crc != *b++) { return(NULL); } // Bad CRC.
 
   return(b); // Point to just after CRC.
@@ -1012,7 +1023,8 @@ uint8_t SimpleStatsRotationBase::writeJSON(uint8_t *const buf, const uint8_t buf
 #endif
 
 
-#if defined(ENABLE_BOILER_HUB) && defined(USE_MODULE_FHT8VSIMPLE) // Listen for calls for heat from remote valves...
+#if (defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX)) && defined(USE_MODULE_FHT8VSIMPLE) // Listen for calls for heat from remote valves...
+#define LISTEN_FOR_FTp2_FS20_native
 static void decodeAndHandleFTp2_FS20_native(Print *p, const bool secure, uint8_t * const msg, const uint8_t msglen)
 {
   fht8v_msg_t command;
@@ -1051,6 +1063,9 @@ p->print("FS20 msg HC "); p->print(command.hc1); p->print(' '); p->println(comma
           content.containsID = true;
           }
 
+#if 0 && defined(DEBUG)
+if(allGood) { p->println("FS20 ts"); }
+#endif
         // If frame looks good then capture it.
         if(allGood) { recordCoreStats(false, &content); }
 //            else { setLastRXErr(FHT8VRXErr_BAD_RX_SUBFRAME); }
@@ -1064,6 +1079,9 @@ p->print("FS20 msg HC "); p->print(command.hc1); p->print(' '); p->println(comma
       {
       if(verifyHeaderAndCRCForTrailingMinimalStatsPayload(trailer)) // Valid header and CRC.
         {
+#if 0 && defined(DEBUG)
+      p->println("FS20 MS RX"); // Just notes that a 'valve %' FS20 command has been overheard.
+#endif
         trailingMinimalStatsPayload_t payload;
         extractTrailingMinimalStatsPayload(trailer, &payload);
         recordMinimalStats(true, command.hc1, command.hc2, &payload); // Record stats; local loopback is secure.
@@ -1146,14 +1164,16 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, uint8_t *
 #endif
 
 #ifdef ALLOW_STATS_RX
-    // TODO: verify that this is actually working!
     case OTRadioLink::FTp2_FullStatsIDL: case OTRadioLink::FTp2_FullStatsIDH:
       {
+#if 0 && defined(DEBUG)
+DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats IDx");
+#endif
       // May be binary stats frame, so attempt to decode...
       FullStatsMessageCore_t content;
       // (TODO: should reject non-secure messages when expecting secure ones...)
-      const uint8_t *msg = decodeFullStatsMessageCore(msg, msglen, stTXalwaysAll, false, &content);
-      if(NULL != msg)
+      const uint8_t *tail = decodeFullStatsMessageCore(msg, msglen, stTXalwaysAll, false, &content);
+      if(NULL != tail)
          {
          if(content.containsID)
            {
@@ -1171,7 +1191,7 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, uint8_t *
       }
 #endif
 
-#if defined(ENABLE_BOILER_HUB) && defined(USE_MODULE_FHT8VSIMPLE) // Listen for calls for heat from remote valves...
+#if defined(LISTEN_FOR_FTp2_FS20_native) // Listen for calls for heat from remote valves...
     case OTRadioLink::FTp2_FS20_native:
       {
       decodeAndHandleFTp2_FS20_native(p, secure, msg, msglen);
