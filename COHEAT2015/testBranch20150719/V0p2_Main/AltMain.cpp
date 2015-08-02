@@ -331,7 +331,10 @@ void loopAlt()
     uint8_t *const bptr = RFM22RXPreambleAdd(buf);
     const uint8_t bodylen = a1.encodeSimple(bptr, sizeof(buf) - STATS_MSG_START_OFFSET, true);
     const uint8_t buflen = STATS_MSG_START_OFFSET + bodylen;
-    const bool doubleTX = false;
+#if 1 && defined(DEBUG)
+    OTRadioLink::printRXMsg(&Serial, buf, buflen);
+#endif
+    const bool doubleTX = true;
     if(RFM23B.sendRaw(buf, buflen, 0, (doubleTX ? OTRadioLink::OTRadioLink::TXmax : OTRadioLink::OTRadioLink::TXnormal)))
       {
 #if 1 && defined(DEBUG)

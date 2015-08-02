@@ -106,7 +106,7 @@ static void testLibVersions()
 #error Wrong OTRFM23BLink library version!
 #endif
 #ifdef ALLOW_CC1_SUPPORT
-#if !(0 == ARDUINO_LIB_OTPROTOCOLCC_VERSION_MAJOR) || !(1 <= ARDUINO_LIB_OTPROTOCOLCC_VERSION_MINOR)
+#if !(0 == ARDUINO_LIB_OTPROTOCOLCC_VERSION_MAJOR) || !(2 <= ARDUINO_LIB_OTPROTOCOLCC_VERSION_MINOR)
 #error Wrong OTProtocolCC library version!
 #endif
 #endif
