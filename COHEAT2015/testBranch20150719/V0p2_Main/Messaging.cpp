@@ -1115,14 +1115,30 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, uint8_t *
     default:
     case OTRadioLink::FTp2_NONE:
       {
-#if 0 && defined(DEBUG)
+#if 1 && defined(DEBUG)
       p->print(F("!RX bad msg ")); OTRadioLink::printRXMsg(p, msg, min(msglen, 8));
 #endif
       return;
       }
 
+#ifdef ALLOW_CC1_SUPPORT_HUB
+    case OTRadioLink::FTp2_CC1Alert: // Handle inbound alert message.
+      {
+      OTRadioLink::printRXMsg(p, msg, min(msglen, 8));
+      return;
+      }
+#endif
+
+#ifdef ALLOW_CC1_SUPPORT_HUB
+    case OTRadioLink::FTp2_CC1PollResponse: // Handle inbound poll-response message.
+      {
+      OTRadioLink::printRXMsg(p, msg, min(msglen, 8));
+      return;
+      }
+#endif
+
 #ifdef ALLOW_CC1_SUPPORT_RELAY
-    case: OTRadioLink::FTp2_CC1Alert // Handle inbound alert message.
+    case OTRadioLink::FTp2_CC1PollAndCmd: // Handle inbound poll/cmd message.
       {
       OTRadioLink::printRXMsg(p, msg, min(msglen, 8));
       return;
