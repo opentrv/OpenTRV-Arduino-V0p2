@@ -55,7 +55,21 @@ extern OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, -1> RFM23B;
 //#define STATS_MSG_MAX_LEN (64 - STATS_MSG_START_OFFSET)
 #define STATS_MSG_START_OFFSET (RFM22_PREAMBLE_BYTES + RFM22_SYNC_MIN_BYTES)
 #define STATS_MSG_MAX_LEN (64 - STATS_MSG_START_OFFSET)
-void RFM22RawStatsTX(uint8_t *buf, bool doubleTX);
+void RFM22RawStatsTXFFTerminated(uint8_t *buf, bool doubleTX);
+
+// Adds the STATS_MSG_START_OFFSET preamble to enable reception by a remote RFM22B/RFM23B.
+// Returns the first free byte after the preamble.
+static inline uint8_t *RFM22RXPreambleAdd(uint8_t *buf)
+  {
+  // Start with RFM23-friendly preamble which ends with with the aacccccc sync word.
+  memset(buf, RFM22_PREAMBLE_BYTE, RFM22_PREAMBLE_BYTES);
+  buf += RFM22_PREAMBLE_BYTES;
+  // Send the sync bytes.
+  memset(buf, RFM22_SYNC_BYTE, RFM22_SYNC_MIN_BYTES);
+  buf += RFM22_SYNC_MIN_BYTES;
+  // Return the adjusted pointer.
+  return(buf);
+  }
 
 
 #endif

@@ -50,16 +50,16 @@ OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, -1> RFM23B;
 // This will use whichever transmission medium/carrier/etc is available.
 //#define STATS_MSG_START_OFFSET (RFM22_PREAMBLE_BYTES + RFM22_SYNC_MIN_BYTES)
 //#define STATS_MSG_MAX_LEN (64 - STATS_MSG_START_OFFSET)
-void RFM22RawStatsTX(uint8_t * const buf, const bool doubleTX)
+void RFM22RawStatsTXFFTerminated(uint8_t * const buf, const bool doubleTX)
   {
-  // Write in the preamble/sync bytes.
-  uint8_t *bptr = buf;
-  // Start with RFM23-friendly preamble which ends with with the aacccccc sync word.
-  memset(bptr, RFM22_PREAMBLE_BYTE, RFM22_PREAMBLE_BYTES);
-  bptr += RFM22_PREAMBLE_BYTES;
-  // Send the sync bytes.
-  memset(bptr, RFM22_SYNC_BYTE, RFM22_SYNC_MIN_BYTES);
-  bptr += RFM22_SYNC_MIN_BYTES;
+//  // Write in the preamble/sync bytes.
+//  uint8_t *bptr = buf;
+//  // Start with RFM23-friendly preamble which ends with with the aacccccc sync word.
+//  memset(bptr, RFM22_PREAMBLE_BYTE, RFM22_PREAMBLE_BYTES);
+//  bptr += RFM22_PREAMBLE_BYTES;
+//  // Send the sync bytes.
+//  memset(bptr, RFM22_SYNC_BYTE, RFM22_SYNC_MIN_BYTES);
+//  bptr += RFM22_SYNC_MIN_BYTES;
 
 //  // TODO: put in listen before TX to reduce collisions (CSMA).
 //  // Send message starting with preamble.
@@ -71,6 +71,7 @@ void RFM22RawStatsTX(uint8_t * const buf, const bool doubleTX)
 //    nap(WDTO_15MS);
 //    RFM22TXFIFO(); // Re-send it!
 //    }
+  RFM22RXPreambleAdd(buf);
   const uint8_t buflen = OTRadioLink::frameLenFFTerminated(buf);
 #if 0 && defined(DEBUG)
     DEBUG_SERIAL_PRINT_FLASHSTRING("buflen=");

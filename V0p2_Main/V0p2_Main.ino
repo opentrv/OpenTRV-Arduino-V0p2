@@ -29,10 +29,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
   Basic AVR power consumption ticking an (empty) control loop at ~0.5Hz should be ~1uA.
  */
 
-// Arduino libraries imported here (even for use in other .cpp files).
-#include <SPI.h>
-#include <Wire.h>
-#include <OTRadioLink.h>
+#ifdef ALLOW_CC1_SUPPORT
+#include <OTProtocolCC.h>
+#endif
 
 #include <util/crc16.h>
 #include <avr/eeprom.h>
@@ -41,6 +40,12 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 #include "V0p2_Generic_Config.h"
 #include "V0p2_Board_IO_Config.h" // I/O pin allocation: include ahead of I/O module headers.
+
+// Arduino libraries imported here (even for use in other .cpp files).
+#include <SPI.h>
+#include <Wire.h>
+#include <OTRadioLink.h>
+
 #include "V0p2_Sensors.h"
 
 #include "Control.h"

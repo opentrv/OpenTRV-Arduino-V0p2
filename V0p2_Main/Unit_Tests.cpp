@@ -95,15 +95,20 @@ static void testLibVersions()
   {
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("LibVersions");
 #if !(0 == ARDUINO_LIB_OTV0P2BASE_VERSION_MAJOR) || !(5 <= ARDUINO_LIB_OTV0P2BASE_VERSION_MINOR)
-#error Wrong library version!
+#error Wrong OTV0p2Base library version!
 #endif
 #if !(0 == ARDUINO_LIB_OTRADIOLINK_VERSION_MAJOR) || !(5 <= ARDUINO_LIB_OTRADIOLINK_VERSION_MINOR)
-#error Wrong library version!
+#error Wrong OTRadioLink library version!
 #endif
 //  AssertIsEqual(0, ARDUINO_LIB_OTRADIOLINK_VERSION_MAJOR);
 //  AssertIsTrue(1 <= ARDUINO_LIB_OTRADIOLINK_VERSION_MINOR); // Minimum acceptable minor version.
 #if !(0 == ARDUINO_LIB_OTRFM23BLINK_VERSION_MAJOR) || !(5 <= ARDUINO_LIB_OTRFM23BLINK_VERSION_MINOR)
-#error Wrong library version!
+#error Wrong OTRFM23BLink library version!
+#endif
+#ifdef ALLOW_CC1_SUPPORT
+#if !(0 == ARDUINO_LIB_OTPROTOCOLCC_VERSION_MAJOR) || !(2 <= ARDUINO_LIB_OTPROTOCOLCC_VERSION_MINOR)
+#error Wrong OTProtocolCC library version!
+#endif
 #endif
   }
 

@@ -22,14 +22,16 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
   Also for rapid prototyping without dead-weight of OpenTRV intricate timing, etc!
  */
 
-
-// Arduino libraries.
-//#include <Wire.h>
-
 #include "V0p2_Main.h"
 
 #include "V0p2_Generic_Config.h"
 #include "V0p2_Board_IO_Config.h" // I/O pin allocation: include ahead of I/O module headers.
+
+// Arduino libraries.
+//#include <Wire.h>
+#ifdef ALLOW_CC1_SUPPORT
+#include <OTProtocolCC.h>
+#endif
 
 #include "Control.h"
 #include "EEPROM_Utils.h"
@@ -320,6 +322,38 @@ void loopAlt()
 
 
 
+#ifdef ALLOW_CC1_SUPPORT_RELAY
+  // FIXME: dumb alert TX every minute...
+  if(0 == TIME_LSD)
+    {
+    const OTProtocolCC::CC1Alert a1 = OTProtocolCC::CC1Alert::makeAlert(99, 99);
+    uint8_t buf[32]; // More than large enough for preamble + sync + alert message.
+    uint8_t *const bptr = RFM22RXPreambleAdd(buf);
+    const uint8_t bodylen = a1.encodeSimple(bptr, sizeof(buf) - STATS_MSG_START_OFFSET, true);
+    const uint8_t buflen = STATS_MSG_START_OFFSET + bodylen;
+#if 1 && defined(DEBUG)
+    OTRadioLink::printRXMsg(&Serial, buf, buflen);
+#endif
+    const bool doubleTX = true;
+    if(RFM23B.sendRaw(buf, buflen, 0, (doubleTX ? OTRadioLink::OTRadioLink::TXmax : OTRadioLink::OTRadioLink::TXnormal)))
+      {
+#if 1 && defined(DEBUG)
+      DEBUG_SERIAL_PRINTLN_FLASHSTRING("TX alert");
+#endif
+      }  
+#if 1 && defined(DEBUG)
+    else
+      {
+      DEBUG_SERIAL_PRINTLN_FLASHSTRING("!TX failed");
+      }
+#endif
+    }
+#endif
+
+
+
+
+
 
 
 // EXPERIMENTAL TEST OF NEW RADIO CODE
@@ -366,30 +400,30 @@ void loopAlt()
 #if 1 && defined(DEBUG)
   if(0 == (TIME_LSD & 3)) // TX every 4s so as not to flood the airwaves...
     {
-    uint8_t buf[STATS_MSG_START_OFFSET + 65];
-    strncpy(STATS_MSG_START_OFFSET + (char *)buf, "{}", sizeof(buf)-1); // Allow for \0 to be replaced with crc and 0xff later.
-    uint8_t *bptr = buf + STATS_MSG_START_OFFSET;
-    const int wrote = strlen((char *)bptr);
-    // Adjust JSON message for transmission.
-    // (Set high-bit on final closing brace to make it unique, and compute (non-0xff) CRC.)
-    const uint8_t crc = adjustJSONMsgForTXAndComputeCRC((char *)bptr);
-    if(0xff == crc)
-      {
-  #if 1 && defined(DEBUG)
-      DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON msg bad!");
-  #endif
-      }
-    else
-      {
-      bptr += wrote;
-      *bptr++ = crc; // Add 7-bit CRC for on-the-wire check.
-      *bptr = 0xff; // Terminate message for TX.
-      // Send it!
-      RFM22RawStatsTX(buf, false);
-  #if 1 && defined(DEBUG)
-      DEBUG_SERIAL_PRINTLN_FLASHSTRING("TX");
-  #endif
-      }
+//    uint8_t buf[STATS_MSG_START_OFFSET + 65];
+//    strncpy(STATS_MSG_START_OFFSET + (char *)buf, "{}", sizeof(buf)-1); // Allow for \0 to be replaced with crc and 0xff later.
+//    uint8_t *bptr = buf + STATS_MSG_START_OFFSET;
+//    const int wrote = strlen((char *)bptr);
+//    // Adjust JSON message for transmission.
+//    // (Set high-bit on final closing brace to make it unique, and compute (non-0xff) CRC.)
+//    const uint8_t crc = adjustJSONMsgForTXAndComputeCRC((char *)bptr);
+//    if(0xff == crc)
+//      {
+//  #if 1 && defined(DEBUG)
+//      DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON msg bad!");
+//  #endif
+//      }
+//    else
+//      {
+//      bptr += wrote;
+//      *bptr++ = crc; // Add 7-bit CRC for on-the-wire check.
+//      *bptr = 0xff; // Terminate message for TX.
+//      // Send it!
+//      RFM22RawStatsTX(buf, false);
+//  #if 1 && defined(DEBUG)
+//      DEBUG_SERIAL_PRINTLN_FLASHSTRING("TX");
+//  #endif
+//      }
     }
 #endif
 
@@ -397,18 +431,13 @@ void loopAlt()
 
 
 
-#if defined(USE_MODULE_FHT8VSIMPLE)
-  if(0 == TIME_LSD)
-    {
-    // Once per minute regenerate valve-setting command ready to transmit.
-    FHT8VCreateValveSetCmdFrame(valvePosition);
-    }
-#endif
-
-
-
-
-
+//#if defined(USE_MODULE_FHT8VSIMPLE)
+//  if(0 == TIME_LSD)
+//    {
+//    // Once per minute regenerate valve-setting command ready to transmit.
+//    FHT8VCreateValveSetCmdFrame(valvePosition);
+//    }
+//#endif
 
 
 #if defined(USE_MODULE_FHT8VSIMPLE)
