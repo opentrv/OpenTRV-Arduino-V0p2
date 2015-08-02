@@ -20,6 +20,11 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
  Generic messaging support for OpenTRV.
  */
 
+#include <OTRadioLink.h>
+#ifdef ALLOW_CC1_SUPPORT
+#include <OTProtocolCC.h>
+#endif
+
 #include <util/atomic.h>
 
 #include "Messaging.h"
@@ -1007,7 +1012,7 @@ uint8_t SimpleStatsRotationBase::writeJSON(uint8_t *const buf, const uint8_t buf
 #endif
 
 
-#ifdef ENABLE_BOILER_HUB
+#if defined(ENABLE_BOILER_HUB) && defined(USE_MODULE_FHT8VSIMPLE) // Listen for calls for heat from remote valves...
 static void decodeAndHandleFTp2_FS20_native(Print *p, const bool secure, uint8_t * const msg, const uint8_t msglen)
 {
   fht8v_msg_t command;
@@ -1142,7 +1147,7 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, uint8_t *
       }
 #endif
 
-#ifdef ENABLE_BOILER_HUB // Listen for calls for heat from remote valves...
+#if defined(ENABLE_BOILER_HUB) && defined(USE_MODULE_FHT8VSIMPLE) // Listen for calls for heat from remote valves...
     case OTRadioLink::FTp2_FS20_native:
       {
       decodeAndHandleFTp2_FS20_native(p, secure, msg, msglen);

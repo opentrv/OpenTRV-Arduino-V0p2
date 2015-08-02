@@ -22,17 +22,16 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
   Also for rapid prototyping without dead-weight of OpenTRV intricate timing, etc!
  */
 
+#include "V0p2_Main.h"
+
+#include "V0p2_Generic_Config.h"
+#include "V0p2_Board_IO_Config.h" // I/O pin allocation: include ahead of I/O module headers.
 
 // Arduino libraries.
 //#include <Wire.h>
 #ifdef ALLOW_CC1_SUPPORT
 #include <OTProtocolCC.h>
 #endif
-
-#include "V0p2_Main.h"
-
-#include "V0p2_Generic_Config.h"
-#include "V0p2_Board_IO_Config.h" // I/O pin allocation: include ahead of I/O module headers.
 
 #include "Control.h"
 #include "EEPROM_Utils.h"
@@ -323,6 +322,35 @@ void loopAlt()
 
 
 
+#ifdef ALLOW_CC1_SUPPORT_RELAY
+  // FIXME: dumb alert TX every minute...
+  if(0 == TIME_LSD)
+    {
+    const OTProtocolCC::CC1Alert a1 = OTProtocolCC::CC1Alert::makeAlert(99, 99);
+    uint8_t buf[32]; // More than large enough for preamble + sync + alert message.
+    uint8_t *const bptr = RFM22RXPreambleAdd(buf);
+    const uint8_t bodylen = a1.encodeSimple(bptr, sizeof(buf) - STATS_MSG_START_OFFSET, true);
+    const uint8_t buflen = STATS_MSG_START_OFFSET + bodylen;
+    const bool doubleTX = false;
+    if(RFM23B.sendRaw(buf, buflen, 0, (doubleTX ? OTRadioLink::OTRadioLink::TXmax : OTRadioLink::OTRadioLink::TXnormal)))
+      {
+#if 1 && defined(DEBUG)
+      DEBUG_SERIAL_PRINTLN_FLASHSTRING("TX alert");
+#endif
+      }  
+#if 1 && defined(DEBUG)
+    else
+      {
+      DEBUG_SERIAL_PRINTLN_FLASHSTRING("!TX failed");
+      }
+#endif
+    }
+#endif
+
+
+
+
+
 
 
 // EXPERIMENTAL TEST OF NEW RADIO CODE
@@ -400,18 +428,13 @@ void loopAlt()
 
 
 
-#if defined(USE_MODULE_FHT8VSIMPLE)
-  if(0 == TIME_LSD)
-    {
-    // Once per minute regenerate valve-setting command ready to transmit.
-    FHT8VCreateValveSetCmdFrame(valvePosition);
-    }
-#endif
-
-
-
-
-
+//#if defined(USE_MODULE_FHT8VSIMPLE)
+//  if(0 == TIME_LSD)
+//    {
+//    // Once per minute regenerate valve-setting command ready to transmit.
+//    FHT8VCreateValveSetCmdFrame(valvePosition);
+//    }
+//#endif
 
 
 #if defined(USE_MODULE_FHT8VSIMPLE)

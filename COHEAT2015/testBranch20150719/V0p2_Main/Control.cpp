@@ -1337,6 +1337,7 @@ bool pollIO(const bool force)
 static SimpleStatsRotation<8> ss1; // Configured for maximum different stats.
 #endif
 
+#ifdef ALLOW_STATS_TX
 // Do bare stats transmission.
 // Output should be filtered for items appropriate
 // to current channel security and sensitivity level.
@@ -1375,7 +1376,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
       return;
       }
     // Send it!
-    RFM22RawStatsTX(buf, allowDoubleTX);
+    RFM22RawStatsTXFFTerminated(buf, allowDoubleTX);
     // Record stats as if remote, and treat channel as secure.
     recordCoreStats(true, &content);
     handleQueuedMessages(&Serial, true, &RFM23B);
@@ -1438,7 +1439,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
     recordJSONStats(true, (const char *)bptr);
     handleQueuedMessages(&Serial, true, &RFM23B);
     // Adjust JSON message for transmission.
-    // (Set high-bit on final '}' to make it unique, and compute (non-0xff) CRC.)
+    // (Set high-bit on final closing brace to make it unique, and compute (non-0xff) CRC.)
     const uint8_t crc = adjustJSONMsgForTXAndComputeCRC((char *)bptr);
     if(0xff == crc)
       {
@@ -1460,13 +1461,13 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
       }
 #endif
     // Send it!
-    RFM22RawStatsTX(buf, allowDoubleTX);
+    RFM22RawStatsTXFFTerminated(buf, allowDoubleTX);
     }
-
 #endif // defined(ALLOW_JSON_OUTPUT)
 
 //DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats TX");
   }
+#endif // defined(ALLOW_STATS_TX)
 
 
 
