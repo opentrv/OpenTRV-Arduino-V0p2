@@ -31,6 +31,17 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
  and is constrained to ASCII-7 printable characters only (in range [32,126]).
 
  The messages on the wire are protected by a checksum or CRC.
+
+ NOTE: when communicating to a host over serial, leading punctuation characters are significant,
+ and output is line-oriented:
+ 
+  '!' introduces an error.
+  '?' introduces a warning.
+  '=' introduces a local status message.
+  '>' is a CLI prompt.
+  '@' introduces a translated (to ASCII7) binary status messages.
+  '{' introduces a raw JSON (map) message.
+  '+<msgtype> ' introduces a relayed/decoded message of the givens message type.  Note the space.
  */
 
 #ifndef MESSAGING_H

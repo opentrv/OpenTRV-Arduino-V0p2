@@ -44,7 +44,18 @@ The OpenTRV project licenses this file to you
  
  ; This can use a simple setback (drops the 'warm' target a little to save energy)
  ; eg using an LDR, ie reasonable ambient light, as a proxy for occupancy.
+
+
+ NOTE: when communicating to a host over serial, leading punctuation characters are significant,
+ and output is line-oriented:
  
+  '!' introduces an error.
+  '?' introduces a warning.
+  '=' introduces a local status message.
+  '>' is a CLI prompt.
+  '@' introduces a translated (to ASCII7) binary status messages.
+  '{' introduces a raw JSON (map) message.
+  '+<msgtype> ' introduces a relayed/decoded message of the givens message type.  Note the space. 
  */
 
 #ifndef UI_MINIMAL_H

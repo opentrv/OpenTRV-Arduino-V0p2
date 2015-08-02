@@ -1142,7 +1142,13 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, uint8_t *
 #ifdef ALLOW_CC1_SUPPORT_HUB
     case OTRadioLink::FTp2_CC1Alert: // Handle inbound alert message.
       {
-      OTRadioLink::printRXMsg(p, msg, min(msglen, 8));
+      //OTRadioLink::printRXMsg(p, msg, min(msglen, 8));
+      OTProtocolCC::CC1Alert a = OTProtocolCC::CC1Alert::decodeAlert(bufAlert0, sizeof(bufAlert0));
+      // After decode instance should be valid and with correct house code.
+      if(a2.isValid())
+        {
+        p->print(F("+CC1 ! ")); p->print(a.getHC1()); p->print(' '); p->println(a.getHC2());
+        }
       return;
       }
 #endif
