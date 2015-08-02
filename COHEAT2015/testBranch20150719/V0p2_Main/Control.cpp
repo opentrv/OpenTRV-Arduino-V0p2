@@ -1583,6 +1583,7 @@ void setupOpenTRV()
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("int setup");
 #endif
 
+#ifdef ALLOW_STATS_TX
   // Do early 'wake-up' stats transmission if possible
   // when everything else is set up and ready.
   // Attempt to maximise chance of reception with a double TX.
@@ -1602,6 +1603,7 @@ void setupOpenTRV()
     if(!ss1.changedValue()) { break; }
     }
 //  nap(WDTO_120MS, false);
+#endif
 
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("setup stats sent");
@@ -2157,6 +2159,7 @@ void loopOpenTRV()
     // Force read of supply/battery voltage; measure and recompute status (etc) less often when already thought to be low, eg when conserving.
     case 4: { if(runAll) { Supply_mV.read(); } break; }
 
+#ifdef ALLOW_STATS_TX
     // Regular transmission of stats if NOT driving a local valve (else stats can be piggybacked onto that).
     case 10:
       {
@@ -2190,7 +2193,7 @@ void loopOpenTRV()
         }
       break;
       }
-
+#endif
 
 // SENSOR READ AND STATS
 //

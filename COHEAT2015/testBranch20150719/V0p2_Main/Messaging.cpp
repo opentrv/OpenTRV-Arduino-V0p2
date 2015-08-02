@@ -1007,6 +1007,87 @@ uint8_t SimpleStatsRotationBase::writeJSON(uint8_t *const buf, const uint8_t buf
 #endif
 
 
+#ifdef ENABLE_BOILER_HUB
+static void decodeAndHandleFTp2_FS20_native(Print *p, const bool secure, uint8_t * const msg, const uint8_t msglen)
+{
+  fht8v_msg_t command;
+  uint8_t const *lastByte = msg+msglen-1;
+  uint8_t const *trailer = FHT8VDecodeBitStream(msg, lastByte, &command);
+  if(NULL != trailer)
+    {
+#if 0 && defined(DEBUG)
+p->print("FS20 msg HC "); p->print(command.hc1); p->print(' '); p->println(command.hc2);
+#endif
+#if defined(ALLOW_STATS_RX) // Only look for the trailer if supported.
+    // If whole FHT8V frame was OK then check if there is a valid stats trailer.
+
+    // Check for 'core' stats trailer.
+    if((trailer + FullStatsMessageCore_MAX_BYTES_ON_WIRE <= lastByte) && // Enough space for minimum-stats trailer.
+       (MESSAGING_FULL_STATS_FLAGS_HEADER_MSBS == (trailer[0] & MESSAGING_FULL_STATS_FLAGS_HEADER_MASK)))
+      {
+      FullStatsMessageCore_t content;
+      const uint8_t *tail = decodeFullStatsMessageCore(trailer, lastByte-trailer+1, stTXalwaysAll, false, &content);
+      if(NULL != tail)
+        {
+        // Received trailing stats frame!
+
+        // If ID is present then make sure it matches that implied by the FHT8V frame (else reject this trailer)
+        // else file it in from the FHT8C frame.
+        bool allGood = true;
+        if(content.containsID)
+          {
+          if((content.id0 != command.hc1) || (content.id1 != command.hc2))
+            { allGood = false; }
+          }
+        else
+          {
+          content.id0 = command.hc1;
+          content.id1 = command.hc2;
+          content.containsID = true;
+          }
+
+        // If frame looks good then capture it.
+        if(allGood) { recordCoreStats(false, &content); }
+//            else { setLastRXErr(FHT8VRXErr_BAD_RX_SUBFRAME); }
+        // TODO: record error with mismatched ID.
+        }
+      }
+#if defined(ALLOW_MINIMAL_STATS_TXRX)
+    // Check for minimum stats trailer.
+    else if((trailer + MESSAGING_TRAILING_MINIMAL_STATS_PAYLOAD_BYTES <= lastByte) && // Enough space for minimum-stats trailer.
+       (MESSAGING_TRAILING_MINIMAL_STATS_HEADER_MSBS == (trailer[0] & MESSAGING_TRAILING_MINIMAL_STATS_HEADER_MASK)))
+      {
+      if(verifyHeaderAndCRCForTrailingMinimalStatsPayload(trailer)) // Valid header and CRC.
+        {
+        trailingMinimalStatsPayload_t payload;
+        extractTrailingMinimalStatsPayload(trailer, &payload);
+        recordMinimalStats(true, command.hc1, command.hc2, &payload); // Record stats; local loopback is secure.
+        }
+      }
+#endif
+#endif
+
+#if defined(ENABLE_BOILER_HUB)
+    // Potentially accept as call for heat only if command is 0x26 (38).
+    // Later filter on the valve being open enough for some water flow to be likely
+    // (for individual valves, and in aggregate)
+    // and the housecode being accepted.
+    if(0x26 == command.command)
+      {
+      const uint16_t compoundHC = (command.hc1 << 8) | command.hc2;
+#if 0 && defined(DEBUG)
+      p->println("FS20 0x26 RX"); // Just notes that a 'valve %' FS20 command has been overheard.
+#endif
+      remoteCallForHeatRX(compoundHC, (0 == command.extension) ? 0 : (uint8_t) ((command.extension * 100) / 255));
+      }
+#endif
+    }
+  return;
+  }
+#endif
+
+
+
 
 // Decode and handle inbound raw message.
 // A message may contain trailing garbage at the end; the decoder/router should cope.
@@ -1035,6 +1116,7 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, uint8_t *
       return;
       }
 
+#ifdef ALLOW_STATS_RX
     // TODO: verify that this is actually working!
     case OTRadioLink::FTp2_FullStatsIDL: case OTRadioLink::FTp2_FullStatsIDH:
       {
@@ -1058,90 +1140,24 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, uint8_t *
          }
       return;
       }
+#endif
 
+#ifdef ENABLE_BOILER_HUB // Listen for calls for heat from remote valves...
     case OTRadioLink::FTp2_FS20_native:
       {
-      fht8v_msg_t command;
-      uint8_t const *lastByte = msg+msglen-1;
-      uint8_t const *trailer = FHT8VDecodeBitStream(msg, lastByte, &command);
-      if(NULL != trailer)
-        {
-#if 0 && defined(DEBUG)
-p->print("FS20 msg HC "); p->print(command.hc1); p->print(' '); p->println(command.hc2);
-#endif
-#if defined(ALLOW_STATS_RX) // Only look for the trailer if supported.
-        // If whole FHT8V frame was OK then check if there is a valid stats trailer.
-  
-        // Check for 'core' stats trailer.
-        if((trailer + FullStatsMessageCore_MAX_BYTES_ON_WIRE <= lastByte) && // Enough space for minimum-stats trailer.
-           (MESSAGING_FULL_STATS_FLAGS_HEADER_MSBS == (trailer[0] & MESSAGING_FULL_STATS_FLAGS_HEADER_MASK)))
-          {
-          FullStatsMessageCore_t content;
-          const uint8_t *tail = decodeFullStatsMessageCore(trailer, lastByte-trailer+1, stTXalwaysAll, false, &content);
-          if(NULL != tail)
-            {
-            // Received trailing stats frame!
-  
-            // If ID is present then make sure it matches that implied by the FHT8V frame (else reject this trailer)
-            // else file it in from the FHT8C frame.
-            bool allGood = true;
-            if(content.containsID)
-              {
-              if((content.id0 != command.hc1) || (content.id1 != command.hc2))
-                { allGood = false; }
-              }
-            else
-              {
-              content.id0 = command.hc1;
-              content.id1 = command.hc2;
-              content.containsID = true;
-              }
-  
-            // If frame looks good then capture it.
-            if(allGood) { recordCoreStats(false, &content); }
-//            else { setLastRXErr(FHT8VRXErr_BAD_RX_SUBFRAME); }
-            // TODO: record error with mismatched ID.
-            }
-          }
-#if defined(ALLOW_MINIMAL_STATS_TXRX)
-        // Check for minimum stats trailer.
-        else if((trailer + MESSAGING_TRAILING_MINIMAL_STATS_PAYLOAD_BYTES <= lastByte) && // Enough space for minimum-stats trailer.
-           (MESSAGING_TRAILING_MINIMAL_STATS_HEADER_MSBS == (trailer[0] & MESSAGING_TRAILING_MINIMAL_STATS_HEADER_MASK)))
-          {
-          if(verifyHeaderAndCRCForTrailingMinimalStatsPayload(trailer)) // Valid header and CRC.
-            {
-            trailingMinimalStatsPayload_t payload;
-            extractTrailingMinimalStatsPayload(trailer, &payload);
-            recordMinimalStats(true, command.hc1, command.hc2, &payload); // Record stats; local loopback is secure.
-            }
-          }
-#endif
-#endif
-
-#if defined(ENABLE_BOILER_HUB)
-        // Potentially accept as call for heat only if command is 0x26 (38).
-        // Later filter on the valve being open enough for some water flow to be likely
-        // (for individual valves, and in aggregate)
-        // and the housecode being accepted.
-        if(0x26 == command.command)
-          {
-          const uint16_t compoundHC = (command.hc1 << 8) | command.hc2;
-#if 0 && defined(DEBUG)
-          p->println("FS20 0x26 RX"); // Just notes that a 'valve %' FS20 command has been overheard.
-#endif
-          remoteCallForHeatRX(compoundHC, (0 == command.extension) ? 0 : (uint8_t) ((command.extension * 100) / 255));
-          }
-#endif
-        }
+      decodeAndHandleFTp2_FS20_native(p, secure, msg, msglen);
       return;
       }
+#endif
 
+#ifdef ALLOW_STATS_RX
     case OTRadioLink::FTp2_JSONRaw:
       {
       if(-1 != adjustJSONMsgForRXAndCheckCRC((char *)msg, msglen))
         { recordJSONStats(secure, (const char *)msg); }
       return;
       }
+#endif
     }
   }
 
@@ -1174,6 +1190,7 @@ bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadi
     workDone = true;
     }
 
+#ifdef ALLOW_STATS_RX
   // Look for binary-format message.
   FullStatsMessageCore_t stats;
   getLastCoreStats(&stats);
@@ -1220,6 +1237,7 @@ bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadi
     // Note that some work has been done.
     workDone = true;
     }
+#endif
 
   // Turn off serial at end, if this routine woke it.
   if(neededWaking) { flushSerialProductive(); powerDownSerial(); }
