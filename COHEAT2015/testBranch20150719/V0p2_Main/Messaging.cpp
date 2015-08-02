@@ -1143,8 +1143,8 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, uint8_t *
 #ifdef ALLOW_CC1_SUPPORT_HUB
     case OTRadioLink::FTp2_CC1Alert: // Handle inbound alert message.
       {
-      //OTRadioLink::printRXMsg(p, msg, min(msglen, 8));
-      OTProtocolCC::CC1Alert a = OTProtocolCC::CC1Alert::decodeAlert(msg, msglen);
+      OTProtocolCC::CC1Alert a;
+      a.OTProtocolCC::CC1Alert::decodeSimple(msg, msglen);
       // After decode instance should be valid and with correct house code.
       if(a.isValid())
         {
@@ -1159,6 +1159,14 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, uint8_t *
     case OTRadioLink::FTp2_CC1PollResponse: // Handle inbound poll-response message.
       {
       OTRadioLink::printRXMsg(p, msg, min(msglen, 8));
+      OTProtocolCC::CC1PollResponse a;
+      a.OTProtocolCC::CC1PollResponse::decodeSimple(msg, msglen);
+      // After decode instance should be valid and with correct house code.
+      if(a.isValid())
+        {
+        // Pass message to host to deal with as "! hc1 hc2" after prefix indicating relayed (CC1 alert) message.
+        p->print(F("+CC1 * ")); p->print(a.getHC1()); p->print(' '); p->println(a.getHC2());
+        }
       return;
       }
 #endif
@@ -1167,6 +1175,14 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, uint8_t *
     case OTRadioLink::FTp2_CC1PollAndCmd: // Handle inbound poll/cmd message.
       {
       OTRadioLink::printRXMsg(p, msg, min(msglen, 8));
+      OTProtocolCC::CC1PollAndCmd a;
+      a.OTProtocolCC::CC1PollAndCmd::decodeSimple(msg, msglen);
+      // After decode instance should be valid and with correct house code.
+      if(a.isValid())
+        {
+        // Pass message to host to deal with as "! hc1 hc2" after prefix indicating relayed (CC1 alert) message.
+        p->print(F("+CC1 * ")); p->print(a.getHC1()); p->print(' '); p->println(a.getHC2());
+        }
       return;
       }
 #endif
