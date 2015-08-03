@@ -409,11 +409,38 @@ void checkUserSchedule()
 static bool extCLIHandler(Print *const p, char *const buf, const uint8_t n)
   {
 
+#ifdef ALLOW_CC1_SUPPORT_RELAY
+  // If CC1 replay then allow +CC1 ! command to send an alert to the hub.
+  // Full command is:
+  //    +CC1 !
+  // This unit's housecode is used in the frame sent.
+  const uint8_t CC1_A_PREFIX_LEN = 6;
+  // Falling through rather than return(true) indicates failure.
+  if((n >= CC1_A_PREFIX_LEN) && (0 == strncmp("+CC1 !", buf, CC1_A_PREFIX_LEN)))
+    {
+    OTProtocolCC::CC1Alert a = OTProtocolCC::CC1Alert::make(FHT8VGetHC1(), FHT8VGetHC2());
+    if(a.isValid())
+      {
+      uint8_t txbuf[STATS_MSG_START_OFFSET + OTProtocolCC::CC1Alert::primary_frame_bytes+1]; // More than large enough for preamble + sync + alert message.
+      uint8_t *const bptr = RFM22RXPreambleAdd(txbuf);
+      const uint8_t bodylen = a.encodeSimple(bptr, sizeof(txbuf) - STATS_MSG_START_OFFSET, true);
+      const uint8_t buflen = STATS_MSG_START_OFFSET + bodylen;
+#if 0 && defined(DEBUG)
+OTRadioLink::printRXMsg(p, txbuf, buflen);
+#endif
+      if(RFM23B.sendRaw(txbuf, buflen)) // Send at default volume...  One going missing won't hurt that much.
+        { return(true); } // Done it!
+      }
+
+    return(false); // FAILED if fallen through from above.
+    }
+#endif
+
 #ifdef ALLOW_CC1_SUPPORT_HUB
-  // If CC1 hub then allow +CC1 ? command to poll a remote node.
+  // If CC1 hub then allow +CC1 ? command to poll a remote relay.
   // Full command is:
   //    +CC1 ? hc1 hc2 rp lc lt lf
-  // ie five numeric arguments, see below:
+  // ie six numeric arguments, see below, with out-of-range values coerced (other than housecodes):
 //            // Factory method to create instance.
 //            // Invalid parameters (except house codes) will be coerced into range.
 //            //   * House code (hc1, hc2) of valve controller that the poll/command is being sent to.
@@ -455,7 +482,7 @@ static bool extCLIHandler(Print *const p, char *const buf, const uint8_t n)
           uint8_t *const bptr = RFM22RXPreambleAdd(txbuf);
           const uint8_t bodylen = q.encodeSimple(bptr, sizeof(txbuf) - STATS_MSG_START_OFFSET, true);
           const uint8_t buflen = STATS_MSG_START_OFFSET + bodylen;
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
     OTRadioLink::printRXMsg(p, txbuf, buflen);
 #endif
           const bool doubleTX = false;
