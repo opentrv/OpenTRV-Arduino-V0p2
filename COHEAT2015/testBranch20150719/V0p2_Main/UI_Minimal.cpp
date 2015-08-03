@@ -138,7 +138,11 @@ bool tickUI(const uint_fast8_t sec)
       }
     }
 
+#ifdef OCCUPANCY_SUPPORT
   const bool reportedRecently = Occupancy.reportedRecently();
+#else
+  const bool reportedRecently = false;
+#endif
 // Drive second UI LED if available.
 #if defined(LED_UI2_ON)
   // Flash 2nd UI LED very briefly every 'tick' while activity has recently been reported.
@@ -240,7 +244,11 @@ bool tickUI(const uint_fast8_t sec)
 
     // Keep reporting UI status if the user has just touched the unit in some way.
     // (Or if occupancy/activity was just detected, to give the use some feedback for indirectly interacting.)
-    const bool justTouched = statusChange || veryRecentUIControlUse() || Occupancy.reportedRecently();
+    const bool justTouched = statusChange || veryRecentUIControlUse()
+#ifdef OCCUPANCY_SUPPORT
+        || Occupancy.reportedRecently()
+#endif
+        ;
 
     // Mode button not pressed: indicate current mode with flash(es); more flashes if actually calling for heat.
     // Force display while UI controls are being used, eg to indicate temp pot position.
@@ -252,7 +260,11 @@ bool tickUI(const uint_fast8_t sec)
       // Flash infrequently if no recently operated controls and not in BAKE mode and not actually calling for heat;
       // this is to conserve batteries for those people who leave the valves in WARM mode all the time.
       if(justTouched ||
-         ((forthTick || NominalRadValve.isCallingForHeat() || inBakeMode()) && !AmbLight.isRoomDark()))
+         ((forthTick
+#ifdef ENABLE_NOMINAL_RAD_VALVE
+             || NominalRadValve.isCallingForHeat()
+#endif
+             || inBakeMode()) && !AmbLight.isRoomDark()))
         {
         // First flash to indicate WARM mode (or pot being twiddled).
         LED_HEATCALL_ON();
@@ -264,6 +276,7 @@ bool tickUI(const uint_fast8_t sec)
         else if(!isComfortTemperature(wt)) { tinyPause(); }
         else { mediumPause(); }
 
+#ifdef ENABLE_NOMINAL_RAD_VALVE
         // Second flash to indicate actually calling for heat.
         if(NominalRadValve.isCallingForHeat())
           {
@@ -288,9 +301,11 @@ bool tickUI(const uint_fast8_t sec)
             }
 #endif
           }
+#endif
         }
       }
  
+#ifdef ENABLE_NOMINAL_RAD_VALVE
     // Even in FROST mode, and if actually calling for heat (eg opening the rad valve significantly, etc)
     // then emit a tiny double flash on every 4th tick.
     // This call for heat may be frost protection or pre-warming / anticipating demand.
@@ -309,6 +324,7 @@ bool tickUI(const uint_fast8_t sec)
       LED_HEATCALL_ON(); // flash
       veryTinyPause();
       }
+#endif
 
     // Enforce any changes that may have been driven by other UI components (ie other than MODE button).
     // Eg adjustment of temp pot / eco bias changing scheduled state.
@@ -437,7 +453,9 @@ void serialStatusReport()
 #else
   Serial.print(inWarmMode() ? 'W' : 'F');
 #endif
+#ifdef ENABLE_NOMINAL_RAD_VALVE
   Serial.print(NominalRadValve.get()); Serial.print('%'); // Target valve position.
+#endif
   const int temp = TemperatureC16.get();
   Serial.print('@'); Serial.print(temp >> 4); Serial.print('C'); // Unrounded whole degrees C.
       Serial.print(temp & 0xf, HEX); // Show 16ths in hex.
@@ -480,7 +498,9 @@ void serialStatusReport()
 #ifdef SETTABLE_TARGET_TEMPERATURES // Show thresholds and current target since no longer so easily deduced.
   Serial.print(';'); // Terminate previous section.
   Serial.print('S'); // Current settable temperature target, and FROST and WARM settings.
+#ifdef ENABLE_NOMINAL_RAD_VALVE
   Serial.print(NominalRadValve.getTargetTempC());
+#endif
   Serial_print_space();
   Serial.print(getFROSTTargetC());
   Serial_print_space();
@@ -527,7 +547,7 @@ void serialStatusReport()
     }
 #endif
 
-#if 1
+#ifdef ENABLE_NOMINAL_RAD_VALVE
   // *M* section: min-valve-percentage open section, iff not at default value.
   const uint8_t minValvePcOpen = NominalRadValve.getMinValvePcReallyOpen();
   if(DEFAULT_MIN_VALVE_PC_REALLY_OPEN != minValvePcOpen) { Serial.print(F(";M")); Serial.print(minValvePcOpen); }
@@ -547,7 +567,7 @@ void serialStatusReport()
   ss1.put(Occupancy);
 //  ss1.put(Occupancy.vacHTag(), Occupancy.getVacancyH()); // EXPERIMENTAL
 #endif
-#if 1 && defined(DEBUG)
+#ifdef ENABLE_MODELLED_RAD_VALVE
     ss1.put(NominalRadValve.tagCMPC(), NominalRadValve.getCumulativeMovementPC()); // EXPERIMENTAL
 #endif
   const uint8_t wrote = ss1.writeJSON((uint8_t *)buf, sizeof(buf), 0, true);
@@ -597,39 +617,50 @@ static void dumpCLIUsage(const uint8_t stopBy)
   Serial.println();
   //Serial.println(F("CLI usage:"));
   printCLILine(deadline, '?', F("this help"));
-#if defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX)
-  printCLILine(deadline, F("C M"), F("Central hub >=M mins on, 0 off"));
-#endif
-  printCLILine(deadline, F("D N"), F("Dump stats set N"));
+  
+  // Core CLI features first... (E, [H], I, S V)
   printCLILine(deadline, 'E', F("Exit CLI"));
-  printCLILine(deadline, 'F', F("Frost"));
-#if defined(SETTABLE_TARGET_TEMPERATURES) && !defined(TEMP_POT_AVAILABLE)
-  printCLILine(deadline, F("F CC"), F("set Frost/setback temp CC"));
-#endif
 #if defined(USE_MODULE_FHT8VSIMPLE) && defined(LOCAL_TRV)
   printCLILine(deadline, F("H H1 H2"), F("set FHT8V House codes 1&2"));
   printCLILine(deadline, 'H', F("clear House codes"));
 #endif
   printCLILine(deadline, 'I', F("new ID"));
+  printCLILine(deadline, 'S', F("show Status"));
+  printCLILine(deadline, 'V', F("sys Version"));
+
+#ifdef ENABLE_FULL_OT_CLI
+  // Optional CLI features...
+  Serial.println(F("-"));
+#if defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX)
+  printCLILine(deadline, F("C M"), F("Central hub >=M mins on, 0 off"));
+#endif
+  printCLILine(deadline, F("D N"), F("Dump stats set N"));
+  printCLILine(deadline, 'F', F("Frost"));
+#if defined(SETTABLE_TARGET_TEMPERATURES) && !defined(TEMP_POT_AVAILABLE)
+  printCLILine(deadline, F("F CC"), F("set Frost/setback temp CC"));
+#endif
+
   //printCLILine(deadline, 'L', F("Learn to warm every 24h from now, clear if in frost mode, schedule 0"));
   printCLILine(deadline, F("L S"), F("Learn daily warm now, clear if in frost mode, schedule S"));
   //printCLILine(deadline, F("P HH MM"), F("Program: warm daily starting at HH MM schedule 0"));
   printCLILine(deadline, F("P HH MM S"), F("Program: warm daily starting at HH MM schedule S"));
   printCLILine(deadline, F("O PP"), F("min % for valve to be Open"));
+#if defined(ENABLE_NOMINAL_RAD_VALVE)
   printCLILine(deadline, 'O', F("reset Open %"));
+#endif
 #ifdef SUPPORT_BAKE
   printCLILine(deadline, 'Q', F("Quick Heat"));
 #endif
 //  printCLILine(deadline, F("R N"), F("dump Raw stats set N"));
-  printCLILine(deadline, 'S', F("show Status"));
+
   printCLILine(deadline, F("T HH MM"), F("set 24h Time"));
-  printCLILine(deadline, 'V', F("sys Version"));
   printCLILine(deadline, 'W', F("Warm"));
 #if defined(SETTABLE_TARGET_TEMPERATURES) && !defined(TEMP_POT_AVAILABLE)
   printCLILine(deadline, F("W CC"), F("set Warm temp CC"));
 #endif
   printCLILine(deadline, 'X', F("Xmit security level; 0 always, 255 never"));
   printCLILine(deadline, 'Z', F("Zap stats"));
+#endif // ENABLE_FULL_OT_CLI
   Serial.println();
   }
 
@@ -771,6 +802,78 @@ void pollCLI(const uint8_t maxSCT)
       // Explicit request for help, or unrecognised first character.
       // Avoid showing status as may already be rather a lot of output.
       default: case '?': { dumpCLIUsage(maxSCT); showStatus = false; break; }
+      
+      
+      // CORE CLI FEATURES: keep small and low-impact.
+      //     E, [H], I, S V
+      // ---
+      // Exit/deactivate CLI immediately.
+      // This should be followed by JUST CR ('\r') OR LF ('\n')
+      // else the second will wake the CLI up again.
+      case 'E': { CLITimeoutM = 0; break; }
+#if defined(USE_MODULE_FHT8VSIMPLE) && (defined(LOCAL_TRV) || defined(SLAVE_TRV))
+      // H nn nn
+      // Set (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control.
+      // Missing values will clear the code entirely (and disable use of the valve).
+      case 'H':
+        {
+        char *last; // Used by strtok_r().
+        char *tok1;
+        // Minimum 5 character sequence makes sense and is safe to tokenise, eg "H 1 2".
+        if((n >= 5) && (NULL != (tok1 = strtok_r(buf+2, " ", &last))))
+          {
+          char *tok2 = strtok_r(NULL, " ", &last);
+          if(NULL != tok2)
+            {
+            const int hc1 = atoi(tok1);
+            const int hc2 = atoi(tok2);
+            if((hc1 < 0) || (hc1 > 99) || (hc2 < 0) || (hc2 > 99)) { InvalidIgnored(); }
+            else
+              {
+              FHT8VSetHC1(hc1);
+              FHT8VSetHC2(hc2);
+              FHT8VSyncAndTXReset(); // Force re-sync with FHT8V valve.
+              }
+            }
+          }
+        else if(n < 2) // Just 'H', possibly with trailing whitespace.
+          {
+          FHT8VClearHC();
+          FHT8VSyncAndTXReset(); // Force into unsynchronized state.
+          }
+        break;
+        }
+#endif
+      // Set new random ID.
+      // Should possibly restart the system afterwards.
+      case 'I':
+        {
+        ensureIDCreated(true); // Force ID change.
+        break;
+        }
+      // Status line and optional smart/scheduled warming prediction request.
+      case 'S':
+        {
+        Serial.print(F("Resets: "));
+        const uint8_t resetCount = eeprom_read_byte((uint8_t *)EE_START_RESET_COUNT);
+        Serial.print(resetCount);
+        Serial.println();
+        Serial.print(F("Overruns: "));
+        const uint8_t overrunCount = (~eeprom_read_byte((uint8_t *)EE_START_OVERRUN_COUNTER)) & 0xff;
+        Serial.print(overrunCount);
+        Serial.println();
+        break; // Note that status is by default printed after processing input line.
+        }
+      // Version information printed as one line to serial, machine- and human- parseable.
+      case 'V':
+        {
+        serialPrintlnBuildVersion();
+        break;
+        }
+   
+
+
+#ifdef ENABLE_FULL_OT_CLI // NON-CORE CLI FEATURES
 
 #if defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX)
       // C M
@@ -788,11 +891,6 @@ void pollCLI(const uint8_t maxSCT)
         break;
         }
 #endif
-
-      // Exit/deactivate CLI immediately.
-      // This should be followed by JUST CR ('\r') OR LF ('\b')
-      // else the second will wake the CLI up again.
-      case 'E': { CLITimeoutM = 0; break; }
 
 //      // Raw stats: R N
 //      // Avoid showing status afterwards as may already be rather a lot of output.
@@ -890,7 +988,9 @@ void pollCLI(const uint8_t maxSCT)
         if(n == 2)
           {
           if('!' == buf[1]) { Serial.println(F("hols")); }
+#ifdef OCCUPANCY_SUPPORT
           Occupancy.setHolidayMode();
+#endif
           setWarmModeDebounced(false);
           break;
           }
@@ -905,47 +1005,6 @@ void pollCLI(const uint8_t maxSCT)
         else
 #endif
           { setWarmModeDebounced(false); } // No parameter supplied; switch to FROST mode.
-        break;
-        }
-
-#if defined(USE_MODULE_FHT8VSIMPLE) && defined(LOCAL_TRV)
-      // Set (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control.
-      // Missing values will clear the code entirely (and disable use of the valve).
-      case 'H':
-        {
-        char *last; // Used by strtok_r().
-        char *tok1;
-        // Minimum 5 character sequence makes sense and is safe to tokenise, eg "H 1 2".
-        if((n >= 5) && (NULL != (tok1 = strtok_r(buf+2, " ", &last))))
-          {
-          char *tok2 = strtok_r(NULL, " ", &last);
-          if(NULL != tok2)
-            {
-            const int hc1 = atoi(tok1);
-            const int hc2 = atoi(tok2);
-            if((hc1 < 0) || (hc1 > 99) || (hc2 < 0) || (hc2 > 99)) { InvalidIgnored(); }
-            else
-              {
-              FHT8VSetHC1(hc1);
-              FHT8VSetHC2(hc2);
-              FHT8VSyncAndTXReset(); // Force re-sync with FHT8V valve.
-              }
-            }
-          }
-        else if(n < 2) // Just 'H', possibly with trailing whitespace.
-          {
-          FHT8VClearHC();
-          FHT8VSyncAndTXReset(); // Force into unsynchronized state.
-          }
-        break;
-        }
-#endif
-
-      // Set new random ID.
-      // Should possibly restart afterwards.
-      case 'I':
-        {
-        ensureIDCreated(true); // Force ID.
         break;
         }
 
@@ -966,6 +1025,7 @@ void pollCLI(const uint8_t maxSCT)
         break;
         }
 
+#if defined(ENABLE_NOMINAL_RAD_VALVE)
       // Set/clear min-valve-open-% threshold override.
       case 'O':
         {
@@ -977,6 +1037,7 @@ void pollCLI(const uint8_t maxSCT)
         NominalRadValve.setMinValvePcReallyOpen(minPcOpen);
         break;
         }
+#endif
 
       // Program simple schedule HH MM [N].
       case 'P':
@@ -1011,30 +1072,6 @@ void pollCLI(const uint8_t maxSCT)
       case 'Q': { startBakeDebounced(); break; }
 #endif
 
-      // Status line and optional smart/scheduled warming prediction request.
-      case 'S':
-        {
-        Serial.print(F("Resets: "));
-        const uint8_t resetCount = eeprom_read_byte((uint8_t *)EE_START_RESET_COUNT);
-        Serial.print(resetCount);
-        Serial.println();
-        Serial.print(F("Overruns: "));
-        const uint8_t overrunCount = (~eeprom_read_byte((uint8_t *)EE_START_OVERRUN_COUNTER)) & 0xff;
-        Serial.print(overrunCount);
-        Serial.println();
-#ifdef ENABLE_ANTICIPATION
-        uint_least8_t hh = getHoursLT();
-        Serial.print(F("Smart warming: "));
-        for(int i = 24; --i >= 0; )
-          {
-          Serial.print(shouldBeWarmedAtHour(hh) ? 'w' : 'f'); // TODO: show 'W' for scheduled WARM mode.
-          if(++hh > 23) { hh = 0; }
-          }
-        Serial.println();
-#endif
-        break; // Note that status is by default printed after processing input line.
-        }
-
       // Time set T HH MM.
       case 'T':
         {
@@ -1052,13 +1089,6 @@ void pollCLI(const uint8_t maxSCT)
             if(!setHoursMinutesLT(hh, mm)) { InvalidIgnored(); }
             }
           }
-        break;
-        }
-
-      // Version information printed as one line to serial, machine- and human- parseable.
-      case 'V':
-        {
-        serialPrintlnBuildVersion();
         break;
         }
 
@@ -1110,6 +1140,7 @@ void pollCLI(const uint8_t maxSCT)
         showStatus = false; // May be slow; avoid showing stats line which will in any case be unchanged.
         break;
         }
+#endif // ENABLE_FULL_OT_CLI // NON-CORE FEATURES
       }
 
     // Almost always show status line afterwards as feedback of command received and new state.

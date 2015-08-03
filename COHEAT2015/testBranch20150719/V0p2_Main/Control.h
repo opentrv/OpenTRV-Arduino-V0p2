@@ -360,6 +360,7 @@ struct ModelledRadValveState
   };
 
 #if defined(LOCAL_TRV)
+#define ENABLE_MODELLED_RAD_VALVE
 // Internal model of radidator valve position, embodying control logic.
 class ModelledRadValve : public AbstractRadValve
   {
@@ -522,8 +523,36 @@ class ModelledRadValve : public AbstractRadValve
     // Any out-of-range value (eg >100) clears the override and DEFAULT_MIN_VALVE_PC_REALLY_OPEN will be used.
     static void setMinValvePcReallyOpen(uint8_t percent);
   };
+#define ENABLE_NOMINAL_RAD_VALVE
 // Singleton implementation for entire node.
 extern ModelledRadValve NominalRadValve;
+#elif defined(SLAVE_VALVE)
+// Valve which is put where it is told; no smarts of its own.
+class SimpleSlaveRadValve : public AbstractRadValve
+  {
+  public:
+    // Do any regular work that needs doing.
+    // Sets/clears changed flag if computed valve position changed.
+    // Call at a fixed rate (1/60s).
+    // Potentially expensive/slow.
+    virtual uint8_t read() { return(value); }
+
+    // Returns preferred poll interval (in seconds); non-zero.
+    // Must be polled at near constant rate, about once per minute.
+    virtual uint8_t preferredPollInterval_s() const { return(60); }
+
+    // Returns a suggested (JSON) tag/field/key name including units of get(); NULL means no recommended tag.
+    // The lifetime of the pointed-to text must be at least that of the Sensor instance.
+    virtual const char *tag() const { return("v|%"); }
+
+    // Returns true if (re)calibrating/(re)initialising/(re)syncing.
+    // The target valve position is not lost while this is true.
+    // By default there is no recalibration step.
+    virtual bool isRecalibrating() const;
+  }
+#define ENABLE_NOMINAL_RAD_VALVE
+// Singleton implementation for entire node.
+extern SimpleSlaveRadValve NominalRadValve;
 #endif
 
 

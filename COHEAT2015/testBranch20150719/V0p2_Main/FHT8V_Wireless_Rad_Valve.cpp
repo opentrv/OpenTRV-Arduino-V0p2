@@ -311,7 +311,7 @@ uint8_t *FHT8VCreateValveSetCmdFrame_r(uint8_t *const bptr, fht8v_msg_t *command
   // OR if adding a trailer that the hub should see.
   // NOTE: this requires more buffer space.
   const bool doHeader = etmsp
-#if defined(RFM22_SYNC_BCFH)
+#if defined(RFM22_SYNC_BCFH) && defined(ENABLE_NOMINAL_RAD_VALVE)
   // NOTE: the percentage-open threshold to call for heat from the boiler is set to allow the valve to open significantly, etc.
       || (TRVPercentOpen >= NominalRadValve.getMinValvePcReallyOpen())
 #endif
@@ -384,7 +384,7 @@ void FHT8VCreateValveSetCmdFrame(const uint8_t valvePC)
 // HC1 and HC2 are fetched with the FHT8VGetHC1() and FHT8VGetHC2() calls, and address is always 0.
 // The generated command frame can be resent indefinitely.
 // If no valve is set up then this may simply terminate an empty buffer with 0xff.
-void FHT8VCreateValveSetCmdFrame()
+void FHT8VCreateValveSetCmdFrame(const AbstractRadValve &valve)
   {
   if(!localFHT8VTRVEnabled())
     {
@@ -393,7 +393,8 @@ void FHT8VCreateValveSetCmdFrame()
     return;
     }
 
-  FHT8VCreateValveSetCmdFrame(NominalRadValve.get());
+  FHT8VCreateValveSetCmdFrame(valve.get());
+//  FHT8VCreateValveSetCmdFrame(NominalRadValve.get());
   }
 
 // True once/while this node is synced with and controlling the target FHT8V valve; initially false.
@@ -419,8 +420,10 @@ bool FHT8VisControlledValveOpen() { return(getFHT8V_isValveOpen()); }
 // Call just after TX of valve-setting command which is assumed to reflect current TRVPercentOpen state.
 // This helps avoiding calling for heat from a central boiler until the valve is really open,
 // eg to avoid excess load on (or energy wasting by) the circulation pump.
+#ifdef ENABLE_NOMINAL_RAD_VALVE
 static void setFHT8V_isValveOpen()
   { FHT8V_isValveOpen = (NominalRadValve.get() >= NominalRadValve.getMinValvePcReallyOpen()); }
+#endif
 
 
 // Sync status and down counter for FHT8V, initially zero; value not important once in sync.
@@ -495,8 +498,10 @@ static void valveSettingTX(const bool allowDoubleTX)
   {
   // Transmit correct valve-setting command that should already be in the buffer...
   FHT8VTXFHTQueueAndSendCmd(FHT8VTXCommandArea, allowDoubleTX);
+#ifdef ENABLE_NOMINAL_RAD_VALVE
   // Indicate state that valve should now actually be in (or physically moving to)...
   setFHT8V_isValveOpen();
+#endif
   }
 
 // Half second count within current minor cycle for FHT8VPollSyncAndTX_XXX().
@@ -640,7 +645,11 @@ static bool doSync(const bool allowDoubleTX)
       //*FHT8VTXCommandArea = 0xff;
 
       // On ATmega there is plenty of CPU heft to fill command buffer immediately with valve-setting command.
-      FHT8VCreateValveSetCmdFrame();
+#ifdef ENABLE_NOMINAL_RAD_VALVE
+      FHT8VCreateValveSetCmdFrame(NominalRadValve);
+#else
+      FHT8VCreateValveSetCmdFrame(0);
+#endif
 
       // Set up correct delay to next TX; no more this minor cycle...
       halfSecondsToNextFHT8VTX = FHT8VTXGapHalfSeconds(command.hc2, halfSecondCount);
