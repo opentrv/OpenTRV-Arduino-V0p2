@@ -1134,18 +1134,20 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, uint8_t *
     default:
     case OTRadioLink::FTp2_NONE:
       {
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
       p->print(F("!RX bad msg ")); OTRadioLink::printRXMsg(p, msg, min(msglen, 8));
 #endif
       return;
       }
 
 #ifdef ALLOW_CC1_SUPPORT_HUB
-    case OTRadioLink::FTp2_CC1Alert: // Handle inbound alert message.
+    // Handle alert message (at hub).
+    // Dump onto serial to be seen by the attached host.
+    case OTRadioLink::FTp2_CC1Alert:
       {
       OTProtocolCC::CC1Alert a;
       a.OTProtocolCC::CC1Alert::decodeSimple(msg, msglen);
-      // After decode instance should be valid and with correct house code.
+      // After decode instance should be valid and with correct (source) house code.
       if(a.isValid())
         {
         // Pass message to host to deal with as "! hc1 hc2" after prefix indicating relayed (CC1 alert) message.
@@ -1156,12 +1158,13 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, uint8_t *
 #endif
 
 #ifdef ALLOW_CC1_SUPPORT_HUB
-    case OTRadioLink::FTp2_CC1PollResponse: // Handle inbound poll-response message.
+    // Handle poll-response message (at hub).
+    // Dump onto serial to be seen by the attached host.
+    case OTRadioLink::FTp2_CC1PollResponse:
       {
-      OTRadioLink::printRXMsg(p, msg, min(msglen, 8));
       OTProtocolCC::CC1PollResponse a;
       a.OTProtocolCC::CC1PollResponse::decodeSimple(msg, msglen);
-      // After decode instance should be valid and with correct house code.
+      // After decode instance should be valid and with correct (source) house code.
       if(a.isValid())
         {
         // Pass message to host to deal with as:
@@ -1195,24 +1198,25 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, uint8_t *
 #endif
 
 #ifdef ALLOW_CC1_SUPPORT_RELAY
-    case OTRadioLink::FTp2_CC1PollAndCmd: // Handle inbound poll/cmd message.
+    // Handle poll/cmd message (at relay).
+    // IFF this message is addressed to this (target) unit's house code
+    // then action the commands and respond (quickly) with a poll response.
+    case OTRadioLink::FTp2_CC1PollAndCmd:
       {
-      OTRadioLink::printRXMsg(p, msg, min(msglen, 8));
       OTProtocolCC::CC1PollAndCommand a;
       a.OTProtocolCC::CC1PollAndCommand::decodeSimple(msg, msglen);
       // After decode instance should be valid and with correct house code.
       if(a.isValid())
         {
-        // Pass message to host to deal with as:
-        //     ! hc1 hc2
-        // after prefix indicating relayed (CC1) message.
         p->print(F("+CC1 * ")); p->print(a.getHC1()); p->print(' '); p->println(a.getHC2());
+        // TODO
         }
       return;
       }
 #endif
 
 #ifdef ALLOW_STATS_RX
+    // Stand-alone stats message.
     case OTRadioLink::FTp2_FullStatsIDL: case OTRadioLink::FTp2_FullStatsIDH:
       {
 #if 0 && defined(DEBUG)
