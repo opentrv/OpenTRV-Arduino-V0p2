@@ -880,7 +880,14 @@ void pollCLI(const uint8_t maxSCT)
         }
 
 
-#ifdef ENABLE_EXTENDED_CLI // Handle CLI extensions.
+#ifdef ENABLE_EXTENDED_CLI
+      // Handle CLI extensions.
+      // Command of form:
+      //   +EXT .....
+      // where EXT is the name of the extension, usually 3 letters.
+      //
+      // It is acceptable for extCLIHandler() to alter the buffer passed,
+      // eg with strtok_t().
       case '+':
         {
         // const bool success = extCLIHandler(&Serial, buf, n);
