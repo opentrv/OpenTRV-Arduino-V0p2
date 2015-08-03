@@ -392,6 +392,28 @@ void checkUserSchedule()
   }
 
 
+
+
+
+#ifdef ENABLE_EXTENDED_CLI
+// Handle CLI extension commands.
+// Command of form:
+//   +EXT .....
+// where EXT is the name of the extension, usually 3 letters.
+//
+// It is acceptable for extCLIHandler() to alter the buffer passed,
+// eg with strtok_t().
+static bool extCLIHandler(Print const *p, char const *buf, const uint8_t n)
+  {
+  return(false); // FAILED.
+  }
+#endif 
+
+
+
+
+
+
 // Prints a single space to Serial (which must be up and running).
 static void Serial_print_space() { Serial.print(' '); }
 
@@ -890,7 +912,8 @@ void pollCLI(const uint8_t maxSCT)
       // eg with strtok_t().
       case '+':
         {
-        // const bool success = extCLIHandler(&Serial, buf, n);
+        const bool success = extCLIHandler(&Serial, buf, n);
+        Serial.println(success ? F("OK") : F("FAILED"));
         break;
         }
 #endif  
