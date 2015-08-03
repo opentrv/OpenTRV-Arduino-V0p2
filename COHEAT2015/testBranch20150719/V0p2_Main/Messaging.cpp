@@ -1164,8 +1164,31 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, uint8_t *
       // After decode instance should be valid and with correct house code.
       if(a.isValid())
         {
-        // Pass message to host to deal with as "! hc1 hc2" after prefix indicating relayed (CC1 alert) message.
-        p->print(F("+CC1 * ")); p->print(a.getHC1()); p->print(' '); p->println(a.getHC2());
+        // Pass message to host to deal with as:
+        //     * hc1 hc2 rh tp tr al s w sy
+        // after prefix indicating relayed (CC1) message.
+        // (Parameters in same order as make() factory method, see below.)
+//   * House code (hc1, hc2) of valve controller that the poll/command is being sent to.
+//   * relative-humidity    [0,50] 0-100 in 2% steps (rh)
+//   * temperature-ds18b20  [0,199] 0.000-99.999C in 1/2 C steps, pipe temp (tp)
+//   * temperature-opentrv  [0,199] 0.000-49.999C in 1/4 C steps, room temp (tr)
+//   * ambient-light        [1,62] no units, dark to light (al)
+//   * switch               [false,true] activation toggle, helps async poll detect intermittent use (s)
+//   * window               [false,true] false=closed,true=open (w)
+//   * syncing              [false,true] if true, (re)syncing to FHT8V (sy)
+// Returns instance; check isValid().
+//            static CC1PollResponse make(uint8_t hc1, uint8_t hc2,
+//                                        uint8_t rh,
+//                                        uint8_t tp, uint8_t tr,
+//                                        uint8_t al,
+//                                        bool s, bool w, bool sy);
+        p->print(F("+CC1 * "));
+            p->print(a.getHC1()); p->print(' '); p->print(a.getHC2()); p->print(' ');
+            p->print(a.getRH()); p->print(' ');
+            p->print(a.getTP()); p->print(' '); p->print(a.getTR()); p->print(' ');
+            p->print(a.getAL()); p->print(' ');
+            p->print(a.getS()); p->print(' '); p->print(a.getW()); p->print(' ');
+               p->println(a.getSY());
         }
       return;
       }
@@ -1180,7 +1203,9 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, uint8_t *
       // After decode instance should be valid and with correct house code.
       if(a.isValid())
         {
-        // Pass message to host to deal with as "! hc1 hc2" after prefix indicating relayed (CC1 alert) message.
+        // Pass message to host to deal with as:
+        //     ! hc1 hc2
+        // after prefix indicating relayed (CC1) message.
         p->print(F("+CC1 * ")); p->print(a.getHC1()); p->print(' '); p->println(a.getHC2());
         }
       return;

@@ -432,7 +432,7 @@ static bool extCLIHandler(Print *const p, char *const buf, const uint8_t n)
     {
     char *last; // Used by strtok_r().
     char *tok1;
-    // Minimum sequence that could possibly contain the params.
+    // Attempt to parse the parameters.
     if((n-CC1_Q_PREFIX_LEN >= CC1_Q_PARAMS*2-1) && (NULL != (tok1 = strtok_r(buf+CC1_Q_PREFIX_LEN, " ", &last))))
       {
       char *tok2 = strtok_r(NULL, " ", &last);
