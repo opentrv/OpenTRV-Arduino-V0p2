@@ -138,7 +138,11 @@ bool tickUI(const uint_fast8_t sec)
       }
     }
 
+#ifdef OCCUPANCY_SUPPORT
   const bool reportedRecently = Occupancy.reportedRecently();
+#else
+  const bool reportedRecently = false;
+#endif
 // Drive second UI LED if available.
 #if defined(LED_UI2_ON)
   // Flash 2nd UI LED very briefly every 'tick' while activity has recently been reported.
@@ -240,7 +244,11 @@ bool tickUI(const uint_fast8_t sec)
 
     // Keep reporting UI status if the user has just touched the unit in some way.
     // (Or if occupancy/activity was just detected, to give the use some feedback for indirectly interacting.)
-    const bool justTouched = statusChange || veryRecentUIControlUse() || Occupancy.reportedRecently();
+    const bool justTouched = statusChange || veryRecentUIControlUse()
+#ifdef OCCUPANCY_SUPPORT
+        || Occupancy.reportedRecently()
+#endif
+        ;
 
     // Mode button not pressed: indicate current mode with flash(es); more flashes if actually calling for heat.
     // Force display while UI controls are being used, eg to indicate temp pot position.
@@ -252,7 +260,11 @@ bool tickUI(const uint_fast8_t sec)
       // Flash infrequently if no recently operated controls and not in BAKE mode and not actually calling for heat;
       // this is to conserve batteries for those people who leave the valves in WARM mode all the time.
       if(justTouched ||
-         ((forthTick || NominalRadValve.isCallingForHeat() || inBakeMode()) && !AmbLight.isRoomDark()))
+         ((forthTick
+#ifdef ENABLE_NOMINAL_RAD_VALVE
+             || NominalRadValve.isCallingForHeat()
+#endif
+             || inBakeMode()) && !AmbLight.isRoomDark()))
         {
         // First flash to indicate WARM mode (or pot being twiddled).
         LED_HEATCALL_ON();
@@ -264,6 +276,7 @@ bool tickUI(const uint_fast8_t sec)
         else if(!isComfortTemperature(wt)) { tinyPause(); }
         else { mediumPause(); }
 
+#ifdef ENABLE_NOMINAL_RAD_VALVE
         // Second flash to indicate actually calling for heat.
         if(NominalRadValve.isCallingForHeat())
           {
@@ -288,9 +301,11 @@ bool tickUI(const uint_fast8_t sec)
             }
 #endif
           }
+#endif
         }
       }
  
+#ifdef ENABLE_NOMINAL_RAD_VALVE
     // Even in FROST mode, and if actually calling for heat (eg opening the rad valve significantly, etc)
     // then emit a tiny double flash on every 4th tick.
     // This call for heat may be frost protection or pre-warming / anticipating demand.
@@ -309,6 +324,7 @@ bool tickUI(const uint_fast8_t sec)
       LED_HEATCALL_ON(); // flash
       veryTinyPause();
       }
+#endif
 
     // Enforce any changes that may have been driven by other UI components (ie other than MODE button).
     // Eg adjustment of temp pot / eco bias changing scheduled state.
@@ -437,7 +453,9 @@ void serialStatusReport()
 #else
   Serial.print(inWarmMode() ? 'W' : 'F');
 #endif
+#ifdef ENABLE_NOMINAL_RAD_VALVE
   Serial.print(NominalRadValve.get()); Serial.print('%'); // Target valve position.
+#endif
   const int temp = TemperatureC16.get();
   Serial.print('@'); Serial.print(temp >> 4); Serial.print('C'); // Unrounded whole degrees C.
       Serial.print(temp & 0xf, HEX); // Show 16ths in hex.
@@ -480,7 +498,9 @@ void serialStatusReport()
 #ifdef SETTABLE_TARGET_TEMPERATURES // Show thresholds and current target since no longer so easily deduced.
   Serial.print(';'); // Terminate previous section.
   Serial.print('S'); // Current settable temperature target, and FROST and WARM settings.
+#ifdef ENABLE_NOMINAL_RAD_VALVE
   Serial.print(NominalRadValve.getTargetTempC());
+#endif
   Serial_print_space();
   Serial.print(getFROSTTargetC());
   Serial_print_space();
@@ -527,7 +547,7 @@ void serialStatusReport()
     }
 #endif
 
-#if 1
+#ifdef ENABLE_NOMINAL_RAD_VALVE
   // *M* section: min-valve-percentage open section, iff not at default value.
   const uint8_t minValvePcOpen = NominalRadValve.getMinValvePcReallyOpen();
   if(DEFAULT_MIN_VALVE_PC_REALLY_OPEN != minValvePcOpen) { Serial.print(F(";M")); Serial.print(minValvePcOpen); }
@@ -547,7 +567,7 @@ void serialStatusReport()
   ss1.put(Occupancy);
 //  ss1.put(Occupancy.vacHTag(), Occupancy.getVacancyH()); // EXPERIMENTAL
 #endif
-#if 1 && defined(DEBUG)
+#ifdef ENABLE_MODELLED_RAD_VALVE
     ss1.put(NominalRadValve.tagCMPC(), NominalRadValve.getCumulativeMovementPC()); // EXPERIMENTAL
 #endif
   const uint8_t wrote = ss1.writeJSON((uint8_t *)buf, sizeof(buf), 0, true);
@@ -616,7 +636,9 @@ static void dumpCLIUsage(const uint8_t stopBy)
   //printCLILine(deadline, F("P HH MM"), F("Program: warm daily starting at HH MM schedule 0"));
   printCLILine(deadline, F("P HH MM S"), F("Program: warm daily starting at HH MM schedule S"));
   printCLILine(deadline, F("O PP"), F("min % for valve to be Open"));
+#if defined(ENABLE_NOMINAL_RAD_VALVE)
   printCLILine(deadline, 'O', F("reset Open %"));
+#endif
 #ifdef SUPPORT_BAKE
   printCLILine(deadline, 'Q', F("Quick Heat"));
 #endif
@@ -890,7 +912,9 @@ void pollCLI(const uint8_t maxSCT)
         if(n == 2)
           {
           if('!' == buf[1]) { Serial.println(F("hols")); }
+#ifdef OCCUPANCY_SUPPORT
           Occupancy.setHolidayMode();
+#endif
           setWarmModeDebounced(false);
           break;
           }
@@ -966,6 +990,7 @@ void pollCLI(const uint8_t maxSCT)
         break;
         }
 
+#if defined(ENABLE_NOMINAL_RAD_VALVE)
       // Set/clear min-valve-open-% threshold override.
       case 'O':
         {
@@ -977,6 +1002,7 @@ void pollCLI(const uint8_t maxSCT)
         NominalRadValve.setMinValvePcReallyOpen(minPcOpen);
         break;
         }
+#endif
 
       // Program simple schedule HH MM [N].
       case 'P':

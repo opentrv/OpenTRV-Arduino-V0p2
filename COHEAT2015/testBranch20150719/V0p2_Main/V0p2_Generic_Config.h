@@ -77,6 +77,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define USE_RTC_INTERNAL_SIMPLE
 // IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
 #define LOCAL_TRV
+// IF DEFINED: this unit controls a valve, by provides slave valve control only.
+#undef SLAVE_TRV
 // IF DEFINED: this unit can act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
 #define ENABLE_BOILER_HUB
 // IF DEFINED: allow RX of stats frames.
@@ -87,8 +89,17 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define ALLOW_JSON_OUTPUT
 // IF DEFINED: use active-low LEARN button(s).  Needs SUPPORT_SINGLETON_SCHEDULE.
 #define LEARN_BUTTON_AVAILABLE // OPTIONAL ON V0.09 PCB1
+// IF DEFINED: this unit supports CLI over the USB/serial connection, eg for run-time reconfig.
+#define SUPPORT_CLI
+// IF DEFINED: support for general timed and multi-input occupancy detection / use.
+#define OCCUPANCY_SUPPORT
+// IF DEFINED: enable a full OpenTRV CLI.
+#define ENABLE_FULL_OT_CLI
+// IF DEFINED: enable a full OpenTRV UI with normal LEDs etc.
+#define ENABLE_FULL_OT_UI
 // IF DEFINED: minimise boot effort and energy eg for intermittently-powered energy-harvesting applications.
 #undef MIN_ENERGY_BOOT
+
 
 
 
@@ -152,6 +163,14 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define ALLOW_STATS_RX
 // IF DEFINED: allow TX of stats frames.
 #undef ALLOW_STATS_TX
+// IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
+#undef LOCAL_TRV // THESE HUB UNITS DO NOT manage a local TRV.
+// IF DEFINED: enable a full OpenTRV CLI.
+#undef ENABLE_FULL_OT_CLI
+// IF DEFINED: enable a full OpenTRV UI with normal LEDs etc.
+#undef ENABLE_FULL_OT_UI
+// IF DEFINED: support for general timed and multi-input occupancy detection / use.
+#undef OCCUPANCY_SUPPORT // None of that logic required at hub.
 // IF DEFINED: act as CC1 simple hub node.
 #define ALLOW_CC1_SUPPORT
 #define ALLOW_CC1_SUPPORT_HUB
@@ -311,6 +330,16 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #undef ALLOW_STATS_TX
 // IF DEFINED: allow JSON stats frames alongside binary ones.
 #undef ALLOW_JSON_OUTPUT
+// IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
+#undef LOCAL_TRV
+// IF DEFINED: this unit controls a valve, by provides slave valve control only.
+#define SLAVE_TRV
+// IF DEFINED: enable a full OpenTRV CLI.
+#undef ENABLE_FULL_OT_CLI
+// IF DEFINED: enable a full OpenTRV UI with normal LEDs etc.
+#undef ENABLE_FULL_OT_UI
+// IF DEFINED: support for general timed and multi-input occupancy detection / use.
+#undef OCCUPANCY_SUPPORT // No direct occupancy tracking at relay unit itself.
 // IF UNDEFINED: no LEARN mode for REV9 boards (window sensor(s) instead).
 //#undef LEARN_BUTTON_AVAILABLE
 // IF DEFINED: act as CC1 simple relay node.
@@ -386,8 +415,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #endif
 // Anticipation logic not yet ready for prime-time.
 //#define ENABLE_ANTICIPATION
-// IF DEFINED: this unit supports CLI over the USB/serial connection, eg for run-time reconfig.
-#define SUPPORT_CLI
 // IF DEFINED: this unit supports BAKE mode.
 #define SUPPORT_BAKE
 // IF DEFINED: this unit may run on 2xAA cells, preferably rechargeable eg NiMH, ~2V--2.4V, and should monitor supply voltage.
@@ -396,12 +423,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define SETTABLE_TARGET_TEMPERATURES
 // IF DEFINED: use FHT8V wireless radio module/valve.
 #define USE_MODULE_FHT8VSIMPLE
-// IF DEFINED: use simple LDR-based detection of room use/occupancy; brings in getRoomInUseFromLDR subroutine.
+// IF DEFINED: use simple LDR-based detection of room use/occupancy; brings in getRoomInUseFromLDR subroutne.
 #define USE_MODULE_LDROCCUPANCYDETECTION
 // If LDR is not to be used then specifically define OMIT_... as below.
 //#define OMIT_MODULE_LDROCCUPANCYDETECTION //  LDR 'occupancy' sensing irrelevant for DHW.
-// IF DEFINED: support for general timed and multi-input occupancy detection / use.
-#define OCCUPANCY_SUPPORT
 // IF DEFINED: use software RTC.
 #define USE_RTC_INTERNAL_SIMPLE // Provide software RTC support by default.
 // IF DEFINED: support one on and one off time per day (possibly in conjunction with 'learn' button).

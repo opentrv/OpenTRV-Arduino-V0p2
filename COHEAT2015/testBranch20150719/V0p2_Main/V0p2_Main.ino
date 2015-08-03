@@ -490,15 +490,21 @@ void setup()
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("Computing initial target/demand...");
 #endif
+#if defined(ENABLE_NOMINAL_RAD_VALVE)
   // Update targets, output to TRV and boiler, etc, to be sensible before main loop starts.
   NominalRadValve.read();
+#endif
 #if defined(USE_MODULE_FHT8VSIMPLE)
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("Creating initial FHT8V frame...");
 #endif
   // Unconditionally ensure that a valid FHT8V TRV command frame has been computed and stored
   // in case this unit is actually controlling a local valve.
-  FHT8VCreateValveSetCmdFrame();
+#if defined(ENABLE_NOMINAL_RAD_VALVE)
+  FHT8VCreateValveSetCmdFrame(NominalRadValve);
+#else
+  FHT8VCreateValveSetCmdFrame(0);
+#endif
 #endif
 #endif
 
