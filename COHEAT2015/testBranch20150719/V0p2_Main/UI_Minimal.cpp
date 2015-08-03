@@ -671,7 +671,12 @@ static void InvalidIgnored() { Serial.println(F("Invalid, ignored.")); }
 // If INTERACTIVE_ECHO defined then immediately echo received characters, not at end of line.
 #define CLI_INTERACTIVE_ECHO
 
-#define MAXIMUM_CLI_RESPONSE_CHARS 9 // Just enough for any valid command expected not including trailing LF.  (Note that Serial RX buffer is 64 bytes.)
+#define MAXIMUM_CLI_OT_RESPONSE_CHARS 9 // Just enough for any valid core/OT command expected not including trailing LF.  (Note that Serial RX buffer is 64 bytes.)
+#ifdef ENABLE_EXTENDED_CLI // Allow for much longer input commands.
+#define MAXIMUM_CLI_RESPONSE_CHARS (max(64, MAXIMUM_CLI_OT_RESPONSE_CHARS))
+#else
+#define MAXIMUM_CLI_RESPONSE_CHARS MAXIMUM_CLI_OT_RESPONSE_CHARS
+#endif
 #define IDLE_SLEEP_SCT (15/SUBCYCLE_TICK_MS_RD) // Approx sub-cycle ticks in idle sleep (15ms), erring on side of being too large; strictly positive.
 #define BUF_FILL_TIME_MS (((MAXIMUM_CLI_RESPONSE_CHARS*10) * 1000 + (BAUD-1)) / BAUD) // Time to read full/maximal input command buffer; ms, strictly positive.
 #define BUF_FILL_TIME_SCT (BUF_FILL_TIME_MS/SUBCYCLE_TICK_MS_RD) // Approx sub-cycle ticks to fill buf, erring on side of being too large; strictly positive.
@@ -868,6 +873,9 @@ void pollCLI(const uint8_t maxSCT)
       case 'V':
         {
         serialPrintlnBuildVersion();
+#ifdef ENABLE_EXTENDED_CLI // Allow for much longer input commands.
+        Serial.print(F("Input max chars: ")); Serial.println(MAXIMUM_CLI_RESPONSE_CHARS);
+#endif
         break;
         }
    

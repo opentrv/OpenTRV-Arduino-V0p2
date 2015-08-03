@@ -97,6 +97,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define ENABLE_FULL_OT_CLI
 // IF DEFINED: enable a full OpenTRV UI with normal LEDs etc.
 #define ENABLE_FULL_OT_UI
+// IF DEFINED: enable and extended CLI with a longer input buffer for example.
+#undef ENABLE_EXTENDED_CLI
 // IF DEFINED: minimise boot effort and energy eg for intermittently-powered energy-harvesting applications.
 #undef MIN_ENERGY_BOOT
 
@@ -169,6 +171,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #undef ENABLE_FULL_OT_CLI
 // IF DEFINED: enable a full OpenTRV UI with normal LEDs etc.
 #undef ENABLE_FULL_OT_UI
+// IF DEFINED: enable and extended CLI with a longer input buffer for example.
+#define ENABLE_EXTENDED_CLI
 // IF DEFINED: support for general timed and multi-input occupancy detection / use.
 #undef OCCUPANCY_SUPPORT // None of that logic required at hub.
 // IF DEFINED: act as CC1 simple hub node.
