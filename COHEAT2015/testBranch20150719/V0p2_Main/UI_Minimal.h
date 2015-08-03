@@ -115,8 +115,10 @@ bool isCLIActive();
 // Used to poll user side for CLI input until specified sub-cycle time.
 // A period of less than (say) 500ms will be difficult for direct human response on a raw terminal.
 // A period of less than (say) 100ms is not recommended to avoid possibility of overrun on long interactions.
+// Times itself out after at least a minute or two of inactivity. 
 // NOT RENTRANT (eg uses static state for speed and code space).
-void pollCLI(const uint8_t maxSCT);
+void pollCLI(uint8_t maxSCT, bool startOfMinute);
+
 // Minimum recommended poll time in sub-cycle ticks...
 #define CLI_POLL_MIN_SCT (200/SUBCYCLE_TICK_MS_RN)
 

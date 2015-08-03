@@ -133,8 +133,8 @@ bool tickUI(const uint_fast8_t sec)
       {
       // Run down UI iteraction timer if need be, one tick per minute.
       if(uiTimeoutM > 0) { --uiTimeoutM; }
-      // Run down CLI timer if need be.
-      if(CLITimeoutM > 0) { --CLITimeoutM; }
+//      // Run down CLI timer if need be.
+//      if(CLITimeoutM > 0) { --CLITimeoutM; }
       }
     }
 
@@ -807,9 +807,20 @@ static void InvalidIgnored() { Serial.println(F("Invalid, ignored.")); }
 // Commands should be sent terminated by CR *or* LF; both may prevent 'E' (exit) from working properly.
 // A period of less than (say) 500ms will be difficult for direct human response on a raw terminal.
 // A period of less than (say) 100ms is not recommended to avoid possibility of overrun on long interactions.
+// Times itself out after at least a minute or two of inactivity. 
 // NOT RENTRANT (eg uses static state for speed and code space).
-void pollCLI(const uint8_t maxSCT)
+void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
   {
+  // Perform any once-per-minute operations.
+  if(startOfMinute)
+    {
+    ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
+      {
+      // Run down CLI timer if need be.
+      if(CLITimeoutM > 0) { --CLITimeoutM; }
+      }
+    }
+
   // Compute safe limit time given granularity of sleep and buffer fill.
   const uint8_t targetMaxSCT = (maxSCT <= MIN_POLL_SCT) ? ((uint8_t) 0) : ((uint8_t) (maxSCT - 1 - MIN_POLL_SCT));
   if(getSubCycleTime() >= targetMaxSCT) { return; } // Too short to try.

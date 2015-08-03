@@ -2114,6 +2114,7 @@ void loopOpenTRV()
   // Show status if the user changed something significant.
   // Must take ~300ms or less so as not to run over into next half second if two TXs are done.
   bool recompute = false; // Set true an extra recompute of target temperature should be done.
+#ifdef ENABLE_FULL_OT_UI // Run the OpenTRV button/LED UI if required.
 #if !defined(TWO_S_TICK_RTC_SUPPORT)
   if(0 == (TIME_LSD & 1))
 #endif
@@ -2124,6 +2125,7 @@ void loopOpenTRV()
       recompute = true;
       }
     }
+#endif
 
 #ifdef ENABLE_MODELLED_RAD_VALVE
   if(recompute || veryRecentUIControlUse())
@@ -2361,7 +2363,7 @@ void loopOpenTRV()
       // Don't listen beyond the last 16th of the cycle,
       // or a minimal time if only prodding for interaction with automated front-end,
       // as listening for UART RX uses lots of power.
-      { pollCLI(humanCLIUse ? (GSCT_MAX-listenTime) : (sct+CLI_POLL_MIN_SCT)); }
+      { pollCLI(humanCLIUse ? (GSCT_MAX-listenTime) : (sct+CLI_POLL_MIN_SCT), 0 == TIME_LSD); }
     }
 #endif
 
