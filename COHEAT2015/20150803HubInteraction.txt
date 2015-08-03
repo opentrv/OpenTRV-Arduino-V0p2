@@ -1,0 +1,26 @@
+Interactions with the hub to implement COHEAT functionality
+===========================================================
+DHD20150803
+
+Input from the serial connection from the hub (REV2) board is line-oriented.
+The initial character on a line, if punctuation, indicates the meaning of the line.
+For the purposes of the 2015/08 project, these are key:
+
+Line-start character and line meaning:
+
+ '!' Error: text follows.
+ '?' Warning: text follows.
+ '>' CLI prompt; there is a limited window to respond.
+ '+' An inbound frame: lines starting '+CC1 !' (alert) and '+CC1 *' (poll response) are of interest.
+
+CLI commands should be terminated with a single new line ('\n').
+The CLI can be exited with the 'E' command.
+The CLI will spontaneously wake every few minutes for one prompt.
+The CLI can be woken with CRLF send to the serial.
+The CLI will time out and go to sleep after a couple of minutes' inactivity.
+
+The command '+CC1 ? ...' is used to poll a remote relay/valve node.
+
+The +CC1 commands in and out are described more below.
+
+
