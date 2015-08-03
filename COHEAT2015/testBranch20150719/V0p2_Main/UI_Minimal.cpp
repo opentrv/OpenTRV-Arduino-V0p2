@@ -779,7 +779,7 @@ void pollCLI(const uint8_t maxSCT)
     // Restart the CLI timer on receipt of plausible (ASCII) input (cf noise from UART floating or starting up),
     // Else print a very brief low-CPU-cost help message and give up as efficiently and safely and quickly as possible.
     const char firstChar = buf[0];
-    const bool plausibleCommand = ((firstChar >= '?') && (firstChar <= 'z'));
+    const bool plausibleCommand = ((firstChar > ' ') && (firstChar <= 'z'));
     if(plausibleCommand) { resetCLIActiveTimer(); }
     else
       {
@@ -880,7 +880,14 @@ void pollCLI(const uint8_t maxSCT)
         }
 
 
-#ifdef ENABLE_EXTENDED_CLI // Handle CLI extensions.
+#ifdef ENABLE_EXTENDED_CLI
+      // Handle CLI extensions.
+      // Command of form:
+      //   +EXT .....
+      // where EXT is the name of the extension, usually 3 letters.
+      //
+      // It is acceptable for extCLIHandler() to alter the buffer passed,
+      // eg with strtok_t().
       case '+':
         {
         // const bool success = extCLIHandler(&Serial, buf, n);
