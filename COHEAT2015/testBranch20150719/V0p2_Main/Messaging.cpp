@@ -1236,16 +1236,18 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, uint8_t *
           // Hub can poll again if it does not see the response.
           // TODO: if we start responding very quickly to RX messages then
           // MAY NEED A DELAY HERE TO LET THE HUB RECOVER AND REVERT TO RX MODE.    
-          uint8_t txbuf[STATS_MSG_START_OFFSET + OTProtocolCC::CC1Alert::primary_frame_bytes+1]; // More than large enough for preamble + sync + alert message.
+          uint8_t txbuf[STATS_MSG_START_OFFSET + OTProtocolCC::CC1PollResponse::primary_frame_bytes+1]; // More than large enough for preamble + sync + alert message.
           uint8_t *const bptr = RFM22RXPreambleAdd(txbuf);
-          const uint8_t bodylen = a.encodeSimple(bptr, sizeof(txbuf) - STATS_MSG_START_OFFSET, true);
+          const uint8_t bodylen = r.encodeSimple(bptr, sizeof(txbuf) - STATS_MSG_START_OFFSET, true);
           const uint8_t buflen = STATS_MSG_START_OFFSET + bodylen;
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
 OTRadioLink::printRXMsg(p, txbuf, buflen);
 #endif
           if(RFM23B.sendRaw(txbuf, buflen)) // Send at default volume...  One going missing won't hurt that much.
             {
+#if 1 && defined(DEBUG)
             p->println(F("polled")); // Done it!
+#endif
             }
           }
         }
