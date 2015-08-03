@@ -182,7 +182,7 @@ bool setWARMTargetC(uint8_t tempC);
 #define isComfortTemperature(tempC) ((tempC) >= BIASCOM_WARM)
 
 
-#if defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX)
+#if defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX) || defined(ENABLE_DEFAULT_ALWAYS_RX)
 // Get minimum on (and off) time for pointer (minutes); zero if not in hub mode.
 uint8_t getMinBoilerOnMinutes();
 // Set minimum on (and off) time for pointer (minutes); zero to disable hub mode.
@@ -192,10 +192,18 @@ void setMinBoilerOnMinutes(uint8_t mins);
 #define getMinBoilerOnMinutes() (0) // Always disabled.
 #define setMinBoilerOnMinutes(mins) {} // Do nothing.
 #endif
+
+#ifdef ENABLE_DEFAULT_ALWAYS_RX
+// True: always in central hub/listen mode.
+#define inHubMode() (true)
+// True: always in stats hub/listen mode.
+#define inStatsHubMode() (true)
+#else
 // True if in central hub/listen mode (possibly with local radiator also).
 #define inHubMode() (0 != getMinBoilerOnMinutes())
 // True if in stats hub/listen mode (minimum timeout).
 #define inStatsHubMode() (1 == getMinBoilerOnMinutes())
+#endif
 
 
 
