@@ -397,15 +397,78 @@ void checkUserSchedule()
 
 #ifdef ENABLE_EXTENDED_CLI
 // Handle CLI extension commands.
-// Command of form:
+// Commands of form:
 //   +EXT .....
 // where EXT is the name of the extension, usually 3 letters.
-//
+
+#include <OTProtocolCC.h>
+#include "RFM22_Radio.h"
+
 // It is acceptable for extCLIHandler() to alter the buffer passed,
 // eg with strtok_t().
-static bool extCLIHandler(Print const *p, char const *buf, const uint8_t n)
+static bool extCLIHandler(Print *const p, char *const buf, const uint8_t n)
   {
-  return(false); // FAILED.
+
+#ifdef ALLOW_CC1_SUPPORT_HUB
+  // If CC1 hub then allow +CC1 ? command to poll a remote node.
+  // Full command is:
+  //    +CC1 ? hc1 hc2 rp lc lt lf
+  // ie five numeric arguments, see below:
+//            // Factory method to create instance.
+//            // Invalid parameters (except house codes) will be coerced into range.
+//            //   * House code (hc1, hc2) of valve controller that the poll/command is being sent to.
+//            //   * rad-open-percent     [0,100] 0-100 in 1% steps, percent open approx to set rad valve (rp)
+//            //   * light-colour         [0,3] bit flags 1==red 2==green (lc) 0 => stop everything
+//            //   * light-on-time        [1,15] (0 not allowed) 30-450s in units of 30s (lt) ???
+//            //   * light-flash          [1,3] (0 not allowed) 1==single 2==double 3==on (lf)
+//            // Returns instance; check isValid().
+//            static CC1PollAndCommand make(uint8_t hc1, uint8_t hc2,
+//                                          uint8_t rp,
+//                                          uint8_t lc, uint8_t lt, uint8_t lf);
+  const uint8_t CC1_Q_PREFIX_LEN = 7;
+  const uint8_t CC1_Q_PARAMS = 6;
+  // Falling through rather than return(true) indicates failure.
+  if((n >= CC1_Q_PREFIX_LEN) && (0 == strncmp("+CC1 ? ", buf, CC1_Q_PREFIX_LEN)))
+    {
+    char *last; // Used by strtok_r().
+    char *tok1;
+    // Minimum sequence that could possibly contain the params.
+    if((n-CC1_Q_PREFIX_LEN >= CC1_Q_PARAMS*2-1) && (NULL != (tok1 = strtok_r(buf+CC1_Q_PREFIX_LEN, " ", &last))))
+      {
+      char *tok2 = strtok_r(NULL, " ", &last);
+      char *tok3 = (NULL == tok2) ? NULL : strtok_r(NULL, " ", &last);
+      char *tok4 = (NULL == tok3) ? NULL : strtok_r(NULL, " ", &last);
+      char *tok5 = (NULL == tok4) ? NULL : strtok_r(NULL, " ", &last);
+      char *tok6 = (NULL == tok5) ? NULL : strtok_r(NULL, " ", &last);
+      if(NULL != tok6)
+        {
+        OTProtocolCC::CC1PollAndCommand q = OTProtocolCC::CC1PollAndCommand::make(
+            atoi(tok1),
+            atoi(tok2),
+            atoi(tok3),
+            atoi(tok4),
+            atoi(tok5),
+            atoi(tok6));
+        if(q.isValid())
+          {
+          uint8_t txbuf[STATS_MSG_START_OFFSET + OTProtocolCC::CC1PollAndCommand::primary_frame_bytes+1]; // More than large enough for preamble + sync + alert message.
+          uint8_t *const bptr = RFM22RXPreambleAdd(txbuf);
+          const uint8_t bodylen = q.encodeSimple(bptr, sizeof(txbuf) - STATS_MSG_START_OFFSET, true);
+          const uint8_t buflen = STATS_MSG_START_OFFSET + bodylen;
+#if 1 && defined(DEBUG)
+    OTRadioLink::printRXMsg(p, txbuf, buflen);
+#endif
+          const bool doubleTX = false;
+          if(RFM23B.sendRaw(txbuf, buflen, 0, (doubleTX ? OTRadioLink::OTRadioLink::TXmax : OTRadioLink::OTRadioLink::TXloud)))
+            { return(true); } // Done it!
+          }
+        }
+      }
+    return(false); // FAILED if fallen through from above.
+    }
+#endif
+
+  return(false); // FAILED if not otherwise handled.
   }
 #endif 
 
