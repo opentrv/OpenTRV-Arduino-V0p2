@@ -31,6 +31,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 
 #include "EEPROM_Utils.h"
 #include "Power_Management.h"
+#include "RFM22_Radio.h"
 #include "Security.h"
 #include "Serial_IO.h"
 
@@ -1208,8 +1209,45 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, uint8_t *
       // After decode instance should be valid and with correct house code.
       if(a.isValid())
         {
-        p->print(F("+CC1 * ")); p->print(a.getHC1()); p->print(' '); p->println(a.getHC2());
-        // TODO
+//        p->print(F("+CC1 * ")); p->print(a.getHC1()); p->print(' '); p->println(a.getHC2());
+        const uint8_t hc1 = FHT8VGetHC1();
+        const uint8_t hc2 = FHT8VGetHC2();
+        if((a.getHC1() == hc1) && (a.getHC2() == hc2))
+          {
+          // The message is targetted at this node.
+          
+          // TODO: act on the command.
+          
+          // Respond to the hub.
+#ifdef HUMIDITY_SENSOR_SUPPORT
+          const uint8_t rh = RelHumidity.get() >> 1; // Scale from [0,100] to [0,50] for TX.
+#else
+          const uint8_t rh = 0; // RH% not available.
+#endif
+          const uint8_t tp = 0; // FIXME: get the real sensor data.
+          const uint8_t tr = (constrain(TemperatureC16.get(), 0*4, 50*4) >> 4); // Scale from 1/16C to 1/4C [0,50] for TX.
+          const uint8_t al = AmbLight.read() >> 2; // Scale from [0,255] to [1,62] for TX (allow value coercion at extremes).
+          const bool s = false; // FIXME: get the real sensor data.
+          const bool w = false; // FIXME: get the real sensor data.
+          const bool sy = false; // FIXME: get the real sensor data.
+          OTProtocolCC::CC1PollResponse r =
+              OTProtocolCC::CC1PollResponse::make(hc1, hc2, rh, tp, tr, al, s, w, sy);
+          // Send message back to hub.
+          // Hub can poll again if it does not see the response.
+          // TODO: if we start responding very quickly to RX messages then
+          // MAY NEED A DELAY HERE TO LET THE HUB RECOVER AND REVERT TO RX MODE.    
+          uint8_t txbuf[STATS_MSG_START_OFFSET + OTProtocolCC::CC1Alert::primary_frame_bytes+1]; // More than large enough for preamble + sync + alert message.
+          uint8_t *const bptr = RFM22RXPreambleAdd(txbuf);
+          const uint8_t bodylen = a.encodeSimple(bptr, sizeof(txbuf) - STATS_MSG_START_OFFSET, true);
+          const uint8_t buflen = STATS_MSG_START_OFFSET + bodylen;
+#if 1 && defined(DEBUG)
+OTRadioLink::printRXMsg(p, txbuf, buflen);
+#endif
+          if(RFM23B.sendRaw(txbuf, buflen)) // Send at default volume...  One going missing won't hurt that much.
+            {
+            p->println(F("polled")); // Done it!
+            }
+          }
         }
       return;
       }
