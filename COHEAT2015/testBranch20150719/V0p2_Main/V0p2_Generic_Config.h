@@ -464,7 +464,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 
 // If (potentially) needing to run in some sort of continuous RX mode, define a flag true (else false).
-#if defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX)
+#if defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX) || defined(ENABLE_DEFAULT_ALWAYS_RX)
 #define CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX true
 #else
 #define CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX false

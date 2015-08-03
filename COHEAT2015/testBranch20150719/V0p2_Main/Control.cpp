@@ -1813,7 +1813,11 @@ void loopOpenTRV()
   // and could be disabled if no local valve is being run to provide better response to remote nodes.
   bool hubModeBoilerOn = false; // If true then remote call for heat is in progress.
 //#if defined(USE_MODULE_FHT8VSIMPLE)
+#ifdef ENABLE_DEFAULT_ALWAYS_RX
+  bool needsToEavesdrop = true; // By default listen.
+#else
   bool needsToEavesdrop = false; // By default assume no need to eavesdrop.
+#endif
 //#endif
   if(hubMode)
     {
@@ -2040,7 +2044,6 @@ void loopOpenTRV()
 //  // Check RSSI...
 //  if(needsToEavesdrop)
 //    {
-////    const uint8_t rssi = RFM22RSSI();
 //    const uint8_t rssi = RFM23.getRSSI();
 //    static uint8_t lastRSSI;
 //    if((rssi > 0) && (lastRSSI != rssi))
