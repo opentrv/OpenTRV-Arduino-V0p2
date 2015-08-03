@@ -19,7 +19,7 @@ The CLI will spontaneously wake every few minutes for one prompt.
 The CLI can be woken with CRLF send to the serial.
 The CLI will time out and go to sleep after a couple of minutes' inactivity.
 
-The command '+CC1 ? ...' is used to poll a remote relay/valve node.
+The command '+CC1 ? ...' via the CLI is used to poll a remote relay/valve node.
 
 The +CC1 commands in and out are described more below.
 
