@@ -1198,8 +1198,8 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, uint8_t *
     case OTRadioLink::FTp2_CC1PollAndCmd: // Handle inbound poll/cmd message.
       {
       OTRadioLink::printRXMsg(p, msg, min(msglen, 8));
-      OTProtocolCC::CC1PollAndCmd a;
-      a.OTProtocolCC::CC1PollAndCmd::decodeSimple(msg, msglen);
+      OTProtocolCC::CC1PollAndCommand a;
+      a.OTProtocolCC::CC1PollAndCommand::decodeSimple(msg, msglen);
       // After decode instance should be valid and with correct house code.
       if(a.isValid())
         {
