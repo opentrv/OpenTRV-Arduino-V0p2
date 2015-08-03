@@ -881,7 +881,7 @@ void pollCLI(const uint8_t maxSCT)
 
 
 #ifdef ENABLE_EXTENDED_CLI
-      // Handle CLI extensions.
+      // Handle CLI extension commands.
       // Command of form:
       //   +EXT .....
       // where EXT is the name of the extension, usually 3 letters.
