@@ -1218,15 +1218,16 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, uint8_t *
           
           // TODO: act on the incoming command.
           
-          // Respond to the hub.
+          // Respond to the hub with sensor data.
+          // Can use read() for very freshest values at risk of some delay/cost.
 #ifdef HUMIDITY_SENSOR_SUPPORT
-          const uint8_t rh = RelHumidity.get() >> 1; // Scale from [0,100] to [0,50] for TX.
+          const uint8_t rh = RelHumidity.read() >> 1; // Scale from [0,100] to [0,50] for TX.
 #else
           const uint8_t rh = 0; // RH% not available.
 #endif
           const uint8_t tp = 0; // FIXME: get the real sensor data.
-          const uint8_t tr = (constrain(TemperatureC16.get(), 0*4, 50*4) >> 2); // Scale from 1/16C to 1/4C [0,50] for TX.
-          const uint8_t al = AmbLight.get() >> 2; // Scale from [0,255] to [1,62] for TX (allow value coercion at extremes).
+          const uint8_t tr = (uint8_t) constrain(TemperatureC16.read() >> 2, 0, 199); // Scale from 1/16C to 1/4C [0,50] for TX.
+          const uint8_t al = AmbLight.read() >> 2; // Scale from [0,255] to [1,62] for TX (allow value coercion at extremes).
           const bool s = false; // FIXME: get the real sensor data.
           const bool w = false; // FIXME: get the real sensor data.
           const bool sy = false; // FIXME: get the real sensor data.
