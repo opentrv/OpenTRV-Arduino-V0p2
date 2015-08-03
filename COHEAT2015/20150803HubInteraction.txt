@@ -1,0 +1,48 @@
+Interactions with the hub to implement COHEAT functionality
+===========================================================
+DHD20150803
+
+Input from the serial connection from the hub (REV2) board is line-oriented.
+The initial character on a line, if punctuation, indicates the meaning of the line.
+For the purposes of the 2015/08 project, these are key:
+
+Line-start character and line meaning:
+
+ '!' Error: text follows.
+ '?' Warning: text follows.
+ '>' CLI prompt; there is a limited window to respond.
+ '+' An inbound frame: lines starting '+CC1 !' (alert) and '+CC1 *' (poll response) are of interest.
+
+CLI commands should be terminated with a single new line ('\n').
+The CLI can be exited with the 'E' command.
+The CLI will spontaneously wake every few minutes for one prompt.
+The CLI can be woken with CRLF send to the serial.
+The CLI will time out and go to sleep after a couple of minutes' inactivity.
+
+The command '+CC1 ? ...' is used to poll a remote relay/valve node.
+
+The +CC1 commands in and out are described more below.
+
+Inbound CC1 messages on the serial line are:
++CC1 ! hc1 hc2
++CC1 * hc1 hc2 rh tp tr al s w sy
+
+Parameters mean:
+  * House code (hc1, hc2) of the relay/valve controller that the poll/command is being sent to.
+  * relative-humidity    [0,50] 0-100 in 2% steps (rh)
+  * temperature-ds18b20  [0,199] 0.000-99.999C in 1/2 C steps, pipe temp (tp)
+  * temperature-opentrv  [0,199] 0.000-49.999C in 1/4 C steps, room temp (tr)
+  * ambient-light        [1,62] no units, dark to light (al)
+  * switch               [false,true] activation toggle, helps async poll detect intermittent use (s)
+  * window               [false,true] false=closed,true=open (w)
+  * syncing              [false,true] if true, (re)syncing to FHT8V (sy)
+
+The outbound CC1 message sent via the CLI is:
++CC1 ? hc1 hc2 rp lc lt lf
+
+Parameters mean:
+  * House code (hc1, hc2) of the relay/valve controller that the poll/command is being sent to.
+  * rad-open-percent     [0,100] 0-100 in 1% steps, percent open approx to set rad valve (rp)
+  * light-colour         [0,3] bit flags 1==red 2==green (lc) 0 => stop everything
+  * light-on-time        [1,15] (0 not allowed) 30-450s in units of 30s (lt) ???
+  * light-flash          [1,3] (0 not allowed) 1==single 2==double 3==on (lf)
