@@ -185,6 +185,23 @@ void serialPrintlnBuildVersion()
 
 static const OTRadioLink::OTRadioChannelConfig RFMConfig(FHT8V_RFM22_Reg_Values, true, true, true);
 
+#if defined(ALLOW_CC1_SUPPORT_RELAY)
+// For a CC1 relay, ignore everything except FTp2_CC1PollAndCmd messages.
+// With care (not accessing EEPROM for example) this could also reject anything with wrong house code.
+static bool FilterRXISR(const uint8_t *buf, const uint8_t buflen)
+  { return((buflen >= 8) && (OTRadioLink::FTp2_CC1PollAndCmd == buf[0])); }
+#elif defined(ALLOW_CC1_SUPPORT_HUB)
+// For a CC1 hub, ignore everything except FTp2_CC1Alert and FTp2_CC1PollResponse messages.
+static bool FilterRXISR(const uint8_t *buf, const uint8_t buflen)
+  {
+  return((buflen >= 8) &&
+      ((OTRadioLink::FTp2_CC1Alert == buf[0]) || (OTRadioLink::FTp2_CC1PollResponse == buf[0])));
+  }
+#else
+// NO RADIO RX FILTERING BY DEFAULT
+#define FilterRXISR NULL
+#endif
+
 // Optional Power-On Self Test routines.
 // Aborts with a call to panic() if a test fails.
 void optionalPOST()
@@ -203,6 +220,8 @@ void optionalPOST()
   RFM23B.preinit(NULL);
   // Check that the radio is correctly connected; panic if not...
   if(!RFM23B.configure(1, &RFMConfig) || !RFM23B.begin()) { panic(); }
+  // Apply filtering, if any, while we're having fun...
+  RFM23B.setFilterRXISR(FilterRXISR);
 #endif
 
 //  posPOST(1, F("Radio OK, checking buttons/sensors and xtal"));
@@ -525,7 +544,7 @@ void setup()
   
 #if defined(SUPPORT_CLI) && !defined(ALT_MAIN_LOOP) && !defined(UNIT_TESTS)
   // Help user get to CLI.
-  serialPrintlnAndFlush(F("? at CLI prompt for help"));
+  serialPrintlnAndFlush(F("At CLI > prompt enter ? for help"));
 #endif
 
 #if !defined(ALT_MAIN_LOOP) && !defined(UNIT_TESTS)

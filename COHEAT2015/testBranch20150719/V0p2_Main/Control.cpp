@@ -1985,6 +1985,12 @@ void loopOpenTRV()
   if(needsToEavesdrop)
     {
 #if 1 && defined(DEBUG)
+    for(uint8_t lastErr; 0 != (lastErr = RFM23B.getRXErr()); )
+      {
+      DEBUG_SERIAL_PRINT_FLASHSTRING("!RX err ");
+      DEBUG_SERIAL_PRINT(lastErr);
+      DEBUG_SERIAL_PRINTLN();
+      }
     const uint8_t dropped = RFM23B.getRXMsgsDroppedRecent();
     static uint8_t oldDropped;
     if(dropped != oldDropped)
@@ -1994,11 +2000,15 @@ void loopOpenTRV()
       DEBUG_SERIAL_PRINTLN();
       oldDropped = dropped;
       }
-    for(uint8_t lastErr; 0 != (lastErr = RFM23B.getRXErr()); )
+    // Filtered out messages are not any sort of error.
+    const uint8_t filtered = RFM23B.getRXMsgsFilteredRecent();
+    static uint8_t oldFiltered;
+    if(filtered != oldFiltered)
       {
-      DEBUG_SERIAL_PRINT_FLASHSTRING("!RX err ");
-      DEBUG_SERIAL_PRINT(lastErr);
+      DEBUG_SERIAL_PRINT_FLASHSTRING("RX filtered ");
+      DEBUG_SERIAL_PRINT(filtered);
       DEBUG_SERIAL_PRINTLN();
+      oldFiltered = filtered;
       }
 #endif
 #if 0 && defined(DEBUG)
