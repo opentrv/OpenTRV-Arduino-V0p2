@@ -997,7 +997,6 @@ void ModelledRadValve::computeCallForHeat()
 // Singleton implementation for entire node.
 SimpleSlaveRadValve NominalRadValve;
 
-
 // Set new value.
 // Ignores invalid values.
 bool SimpleSlaveRadValve::set(const uint8_t newValue)
