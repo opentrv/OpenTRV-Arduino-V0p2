@@ -46,3 +46,13 @@ Parameters mean:
   * light-colour         [0,3] bit flags 1==red 2==green (lc) 0 => stop everything
   * light-on-time        [1,15] (0 not allowed) 30-450s in units of 30s (lt) ???
   * light-flash          [1,3] (0 not allowed) 1==single 2==double 3==on (lf)
+
+A poll response should arrive within a few seconds (allow 10s),
+if not then the message in either direction may have been lost,
+and you should consider a resend.
+
+
+General notes:
+
+ 1) Transmissions are not guaranteed to arrive.
+ 2) Bandwidth is a very scare resource; don't send more than you have to.
