@@ -122,5 +122,19 @@ void pollCLI(uint8_t maxSCT, bool startOfMinute);
 // Minimum recommended poll time in sub-cycle ticks...
 #define CLI_POLL_MIN_SCT (200/SUBCYCLE_TICK_MS_RN)
 
+
+// CUSTOM IO FOR SPECIAL DEPLOYMENTS
+#ifdef ALLOW_CC1_SUPPORT_RELAY_IO // REV9 CC1 relay...
+// Call this on even numbered seconds (with current time in seconds) to allow the CO UI to operate.
+// Should never be skipped, so as to allow the UI to remain responsive.
+bool tickUICO(uint_fast8_t sec);
+// Directly adjust LEDs.
+//   * light-colour         [0,3] bit flags 1==red 2==green (lc) 0 => stop everything
+//   * light-on-time        [1,15] (0 not allowed) 30-450s in units of 30s (lt) ???
+//   * light-flash          [1,3] (0 not allowed) 1==single 2==double 3==on (lf)
+void setLEDsCO(uint8_t lc, uint8_t lt, uint8_t lf);
+#endif
+
+
 #endif
 

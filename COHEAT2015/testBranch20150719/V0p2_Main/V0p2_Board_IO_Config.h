@@ -67,7 +67,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // Analogue inputs (may need digital input buffers disabled to minimise power, so use as outputs): dpin 6, 7
 
 
-// UI LED for 'heat call', primary UI LED, digital out.
+// Primary UI LED for 'heat call' in OpenTRV controller units, digital out.
 #if V0p2_REV == 1 // REV1 only
 #define LED_HEATCALL 13 // ATMega328P-PU PDIP pin 19, PB5. SHARED WITH SPI DUTIES as per Arduino UNO...
 #define LED_HEATCALL_ON() { fastDigitalWrite(LED_HEATCALL, HIGH); }
@@ -81,7 +81,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // ISR-safe UI LED ON.
 #define LED_HEATCALL_ON_ISR_SAFE() { LED_HEATCALL_ON(); }
 
-// Secondary (active-low) LED available on some boards.
+// Secondary UI LED available on some boards.
 #if (V0p2_REV >= 7) && (V0p2_REV <= 9)
 #define LED_UI2_EXISTS
 #if (V0p2_REV == 7) || (V0p2_REV == 8)

@@ -1303,3 +1303,26 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
   if(neededWaking) { powerDownSerial(); }
   }
 
+
+
+// CUSTOM IO FOR SPECIAL DEPLOYMENTS
+#ifdef ALLOW_CC1_SUPPORT_RELAY_IO // REV9 CC1 relay...
+// Call this on even numbered seconds (with current time in seconds) to allow the CO UI to operate.
+// Should never be skipped, so as to allow the UI to remain responsive.
+bool tickUICO(uint_fast8_t sec)
+  {
+  return(false); // No human interaction this tick...
+  }
+
+// Directly adjust LEDs.
+//   * light-colour         [0,3] bit flags 1==red 2==green (lc) 0 => stop everything
+//   * light-on-time        [1,15] (0 not allowed) 30-450s in units of 30s (lt) ???
+//   * light-flash          [1,3] (0 not allowed) 1==single 2==double 3==on (lf)
+void setLEDsCO(const uint8_t lc, const uint8_t lt, const uint8_t lf)
+    {
+    // Assume primary UI LED is the red one (at least fot REV9 boards)...
+    if(lc & 1) { LED_HEATCALL_ON(); } else { LED_HEATCALL_OFF(); }
+    // Assume secondary UI LED is the green one (at least fot REV9 boards)...
+    if(lc & 2) { LED_UI2_ON(); } else { LED_UI2_OFF(); }
+    }
+#endif

@@ -34,6 +34,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 #include "RFM22_Radio.h"
 #include "Security.h"
 #include "Serial_IO.h"
+#include "UI_Minimal.h"
 
 #ifdef USE_MODULE_FHT8VSIMPLE
 #include "FHT8V_Wireless_Rad_Valve.h"
@@ -1204,20 +1205,21 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, uint8_t *
     // then action the commands and respond (quickly) with a poll response.
     case OTRadioLink::FTp2_CC1PollAndCmd:
       {
-      OTProtocolCC::CC1PollAndCommand a;
-      a.OTProtocolCC::CC1PollAndCommand::decodeSimple(msg, msglen);
+      OTProtocolCC::CC1PollAndCommand c;
+      c.OTProtocolCC::CC1PollAndCommand::decodeSimple(msg, msglen);
       // After decode instance should be valid and with correct house code.
-      if(a.isValid())
+      if(c.isValid())
         {
 //        p->print(F("+CC1 * ")); p->print(a.getHC1()); p->print(' '); p->println(a.getHC2());
+        // Process the message only if it is targetted at this node.
         const uint8_t hc1 = FHT8VGetHC1();
         const uint8_t hc2 = FHT8VGetHC2();
-        if((a.getHC1() == hc1) && (a.getHC2() == hc2))
+        if((c.getHC1() == hc1) && (c.getHC2() == hc2))
           {
-          // The message is targetted at this node.
-          
-          // TODO: act on the incoming command.
-          
+          // Act on the incoming command.
+          setLEDsCO(c.getLC(), c.getLT(), c.getLF());
+          // TODO: act on other elements of incoming command.
+
           // Respond to the hub with sensor data.
           // Can use read() for very freshest values at risk of some delay/cost.
 #ifdef HUMIDITY_SENSOR_SUPPORT

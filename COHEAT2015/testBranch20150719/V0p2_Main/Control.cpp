@@ -2114,18 +2114,29 @@ void loopOpenTRV()
   // Show status if the user changed something significant.
   // Must take ~300ms or less so as not to run over into next half second if two TXs are done.
   bool recompute = false; // Set true an extra recompute of target temperature should be done.
-#ifdef ENABLE_FULL_OT_UI // Run the OpenTRV button/LED UI if required.
 #if !defined(TWO_S_TICK_RTC_SUPPORT)
   if(0 == (TIME_LSD & 1))
 #endif
     {
+#ifdef ENABLE_FULL_OT_UI
+    // Run the OpenTRV button/LED UI if required.
     if(tickUI(TIME_LSD))
       {
       showStatus = true;
       recompute = true;
       }
-    }
 #endif
+  // Alternative UI tickers...
+#ifdef ALLOW_CC1_SUPPORT_RELAY_IO // REV9 CC1 relay...
+    // Run the CC1 relay UI.
+    if(tickUICO(TIME_LSD))
+      {
+      showStatus = true;
+      }
+#endif
+    }
+
+
 
 #ifdef ENABLE_MODELLED_RAD_VALVE
   if(recompute || veryRecentUIControlUse())
