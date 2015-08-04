@@ -544,44 +544,41 @@ class SimpleSlaveRadValve : public AbstractRadValve
     uint8_t ticksLeft;
 
   public:
-    // Initial time to wait with valve closed for initial command from controller.
+    // Initial time to wait with valve (almost) closed for initial command from controller.
     // Helps avoid thrashing around during start-up when no heat may actually be required.
-    static const uint8_t INITIAL_TIMEOUT_MINS = 11;
+    // Controller is required to send at least every 15 mins, ie just less than this.
+    static const uint8_t INITIAL_TIMEOUT_MINS = 16;
 
     // Valid calls to set() must happen at less than this interval (minutes, positive).
     // If this timeout triggers, a default valve position is used.
+    // Controller is required to send at least every 15 mins, ie at most half this.
     static const uint8_t TIMEOUT_MINS = 30;
 
     // Default (safe) valve position in percent.
     // Similar to, but distinguishable from, eg FHT8V 'lost connection' 30% position.
     static const uint8_t SAFE_POSITION_PC = 33;
 
-    // Create an instance with valve initially closed
+    // Create an instance with valve initially (almost) closed
     // and a few minutes for controller to be heard before reverting to 'safe' position.
-    SimpleSlaveRadValve() : ticksLeft(INITIAL_TIMEOUT_MINS) { }
+    // This initial not-fully-closed position should help signal correct setup.
+    SimpleSlaveRadValve() : ticksLeft(INITIAL_TIMEOUT_MINS) { value = 1; }
+
+    // Get estimated minimum percentage open for significant flow for this device; strictly positive in range [1,99].
+    // Set to just above the initial value given. 
+    virtual uint8_t getMinPercentOpen() const { return(2); }
 
     // Returns true if this sensor/actuator value is potentially valid, eg in-range.
     virtual bool isValid(const uint8_t value) const { return(value <= 100); }
 
     // Set new value.
     // Ignores invalid values.
-    bool set(const uint8_t newValue)
-      {
-      if(!isValid(newValue)) { return(false); }
-      value = newValue;
-      ticksLeft = TIMEOUT_MINS;
-      return(true);
-      }
+    bool set(const uint8_t newValue);
 
     // Do any regular work that needs doing.
     // Deals with timeout and reversion to 'safe' valve position if the controller goes quiet.
     // Call at a fixed rate (1/60s).
     // Potentially expensive/slow.
-    virtual uint8_t read()
-      {
-      if((0 == ticksLeft) || (0 == --ticksLeft)) { value = SAFE_POSITION_PC; }
-      return(value);
-      }
+    virtual uint8_t read();
 
     // Returns preferred poll interval (in seconds); non-zero.
     // Must be polled at near constant rate, about once per minute.

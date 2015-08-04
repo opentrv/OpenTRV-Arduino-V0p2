@@ -49,10 +49,12 @@ Parameters mean:
 
 A poll response should arrive within a few seconds (allow 10s),
 if not then the message in either direction may have been lost,
-and you should consider a resend.
+and hub should consider a resend.
 
 
 General notes:
 
  1) Transmissions are not guaranteed to arrive.
  2) Bandwidth is a very scare resource; don't send more than you have to.
+ 3) Poll/command should be sent by hub at least every 15m; relay will timeout after 30m and go to 'safe' state.
+ 4) Poll response should be sent by relay within a few seconds (allow 10s) of poll/command.

@@ -997,6 +997,38 @@ void ModelledRadValve::computeCallForHeat()
 // Singleton implementation for entire node.
 SimpleSlaveRadValve NominalRadValve;
 
+
+// Set new value.
+// Ignores invalid values.
+bool SimpleSlaveRadValve::set(const uint8_t newValue)
+  {
+  if(!isValid(newValue)) { return(false); }
+  if(newValue != value)
+    {
+    value = newValue;
+    // Regenerate buffer ready to TX to FHT8V.
+    FHT8VCreateValveSetCmdFrame(*this);
+    }
+  ticksLeft = TIMEOUT_MINS;
+  return(true);
+  }
+
+// Do any regular work that needs doing.
+// Deals with timeout and reversion to 'safe' valve position if the controller goes quiet.
+// Call at a fixed rate (1/60s).
+// Potentially expensive/slow.
+uint8_t SimpleSlaveRadValve::read()
+  {
+  if((0 == ticksLeft) || (0 == --ticksLeft))
+    {
+    value = SAFE_POSITION_PC;
+#if 1 && defined(DEBUG)
+    DEBUG_SERIAL_PRINTLN_FLASHSTRING("!controller silent: valve moved to safe position");
+#endif
+    }
+  return(value);
+  }
+
 // Returns true if (re)calibrating/(re)initialising/(re)syncing.
 // The target valve position is not lost while this is true.
 // By default there is no recalibration step.
@@ -2296,14 +2328,12 @@ void loopOpenTRV()
       NominalRadValve.read();
 #endif
 
-#if defined(USE_MODULE_FHT8VSIMPLE) && defined(ENABLE_NOMINAL_RAD_VALVE)
+#if defined(USE_MODULE_FHT8VSIMPLE) && defined(LOCAL_TRV) // Only regen when needed.
       // If there was a change in target valve position,
       // or periodically in the minute after all sensors should have been read,
       // precompute some or all of any outgoing frame/stats/etc ready for the next transmission.
-#ifdef LOCAL_TRV // Be smart if using local control (and battery powered?); slave can do it every time.
       if(NominalRadValve.isValveMoved() ||
          (minute1From4AfterSensors && enableTrailingStatsPayload()))
-#endif
         {
         if(localFHT8VTRVEnabled()) { FHT8VCreateValveSetCmdFrame(NominalRadValve); }
         }

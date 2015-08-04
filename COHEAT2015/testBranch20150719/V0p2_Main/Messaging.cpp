@@ -1193,7 +1193,6 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, uint8_t *
           setLEDsCO(c.getLC(), c.getLT(), c.getLF());
           // Set radiator valve position.
           NominalRadValve.set(c.getRP());
-          // TODO: act on other elements of incoming command.
 
           // Respond to the hub with sensor data.
           // Can use read() for very freshest values at risk of some delay/cost.
@@ -1207,7 +1206,7 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, uint8_t *
           const uint8_t al = AmbLight.read() >> 2; // Scale from [0,255] to [1,62] for TX (allow value coercion at extremes).
           const bool s = false; // FIXME: get the real sensor data.
           const bool w = false; // FIXME: get the real sensor data.
-          const bool sy = false; // FIXME: get the real sensor data.
+          const bool sy = NominalRadValve.isRecalibrating();
           OTProtocolCC::CC1PollResponse r =
               OTProtocolCC::CC1PollResponse::make(hc1, hc2, rh, tp, tr, al, s, w, sy);
           // Send message back to hub.
