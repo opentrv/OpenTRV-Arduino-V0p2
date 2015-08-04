@@ -993,9 +993,20 @@ void ModelledRadValve::computeCallForHeat()
   retainedState.tick(value, inputState);
   }
 //#endif // ENABLE_MODELLED_RAD_VALVE
-#elif defined(SLAVE_VALVE)
+#elif defined(SLAVE_TRV)
 // Singleton implementation for entire node.
 SimpleSlaveRadValve NominalRadValve;
+
+// Returns true if (re)calibrating/(re)initialising/(re)syncing.
+// The target valve position is not lost while this is true.
+// By default there is no recalibration step.
+bool SimpleSlaveRadValve::isRecalibrating() const
+  {
+#ifdef USE_MODULE_FHT8VSIMPLE
+  if(!isSyncedWithFHT8V()) { return(true); }
+#endif
+  return(false);
+  }
 #endif
 
 
@@ -1788,8 +1799,8 @@ void loopOpenTRV()
     (0 == boilerCountdownTicks) && // Unless the boiler is off, stay responsive.
 #endif
 #ifdef ENABLE_NOMINAL_RAD_VALVE
-    (!NominalRadValve.isControlledValveReallyOpen()) &&  // Run at full speed until valve(s) should actually have shut and the boiler gone off.
-    (!NominalRadValve.isCallingForHeat()); // Run at full speed until not nominally demanding heat, eg even during FROST mode or pre-heating.
+    (!NominalRadValve.isControlledValveReallyOpen()); // &&  // Run at full speed until valve(s) should actually have shut and the boiler gone off.
+//    (!NominalRadValve.isCallingForHeat()); // Run at full speed until not nominally demanding heat, eg even during FROST mode or pre-heating.
 #else
     true; // Allow local power conservation if all other factors are right.
 #endif
@@ -2289,10 +2300,12 @@ void loopOpenTRV()
       // If there was a change in target valve position,
       // or periodically in the minute after all sensors should have been read,
       // precompute some or all of any outgoing frame/stats/etc ready for the next transmission.
+#ifdef LOCAL_TRV // Be smart if using local control (and battery powered?); slave can do it every time.
       if(NominalRadValve.isValveMoved() ||
          (minute1From4AfterSensors && enableTrailingStatsPayload()))
+#endif
         {
-        if(localFHT8VTRVEnabled()) { FHT8VCreateValveSetCmdFrame(); }
+        if(localFHT8VTRVEnabled()) { FHT8VCreateValveSetCmdFrame(NominalRadValve); }
         }
 #endif
 

@@ -534,16 +534,54 @@ class ModelledRadValve : public AbstractRadValve
 #define ENABLE_NOMINAL_RAD_VALVE
 // Singleton implementation for entire node.
 extern ModelledRadValve NominalRadValve;
-#elif defined(SLAVE_VALVE)
+#elif defined(SLAVE_TRV)
 // Valve which is put where it is told; no smarts of its own.
 class SimpleSlaveRadValve : public AbstractRadValve
   {
+  private:
+    // Ticks left before comms timing out and valve should revert to 'safe' position.
+    // Counts down to zero one tick per minute in the absence of valid calls to set().
+    uint8_t ticksLeft;
+
   public:
+    // Initial time to wait with valve closed for initial command from controller.
+    // Helps avoid thrashing around during start-up when no heat may actually be required.
+    static const uint8_t INITIAL_TIMEOUT_MINS = 11;
+
+    // Valid calls to set() must happen at less than this interval (minutes, positive).
+    // If this timeout triggers, a default valve position is used.
+    static const uint8_t TIMEOUT_MINS = 30;
+
+    // Default (safe) valve position in percent.
+    // Similar to, but distinguishable from, eg FHT8V 'lost connection' 30% position.
+    static const uint8_t SAFE_POSITION_PC = 33;
+
+    // Create an instance with valve initially closed
+    // and a few minutes for controller to be heard before reverting to 'safe' position.
+    SimpleSlaveRadValve() : ticksLeft(INITIAL_TIMEOUT_MINS) { }
+
+    // Returns true if this sensor/actuator value is potentially valid, eg in-range.
+    virtual bool isValid(const uint8_t value) const { return(value <= 100); }
+
+    // Set new value.
+    // Ignores invalid values.
+    bool set(const uint8_t newValue)
+      {
+      if(!isValid(newValue)) { return(false); }
+      value = newValue;
+      ticksLeft = TIMEOUT_MINS;
+      return(true);
+      }
+
     // Do any regular work that needs doing.
-    // Sets/clears changed flag if computed valve position changed.
+    // Deals with timeout and reversion to 'safe' valve position if the controller goes quiet.
     // Call at a fixed rate (1/60s).
     // Potentially expensive/slow.
-    virtual uint8_t read() { return(value); }
+    virtual uint8_t read()
+      {
+      if((0 == ticksLeft) || (0 == --ticksLeft)) { value = SAFE_POSITION_PC; }
+      return(value);
+      }
 
     // Returns preferred poll interval (in seconds); non-zero.
     // Must be polled at near constant rate, about once per minute.
@@ -557,7 +595,7 @@ class SimpleSlaveRadValve : public AbstractRadValve
     // The target valve position is not lost while this is true.
     // By default there is no recalibration step.
     virtual bool isRecalibrating() const;
-  }
+  };
 #define ENABLE_NOMINAL_RAD_VALVE
 // Singleton implementation for entire node.
 extern SimpleSlaveRadValve NominalRadValve;

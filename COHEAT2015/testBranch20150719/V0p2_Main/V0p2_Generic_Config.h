@@ -77,7 +77,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define USE_RTC_INTERNAL_SIMPLE
 // IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
 #define LOCAL_TRV
-// IF DEFINED: this unit controls a valve, by provides slave valve control only.
+// IF DEFINED: this unit controls a valve, but provides slave valve control only.
 #undef SLAVE_TRV
 // IF DEFINED: this unit can act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
 #define ENABLE_BOILER_HUB
@@ -340,7 +340,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #undef ALLOW_JSON_OUTPUT
 // IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
 #undef LOCAL_TRV
-// IF DEFINED: this unit controls a valve, by provides slave valve control only.
+// IF DEFINED: this unit controls a valve, but provides slave valve control only.
 #define SLAVE_TRV
 // IF DEFINED: (default) forced always-on radio listen/RX, eg not requiring setup to explicitly enable.
 #define ENABLE_DEFAULT_ALWAYS_RX

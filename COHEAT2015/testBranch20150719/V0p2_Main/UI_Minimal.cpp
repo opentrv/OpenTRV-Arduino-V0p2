@@ -261,7 +261,7 @@ bool tickUI(const uint_fast8_t sec)
       // this is to conserve batteries for those people who leave the valves in WARM mode all the time.
       if(justTouched ||
          ((forthTick
-#ifdef ENABLE_NOMINAL_RAD_VALVE
+#if defined(ENABLE_NOMINAL_RAD_VALVE) && defined(LOCAL_TRV)
              || NominalRadValve.isCallingForHeat()
 #endif
              || inBakeMode()) && !AmbLight.isRoomDark()))
@@ -276,7 +276,7 @@ bool tickUI(const uint_fast8_t sec)
         else if(!isComfortTemperature(wt)) { tinyPause(); }
         else { mediumPause(); }
 
-#ifdef ENABLE_NOMINAL_RAD_VALVE
+#if defined(ENABLE_NOMINAL_RAD_VALVE) && defined(LOCAL_TRV)
         // Second flash to indicate actually calling for heat.
         if(NominalRadValve.isCallingForHeat())
           {
@@ -305,7 +305,7 @@ bool tickUI(const uint_fast8_t sec)
         }
       }
  
-#ifdef ENABLE_NOMINAL_RAD_VALVE
+#if defined(ENABLE_NOMINAL_RAD_VALVE) && defined(LOCAL_TRV)
     // Even in FROST mode, and if actually calling for heat (eg opening the rad valve significantly, etc)
     // then emit a tiny double flash on every 4th tick.
     // This call for heat may be frost protection or pre-warming / anticipating demand.
@@ -610,7 +610,7 @@ void serialStatusReport()
 #ifdef SETTABLE_TARGET_TEMPERATURES // Show thresholds and current target since no longer so easily deduced.
   Serial.print(';'); // Terminate previous section.
   Serial.print('S'); // Current settable temperature target, and FROST and WARM settings.
-#ifdef ENABLE_NOMINAL_RAD_VALVE
+#ifdef LOCAL_TRV
   Serial.print(NominalRadValve.getTargetTempC());
 #endif
   Serial_print_space();
@@ -659,7 +659,7 @@ void serialStatusReport()
     }
 #endif
 
-#ifdef ENABLE_NOMINAL_RAD_VALVE
+#ifdef LOCAL_TRV
   // *M* section: min-valve-percentage open section, iff not at default value.
   const uint8_t minValvePcOpen = NominalRadValve.getMinValvePcReallyOpen();
   if(DEFAULT_MIN_VALVE_PC_REALLY_OPEN != minValvePcOpen) { Serial.print(F(";M")); Serial.print(minValvePcOpen); }
