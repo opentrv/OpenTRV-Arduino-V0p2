@@ -54,21 +54,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // Magic numbers c/o Mike Stirling!
 const uint8_t FHT8V_RFM22_Reg_Values[][2] PROGMEM =
   {
-    {6,0}, // Disable default chiprdy and por interrupts.
-    {8,0}, // RFM22REG_OP_CTRL2: ANTDIVxxx, RXMPK, AUTOTX, ENLDM
-
-#ifndef RFM22_IS_ACTUALLY_RFM23
-// For RFM22 with RXANT tied to GPIO0, and TXANT tied to GPIO1...
-    {0xb,0x15}, {0xc,0x12}, // Can be omitted FOR RFM23.
-#endif
-
-// 0x30 = 0x00 - turn off packet handling
-// 0x33 = 0x06 - set 4 byte sync
-// 0x34 = 0x08 - set 4 byte preamble
-// 0x35 = 0x10 - set preamble threshold (RX) 2 nybbles / 1 bytes of preamble.
-// 0x36-0x39 = 0xaacccccc - set sync word, using end of RFM22-pre-preamble and start of FHT8V preamble.
-    {0x30,0}, {0x33,6}, {0x34,8}, {0x35,0x10}, {0x36,0xaa}, {0x37,0xcc}, {0x38,0xcc}, {0x39,0xcc},
-
+  // Putting TX power setting first to help with dynamic adjustment.
 // From AN440: The output power is configurable from +13 dBm to -8 dBm (Si4430/31), and from +20 dBM to -1 dBM (Si4432) in ~3 dB steps. txpow[2:0]=000 corresponds to min output power, while txpow[2:0]=111 corresponds to max output power.
 // The maximum legal ERP (not TX output power) on 868.35 MHz is 25 mW with a 1% duty cycle (see IR2030/1/16).
 //EEPROM ($6d,%00001111) ; RFM22REG_TX_POWER: Maximum TX power: 100mW for RFM22; not legal in UK/EU on RFM22 for this band.
@@ -86,6 +72,21 @@ const uint8_t FHT8V_RFM22_Reg_Values[][2] PROGMEM =
     {0x6d,0xb},
     #endif
 #endif
+
+    {6,0}, // Disable default chiprdy and por interrupts.
+    {8,0}, // RFM22REG_OP_CTRL2: ANTDIVxxx, RXMPK, AUTOTX, ENLDM
+
+#ifndef RFM22_IS_ACTUALLY_RFM23
+// For RFM22 with RXANT tied to GPIO0, and TXANT tied to GPIO1...
+    {0xb,0x15}, {0xc,0x12}, // Can be omitted FOR RFM23.
+#endif
+
+// 0x30 = 0x00 - turn off packet handling
+// 0x33 = 0x06 - set 4 byte sync
+// 0x34 = 0x08 - set 4 byte preamble
+// 0x35 = 0x10 - set preamble threshold (RX) 2 nybbles / 1 bytes of preamble.
+// 0x36-0x39 = 0xaacccccc - set sync word, using end of RFM22-pre-preamble and start of FHT8V preamble.
+    {0x30,0}, {0x33,6}, {0x34,8}, {0x35,0x10}, {0x36,0xaa}, {0x37,0xcc}, {0x38,0xcc}, {0x39,0xcc},
 
     {0x6e,40}, {0x6f,245}, // 5000bps, ie 200us/bit for FHT (6 for 1, 4 for 0).  10485 split across the registers, MSB first.
     {0x70,0x20}, // MOD CTRL 1: low bit rate (<30kbps), no Manchester encoding, no whitening.
