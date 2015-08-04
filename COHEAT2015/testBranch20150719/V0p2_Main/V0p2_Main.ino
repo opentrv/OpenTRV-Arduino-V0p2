@@ -188,14 +188,21 @@ static const OTRadioLink::OTRadioChannelConfig RFMConfig(FHT8V_RFM22_Reg_Values,
 #if defined(ALLOW_CC1_SUPPORT_RELAY)
 // For a CC1 relay, ignore everything except FTp2_CC1PollAndCmd messages.
 // With care (not accessing EEPROM for example) this could also reject anything with wrong house code.
-static bool FilterRXISR(const uint8_t *buf, const uint8_t buflen)
-  { return((buflen >= 8) && (OTRadioLink::FTp2_CC1PollAndCmd == buf[0])); }
+static bool FilterRXISR(const volatile uint8_t *buf, volatile uint8_t &buflen)
+  {
+  if((buflen < 8) || (OTRadioLink::FTp2_CC1PollAndCmd != buf[0])) { return(false); }
+  buflen = 8; // Truncate message to correct size for efficiency.
+  return(true); // Accept message.
+  }
 #elif defined(ALLOW_CC1_SUPPORT_HUB)
 // For a CC1 hub, ignore everything except FTp2_CC1Alert and FTp2_CC1PollResponse messages.
-static bool FilterRXISR(const uint8_t *buf, const uint8_t buflen)
+static bool FilterRXISR(const volatile uint8_t *buf, volatile uint8_t &buflen)
   {
-  return((buflen >= 8) &&
-      ((OTRadioLink::FTp2_CC1Alert == buf[0]) || (OTRadioLink::FTp2_CC1PollResponse == buf[0])));
+  if(buflen < 8) { return(false); }
+  const uint8_t t = buf[0];
+  if((OTRadioLink::FTp2_CC1Alert != t) && (OTRadioLink::FTp2_CC1PollResponse != t)) { return(false); }
+  buflen = 8; // Truncate message to correct size for efficiency.
+  return(true); // Accept message.
   }
 #else
 // NO RADIO RX FILTERING BY DEFAULT
