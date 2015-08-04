@@ -141,8 +141,8 @@ uint8_t FHT8VGetHC2();
 bool isSyncedWithFHT8V();
 
 
-// IF DEFINED: this unit may act as a thermostat controlling a local TRV (and calling for heat from the boiler).
-#ifdef LOCAL_TRV
+// This unit may control a local TRV.
+#if defined(LOCAL_TRV) || defined(SLAVE_TRV)
 // Returns TRV if valve/radiator is to be controlled by this unit.
 // Usually the case, but may not be for (a) a hub or (b) a not-yet-configured unit.
 // Returns false if house code parts are set to invalid or uninitialised values (>99).

@@ -30,6 +30,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 #include <util/atomic.h>
 
 #include "EEPROM_Utils.h"
+#include "Control.h"
 #include "Power_Management.h"
 #include "RFM22_Radio.h"
 #include "Security.h"
@@ -58,35 +59,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 //    }
 //  return(crc);
 //  }
-
-
-// Moved to OTRadioLink::crc7_5B_update() in the OTRadioLink library.
-///**Update 7-bit CRC with next byte; result always has top bit zero.
-// * Polynomial 0x5B (1011011, Koopman) = (x+1)(x^6 + x^5 + x^3 + x^2 + 1) = 0x37 (0110111, Normal)
-// * <p>
-// * Should maybe initialise with 0x7f.
-// * <p>
-// * See: http://users.ece.cmu.edu/~koopman/roses/dsn04/koopman04_crc_poly_embedded.pdf
-// * <p>
-// * Should detect all 3-bit errors in up to 7 bytes of payload,
-// * see: http://users.ece.cmu.edu/~koopman/crc/0x5b.txt
-// * <p>
-// * For 2 or 3 byte payloads this should have a Hamming distance of 4 and be within a factor of 2 of optimal error detection.
-// * <p>
-// * TODO: provide table-driven optimised alternative,
-// *     eg see http://www.tty1.net/pycrc/index_en.html
-// */
-//uint8_t crc7_5B_update(uint8_t crc, const uint8_t datum)
-//    {
-//    for(uint8_t i = 0x80; i != 0; i >>= 1)
-//        {
-//        bool bit = (0 != (crc & 0x40));
-//        if(0 != (datum & i)) { bit = !bit; }
-//        crc <<= 1;
-//        if(bit) { crc ^= 0x37; }
-//        }
-//    return(crc & 0x7f);
-//    }
 
 
 
@@ -1217,7 +1189,10 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, uint8_t *
         if((c.getHC1() == hc1) && (c.getHC2() == hc2))
           {
           // Act on the incoming command.
+          // Set LEDs.
           setLEDsCO(c.getLC(), c.getLT(), c.getLF());
+          // Set radiator valve position.
+          NominalRadValve.set(c.getRP());
           // TODO: act on other elements of incoming command.
 
           // Respond to the hub with sensor data.
