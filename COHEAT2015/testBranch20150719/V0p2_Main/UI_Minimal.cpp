@@ -1316,25 +1316,67 @@ static void setLEDs(const uint8_t lc)
     if(lc & 2) { LED_UI2_ON(); } else { LED_UI2_OFF(); }
     }
 
-// Count down in 2s ticks until LEDs go out.
+// Logical last-requested light colour (lc).
+static uint8_t lcCO;
+// Count down in 2s ticks until LEDs go out (derived from lt).
 static uint8_t countDownLEDSforCO;
+// Requested flash type (lf).
+static uint8_t lfCO;
 
 // Call this on even numbered seconds (with current time in seconds) to allow the CO UI to operate.
 // Should never be skipped, so as to allow the UI to remain responsive.
 bool tickUICO(const uint_fast8_t sec)
   {
-  // All LEDs off when count-down timer hits zero.
-  if((0 == countDownLEDSforCO) || (0 == --countDownLEDSforCO)) { setLEDs(0); }
+  // All LEDs off when count-down timer is/hits zero.
+  if((0 == countDownLEDSforCO) || (0 == --countDownLEDSforCO)) { lcCO = 0; setLEDs(0); }
+  // Else force 'correct' requested light colour and deal with any 'flash' state.
+  else
+    {
+    setLEDs(lcCO);
+
+    // Deal with flashing (non-solid) output here.
+    // Do some fiendly I/O polling while waiting!
+    if(lfCO != 3)
+      {
+      // Make this the first flash.
+      mediumPause();
+      setLEDs(0); // End of first flash.
+      pollIO(); // Poll while LEDs are off.
+      if(2 == lfCO)
+        {
+        offPause();
+        pollIO(); // Poll while LEDs are off.
+        // Start the second flash.
+        setLEDs(lcCO);
+        mediumPause();
+        setLEDs(0); // End of second flash.
+        pollIO(); // Poll while LEDs are off.
+        }
+      }
+    }
+
   return(false); // No human interaction this tick...
   }
 
 // Directly adjust LEDs.
+// May be called from a message handler, so minimise blocking.
 //   * light-colour         [0,3] bit flags 1==red 2==green (lc) 0 => stop everything
 //   * light-on-time        [1,15] (0 not allowed) 30-450s in units of 30s (lt) ???
 //   * light-flash          [1,3] (0 not allowed) 1==single 2==double 3==on (lf)
+// Not ISR- safe.
 void setLEDsCO(const uint8_t lc, const uint8_t lt, const uint8_t lf)
     {
+    lcCO = lc;
     countDownLEDSforCO = lt * 15; // Units are 30s, ticks are 2s.
-    setLEDs(lc);
+    lfCO = lf;
+    setLEDs(lc); // Set correct colour immediately.
+    if(3 != lf)
+      {
+      // Only a flash of some sort is requested,
+      // so just flicker the LED(s),
+      // then turn off again until proper flash handler.
+      tinyPause();
+      setLEDs(0);
+      }
     }
 #endif
