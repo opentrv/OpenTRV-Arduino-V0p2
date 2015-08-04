@@ -52,25 +52,6 @@ OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, -1> RFM23B;
 //#define STATS_MSG_MAX_LEN (64 - STATS_MSG_START_OFFSET)
 void RFM22RawStatsTXFFTerminated(uint8_t * const buf, const bool doubleTX)
   {
-//  // Write in the preamble/sync bytes.
-//  uint8_t *bptr = buf;
-//  // Start with RFM23-friendly preamble which ends with with the aacccccc sync word.
-//  memset(bptr, RFM22_PREAMBLE_BYTE, RFM22_PREAMBLE_BYTES);
-//  bptr += RFM22_PREAMBLE_BYTES;
-//  // Send the sync bytes.
-//  memset(bptr, RFM22_SYNC_BYTE, RFM22_SYNC_MIN_BYTES);
-//  bptr += RFM22_SYNC_MIN_BYTES;
-
-//  // TODO: put in listen before TX to reduce collisions (CSMA).
-//  // Send message starting with preamble.
-//  // Assume RFM22/23 support for now.
-//  RFM22QueueCmdToFF(buf);
-//  RFM22TXFIFO(); // Send it!  Approx 1.6ms/byte.
-//  if(doubleTX)
-//    {
-//    nap(WDTO_15MS);
-//    RFM22TXFIFO(); // Re-send it!
-//    }
   RFM22RXPreambleAdd(buf);
   const uint8_t buflen = OTRadioLink::frameLenFFTerminated(buf);
 #if 0 && defined(DEBUG)
@@ -84,19 +65,6 @@ void RFM22RawStatsTXFFTerminated(uint8_t * const buf, const bool doubleTX)
     DEBUG_SERIAL_PRINTLN_FLASHSTRING("!TX failed");
 #endif
     }
-//  if(!RFM23B.sendRaw(buf, buflen)) // , 0, (doubleTX ? OTRadioLink::OTRadioLink::TXmax : OTRadioLink::OTRadioLink::TXnormal)))
-//    {
-//#if 1 && defined(DEBUG)
-//    DEBUG_SERIAL_PRINTLN_FLASHSTRING("!TX failed");
-//#endif
-//    }
-//  if(doubleTX && !RFM23B.sendRaw(buf, buflen)) // , 0, (doubleTX ? OTRadioLink::OTRadioLink::TXmax : OTRadioLink::OTRadioLink::TXnormal)))
-//    {
-//#if 1 && defined(DEBUG)
-//    DEBUG_SERIAL_PRINTLN_FLASHSTRING("!TX2 failed");
-//#endif
-//    }
-
   //DEBUG_SERIAL_PRINTLN_FLASHSTRING("RS");
   }
 

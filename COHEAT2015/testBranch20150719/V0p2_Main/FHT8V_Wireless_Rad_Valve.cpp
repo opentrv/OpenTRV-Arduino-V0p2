@@ -47,6 +47,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // Use the global value for now.
 #define FHT8V_MIN_VALVE_PC_REALLY_OPEN DEFAULT_MIN_VALVE_PC_REALLY_OPEN
 
+// If true then allow double TX for normal valve setting, else only allow it for sync.
+// May want to enforce this where bandwidth is known to be scarce.
+static const bool ALLOW_NON_SYNC_DOUBLE_TX = false;
+
 
 #if defined(USE_MODULE_RFM22RADIOSIMPLE)
 // Provide RFM22/RFM23 register settings for use with FHT8V in Flash memory.
@@ -503,7 +507,8 @@ static void FHT8VTXFHTQueueAndSendCmd(uint8_t *bptr, const bool doubleTX)
 static void valveSettingTX(const bool allowDoubleTX)
   {
   // Transmit correct valve-setting command that should already be in the buffer...
-  FHT8VTXFHTQueueAndSendCmd(FHT8VTXCommandArea, allowDoubleTX);
+  // May not allow double TX for non-sync transmissions to conserve bandwidth.
+  FHT8VTXFHTQueueAndSendCmd(FHT8VTXCommandArea, ALLOW_NON_SYNC_DOUBLE_TX && allowDoubleTX);
 #ifdef ENABLE_NOMINAL_RAD_VALVE
   // Indicate state that valve should now actually be in (or physically moving to)...
   setFHT8V_isValveOpen();
@@ -781,31 +786,31 @@ bool FHT8VPollSyncAndTX_Next(const bool allowDoubleTX)
 #endif
   }
 
-#if defined(FHT8V_ALLOW_EXTRA_TXES)
-// Does an extra (single) TX if safe to help ensure that the hub hears, eg in case of poor comms.
-// Safe means when in sync with the valve,
-// and well away from the normal transmission windows to avoid confusing the valve.
-// Returns true iff a TX was done.
-// This may also be omitted if the TX would not be heard by the hub anyway.
-// Note: (single) transmission time is up to about 80ms.
-// In future this may be transmitted so as never to be decoded by the valve,
-// and seen by the hub as an extra TX with its offset from the real TX also sent.
-// FIXME: have this use alternative stats message form to avoid confusing FHT8V valve or hub.
-bool FHT8VDoSafeExtraTXToHub()
-  {
-  // Do nothing until in sync.
-  if(!syncedWithFHT8V) { return(false); }
-  // Do nothing if too close to (within maybe 10s of) the start or finish of a ~2m TX cycle
-  // (which might cause FHT8V to latch onto the wrong, extra, TX, for example).
-  if((halfSecondsToNextFHT8VTX < 20) || (halfSecondsToNextFHT8VTX > 210)) { return(false); }
-  // Do nothing if we would not send something that the hub would hear anyway.
-  if(NominalRadValve.get() < getMinValvePcReallyOpen()) { return(false); }
-  // Do (single) TX.
-  FHT8VTXFHTQueueAndSendCmd(FHT8VTXCommandArea, false);
-  // Done it.
-  return(true);
-  }
-#endif
+//#if defined(FHT8V_ALLOW_EXTRA_TXES)
+//// Does an extra (single) TX if safe to help ensure that the hub hears, eg in case of poor comms.
+//// Safe means when in sync with the valve,
+//// and well away from the normal transmission windows to avoid confusing the valve.
+//// Returns true iff a TX was done.
+//// This may also be omitted if the TX would not be heard by the hub anyway.
+//// Note: (single) transmission time is up to about 80ms.
+//// In future this may be transmitted so as never to be decoded by the valve,
+//// and seen by the hub as an extra TX with its offset from the real TX also sent.
+//// FIXME: have this use alternative stats message form to avoid confusing FHT8V valve or hub.
+//bool FHT8VDoSafeExtraTXToHub()
+//  {
+//  // Do nothing until in sync.
+//  if(!syncedWithFHT8V) { return(false); }
+//  // Do nothing if too close to (within maybe 10s of) the start or finish of a ~2m TX cycle
+//  // (which might cause FHT8V to latch onto the wrong, extra, TX, for example).
+//  if((halfSecondsToNextFHT8VTX < 20) || (halfSecondsToNextFHT8VTX > 210)) { return(false); }
+//  // Do nothing if we would not send something that the hub would hear anyway.
+//  if(NominalRadValve.get() < getMinValvePcReallyOpen()) { return(false); }
+//  // Do (single) TX.
+//  FHT8VTXFHTQueueAndSendCmd(FHT8VTXCommandArea, false);
+//  // Done it.
+//  return(true);
+//  }
+//#endif
 
 
 // Hub-mode receive buffer for RX from FHT8V.

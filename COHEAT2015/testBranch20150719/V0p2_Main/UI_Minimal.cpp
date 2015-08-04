@@ -428,7 +428,10 @@ static bool extCLIHandler(Print *const p, char *const buf, const uint8_t n)
 #if 0 && defined(DEBUG)
 OTRadioLink::printRXMsg(p, txbuf, buflen);
 #endif
-      if(RFM23B.sendRaw(txbuf, buflen)) // Send at default volume...  One going missing won't hurt that much.
+      // Send loud since the hub may be relatively far away,
+      // there is no 'ACK', and these messages should not be sent very often.
+      // Should be consistent with automatically-generated alerts to help with diagnosis.
+      if(RFM23B.sendRaw(txbuf, buflen, 0, OTRadioLink::OTRadioLink::TXmax))
         { return(true); } // Done it!
       }
 
@@ -485,8 +488,8 @@ OTRadioLink::printRXMsg(p, txbuf, buflen);
 #if 0 && defined(DEBUG)
     OTRadioLink::printRXMsg(p, txbuf, buflen);
 #endif
-          const bool doubleTX = false;
-          if(RFM23B.sendRaw(txbuf, buflen, 0, (doubleTX ? OTRadioLink::OTRadioLink::TXmax : OTRadioLink::OTRadioLink::TXloud)))
+          // TX at normal volume since ACKed and can be repeated if necessary.
+          if(RFM23B.sendRaw(txbuf, buflen))
             { return(true); } // Done it!
           }
         }
