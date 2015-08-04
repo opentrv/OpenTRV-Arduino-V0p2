@@ -1307,10 +1307,24 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
 
 // CUSTOM IO FOR SPECIAL DEPLOYMENTS
 #ifdef ALLOW_CC1_SUPPORT_RELAY_IO // REV9 CC1 relay...
+// Do basic static LED setting.
+static void setLEDs(const uint8_t lc)
+    {
+    // Assume primary UI LED is the red one (at least fot REV9 boards)...
+    if(lc & 1) { LED_HEATCALL_ON(); } else { LED_HEATCALL_OFF(); }
+    // Assume secondary UI LED is the green one (at least fot REV9 boards)...
+    if(lc & 2) { LED_UI2_ON(); } else { LED_UI2_OFF(); }
+    }
+
+// Count down in 2s ticks until LEDs go out.
+static uint8_t countDownLEDSforCO;
+
 // Call this on even numbered seconds (with current time in seconds) to allow the CO UI to operate.
 // Should never be skipped, so as to allow the UI to remain responsive.
-bool tickUICO(uint_fast8_t sec)
+bool tickUICO(const uint_fast8_t sec)
   {
+  // All LEDs off when count-down timer hits zero.
+  if((0 == countDownLEDSforCO) || (0 == --countDownLEDSforCO)) { setLEDs(0); }
   return(false); // No human interaction this tick...
   }
 
@@ -1320,9 +1334,7 @@ bool tickUICO(uint_fast8_t sec)
 //   * light-flash          [1,3] (0 not allowed) 1==single 2==double 3==on (lf)
 void setLEDsCO(const uint8_t lc, const uint8_t lt, const uint8_t lf)
     {
-    // Assume primary UI LED is the red one (at least fot REV9 boards)...
-    if(lc & 1) { LED_HEATCALL_ON(); } else { LED_HEATCALL_OFF(); }
-    // Assume secondary UI LED is the green one (at least fot REV9 boards)...
-    if(lc & 2) { LED_UI2_ON(); } else { LED_UI2_OFF(); }
+    countDownLEDSforCO = lt * 15; // Units are 30s, ticks are 2s.
+    setLEDs(lc);
     }
 #endif
