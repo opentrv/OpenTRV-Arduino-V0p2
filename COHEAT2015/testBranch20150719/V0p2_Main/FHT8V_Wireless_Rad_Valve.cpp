@@ -536,33 +536,25 @@ static uint8_t FHT8VTXGapHalfSeconds(const uint8_t hc2, const uint8_t halfSecond
 // This is NOT intended to be used to sleep over the end of a minor cycle.
 static void sleepUntilSubCycleTimeOptionalRX(const uint8_t sleepUntil)
     {
-#if defined(ENABLE_BOILER_HUB)
-    const bool hubMode = inHubMode();
-    // Slowly poll for incoming RX while waiting for a particular time, eg to TX.
-    if(hubMode)
-      {
 #if 0 && defined(DEBUG)
-      DEBUG_SERIAL_PRINT_FLASHSTRING("TXwait");
+    DEBUG_SERIAL_PRINT_FLASHSTRING("TXwait");
 #endif
+    // Poll I/O regularly if listening out for radio comms.
+    if(inHubMode())
+      {
       // Only do nap+poll if lots of time left.
       while(sleepUntil > fmax(getSubCycleTime() + (50/SUBCYCLE_TICK_MS_RD), GSCT_MAX))
         { nap15AndPoll(); } // Assumed ~15ms sleep max.
       // Poll in remaining time without nap.
       while(sleepUntil > getSubCycleTime())
         { pollIO(); }
-#if 0 && defined(DEBUG)
-      DEBUG_SERIAL_PRINT_FLASHSTRING("*");
-#endif
       }
+#if 0 && defined(DEBUG)
+    DEBUG_SERIAL_PRINT_FLASHSTRING("*");
 #endif
 
     // Sleep until exactly the right time.
     sleepUntilSubCycleTime(sleepUntil);
-
-//#if defined(ENABLE_BOILER_HUB)
-//    // Final quick poll for RX activity.
-//    if(hubMode) { FHT8VCallForHeatPoll(); }
-//#endif
     }
 
 // Run the algorithm to get in sync with the receiver.
@@ -609,6 +601,8 @@ static bool doSync(const bool allowDoubleTX)
 #endif
       }
 
+    handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O built up while waiting.
+
     // After penultimate sync TX set up time to sending of final sync command.
     if(1 == --syncStateFHT8V)
       {
@@ -634,7 +628,7 @@ static bool doSync(const bool allowDoubleTX)
       FHT8VCreate200usBitStreamBptr(FHT8VTXCommandArea, &command);
       if(halfSecondCount > 0) { sleepUntilSubCycleTimeOptionalRX((SUB_CYCLE_TICKS_PER_S/2) * halfSecondCount); }
       FHT8VTXFHTQueueAndSendCmd(FHT8VTXCommandArea, allowDoubleTX); // SEND SYNC FINAL
-    // Note that FHT8VTXCommandArea now does not contain a valid valve-setting command...
+      // Note that FHT8VTXCommandArea now does not contain a valid valve-setting command...
 #if 0 && defined(DEBUG)
       DEBUG_SERIAL_TIMESTAMP();
       DEBUG_SERIAL_PRINT(' ');
@@ -774,6 +768,7 @@ bool FHT8VPollSyncAndTX_Next(const bool allowDoubleTX)
     // DEBUG_SERIAL_PRINTLN_FLASHSTRING(" FHT8V TX");
 #endif
     serialPrintlnAndFlush(F("FHT8V TX"));
+    handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O built up while waiting.
 
     // Set up correct delay to next TX.
     halfSecondsToNextFHT8VTX = FHT8VTXGapHalfSeconds(FHT8VGetHC2(), halfSecondCount);

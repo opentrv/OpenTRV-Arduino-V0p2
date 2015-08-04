@@ -2045,6 +2045,7 @@ void loopOpenTRV()
     // before sleep and on wakeup in case some IO needs further processing now,
     // eg work was accrued during the previous major slow/outer loop
     // or the in a previous orbit of this loop sleep or nap was terminated by an I/O interrupt.
+    // May generate output to host on Serial.
     // Come back and have another go if work was done, until the next tick at most.
     if(handleQueuedMessages(&Serial, true, &RFM23B)) { continue; }
 
@@ -2258,7 +2259,7 @@ void loopOpenTRV()
         // Sleep randomly up to 128ms to spread transmissions and thus help avoid collisions.
         sleepLowPowerLessThanMs(1 + (OTV0P2BASE::randRNG8() & 0x7f));
 //        nap(randRNG8NextBoolean() ? WDTO_60MS : WDTO_120MS); // FIXME: need a different random interval generator!
-        pollIO(); // Deal with any pending I/O.
+        handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O.
         // Send it!
         // Try for double TX for extra robustness unless:
         //   * this is a speculative 'extra' TX
