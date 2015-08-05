@@ -224,6 +224,8 @@ extern MinimalOneWire<PIN_OW_DQ_DATA> MinOW;
 //     with more bits of the final nibble defined for with higher precision
 //   * enumeration order of this device on the OW bus,
 //     with 0 (the default) being the first found by the usual deterministic scan
+//   * whether the CRC should de checked for incoming data
+//     to improve reliability on long connections at a code and CPU cost
 // Multiple DS18B20s can nominally be supported on one or multiple OW buses.
 // Not all template parameter combinations may be supported.
 // Provides temperature as a signed int value with 0C == 0 at all precisions.
