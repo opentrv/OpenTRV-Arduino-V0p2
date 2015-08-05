@@ -212,6 +212,7 @@ extern MinimalOneWire<PIN_OW_DQ_DATA> MinOW;
 #endif
 
 
+
 #ifdef SUPPORTS_MINIMAL_ONEWIRE
 // External/off-board DS18B20 temperature sensor.
 // Requires OneWire support.
