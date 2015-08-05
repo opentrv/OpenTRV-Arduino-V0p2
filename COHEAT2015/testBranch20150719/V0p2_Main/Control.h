@@ -146,15 +146,15 @@ void _TEST_set_basetemp_override(_TEST_basetemp_override override);
 // This is determined from user-settable temperature values.
 bool hasEcoBias();
 
-// Get dynamically-set thresholds/parameters.
-#if defined(SETTABLE_TARGET_TEMPERATURES) || defined(TEMP_POT_AVAILABLE)
+// Get (possibly dynamically-set) thresholds/parameters.
+//#if defined(SETTABLE_TARGET_TEMPERATURES) || defined(TEMP_POT_AVAILABLE)
 // Get 'FROST' protection target in C; no higher than getWARMTargetC() returns, strictly positive, in range [MIN_TARGET_C,MAX_TARGET_C].
 // Depends dynamically on current (last-read) temp-pot setting.
 uint8_t getFROSTTargetC();
 // Get 'WARM' target in C; no lower than getFROSTTargetC() returns, strictly positive, in range [MIN_TARGET_C,MAX_TARGET_C].
 // Depends dynamically on current (last-read) temp-pot setting.
 uint8_t getWARMTargetC();
-#endif
+//#endif
 
 #if defined(TEMP_POT_AVAILABLE)
 // Expose internal calculation of WARM target based on user physical control for unit testing.

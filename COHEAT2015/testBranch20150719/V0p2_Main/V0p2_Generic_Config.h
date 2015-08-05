@@ -75,6 +75,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define SUPPLY_VOLTAGE_LOW_2AA
 // Provide software RTC support by default.
 #define USE_RTC_INTERNAL_SIMPLE
+// IF DEFINED: basic FROST/WARM temperatures are settable.
+#define SETTABLE_TARGET_TEMPERATURES
 // IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
 #define LOCAL_TRV
 // IF DEFINED: this unit controls a valve, but provides slave valve control only.
@@ -176,6 +178,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #undef ENABLE_FULL_OT_CLI
 // IF DEFINED: enable a full OpenTRV UI with normal LEDs etc.
 #undef ENABLE_FULL_OT_UI
+// IF DEFINED: basic FROST/WARM temperatures are settable.
+#undef SETTABLE_TARGET_TEMPERATURES
 // IF DEFINED: enable and extended CLI with a longer input buffer for example.
 #define ENABLE_EXTENDED_CLI
 // IF DEFINED: support for general timed and multi-input occupancy detection / use.
@@ -353,6 +357,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #undef ENABLE_FULL_OT_CLI
 // IF DEFINED: enable a full OpenTRV UI with normal LEDs etc.
 #undef ENABLE_FULL_OT_UI
+// IF DEFINED: basic FROST/WARM temperatures are settable.
+#undef SETTABLE_TARGET_TEMPERATURES
 // IF DEFINED: enable and extended CLI with a longer input buffer for example.
 #define ENABLE_EXTENDED_CLI
 // IF DEFINED: support for general timed and multi-input occupancy detection / use.
@@ -437,8 +443,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define SUPPORT_BAKE
 // IF DEFINED: this unit may run on 2xAA cells, preferably rechargeable eg NiMH, ~2V--2.4V, and should monitor supply voltage.
 #define SUPPLY_VOLTAGE_LOW_2AA // May require limiting clock speed and using some alternative peripherals/sensors...
-// IF DEFINED: basic FROST/WARM temperatures are settable.
-#define SETTABLE_TARGET_TEMPERATURES
 // IF DEFINED: use FHT8V wireless radio module/valve.
 #define USE_MODULE_FHT8VSIMPLE
 // IF DEFINED: use simple LDR-based detection of room use/occupancy; brings in getRoomInUseFromLDR subroutne.

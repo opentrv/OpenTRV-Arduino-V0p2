@@ -98,15 +98,6 @@ void _TEST_set_basetemp_override(const _TEST_basetemp_override override)
 #define TEMP_SCALE_MID ((BIASECO_WARM + BIASCOM_WARM + 1)/2) // Middle of range for adjustable-base-temperature systems; should be 'eco' baised.
 #define TEMP_SCALE_MAX (BIASCOM_WARM+1) // Top of range for adjustable-base-temperature systems.
 
-// If true (the default) then the system has an 'Eco' energy-saving bias, else it has a 'comfort' bias.
-// Several system parameters are adjusted depending on the bias,
-// with 'eco' slanted toward saving energy, eg with lower target temperatures and shorter on-times.
-#ifndef hasEcoBias // If not a macro...
-// True if WARM temperature at/below halfway mark between eco and comfort levels.
-// Midpoint should be just in eco part to provide a system bias toward eco.
-bool hasEcoBias() { return(getWARMTargetC() <= TEMP_SCALE_MID); }
-//#endif
-#endif
 
 // Get 'FROST' protection target in C; no higher than getWARMTargetC() returns, strictly positive, in range [MIN_TARGET_C,MAX_TARGET_C].
 #if defined(TEMP_POT_AVAILABLE)
@@ -226,7 +217,7 @@ uint8_t getWARMTargetC()
   return(fnmax(stored, getFROSTTargetC()));
   }
 #else
-#define getWARMTargetC() ((uint8_t) (WARM)) // Fixed value.
+uint8_t getWARMTargetC() { return((uint8_t) (WARM)); } // Fixed value.
 #endif
 
 #if defined(SETTABLE_TARGET_TEMPERATURES)
@@ -251,6 +242,17 @@ bool setWARMTargetC(uint8_t tempC)
   eeprom_smart_update_byte((uint8_t *)EE_START_WARM_C, tempC); // Update in EEPROM if necessary.
   return(true); // Assume value correctly written.
   }
+#endif
+
+
+// If true (the default) then the system has an 'Eco' energy-saving bias, else it has a 'comfort' bias.
+// Several system parameters are adjusted depending on the bias,
+// with 'eco' slanted toward saving energy, eg with lower target temperatures and shorter on-times.
+#ifndef hasEcoBias // If not a macro...
+// True if WARM temperature at/below halfway mark between eco and comfort levels.
+// Midpoint should be just in eco part to provide a system bias toward eco.
+bool hasEcoBias() { return(getWARMTargetC() <= TEMP_SCALE_MID); }
+//#endif
 #endif
 
 

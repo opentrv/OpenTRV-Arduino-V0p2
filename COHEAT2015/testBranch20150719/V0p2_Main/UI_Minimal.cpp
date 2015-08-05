@@ -576,16 +576,17 @@ void serialStatusReport()
       Serial.print(temp & 0xf, HEX); // Show 16ths in hex.
 
 //#if 0
-//  // *P* section: low power flag only shown iff (battery) low.
+//  // *P* section: low power flag shown only if (battery) low.
 //  if(Supply_mV.isSupplyVoltageLow()) { Serial.print(F(";Plow")); }
 //#endif
 
-#if 1
+#ifdef ENABLE_FULL_OT_CLI
   // *X* section: Xmit security level shown only if some non-essential TX potentially allowed.
   const stats_TX_level xmitLevel = getStatsTXLevel();
   if(xmitLevel < stTXnever) { Serial.print(F(";X")); Serial.print(xmitLevel); }
 #endif
 
+#ifdef ENABLE_FULL_OT_CLI
   // *T* section: time and schedules.
   const uint_least8_t hh = getHoursLT();
   const uint_least8_t mm = getMinutesLT();
@@ -608,6 +609,7 @@ void serialStatusReport()
     Serial.print('F'); Serial.print(endH); Serial_print_space(); Serial.print(endM);
     }
   if(isAnyScheduleOnWARMNow()) { Serial.print('*'); } // Indicate that at least one schedule is active now.
+#endif
 
   // *S* section: settable target/threshold temperatures, current target, and eco/smart/occupied flags.
 #ifdef SETTABLE_TARGET_TEMPERATURES // Show thresholds and current target since no longer so easily deduced.
