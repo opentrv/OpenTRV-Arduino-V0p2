@@ -135,6 +135,14 @@ bool tickUICO(uint_fast8_t sec);
 // If fromPollAndCmd is true then this is being called from an incoming Poll/Cms message receipt.
 // Not ISR- safe.
 void setLEDsCO(uint8_t lc, uint8_t lt, uint8_t lf, bool fromPollAndCmd);
+
+// Get the switch toggle state.
+// The hub should monitor this changing,
+// taking the change as indication of a boost request.
+// This is allowed to toggle only much slower than the hub should poll,
+// thus ensuring that the hub doesn't miss a boost request.
+// Safe to call from an ISR (though this would be unexpected).
+bool getSwitchToggleStateCO();
 #endif
 
 

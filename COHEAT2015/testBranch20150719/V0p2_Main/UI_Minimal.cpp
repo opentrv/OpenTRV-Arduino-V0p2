@@ -1317,8 +1317,24 @@ static uint8_t lfCO;
 // This is kept long enough to ensure that the hub cannot have failed to see the status flip
 // unless all contact has in fact been lost.
 static const uint8_t MIN_BOOST_INTERVAL_M = 30;
-// True if the button was pressed on the previous tick.
+// Count down from last flip of switch-toggle state, minutes.  Cannot toggle unless this is zero.
+static uint8_t toggle_blocked_countdown_m;
+// True if the button was active on the previous tick.
 static bool oldButtonPressed;
+// Switch state toggled when user activates boost function.
+// Marked volatile to allow safe lock-free read access from an ISR if necessary.
+static volatile bool switch_toggle_state;
+// True while waiting for poll after a boost request.
+// Cleared after a poll which is presumed to notice the request.
+static bool waitingForPollAfterBoostRequest;
+
+// Get the switch toggle state.
+// The hub should monitor this changing,
+// taking the change as indication of a boost request.
+// This is allowed to toggle only much slower than the hub should poll,
+// thus ensuring that the hub doesn't miss a boost request.
+// Safe to call from an ISR (though this would be unexpected).
+bool getSwitchToggleStateCO() { return(switch_toggle_state); }
 
 // Call this on even numbered seconds (with current time in seconds) to allow the CO UI to operate.
 // Should never be skipped, so as to allow the UI to remain responsive.
@@ -1333,6 +1349,10 @@ static bool oldButtonPressed;
 //      and possibly periodically until a new poll request comes in (as indicated by a call to setLEDsCO())
 bool tickUICO(const uint_fast8_t sec)
   {
+  // Deal with the countdown timers.
+  if((0 == sec) && (toggle_blocked_countdown_m > 0)) { --toggle_blocked_countdown_m; }
+  if(countDownLEDSforCO > 0) { --countDownLEDSforCO; }
+
   // Note whether the button is pressed on this tick.
   const bool buttonPressed = (LOW == fastDigitalRead(BUTTON_MODE_L));
   // Note whether the button has just been pressed.
@@ -1340,18 +1360,32 @@ bool tickUICO(const uint_fast8_t sec)
   oldButtonPressed = buttonPressed;
   if(buttonJustPressed)
     {
-    // Send an alert message immediately, inviting the hub to poll this node ASAP.
-    sendCC1AlertByRFM23B();
     // Set the LED to solid red until upto the comms timeout.
     // When the hub poll the LEDs will be set to whatever the poll specifies.
     setLEDsCO(1, MIN_BOOST_INTERVAL_M*2, 3, false);
+    // If not still counting down since the last switch-state toggle,
+    // toggle it now,
+    // and restart the count-down.
+    if(0 == toggle_blocked_countdown_m)
+        {
+        switch_toggle_state = !switch_toggle_state;
+        toggle_blocked_countdown_m = MIN_BOOST_INTERVAL_M;
+        }
+    // Set up to set alerts periodically until polled.
+    // Has the effect of allow the hub to know when boost is being requested
+    // even if it's not yet time to flip the toggle.
+    waitingForPollAfterBoostRequest = true;
+    // Send an alert message immediately,
+    // AFTER adjusting all relevant state so as to avoid a race,
+    // inviting the hub to poll this node ASAP and eg notice the toggle state.
+    sendCC1AlertByRFM23B();
     // Do no further UI processing this tick.
     // Note the user interaction to the caller.
     return(true);
     }
 
-  // All LEDs off when count-down timer is/hits zero.
-  if((0 == countDownLEDSforCO) || (0 == --countDownLEDSforCO)) { lcCO = 0; setLEDs(0); }
+  // All LEDs off when their count-down timer is/hits zero.
+  if(0 == countDownLEDSforCO) { lcCO = 0; setLEDs(0); }
   // Else force 'correct' requested light colour and deal with any 'flash' state.
   else
     {
@@ -1378,6 +1412,12 @@ bool tickUICO(const uint_fast8_t sec)
       }
     }
 
+  // If still waiting for a poll after a boost request,
+  // arrange to send extra alerts about once every two minutes,
+  // randomly so as to minimise collisions with other regular traffic.
+  if(waitingForPollAfterBoostRequest && (sec == (OTV0P2BASE::randRNG8() & 0x3e)))
+    { sendCC1AlertByRFM23B(); }
+
   return(false); // No human interaction this tick...
   }
 
@@ -1402,5 +1442,7 @@ void setLEDsCO(const uint8_t lc, const uint8_t lt, const uint8_t lf, const bool 
       tinyPause();
       setLEDs(0);
       }
+    // Assume that the hub will shortly know about any pending request.
+    if(fromPollAndCmd) { waitingForPollAfterBoostRequest = false; }
     }
 #endif

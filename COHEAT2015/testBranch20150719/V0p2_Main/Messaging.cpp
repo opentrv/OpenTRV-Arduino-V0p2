@@ -1204,7 +1204,7 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, uint8_t *
           const uint8_t tp = (uint8_t) constrain(extDS18B20_0.read() >> 3, 0, 199); // Scale to to 1/2C [0,100[ for TX.
           const uint8_t tr = (uint8_t) constrain(TemperatureC16.read() >> 2, 0, 199); // Scale from 1/16C to 1/4C [0,50[ for TX.
           const uint8_t al = AmbLight.read() >> 2; // Scale from [0,255] to [1,62] for TX (allow value coercion at extremes).
-          const bool s = false; // FIXME: get the real sensor data.
+          const bool s = getSwitchToggleStateCO();
           const bool w = (fastDigitalRead(BUTTON_LEARN2_L) != LOW); // BUTTON_LEARN2_L high means open circuit means door/window open.
           const bool sy = NominalRadValve.isRecalibrating();
           OTProtocolCC::CC1PollResponse r =
