@@ -865,6 +865,22 @@ int RoomTemperatureC16::read()
   }
 
 
+#if defined(SENSOR_EXTERNAL_DS18B20_ENABLE)
+    // Force a read/poll of room temperature and return the value sensed in units of 1/16 C.
+    // Should be called at regular intervals (1/60s) if isJittery() is true.
+    // Expensive/slow.
+    // Not thread-safe nor usable within ISRs (Interrupt Service Routines).
+int ExtTemperatureDS18B20C16::read()
+  {
+    // TODO
+  }
+#endif
+
+#if defined(SENSOR_EXTERNAL_DS18B20_ENABLE_0) // Enable sensor zero.
+extern ExtTemperatureDS18B20C16 eds0(0);
+#endif
+
+
 
 
 

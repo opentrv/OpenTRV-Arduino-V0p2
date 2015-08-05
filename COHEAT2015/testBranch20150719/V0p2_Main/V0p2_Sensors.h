@@ -213,15 +213,15 @@ extern MinimalOneWire<PIN_OW_DQ_DATA> MinOW;
 
 
 
-#ifdef SUPPORTS_MINIMAL_ONEWIRE
-// External/off-board DS18B20 temperature sensor.
+#if defined(SENSOR_EXTERNAL_DS18B20_ENABLE) // Needs defined(SUPPORTS_MINIMAL_ONEWIRE)
+// External/off-board DS18B20 temperature sensor in nominal 1/16 C.
 // Requires OneWire support.
 // Will in future be templated on:
 //   * the MinimalOneWire instance to use
-//   * number of bits after the binary point (1, 2, 3 or 4) to go in the lsbs
-//     (fewer is faster)
-//     so for example 1C at 1 bit after the point will be 0x2,
-//     and at 4 bits after the poitn will be 0x10
+//   * precision (9, 10, 11 or 12 bits, 12 for the full C/16 resolution),
+//     noting that lower precision is faster,
+//     and for example 1C will be 0x1X
+//     with more bits of the final nibble defined for with higher precision
 //   * enumeration order of this device on the OW bus,
 //     with 0 (the default) being the first found by the usual deterministic scan
 // Multiple DS18B20s can nominally be supported on one or multiple OW buses.
@@ -229,14 +229,39 @@ extern MinimalOneWire<PIN_OW_DQ_DATA> MinOW;
 // Provides temperature as a signed int value with 0C == 0 at all precisions.
 //template <template <class = float> class T> struct A 
 //template <template <uint8_t DigitalPin> class MOW, uint8_t bitsAfterPoint = 4, uint8_t busOrder = 0>
-class ExtTemperatureDS18B20 : public Sensor<int>
+class ExtTemperatureDS18B20C16 : public Sensor<int>
   {
   private:
-      const uint8_t bitsAfterPoint;
-      const uint8_t busOrder;
+    // Ordinal of this DS18B20 on the OW bus.
+    // FIXME: not currently used.
+    const uint8_t busOrder;
+
+    // True once initialised.
+    bool initialised;
+
+    // Current value in (shifted) C.      
+    int value;
+
   public:
-      ExtTemperatureDS18B20(uint8_t _bitsAfterPoint = 4, uint8_t _busOrder = 0) : bitsAfterPoint(_bitsAfterPoint), busOrder(_busOrder) { }
+    ExtTemperatureDS18B20C16(uint8_t _busOrder) : busOrder(_busOrder), initialised(false), value(0) { }
+
+    // Precision in bits 9,12]; 9 gives 1/2C resolution, 12 gives 1/16C resolution.
+    int getPrecisionBits() { return(9); }
+
+    // Force a read/poll of room temperature and return the value sensed in units of 1/16 C.
+    // Should be called at regular intervals (1/60s) if isJittery() is true.
+    // Expensive/slow.
+    // Not thread-safe nor usable within ISRs (Interrupt Service Routines).
+    virtual int read();
+
+    // Return last value fetched by read(); undefined before first read().
+    // Fast.
+    // Not thread-safe nor usable within ISRs (Interrupt Service Routines).
+    virtual int get() const { return(value); }
   };
+
+#define SENSOR_EXTERNAL_DS18B20_ENABLE_0 // Enable sensor zero.
+extern ExtTemperatureDS18B20C16 eds0;
 #endif
 
 
