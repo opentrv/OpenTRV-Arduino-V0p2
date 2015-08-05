@@ -1328,10 +1328,32 @@ static uint8_t countDownLEDSforCO;
 // Requested flash type (lf).
 static uint8_t lfCO;
 
+// Handle boost button-press semantics.
+// Timeout in minutes before a new boot request will be fully actioned.
+// This is kept long enough to ensure that the hub cannot have failed to see the status flip
+// unless all contact has in fact been lost.
+static const uint8_t MIN_BOOST_INTERVAL_M = 30;
+// True if the button was pressed on the previous tick.
+static bool oldButtonPressed;
+
 // Call this on even numbered seconds (with current time in seconds) to allow the CO UI to operate.
 // Should never be skipped, so as to allow the UI to remain responsive.
+//
+// The boost button for the CO relay is BUTTON_MODE_L.
+// This routine/UI cares about off-to-on active edges of the button, ie the moment of being pressed,
+// at which it will:
+//    * turn the user0visible LED solid red (for a while)
+//    * flip the status flag providing it has been more than 30 minutes since the last one
+//      (this 30 minutes being the time at which contact with the hub would be deemed lost if no comms)
+//    * send an alert message until a new poll request comes in (as indicated by a call to setLEDsCO())
 bool tickUICO(const uint_fast8_t sec)
   {
+  // Note whether the button is pressed on this tick.
+  const bool buttonPressed = (LOW == fastDigitalRead(BUTTON_MODE_L));
+  // Note whether the button has just been pressed.
+  const bool buttonJustPressed = (buttonPressed && !oldButtonPressed);
+  oldButtonPressed = buttonPressed;
+
   // All LEDs off when count-down timer is/hits zero.
   if((0 == countDownLEDSforCO) || (0 == --countDownLEDSforCO)) { lcCO = 0; setLEDs(0); }
   // Else force 'correct' requested light colour and deal with any 'flash' state.
@@ -1368,8 +1390,9 @@ bool tickUICO(const uint_fast8_t sec)
 //   * light-colour         [0,3] bit flags 1==red 2==green (lc) 0 => stop everything
 //   * light-on-time        [1,15] (0 not allowed) 30-450s in units of 30s (lt) ???
 //   * light-flash          [1,3] (0 not allowed) 1==single 2==double 3==on (lf)
+// If fromPollAndCmd is true then this was called from an incoming Poll/Cms message receipt.
 // Not ISR- safe.
-void setLEDsCO(const uint8_t lc, const uint8_t lt, const uint8_t lf)
+void setLEDsCO(const uint8_t lc, const uint8_t lt, const uint8_t lf, const bool fromPollAndCmd)
     {
     lcCO = lc;
     countDownLEDSforCO = lt * 15; // Units are 30s, ticks are 2s.

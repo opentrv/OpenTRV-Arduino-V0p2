@@ -1190,7 +1190,7 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, uint8_t *
           {
           // Act on the incoming command.
           // Set LEDs.
-          setLEDsCO(c.getLC(), c.getLT(), c.getLF());
+          setLEDsCO(c.getLC(), c.getLT(), c.getLF(), true);
           // Set radiator valve position.
           NominalRadValve.set(c.getRP());
 
