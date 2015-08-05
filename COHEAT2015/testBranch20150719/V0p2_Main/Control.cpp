@@ -2000,6 +2000,8 @@ void loopOpenTRV()
       DEBUG_SERIAL_PRINTLN();
       oldDropped = dropped;
       }
+#endif
+#if 0 && defined(DEBUG)
     // Filtered out messages are not any sort of error.
     const uint8_t filtered = RFM23B.getRXMsgsFilteredRecent();
     static uint8_t oldFiltered;
