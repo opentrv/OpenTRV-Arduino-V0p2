@@ -8,7 +8,8 @@ At the prompt enter:
 
     H nn mm
 
-terminated with newline (\n) to set the housecode to match the C1 and C2 values of the FHT8V,
+terminated with newline (NL, ASCII 10, '\n')
+to set the house code to match the C1 and C2 values of the FHT8V,
 eg if the valve showed C1 70 C2 03 then enter:
 
     H 70 03
