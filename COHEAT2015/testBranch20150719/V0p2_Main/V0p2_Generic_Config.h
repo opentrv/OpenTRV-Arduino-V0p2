@@ -41,7 +41,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
 //#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
-#define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
+//#define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
 //#define CONFIG_DORM1 // REV7 / DORM1 Winter 2014/2015 all-in-one valve unit.
 //#define CONFIG_DORM1_BOILER // REV8 / DORM1 Winter 2014/2015 boiler-control unit.
 
@@ -55,7 +55,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_BH_TESTLAB
 //#define CONFIG_DORM1_SANS32K // REV7 / DORM1 without working 32768Hz clock.
 //#define CONFIG_REV7N // REV7 with external "Model N" valve.
-//#define CONFIG_REV9 // REV9 as CC1 relay.
+#define CONFIG_REV9 // REV9 as CC1 relay.
 
 
 
@@ -103,7 +103,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #undef ENABLE_EXTENDED_CLI
 // IF DEFINED: minimise boot effort and energy eg for intermittently-powered energy-harvesting applications.
 #undef MIN_ENERGY_BOOT
-
+// IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
+#undef SENSOR_SHT21_ENABLE
 
 
 
@@ -207,7 +208,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define MIN_ENERGY_BOOT
 //// Enable use of DS18B20 temp sensor.
 //#define SENSOR_DS18B20_ENABLE
-// Enable use of SHT21 RH and temp sensor.
+//// IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
 //#define SENSOR_SHT21_ENABLE
 // Using RoHS-compliant phototransistor in place of LDR.
 #define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
@@ -261,7 +262,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #ifdef CONFIG_DHD_TESTLAB_REV4 // DHD's test lab with TRV on REV4 (cut2) board.
 // Revision of V0.2 board.
 #define V0p2_REV 4 // REV0 covers DHD's breadboard and first V0.2 PCB.
-// Enable use of SHT21 RH and temp sensor.
+// IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
 #define SENSOR_SHT21_ENABLE
 // Using RoHS-compliant phototransistor in place of LDR.
 #define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
@@ -286,7 +287,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define V0p2_REV 7
 // IF DEFINED: initial direct motor drive design.
 #define DIRECT_MOTOR_DRIVE_V1
-// Enable use of SHT21 RH and temp sensor.
+// IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
 #define SENSOR_SHT21_ENABLE
 // Using RoHS-compliant phototransistor in place of LDR.
 #define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
@@ -305,7 +306,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define V0p2_REV 8
 // No working xtal on initial batch.
 #undef WAKEUP_32768HZ_XTAL
-// TMP112 to save a few pennies?
+//// IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
 //#define SENSOR_SHT21_ENABLE
 // Using RoHS-compliant phototransistor in place of LDR.
 #define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
@@ -322,10 +323,12 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define V0p2_REV 9 // REV0 covers DHD's breadboard and first V0.2 PCB.
 //// Enable use of OneWire devices.
 //#define SUPPORT_ONEWIRE
-//// Enable use of DS18B20 temp sensor.
+//// Enable use of DS18B20 temp sensor (in lieu of on-board TMP112).
 //#define SENSOR_DS18B20_ENABLE
-// Enable use of SHT21 RH and temp sensor.
+// IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
 #define SENSOR_SHT21_ENABLE
+// IF DEFINED: enable use of additional (eg external) DS18B20 temp sensor(s).
+#define SENSOR_EXTERNAL_DS18B20_ENABLE
 // Using RoHS-compliant phototransistor in place of LDR.
 #define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // For 1st-cust REV9 boards phototransistor was accidentally pulling down not up.
@@ -417,7 +420,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // (Don't fiddle with these unless you are sure of module interdependencies, etc!)
 
 
-#ifdef COMMON_SETTINGS // FOR REV0 and REV1.
+#ifdef COMMON_SETTINGS // FOR REV0 onwards...
 #if (V0p2_REV >= 1) // && (V0p2_REV <= 8) // && !defined(CONFIG_DHD_TESTLAB_REV2) // All REV 1--8 PCBs use RFM23B.
 // IF DEFINED: RFM23 is in use in place of RFM22.
 #define RFM22_IS_ACTUALLY_RFM23 // Note: RFM23 used on V0.2 PCB.
