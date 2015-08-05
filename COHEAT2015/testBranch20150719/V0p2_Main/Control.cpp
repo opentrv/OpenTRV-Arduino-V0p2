@@ -2141,6 +2141,11 @@ void loopOpenTRV()
   DEBUG_SERIAL_PRINTLN();
 #endif
 
+#if 1 && defined(DEBUG)
+  DEBUG_SERIAL_PRINT_FLASHSTRING("DS18B20: ");
+  DEBUG_SERIAL_PRINT(extDS18B20_0.read());
+  DEBUG_SERIAL_PRINTLN();
+#endif
 
 
 

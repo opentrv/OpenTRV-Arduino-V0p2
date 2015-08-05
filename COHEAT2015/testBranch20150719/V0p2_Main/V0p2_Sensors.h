@@ -236,20 +236,48 @@ class ExtTemperatureDS18B20C16 : public Sensor<int>
     // FIXME: not currently used.
     const uint8_t busOrder;
 
+    // Precision [9,12].
+    uint8_t precision;
+
+    // Address of DS18B20 being used, else [0] == 0 if none found.
+    uint8_t address[8];
+
     // True once initialised.
     bool initialised;
 
     // Current value in (shifted) C.      
     int value;
 
+    // Initialise the device (if any) before first use.
+    // Returns true iff successful.
+    // Uses specified order DS18B20 found on bus.
+    // May need to be reinitialised if precision changed.
+    bool init();
+
   public:
-    ExtTemperatureDS18B20C16(uint8_t _busOrder) : busOrder(_busOrder), initialised(false), value(0) { }
+    // Minimum supported precision, in bits, corresponding to 1/2 C resolution.
+    static const uint8_t MIN_PRECISION = 9;
+    // Maximum supported precision, in bits, corresponding to 1/16 C resolution.
+    static const uint8_t MAX_PRECISION = 12;
+    // Default precision; defaults to minimum for speed.
+    static const uint8_t DEFAULT_PRECISION = MIN_PRECISION;
 
-    // Precision in bits 9,12]; 9 gives 1/2C resolution, 12 gives 1/16C resolution.
-    int getPrecisionBits() { return(9); }
+    // Error value returned if device unavailable or not yet read.
+    // Negative and below minimum value that DS18B20 can return legitimately (-55C). 
+    static const int INVALID_TEMP = -128 * 16; // Nominally -128C.
 
-    // Force a read/poll of room temperature and return the value sensed in units of 1/16 C.
-    // Should be called at regular intervals (1/60s) if isJittery() is true.
+    // Create instance with given bus ordinal and precision.
+    ExtTemperatureDS18B20C16(uint8_t _busOrder = 0, uint8_t _precision = DEFAULT_PRECISION) : busOrder(_busOrder), initialised(false), value(INVALID_TEMP)
+      {
+      // Coerce precision to be valid.
+      precision = constrain(_precision, MIN_PRECISION, MAX_PRECISION);
+      }
+
+    // Get current precision in bits [9,12]; 9 gives 1/2C resolution, 12 gives 1/16C resolution.
+    int getPrecisionBits() { return(precision); }
+ 
+    // Force a read/poll of temperature and return the value sensed in nominal units of 1/16 C.
+    // At sub-maximum precision lsbits will be zero or undefined.
     // Expensive/slow.
     // Not thread-safe nor usable within ISRs (Interrupt Service Routines).
     virtual int read();
@@ -261,7 +289,7 @@ class ExtTemperatureDS18B20C16 : public Sensor<int>
   };
 
 #define SENSOR_EXTERNAL_DS18B20_ENABLE_0 // Enable sensor zero.
-extern ExtTemperatureDS18B20C16 eds0;
+extern ExtTemperatureDS18B20C16 extDS18B20_0;
 #endif
 
 
