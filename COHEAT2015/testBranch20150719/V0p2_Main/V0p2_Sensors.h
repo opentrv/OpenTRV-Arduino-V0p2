@@ -290,6 +290,7 @@ class ExtTemperatureDS18B20C16 : public Sensor<int>
 
 #define SENSOR_EXTERNAL_DS18B20_ENABLE_0 // Enable sensor zero.
 extern ExtTemperatureDS18B20C16 extDS18B20_0;
+
 #endif
 
 
