@@ -132,7 +132,9 @@ bool tickUICO(uint_fast8_t sec);
 //   * light-colour         [0,3] bit flags 1==red 2==green (lc) 0 => stop everything
 //   * light-on-time        [1,15] (0 not allowed) 30-450s in units of 30s (lt) ???
 //   * light-flash          [1,3] (0 not allowed) 1==single 2==double 3==on (lf)
-void setLEDsCO(uint8_t lc, uint8_t lt, uint8_t lf);
+// If fromPollAndCmd is true then this is being called from an incoming Poll/Cms message receipt.
+// Not ISR- safe.
+void setLEDsCO(uint8_t lc, uint8_t lt, uint8_t lf, bool fromPollAndCmd);
 #endif
 
 

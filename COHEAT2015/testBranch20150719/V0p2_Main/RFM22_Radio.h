@@ -72,5 +72,10 @@ static inline uint8_t *RFM22RXPreambleAdd(uint8_t *buf)
   }
 
 
+#ifdef ALLOW_CC1_SUPPORT_RELAY
+// Send a CC1 Alert message with this unit's house code via the RFM23B.
+bool sendCC1AlertByRFM23B();
+#endif
+
 #endif
 
