@@ -873,7 +873,7 @@ int RoomTemperatureC16::read()
 // May need to be reinitialised if precision changed.
 bool ExtTemperatureDS18B20C16::init()
   {
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("DS18B20 init...");
+//  DEBUG_SERIAL_PRINTLN_FLASHSTRING("DS18B20 init...");
   bool found = false;
 
   // Ensure no bad search state.
@@ -887,7 +887,7 @@ bool ExtTemperatureDS18B20C16::init()
       break;
       }
 
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
     // Found a device.
     DEBUG_SERIAL_PRINT_FLASHSTRING("addr:");
     for(int i = 0; i < 8; ++i)
@@ -900,13 +900,13 @@ bool ExtTemperatureDS18B20C16::init()
 
     if(0x28 != address[0])
       {
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
       DEBUG_SERIAL_PRINTLN_FLASHSTRING("Not a DS18B20, skipping...");
 #endif
       continue;
       }
 
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
     DEBUG_SERIAL_PRINTLN_FLASHSTRING("Setting precision...");
 #endif
     MinOW.reset();
@@ -967,6 +967,7 @@ int ExtTemperatureDS18B20C16::read()
   return(rawC16);
   }
 #endif
+
 
 #if defined(SENSOR_EXTERNAL_DS18B20_ENABLE_0) // Enable sensor zero.
 extern ExtTemperatureDS18B20C16 extDS18B20_0(0);
