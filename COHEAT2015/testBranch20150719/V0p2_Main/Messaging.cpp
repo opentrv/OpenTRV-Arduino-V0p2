@@ -1201,8 +1201,8 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, uint8_t *
 #else
           const uint8_t rh = 0; // RH% not available.
 #endif
-          const uint8_t tp = 0; // FIXME: get the real sensor data.
-          const uint8_t tr = (uint8_t) constrain(TemperatureC16.read() >> 2, 0, 199); // Scale from 1/16C to 1/4C [0,50] for TX.
+          const uint8_t tp = (uint8_t) constrain(extDS18B20_0.read() >> 3, 0, 199); // Scale to to 1/2C [0,100[ for TX.
+          const uint8_t tr = (uint8_t) constrain(TemperatureC16.read() >> 2, 0, 199); // Scale from 1/16C to 1/4C [0,50[ for TX.
           const uint8_t al = AmbLight.read() >> 2; // Scale from [0,255] to [1,62] for TX (allow value coercion at extremes).
           const bool s = false; // FIXME: get the real sensor data.
           const bool w = (fastDigitalRead(BUTTON_LEARN2_L) != LOW); // BUTTON_LEARN2_L high means open circuit means door/window open.
@@ -1211,8 +1211,7 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, uint8_t *
               OTProtocolCC::CC1PollResponse::make(hc1, hc2, rh, tp, tr, al, s, w, sy);
           // Send message back to hub.
           // Hub can poll again if it does not see the response.
-          // TODO: if we start responding very quickly to RX messages then
-          // MAY NEED A DELAY HERE TO LET THE HUB RECOVER AND REVERT TO RX MODE.    
+          // TODO: may need to insert a delay to allow hub to be ready if use of read() above is not enough.
           uint8_t txbuf[STATS_MSG_START_OFFSET + OTProtocolCC::CC1PollResponse::primary_frame_bytes+1]; // More than large enough for preamble + sync + alert message.
           uint8_t *const bptr = RFM22RXPreambleAdd(txbuf);
           const uint8_t bodylen = r.encodeSimple(bptr, sizeof(txbuf) - STATS_MSG_START_OFFSET, true);
