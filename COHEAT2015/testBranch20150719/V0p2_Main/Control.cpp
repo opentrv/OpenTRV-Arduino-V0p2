@@ -2192,6 +2192,8 @@ void loopOpenTRV()
       }
 #endif
     }
+  // Handling the UI may have taken a little while, so process I/O a little.
+  handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O.
 
 
 
@@ -2211,6 +2213,8 @@ void loopOpenTRV()
     // ---------- HALF SECOND #1 -----------
     useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V); 
 //    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@1"); }
+    // Handling the FHT8V may have taken a little while, so process I/O a little.
+    handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O.
     }
 #endif
 
@@ -2400,6 +2404,8 @@ void loopOpenTRV()
     // ---------- HALF SECOND #2 -----------
     useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V); 
 //    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@2"); }
+    // Handling the FHT8V may have taken a little while, so process I/O a little.
+    handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O.
     }
 #endif
 
@@ -2412,6 +2418,8 @@ void loopOpenTRV()
     // ---------- HALF SECOND #3 -----------
     useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V); 
 //    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@3"); }
+    // Handling the FHT8V may have taken a little while, so process I/O a little.
+    handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O.
     }
 #endif
 

@@ -659,7 +659,7 @@ void getLastJSONStats(char *buf);
 #define getLastJSONStats(buf) {*(buf) = '\0';} // Nothing to receive.
 #endif
 
-// Incrementally process I/O and queued messages, including from the radio link.
+// Incrementally poll and process I/O and queued messages, including from the radio link.
 // Returns true if some work was done.
 // This may mean printing them to Serial (which the passed Print object usually is),
 // or adjusting system parameters,

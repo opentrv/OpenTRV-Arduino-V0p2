@@ -228,15 +228,15 @@ static void inline tinyPause() { nap(WDTO_15MS); } // 15ms vs 18ms nominal for P
 #define SMALL_PAUSE_MS 30
 static void inline smallPause() { nap(WDTO_30MS); }
 // Medium low-power sleep to approximately match the PICAXE V0.09 routine of the same name.
-// Premature wakeups may be allowed to avoid blocking I/O polling for too long.
+// Premature wakeups MAY be allowed to avoid blocking I/O polling for too long.
 #define MEDIUM_PAUSE_MS 60
-static void inline mediumPause() { nap(WDTO_60MS, true); } // 60ms vs 144ms nominal for PICAXE V0.09 impl.
+static void inline mediumPause() { nap(WDTO_60MS); } // 60ms vs 144ms nominal for PICAXE V0.09 impl.
 // Big low-power sleep to approximately match the PICAXE V0.09 routine of the same name.
-// Premature wakeups may be allowed to avoid blocking I/O polling for too long.
+// Premature wakeups MAY be allowed to avoid blocking I/O polling for too long.
 #define BIG_PAUSE_MS 120
-static void inline bigPause() { nap(WDTO_120MS, true); } // 120ms vs 288ms nominal for PICAXE V0.09 impl.
+static void inline bigPause() { nap(WDTO_120MS); } // 120ms vs 288ms nominal for PICAXE V0.09 impl.
 
-#if defined(WAKEUP_32768HZ_XTAL) || 1 // FIXME: need to not use getSubCycleTime() where slow clock NOT available.
+#if defined(WAKEUP_32768HZ_XTAL) || 1 // FIXME: avoid getSubCycleTime() where slow clock NOT available.
 // Get fraction of the way through the basic cycle in range [0,255].
 // This can be used for precision timing during the cycle,
 // or to avoid overrunning a cycle with tasks of variable timing.
