@@ -329,6 +329,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define SENSOR_SHT21_ENABLE
 // IF DEFINED: enable use of additional (eg external) DS18B20 temp sensor(s).
 #define SENSOR_EXTERNAL_DS18B20_ENABLE
+// SENSOR_EXTERNAL_DS18B20_ENABLE requires SUPPORTS_MINIMAL_ONEWIRE.
+#define SUPPORTS_MINIMAL_ONEWIRE
 // Using RoHS-compliant phototransistor in place of LDR.
 #define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // For 1st-cust REV9 boards phototransistor was accidentally pulling down not up.
