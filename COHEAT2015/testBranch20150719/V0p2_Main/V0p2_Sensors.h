@@ -213,7 +213,7 @@ extern MinimalOneWire<PIN_OW_DQ_DATA> MinOW;
 
 
 
-#ifdef SUPPORTS_MINIMAL_ONEWIRE
+#if defined(SENSOR_EXTERNAL_DS18B20_ENABLE) // Needs defined(SUPPORTS_MINIMAL_ONEWIRE)
 // External/off-board DS18B20 temperature sensor.
 // Requires OneWire support.
 // Will in future be templated on:
@@ -232,11 +232,31 @@ extern MinimalOneWire<PIN_OW_DQ_DATA> MinOW;
 class ExtTemperatureDS18B20 : public Sensor<int>
   {
   private:
+      // Current value in (shifted) C.      
+      int value;
+
       const uint8_t bitsAfterPoint;
       const uint8_t busOrder;
+
   public:
-      ExtTemperatureDS18B20(uint8_t _bitsAfterPoint = 4, uint8_t _busOrder = 0) : bitsAfterPoint(_bitsAfterPoint), busOrder(_busOrder) { }
+      ExtTemperatureDS18B20(uint8_t _busOrder = 0, uint8_t _bitsAfterPoint = 4)
+        : value(0),
+          bitsAfterPoint(_bitsAfterPoint), busOrder(_busOrder) { }
+
+    // Force a read/poll of room temperature and return the value sensed in units of 1/16 C.
+    // Should be called at regular intervals (1/60s) if isJittery() is true.
+    // Expensive/slow.
+    // Not thread-safe nor usable within ISRs (Interrupt Service Routines).
+    virtual int read();
+
+    // Return last value fetched by read(); undefined before first read().
+    // Fast.
+    // Not thread-safe nor usable within ISRs (Interrupt Service Routines).
+    virtual int get() const { return(value); }
   };
+
+#define SENSOR_EXTERNAL_DS18B20_ENABLE_0 // Enable sensor zero.
+extern ExtTemperatureDS18B20 eds0;
 #endif
 
 
