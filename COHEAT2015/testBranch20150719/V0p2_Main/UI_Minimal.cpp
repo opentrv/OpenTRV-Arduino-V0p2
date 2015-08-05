@@ -1329,7 +1329,7 @@ static bool oldButtonPressed;
 //    * turn the user0visible LED solid red (for a while)
 //    * flip the status flag providing it has been more than 30 minutes since the last one
 //      (this 30 minutes being the time at which contact with the hub would be deemed lost if no comms)
-//    * send an alert message immeiately
+//    * send an alert message immediately (with the usual 'likely-to-get-heard loudness settings)
 //      and possibly periodically until a new poll request comes in (as indicated by a call to setLEDsCO())
 bool tickUICO(const uint_fast8_t sec)
   {
