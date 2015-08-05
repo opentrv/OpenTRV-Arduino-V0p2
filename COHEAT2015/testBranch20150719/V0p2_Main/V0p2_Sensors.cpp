@@ -25,9 +25,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015,
 #include <util/atomic.h>
 
 #include <Wire.h> // Arduino I2C library.
-#ifdef REQUIRES_ONEWIRE22_LIB
-#include <OneWire.h>
-#endif
+//#ifdef REQUIRES_ONEWIRE22_LIB
+//#include <OneWire.h>
+//#endif
+#include <OTV0p2Base.h>
 
 #include "Sensor.h"
 
