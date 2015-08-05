@@ -1,0 +1,30 @@
+How to set a house code on a REV9 unit to match the FHT8V valve’s
+==================================================================
+
+When the ‘>’ CLI prompt shows you have a short time (<<2s) to enter a command.
+(You can wake the CLI with a few newlines; it will go to sleep again after a couple of minutes.)
+
+At the prompt enter:
+
+    H nn mm
+
+terminated with newline (\n) to set the housecode to match the C1 and C2 values of the FHT8V,
+eg if the valve showed C1 70 C2 03 then enter:
+
+    H 70 03
+
+or even just:
+
+    H 70 3
+
+so your terminal session would look like:
+
+    >H 70 3
+    =F1%@23CF;X0;T13 38 W255 0 F255 0 W255 0 F255 0;S 7 18;HC70 3 s
+    FHT8V SYNC...
+
+(the = status line may have some different values on it)
+
+and you should see the REV9 unit attempt to start (re)sync with the valve immediately.
+
+(The house code can be cleared with just a ‘H’ on its own should you want to do that.)
