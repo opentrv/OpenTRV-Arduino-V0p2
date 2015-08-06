@@ -31,7 +31,7 @@ Setting up the REV9/relay and FHT8V.
    and shut down (not listen for any more radio comms) and need power cycling in conjunction with
    the REV9 to resync.
 
-So note: the REV9 and FHT8V share the housecode ID.
+Note: the REV9 and FHT8V share a housecode/ID, so the REV9 is a proxy for the FHT8V.
 
 
 REV2 hub to REV9 relay comms
@@ -57,12 +57,12 @@ REV2 hub to REV9 relay comms
 
 REV9 relay to REV2 hub comms
 
-   1) Pressing a button on the REV9 should cause an alert to be sent to all listening REV2 hubs,
-      seen as (from REV9 with housecode 12 34):
+1) Pressing a button on the REV9 should cause an alert to be sent to all listening REV2 hubs,
+   seen as (from REV9 with housecode 12 34):
 
     +CC1 ! 12 34
 
-   2) That should be sent randomly about once every 2 minutes by the REV9 relay
-      until the REV9 relay sees and responds to a poll from a REV2 hub.
+2) That should be sent randomly about once every 2 minutes by the REV9 relay
+   until the REV9 relay sees and responds to a poll from a REV2 hub.
 
 Note: the initial (cut1) REV9 boards had the switch stuck in the on position.
