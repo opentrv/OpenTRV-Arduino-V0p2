@@ -30,3 +30,35 @@ Setting up the REV9/relay and FHT8V.
 9) If the FHT8V stops hearing from the REV9 for an extended period it will move to (and show) 30%
    and shut down (not listen for any more radio comms) and need power cycling in conjunction with
    the REV9 to resync.
+
+
+REV2 hub to REV9 relay comms
+
+1) At a REV2 send from the CLI a poll/command starting +CC1 ? eg:
+
+    >+CC1 ? 25 28 5 2 2 2
+
+   to send to the REV9 (and thus FHT8V) with house code 25 28 in this case.
+   This command also sets the valve position to 5%,
+   and sets the LEDs to do green double-flashes for 60 seconds.
+
+   See 20150803HubInteraction.txt for more details of the commands.
+
+   You should also see a response from the REV9 with house code 25 28 such as:
+
+    +CC1 * 25 28 25 0 98 62 1 1 1
+
+   See 20150803HubInteraction.txt for more details of the values.
+
+
+REV9 relay to REV2 hub comms
+
+   1) Pressing a button on the REV9 should cause an alert to be sent to all listening REV2 hubs,
+      seen as (from REV9 with housecode 25 28):
+
+    +CC1 ! 25 28
+
+   2) That should be sent randomly about once every 2 minutes by the REV9 relay
+      until the REV9 relay sees and response to a poll from a REV2 hub.
+
+Note: the initial REV9 boards had the switch stuck in the on position.
