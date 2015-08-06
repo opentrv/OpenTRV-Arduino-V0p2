@@ -1,7 +1,6 @@
 Installation Basics
 
 
-
 Setting up the REV9/relay and FHT8V.
 
 1) Put batteries in the FHT8V and note the house code that comes up after C1 and C2,
