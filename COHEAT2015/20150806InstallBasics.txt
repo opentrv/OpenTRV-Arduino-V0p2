@@ -31,6 +31,8 @@ Setting up the REV9/relay and FHT8V.
    and shut down (not listen for any more radio comms) and need power cycling in conjunction with
    the REV9 to resync.
 
+So note: the REV9 and FHT8V share the housecode ID.
+
 
 REV2 hub to REV9 relay comms
 
