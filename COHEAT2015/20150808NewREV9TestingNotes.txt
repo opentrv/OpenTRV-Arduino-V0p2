@@ -1,0 +1,4 @@
+Testing/fixing/patching notes for two new (cut2) REV9 delivered 2015/08/06.
+
+  * Loaded latest REV9 code via FTDI (both boards: AVR with just bootloader, and bootloader + app).
+  * Set housecode and started controlling FHT8V: onboard trace antenna apparently functional in quiet radio env.
