@@ -6,3 +6,5 @@ Testing/fixing/patching notes for two new (cut2) REV9 delivered 2015/08/06.
   * TX to FHT8V from REV9 cut2 verified (sync and valve position control).
   * TX to REV2 from REV9 cut2 verified (alert and poll response messages).
   * TX to REV9 from REV2 cut2 verified (poll/command messages).
+  * Verified ambient light sensor value rises with light level, though may not be a bit low on sensitivity.
+  * Verified DS18B20 response to temperature, and absence shows as 0C reading.
