@@ -1,0 +1,33 @@
+Installation Basics
+
+
+
+Setting up the REV9/relay and FHT8V.
+
+1) Put batteries in the FHT8V and note the house code that comes up after C1 and C2,
+   eg for a display of C1 12 C2 34 then the house code is 12 34.
+
+2) Fit the FHT8V to the rad once the motor has stopped whirring and A2 is shown if not already fitted.
+
+3) Boot the REV9 on the CLI.  Hit send/return periodically to keep the CLI awake.
+
+4) Press the FHT8V button and wait for the 0 to come up.
+
+5) Enter the housecode immediately after the '>' CLI prompt comes up as H 12 34 for the above example.
+   Entering the house codes like this should force the REV9 relay to restart the sync process.
+
+6) The REV9 should show it starting to sync with the FHT8V and then about 2 minutes later show FHT SYNC FINAL.
+   If the bleeper has not been disabled on the FHT8V then each of these should produce a bleep,
+   confirming that everything is working.
+
+7) The status messages (starting with =) on the REV9 should now show the valve position at 1%,
+   and after about 2 minutes and an "FHT8V TX" the FHT8V should whirr a little and move to 1%.
+
+8) If nothing is heard from the hub by the REV9 relay for a while
+   (usually 30 minutes, less during initialisation)
+   then the REV9 will show complaints about not hearing from the hub and moving to a safe valve position,
+   the status messages should show 33%, and the FHT8V should move to 33% and show that on its display.
+
+9) If the FHT8V stops hearing from the REV9 for an extended period it will move to (and show) 30%
+   and shut down (not listen for any more radio comms) and need power cycling in conjunction with
+   the REV9 to resync.
