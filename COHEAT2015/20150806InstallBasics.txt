@@ -36,17 +36,19 @@ REV2 hub to REV9 relay comms
 
 1) At a REV2 send from the CLI a poll/command starting +CC1 ? eg:
 
-    +CC1 ? 25 28 5 2 2 2
+    +CC1 ? 12 34 5 2 2 2
 
-   to send to the REV9 (and thus FHT8V) with house code 25 28 in this case.
+   to send to the REV9 (and thus FHT8V) with house code 12 34 in this case.
    This command also sets the valve position to 5%,
    and sets the LEDs to do green double-flashes for 60 seconds.
 
    See 20150803HubInteraction.txt for more details of the commands.
 
-   You should also see a response from the REV9 with house code 25 28 such as:
+   You should also see a response from the REV9 with house code 12 34 such as:
 
-    +CC1 * 25 28 25 0 98 62 1 1 1
+    +CC1 * 12 34 25 0 98 62 1 1 1
+
+   A REV9 relay will only respond to ? messages with its own house code in.
 
    See 20150803HubInteraction.txt for more details of the values.
 
@@ -54,9 +56,9 @@ REV2 hub to REV9 relay comms
 REV9 relay to REV2 hub comms
 
    1) Pressing a button on the REV9 should cause an alert to be sent to all listening REV2 hubs,
-      seen as (from REV9 with housecode 25 28):
+      seen as (from REV9 with housecode 12 34):
 
-    +CC1 ! 25 28
+    +CC1 ! 12 34
 
    2) That should be sent randomly about once every 2 minutes by the REV9 relay
       until the REV9 relay sees and responds to a poll from a REV2 hub.
