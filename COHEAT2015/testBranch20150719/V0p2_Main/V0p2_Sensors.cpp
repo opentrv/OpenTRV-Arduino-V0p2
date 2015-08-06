@@ -275,7 +275,7 @@ MinimalOneWire<PIN_OW_DQ_DATA> MinOW;
 #ifdef AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 #define ALREFERENCE INTERNAL // Internal 1.1V reference.
 #ifdef AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400_WRONG_WAY
-#define ALREFERENCE DEFAULT // Supply voltage as reference for REV9 first cut.  HACK HACK!
+#define ALREFERENCE DEFAULT // Supply voltage as reference for REV9 cut1.  HACK HACK!
 #endif
 // If defined, then allow adaptive compression of top part of range when would otherwise max out.
 // This may be somewhat supply-voltage dependent, eg capped by the supply voltage.

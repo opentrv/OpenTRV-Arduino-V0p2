@@ -55,7 +55,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_BH_TESTLAB
 //#define CONFIG_DORM1_SANS32K // REV7 / DORM1 without working 32768Hz clock.
 //#define CONFIG_REV7N // REV7 with external "Model N" valve.
-#define CONFIG_REV9 // REV9 as CC1 relay.
+//#define CONFIG_REV9_cut1 // REV9 as CC1 relay, cut1 of board.
+#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
 
 
 
@@ -323,10 +324,15 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #endif
 
 // -------------------------
+#ifdef CONFIG_REV9_cut1
+#define V0p2_REV 9 // Just like cut2 but with some bugs...
+// For 1st-cust REV9 boards phototransistor was accidentally pulling down not up.
+#define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400_WRONG_WAY
+#endif
 
-#ifdef CONFIG_REV9 // REV9 (initial board release) derived from REV4.
+#ifdef CONFIG_REV9 // REV9 cut2, derived from REV4.
 // Revision of V0.2 board.
-#define V0p2_REV 9 // REV0 covers DHD's breadboard and first V0.2 PCB.
+#define V0p2_REV 9
 //// Enable use of OneWire devices.
 //#define SUPPORT_ONEWIRE
 //// Enable use of DS18B20 temp sensor (in lieu of on-board TMP112).
@@ -339,8 +345,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define SUPPORTS_MINIMAL_ONEWIRE
 // Using RoHS-compliant phototransistor in place of LDR.
 #define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
-// For 1st-cust REV9 boards phototransistor was accidentally pulling down not up.
-#define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400_WRONG_WAY
 // IF UNDEFINED: this unit cannot act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
 #undef ENABLE_BOILER_HUB
 // IF DEFINED: allow RX of stats frames.
