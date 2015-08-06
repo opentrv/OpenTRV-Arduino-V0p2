@@ -36,7 +36,7 @@ REV2 hub to REV9 relay comms
 
 1) At a REV2 send from the CLI a poll/command starting +CC1 ? eg:
 
-    >+CC1 ? 25 28 5 2 2 2
+    +CC1 ? 25 28 5 2 2 2
 
    to send to the REV9 (and thus FHT8V) with house code 25 28 in this case.
    This command also sets the valve position to 5%,
@@ -59,6 +59,6 @@ REV9 relay to REV2 hub comms
     +CC1 ! 25 28
 
    2) That should be sent randomly about once every 2 minutes by the REV9 relay
-      until the REV9 relay sees and response to a poll from a REV2 hub.
+      until the REV9 relay sees and responds to a poll from a REV2 hub.
 
-Note: the initial REV9 boards had the switch stuck in the on position.
+Note: the initial (cut1) REV9 boards had the switch stuck in the on position.
