@@ -58,3 +58,5 @@ General notes:
  2) Bandwidth is a very scare resource; don't send more than you have to.
  3) Poll/command should be sent by hub at least every 15m; relay will timeout after 30m and go to 'safe' state.
  4) Poll response should be sent by relay within a few seconds (allow 10s) of poll/command.
+ 5) Note that ALL REV2/hub units potentially hear ALL traffic (eg alerts and poll responses).
+ 6) Note that REV9s will only respond to poll/cmd messages addressed to their housecode.
