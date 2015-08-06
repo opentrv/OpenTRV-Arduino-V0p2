@@ -1,0 +1,12 @@
+Installation Basics
+
+Setting up the REV9/relay and FHT8V.
+
+1) Put batteries in the FHT8V and note the house code that comes up after C1 and C2,
+   eg for a display of C1 12 C2 34 then the house code is 12 34.
+
+2) Fit the FHT8V to the rad once the motor has stopped whirring and A2 is shown if not already fitted.
+
+3) Boot the REV9 on the CLI.  Hit send/return periodically to keep the CLI awake.
+
+4) Press the FHT8V button and wait for 
