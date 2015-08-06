@@ -25,6 +25,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 
 #include <util/atomic.h>
 #include <Arduino.h>
+#include <OTV0p2Base.h>
 
 #include "V0p2_Main.h"
 #include "Sensor.h"
@@ -34,8 +35,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 // Meant to be similar to use to OneWire library V2.2.
 // Supports search but not necessarily CRC.
 // Designed to work with 1MHz/1MIPS CPU clock.
-#if defined(PIN_OW_DQ_DATA) && defined(SUPPORT_ONEWIRE)
-#define SUPPORTS_MINIMAL_ONEWIRE
+
 // OneWire protocol: http://www.maximintegrated.com/en/app-notes/index.mvp/id/126
 //    The system must be capable of generating an accurate and repeatable 1us delay for standard speed ... 
 //    The four basic operations of a 1-Wire bus are Reset, Write 1 bit, Write 0 bit, and Read bit.
@@ -65,16 +65,16 @@ class MinimalOneWireBase
     // Standardised delays; must be inlined and usually have interrupts turned off around them.
     // These are all reduced by enough time to allow two instructions, eg maximally-fast port operations.
     static const uint8_t stdDelayReduction = 2;
-    inline void delayA() const { delay_us(  6 - stdDelayReduction); }
-    inline void delayB() const { delay_us( 64 - stdDelayReduction); }
-    inline void delayC() const { delay_us( 60 - stdDelayReduction); }
-    inline void delayD() const { delay_us( 10 - stdDelayReduction); }
-    inline void delayE() const { delay_us(  9 - stdDelayReduction); }
-    inline void delayF() const { delay_us( 55 - stdDelayReduction); }
-    inline void delayG() const { delay_us(  0 - stdDelayReduction); }
-    inline void delayH() const { delay_us(480 - stdDelayReduction); }
-    inline void delayI() const { delay_us( 70 - stdDelayReduction); }
-    inline void delayJ() const { delay_us(410 - stdDelayReduction); }
+    inline void delayA() const { OTV0P2BASE_delay_us(  6 - stdDelayReduction); }
+    inline void delayB() const { OTV0P2BASE_delay_us( 64 - stdDelayReduction); }
+    inline void delayC() const { OTV0P2BASE_delay_us( 60 - stdDelayReduction); }
+    inline void delayD() const { OTV0P2BASE_delay_us( 10 - stdDelayReduction); }
+    inline void delayE() const { OTV0P2BASE_delay_us(  9 - stdDelayReduction); }
+    inline void delayF() const { OTV0P2BASE_delay_us( 55 - stdDelayReduction); }
+    inline void delayG() const { OTV0P2BASE_delay_us(  0 - stdDelayReduction); }
+    inline void delayH() const { OTV0P2BASE_delay_us(480 - stdDelayReduction); }
+    inline void delayI() const { OTV0P2BASE_delay_us( 70 - stdDelayReduction); }
+    inline void delayJ() const { OTV0P2BASE_delay_us(410 - stdDelayReduction); }
 
     // Fast direct GPIO operations.
     // Will be fastest (eg often single instructions) if their arguments are compile-time constants.
@@ -206,7 +206,93 @@ class MinimalOneWire : public MinimalOneWireBase
       if(high) { delayB(); } else { delayD(); }
       }
   };
+#if defined(PIN_OW_DQ_DATA) && defined(SUPPORT_ONEWIRE)
+#define SUPPORTS_MINIMAL_ONEWIRE
 extern MinimalOneWire<PIN_OW_DQ_DATA> MinOW;
+#endif
+
+
+
+#if defined(SENSOR_EXTERNAL_DS18B20_ENABLE) // Needs defined(SUPPORTS_MINIMAL_ONEWIRE)
+// External/off-board DS18B20 temperature sensor in nominal 1/16 C.
+// Requires OneWire support.
+// Will in future be templated on:
+//   * the MinimalOneWire instance to use
+//   * precision (9, 10, 11 or 12 bits, 12 for the full C/16 resolution),
+//     noting that lower precision is faster,
+//     and for example 1C will be 0x1X
+//     with more bits of the final nibble defined for with higher precision
+//   * enumeration order of this device on the OW bus,
+//     with 0 (the default) being the first found by the usual deterministic scan
+//   * whether the CRC should de checked for incoming data
+//     to improve reliability on long connections at a code and CPU cost
+// Multiple DS18B20s can nominally be supported on one or multiple OW buses.
+// Not all template parameter combinations may be supported.
+// Provides temperature as a signed int value with 0C == 0 at all precisions.
+//template <template <class = float> class T> struct A 
+//template <template <uint8_t DigitalPin> class MOW, uint8_t bitsAfterPoint = 4, uint8_t busOrder = 0>
+class ExtTemperatureDS18B20C16 : public Sensor<int>
+  {
+  private:
+    // Ordinal of this DS18B20 on the OW bus.
+    // FIXME: not currently used.
+    const uint8_t busOrder;
+
+    // Precision [9,12].
+    uint8_t precision;
+
+    // Address of DS18B20 being used, else [0] == 0 if none found.
+    uint8_t address[8];
+
+    // True once initialised.
+    bool initialised;
+
+    // Current value in (shifted) C.      
+    int value;
+
+    // Initialise the device (if any) before first use.
+    // Returns true iff successful.
+    // Uses specified order DS18B20 found on bus.
+    // May need to be reinitialised if precision changed.
+    bool init();
+
+  public:
+    // Minimum supported precision, in bits, corresponding to 1/2 C resolution.
+    static const uint8_t MIN_PRECISION = 9;
+    // Maximum supported precision, in bits, corresponding to 1/16 C resolution.
+    static const uint8_t MAX_PRECISION = 12;
+    // Default precision; defaults to minimum for speed.
+    static const uint8_t DEFAULT_PRECISION = MIN_PRECISION;
+
+    // Error value returned if device unavailable or not yet read.
+    // Negative and below minimum value that DS18B20 can return legitimately (-55C). 
+    static const int INVALID_TEMP = -128 * 16; // Nominally -128C.
+
+    // Create instance with given bus ordinal and precision.
+    ExtTemperatureDS18B20C16(uint8_t _busOrder = 0, uint8_t _precision = DEFAULT_PRECISION) : busOrder(_busOrder), initialised(false), value(INVALID_TEMP)
+      {
+      // Coerce precision to be valid.
+      precision = constrain(_precision, MIN_PRECISION, MAX_PRECISION);
+      }
+
+    // Get current precision in bits [9,12]; 9 gives 1/2C resolution, 12 gives 1/16C resolution.
+    int getPrecisionBits() { return(precision); }
+ 
+    // Force a read/poll of temperature and return the value sensed in nominal units of 1/16 C.
+    // At sub-maximum precision lsbits will be zero or undefined.
+    // Expensive/slow.
+    // Not thread-safe nor usable within ISRs (Interrupt Service Routines).
+    virtual int read();
+
+    // Return last value fetched by read(); undefined before first read().
+    // Fast.
+    // Not thread-safe nor usable within ISRs (Interrupt Service Routines).
+    virtual int get() const { return(value); }
+  };
+
+#define SENSOR_EXTERNAL_DS18B20_ENABLE_0 // Enable sensor zero.
+extern ExtTemperatureDS18B20C16 extDS18B20_0;
+
 #endif
 
 
@@ -290,7 +376,7 @@ class AmbientLight
     // Unknown, so always false.
     // Thread-safe and usable within ISRs (Interrupt Service Routines).
     static bool isRoomDark() { return(false); }
-  }
+  };
 #endif
 // Singleton implementation/instance.
 extern AmbientLight AmbLight;
@@ -302,9 +388,7 @@ extern AmbientLight AmbLight;
 
 
 
-
-
-// Room/ambient temperature.
+// Room/ambient temperature, usually from the on-board sensor.
 
 // Sensor for ambient/room temperature in 1/16th of one degree Celsius.
 // An error may be indicated by returning a zero or (very) negative value.

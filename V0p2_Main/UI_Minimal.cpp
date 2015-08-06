@@ -133,12 +133,16 @@ bool tickUI(const uint_fast8_t sec)
       {
       // Run down UI iteraction timer if need be, one tick per minute.
       if(uiTimeoutM > 0) { --uiTimeoutM; }
-      // Run down CLI timer if need be.
-      if(CLITimeoutM > 0) { --CLITimeoutM; }
+//      // Run down CLI timer if need be.
+//      if(CLITimeoutM > 0) { --CLITimeoutM; }
       }
     }
 
+#ifdef OCCUPANCY_SUPPORT
   const bool reportedRecently = Occupancy.reportedRecently();
+#else
+  const bool reportedRecently = false;
+#endif
 // Drive second UI LED if available.
 #if defined(LED_UI2_ON)
   // Flash 2nd UI LED very briefly every 'tick' while activity has recently been reported.
@@ -240,7 +244,11 @@ bool tickUI(const uint_fast8_t sec)
 
     // Keep reporting UI status if the user has just touched the unit in some way.
     // (Or if occupancy/activity was just detected, to give the use some feedback for indirectly interacting.)
-    const bool justTouched = statusChange || veryRecentUIControlUse() || Occupancy.reportedRecently();
+    const bool justTouched = statusChange || veryRecentUIControlUse()
+#ifdef OCCUPANCY_SUPPORT
+        || Occupancy.reportedRecently()
+#endif
+        ;
 
     // Mode button not pressed: indicate current mode with flash(es); more flashes if actually calling for heat.
     // Force display while UI controls are being used, eg to indicate temp pot position.
@@ -252,7 +260,11 @@ bool tickUI(const uint_fast8_t sec)
       // Flash infrequently if no recently operated controls and not in BAKE mode and not actually calling for heat;
       // this is to conserve batteries for those people who leave the valves in WARM mode all the time.
       if(justTouched ||
-         ((forthTick || NominalRadValve.isCallingForHeat() || inBakeMode()) && !AmbLight.isRoomDark()))
+         ((forthTick
+#if defined(ENABLE_NOMINAL_RAD_VALVE) && defined(LOCAL_TRV)
+             || NominalRadValve.isCallingForHeat()
+#endif
+             || inBakeMode()) && !AmbLight.isRoomDark()))
         {
         // First flash to indicate WARM mode (or pot being twiddled).
         LED_HEATCALL_ON();
@@ -264,6 +276,7 @@ bool tickUI(const uint_fast8_t sec)
         else if(!isComfortTemperature(wt)) { tinyPause(); }
         else { mediumPause(); }
 
+#if defined(ENABLE_NOMINAL_RAD_VALVE) && defined(LOCAL_TRV)
         // Second flash to indicate actually calling for heat.
         if(NominalRadValve.isCallingForHeat())
           {
@@ -288,9 +301,11 @@ bool tickUI(const uint_fast8_t sec)
             }
 #endif
           }
+#endif
         }
       }
  
+#if defined(ENABLE_NOMINAL_RAD_VALVE) && defined(LOCAL_TRV)
     // Even in FROST mode, and if actually calling for heat (eg opening the rad valve significantly, etc)
     // then emit a tiny double flash on every 4th tick.
     // This call for heat may be frost protection or pre-warming / anticipating demand.
@@ -309,6 +324,7 @@ bool tickUI(const uint_fast8_t sec)
       LED_HEATCALL_ON(); // flash
       veryTinyPause();
       }
+#endif
 
     // Enforce any changes that may have been driven by other UI components (ie other than MODE button).
     // Eg adjustment of temp pot / eco bias changing scheduled state.
@@ -376,6 +392,105 @@ void checkUserSchedule()
   }
 
 
+
+
+
+#ifdef ENABLE_EXTENDED_CLI
+// Handle CLI extension commands.
+// Commands of form:
+//   +EXT .....
+// where EXT is the name of the extension, usually 3 letters.
+
+#include <OTProtocolCC.h>
+#include "RFM22_Radio.h"
+
+// It is acceptable for extCLIHandler() to alter the buffer passed,
+// eg with strtok_t().
+static bool extCLIHandler(Print *const p, char *const buf, const uint8_t n)
+  {
+
+#ifdef ALLOW_CC1_SUPPORT_RELAY
+  // If CC1 replay then allow +CC1 ! command to send an alert to the hub.
+  // Full command is:
+  //    +CC1 !
+  // This unit's housecode is used in the frame sent.
+  const uint8_t CC1_A_PREFIX_LEN = 6;
+  // Falling through rather than return(true) indicates failure.
+  if((n >= CC1_A_PREFIX_LEN) && (0 == strncmp("+CC1 !", buf, CC1_A_PREFIX_LEN)))
+    {
+    // Send the alert!
+    return(sendCC1AlertByRFM23B());
+    }
+#endif
+
+#ifdef ALLOW_CC1_SUPPORT_HUB
+  // If CC1 hub then allow +CC1 ? command to poll a remote relay.
+  // Full command is:
+  //    +CC1 ? hc1 hc2 rp lc lt lf
+  // ie six numeric arguments, see below, with out-of-range values coerced (other than housecodes):
+//            // Factory method to create instance.
+//            // Invalid parameters (except house codes) will be coerced into range.
+//            //   * House code (hc1, hc2) of valve controller that the poll/command is being sent to.
+//            //   * rad-open-percent     [0,100] 0-100 in 1% steps, percent open approx to set rad valve (rp)
+//            //   * light-colour         [0,3] bit flags 1==red 2==green (lc) 0 => stop everything
+//            //   * light-on-time        [1,15] (0 not allowed) 30-450s in units of 30s (lt) ???
+//            //   * light-flash          [1,3] (0 not allowed) 1==single 2==double 3==on (lf)
+//            // Returns instance; check isValid().
+//            static CC1PollAndCommand make(uint8_t hc1, uint8_t hc2,
+//                                          uint8_t rp,
+//                                          uint8_t lc, uint8_t lt, uint8_t lf);
+  const uint8_t CC1_Q_PREFIX_LEN = 7;
+  const uint8_t CC1_Q_PARAMS = 6;
+  // Falling through rather than return(true) indicates failure.
+  if((n >= CC1_Q_PREFIX_LEN) && (0 == strncmp("+CC1 ? ", buf, CC1_Q_PREFIX_LEN)))
+    {
+    char *last; // Used by strtok_r().
+    char *tok1;
+    // Attempt to parse the parameters.
+    if((n-CC1_Q_PREFIX_LEN >= CC1_Q_PARAMS*2-1) && (NULL != (tok1 = strtok_r(buf+CC1_Q_PREFIX_LEN, " ", &last))))
+      {
+      char *tok2 = strtok_r(NULL, " ", &last);
+      char *tok3 = (NULL == tok2) ? NULL : strtok_r(NULL, " ", &last);
+      char *tok4 = (NULL == tok3) ? NULL : strtok_r(NULL, " ", &last);
+      char *tok5 = (NULL == tok4) ? NULL : strtok_r(NULL, " ", &last);
+      char *tok6 = (NULL == tok5) ? NULL : strtok_r(NULL, " ", &last);
+      if(NULL != tok6)
+        {
+        OTProtocolCC::CC1PollAndCommand q = OTProtocolCC::CC1PollAndCommand::make(
+            atoi(tok1),
+            atoi(tok2),
+            atoi(tok3),
+            atoi(tok4),
+            atoi(tok5),
+            atoi(tok6));
+        if(q.isValid())
+          {
+          uint8_t txbuf[STATS_MSG_START_OFFSET + OTProtocolCC::CC1PollAndCommand::primary_frame_bytes+1]; // More than large enough for preamble + sync + alert message.
+          uint8_t *const bptr = RFM22RXPreambleAdd(txbuf);
+          const uint8_t bodylen = q.encodeSimple(bptr, sizeof(txbuf) - STATS_MSG_START_OFFSET, true);
+          const uint8_t buflen = STATS_MSG_START_OFFSET + bodylen;
+#if 0 && defined(DEBUG)
+    OTRadioLink::printRXMsg(p, txbuf, buflen);
+#endif
+          // TX at normal volume since ACKed and can be repeated if necessary.
+          if(RFM23B.sendRaw(txbuf, buflen))
+            { return(true); } // Done it!
+          }
+        }
+      }
+    return(false); // FAILED if fallen through from above.
+    }
+#endif
+
+  return(false); // FAILED if not otherwise handled.
+  }
+#endif 
+
+
+
+
+
+
 // Prints a single space to Serial (which must be up and running).
 static void Serial_print_space() { Serial.print(' '); }
 
@@ -437,22 +552,25 @@ void serialStatusReport()
 #else
   Serial.print(inWarmMode() ? 'W' : 'F');
 #endif
+#ifdef ENABLE_NOMINAL_RAD_VALVE
   Serial.print(NominalRadValve.get()); Serial.print('%'); // Target valve position.
+#endif
   const int temp = TemperatureC16.get();
   Serial.print('@'); Serial.print(temp >> 4); Serial.print('C'); // Unrounded whole degrees C.
       Serial.print(temp & 0xf, HEX); // Show 16ths in hex.
 
 //#if 0
-//  // *P* section: low power flag only shown iff (battery) low.
+//  // *P* section: low power flag shown only if (battery) low.
 //  if(Supply_mV.isSupplyVoltageLow()) { Serial.print(F(";Plow")); }
 //#endif
 
-#if 1
+#ifdef ENABLE_FULL_OT_CLI
   // *X* section: Xmit security level shown only if some non-essential TX potentially allowed.
   const stats_TX_level xmitLevel = getStatsTXLevel();
   if(xmitLevel < stTXnever) { Serial.print(F(";X")); Serial.print(xmitLevel); }
 #endif
 
+#ifdef ENABLE_FULL_OT_CLI
   // *T* section: time and schedules.
   const uint_least8_t hh = getHoursLT();
   const uint_least8_t mm = getMinutesLT();
@@ -475,12 +593,15 @@ void serialStatusReport()
     Serial.print('F'); Serial.print(endH); Serial_print_space(); Serial.print(endM);
     }
   if(isAnyScheduleOnWARMNow()) { Serial.print('*'); } // Indicate that at least one schedule is active now.
+#endif
 
   // *S* section: settable target/threshold temperatures, current target, and eco/smart/occupied flags.
 #ifdef SETTABLE_TARGET_TEMPERATURES // Show thresholds and current target since no longer so easily deduced.
   Serial.print(';'); // Terminate previous section.
   Serial.print('S'); // Current settable temperature target, and FROST and WARM settings.
+#ifdef LOCAL_TRV
   Serial.print(NominalRadValve.getTargetTempC());
+#endif
   Serial_print_space();
   Serial.print(getFROSTTargetC());
   Serial_print_space();
@@ -527,7 +648,7 @@ void serialStatusReport()
     }
 #endif
 
-#if 1
+#ifdef LOCAL_TRV
   // *M* section: min-valve-percentage open section, iff not at default value.
   const uint8_t minValvePcOpen = NominalRadValve.getMinValvePcReallyOpen();
   if(DEFAULT_MIN_VALVE_PC_REALLY_OPEN != minValvePcOpen) { Serial.print(F(";M")); Serial.print(minValvePcOpen); }
@@ -547,7 +668,7 @@ void serialStatusReport()
   ss1.put(Occupancy);
 //  ss1.put(Occupancy.vacHTag(), Occupancy.getVacancyH()); // EXPERIMENTAL
 #endif
-#if 1 && defined(DEBUG)
+#ifdef ENABLE_MODELLED_RAD_VALVE
     ss1.put(NominalRadValve.tagCMPC(), NominalRadValve.getCumulativeMovementPC()); // EXPERIMENTAL
 #endif
   const uint8_t wrote = ss1.writeJSON((uint8_t *)buf, sizeof(buf), 0, true);
@@ -597,39 +718,50 @@ static void dumpCLIUsage(const uint8_t stopBy)
   Serial.println();
   //Serial.println(F("CLI usage:"));
   printCLILine(deadline, '?', F("this help"));
-#if defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX)
-  printCLILine(deadline, F("C M"), F("Central hub >=M mins on, 0 off"));
-#endif
-  printCLILine(deadline, F("D N"), F("Dump stats set N"));
+  
+  // Core CLI features first... (E, [H], I, S V)
   printCLILine(deadline, 'E', F("Exit CLI"));
-  printCLILine(deadline, 'F', F("Frost"));
-#if defined(SETTABLE_TARGET_TEMPERATURES) && !defined(TEMP_POT_AVAILABLE)
-  printCLILine(deadline, F("F CC"), F("set Frost/setback temp CC"));
-#endif
 #if defined(USE_MODULE_FHT8VSIMPLE) && defined(LOCAL_TRV)
   printCLILine(deadline, F("H H1 H2"), F("set FHT8V House codes 1&2"));
   printCLILine(deadline, 'H', F("clear House codes"));
 #endif
   printCLILine(deadline, 'I', F("new ID"));
+  printCLILine(deadline, 'S', F("show Status"));
+  printCLILine(deadline, 'V', F("sys Version"));
+
+#ifdef ENABLE_FULL_OT_CLI
+  // Optional CLI features...
+  Serial.println(F("-"));
+#if defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX)
+  printCLILine(deadline, F("C M"), F("Central hub >=M mins on, 0 off"));
+#endif
+  printCLILine(deadline, F("D N"), F("Dump stats set N"));
+  printCLILine(deadline, 'F', F("Frost"));
+#if defined(SETTABLE_TARGET_TEMPERATURES) && !defined(TEMP_POT_AVAILABLE)
+  printCLILine(deadline, F("F CC"), F("set Frost/setback temp CC"));
+#endif
+
   //printCLILine(deadline, 'L', F("Learn to warm every 24h from now, clear if in frost mode, schedule 0"));
   printCLILine(deadline, F("L S"), F("Learn daily warm now, clear if in frost mode, schedule S"));
   //printCLILine(deadline, F("P HH MM"), F("Program: warm daily starting at HH MM schedule 0"));
   printCLILine(deadline, F("P HH MM S"), F("Program: warm daily starting at HH MM schedule S"));
   printCLILine(deadline, F("O PP"), F("min % for valve to be Open"));
+#if defined(ENABLE_NOMINAL_RAD_VALVE)
   printCLILine(deadline, 'O', F("reset Open %"));
+#endif
 #ifdef SUPPORT_BAKE
   printCLILine(deadline, 'Q', F("Quick Heat"));
 #endif
 //  printCLILine(deadline, F("R N"), F("dump Raw stats set N"));
-  printCLILine(deadline, 'S', F("show Status"));
+
   printCLILine(deadline, F("T HH MM"), F("set 24h Time"));
-  printCLILine(deadline, 'V', F("sys Version"));
   printCLILine(deadline, 'W', F("Warm"));
 #if defined(SETTABLE_TARGET_TEMPERATURES) && !defined(TEMP_POT_AVAILABLE)
   printCLILine(deadline, F("W CC"), F("set Warm temp CC"));
 #endif
   printCLILine(deadline, 'X', F("Xmit security level; 0 always, 255 never"));
   printCLILine(deadline, 'Z', F("Zap stats"));
+#endif // ENABLE_FULL_OT_CLI
   Serial.println();
   }
 
@@ -640,7 +772,12 @@ static void InvalidIgnored() { Serial.println(F("Invalid, ignored.")); }
 // If INTERACTIVE_ECHO defined then immediately echo received characters, not at end of line.
 #define CLI_INTERACTIVE_ECHO
 
-#define MAXIMUM_CLI_RESPONSE_CHARS 9 // Just enough for any valid command expected not including trailing LF.  (Note that Serial RX buffer is 64 bytes.)
+#define MAXIMUM_CLI_OT_RESPONSE_CHARS 9 // Just enough for any valid core/OT command expected not including trailing LF.  (Note that Serial RX buffer is 64 bytes.)
+#ifdef ENABLE_EXTENDED_CLI // Allow for much longer input commands.
+#define MAXIMUM_CLI_RESPONSE_CHARS (max(64, MAXIMUM_CLI_OT_RESPONSE_CHARS))
+#else
+#define MAXIMUM_CLI_RESPONSE_CHARS MAXIMUM_CLI_OT_RESPONSE_CHARS
+#endif
 #define IDLE_SLEEP_SCT (15/SUBCYCLE_TICK_MS_RD) // Approx sub-cycle ticks in idle sleep (15ms), erring on side of being too large; strictly positive.
 #define BUF_FILL_TIME_MS (((MAXIMUM_CLI_RESPONSE_CHARS*10) * 1000 + (BAUD-1)) / BAUD) // Time to read full/maximal input command buffer; ms, strictly positive.
 #define BUF_FILL_TIME_SCT (BUF_FILL_TIME_MS/SUBCYCLE_TICK_MS_RD) // Approx sub-cycle ticks to fill buf, erring on side of being too large; strictly positive.
@@ -659,9 +796,20 @@ static void InvalidIgnored() { Serial.println(F("Invalid, ignored.")); }
 // Commands should be sent terminated by CR *or* LF; both may prevent 'E' (exit) from working properly.
 // A period of less than (say) 500ms will be difficult for direct human response on a raw terminal.
 // A period of less than (say) 100ms is not recommended to avoid possibility of overrun on long interactions.
+// Times itself out after at least a minute or two of inactivity. 
 // NOT RENTRANT (eg uses static state for speed and code space).
-void pollCLI(const uint8_t maxSCT)
+void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
   {
+  // Perform any once-per-minute operations.
+  if(startOfMinute)
+    {
+    ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
+      {
+      // Run down CLI timer if need be.
+      if(CLITimeoutM > 0) { --CLITimeoutM; }
+      }
+    }
+
   // Compute safe limit time given granularity of sleep and buffer fill.
   const uint8_t targetMaxSCT = (maxSCT <= MIN_POLL_SCT) ? ((uint8_t) 0) : ((uint8_t) (maxSCT - 1 - MIN_POLL_SCT));
   if(getSubCycleTime() >= targetMaxSCT) { return; } // Too short to try.
@@ -706,13 +854,13 @@ void pollCLI(const uint8_t maxSCT)
         continue;
         }
 #endif
-      if((ic < 32) || (ic > 126)) { continue; } // Drop bogus characters.
-      // Ignore any leading char that is not a letter (or '?'),
+      if((ic < 32) || (ic > 126)) { continue; } // Drop bogus non-printable characters.
+      // Ignore any leading char that is not a letter (or '?' or '+'),
       // and force leading (command) char to upper case.
       if(0 == n)
         {
         ic = toupper(ic);
-        if(('?' != ic) && ((ic < 'A') || (ic > 'Z'))) { continue; }
+        if(('+' != ic) && ('?' != ic) && ((ic < 'A') || (ic > 'Z'))) { continue; }
         }
       // Store the incoming char.
       buf[n++] = (char) ic;
@@ -743,7 +891,7 @@ void pollCLI(const uint8_t maxSCT)
     // Restart the CLI timer on receipt of plausible (ASCII) input (cf noise from UART floating or starting up),
     // Else print a very brief low-CPU-cost help message and give up as efficiently and safely and quickly as possible.
     const char firstChar = buf[0];
-    const bool plausibleCommand = ((firstChar >= '?') && (firstChar <= 'z'));
+    const bool plausibleCommand = ((firstChar > ' ') && (firstChar <= 'z'));
     if(plausibleCommand) { resetCLIActiveTimer(); }
     else
       {
@@ -772,6 +920,97 @@ void pollCLI(const uint8_t maxSCT)
       // Avoid showing status as may already be rather a lot of output.
       default: case '?': { dumpCLIUsage(maxSCT); showStatus = false; break; }
 
+
+      // CORE CLI FEATURES: keep small and low-impact.
+      //     E, [H], I, S V
+      // ---
+      // Exit/deactivate CLI immediately.
+      // This should be followed by JUST CR ('\r') OR LF ('\n')
+      // else the second will wake the CLI up again.
+      case 'E': { CLITimeoutM = 0; break; }
+#if defined(USE_MODULE_FHT8VSIMPLE) && (defined(LOCAL_TRV) || defined(SLAVE_TRV))
+      // H nn nn
+      // Set (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control.
+      // Missing values will clear the code entirely (and disable use of the valve).
+      case 'H':
+        {
+        char *last; // Used by strtok_r().
+        char *tok1;
+        // Minimum 5 character sequence makes sense and is safe to tokenise, eg "H 1 2".
+        if((n >= 5) && (NULL != (tok1 = strtok_r(buf+2, " ", &last))))
+          {
+          char *tok2 = strtok_r(NULL, " ", &last);
+          if(NULL != tok2)
+            {
+            const int hc1 = atoi(tok1);
+            const int hc2 = atoi(tok2);
+            if((hc1 < 0) || (hc1 > 99) || (hc2 < 0) || (hc2 > 99)) { InvalidIgnored(); }
+            else
+              {
+              FHT8VSetHC1(hc1);
+              FHT8VSetHC2(hc2);
+              FHT8VSyncAndTXReset(); // Force re-sync with FHT8V valve.
+              }
+            }
+          }
+        else if(n < 2) // Just 'H', possibly with trailing whitespace.
+          {
+          FHT8VClearHC();
+          FHT8VSyncAndTXReset(); // Force into unsynchronized state.
+          }
+        break;
+        }
+#endif
+      // Set new random ID.
+      // Should possibly restart the system afterwards.
+      case 'I':
+        {
+        ensureIDCreated(true); // Force ID change.
+        break;
+        }
+      // Status line and optional smart/scheduled warming prediction request.
+      case 'S':
+        {
+        Serial.print(F("Resets: "));
+        const uint8_t resetCount = eeprom_read_byte((uint8_t *)EE_START_RESET_COUNT);
+        Serial.print(resetCount);
+        Serial.println();
+        Serial.print(F("Overruns: "));
+        const uint8_t overrunCount = (~eeprom_read_byte((uint8_t *)EE_START_OVERRUN_COUNTER)) & 0xff;
+        Serial.print(overrunCount);
+        Serial.println();
+        break; // Note that status is by default printed after processing input line.
+        }
+      // Version information printed as one line to serial, machine- and human- parseable.
+      case 'V':
+        {
+        serialPrintlnBuildVersion();
+#ifdef ENABLE_EXTENDED_CLI // Allow for much longer input commands for extended CLI.
+        Serial.print(F("Ext CLI max chars: ")); Serial.println(MAXIMUM_CLI_RESPONSE_CHARS);
+#endif
+        break;
+        }
+
+
+#ifdef ENABLE_EXTENDED_CLI
+      // Handle CLI extension commands.
+      // Command of form:
+      //   +EXT .....
+      // where EXT is the name of the extension, usually 3 letters.
+      //
+      // It is acceptable for extCLIHandler() to alter the buffer passed,
+      // eg with strtok_t().
+      case '+':
+        {
+        const bool success = extCLIHandler(&Serial, buf, n);
+        Serial.println(success ? F("OK") : F("FAILED"));
+        break;
+        }
+#endif  
+
+
+#ifdef ENABLE_FULL_OT_CLI // NON-CORE CLI FEATURES
+
 #if defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX)
       // C M
       // Set central-hub boiler minimum on (and off) time; 0 to disable.
@@ -788,11 +1027,6 @@ void pollCLI(const uint8_t maxSCT)
         break;
         }
 #endif
-
-      // Exit/deactivate CLI immediately.
-      // This should be followed by JUST CR ('\r') OR LF ('\b')
-      // else the second will wake the CLI up again.
-      case 'E': { CLITimeoutM = 0; break; }
 
 //      // Raw stats: R N
 //      // Avoid showing status afterwards as may already be rather a lot of output.
@@ -890,7 +1124,9 @@ void pollCLI(const uint8_t maxSCT)
         if(n == 2)
           {
           if('!' == buf[1]) { Serial.println(F("hols")); }
+#ifdef OCCUPANCY_SUPPORT
           Occupancy.setHolidayMode();
+#endif
           setWarmModeDebounced(false);
           break;
           }
@@ -905,47 +1141,6 @@ void pollCLI(const uint8_t maxSCT)
         else
 #endif
           { setWarmModeDebounced(false); } // No parameter supplied; switch to FROST mode.
-        break;
-        }
-
-#if defined(USE_MODULE_FHT8VSIMPLE) && defined(LOCAL_TRV)
-      // Set (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control.
-      // Missing values will clear the code entirely (and disable use of the valve).
-      case 'H':
-        {
-        char *last; // Used by strtok_r().
-        char *tok1;
-        // Minimum 5 character sequence makes sense and is safe to tokenise, eg "H 1 2".
-        if((n >= 5) && (NULL != (tok1 = strtok_r(buf+2, " ", &last))))
-          {
-          char *tok2 = strtok_r(NULL, " ", &last);
-          if(NULL != tok2)
-            {
-            const int hc1 = atoi(tok1);
-            const int hc2 = atoi(tok2);
-            if((hc1 < 0) || (hc1 > 99) || (hc2 < 0) || (hc2 > 99)) { InvalidIgnored(); }
-            else
-              {
-              FHT8VSetHC1(hc1);
-              FHT8VSetHC2(hc2);
-              FHT8VSyncAndTXReset(); // Force re-sync with FHT8V valve.
-              }
-            }
-          }
-        else if(n < 2) // Just 'H', possibly with trailing whitespace.
-          {
-          FHT8VClearHC();
-          FHT8VSyncAndTXReset(); // Force into unsynchronized state.
-          }
-        break;
-        }
-#endif
-
-      // Set new random ID.
-      // Should possibly restart afterwards.
-      case 'I':
-        {
-        ensureIDCreated(true); // Force ID.
         break;
         }
 
@@ -966,6 +1161,7 @@ void pollCLI(const uint8_t maxSCT)
         break;
         }
 
+#if defined(ENABLE_NOMINAL_RAD_VALVE)
       // Set/clear min-valve-open-% threshold override.
       case 'O':
         {
@@ -977,6 +1173,7 @@ void pollCLI(const uint8_t maxSCT)
         NominalRadValve.setMinValvePcReallyOpen(minPcOpen);
         break;
         }
+#endif
 
       // Program simple schedule HH MM [N].
       case 'P':
@@ -1011,30 +1208,6 @@ void pollCLI(const uint8_t maxSCT)
       case 'Q': { startBakeDebounced(); break; }
 #endif
 
-      // Status line and optional smart/scheduled warming prediction request.
-      case 'S':
-        {
-        Serial.print(F("Resets: "));
-        const uint8_t resetCount = eeprom_read_byte((uint8_t *)EE_START_RESET_COUNT);
-        Serial.print(resetCount);
-        Serial.println();
-        Serial.print(F("Overruns: "));
-        const uint8_t overrunCount = (~eeprom_read_byte((uint8_t *)EE_START_OVERRUN_COUNTER)) & 0xff;
-        Serial.print(overrunCount);
-        Serial.println();
-#ifdef ENABLE_ANTICIPATION
-        uint_least8_t hh = getHoursLT();
-        Serial.print(F("Smart warming: "));
-        for(int i = 24; --i >= 0; )
-          {
-          Serial.print(shouldBeWarmedAtHour(hh) ? 'w' : 'f'); // TODO: show 'W' for scheduled WARM mode.
-          if(++hh > 23) { hh = 0; }
-          }
-        Serial.println();
-#endif
-        break; // Note that status is by default printed after processing input line.
-        }
-
       // Time set T HH MM.
       case 'T':
         {
@@ -1052,13 +1225,6 @@ void pollCLI(const uint8_t maxSCT)
             if(!setHoursMinutesLT(hh, mm)) { InvalidIgnored(); }
             }
           }
-        break;
-        }
-
-      // Version information printed as one line to serial, machine- and human- parseable.
-      case 'V':
-        {
-        serialPrintlnBuildVersion();
         break;
         }
 
@@ -1110,6 +1276,7 @@ void pollCLI(const uint8_t maxSCT)
         showStatus = false; // May be slow; avoid showing stats line which will in any case be unchanged.
         break;
         }
+#endif // ENABLE_FULL_OT_CLI // NON-CORE FEATURES
       }
 
     // Almost always show status line afterwards as feedback of command received and new state.
@@ -1125,3 +1292,157 @@ void pollCLI(const uint8_t maxSCT)
   if(neededWaking) { powerDownSerial(); }
   }
 
+
+
+// CUSTOM IO FOR SPECIAL DEPLOYMENTS
+#ifdef ALLOW_CC1_SUPPORT_RELAY_IO // REV9 CC1 relay...
+// Do basic static LED setting.
+static void setLEDs(const uint8_t lc)
+    {
+    // Assume primary UI LED is the red one (at least fot REV9 boards)...
+    if(lc & 1) { LED_HEATCALL_ON(); } else { LED_HEATCALL_OFF(); }
+    // Assume secondary UI LED is the green one (at least fot REV9 boards)...
+    if(lc & 2) { LED_UI2_ON(); } else { LED_UI2_OFF(); }
+    }
+
+// Logical last-requested light colour (lc).
+static uint8_t lcCO;
+// Count down in 2s ticks until LEDs go out (derived from lt).
+static uint8_t countDownLEDSforCO;
+// Requested flash type (lf).
+static uint8_t lfCO;
+
+// Handle boost button-press semantics.
+// Timeout in minutes before a new boot request will be fully actioned.
+// This is kept long enough to ensure that the hub cannot have failed to see the status flip
+// unless all contact has in fact been lost.
+static const uint8_t MIN_BOOST_INTERVAL_M = 30;
+// Count down from last flip of switch-toggle state, minutes.  Cannot toggle unless this is zero.
+static uint8_t toggle_blocked_countdown_m;
+// True if the button was active on the previous tick.
+static bool oldButtonPressed;
+// Switch state toggled when user activates boost function.
+// Marked volatile to allow safe lock-free read access from an ISR if necessary.
+static volatile bool switch_toggle_state;
+// True while waiting for poll after a boost request.
+// Cleared after a poll which is presumed to notice the request.
+static bool waitingForPollAfterBoostRequest;
+
+// Get the switch toggle state.
+// The hub should monitor this changing,
+// taking the change as indication of a boost request.
+// This is allowed to toggle only much slower than the hub should poll,
+// thus ensuring that the hub doesn't miss a boost request.
+// Safe to call from an ISR (though this would be unexpected).
+bool getSwitchToggleStateCO() { return(switch_toggle_state); }
+
+// Call this on even numbered seconds (with current time in seconds) to allow the CO UI to operate.
+// Should never be skipped, so as to allow the UI to remain responsive.
+//
+// The boost button for the CO relay is BUTTON_MODE_L.
+// This routine/UI cares about off-to-on active edges of the button, ie the moment of being pressed,
+// at which it will:
+//    * turn the user0visible LED solid red (for a while)
+//    * flip the status flag providing it has been more than 30 minutes since the last one
+//      (this 30 minutes being the time at which contact with the hub would be deemed lost if no comms)
+//    * send an alert message immediately (with the usual 'likely-to-get-heard loudness settings)
+//      and possibly periodically until a new poll request comes in (as indicated by a call to setLEDsCO())
+bool tickUICO(const uint_fast8_t sec)
+  {
+  // Deal with the countdown timers.
+  if((0 == sec) && (toggle_blocked_countdown_m > 0)) { --toggle_blocked_countdown_m; }
+  if(countDownLEDSforCO > 0) { --countDownLEDSforCO; }
+
+  // Note whether the button is pressed on this tick.
+  const bool buttonPressed = (LOW == fastDigitalRead(BUTTON_MODE_L));
+  // Note whether the button has just been pressed.
+  const bool buttonJustPressed = (buttonPressed && !oldButtonPressed);
+  oldButtonPressed = buttonPressed;
+  if(buttonJustPressed)
+    {
+    // Set the LED to solid red until upto the comms timeout.
+    // When the hub poll the LEDs will be set to whatever the poll specifies.
+    setLEDsCO(1, MIN_BOOST_INTERVAL_M*2, 3, false);
+    // If not still counting down since the last switch-state toggle,
+    // toggle it now,
+    // and restart the count-down.
+    if(0 == toggle_blocked_countdown_m)
+        {
+        switch_toggle_state = !switch_toggle_state;
+        toggle_blocked_countdown_m = MIN_BOOST_INTERVAL_M;
+        }
+    // Set up to set alerts periodically until polled.
+    // Has the effect of allow the hub to know when boost is being requested
+    // even if it's not yet time to flip the toggle.
+    waitingForPollAfterBoostRequest = true;
+    // Send an alert message immediately,
+    // AFTER adjusting all relevant state so as to avoid a race,
+    // inviting the hub to poll this node ASAP and eg notice the toggle state.
+    sendCC1AlertByRFM23B();
+    // Do no further UI processing this tick.
+    // Note the user interaction to the caller.
+    return(true);
+    }
+
+  // All LEDs off when their count-down timer is/hits zero.
+  if(0 == countDownLEDSforCO) { lcCO = 0; setLEDs(0); }
+  // Else force 'correct' requested light colour and deal with any 'flash' state.
+  else
+    {
+    setLEDs(lcCO);
+
+    // Deal with flashing (non-solid) output here.
+    // Do some fiendly I/O polling while waiting!
+    if(lfCO != 3)
+      {
+      // Make this the first flash.
+      mediumPause();
+      setLEDs(0); // End of first flash.
+      pollIO(); // Poll while LEDs are off.
+      if(2 == lfCO)
+        {
+        offPause();
+        pollIO(); // Poll while LEDs are off.
+        // Start the second flash.
+        setLEDs(lcCO);
+        mediumPause();
+        setLEDs(0); // End of second flash.
+        pollIO(); // Poll while LEDs are off.
+        }
+      }
+    }
+
+  // If still waiting for a poll after a boost request,
+  // arrange to send extra alerts about once every two minutes,
+  // randomly so as to minimise collisions with other regular traffic.
+  if(waitingForPollAfterBoostRequest && (sec == (OTV0P2BASE::randRNG8() & 0x3e)))
+    { sendCC1AlertByRFM23B(); }
+
+  return(false); // No human interaction this tick...
+  }
+
+// Directly adjust LEDs.
+// May be called from a message handler, so minimise blocking.
+//   * light-colour         [0,3] bit flags 1==red 2==green (lc) 0 => stop everything
+//   * light-on-time        [1,15] (0 not allowed) 30-450s in units of 30s (lt) ???
+//   * light-flash          [1,3] (0 not allowed) 1==single 2==double 3==on (lf)
+// If fromPollAndCmd is true then this was called from an incoming Poll/Cms message receipt.
+// Not ISR- safe.
+void setLEDsCO(const uint8_t lc, const uint8_t lt, const uint8_t lf, const bool fromPollAndCmd)
+    {
+    lcCO = lc;
+    countDownLEDSforCO = (lt >= 17) ? 255 : lt * 15; // Units are 30s, ticks are 2s; overflow is avoided.
+    lfCO = lf;
+    setLEDs(lc); // Set correct colour immediately.
+    if(3 != lf)
+      {
+      // Only a flash of some sort is requested,
+      // so just flicker the LED(s),
+      // then turn off again until proper flash handler.
+      tinyPause();
+      setLEDs(0);
+      }
+    // Assume that the hub will shortly know about any pending request.
+    if(fromPollAndCmd) { waitingForPollAfterBoostRequest = false; }
+    }
+#endif

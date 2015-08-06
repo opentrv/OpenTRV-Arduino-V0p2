@@ -44,7 +44,18 @@ The OpenTRV project licenses this file to you
  
  ; This can use a simple setback (drops the 'warm' target a little to save energy)
  ; eg using an LDR, ie reasonable ambient light, as a proxy for occupancy.
+
+
+ NOTE: when communicating to a host over serial, leading punctuation characters are significant,
+ and output is line-oriented:
  
+  '!' introduces an error.
+  '?' introduces a warning.
+  '=' introduces a local status message.
+  '>' is a CLI prompt.
+  '@' introduces a translated (to ASCII7) binary status messages.
+  '{' introduces a raw JSON (map) message.
+  '+<msgtype> ' introduces a relayed/decoded message of the givens message type.  Note the space. 
  */
 
 #ifndef UI_MINIMAL_H
@@ -104,10 +115,36 @@ bool isCLIActive();
 // Used to poll user side for CLI input until specified sub-cycle time.
 // A period of less than (say) 500ms will be difficult for direct human response on a raw terminal.
 // A period of less than (say) 100ms is not recommended to avoid possibility of overrun on long interactions.
+// Times itself out after at least a minute or two of inactivity. 
 // NOT RENTRANT (eg uses static state for speed and code space).
-void pollCLI(const uint8_t maxSCT);
+void pollCLI(uint8_t maxSCT, bool startOfMinute);
+
 // Minimum recommended poll time in sub-cycle ticks...
 #define CLI_POLL_MIN_SCT (200/SUBCYCLE_TICK_MS_RN)
+
+
+// CUSTOM IO FOR SPECIAL DEPLOYMENTS
+#ifdef ALLOW_CC1_SUPPORT_RELAY_IO // REV9 CC1 relay...
+// Call this on even numbered seconds (with current time in seconds) to allow the CO UI to operate.
+// Should never be skipped, so as to allow the UI to remain responsive.
+bool tickUICO(uint_fast8_t sec);
+// Directly adjust LEDs.
+//   * light-colour         [0,3] bit flags 1==red 2==green (lc) 0 => stop everything
+//   * light-on-time        [1,15] (0 not allowed) 30-450s in units of 30s (lt) ???
+//   * light-flash          [1,3] (0 not allowed) 1==single 2==double 3==on (lf)
+// If fromPollAndCmd is true then this is being called from an incoming Poll/Cms message receipt.
+// Not ISR- safe.
+void setLEDsCO(uint8_t lc, uint8_t lt, uint8_t lf, bool fromPollAndCmd);
+
+// Get the switch toggle state.
+// The hub should monitor this changing,
+// taking the change as indication of a boost request.
+// This is allowed to toggle only much slower than the hub should poll,
+// thus ensuring that the hub doesn't miss a boost request.
+// Safe to call from an ISR (though this would be unexpected).
+bool getSwitchToggleStateCO();
+#endif
+
 
 #endif
 

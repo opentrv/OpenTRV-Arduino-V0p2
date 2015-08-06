@@ -177,13 +177,37 @@ void serialPrintlnBuildVersion()
   {
   serialPrintAndFlush(F("board V0.2 REV"));
   serialPrintAndFlush(V0p2_REV);
-  serialPrintAndFlush(F("; code $Id: b0cc1e292d3e8704dc49417ce50b532607303d40 $ ")); // Expect SVN/git to substitute the Id keyword here with svn:keywords property set.
+  serialPrintAndFlush(F(" "));
   serialPrintAndFlush(_YYYYMmmDD);
   serialPrintAndFlush(F(" " __TIME__));
   serialPrintlnAndFlush();
   }
 
 static const OTRadioLink::OTRadioChannelConfig RFMConfig(FHT8V_RFM22_Reg_Values, true, true, true);
+
+#if defined(ALLOW_CC1_SUPPORT_RELAY)
+// For a CC1 relay, ignore everything except FTp2_CC1PollAndCmd messages.
+// With care (not accessing EEPROM for example) this could also reject anything with wrong house code.
+static bool FilterRXISR(const volatile uint8_t *buf, volatile uint8_t &buflen)
+  {
+  if((buflen < 8) || (OTRadioLink::FTp2_CC1PollAndCmd != buf[0])) { return(false); }
+  buflen = 8; // Truncate message to correct size for efficiency.
+  return(true); // Accept message.
+  }
+#elif defined(ALLOW_CC1_SUPPORT_HUB)
+// For a CC1 hub, ignore everything except FTp2_CC1Alert and FTp2_CC1PollResponse messages.
+static bool FilterRXISR(const volatile uint8_t *buf, volatile uint8_t &buflen)
+  {
+  if(buflen < 8) { return(false); }
+  const uint8_t t = buf[0];
+  if((OTRadioLink::FTp2_CC1Alert != t) && (OTRadioLink::FTp2_CC1PollResponse != t)) { return(false); }
+  buflen = 8; // Truncate message to correct size for efficiency.
+  return(true); // Accept message.
+  }
+#else
+// NO RADIO RX FILTERING BY DEFAULT
+#define FilterRXISR NULL
+#endif
 
 // Optional Power-On Self Test routines.
 // Aborts with a call to panic() if a test fails.
@@ -203,6 +227,8 @@ void optionalPOST()
   RFM23B.preinit(NULL);
   // Check that the radio is correctly connected; panic if not...
   if(!RFM23B.configure(1, &RFMConfig) || !RFM23B.begin()) { panic(); }
+  // Apply filtering, if any, while we're having fun...
+  RFM23B.setFilterRXISR(FilterRXISR);
 #endif
 
 //  posPOST(1, F("Radio OK, checking buttons/sensors and xtal"));
@@ -490,15 +516,21 @@ void setup()
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("Computing initial target/demand...");
 #endif
+#if defined(ENABLE_NOMINAL_RAD_VALVE)
   // Update targets, output to TRV and boiler, etc, to be sensible before main loop starts.
   NominalRadValve.read();
+#endif
 #if defined(USE_MODULE_FHT8VSIMPLE)
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("Creating initial FHT8V frame...");
 #endif
   // Unconditionally ensure that a valid FHT8V TRV command frame has been computed and stored
   // in case this unit is actually controlling a local valve.
-  FHT8VCreateValveSetCmdFrame();
+#if defined(ENABLE_NOMINAL_RAD_VALVE)
+  FHT8VCreateValveSetCmdFrame(NominalRadValve);
+#else
+  FHT8VCreateValveSetCmdFrame(0);
+#endif
 #endif
 #endif
 
@@ -519,7 +551,7 @@ void setup()
   
 #if defined(SUPPORT_CLI) && !defined(ALT_MAIN_LOOP) && !defined(UNIT_TESTS)
   // Help user get to CLI.
-  serialPrintlnAndFlush(F("? at CLI prompt for help"));
+  serialPrintlnAndFlush(F("At CLI > prompt enter ? for help"));
 #endif
 
 #if !defined(ALT_MAIN_LOOP) && !defined(UNIT_TESTS)

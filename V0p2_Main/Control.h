@@ -146,15 +146,15 @@ void _TEST_set_basetemp_override(_TEST_basetemp_override override);
 // This is determined from user-settable temperature values.
 bool hasEcoBias();
 
-// Get dynamically-set thresholds/parameters.
-#if defined(SETTABLE_TARGET_TEMPERATURES) || defined(TEMP_POT_AVAILABLE)
+// Get (possibly dynamically-set) thresholds/parameters.
+//#if defined(SETTABLE_TARGET_TEMPERATURES) || defined(TEMP_POT_AVAILABLE)
 // Get 'FROST' protection target in C; no higher than getWARMTargetC() returns, strictly positive, in range [MIN_TARGET_C,MAX_TARGET_C].
 // Depends dynamically on current (last-read) temp-pot setting.
 uint8_t getFROSTTargetC();
 // Get 'WARM' target in C; no lower than getFROSTTargetC() returns, strictly positive, in range [MIN_TARGET_C,MAX_TARGET_C].
 // Depends dynamically on current (last-read) temp-pot setting.
 uint8_t getWARMTargetC();
-#endif
+//#endif
 
 #if defined(TEMP_POT_AVAILABLE)
 // Expose internal calculation of WARM target based on user physical control for unit testing.
@@ -182,7 +182,7 @@ bool setWARMTargetC(uint8_t tempC);
 #define isComfortTemperature(tempC) ((tempC) >= BIASCOM_WARM)
 
 
-#if defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX)
+#if defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX) || defined(ENABLE_DEFAULT_ALWAYS_RX)
 // Get minimum on (and off) time for pointer (minutes); zero if not in hub mode.
 uint8_t getMinBoilerOnMinutes();
 // Set minimum on (and off) time for pointer (minutes); zero to disable hub mode.
@@ -192,10 +192,18 @@ void setMinBoilerOnMinutes(uint8_t mins);
 #define getMinBoilerOnMinutes() (0) // Always disabled.
 #define setMinBoilerOnMinutes(mins) {} // Do nothing.
 #endif
+
+#ifdef ENABLE_DEFAULT_ALWAYS_RX
+// True: always in central hub/listen mode.
+#define inHubMode() (true)
+// True: always in stats hub/listen mode.
+#define inStatsHubMode() (true)
+#else
 // True if in central hub/listen mode (possibly with local radiator also).
 #define inHubMode() (0 != getMinBoilerOnMinutes())
 // True if in stats hub/listen mode (minimum timeout).
 #define inStatsHubMode() (1 == getMinBoilerOnMinutes())
+#endif
 
 
 
@@ -360,6 +368,7 @@ struct ModelledRadValveState
   };
 
 #if defined(LOCAL_TRV)
+#define ENABLE_MODELLED_RAD_VALVE
 // Internal model of radidator valve position, embodying control logic.
 class ModelledRadValve : public AbstractRadValve
   {
@@ -522,8 +531,71 @@ class ModelledRadValve : public AbstractRadValve
     // Any out-of-range value (eg >100) clears the override and DEFAULT_MIN_VALVE_PC_REALLY_OPEN will be used.
     static void setMinValvePcReallyOpen(uint8_t percent);
   };
+#define ENABLE_NOMINAL_RAD_VALVE
 // Singleton implementation for entire node.
 extern ModelledRadValve NominalRadValve;
+#elif defined(SLAVE_TRV)
+// Valve which is put where it is told; no smarts of its own.
+class SimpleSlaveRadValve : public AbstractRadValve
+  {
+  private:
+    // Ticks left before comms timing out and valve should revert to 'safe' position.
+    // Counts down to zero one tick per minute in the absence of valid calls to set().
+    uint8_t ticksLeft;
+
+  public:
+    // Initial time to wait with valve (almost) closed for initial command from controller.
+    // Helps avoid thrashing around during start-up when no heat may actually be required.
+    // Controller is required to send at least every 15 mins, ie just less than this.
+    static const uint8_t INITIAL_TIMEOUT_MINS = 16;
+
+    // Valid calls to set() must happen at less than this interval (minutes, positive).
+    // If this timeout triggers, a default valve position is used.
+    // Controller is required to send at least every 15 mins, ie at most half this.
+    static const uint8_t TIMEOUT_MINS = 30;
+
+    // Default (safe) valve position in percent.
+    // Similar to, but distinguishable from, eg FHT8V 'lost connection' 30% position.
+    static const uint8_t SAFE_POSITION_PC = 33;
+
+    // Create an instance with valve initially (almost) closed
+    // and a few minutes for controller to be heard before reverting to 'safe' position.
+    // This initial not-fully-closed position should help signal correct setup.
+    SimpleSlaveRadValve() : ticksLeft(INITIAL_TIMEOUT_MINS) { value = 1; }
+
+    // Get estimated minimum percentage open for significant flow for this device; strictly positive in range [1,99].
+    // Set to just above the initial value given. 
+    virtual uint8_t getMinPercentOpen() const { return(2); }
+
+    // Returns true if this sensor/actuator value is potentially valid, eg in-range.
+    virtual bool isValid(const uint8_t value) const { return(value <= 100); }
+
+    // Set new value.
+    // Ignores invalid values.
+    bool set(const uint8_t newValue);
+
+    // Do any regular work that needs doing.
+    // Deals with timeout and reversion to 'safe' valve position if the controller goes quiet.
+    // Call at a fixed rate (1/60s).
+    // Potentially expensive/slow.
+    virtual uint8_t read();
+
+    // Returns preferred poll interval (in seconds); non-zero.
+    // Must be polled at near constant rate, about once per minute.
+    virtual uint8_t preferredPollInterval_s() const { return(60); }
+
+    // Returns a suggested (JSON) tag/field/key name including units of get(); NULL means no recommended tag.
+    // The lifetime of the pointed-to text must be at least that of the Sensor instance.
+    virtual const char *tag() const { return("v|%"); }
+
+    // Returns true if (re)calibrating/(re)initialising/(re)syncing.
+    // The target valve position is not lost while this is true.
+    // By default there is no recalibration step.
+    virtual bool isRecalibrating() const;
+  };
+#define ENABLE_NOMINAL_RAD_VALVE
+// Singleton implementation for entire node.
+extern SimpleSlaveRadValve NominalRadValve;
 #endif
 
 

@@ -25,9 +25,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015,
 #include <util/atomic.h>
 
 #include <Wire.h> // Arduino I2C library.
-#ifdef REQUIRES_ONEWIRE22_LIB
-#include <OneWire.h>
-#endif
+//#ifdef REQUIRES_ONEWIRE22_LIB
+//#include <OneWire.h>
+//#endif
+#include <OTV0p2Base.h>
 
 #include "Sensor.h"
 
@@ -862,6 +863,115 @@ int RoomTemperatureC16::read()
   value = raw;
   return(value);
   }
+
+
+
+#if defined(SENSOR_EXTERNAL_DS18B20_ENABLE)
+// Initialise the device (if any) before first use.
+// Returns true iff successful.
+// Uses specified order DS18B20 found on bus.
+// May need to be reinitialised if precision changed.
+bool ExtTemperatureDS18B20C16::init()
+  {
+//  DEBUG_SERIAL_PRINTLN_FLASHSTRING("DS18B20 init...");
+  bool found = false;
+
+  // Ensure no bad search state.
+  MinOW.reset_search();
+
+  for( ; ; )
+    {
+    if(!MinOW.search(address))
+      {
+      MinOW.reset_search(); // Be kind to any other OW search user.
+      break;
+      }
+
+#if 0 && defined(DEBUG)
+    // Found a device.
+    DEBUG_SERIAL_PRINT_FLASHSTRING("addr:");
+    for(int i = 0; i < 8; ++i)
+      {
+      DEBUG_SERIAL_PRINT(' ');
+      DEBUG_SERIAL_PRINTFMT(address[i], HEX);
+      }
+    DEBUG_SERIAL_PRINTLN();
+#endif
+
+    if(0x28 != address[0])
+      {
+#if 0 && defined(DEBUG)
+      DEBUG_SERIAL_PRINTLN_FLASHSTRING("Not a DS18B20, skipping...");
+#endif
+      continue;
+      }
+
+#if 0 && defined(DEBUG)
+    DEBUG_SERIAL_PRINTLN_FLASHSTRING("Setting precision...");
+#endif
+    MinOW.reset();
+    // Write scratchpad/config
+    MinOW.select(address);
+    MinOW.write(0x4e);
+    MinOW.write(0); // Th: not used.
+    MinOW.write(0); // Tl: not used.
+//    MinOW.write(DS1820_PRECISION | 0x1f); // Config register; lsbs all 1.
+    MinOW.write(((precision - 9) << 6) | 0x1f); // Config register; lsbs all 1.
+
+    // Found one and configured it!
+    found = true;
+    }
+
+  // Search has been run (whether DS18B20 was found or not).
+  initialised = true;
+
+  if(!found)
+    {
+    DEBUG_SERIAL_PRINTLN_FLASHSTRING("DS18B20 not found");
+    address[0] = 0; // Indicate that no DS18B20 was found.
+    }
+  return(found);
+  }
+
+// Force a read/poll of temperature and return the value sensed in nominal units of 1/16 C.
+// At sub-maximum precision lsbits will be zero or undefined.
+// Expensive/slow.
+// Not thread-safe nor usable within ISRs (Interrupt Service Routines).
+int ExtTemperatureDS18B20C16::read()
+  {
+  if(!initialised) { init(); }
+  if(0 == address[0]) { value = INVALID_TEMP; return(INVALID_TEMP); }
+
+  // Start a temperature reading.
+  MinOW.reset();
+  MinOW.select(address);
+  MinOW.write(0x44); // Start conversion without parasite power.
+  //delay(750); // 750ms should be enough.
+  // Poll for conversion complete (bus released)...
+  while(MinOW.read_bit() == 0) { nap(WDTO_15MS); }
+
+  // Fetch temperature (scratchpad read).
+  MinOW.reset();
+  MinOW.select(address);    
+  MinOW.write(0xbe);
+  // Read first two bytes of 9 available.  (No CRC config or check.)
+  const uint8_t d0 = MinOW.read();
+  const uint8_t d1 = MinOW.read();
+  // Terminate read and let DS18B20 go back to sleep.
+  MinOW.reset();
+
+  // Extract raw temperature, masking any undefined lsbit.
+  // TODO: mask out undefined LSBs if precision not maximum.
+  const int16_t rawC16 = (d1 << 8) | (d0);
+
+  return(rawC16);
+  }
+#endif
+
+
+#if defined(SENSOR_EXTERNAL_DS18B20_ENABLE_0) // Enable sensor zero.
+extern ExtTemperatureDS18B20C16 extDS18B20_0(0);
+#endif
 
 
 

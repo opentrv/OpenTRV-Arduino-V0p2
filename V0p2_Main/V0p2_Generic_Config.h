@@ -75,8 +75,12 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define SUPPLY_VOLTAGE_LOW_2AA
 // Provide software RTC support by default.
 #define USE_RTC_INTERNAL_SIMPLE
+// IF DEFINED: basic FROST/WARM temperatures are settable.
+#define SETTABLE_TARGET_TEMPERATURES
 // IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
 #define LOCAL_TRV
+// IF DEFINED: this unit controls a valve, but provides slave valve control only.
+#undef SLAVE_TRV
 // IF DEFINED: this unit can act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
 #define ENABLE_BOILER_HUB
 // IF DEFINED: allow RX of stats frames.
@@ -85,10 +89,24 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define ALLOW_STATS_TX
 // IF DEFINED: allow JSON stats frames alongside binary ones.
 #define ALLOW_JSON_OUTPUT
+// IF DEFINED: (default) forced always-on radio listen/RX, eg not requiring setup to explicitly enable.
+#undef ENABLE_DEFAULT_ALWAYS_RX
 // IF DEFINED: use active-low LEARN button(s).  Needs SUPPORT_SINGLETON_SCHEDULE.
 #define LEARN_BUTTON_AVAILABLE // OPTIONAL ON V0.09 PCB1
+// IF DEFINED: this unit supports CLI over the USB/serial connection, eg for run-time reconfig.
+#define SUPPORT_CLI
+// IF DEFINED: support for general timed and multi-input occupancy detection / use.
+#define OCCUPANCY_SUPPORT
+// IF DEFINED: enable a full OpenTRV CLI.
+#define ENABLE_FULL_OT_CLI
+// IF DEFINED: enable a full OpenTRV UI with normal LEDs etc.
+#define ENABLE_FULL_OT_UI
+// IF DEFINED: enable and extended CLI with a longer input buffer for example.
+#undef ENABLE_EXTENDED_CLI
 // IF DEFINED: minimise boot effort and energy eg for intermittently-powered energy-harvesting applications.
 #undef MIN_ENERGY_BOOT
+// IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
+#undef SENSOR_SHT21_ENABLE
 
 
 
@@ -149,9 +167,25 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: this unit can act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
 #undef ENABLE_BOILER_HUB
 // IF DEFINED: allow RX of stats frames.
-#define ALLOW_STATS_RX
+#undef ALLOW_STATS_RX // Not needed for CC1 frames.
 // IF DEFINED: allow TX of stats frames.
 #undef ALLOW_STATS_TX
+// IF DEFINED: (default) forced always-on radio listen/RX, eg not requiring setup to explicitly enable.
+#define ENABLE_DEFAULT_ALWAYS_RX
+// IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
+#undef LOCAL_TRV // THESE HUB UNITS DO NOT manage a local TRV.
+// IF DEFINED: allow JSON stats frames alongside binary ones.
+#undef ALLOW_JSON_OUTPUT
+// IF DEFINED: enable a full OpenTRV CLI.
+#undef ENABLE_FULL_OT_CLI
+// IF DEFINED: enable a full OpenTRV UI with normal LEDs etc.
+#undef ENABLE_FULL_OT_UI
+// IF DEFINED: basic FROST/WARM temperatures are settable.
+#undef SETTABLE_TARGET_TEMPERATURES
+// IF DEFINED: enable and extended CLI with a longer input buffer for example.
+#define ENABLE_EXTENDED_CLI
+// IF DEFINED: support for general timed and multi-input occupancy detection / use.
+#undef OCCUPANCY_SUPPORT // None of that logic required at hub.
 // IF DEFINED: act as CC1 simple hub node.
 #define ALLOW_CC1_SUPPORT
 #define ALLOW_CC1_SUPPORT_HUB
@@ -180,7 +214,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define MIN_ENERGY_BOOT
 //// Enable use of DS18B20 temp sensor.
 //#define SENSOR_DS18B20_ENABLE
-// Enable use of SHT21 RH and temp sensor.
+//// IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
 //#define SENSOR_SHT21_ENABLE
 // Using RoHS-compliant phototransistor in place of LDR.
 #define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
@@ -234,7 +268,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #ifdef CONFIG_DHD_TESTLAB_REV4 // DHD's test lab with TRV on REV4 (cut2) board.
 // Revision of V0.2 board.
 #define V0p2_REV 4 // REV0 covers DHD's breadboard and first V0.2 PCB.
-// Enable use of SHT21 RH and temp sensor.
+// IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
 #define SENSOR_SHT21_ENABLE
 // Using RoHS-compliant phototransistor in place of LDR.
 #define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
@@ -259,7 +293,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define V0p2_REV 7
 // IF DEFINED: initial direct motor drive design.
 #define DIRECT_MOTOR_DRIVE_V1
-// Enable use of SHT21 RH and temp sensor.
+// IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
 #define SENSOR_SHT21_ENABLE
 // Using RoHS-compliant phototransistor in place of LDR.
 #define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
@@ -278,7 +312,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define V0p2_REV 8
 // No working xtal on initial batch.
 #undef WAKEUP_32768HZ_XTAL
-// TMP112 to save a few pennies?
+//// IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
 //#define SENSOR_SHT21_ENABLE
 // Using RoHS-compliant phototransistor in place of LDR.
 #define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
@@ -295,10 +329,14 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define V0p2_REV 9 // REV0 covers DHD's breadboard and first V0.2 PCB.
 //// Enable use of OneWire devices.
 //#define SUPPORT_ONEWIRE
-//// Enable use of DS18B20 temp sensor.
+//// Enable use of DS18B20 temp sensor (in lieu of on-board TMP112).
 //#define SENSOR_DS18B20_ENABLE
-// Enable use of SHT21 RH and temp sensor.
+// IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
 #define SENSOR_SHT21_ENABLE
+// IF DEFINED: enable use of additional (eg external) DS18B20 temp sensor(s).
+#define SENSOR_EXTERNAL_DS18B20_ENABLE
+// SENSOR_EXTERNAL_DS18B20_ENABLE requires SUPPORTS_MINIMAL_ONEWIRE.
+#define SUPPORTS_MINIMAL_ONEWIRE
 // Using RoHS-compliant phototransistor in place of LDR.
 #define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // For 1st-cust REV9 boards phototransistor was accidentally pulling down not up.
@@ -309,13 +347,32 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #undef ALLOW_STATS_RX
 // IF DEFINED: allow TX of stats frames.
 #undef ALLOW_STATS_TX
+// IF DEFINED: (default) forced always-on radio listen/RX, eg not requiring setup to explicitly enable.
+#define ENABLE_DEFAULT_ALWAYS_RX
 // IF DEFINED: allow JSON stats frames alongside binary ones.
 #undef ALLOW_JSON_OUTPUT
+// IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
+#undef LOCAL_TRV
+// IF DEFINED: this unit controls a valve, but provides slave valve control only.
+#define SLAVE_TRV
+// IF DEFINED: (default) forced always-on radio listen/RX, eg not requiring setup to explicitly enable.
+#define ENABLE_DEFAULT_ALWAYS_RX
+// IF DEFINED: enable a full OpenTRV CLI.
+#undef ENABLE_FULL_OT_CLI
+// IF DEFINED: enable a full OpenTRV UI with normal LEDs etc.
+#undef ENABLE_FULL_OT_UI
+// IF DEFINED: basic FROST/WARM temperatures are settable.
+#undef SETTABLE_TARGET_TEMPERATURES
+// IF DEFINED: enable and extended CLI with a longer input buffer for example.
+#define ENABLE_EXTENDED_CLI
+// IF DEFINED: support for general timed and multi-input occupancy detection / use.
+#undef OCCUPANCY_SUPPORT // No direct occupancy tracking at relay unit itself.
 // IF UNDEFINED: no LEARN mode for REV9 boards (window sensor(s) instead).
 //#undef LEARN_BUTTON_AVAILABLE
 // IF DEFINED: act as CC1 simple relay node.
 #define ALLOW_CC1_SUPPORT
 #define ALLOW_CC1_SUPPORT_RELAY
+#define ALLOW_CC1_SUPPORT_RELAY_IO // Direct addressing of LEDs, use of buttons, etc.
 // Use common settings.
 #define COMMON_SETTINGS
 #endif
@@ -375,7 +432,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // (Don't fiddle with these unless you are sure of module interdependencies, etc!)
 
 
-#ifdef COMMON_SETTINGS // FOR REV0 and REV1.
+#ifdef COMMON_SETTINGS // FOR REV0 onwards...
 #if (V0p2_REV >= 1) // && (V0p2_REV <= 8) // && !defined(CONFIG_DHD_TESTLAB_REV2) // All REV 1--8 PCBs use RFM23B.
 // IF DEFINED: RFM23 is in use in place of RFM22.
 #define RFM22_IS_ACTUALLY_RFM23 // Note: RFM23 used on V0.2 PCB.
@@ -386,22 +443,16 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #endif
 // Anticipation logic not yet ready for prime-time.
 //#define ENABLE_ANTICIPATION
-// IF DEFINED: this unit supports CLI over the USB/serial connection, eg for run-time reconfig.
-#define SUPPORT_CLI
 // IF DEFINED: this unit supports BAKE mode.
 #define SUPPORT_BAKE
 // IF DEFINED: this unit may run on 2xAA cells, preferably rechargeable eg NiMH, ~2V--2.4V, and should monitor supply voltage.
 #define SUPPLY_VOLTAGE_LOW_2AA // May require limiting clock speed and using some alternative peripherals/sensors...
-// IF DEFINED: basic FROST/WARM temperatures are settable.
-#define SETTABLE_TARGET_TEMPERATURES
 // IF DEFINED: use FHT8V wireless radio module/valve.
 #define USE_MODULE_FHT8VSIMPLE
-// IF DEFINED: use simple LDR-based detection of room use/occupancy; brings in getRoomInUseFromLDR subroutine.
+// IF DEFINED: use simple LDR-based detection of room use/occupancy; brings in getRoomInUseFromLDR subroutne.
 #define USE_MODULE_LDROCCUPANCYDETECTION
 // If LDR is not to be used then specifically define OMIT_... as below.
 //#define OMIT_MODULE_LDROCCUPANCYDETECTION //  LDR 'occupancy' sensing irrelevant for DHW.
-// IF DEFINED: support for general timed and multi-input occupancy detection / use.
-#define OCCUPANCY_SUPPORT
 // IF DEFINED: use software RTC.
 #define USE_RTC_INTERNAL_SIMPLE // Provide software RTC support by default.
 // IF DEFINED: support one on and one off time per day (possibly in conjunction with 'learn' button).
@@ -427,7 +478,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 
 // If (potentially) needing to run in some sort of continuous RX mode, define a flag true (else false).
-#if defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX)
+#if defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX) || defined(ENABLE_DEFAULT_ALWAYS_RX)
 #define CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX true
 #else
 #define CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX false

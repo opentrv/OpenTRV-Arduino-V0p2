@@ -98,15 +98,6 @@ void _TEST_set_basetemp_override(const _TEST_basetemp_override override)
 #define TEMP_SCALE_MID ((BIASECO_WARM + BIASCOM_WARM + 1)/2) // Middle of range for adjustable-base-temperature systems; should be 'eco' baised.
 #define TEMP_SCALE_MAX (BIASCOM_WARM+1) // Top of range for adjustable-base-temperature systems.
 
-// If true (the default) then the system has an 'Eco' energy-saving bias, else it has a 'comfort' bias.
-// Several system parameters are adjusted depending on the bias,
-// with 'eco' slanted toward saving energy, eg with lower target temperatures and shorter on-times.
-#ifndef hasEcoBias // If not a macro...
-// True if WARM temperature at/below halfway mark between eco and comfort levels.
-// Midpoint should be just in eco part to provide a system bias toward eco.
-bool hasEcoBias() { return(getWARMTargetC() <= TEMP_SCALE_MID); }
-//#endif
-#endif
 
 // Get 'FROST' protection target in C; no higher than getWARMTargetC() returns, strictly positive, in range [MIN_TARGET_C,MAX_TARGET_C].
 #if defined(TEMP_POT_AVAILABLE)
@@ -226,7 +217,7 @@ uint8_t getWARMTargetC()
   return(fnmax(stored, getFROSTTargetC()));
   }
 #else
-#define getWARMTargetC() ((uint8_t) (WARM)) // Fixed value.
+uint8_t getWARMTargetC() { return((uint8_t) (WARM)); } // Fixed value.
 #endif
 
 #if defined(SETTABLE_TARGET_TEMPERATURES)
@@ -251,6 +242,17 @@ bool setWARMTargetC(uint8_t tempC)
   eeprom_smart_update_byte((uint8_t *)EE_START_WARM_C, tempC); // Update in EEPROM if necessary.
   return(true); // Assume value correctly written.
   }
+#endif
+
+
+// If true (the default) then the system has an 'Eco' energy-saving bias, else it has a 'comfort' bias.
+// Several system parameters are adjusted depending on the bias,
+// with 'eco' slanted toward saving energy, eg with lower target temperatures and shorter on-times.
+#ifndef hasEcoBias // If not a macro...
+// True if WARM temperature at/below halfway mark between eco and comfort levels.
+// Midpoint should be just in eco part to provide a system bias toward eco.
+bool hasEcoBias() { return(getWARMTargetC() <= TEMP_SCALE_MID); }
+//#endif
 #endif
 
 
@@ -451,9 +453,9 @@ bool shouldBeWarmedAtHour(const uint_least8_t hh)
 
 
 
+#ifdef ENABLE_MODELLED_RAD_VALVE
 // Internal model of controlled radidator valve position.
 ModelledRadValve NominalRadValve;
-
 // Cache initially unset.
 uint8_t ModelledRadValve::mVPRO_cache = 0;
 
@@ -992,8 +994,53 @@ void ModelledRadValve::computeCallForHeat()
   computeTargetTemperature();
   retainedState.tick(value, inputState);
   }
+//#endif // ENABLE_MODELLED_RAD_VALVE
+#elif defined(SLAVE_TRV)
+// Singleton implementation for entire node.
+SimpleSlaveRadValve NominalRadValve;
 
+// Set new value.
+// Ignores invalid values.
+bool SimpleSlaveRadValve::set(const uint8_t newValue)
+  {
+  if(!isValid(newValue)) { return(false); }
+  if(newValue != value)
+    {
+    value = newValue;
+    // Regenerate buffer ready to TX to FHT8V.
+    FHT8VCreateValveSetCmdFrame(*this);
+    }
+  ticksLeft = TIMEOUT_MINS;
+  return(true);
+  }
 
+// Do any regular work that needs doing.
+// Deals with timeout and reversion to 'safe' valve position if the controller goes quiet.
+// Call at a fixed rate (1/60s).
+// Potentially expensive/slow.
+uint8_t SimpleSlaveRadValve::read()
+  {
+  if((0 == ticksLeft) || (0 == --ticksLeft))
+    {
+    value = SAFE_POSITION_PC;
+#if 1 && defined(DEBUG)
+    DEBUG_SERIAL_PRINTLN_FLASHSTRING("!controller silent: valve moved to safe position");
+#endif
+    }
+  return(value);
+  }
+
+// Returns true if (re)calibrating/(re)initialising/(re)syncing.
+// The target valve position is not lost while this is true.
+// By default there is no recalibration step.
+bool SimpleSlaveRadValve::isRecalibrating() const
+  {
+#ifdef USE_MODULE_FHT8VSIMPLE
+  if(!isSyncedWithFHT8V()) { return(true); }
+#endif
+  return(false);
+  }
+#endif
 
 
 // The STATS_SMOOTH_SHIFT is chosen to retain some reasonable precision within a byte and smooth over a weekly cycle.
@@ -1293,7 +1340,11 @@ void populateCoreStats(FullStatsMessageCore_t *const content)
   content->containsAmbL = true;
   // OC1/OC2 = Occupancy: 00 not disclosed, 01 not occupied, 10 possibly occupied, 11 probably occupied.
   // The encodeFullStatsMessageCore() route should omit data not appopriate for security reasons.
+#ifdef OCCUPANCY_SUPPORT
   content->occ = Occupancy.twoBitOccupancyValue();
+#else
+  content->occ = 0; // Not supported.
+#endif
   }
 
 
@@ -1780,8 +1831,12 @@ void loopOpenTRV()
 #if defined(ENABLE_BOILER_HUB)
     (0 == boilerCountdownTicks) && // Unless the boiler is off, stay responsive.
 #endif
-    (!NominalRadValve.isControlledValveReallyOpen()) &&  // Run at full speed until valve(s) should actually have shut and the boiler gone off.
-    (!NominalRadValve.isCallingForHeat()); // Run at full speed until not nominally demanding heat, eg even during FROST mode or pre-heating.
+#ifdef ENABLE_NOMINAL_RAD_VALVE
+    (!NominalRadValve.isControlledValveReallyOpen()); // &&  // Run at full speed until valve(s) should actually have shut and the boiler gone off.
+//    (!NominalRadValve.isCallingForHeat()); // Run at full speed until not nominally demanding heat, eg even during FROST mode or pre-heating.
+#else
+    true; // Allow local power conservation if all other factors are right.
+#endif
 
   // Try if very near to end of cycle and thus causing an overrun.
   // Conversely, if not true, should have time to savely log outputs, etc.
@@ -1802,7 +1857,11 @@ void loopOpenTRV()
   // and could be disabled if no local valve is being run to provide better response to remote nodes.
   bool hubModeBoilerOn = false; // If true then remote call for heat is in progress.
 //#if defined(USE_MODULE_FHT8VSIMPLE)
+#ifdef ENABLE_DEFAULT_ALWAYS_RX
+  bool needsToEavesdrop = true; // By default listen.
+#else
   bool needsToEavesdrop = false; // By default assume no need to eavesdrop.
+#endif
 //#endif
   if(hubMode)
     {
@@ -1928,6 +1987,12 @@ void loopOpenTRV()
   if(needsToEavesdrop)
     {
 #if 1 && defined(DEBUG)
+    for(uint8_t lastErr; 0 != (lastErr = RFM23B.getRXErr()); )
+      {
+      DEBUG_SERIAL_PRINT_FLASHSTRING("!RX err ");
+      DEBUG_SERIAL_PRINT(lastErr);
+      DEBUG_SERIAL_PRINTLN();
+      }
     const uint8_t dropped = RFM23B.getRXMsgsDroppedRecent();
     static uint8_t oldDropped;
     if(dropped != oldDropped)
@@ -1937,11 +2002,17 @@ void loopOpenTRV()
       DEBUG_SERIAL_PRINTLN();
       oldDropped = dropped;
       }
-    for(uint8_t lastErr; 0 != (lastErr = RFM23B.getRXErr()); )
+#endif
+#if 0 && defined(DEBUG)
+    // Filtered out messages are not any sort of error.
+    const uint8_t filtered = RFM23B.getRXMsgsFilteredRecent();
+    static uint8_t oldFiltered;
+    if(filtered != oldFiltered)
       {
-      DEBUG_SERIAL_PRINT_FLASHSTRING("!RX err ");
-      DEBUG_SERIAL_PRINT(lastErr);
+      DEBUG_SERIAL_PRINT_FLASHSTRING("RX filtered ");
+      DEBUG_SERIAL_PRINT(filtered);
       DEBUG_SERIAL_PRINTLN();
+      oldFiltered = filtered;
       }
 #endif
 #if 0 && defined(DEBUG)
@@ -1959,8 +2030,12 @@ void loopOpenTRV()
   // Set BOILER_OUT as appropriate for local and/or remote calls for heat.
   // FIXME: local valve-driven boiler on does not obey normal on/off run-time rules.
 #if defined(ENABLE_BOILER_HUB)
-  fastDigitalWrite(OUT_HEATCALL, ((hubModeBoilerOn || NominalRadValve.isControlledValveReallyOpen()) ? HIGH : LOW));
-#elif defined(OUT_HEATCALL) // May not be available on all boards.
+  fastDigitalWrite(OUT_HEATCALL, ((hubModeBoilerOn
+    #ifdef ENABLE_NOMINAL_RAD_VALVE
+      || NominalRadValve.isControlledValveReallyOpen()
+    #endif
+      ) ? HIGH : LOW));
+#elif defined(OUT_HEATCALL) && defined(ENABLE_NOMINAL_RAD_VALVE) // May not be available on all boards.
   fastDigitalWrite(OUT_HEATCALL, NominalRadValve.isControlledValveReallyOpen() ? HIGH : LOW);
 #endif
 
@@ -1984,6 +2059,7 @@ void loopOpenTRV()
     // before sleep and on wakeup in case some IO needs further processing now,
     // eg work was accrued during the previous major slow/outer loop
     // or the in a previous orbit of this loop sleep or nap was terminated by an I/O interrupt.
+    // May generate output to host on Serial.
     // Come back and have another go if work was done, until the next tick at most.
     if(handleQueuedMessages(&Serial, true, &RFM23B)) { continue; }
 
@@ -2025,7 +2101,6 @@ void loopOpenTRV()
 //  // Check RSSI...
 //  if(needsToEavesdrop)
 //    {
-////    const uint8_t rssi = RFM22RSSI();
 //    const uint8_t rssi = RFM23.getRSSI();
 //    static uint8_t lastRSSI;
 //    if((rssi > 0) && (lastRSSI != rssi))
@@ -2080,7 +2155,11 @@ void loopOpenTRV()
   //   * the valve is not required to be wide open (ie a reasonable temperature is currently being maintained).
   //   * this is a hub and has to listen as much as possible
   // to conserve battery and bandwidth.
+  #ifdef ENABLE_NOMINAL_RAD_VALVE
   const bool doubleTXForFTH8V = !conserveBattery && !hubMode && (NominalRadValve.get() >= 50);
+  #else
+  const bool doubleTXForFTH8V = false;
+  #endif
   // FHT8V is highest priority and runs first.
   // ---------- HALF SECOND #0 -----------
   bool useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_First(doubleTXForFTH8V); // Time for extra TX before UI.
@@ -2096,18 +2175,35 @@ void loopOpenTRV()
   if(0 == (TIME_LSD & 1))
 #endif
     {
+#ifdef ENABLE_FULL_OT_UI
+    // Run the OpenTRV button/LED UI if required.
     if(tickUI(TIME_LSD))
       {
       showStatus = true;
       recompute = true;
       }
+#endif
+  // Alternative UI tickers...
+#ifdef ALLOW_CC1_SUPPORT_RELAY_IO // REV9 CC1 relay...
+    // Run the CC1 relay UI.
+    if(tickUICO(TIME_LSD))
+      {
+      showStatus = true;
+      }
+#endif
     }
+  // Handling the UI may have taken a little while, so process I/O a little.
+  handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O.
 
+
+
+#ifdef ENABLE_MODELLED_RAD_VALVE
   if(recompute || veryRecentUIControlUse())
     {
     // Force immediate recompute of target temperature for (UI) responsiveness.
     NominalRadValve.computeTargetTemperature();
     }
+#endif
 
 
 #if defined(USE_MODULE_FHT8VSIMPLE)
@@ -2117,6 +2213,8 @@ void loopOpenTRV()
     // ---------- HALF SECOND #1 -----------
     useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V); 
 //    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@1"); }
+    // Handling the FHT8V may have taken a little while, so process I/O a little.
+    handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O.
     }
 #endif
 
@@ -2179,7 +2277,7 @@ void loopOpenTRV()
         // Sleep randomly up to 128ms to spread transmissions and thus help avoid collisions.
         sleepLowPowerLessThanMs(1 + (OTV0P2BASE::randRNG8() & 0x7f));
 //        nap(randRNG8NextBoolean() ? WDTO_60MS : WDTO_120MS); // FIXME: need a different random interval generator!
-        pollIO(); // Deal with any pending I/O.
+        handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O.
         // Send it!
         // Try for double TX for extra robustness unless:
         //   * this is a speculative 'extra' TX
@@ -2242,18 +2340,20 @@ void loopOpenTRV()
       Occupancy.read();
 #endif
 
+#ifdef ENABLE_NOMINAL_RAD_VALVE
       // Recompute target, valve position and call for heat, etc.
       // Should be called once per minute to work correctly.
       NominalRadValve.read();
+#endif
 
-#if defined(USE_MODULE_FHT8VSIMPLE)
+#if defined(USE_MODULE_FHT8VSIMPLE) && defined(LOCAL_TRV) // Only regen when needed.
       // If there was a change in target valve position,
       // or periodically in the minute after all sensors should have been read,
       // precompute some or all of any outgoing frame/stats/etc ready for the next transmission.
       if(NominalRadValve.isValveMoved() ||
          (minute1From4AfterSensors && enableTrailingStatsPayload()))
         {
-        if(localFHT8VTRVEnabled()) { FHT8VCreateValveSetCmdFrame(); }
+        if(localFHT8VTRVEnabled()) { FHT8VCreateValveSetCmdFrame(NominalRadValve); }
         }
 #endif
 
@@ -2304,6 +2404,8 @@ void loopOpenTRV()
     // ---------- HALF SECOND #2 -----------
     useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V); 
 //    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@2"); }
+    // Handling the FHT8V may have taken a little while, so process I/O a little.
+    handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O.
     }
 #endif
 
@@ -2316,6 +2418,8 @@ void loopOpenTRV()
     // ---------- HALF SECOND #3 -----------
     useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V); 
 //    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@3"); }
+    // Handling the FHT8V may have taken a little while, so process I/O a little.
+    handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O.
     }
 #endif
 
@@ -2335,7 +2439,7 @@ void loopOpenTRV()
       // Don't listen beyond the last 16th of the cycle,
       // or a minimal time if only prodding for interaction with automated front-end,
       // as listening for UART RX uses lots of power.
-      { pollCLI(humanCLIUse ? (GSCT_MAX-listenTime) : (sct+CLI_POLL_MIN_SCT)); }
+      { pollCLI(humanCLIUse ? (GSCT_MAX-listenTime) : (sct+CLI_POLL_MIN_SCT), 0 == TIME_LSD); }
     }
 #endif
 

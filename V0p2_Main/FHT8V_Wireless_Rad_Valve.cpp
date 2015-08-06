@@ -47,6 +47,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // Use the global value for now.
 #define FHT8V_MIN_VALVE_PC_REALLY_OPEN DEFAULT_MIN_VALVE_PC_REALLY_OPEN
 
+// If true then allow double TX for normal valve setting, else only allow it for sync.
+// May want to enforce this where bandwidth is known to be scarce.
+static const bool ALLOW_NON_SYNC_DOUBLE_TX = false;
+
 
 #if defined(USE_MODULE_RFM22RADIOSIMPLE)
 // Provide RFM22/RFM23 register settings for use with FHT8V in Flash memory.
@@ -54,21 +58,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // Magic numbers c/o Mike Stirling!
 const uint8_t FHT8V_RFM22_Reg_Values[][2] PROGMEM =
   {
-    {6,0}, // Disable default chiprdy and por interrupts.
-    {8,0}, // RFM22REG_OP_CTRL2: ANTDIVxxx, RXMPK, AUTOTX, ENLDM
-
-#ifndef RFM22_IS_ACTUALLY_RFM23
-// For RFM22 with RXANT tied to GPIO0, and TXANT tied to GPIO1...
-    {0xb,0x15}, {0xc,0x12}, // Can be omitted FOR RFM23.
-#endif
-
-// 0x30 = 0x00 - turn off packet handling
-// 0x33 = 0x06 - set 4 byte sync
-// 0x34 = 0x08 - set 4 byte preamble
-// 0x35 = 0x10 - set preamble threshold (RX) 2 nybbles / 1 bytes of preamble.
-// 0x36-0x39 = 0xaacccccc - set sync word, using end of RFM22-pre-preamble and start of FHT8V preamble.
-    {0x30,0}, {0x33,6}, {0x34,8}, {0x35,0x10}, {0x36,0xaa}, {0x37,0xcc}, {0x38,0xcc}, {0x39,0xcc},
-
+  // Putting TX power setting first to help with dynamic adjustment.
 // From AN440: The output power is configurable from +13 dBm to -8 dBm (Si4430/31), and from +20 dBM to -1 dBM (Si4432) in ~3 dB steps. txpow[2:0]=000 corresponds to min output power, while txpow[2:0]=111 corresponds to max output power.
 // The maximum legal ERP (not TX output power) on 868.35 MHz is 25 mW with a 1% duty cycle (see IR2030/1/16).
 //EEPROM ($6d,%00001111) ; RFM22REG_TX_POWER: Maximum TX power: 100mW for RFM22; not legal in UK/EU on RFM22 for this band.
@@ -86,6 +76,21 @@ const uint8_t FHT8V_RFM22_Reg_Values[][2] PROGMEM =
     {0x6d,0xb},
     #endif
 #endif
+
+    {6,0}, // Disable default chiprdy and por interrupts.
+    {8,0}, // RFM22REG_OP_CTRL2: ANTDIVxxx, RXMPK, AUTOTX, ENLDM
+
+#ifndef RFM22_IS_ACTUALLY_RFM23
+// For RFM22 with RXANT tied to GPIO0, and TXANT tied to GPIO1...
+    {0xb,0x15}, {0xc,0x12}, // Can be omitted FOR RFM23.
+#endif
+
+// 0x30 = 0x00 - turn off packet handling
+// 0x33 = 0x06 - set 4 byte sync
+// 0x34 = 0x08 - set 4 byte preamble
+// 0x35 = 0x10 - set preamble threshold (RX) 2 nybbles / 1 bytes of preamble.
+// 0x36-0x39 = 0xaacccccc - set sync word, using end of RFM22-pre-preamble and start of FHT8V preamble.
+    {0x30,0}, {0x33,6}, {0x34,8}, {0x35,0x10}, {0x36,0xaa}, {0x37,0xcc}, {0x38,0xcc}, {0x39,0xcc},
 
     {0x6e,40}, {0x6f,245}, // 5000bps, ie 200us/bit for FHT (6 for 1, 4 for 0).  10485 split across the registers, MSB first.
     {0x70,0x20}, // MOD CTRL 1: low bit rate (<30kbps), no Manchester encoding, no whitening.
@@ -309,9 +314,10 @@ uint8_t *FHT8VCreateValveSetCmdFrame_r(uint8_t *const bptr, fht8v_msg_t *command
 
   // Add RFM22-friendly pre-preamble only if calling for heat from the boiler (TRV actually open)
   // OR if adding a trailer that the hub should see.
+  // Only do this for smart local valves; assume slave valves need not signal back to the boiler this way.
   // NOTE: this requires more buffer space.
   const bool doHeader = etmsp
-#if defined(RFM22_SYNC_BCFH)
+#if defined(RFM22_SYNC_BCFH) && defined(LOCAL_VALUE)
   // NOTE: the percentage-open threshold to call for heat from the boiler is set to allow the valve to open significantly, etc.
       || (TRVPercentOpen >= NominalRadValve.getMinValvePcReallyOpen())
 #endif
@@ -384,7 +390,7 @@ void FHT8VCreateValveSetCmdFrame(const uint8_t valvePC)
 // HC1 and HC2 are fetched with the FHT8VGetHC1() and FHT8VGetHC2() calls, and address is always 0.
 // The generated command frame can be resent indefinitely.
 // If no valve is set up then this may simply terminate an empty buffer with 0xff.
-void FHT8VCreateValveSetCmdFrame()
+void FHT8VCreateValveSetCmdFrame(const AbstractRadValve &valve)
   {
   if(!localFHT8VTRVEnabled())
     {
@@ -393,7 +399,8 @@ void FHT8VCreateValveSetCmdFrame()
     return;
     }
 
-  FHT8VCreateValveSetCmdFrame(NominalRadValve.get());
+  FHT8VCreateValveSetCmdFrame(valve.get());
+//  FHT8VCreateValveSetCmdFrame(NominalRadValve.get());
   }
 
 // True once/while this node is synced with and controlling the target FHT8V valve; initially false.
@@ -419,8 +426,14 @@ bool FHT8VisControlledValveOpen() { return(getFHT8V_isValveOpen()); }
 // Call just after TX of valve-setting command which is assumed to reflect current TRVPercentOpen state.
 // This helps avoiding calling for heat from a central boiler until the valve is really open,
 // eg to avoid excess load on (or energy wasting by) the circulation pump.
+#ifdef ENABLE_NOMINAL_RAD_VALVE
 static void setFHT8V_isValveOpen()
+#ifdef LOCAL_TRV // More nuanced test...
   { FHT8V_isValveOpen = (NominalRadValve.get() >= NominalRadValve.getMinValvePcReallyOpen()); }
+#else
+  { FHT8V_isValveOpen = (NominalRadValve.get() >= NominalRadValve.getMinPercentOpen()); }
+#endif
+#endif
 
 
 // Sync status and down counter for FHT8V, initially zero; value not important once in sync.
@@ -494,9 +507,12 @@ static void FHT8VTXFHTQueueAndSendCmd(uint8_t *bptr, const bool doubleTX)
 static void valveSettingTX(const bool allowDoubleTX)
   {
   // Transmit correct valve-setting command that should already be in the buffer...
-  FHT8VTXFHTQueueAndSendCmd(FHT8VTXCommandArea, allowDoubleTX);
+  // May not allow double TX for non-sync transmissions to conserve bandwidth.
+  FHT8VTXFHTQueueAndSendCmd(FHT8VTXCommandArea, ALLOW_NON_SYNC_DOUBLE_TX && allowDoubleTX);
+#ifdef ENABLE_NOMINAL_RAD_VALVE
   // Indicate state that valve should now actually be in (or physically moving to)...
   setFHT8V_isValveOpen();
+#endif
   }
 
 // Half second count within current minor cycle for FHT8VPollSyncAndTX_XXX().
@@ -526,33 +542,25 @@ static uint8_t FHT8VTXGapHalfSeconds(const uint8_t hc2, const uint8_t halfSecond
 // This is NOT intended to be used to sleep over the end of a minor cycle.
 static void sleepUntilSubCycleTimeOptionalRX(const uint8_t sleepUntil)
     {
-#if defined(ENABLE_BOILER_HUB)
-    const bool hubMode = inHubMode();
-    // Slowly poll for incoming RX while waiting for a particular time, eg to TX.
-    if(hubMode)
-      {
 #if 0 && defined(DEBUG)
-      DEBUG_SERIAL_PRINT_FLASHSTRING("TXwait");
+    DEBUG_SERIAL_PRINT_FLASHSTRING("TXwait");
 #endif
+    // Poll I/O regularly if listening out for radio comms.
+    if(inHubMode())
+      {
       // Only do nap+poll if lots of time left.
       while(sleepUntil > fmax(getSubCycleTime() + (50/SUBCYCLE_TICK_MS_RD), GSCT_MAX))
         { nap15AndPoll(); } // Assumed ~15ms sleep max.
       // Poll in remaining time without nap.
       while(sleepUntil > getSubCycleTime())
         { pollIO(); }
-#if 0 && defined(DEBUG)
-      DEBUG_SERIAL_PRINT_FLASHSTRING("*");
-#endif
       }
+#if 0 && defined(DEBUG)
+    DEBUG_SERIAL_PRINT_FLASHSTRING("*");
 #endif
 
     // Sleep until exactly the right time.
     sleepUntilSubCycleTime(sleepUntil);
-
-//#if defined(ENABLE_BOILER_HUB)
-//    // Final quick poll for RX activity.
-//    if(hubMode) { FHT8VCallForHeatPoll(); }
-//#endif
     }
 
 // Run the algorithm to get in sync with the receiver.
@@ -599,6 +607,8 @@ static bool doSync(const bool allowDoubleTX)
 #endif
       }
 
+    handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O built up while waiting.
+
     // After penultimate sync TX set up time to sending of final sync command.
     if(1 == --syncStateFHT8V)
       {
@@ -624,7 +634,7 @@ static bool doSync(const bool allowDoubleTX)
       FHT8VCreate200usBitStreamBptr(FHT8VTXCommandArea, &command);
       if(halfSecondCount > 0) { sleepUntilSubCycleTimeOptionalRX((SUB_CYCLE_TICKS_PER_S/2) * halfSecondCount); }
       FHT8VTXFHTQueueAndSendCmd(FHT8VTXCommandArea, allowDoubleTX); // SEND SYNC FINAL
-    // Note that FHT8VTXCommandArea now does not contain a valid valve-setting command...
+      // Note that FHT8VTXCommandArea now does not contain a valid valve-setting command...
 #if 0 && defined(DEBUG)
       DEBUG_SERIAL_TIMESTAMP();
       DEBUG_SERIAL_PRINT(' ');
@@ -640,7 +650,11 @@ static bool doSync(const bool allowDoubleTX)
       //*FHT8VTXCommandArea = 0xff;
 
       // On ATmega there is plenty of CPU heft to fill command buffer immediately with valve-setting command.
-      FHT8VCreateValveSetCmdFrame();
+#ifdef ENABLE_NOMINAL_RAD_VALVE
+      FHT8VCreateValveSetCmdFrame(NominalRadValve);
+#else
+      FHT8VCreateValveSetCmdFrame(0);
+#endif
 
       // Set up correct delay to next TX; no more this minor cycle...
       halfSecondsToNextFHT8VTX = FHT8VTXGapHalfSeconds(command.hc2, halfSecondCount);
@@ -760,6 +774,7 @@ bool FHT8VPollSyncAndTX_Next(const bool allowDoubleTX)
     // DEBUG_SERIAL_PRINTLN_FLASHSTRING(" FHT8V TX");
 #endif
     serialPrintlnAndFlush(F("FHT8V TX"));
+    handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O built up while waiting.
 
     // Set up correct delay to next TX.
     halfSecondsToNextFHT8VTX = FHT8VTXGapHalfSeconds(FHT8VGetHC2(), halfSecondCount);
@@ -771,31 +786,31 @@ bool FHT8VPollSyncAndTX_Next(const bool allowDoubleTX)
 #endif
   }
 
-#if defined(FHT8V_ALLOW_EXTRA_TXES)
-// Does an extra (single) TX if safe to help ensure that the hub hears, eg in case of poor comms.
-// Safe means when in sync with the valve,
-// and well away from the normal transmission windows to avoid confusing the valve.
-// Returns true iff a TX was done.
-// This may also be omitted if the TX would not be heard by the hub anyway.
-// Note: (single) transmission time is up to about 80ms.
-// In future this may be transmitted so as never to be decoded by the valve,
-// and seen by the hub as an extra TX with its offset from the real TX also sent.
-// FIXME: have this use alternative stats message form to avoid confusing FHT8V valve or hub.
-bool FHT8VDoSafeExtraTXToHub()
-  {
-  // Do nothing until in sync.
-  if(!syncedWithFHT8V) { return(false); }
-  // Do nothing if too close to (within maybe 10s of) the start or finish of a ~2m TX cycle
-  // (which might cause FHT8V to latch onto the wrong, extra, TX, for example).
-  if((halfSecondsToNextFHT8VTX < 20) || (halfSecondsToNextFHT8VTX > 210)) { return(false); }
-  // Do nothing if we would not send something that the hub would hear anyway.
-  if(NominalRadValve.get() < getMinValvePcReallyOpen()) { return(false); }
-  // Do (single) TX.
-  FHT8VTXFHTQueueAndSendCmd(FHT8VTXCommandArea, false);
-  // Done it.
-  return(true);
-  }
-#endif
+//#if defined(FHT8V_ALLOW_EXTRA_TXES)
+//// Does an extra (single) TX if safe to help ensure that the hub hears, eg in case of poor comms.
+//// Safe means when in sync with the valve,
+//// and well away from the normal transmission windows to avoid confusing the valve.
+//// Returns true iff a TX was done.
+//// This may also be omitted if the TX would not be heard by the hub anyway.
+//// Note: (single) transmission time is up to about 80ms.
+//// In future this may be transmitted so as never to be decoded by the valve,
+//// and seen by the hub as an extra TX with its offset from the real TX also sent.
+//// FIXME: have this use alternative stats message form to avoid confusing FHT8V valve or hub.
+//bool FHT8VDoSafeExtraTXToHub()
+//  {
+//  // Do nothing until in sync.
+//  if(!syncedWithFHT8V) { return(false); }
+//  // Do nothing if too close to (within maybe 10s of) the start or finish of a ~2m TX cycle
+//  // (which might cause FHT8V to latch onto the wrong, extra, TX, for example).
+//  if((halfSecondsToNextFHT8VTX < 20) || (halfSecondsToNextFHT8VTX > 210)) { return(false); }
+//  // Do nothing if we would not send something that the hub would hear anyway.
+//  if(NominalRadValve.get() < getMinValvePcReallyOpen()) { return(false); }
+//  // Do (single) TX.
+//  FHT8VTXFHTQueueAndSendCmd(FHT8VTXCommandArea, false);
+//  // Done it.
+//  return(true);
+//  }
+//#endif
 
 
 // Hub-mode receive buffer for RX from FHT8V.
@@ -1074,393 +1089,6 @@ uint8_t const *FHT8VDecodeBitStream(uint8_t const *bitStream, uint8_t const *las
   // in next byte beyond end of FHT8V frame.
   return(state.bitStream + 1);
   }
-
-//// Polls radio for OpenTRV calls for heat once/if SetupToEavesdropOnFHT8V() is in effect.
-//// Does not misbehave (eg return false positives) even if SetupToEavesdropOnFHT8V() not set, eg has been in standby.
-//// If used instead of an interrupt then should probably called at least about once every 100ms.
-//// Returns true if any useful activity/progress was detected by this call (not necessarily a full valid call-for-heat).
-//// Upon receipt of a valid call-for-heat this comes out of eavesdropping mode to save energy.
-//// If a problem is encountered this restarts the eavesdropping process.
-//// Does not block nor take significant time.
-//#if 0 && defined(DEBUG)
-//void debugReportRSSI(const uint8_t id)
-//  {
-//    /*
-//    RSSI [0..255] equiv [-120..20]dB 0.5 dB Steps
-//    where roughly
-//    RSSI [16..230] equiv [-120..0]dB 0.5 dB Steps
-//    RSSI [231] equiv [0.5..20]dB 0.5 dB Steps
-//    */
-//    const uint8_t rssi = RFM22RSSI();
-//    DEBUG_SERIAL_TIMESTAMP();
-//    DEBUG_SERIAL_PRINT(' ');
-//    DEBUG_SERIAL_PRINT(id);
-//    DEBUG_SERIAL_PRINT_FLASHSTRING("r=");
-//    DEBUG_SERIAL_PRINT(rssi);
-//    DEBUG_SERIAL_PRINTLN();
-//  }
-//#else
-//#define debugReportRSSI(id)
-//#endif
-
-//bool FHT8VCallForHeatPoll()
-//  {
-//  // Do nothing unless already in eavesdropping mode.
-//  if(!eavesdropping) { return(false); }
-//
-////#if defined(SAVE_RX_ENERGY)
-////  // Do nothing once call for heat has been collected and is pending action.
-////  if(FHT8VCallForHeatHeard()) { return(false); }
-////#endif
-//
-//#if defined(PIN_RFM_NIRQ)
-//  // If nIRQ line is available then abort if it is not active (and thus spare the SPI bus).
-//  if(fastDigitalRead(PIN_RFM_NIRQ) != LOW) { return(false); }
-//#if 0 && defined(DEBUG)
-//  DEBUG_SERIAL_PRINTLN_FLASHSTRING("RX IRQ");
-//#endif
-//#endif
-//
-//  const uint16_t status = RFM22ReadStatusBoth(); // reg1:reg2, on V0.08 PICAXE tempB2:SPI_DATAB.
-//
-//  if(status & 0x1000) // Received frame.
-//    {
-//#if 0 && defined(DEBUG)
-//    debugReportRSSI(1);
-//#endif
-//// Ensure that data from a previous frame is not trivially re-read by clearing the buffer explicitly.
-////    for(uint8_t *p = FHT8VRXHubArea + FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE; --p >= FHT8VRXHubArea; )
-////      { *p = 0; }
-//    memset(FHT8VRXHubArea, 0xff, sizeof(FHT8VRXHubArea));
-//    // Attempt to read the entire frame.
-//    RFM22RXFIFO(FHT8VRXHubArea, sizeof(FHT8VRXHubArea));
-//    uint8_t pos; // Current byte position in RX buffer...
-//    // Validate FHT8V premable (zeros encoded as up to 6x 0xcc bytes), else abort/restart.
-//    // Insist on at least a couple of bytes of valid preamble being present.
-//    for(pos = 0; pos < 6; ++pos)
-//      {
-//      const uint8_t b = FHT8VRXHubArea[pos];
-//      if(0xcc != b)
-//        {
-//        if(MSG_JSON_LEADING_CHAR == b)
-//          {
-//          if(adjustJSONMsgForRXAndCheckCRC((char *)(FHT8VRXHubArea + pos), sizeof(FHT8VRXHubArea)-pos) > 0)
-//            {
-//            recordJSONStats(false, (const char *)(FHT8VRXHubArea + pos));
-//            _SetupRFM22ToEavesdropOnFHT8V(); // Reset/restart RX.
-//            return(true); // Claim that something has been received.
-//            }
-//#if 0 && defined(DEBUG)
-//          DEBUG_SERIAL_PRINTLN_FLASHSTRING("!Bad JSON msg");
-//#endif
-//          setLastRXErr(FHT8VRXErr_BAD_RX_STATSFRAME);
-//          _SetupRFM22ToEavesdropOnFHT8V(); // Reset/restart RX.
-//          return(false); // Didn't look like valid JSON.
-//          }
-//        else if(MESSAGING_FULL_STATS_FLAGS_HEADER_MSBS == (b & MESSAGING_FULL_STATS_FLAGS_HEADER_MASK))
-//          {
-//          // May be binary stats frame, so attempt to decode...
-//          FullStatsMessageCore_t content;
-//          // (TODO: should reject non-secure messages when expecting secure ones...)
-//          const uint8_t *msg = decodeFullStatsMessageCore(FHT8VRXHubArea, sizeof(FHT8VRXHubArea)-pos, stTXalwaysAll, false, &content);
-//          if(NULL != msg)
-//             {
-//             if(content.containsID)
-//               {
-//#if 0 && defined(DEBUG)
-//               DEBUG_SERIAL_PRINT_FLASHSTRING("Stats msg");
-//               DEBUG_SERIAL_PRINT_FLASHSTRING(" from ");
-//               DEBUG_SERIAL_PRINTFMT(content.id0, HEX);
-//               DEBUG_SERIAL_PRINT(' ');
-//               DEBUG_SERIAL_PRINTFMT(content.id1, HEX);
-//               DEBUG_SERIAL_PRINTLN();
-//#endif
-//               recordCoreStats(false, &content);
-//               }
-//             _SetupRFM22ToEavesdropOnFHT8V(); // Reset/restart RX.
-//             return(true); // Received something!
-//             }
-//#if 0
-//          else
-//            {
-//            setLastRXErr(FHT8VRXErr_BAD_RX_STATSFRAME);
-//            seedRNG8(FHT8VRXHubArea[pos+1], FHT8VRXHubArea[pos+2], FHT8VRXHubArea[pos+3]); // Attempt to gather some entropy from RX noise. (TODO-302).
-//            }
-//#endif
-//
-//          _SetupRFM22ToEavesdropOnFHT8V(); // Reset/restart RX.
-//          return(false); // Nothing valid received.
-//          }
-//
-//        if(pos < 2)
-//          {
-//          setLastRXErr(FHT8VRXErr_BAD_PREAMBLE);
-//#if 0 && defined(DEBUG)
-//          DEBUG_SERIAL_PRINT_FLASHSTRING("RX preamble bad byte @");
-//          DEBUG_SERIAL_PRINT(pos);
-//          DEBUG_SERIAL_PRINT_FLASHSTRING(" value 0x");
-//          DEBUG_SERIAL_PRINTFMT(FHT8VRXHubArea[pos], HEX);
-//          for(int p = pos; ++p < 8; )
-//            {
-//            DEBUG_SERIAL_PRINT_FLASHSTRING(" 0x");
-//            DEBUG_SERIAL_PRINTFMT(FHT8VRXHubArea[p], HEX);
-//            }
-//          DEBUG_SERIAL_PRINTLN();
-//#endif
-//          seedRNG8(FHT8VRXHubArea[pos], FHT8VRXHubArea[pos+2], FHT8VRXHubArea[pos+5]); // Attempt to gather some entropy from RX noise. (TODO-302).
-//          _SetupRFM22ToEavesdropOnFHT8V(); // Reset/restart RX.
-//          return(false);
-//          }
-//        break; // If enough preamble has been seen, move on to the body.
-//        }
-//      }
-//    fht8v_msg_t command;
-//    uint8_t const *lastByte = FHT8VRXHubArea + FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE - 1;
-//    uint8_t const *trailer = FHT8VDecodeBitStream(FHT8VRXHubArea + pos, lastByte, &command);
-//    if(NULL != trailer)
-//      {
-//#if 0 && defined(DEBUG) // VERY SLOW: cannot leave this enabled in normal operation.
-//      DEBUG_SERIAL_PRINT_FLASHSTRING("RX raw");
-//      for(uint8_t i = pos; i < FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE; ++i)
-//        {
-//        const uint8_t b = FHT8VRXHubArea[i];
-//        DEBUG_SERIAL_PRINT_FLASHSTRING(" &");
-//        DEBUG_SERIAL_PRINTFMT(b, HEX);
-//        if(0 == b) { break; } // Stop after first zero (0 could contain at most 2 trailing bits of a valid code).
-//        }
-//      DEBUG_SERIAL_PRINTLN();
-//#endif
-//#if 0 && defined(DEBUG) // VERY SLOW: cannot leave this enabled in normal operation.
-//      DEBUG_SERIAL_PRINT_FLASHSTRING("RX: HC");
-//      DEBUG_SERIAL_PRINT(command.hc1);
-//      DEBUG_SERIAL_PRINT(',');
-//      DEBUG_SERIAL_PRINT(command.hc2);
-//      DEBUG_SERIAL_PRINT_FLASHSTRING(" cmd ");
-//      DEBUG_SERIAL_PRINT(command.command);
-//      DEBUG_SERIAL_PRINT_FLASHSTRING(" ext ");
-//      DEBUG_SERIAL_PRINT(command.extension);
-//      DEBUG_SERIAL_PRINTLN();
-//#endif
-//
-//#if defined(ALLOW_STATS_RX) // Only look for the trailer if supported.
-//      // If whole FHT8V frame was OK then check if there is a valid stats trailer.
-//
-//      // Check for 'core' stats trailer.
-//      if((trailer + FullStatsMessageCore_MAX_BYTES_ON_WIRE <= lastByte) && // Enough space for minimum-stats trailer.
-//         (MESSAGING_FULL_STATS_FLAGS_HEADER_MSBS == (trailer[0] & MESSAGING_FULL_STATS_FLAGS_HEADER_MASK)))
-//        {
-//        FullStatsMessageCore_t content;
-//        const uint8_t *tail = decodeFullStatsMessageCore(trailer, lastByte - trailer, stTXalwaysAll, false, &content);
-//        if(NULL != tail)
-//          {
-//          // Received trailing stats frame!
-//
-//          // If ID is present then make sure it matches that implied by the FHT8V frame (else reject this trailer)
-//          // else file it in from the FHT8C frame.
-//          bool allGood = true;
-//          if(content.containsID)
-//            {
-//            if((content.id0 != command.hc1) || (content.id1 != command.hc2))
-//              { allGood = false; }
-//            }
-//          else
-//            {
-//            content.id0 = command.hc1;
-//            content.id1 = command.hc2;
-//            content.containsID = true;
-//            }
-//
-//          // If frame looks good then capture it.
-//          if(allGood) { recordCoreStats(false, &content); }
-//          else { setLastRXErr(FHT8VRXErr_BAD_RX_SUBFRAME); }
-//          // TODO: record error with mismatched ID.
-//          }
-//        // TODO: maybe scrape some entropy from damaged frame.
-//        }
-//#if defined(ALLOW_MINIMAL_STATS_TXRX)
-//      // Check for minimum stats trailer.
-//      else if((trailer + MESSAGING_TRAILING_MINIMAL_STATS_PAYLOAD_BYTES <= lastByte) && // Enough space for minimum-stats trailer.
-//         (MESSAGING_TRAILING_MINIMAL_STATS_HEADER_MSBS == (trailer[0] & MESSAGING_TRAILING_MINIMAL_STATS_HEADER_MASK)))
-//        {
-//        if(verifyHeaderAndCRCForTrailingMinimalStatsPayload(trailer)) // Valid header and CRC.
-//          {
-//          trailingMinimalStatsPayload_t payload;
-//          extractTrailingMinimalStatsPayload(trailer, &payload);
-//          recordMinimalStats(true, command.hc1, command.hc2, &payload); // Record stats; local loopback is secure.
-//#if 0 && defined(DEBUG) // VERY SLOW: cannot leave this enabled in normal operation.NominalRadValve.get
-//          // Compute compound HC/ID value.
-//          const uint16_t compoundHC = (command.hc1 << 8) | command.hc2;
-//          DEBUG_SERIAL_PRINT_FLASHSTRING("Trailer: @");
-//          DEBUG_SERIAL_PRINTFMT(compoundHC, HEX);
-//          DEBUG_SERIAL_PRINT(' ');
-//          if(payload.powerLow) { DEBUG_SERIAL_PRINT_FLASHSTRING("powerLow "); }
-//          DEBUG_SERIAL_PRINT_FLASHSTRING("temp=");
-//          DEBUG_SERIAL_PRINTFMT(payload.tempC16 >> 4, DEC);
-//          DEBUG_SERIAL_PRINT('C');
-//          DEBUG_SERIAL_PRINTFMT(payload.tempC16 & 0xf, HEX);
-//          DEBUG_SERIAL_PRINTLN();
-//#endif
-//          }
-//#if 0 // Optional extra tracking of error rate/type/location.
-//        else // Failed to verify; deduce bad frame if header looks OK.
-//          {
-//          if(MESSAGING_TRAILING_MINIMAL_STATS_HEADER_MSBS == (trailer[0] & MESSAGING_TRAILING_MINIMAL_STATS_HEADER_MASK))
-//            {
-//            setLastRXErr(FHT8VRXErr_BAD_RX_SUBFRAME);
-//            seedRNG8(trailer[0], trailer[1], trailer[2]); // Attempt to gather some entropy from the RX noise. (TODO-302).
-//            }
-//          }
-//#endif
-//        }
-//#endif
-//#endif
-//
-//      // Potentially accept as call for heat only if command is 0x26 (38)
-//      // and the valve is open enough for some water flow to be likely
-//      // and the housecode is accepted.
-//      if(0x26 == command.command)
-//        {
-//        // Initial fix for TODO-520: Bad comparison screening incoming calls for heat at boiler hub.
-//        const uint8_t mvro = NominalRadValve.getMinValvePcReallyOpen();
-//        if((command.extension > (mvro << 1)) && // Quick approximation as filter with some false positives.
-//           (command.extension >= ((255 * (int)mvro) / 100)) && // More accurate test, but slow.
-//           (FHT8VHubAcceptedHouseCode(command.hc1, command.hc2))) // Accept if house code not filtered out.
-//          {
-//          const uint16_t compoundHC = (command.hc1 << 8) | command.hc2;
-//          ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
-//            { lastCallForHeatHC = compoundHC; } // Update atomically.
-////#if defined(SAVE_RX_ENERGY)
-////          StopEavesdropOnFHT8V(); // Need not eavesdrop for a while.
-////#endif
-//          }
-//        }
-//      _SetupRFM22ToEavesdropOnFHT8V(); // Reset/restart RX.
-//      return(true); // Got a valid frame.
-//      }
-//    else
-//      {
-//      setLastRXErr(FHT8VRXErr_BAD_RX_FRAME);
-//#if 0 && defined(DEBUG)
-//      DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bad RX frame");
-//#endif
-//      _SetupRFM22ToEavesdropOnFHT8V(); // Reset/restart RX.
-//      return(false);
-//      }
-//
-//    // Ensure that RX is re-enabled to avoid missing anything.
-//    _SetupRFM22ToEavesdropOnFHT8V(); // Reset/restart RX.
-//    return(false); // Nothing valid received.
-//    }
-//  else if(status & 0x80) // Got sync from incoming FHT8V message.
-//    {
-//#if 0 && defined(DEBUG)
-//    debugReportRSSI(2);
-//#endif
-//    // Capture some entropy from RSSI and timing...
-//    const uint8_t rssi = RFM23B.getRSSI();
-//    // TODO adjust output power down a little if RX very loud.
-//    addEntropyToPool(rssi ^ (uint8_t)(status ^ (status >> 8)), 1); // Maybe ~1 real bit of entropy.
-//#if 0 && defined(DEBUG)
-//    if(rssi > 0)
-//      {
-//      DEBUG_SERIAL_PRINT_FLASHSTRING("r=");
-//      DEBUG_SERIAL_PRINT(rssi);
-//      DEBUG_SERIAL_PRINTLN();
-//      }
-//#endif
-////    syncSeen = true;
-//    return(true);
-//    }
-//  else if(status & 0x8000) // RX FIFO overflow/underflow: give up and restart...
-//    {
-//#if 0 && defined(DEBUG)
-//    debugReportRSSI(3);
-//#endif
-//    setLastRXErr(FHT8VRXErr_GENERIC);
-//#if 0 && defined(DEBUG)
-//    DEBUG_SERIAL_PRINTLN_FLASHSTRING("RX FIFO problem");
-//#endif
-//    _SetupRFM22ToEavesdropOnFHT8V(); // Reset/restart RX.
-//    return(false);
-//    }
-//
-//  return(false);
-//  }
-
-
-//// Returns true if there is a pending accepted call for heat.
-//// If so a non-~0 housecode will be returned by FHT8VCallForHeatHeardGetAndClear().
-//bool FHT8VCallForHeatHeard()
-//  {
-//  ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
-//    { return(lastCallForHeatHC != (uint16_t)~0); }
-//  return(false); // Not reachable.
-//  }
-
-//// Atomically returns and clears one housecode calling for heat heard since last call, or ~0 if none.
-//uint16_t FHT8VCallForHeatHeardGetAndClear()
-//  {
-//  ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
-//    {
-//    const uint16_t result = lastCallForHeatHC;
-//    lastCallForHeatHC = ~0;
-//    return(result);
-//    }
-//    return(~0); // Not reachable.
-//  }
-//
-//// Atomically returns and clears last (FHT8V) RX error code, or 0 if none.
-//uint8_t FHT8VLastRXErrGetAndClear()
-//  {
-//  ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
-//    {
-//    const uint8_t result = lastRXerrno;
-//    lastRXerrno = 0;
-//    return(result);
-//    }
-//  return(0); // Not reachable.
-//  }
-
-
-
-
-//
-//
-//// Count of house codes selectively listened for at hub.
-//// If zero then calls for heat are not filtered by house code.
-//#ifndef FHT8VHubListenCount
-//uint8_t FHT8VHubListenCount()
-//  { return(0); } // TODO
-//#endif
-//
-//// Get remembered house code N where N < FHT8V_MAX_HUB_REMEMBERED_HOUSECODES.
-//// Returns hc1:hc2 packed into a 16-bit value, with hc1 in most-significant byte.
-//// Returns 0xffff if requested house code index not in use.
-//#ifndef FHT8CHubListenHouseCodeAtIndex
-//uint16_t FHT8CHubListenHouseCodeAtIndex(uint8_t index)
-//  { return((uint16_t) ~0); } // TODO
-//#endif
-//
-//// Remember and respond to calls for heat from hc1:hc2 when a hub.
-//// Returns true if successfully remembered (or already present), else false if cannot be remembered.
-//#ifndef FHT8VHubListenForHouseCode
-//bool FHT8VHubListenForHouseCode(uint8_t hc1, uint8_t hc2)
-//  { return(false); } // TODO
-//#endif
-//
-//// Forget and no longer respond to calls for heat from hc1:hc2 when a hub.
-//#ifndef FHT8VHubUnlistenForHouseCode
-//void FHT8VHubUnlistenForHouseCode(uint8_t hc1, uint8_t hc2)
-//  { } // TODO
-//#endif
-//
-//// Returns true if given house code is a remembered one to accept calls for heat from, or if no filtering is being done.
-//// Fast, and safe to call from an interrupt routine.
-//#ifndef FHT8VHubAcceptedHouseCode
-//bool FHT8VHubAcceptedHouseCode(uint8_t hc1, uint8_t hc2)
-//  { return(true); } // TODO
-//#endif
-
 
 
 

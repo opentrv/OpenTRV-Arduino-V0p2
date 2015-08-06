@@ -112,7 +112,7 @@ uint8_t *FHT8VCreateValveSetCmdFrameHT_r(uint8_t *bptr, bool doHeader, fht8v_msg
 // HC1 and HC2 are fetched with the FHT8VGetHC1() and FHT8VGetHC2() calls, and address is always 0.
 // The generated command frame can be resent indefinitely.
 // If no valve is set up then this may simply terminate an empty buffer with 0xff.
-void FHT8VCreateValveSetCmdFrame();
+void FHT8VCreateValveSetCmdFrame(const AbstractRadValve &valve);
 
 // Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) in the shared TX buffer.
 //   * valvePC  the percentage open to set the valve [0,100]
@@ -141,8 +141,8 @@ uint8_t FHT8VGetHC2();
 bool isSyncedWithFHT8V();
 
 
-// IF DEFINED: this unit may act as a thermostat controlling a local TRV (and calling for heat from the boiler).
-#ifdef LOCAL_TRV
+// This unit may control a local TRV.
+#if defined(LOCAL_TRV) || defined(SLAVE_TRV)
 // Returns TRV if valve/radiator is to be controlled by this unit.
 // Usually the case, but may not be for (a) a hub or (b) a not-yet-configured unit.
 // Returns false if house code parts are set to invalid or uninitialised values (>99).

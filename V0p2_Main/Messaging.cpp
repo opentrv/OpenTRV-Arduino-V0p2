@@ -20,6 +20,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
  Generic messaging support for OpenTRV.
  */
 
+#include "Messaging.h"
+
 #include <OTRadioLink.h>
 #ifdef ALLOW_CC1_SUPPORT
 #include <OTProtocolCC.h>
@@ -27,11 +29,13 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 
 #include <util/atomic.h>
 
-#include "Messaging.h"
 #include "EEPROM_Utils.h"
+#include "Control.h"
 #include "Power_Management.h"
+#include "RFM22_Radio.h"
 #include "Security.h"
 #include "Serial_IO.h"
+#include "UI_Minimal.h"
 
 #ifdef USE_MODULE_FHT8VSIMPLE
 #include "FHT8V_Wireless_Rad_Valve.h"
@@ -55,35 +59,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 //    }
 //  return(crc);
 //  }
-
-
-// Moved to OTRadioLink::crc7_5B_update() in the OTRadioLink library.
-///**Update 7-bit CRC with next byte; result always has top bit zero.
-// * Polynomial 0x5B (1011011, Koopman) = (x+1)(x^6 + x^5 + x^3 + x^2 + 1) = 0x37 (0110111, Normal)
-// * <p>
-// * Should maybe initialise with 0x7f.
-// * <p>
-// * See: http://users.ece.cmu.edu/~koopman/roses/dsn04/koopman04_crc_poly_embedded.pdf
-// * <p>
-// * Should detect all 3-bit errors in up to 7 bytes of payload,
-// * see: http://users.ece.cmu.edu/~koopman/crc/0x5b.txt
-// * <p>
-// * For 2 or 3 byte payloads this should have a Hamming distance of 4 and be within a factor of 2 of optimal error detection.
-// * <p>
-// * TODO: provide table-driven optimised alternative,
-// *     eg see http://www.tty1.net/pycrc/index_en.html
-// */
-//uint8_t crc7_5B_update(uint8_t crc, const uint8_t datum)
-//    {
-//    for(uint8_t i = 0x80; i != 0; i >>= 1)
-//        {
-//        bool bit = (0 != (crc & 0x40));
-//        if(0 != (datum & i)) { bit = !bit; }
-//        crc <<= 1;
-//        if(bit) { crc ^= 0x37; }
-//        }
-//    return(crc & 0x7f);
-//    }
 
 
 
@@ -1133,37 +1108,131 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, uint8_t *
     default:
     case OTRadioLink::FTp2_NONE:
       {
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
       p->print(F("!RX bad msg ")); OTRadioLink::printRXMsg(p, msg, min(msglen, 8));
 #endif
       return;
       }
 
 #ifdef ALLOW_CC1_SUPPORT_HUB
-    case OTRadioLink::FTp2_CC1Alert: // Handle inbound alert message.
+    // Handle alert message (at hub).
+    // Dump onto serial to be seen by the attached host.
+    case OTRadioLink::FTp2_CC1Alert:
       {
-      OTRadioLink::printRXMsg(p, msg, min(msglen, 8));
+      OTProtocolCC::CC1Alert a;
+      a.OTProtocolCC::CC1Alert::decodeSimple(msg, msglen);
+      // After decode instance should be valid and with correct (source) house code.
+      if(a.isValid())
+        {
+        // Pass message to host to deal with as "! hc1 hc2" after prefix indicating relayed (CC1 alert) message.
+        p->print(F("+CC1 ! ")); p->print(a.getHC1()); p->print(' '); p->println(a.getHC2());
+        }
       return;
       }
 #endif
 
 #ifdef ALLOW_CC1_SUPPORT_HUB
-    case OTRadioLink::FTp2_CC1PollResponse: // Handle inbound poll-response message.
+    // Handle poll-response message (at hub).
+    // Dump onto serial to be seen by the attached host.
+    case OTRadioLink::FTp2_CC1PollResponse:
       {
-      OTRadioLink::printRXMsg(p, msg, min(msglen, 8));
+      OTProtocolCC::CC1PollResponse a;
+      a.OTProtocolCC::CC1PollResponse::decodeSimple(msg, msglen);
+      // After decode instance should be valid and with correct (source) house code.
+      if(a.isValid())
+        {
+        // Pass message to host to deal with as:
+        //     * hc1 hc2 rh tp tr al s w sy
+        // after prefix indicating relayed (CC1) message.
+        // (Parameters in same order as make() factory method, see below.)
+//   * House code (hc1, hc2) of valve controller that the poll/command is being sent to.
+//   * relative-humidity    [0,50] 0-100 in 2% steps (rh)
+//   * temperature-ds18b20  [0,199] 0.000-99.999C in 1/2 C steps, pipe temp (tp)
+//   * temperature-opentrv  [0,199] 0.000-49.999C in 1/4 C steps, room temp (tr)
+//   * ambient-light        [1,62] no units, dark to light (al)
+//   * switch               [false,true] activation toggle, helps async poll detect intermittent use (s)
+//   * window               [false,true] false=closed,true=open (w)
+//   * syncing              [false,true] if true, (re)syncing to FHT8V (sy)
+// Returns instance; check isValid().
+//            static CC1PollResponse make(uint8_t hc1, uint8_t hc2,
+//                                        uint8_t rh,
+//                                        uint8_t tp, uint8_t tr,
+//                                        uint8_t al,
+//                                        bool s, bool w, bool sy);
+        p->print(F("+CC1 * "));
+            p->print(a.getHC1()); p->print(' '); p->print(a.getHC2()); p->print(' ');
+            p->print(a.getRH()); p->print(' ');
+            p->print(a.getTP()); p->print(' '); p->print(a.getTR()); p->print(' ');
+            p->print(a.getAL()); p->print(' ');
+            p->print(a.getS()); p->print(' '); p->print(a.getW()); p->print(' ');
+               p->println(a.getSY());
+        }
       return;
       }
 #endif
 
 #ifdef ALLOW_CC1_SUPPORT_RELAY
-    case OTRadioLink::FTp2_CC1PollAndCmd: // Handle inbound poll/cmd message.
+    // Handle poll/cmd message (at relay).
+    // IFF this message is addressed to this (target) unit's house code
+    // then action the commands and respond (quickly) with a poll response.
+    case OTRadioLink::FTp2_CC1PollAndCmd:
       {
-      OTRadioLink::printRXMsg(p, msg, min(msglen, 8));
+      OTProtocolCC::CC1PollAndCommand c;
+      c.OTProtocolCC::CC1PollAndCommand::decodeSimple(msg, msglen);
+      // After decode instance should be valid and with correct house code.
+      if(c.isValid())
+        {
+//        p->print(F("+CC1 * ")); p->print(a.getHC1()); p->print(' '); p->println(a.getHC2());
+        // Process the message only if it is targetted at this node.
+        const uint8_t hc1 = FHT8VGetHC1();
+        const uint8_t hc2 = FHT8VGetHC2();
+        if((c.getHC1() == hc1) && (c.getHC2() == hc2))
+          {
+          // Act on the incoming command.
+          // Set LEDs.
+          setLEDsCO(c.getLC(), c.getLT(), c.getLF(), true);
+          // Set radiator valve position.
+          NominalRadValve.set(c.getRP());
+
+          // Respond to the hub with sensor data.
+          // Can use read() for very freshest values at risk of some delay/cost.
+#ifdef HUMIDITY_SENSOR_SUPPORT
+          const uint8_t rh = RelHumidity.read() >> 1; // Scale from [0,100] to [0,50] for TX.
+#else
+          const uint8_t rh = 0; // RH% not available.
+#endif
+          const uint8_t tp = (uint8_t) constrain(extDS18B20_0.read() >> 3, 0, 199); // Scale to to 1/2C [0,100[ for TX.
+          const uint8_t tr = (uint8_t) constrain(TemperatureC16.read() >> 2, 0, 199); // Scale from 1/16C to 1/4C [0,50[ for TX.
+          const uint8_t al = AmbLight.read() >> 2; // Scale from [0,255] to [1,62] for TX (allow value coercion at extremes).
+          const bool s = getSwitchToggleStateCO();
+          const bool w = (fastDigitalRead(BUTTON_LEARN2_L) != LOW); // BUTTON_LEARN2_L high means open circuit means door/window open.
+          const bool sy = NominalRadValve.isRecalibrating();
+          OTProtocolCC::CC1PollResponse r =
+              OTProtocolCC::CC1PollResponse::make(hc1, hc2, rh, tp, tr, al, s, w, sy);
+          // Send message back to hub.
+          // Hub can poll again if it does not see the response.
+          // TODO: may need to insert a delay to allow hub to be ready if use of read() above is not enough.
+          uint8_t txbuf[STATS_MSG_START_OFFSET + OTProtocolCC::CC1PollResponse::primary_frame_bytes+1]; // More than large enough for preamble + sync + alert message.
+          uint8_t *const bptr = RFM22RXPreambleAdd(txbuf);
+          const uint8_t bodylen = r.encodeSimple(bptr, sizeof(txbuf) - STATS_MSG_START_OFFSET, true);
+          const uint8_t buflen = STATS_MSG_START_OFFSET + bodylen;
+#if 0 && defined(DEBUG)
+OTRadioLink::printRXMsg(p, txbuf, buflen);
+#endif
+          if(RFM23B.sendRaw(txbuf, buflen)) // Send at default volume...  One going missing won't hurt that much.
+            {
+#if 1 && defined(DEBUG)
+            p->println(F("polled")); // Done it!
+#endif
+            }
+          }
+        }
       return;
       }
 #endif
 
 #ifdef ALLOW_STATS_RX
+    // Stand-alone stats message.
     case OTRadioLink::FTp2_FullStatsIDL: case OTRadioLink::FTp2_FullStatsIDH:
       {
 #if 0 && defined(DEBUG)

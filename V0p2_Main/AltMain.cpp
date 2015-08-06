@@ -334,7 +334,7 @@ void loopAlt()
 #if 1 && defined(DEBUG)
     OTRadioLink::printRXMsg(&Serial, buf, buflen);
 #endif
-    const bool doubleTX = true;
+    const bool doubleTX = false;
     if(RFM23B.sendRaw(buf, buflen, 0, (doubleTX ? OTRadioLink::OTRadioLink::TXmax : OTRadioLink::OTRadioLink::TXnormal)))
       {
 #if 1 && defined(DEBUG)
