@@ -49,14 +49,16 @@ Parameters mean:
 
 A poll response should arrive within a few seconds (allow 10s),
 if not then the message in either direction may have been lost,
-and hub should consider a resend.
+and the hub should consider a resend/retry.
 
 
 General notes:
 
  1) Transmissions are not guaranteed to arrive.
- 2) Bandwidth is a very scare resource; don't send more than you have to.
+ 2) Bandwidth is a very scare resource; don't send more than is necessary.
  3) Poll/command should be sent by hub at least every 15m; relay will timeout after 30m and go to 'safe' state.
  4) Poll response should be sent by relay within a few seconds (allow 10s) of poll/command.
  5) Note that ALL REV2/hub units potentially hear ALL traffic (eg alerts and poll responses).
  6) Note that REV9s will only respond to poll/cmd messages addressed to their housecode.
+ 7) REV2/REV9 units cannot listen while transmitting, eg when the REV9 is talking to the FHT8V which it does intensely during sync.
+
