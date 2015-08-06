@@ -3,4 +3,6 @@ Testing/fixing/patching notes for two new (cut2) REV9 delivered 2015/08/06.
   * Loaded latest REV9 code via FTDI (both boards: AVR with just bootloader, and bootloader + app).
   * Set housecode and started controlling FHT8V: onboard trace antenna apparently functional in quiet radio env.
   * Created CONFIG_REV9_cut1 which covers the special-case code for the bugs in the first cut of the board.
-  * TX to FHT8V from REV9 cut2 verified.
+  * TX to FHT8V from REV9 cut2 verified (sync and valve position control).
+  * TX to REV2 from REV9 cut2 verified (alert and poll response messages).
+  * TX to REV9 from REV2 cut2 verified (poll/command messages).
