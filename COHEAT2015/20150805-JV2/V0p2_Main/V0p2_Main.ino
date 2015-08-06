@@ -234,7 +234,7 @@ void optionalPOST()
 //  posPOST(1, F("Radio OK, checking buttons/sensors and xtal"));
 
 // Buttons should not be activated DURING boot; activated button implies fault.
-#if (9 != V0p2_REV) // Usual tests for stuck control buttons.
+#if (9 != V0p2_REV) || !defined(CONFIG_REV9_cut1) // Usual tests for stuck control buttons.
   // Check buttons not stuck in the activated position.
   if((fastDigitalRead(BUTTON_MODE_L) == LOW)
 #if defined(BUTTON_LEARN_L)
