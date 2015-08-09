@@ -641,22 +641,34 @@ void recordMinimalStats(bool secure, uint8_t id0, uint8_t id1, const trailingMin
 #define MSG_JSON_LEADING_CHAR ('{') // This is for a JSON object { ... }.
 
 #if defined(ALLOW_STATS_RX)
-// Record stats (local or remote) in JSON (ie non-empty, {}-surrounded, \0-terminated text) format.
-// If secure is true then this message arrived over a secure channel.
-// The supplied buffer's content is not altered.
-// The supplied JSON should already have been somewhat validated.
-// Is thread/ISR-safe and moderately fast (though will require a data copy).
-// May be backed by a finite-depth queue, even zero-length (ie discarding); usually holds just one item.
-void recordJSONStats(bool secure, const char *json);
+// Send (valid) JSON to specified print channel, terminated with "}\0" or '}'|0x80, followed by "\r\n".
+void outputJSONStats(Print *p, bool secure, const uint8_t *json);
 
-// Gets (and clears) the last JSON record received, if any,
-// filling in the supplied buffer
-// else leaving it starting with '\0' if none available.
-// The buffer must be at least MSG_JSON_MAX_LENGTH+1 chars.
-void getLastJSONStats(char *buf);
+// Checked received raw JSON message followed by CRC, up to MSG_JSON_ABS_MAX_LENGTH chars.
+// Returns length including bounding '{' and '}'|0x80 iff message superficially valid
+// (essentially as checked by quickValidateRawSimpleJSONMessage() for an in-memory message)
+// and that the CRC matches as computed by adjustJSONMsgForTXAndComputeCRC(),
+// else returns -1 (accepts 0 or 0x80 where raw CRC is zero).
+// Does not adjust buffer content.
+#define checkJSONMsgRXCRC_ERR -1
+int8_t checkJSONMsgRXCRC(const uint8_t * bptr, uint8_t bufLen);
+
+//// Record stats (local or remote) in JSON (ie non-empty, {}-surrounded, \0-terminated text) format.
+//// If secure is true then this message arrived over a secure channel.
+//// The supplied buffer's content is not altered.
+//// The supplied JSON should already have been somewhat validated.
+//// Is thread/ISR-safe and moderately fast (though will require a data copy).
+//// May be backed by a finite-depth queue, even zero-length (ie discarding); usually holds just one item.
+//void recordJSONStats(bool secure, const char *json);
+//
+//// Gets (and clears) the last JSON record received, if any,
+//// filling in the supplied buffer
+//// else leaving it starting with '\0' if none available.
+//// The buffer must be at least MSG_JSON_MAX_LENGTH+1 chars.
+//void getLastJSONStats(char *buf);
 #else
-#define recordJSONStats(secure, json) {} // Do nothing.
-#define getLastJSONStats(buf) {*(buf) = '\0';} // Nothing to receive.
+//#define recordJSONStats(secure, json) {} // Do nothing.
+//#define getLastJSONStats(buf) {*(buf) = '\0';} // Nothing to receive.
 #endif
 
 // Incrementally poll and process I/O and queued messages, including from the radio link.
