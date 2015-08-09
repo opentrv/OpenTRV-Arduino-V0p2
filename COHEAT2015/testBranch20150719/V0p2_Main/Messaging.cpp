@@ -1373,13 +1373,15 @@ bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadi
 
   // Check for activity on the radio link.
   rl->poll();
-  if(0 != rl->getRXMsgsQueued())
+  uint8_t msglen;
+  const volatile uint8_t *pb;
+  if(NULL != (pb = rl->peekRXMsg(msglen)))
     {
     if(!neededWaking && wakeSerialIfNeeded && powerUpSerialIfDisabled()) { neededWaking = true; }
-    uint8_t buf[64]; // FIXME: get correct size of buffer. // FIXME: move this large stack burden elsewhere?
-    const uint8_t msglen = rl->getRXMsg(buf, sizeof(buf));
     // Don't currently regard anything arriving over the air as 'secure'.
-    decodeAndHandleRawRXedMessage(p, false, buf, msglen);
+    // FIXME: cast away volatile to process the message content.
+    decodeAndHandleRawRXedMessage(p, false, (const uint8_t *)pb, msglen);
+    rl->removeRXMsg();
     // Note that some work has been done.
     workDone = true;
     }
