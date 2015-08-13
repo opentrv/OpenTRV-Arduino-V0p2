@@ -62,3 +62,10 @@ General notes:
  6) Note that REV9s will only respond to poll/cmd messages addressed to their housecode.
  7) REV2/REV9 units cannot listen while transmitting, eg when the REV9 is talking to the FHT8V which it does intensely during sync.
 
+
+Suggestions to maximise radio performance:
+
+ 1) Poll each relay once every 15 minutes, repeating once or twice if no response is heard within 5--10s.
+ 2) Partition polling by hub and time so that no two nearby hubs are polling in the same minute (of each 15).
+ 3) Consider randomising polling order and/or offset to help avoid deadly embraces.
+ 4) An alert can always be immediately responded to with a poll, though response can be deferred if required.
