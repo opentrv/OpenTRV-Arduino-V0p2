@@ -369,20 +369,27 @@ bool quickValidateRawSimpleJSONMessage(const char *buf);
 // NOTE: adjusts content in place.
 uint8_t adjustJSONMsgForTXAndComputeCRC(char *bptr);
 
-// Extract/adjust raw RXed putative JSON message up to MSG_JSON_MAX_LENGTH chars.
-// Returns length including bounding '{' and '}' iff message superficially valid
+//// Extract/adjust raw RXed putative JSON message up to MSG_JSON_MAX_LENGTH chars.
+//// Returns length including bounding '{' and '}' iff message superficially valid
+//// (essentially as checked by quickValidateRawSimpleJSONMessage() for an in-memory message)
+//// and that the CRC matches as computed by adjustJSONMsgForTXAndComputeCRC(),
+//// else returns -1.
+//// Strips the high-bit off the final '}' and replaces the CRC with a '\0'
+//// iff the message appeared OK
+//// to allow easy handling with string functions.
+////  * bptr  pointer to first byte/char (which must be '{')
+////  * bufLen  remaining bytes in buffer starting at bptr
+//// NOTE: adjusts content in place iff the message appears to be valid JSON.
+//int8_t adjustJSONMsgForRXAndCheckCRC(char *bptr, uint8_t bufLen);
+
+// Checks received raw JSON message followed by CRC, up to MSG_JSON_ABS_MAX_LENGTH chars.
+// Returns length including bounding '{' and '}'|0x80 iff message superficially valid
 // (essentially as checked by quickValidateRawSimpleJSONMessage() for an in-memory message)
 // and that the CRC matches as computed by adjustJSONMsgForTXAndComputeCRC(),
-// else returns -1.
-// Strips the high-bit off the final '}' and replaces the CRC with a '\0'
-// iff the message appeared OK
-// to allow easy handling with string functions.
-//  * bptr  pointer to first byte/char (which must be '{')
-//  * bufLen  remaining bytes in buffer starting at bptr
-// NOTE: adjusts content in place iff the message appears to be valid JSON.
-int8_t adjustJSONMsgForRXAndCheckCRC(char *bptr, uint8_t bufLen);
-
-
+// else returns -1 (accepts 0 or 0x80 where raw CRC is zero).
+// Does not adjust buffer content.
+#define checkJSONMsgRXCRC_ERR -1
+int8_t checkJSONMsgRXCRC(const uint8_t * const bptr, const uint8_t bufLen);
 
 
 
@@ -640,10 +647,10 @@ void recordMinimalStats(bool secure, uint8_t id0, uint8_t id1, const trailingMin
 
 #define MSG_JSON_LEADING_CHAR ('{') // This is for a JSON object { ... }.
 
-#if defined(ALLOW_STATS_RX)
 // Send (valid) JSON to specified print channel, terminated with "}\0" or '}'|0x80, followed by "\r\n".
-void outputJSONStats(Print *p, bool secure, const uint8_t *json);
+void outputJSONStats(Print *p, bool secure, const uint8_t *json, uint8_t bufsize = 1+MSG_JSON_ABS_MAX_LENGTH);
 
+#if defined(ALLOW_STATS_RX)
 // Checked received raw JSON message followed by CRC, up to MSG_JSON_ABS_MAX_LENGTH chars.
 // Returns length including bounding '{' and '}'|0x80 iff message superficially valid
 // (essentially as checked by quickValidateRawSimpleJSONMessage() for an in-memory message)

@@ -41,7 +41,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
 //#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
-#define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
+//#define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
 //#define CONFIG_DORM1 // REV7 / DORM1 Winter 2014/2015 all-in-one valve unit.
 //#define CONFIG_DORM1_BOILER // REV8 / DORM1 Winter 2014/2015 boiler-control unit.
 
@@ -55,6 +55,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_BH_TESTLAB // Bo's test environment.
 //#define CONFIG_DORM1_SANS32K // REV7 / DORM1 without working 32768Hz clock.
 //#define CONFIG_REV7N // REV7 with external "Model N" valve.
+#define CONFIG_REV9_STATS // REV9 as stats node, cut 2 of the board.
 //#define CONFIG_REV9_cut1 // REV9 as CC1 relay, cut1 of board.
 //#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
 
@@ -82,7 +83,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define LOCAL_TRV
 // IF DEFINED: this unit controls a valve, but provides slave valve control only.
 #undef SLAVE_TRV
-// IF DEFINED: this unit can act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
+// IF DEFINED: this unit *can* act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
 #define ENABLE_BOILER_HUB
 // IF DEFINED: allow RX of stats frames.
 #define ALLOW_STATS_RX
@@ -324,6 +325,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #endif
 
 // -------------------------
+
 #ifdef CONFIG_REV9_cut1
 #define V0p2_REV 9 // Just like cut2 but with some bugs...
 // For 1st-cust REV9 boards phototransistor was accidentally pulling down not up.
@@ -349,8 +351,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #undef ENABLE_BOILER_HUB
 // IF DEFINED: allow RX of stats frames.
 #undef ALLOW_STATS_RX
-// IF DEFINED: allow TX of stats frames.
-#undef ALLOW_STATS_TX
+//// IF DEFINED: allow TX of stats frames.
+//#undef ALLOW_STATS_TX
 // IF DEFINED: (default) forced always-on radio listen/RX, eg not requiring setup to explicitly enable.
 #define ENABLE_DEFAULT_ALWAYS_RX
 // IF DEFINED: allow JSON stats frames alongside binary ones.
@@ -377,6 +379,33 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define ALLOW_CC1_SUPPORT
 #define ALLOW_CC1_SUPPORT_RELAY
 #define ALLOW_CC1_SUPPORT_RELAY_IO // Direct addressing of LEDs, use of buttons, etc.
+// Use common settings.
+#define COMMON_SETTINGS
+#endif
+
+
+#ifdef CONFIG_REV9_STATS // REV9 cut2, derived from REV4, as stats node.
+#define V0p2_REV 9
+// IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
+#define SENSOR_SHT21_ENABLE
+// Using RoHS-compliant phototransistor in place of LDR.
+#define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
+// IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
+#undef LOCAL_TRV
+// IF DEFINED: this unit controls a valve, but provides slave valve control only.
+#undef SLAVE_TRV
+// IF DEFINED: this unit can act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
+#undef ENABLE_BOILER_HUB
+// IF DEFINED: allow RX of stats frames.
+#undef ALLOW_STATS_RX
+// IF DEFINED: allow TX of stats frames.
+#define ALLOW_STATS_TX
+// IF DEFINED: allow JSON stats frames alongside binary ones.
+#define ALLOW_JSON_OUTPUT
+// Anticipation logic not yet ready for prime-time.
+//#define ENABLE_ANTICIPATION
+// IF UNDEFINED: this unit cannot act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
+//#undef ENABLE_BOILER_HUB
 // Use common settings.
 #define COMMON_SETTINGS
 #endif
@@ -486,6 +515,11 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX true
 #else
 #define CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX false
+#endif
+
+// If in stats or boiler hub mode, and assuming OOK carrier, then apply trailing-zeros RX filter.
+#if defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX)
+#define CONFIG_TRAILING_ZEROS_FILTER_RX
 #endif
 
 // By default, use the RFM22/RFM23 module to talk to an FHT8V wireless radiator valve.

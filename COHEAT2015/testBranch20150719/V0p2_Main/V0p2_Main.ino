@@ -67,7 +67,6 @@ void panic()
   {
 #ifdef USE_MODULE_RFM22RADIOSIMPLE
   // Reset radio and go into low-power mode.
-//  RFM22PowerOnInit();
    RFM23B.panicShutdown();
 #endif
   // Power down almost everything else...
@@ -204,6 +203,9 @@ static bool FilterRXISR(const volatile uint8_t *buf, volatile uint8_t &buflen)
   buflen = 8; // Truncate message to correct size for efficiency.
   return(true); // Accept message.
   }
+#elif defined(CONFIG_TRAILING_ZEROS_FILTER_RX)
+// Useful general heuristic to improve queueing, etc.
+#define FilterRXISR (OTRadioLink::frameFilterTrailingZeros)
 #else
 // NO RADIO RX FILTERING BY DEFAULT
 #define FilterRXISR NULL

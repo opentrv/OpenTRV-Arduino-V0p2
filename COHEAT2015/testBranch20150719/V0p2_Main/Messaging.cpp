@@ -187,28 +187,28 @@ uint16_t getInboundStatsQueueOverrun()
 // filling in the supplied buffer
 // else leaving it starting with '\0' if none available.
 // The buffer must be at least MSG_JSON_MAX_LENGTH+1 chars.
-#if defined(ALLOW_STATS_RX)
-#ifndef getLastJSONStats
-void getLastJSONStats(char *buf)
-  {
-#if 0 && defined(DEBUG)
-  if(NULL == buf) { panic(); }
-#endif
-  ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
-    {
-    if('\0' == *jsonStats)
-      { *buf = '\0'; } // No message available.
-    else
-      {
-      // Copy the message to the receiver.
-      strcpy(buf, jsonStats);
-      // Clear the buffer.
-      *jsonStats = '\0';
-      }
-    }
-  }
-#endif
-#endif
+//#if defined(ALLOW_STATS_RX)
+//#ifndef getLastJSONStats
+//void getLastJSONStats(char *buf)
+//  {
+//#if 0 && defined(DEBUG)
+//  if(NULL == buf) { panic(); }
+//#endif
+//  ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
+//    {
+//    if('\0' == *jsonStats)
+//      { *buf = '\0'; } // No message available.
+//    else
+//      {
+//      // Copy the message to the receiver.
+//      strcpy(buf, jsonStats);
+//      // Clear the buffer.
+//      *jsonStats = '\0';
+//      }
+//    }
+//  }
+//#endif
+//#endif
 
 
 // Last core stats record received, or with no ID set if none.
@@ -595,10 +595,15 @@ uint8_t adjustJSONMsgForTXAndComputeCRC(char * const bptr)
 
 
 // Send (valid) JSON to specified print channel, terminated with "}\0" or '}'|0x80, followed by "\r\n".
-void outputJSONStats(Print *p, bool secure, const uint8_t * const json)
+void outputJSONStats(Print *p, bool secure, const uint8_t * const json, const uint8_t bufsize)
   {
+#if 0 && defined(DEBUG)
+  if(NULL == json) { panic(); }
+#endif
+  const uint8_t * const je = json + bufsize;
   for(const uint8_t *jp = json; ; ++jp)
     {
+    if(jp >= je) { p->println(F(" ... bad")); return; } // Deliberately don't terminate with '}'...
     if(('}' | 0x80) == *jp) { break; }
     if(('}' == *jp) && ('\0' == jp[1])) { break; }
     p->print((char) *jp);
@@ -607,7 +612,7 @@ void outputJSONStats(Print *p, bool secure, const uint8_t * const json)
   p->println('}');
   }
 
-// Checked received raw JSON message followed by CRC, up to MSG_JSON_ABS_MAX_LENGTH chars.
+// Checks received raw JSON message followed by CRC, up to MSG_JSON_ABS_MAX_LENGTH chars.
 // Returns length including bounding '{' and '}'|0x80 iff message superficially valid
 // (essentially as checked by quickValidateRawSimpleJSONMessage() for an in-memory message)
 // and that the CRC matches as computed by adjustJSONMsgForTXAndComputeCRC(),
@@ -1074,7 +1079,7 @@ uint8_t SimpleStatsRotationBase::writeJSON(uint8_t *const buf, const uint8_t buf
 
 #if (defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX)) && defined(USE_MODULE_FHT8VSIMPLE) // Listen for calls for heat from remote valves...
 #define LISTEN_FOR_FTp2_FS20_native
-static void decodeAndHandleFTp2_FS20_native(Print *p, const bool secure, uint8_t * const msg, const uint8_t msglen)
+static void decodeAndHandleFTp2_FS20_native(Print *p, const bool secure, const uint8_t * const msg, const uint8_t msglen)
 {
   fht8v_msg_t command;
   uint8_t const *lastByte = msg+msglen-1;
@@ -1345,10 +1350,8 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats IDx");
 #ifdef ALLOW_STATS_RX
     case OTRadioLink::FTp2_JSONRaw:
       {
-      uint8_t l;
-      if(-1 != (l = adjustJSONMsgForRXAndCheckCRC(msg, msglen)))
-        // { recordJSONStats(secure, (const char *)msg); }
-        { outputJSONStats(&Serial, secure, msg); }
+      if(-1 != checkJSONMsgRXCRC(msg, msglen))
+        { outputJSONStats(&Serial, secure, msg, msglen); }
       return;
       }
 #endif

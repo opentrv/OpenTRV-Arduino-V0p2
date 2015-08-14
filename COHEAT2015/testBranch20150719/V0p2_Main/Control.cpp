@@ -1482,12 +1482,13 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
       return;
       }
 
-#if 0 /* || !defined(ENABLE_BOILER_HUB) */ && defined(DEBUG)
+#if 1 /* || !defined(ENABLE_BOILER_HUB) */ && defined(DEBUG)
     DEBUG_SERIAL_PRINT((const char *)bptr);
     DEBUG_SERIAL_PRINTLN(); 
 #endif
     // Record stats as if local, and treat channel as secure.
-    recordJSONStats(true, (const char *)bptr);
+//    recordJSONStats(true, (const char *)bptr);
+    outputJSONStats(&Serial, true, bptr, sizeof(buf) - (bptr-buf));
     handleQueuedMessages(&Serial, true, &RFM23B);
     // Adjust JSON message for transmission.
     // (Set high-bit on final closing brace to make it unique, and compute (non-0xff) CRC.)
