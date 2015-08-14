@@ -39,9 +39,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_Trial2013Winter_Round1 // REV1.
 //#define CONFIG_Trial2013Winter_Round2 // REV2 cut4.
 //#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as boiler hub.
-//#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
+#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
 //#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
-#define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
+//#define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
 //#define CONFIG_DORM1 // REV7 / DORM1 Winter 2014/2015 all-in-one valve unit.
 //#define CONFIG_DORM1_BOILER // REV8 / DORM1 Winter 2014/2015 boiler-control unit.
 
@@ -486,6 +486,11 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX true
 #else
 #define CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX false
+#endif
+
+// If in stats or boiler hub mode, and assuming OOK carrier, then apply trailing-zeros RX filter.
+#if defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX)
+#define CONFIG_TRAILING_ZEROS_FILTER_RX
 #endif
 
 // By default, use the RFM22/RFM23 module to talk to an FHT8V wireless radiator valve.
