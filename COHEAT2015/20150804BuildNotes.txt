@@ -1,0 +1,18 @@
+Copying stuff onto REV9 (room sensors) or REV2 (Pi connected)
+
+Full instructions for creating/installing the REV2 code (via the Pi) are here:
+
+https://github.com/opentrv/ors/tree/master/program-rev2
+
+Just note that the hostname of the Pi that we are using to develop on is devors
+
+Typical avrdude command for programming the REV9 from your local machine (Mac?) here:
+
+https://github.com/opentrv/ors/blob/master/program-rev2/step7-copy-to-pi.sh (last line, without the ssh part)
+using the avrdude.conf file in the same repo
+
+Am on Ubuntu, so no guarantees on that last one with your Mac James, tra la la. Should at least give you the settings.
+
+Net result: armed with this information, Damon only has to supply you with two .hex files, one for the REV2s, one for the REV9s. Or in a pinch, you can create the .hex files yourselves from the repos and some twiddling of header files.
+
+If someone has the time to make this a toolchain effort (avr-g++ etc.) rather than using the Arduino IDE, you will be doing us all a favour.
