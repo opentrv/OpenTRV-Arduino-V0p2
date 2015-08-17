@@ -1397,6 +1397,8 @@ static SimpleStatsRotation<8> ss1; // Configured for maximum different stats.
 //   * doBinary  send binary form, else JSON form if supported
 static void bareStatsTX(const bool allowDoubleTX, const bool doBinary)
   {
+  const bool neededWaking = powerUpSerialIfDisabled();
+
 #if (FullStatsMessageCore_MAX_BYTES_ON_WIRE > STATS_MSG_MAX_LEN)
 #error FullStatsMessageCore_MAX_BYTES_ON_WIRE too big
 #endif
@@ -1430,7 +1432,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
     RFM22RawStatsTXFFTerminated(buf, allowDoubleTX);
     // Record stats as if remote, and treat channel as secure.
     recordCoreStats(true, &content);
-    handleQueuedMessages(&Serial, true, &RFM23B);
+    handleQueuedMessages(&Serial, false, &RFM23B); // Serial must already be running!
     }
 
 #if defined(ALLOW_JSON_OUTPUT)
@@ -1482,14 +1484,14 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
       return;
       }
 
-#if 1 /* || !defined(ENABLE_BOILER_HUB) */ && defined(DEBUG)
+#if 0 /* || !defined(ENABLE_BOILER_HUB) */ && defined(DEBUG)
     DEBUG_SERIAL_PRINT((const char *)bptr);
     DEBUG_SERIAL_PRINTLN(); 
 #endif
     // Record stats as if local, and treat channel as secure.
 //    recordJSONStats(true, (const char *)bptr);
-    outputJSONStats(&Serial, true, bptr, sizeof(buf) - (bptr-buf));
-    handleQueuedMessages(&Serial, true, &RFM23B);
+    outputJSONStats(&Serial, true, bptr, sizeof(buf) - (bptr-buf)); // Serial must already be running!
+    handleQueuedMessages(&Serial, false, &RFM23B); // Serial must already be running!
     // Adjust JSON message for transmission.
     // (Set high-bit on final closing brace to make it unique, and compute (non-0xff) CRC.)
     const uint8_t crc = adjustJSONMsgForTXAndComputeCRC((char *)bptr);
@@ -1518,6 +1520,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
 #endif // defined(ALLOW_JSON_OUTPUT)
 
 //DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats TX");
+  if(neededWaking) { flushSerialProductive(); powerDownSerial(); }
   }
 #endif // defined(ALLOW_STATS_TX)
 
@@ -1633,7 +1636,7 @@ void setupOpenTRV()
     }
 
 #if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("int setup");
+  DEBUG_SERIAL_PRINTLN_FLASHSTRING("ints set up");
 #endif
 
 #ifdef ALLOW_STATS_TX
@@ -1677,7 +1680,7 @@ void setupOpenTRV()
 #endif
 
 #if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("Finishng setup...");
+  DEBUG_SERIAL_PRINTLN_FLASHSTRING("Finishing setup...");
 #endif
 
   // Set appropriate loop() values just before entering it.
