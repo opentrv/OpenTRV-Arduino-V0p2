@@ -153,9 +153,9 @@ uint16_t getInboundStatsQueueOverrun()
 #endif
 
 
-// Last JSON (\0-terminated) stats record received, or with first byte \0 if none.
-// Should only be accessed under a lock for thread safety.
-static /* volatile */ char jsonStats[MSG_JSON_MAX_LENGTH + 1];
+//// Last JSON (\0-terminated) stats record received, or with first byte \0 if none.
+//// Should only be accessed under a lock for thread safety.
+//static /* volatile */ char jsonStats[MSG_JSON_MAX_LENGTH + 1];
 
 // Record stats (local or remote) in JSON (ie non-empty, {}-surrounded, \0-terminated text) format.
 // If secure is true then this message arrived over a secure channel.
@@ -163,52 +163,52 @@ static /* volatile */ char jsonStats[MSG_JSON_MAX_LENGTH + 1];
 // The supplied JSON should already have been somewhat validated.
 // Is thread/ISR-safe and moderately fast (though will require a data copy).
 // May be backed by a finite-depth queue, even zero-length (ie discarding); usually holds just one item.
-#if defined(ALLOW_STATS_RX)
-#ifndef recordJSONStats
-void recordJSONStats(bool secure, const char *json)
-  {
-#if 0 && defined(DEBUG)
-  if(NULL == json) { panic(); }
-  if('\0' == *json) { panic(); }
-#endif
-  ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
-    {
-    if('\0' != *jsonStats) { ++inboundStatsQueueOverrun; } // Dropped a frame.
-    // Atomically overwrite existing buffer with new non-empty stats message.
-    strncpy(jsonStats, json, MSG_JSON_MAX_LENGTH+1); // FIXME: will pad redundantly with trailing nulls.
-    // Drop over-length message,
-    if('\0' != jsonStats[sizeof(jsonStats) - 1]) { *jsonStats = '\0'; }
-    }
-  }
-#endif
-#endif
+//#if defined(ALLOW_STATS_RX)
+//#ifndef recordJSONStats
+//void recordJSONStats(bool secure, const char *json)
+//  {
+//#if 0 && defined(DEBUG)
+//  if(NULL == json) { panic(); }
+//  if('\0' == *json) { panic(); }
+//#endif
+//  ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
+//    {
+//    if('\0' != *jsonStats) { ++inboundStatsQueueOverrun; } // Dropped a frame.
+//    // Atomically overwrite existing buffer with new non-empty stats message.
+//    strncpy(jsonStats, json, MSG_JSON_MAX_LENGTH+1); // FIXME: will pad redundantly with trailing nulls.
+//    // Drop over-length message,
+//    if('\0' != jsonStats[sizeof(jsonStats) - 1]) { *jsonStats = '\0'; }
+//    }
+//  }
+//#endif
+//#endif
 
 // Gets (and clears) the last JSON record received, if any,
 // filling in the supplied buffer
 // else leaving it starting with '\0' if none available.
 // The buffer must be at least MSG_JSON_MAX_LENGTH+1 chars.
-#if defined(ALLOW_STATS_RX)
-#ifndef getLastJSONStats
-void getLastJSONStats(char *buf)
-  {
-#if 0 && defined(DEBUG)
-  if(NULL == buf) { panic(); }
-#endif
-  ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
-    {
-    if('\0' == *jsonStats)
-      { *buf = '\0'; } // No message available.
-    else
-      {
-      // Copy the message to the receiver.
-      strcpy(buf, jsonStats);
-      // Clear the buffer.
-      *jsonStats = '\0';
-      }
-    }
-  }
-#endif
-#endif
+//#if defined(ALLOW_STATS_RX)
+//#ifndef getLastJSONStats
+//void getLastJSONStats(char *buf)
+//  {
+//#if 0 && defined(DEBUG)
+//  if(NULL == buf) { panic(); }
+//#endif
+//  ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
+//    {
+//    if('\0' == *jsonStats)
+//      { *buf = '\0'; } // No message available.
+//    else
+//      {
+//      // Copy the message to the receiver.
+//      strcpy(buf, jsonStats);
+//      // Clear the buffer.
+//      *jsonStats = '\0';
+//      }
+//    }
+//  }
+//#endif
+//#endif
 
 
 // Last core stats record received, or with no ID set if none.
@@ -593,33 +593,43 @@ uint8_t adjustJSONMsgForTXAndComputeCRC(char * const bptr)
   return(crc);
   }
 
-// IF DEFINED: allow raw ASCII JSON message terminated with '}' and '\0' in adjustJSONMsgForRXAndCheckCRC().
-// This has no error checking other than none of the values straying out of the printable range.
-// Only intended as a transitional measure!
-//#define ALLOW_RAW_JSON_RX
 
-// Extract/adjust raw RXed putative JSON message up to MSG_JSON_ABS_MAX_LENGTH chars.
-// Returns length including bounding '{' and '}' iff message superficially valid
+// Send (valid) JSON to specified print channel, terminated with "}\0" or '}'|0x80, followed by "\r\n".
+// This does NOT attempt to flush output nor wait after writing.
+void outputJSONStats(Print *p, bool secure, const uint8_t * const json, const uint8_t bufsize)
+  {
+#if 0 && defined(DEBUG)
+  if(NULL == json) { panic(); }
+#endif
+  const uint8_t * const je = json + bufsize;
+  for(const uint8_t *jp = json; ; ++jp)
+    {
+    if(jp >= je) { p->println(F(" ... bad")); return; } // Deliberately don't terminate with '}'...
+    if(('}' | 0x80) == *jp) { break; }
+    if(('}' == *jp) && ('\0' == jp[1])) { break; }
+    p->print((char) *jp);
+    }
+  // Terminate the output.
+  p->println('}');
+  }
+
+// Checks received raw JSON message followed by CRC, up to MSG_JSON_ABS_MAX_LENGTH chars.
+// Returns length including bounding '{' and '}'|0x80 iff message superficially valid
 // (essentially as checked by quickValidateRawSimpleJSONMessage() for an in-memory message)
 // and that the CRC matches as computed by adjustJSONMsgForTXAndComputeCRC(),
-// else returns -1.
-// Strips the high-bit off the final '}' and replaces the CRC with a '\0'
-// iff the message appeared OK
-// to allow easy handling with string functions.
-//  * bptr  pointer to first byte/char (which must be '{')
-//  * bufLen  remaining bytes in buffer starting at bptr
-// NOTE: adjusts content in place iff the message appears to be valid JSON.
-#define adjustJSONMsgForRXAndCheckCRC_ERR -1
-int8_t adjustJSONMsgForRXAndCheckCRC(char * const bptr, const uint8_t bufLen)
+// else returns -1 (accepts 0 or 0x80 where raw CRC is zero).
+// Does not adjust buffer content.
+#define checkJSONMsgRXCRC_ERR -1
+int8_t checkJSONMsgRXCRC(const uint8_t * const bptr, const uint8_t bufLen)
   {
-  if('{' != *bptr) { return(adjustJSONMsgForRXAndCheckCRC_ERR); }
+  if('{' != *bptr) { return(checkJSONMsgRXCRC_ERR); }
 #if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("adjustJSONMsgForRXAndCheckCRC()... {");
+  DEBUG_SERIAL_PRINT_FLASHSTRING("checkJSONMsgRXCRC_ERR()... {");
 #endif
   uint8_t crc = '{';
   // Scan up to maximum length for terminating '}'-with-high-bit.
   const uint8_t ml = min(MSG_JSON_ABS_MAX_LENGTH, bufLen);
-  char *p = bptr + 1;
+  const uint8_t *p = bptr + 1;
   for(int i = 1; i < ml; ++i)
     {
     const char c = *p++;
@@ -635,10 +645,8 @@ int8_t adjustJSONMsgForRXAndCheckCRC(char * const bptr, const uint8_t bufLen)
       }
 #endif
     // With a terminating '}' (followed by '\0') the message is superficially valid.
-    if((((char)('}' | 0x80)) == c) && (crc == (uint8_t)*p))
+    if((((char)('}' | 0x80)) == c) && ((crc == *p) || ((0 == crc) && (0x80 == *p))))
       {
-      *(p - 1) = '}';
-      *p = '\0'; // Null terminate for use as a text string.
 #if 0 && defined(DEBUG)
       DEBUG_SERIAL_PRINTLN_FLASHSTRING("} OK with CRC");
 #endif
@@ -652,7 +660,7 @@ int8_t adjustJSONMsgForRXAndCheckCRC(char * const bptr, const uint8_t bufLen)
       DEBUG_SERIAL_PRINTFMT(c, HEX);
       DEBUG_SERIAL_PRINTLN();
 #endif
-      return(adjustJSONMsgForRXAndCheckCRC_ERR);
+      return(checkJSONMsgRXCRC_ERR);
       }
 #if 0 && defined(DEBUG)
     DEBUG_SERIAL_PRINT(c);
@@ -661,8 +669,80 @@ int8_t adjustJSONMsgForRXAndCheckCRC(char * const bptr, const uint8_t bufLen)
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING(" bad: unterminated");
 #endif
-  return(adjustJSONMsgForRXAndCheckCRC_ERR); // Bad (unterminated) message.
+  return(checkJSONMsgRXCRC_ERR); // Bad (unterminated) message.
   }
+
+
+// IF DEFINED: allow raw ASCII JSON message terminated with '}' and '\0' in adjustJSONMsgForRXAndCheckCRC().
+// This has no error checking other than none of the values straying out of the printable range.
+// Only intended as a transitional measure!
+//#define ALLOW_RAW_JSON_RX
+
+//// Extract/adjust raw RXed putative JSON message up to MSG_JSON_ABS_MAX_LENGTH chars.
+//// Returns length including bounding '{' and '}' iff message superficially valid
+//// (essentially as checked by quickValidateRawSimpleJSONMessage() for an in-memory message)
+//// and that the CRC matches as computed by adjustJSONMsgForTXAndComputeCRC(),
+//// else returns -1.
+//// Strips the high-bit off the final '}' and replaces the CRC with a '\0'
+//// iff the message appeared OK
+//// to allow easy handling with string functions.
+////  * bptr  pointer to first byte/char (which must be '{')
+////  * bufLen  remaining bytes in buffer starting at bptr
+//// NOTE: adjusts content in place iff the message appears to be valid JSON.
+//#define adjustJSONMsgForRXAndCheckCRC_ERR -1
+//int8_t adjustJSONMsgForRXAndCheckCRC(char * const bptr, const uint8_t bufLen)
+//  {
+//  if('{' != *bptr) { return(adjustJSONMsgForRXAndCheckCRC_ERR); }
+//#if 0 && defined(DEBUG)
+//  DEBUG_SERIAL_PRINT_FLASHSTRING("adjustJSONMsgForRXAndCheckCRC()... {");
+//#endif
+//  uint8_t crc = '{';
+//  // Scan up to maximum length for terminating '}'-with-high-bit.
+//  const uint8_t ml = min(MSG_JSON_ABS_MAX_LENGTH, bufLen);
+//  char *p = bptr + 1;
+//  for(int i = 1; i < ml; ++i)
+//    {
+//    const char c = *p++;
+//    crc = OTRadioLink::crc7_5B_update(crc, (uint8_t)c); // Update CRC.
+//#ifdef ALLOW_RAW_JSON_RX
+//    if(('}' == c) && ('\0' == *p))
+//      {
+//      // Return raw message as-is!
+//#if 0 && defined(DEBUG)
+//      DEBUG_SERIAL_PRINTLN_FLASHSTRING("} OK raw");
+//#endif
+//      return(i+1);
+//      }
+//#endif
+//    // With a terminating '}' (followed by '\0') the message is superficially valid.
+//    if((((char)('}' | 0x80)) == c) && (crc == (uint8_t)*p))
+//      {
+//      *(p - 1) = '}';
+//      *p = '\0'; // Null terminate for use as a text string.
+//#if 0 && defined(DEBUG)
+//      DEBUG_SERIAL_PRINTLN_FLASHSTRING("} OK with CRC");
+//#endif
+//      return(i+1);
+//      }
+//    // Non-printable/control character makes the message invalid.
+//    if((c < 32) || (c > 126))
+//      {
+//#if 0 && defined(DEBUG)
+//      DEBUG_SERIAL_PRINT_FLASHSTRING(" bad: char 0x");
+//      DEBUG_SERIAL_PRINTFMT(c, HEX);
+//      DEBUG_SERIAL_PRINTLN();
+//#endif
+//      return(adjustJSONMsgForRXAndCheckCRC_ERR);
+//      }
+//#if 0 && defined(DEBUG)
+//    DEBUG_SERIAL_PRINT(c);
+//#endif
+//    }
+//#if 0 && defined(DEBUG)
+//  DEBUG_SERIAL_PRINTLN_FLASHSTRING(" bad: unterminated");
+//#endif
+//  return(adjustJSONMsgForRXAndCheckCRC_ERR); // Bad (unterminated) message.
+//  }
 
 
 // Print a single char to a bounded buffer; returns 1 if successful, else 0 if full.
@@ -1000,7 +1080,7 @@ uint8_t SimpleStatsRotationBase::writeJSON(uint8_t *const buf, const uint8_t buf
 
 #if (defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX)) && defined(USE_MODULE_FHT8VSIMPLE) // Listen for calls for heat from remote valves...
 #define LISTEN_FOR_FTp2_FS20_native
-static void decodeAndHandleFTp2_FS20_native(Print *p, const bool secure, uint8_t * const msg, const uint8_t msglen)
+static void decodeAndHandleFTp2_FS20_native(Print *p, const bool secure, const uint8_t * const msg, const uint8_t msglen)
 {
   fht8v_msg_t command;
   uint8_t const *lastByte = msg+msglen-1;
@@ -1096,7 +1176,7 @@ if(allGood) { p->println("FS20 ts"); }
 // typically the Serial output (which must be running if so).
 // This routine is allowed to alter the contents of the buffer passed
 // to help avoid extra copies, etc.
-static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, uint8_t * const msg, const uint8_t msglen)
+static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uint8_t * const msg, const uint8_t msglen)
   {
   // TODO: consider extracting hash of all message data (good/bad) and injecting into entropy pool.
 #if 0 && defined(DEBUG)
@@ -1271,8 +1351,13 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats IDx");
 #ifdef ALLOW_STATS_RX
     case OTRadioLink::FTp2_JSONRaw:
       {
-      if(-1 != adjustJSONMsgForRXAndCheckCRC((char *)msg, msglen))
-        { recordJSONStats(secure, (const char *)msg); }
+      if(-1 != checkJSONMsgRXCRC(msg, msglen))
+        {
+        // Write out the JSON message.
+        outputJSONStats(&Serial, secure, msg, msglen);
+        // Attempt to ensure that trailing characters are pushed out fully.
+        flushSerialProductive();
+        }
       return;
       }
 #endif
@@ -1297,13 +1382,15 @@ bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadi
 
   // Check for activity on the radio link.
   rl->poll();
-  if(0 != rl->getRXMsgsQueued())
+  uint8_t msglen;
+  const volatile uint8_t *pb;
+  if(NULL != (pb = rl->peekRXMsg(msglen)))
     {
     if(!neededWaking && wakeSerialIfNeeded && powerUpSerialIfDisabled()) { neededWaking = true; }
-    uint8_t buf[64]; // FIXME: get correct size of buffer. // FIXME: move this large stack burden elsewhere?
-    const uint8_t msglen = rl->getRXMsg(buf, sizeof(buf));
     // Don't currently regard anything arriving over the air as 'secure'.
-    decodeAndHandleRawRXedMessage(p, false, buf, msglen);
+    // FIXME: cast away volatile to process the message content.
+    decodeAndHandleRawRXedMessage(p, false, (const uint8_t *)pb, msglen);
+    rl->removeRXMsg();
     // Note that some work has been done.
     workDone = true;
     }
@@ -1344,17 +1431,17 @@ bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadi
     workDone = true;
     }
 
-  // Check for JSON/text-format message if no binary message waiting.
-  char buf[MSG_JSON_MAX_LENGTH+1]; // FIXME: move this large stack burden elsewhere?
-  getLastJSONStats(buf);
-  if('\0' != *buf)
-    {
-    if(!neededWaking && wakeSerialIfNeeded && powerUpSerialIfDisabled()) { neededWaking = true; }
-    // Dump contained JSON message as-is at start of line.
-    p->println(buf);
-    // Note that some work has been done.
-    workDone = true;
-    }
+//  // Check for JSON/text-format message if no binary message waiting.
+//  char buf[MSG_JSON_MAX_LENGTH+1]; // FIXME: move this large stack burden elsewhere?
+//  getLastJSONStats(buf);
+//  if('\0' != *buf)
+//    {
+//    if(!neededWaking && wakeSerialIfNeeded && powerUpSerialIfDisabled()) { neededWaking = true; }
+//    // Dump contained JSON message as-is at start of line.
+//    p->println(buf);
+//    // Note that some work has been done.
+//    workDone = true;
+//    }
 #endif
 
   // Turn off serial at end, if this routine woke it.

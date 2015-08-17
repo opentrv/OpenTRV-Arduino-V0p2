@@ -705,22 +705,17 @@ bool powerUpSerialIfDisabled()
   return(true);
   }
 
-#if 0
+#if 1
 // Flush any pending UART TX bytes in the hardware if UART is enabled, eg useful after Serial.flush() and before sleep.
 void flushSerialHW()
   {
-  if(PRR & _BV(PRUSART0)) { return(); } // UART not running, so nothing to do.
-#if 0
-  // Try to ensure that the possible two bytes (each 1 start + 8 data + 1 stop bit) still in h/w buffers can get out intact...
-  // ~5ms at 4800 baud should suffice...
-  sleepLowPowerMs(1 + ((2 * (1+8+1) * 1000) / BAUD)); // Changing clock speed may mess with UART speed too?
-#else
+  if(PRR & _BV(PRUSART0)) { return; } // UART not running, so nothing to do.
+
   // Snippet c/o http://www.gammon.com.au/forum/?id=11428
   // TODO: try to sleep in a low-ish power mode while waiting for data to clear.
   while(!(UCSR0A & _BV(UDRE0)))  // Wait for empty transmit buffer.
      { UCSR0A |= _BV(TXC0); }  // Mark transmission not complete.
   while(!(UCSR0A & _BV(TXC0))) { } // Wait for the transmission to complete.
-#endif
   return;
   }
 #endif
@@ -738,6 +733,9 @@ void flushSerialProductive()
   // An occasional premature exit to flush() due to Serial interrupt handler interaction is benign, and indeed more grist to the mill.
   while(serialTXInProgress()) { burnHundredsOfCyclesProductivelyAndPoll(); }
   Serial.flush(); // Wait for all output to have been sent.
+  // Could wait two character times at 10 bits per character based on BAUD.
+  // Or mass with the UART...
+  flushSerialHW();
   }
 #endif
 
