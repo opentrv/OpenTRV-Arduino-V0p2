@@ -648,6 +648,7 @@ void recordMinimalStats(bool secure, uint8_t id0, uint8_t id1, const trailingMin
 #define MSG_JSON_LEADING_CHAR ('{') // This is for a JSON object { ... }.
 
 // Send (valid) JSON to specified print channel, terminated with "}\0" or '}'|0x80, followed by "\r\n".
+// This does NOT attempt to flush output nor wait after writing.
 void outputJSONStats(Print *p, bool secure, const uint8_t *json, uint8_t bufsize = 1+MSG_JSON_ABS_MAX_LENGTH);
 
 #if defined(ALLOW_STATS_RX)

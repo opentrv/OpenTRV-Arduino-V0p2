@@ -2139,13 +2139,6 @@ void loopOpenTRV()
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("mV");
 #endif
 
-  // Dump port status re interrupt handling.
-#if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("PORTS: D=");
-  DEBUG_SERIAL_PRINTFMT(prevStatePD, HEX);
-  DEBUG_SERIAL_PRINTLN();
-#endif
-
 
 
 

@@ -595,6 +595,7 @@ uint8_t adjustJSONMsgForTXAndComputeCRC(char * const bptr)
 
 
 // Send (valid) JSON to specified print channel, terminated with "}\0" or '}'|0x80, followed by "\r\n".
+// This does NOT attempt to flush output nor wait after writing.
 void outputJSONStats(Print *p, bool secure, const uint8_t * const json, const uint8_t bufsize)
   {
 #if 0 && defined(DEBUG)
@@ -1351,7 +1352,12 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats IDx");
     case OTRadioLink::FTp2_JSONRaw:
       {
       if(-1 != checkJSONMsgRXCRC(msg, msglen))
-        { outputJSONStats(&Serial, secure, msg, msglen); }
+        {
+        // Write out the JSON message.
+        outputJSONStats(&Serial, secure, msg, msglen);
+        // Attempt to ensure that trailing characters are pushed out fully.
+        flushSerialProductive();
+        }
       return;
       }
 #endif
