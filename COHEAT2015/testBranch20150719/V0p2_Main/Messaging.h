@@ -601,34 +601,43 @@ const uint8_t *decodeFullStatsMessageCore(const uint8_t *buf, uint8_t buflen, st
 
 
 
-#if defined(ALLOW_STATS_RX)
-// Record core incoming stats; ID must be set as a minimum.
-// If secure is true then this message arrived over a secure channel.
-// Is thread/ISR-safe and fast.
-// May be backed by a finite-depth queue, even zero-length (ie discarding); usually holds just one item.
-void recordCoreStats(bool secure, const FullStatsMessageCore_t *stats);
+//#if defined(ALLOW_STATS_RX)
+//// Record core incoming stats; ID must be set as a minimum.
+//// If secure is true then this message arrived over a secure channel.
+//// Is thread/ISR-safe and fast.
+//// May be backed by a finite-depth queue, even zero-length (ie discarding); usually holds just one item.
+//void recordCoreStats(bool secure, const FullStatsMessageCore_t *stats);
+//
+//// Gets (and clears) the last core stats record received, if any, filling in the stats struct.
+//// If no minimal stats record has been received since the last call then the ID will be absent and the rest undefined.
+//void getLastCoreStats(FullStatsMessageCore_t *stats);
+//
+//// Get count of dropped inbound stats messages due to insufficient queue space.
+//uint16_t getInboundStatsQueueOverrun();
+//#else
+//#define recordCoreStats(secure, stats) {} // Do nothing.
+//#define getLastCoreStats(stats) {(stats)->containsID = false;} // Nothing to receive.
+//#define getInboundStatsQueueOverrun() 0 // No queue to overrun.
+//#endif
 
-// Gets (and clears) the last core stats record received, if any, filling in the stats struct.
-// If no minimal stats record has been received since the last call then the ID will be absent and the rest undefined.
-void getLastCoreStats(FullStatsMessageCore_t *stats);
+//#if defined(ALLOW_STATS_RX) && defined(ALLOW_MINIMAL_STATS_TXRX)
+//// Record minimal incoming stats from given ID (if each byte < 100, then may be FHT8V-compatible house code).
+//// If secure is true then this message arrived over a secure channel.
+//// Is thread/ISR-safe and fast.
+//// May be backed by a finite-depth queue, even zero-length (ie discarding); usually holds just one item.
+//void recordMinimalStats(bool secure, uint8_t id0, uint8_t id1, const trailingMinimalStatsPayload_t *payload);
+//#else
+//#define recordMinimalStats(secure, id0, id1, payload) {} // Do nothing.
+//#endif
 
-// Get count of dropped inbound stats messages due to insufficient queue space.
-uint16_t getInboundStatsQueueOverrun();
-#else
-#define recordCoreStats(secure, stats) {} // Do nothing.
-#define getLastCoreStats(stats) {(stats)->containsID = false;} // Nothing to receive.
-#define getInboundStatsQueueOverrun() 0 // No queue to overrun.
-#endif
 
-#if defined(ALLOW_STATS_RX) && defined(ALLOW_MINIMAL_STATS_TXRX)
-// Record minimal incoming stats from given ID (if each byte < 100, then may be FHT8V-compatible house code).
-// If secure is true then this message arrived over a secure channel.
-// Is thread/ISR-safe and fast.
-// May be backed by a finite-depth queue, even zero-length (ie discarding); usually holds just one item.
-void recordMinimalStats(bool secure, uint8_t id0, uint8_t id1, const trailingMinimalStatsPayload_t *payload);
-#else
-#define recordMinimalStats(secure, id0, id1, payload) {} // Do nothing.
-#endif
+// Send (valid) core binary stats to specified print channel, followed by "\r\n".
+// This does NOT attempt to flush output nor wait after writing.
+void outputCoreStats(Print *p, bool secure, const FullStatsMessageCore_t *stats);
+
+// Send (valid) minimal binary stats to specified print channel, followed by "\r\n".
+// This does NOT attempt to flush output nor wait after writing.
+void outputMinimalStats(Print *p, bool secure, uint8_t id0, uint8_t id1, const trailingMinimalStatsPayload_t *stats);
 
 
 // Maximum length of JSON (text) message payload.
@@ -660,23 +669,6 @@ void outputJSONStats(Print *p, bool secure, const uint8_t *json, uint8_t bufsize
 // Does not adjust buffer content.
 #define checkJSONMsgRXCRC_ERR -1
 int8_t checkJSONMsgRXCRC(const uint8_t * bptr, uint8_t bufLen);
-
-//// Record stats (local or remote) in JSON (ie non-empty, {}-surrounded, \0-terminated text) format.
-//// If secure is true then this message arrived over a secure channel.
-//// The supplied buffer's content is not altered.
-//// The supplied JSON should already have been somewhat validated.
-//// Is thread/ISR-safe and moderately fast (though will require a data copy).
-//// May be backed by a finite-depth queue, even zero-length (ie discarding); usually holds just one item.
-//void recordJSONStats(bool secure, const char *json);
-//
-//// Gets (and clears) the last JSON record received, if any,
-//// filling in the supplied buffer
-//// else leaving it starting with '\0' if none available.
-//// The buffer must be at least MSG_JSON_MAX_LENGTH+1 chars.
-//void getLastJSONStats(char *buf);
-#else
-//#define recordJSONStats(secure, json) {} // Do nothing.
-//#define getLastJSONStats(buf) {*(buf) = '\0';} // Nothing to receive.
 #endif
 
 // Incrementally poll and process I/O and queued messages, including from the radio link.

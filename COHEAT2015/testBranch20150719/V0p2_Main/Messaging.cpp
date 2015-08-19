@@ -211,77 +211,126 @@ uint16_t getInboundStatsQueueOverrun()
 //#endif
 
 
-// Last core stats record received, or with no ID set if none.
-// Should only be accessed under a lock for thread safety.
-static /* volatile */ FullStatsMessageCore_t coreStats; // Start up showing no record set.
-
-// Record minimal incoming stats from given ID (if each byte < 100, then may be FHT8V-compatible house code).
-// Is thread/ISR-safe and fast.
-// May be backed by a finite-depth queue, even zero-length (ie discarding); usually holds just one item.
-#if defined(ALLOW_STATS_RX) && defined(ALLOW_MINIMAL_STATS_TXRX)
-#ifndef recordMinimalStats
-void recordMinimalStats(const bool secure, const uint8_t id0, const uint8_t id1, const trailingMinimalStatsPayload_t * const payload)
+// Send (valid) core binary stats to specified print channel, followed by "\r\n".
+// This does NOT attempt to flush output nor wait after writing.
+// Will only write stats with a source ID.
+void outputCoreStats(Print *p, bool secure, const FullStatsMessageCore_t *stats)
   {
-#if 0 && defined(DEBUG)
-  if(NULL == payload) { panic(); }
-#endif
-   ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
+  if(stats->containsID)
     {
-    if(coreStats.containsID) { ++inboundStatsQueueOverrun; } // Dropped a frame.
-    clearFullStatsMessageCore(&coreStats);
-    coreStats.id0 = id0;
-    coreStats.id1 = id1;
-    coreStats.containsID = true;
-    memcpy((void *)&coreStats.tempAndPower, payload, sizeof(coreStats.tempAndPower));
-    coreStats.containsTempAndPower = true;
-    }
-  }
-#endif
-#endif
-
-// Record core incoming stats; ID must be set as a minimum.
-// Is thread/ISR-safe and fast.
-// May be backed by a finite-depth queue, even zero-length (ie discarding); usually holds just one item.
-#if defined(ALLOW_STATS_RX)
-#ifndef recordCoreStats
-void recordCoreStats(const bool secure, const FullStatsMessageCore_t * const stats)
-  {
-#if 0 && defined(DEBUG)
-  if(NULL == payload) { panic(); }
-#endif  // TODO
-   if(!stats->containsID) { return; } // Ignore if no ID.
-   ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
-    {
-    if(coreStats.containsID) { ++inboundStatsQueueOverrun; } // Dropped a frame.
-    memcpy((void *)&coreStats, stats, sizeof(coreStats));
-    }
-  }
-#endif
-#endif
-
-// Gets (and clears) the last core stats record received, if any, returning true and filling in the stats struct.
-// If no minimal stats record has been received since the last call then the ID will be absent and the rest undefined.
-#if defined(ALLOW_STATS_RX)
-#ifndef getLastCoreStats
-void getLastCoreStats(FullStatsMessageCore_t *stats)
-  {
-#if 0 && defined(DEBUG)
-  if(NULL == stats) { panic(); }
-#endif
-  ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
-    {
-    if(!coreStats.containsID)
-      { stats->containsID = false; } // Nothing there; just clear containsID field in response for speed.
-    else
+    // Dump (remote) stats field '@<hexnodeID>;TnnCh[P;]'
+    // where the T field shows temperature in C with a hex digit after the binary point indicated by C
+    // and the optional P field indicates low power.
+    p->print(LINE_START_CHAR_RSTATS);
+    p->print((((uint16_t)stats->id0) << 8) | stats->id1, HEX);
+    if(stats->containsTempAndPower)
       {
-      // Copy everything.
-      memcpy(stats, (void *)&coreStats, sizeof(*stats));
-      coreStats.containsID = false; // Mark stats as read.
+      p->print(F(";T"));
+      p->print(stats->tempAndPower.tempC16 >> 4, DEC);
+      p->print('C');
+      p->print(stats->tempAndPower.tempC16 & 0xf, HEX);
+      if(stats->tempAndPower.powerLow) { p->print(F(";P")); } // Insert power-low field if needed.
       }
+    if(stats->containsAmbL)
+      {
+      p->print(F(";L"));
+      p->print(stats->ambL);
+      }
+    if(0 != stats->occ)
+      {
+      p->print(F(";O"));
+      p->print(stats->occ);
+      }
+    p->println();
     }
   }
-#endif
-#endif
+
+// Send (valid) minimal binary stats to specified print channel, followed by "\r\n".
+// This does NOT attempt to flush output nor wait after writing.
+void outputMinimalStats(Print *p, bool secure, uint8_t id0, uint8_t id1, const trailingMinimalStatsPayload_t *stats)
+    {
+    // Convert to full stats for output.
+    FullStatsMessageCore_t fullstats;
+    clearFullStatsMessageCore(&fullstats);
+    fullstats.id0 = id0;
+    fullstats.id1 = id1;
+    fullstats.containsID = true;
+    memcpy((void *)&fullstats.tempAndPower, stats, sizeof(fullstats.tempAndPower));
+    fullstats.containsTempAndPower = true;
+    outputCoreStats(p, secure, &fullstats);
+    }
+
+//// Last core stats record received, or with no ID set if none.
+//// Should only be accessed under a lock for thread safety.
+//static /* volatile */ FullStatsMessageCore_t coreStats; // Start up showing no record set.
+
+//// Record minimal incoming stats from given ID (if each byte < 100, then may be FHT8V-compatible house code).
+//// Is thread/ISR-safe and fast.
+//// May be backed by a finite-depth queue, even zero-length (ie discarding); usually holds just one item.
+//#if defined(ALLOW_STATS_RX) && defined(ALLOW_MINIMAL_STATS_TXRX)
+//#ifndef recordMinimalStats
+//void recordMinimalStats(const bool secure, const uint8_t id0, const uint8_t id1, const trailingMinimalStatsPayload_t * const payload)
+//  {
+//#if 0 && defined(DEBUG)
+//  if(NULL == payload) { panic(); }
+//#endif
+//   ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
+//    {
+//    if(coreStats.containsID) { ++inboundStatsQueueOverrun; } // Dropped a frame.
+//    clearFullStatsMessageCore(&coreStats);
+//    coreStats.id0 = id0;
+//    coreStats.id1 = id1;
+//    coreStats.containsID = true;
+//    memcpy((void *)&coreStats.tempAndPower, payload, sizeof(coreStats.tempAndPower));
+//    coreStats.containsTempAndPower = true;
+//    }
+//  }
+//#endif
+//#endif
+
+//// Record core incoming stats; ID must be set as a minimum.
+//// Is thread/ISR-safe and fast.
+//// May be backed by a finite-depth queue, even zero-length (ie discarding); usually holds just one item.
+//#if defined(ALLOW_STATS_RX)
+//#ifndef recordCoreStats
+//void recordCoreStats(const bool secure, const FullStatsMessageCore_t * const stats)
+//  {
+//#if 0 && defined(DEBUG)
+//  if(NULL == payload) { panic(); }
+//#endif  // TODO
+//   if(!stats->containsID) { return; } // Ignore if no ID.
+//   ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
+//    {
+//    if(coreStats.containsID) { ++inboundStatsQueueOverrun; } // Dropped a frame.
+//    memcpy((void *)&coreStats, stats, sizeof(coreStats));
+//    }
+//  }
+//#endif
+//#endif
+
+//// Gets (and clears) the last core stats record received, if any, returning true and filling in the stats struct.
+//// If no minimal stats record has been received since the last call then the ID will be absent and the rest undefined.
+//#if defined(ALLOW_STATS_RX)
+//#ifndef getLastCoreStats
+//void getLastCoreStats(FullStatsMessageCore_t *stats)
+//  {
+//#if 0 && defined(DEBUG)
+//  if(NULL == stats) { panic(); }
+//#endif
+//  ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
+//    {
+//    if(!coreStats.containsID)
+//      { stats->containsID = false; } // Nothing there; just clear containsID field in response for speed.
+//    else
+//      {
+//      // Copy everything.
+//      memcpy(stats, (void *)&coreStats, sizeof(*stats));
+//      coreStats.containsID = false; // Mark stats as read.
+//      }
+//    }
+//  }
+//#endif
+//#endif
 
 
 #if defined(ALLOW_STATS_TX)
@@ -533,9 +582,6 @@ const uint8_t *decodeFullStatsMessageCore(const uint8_t * const buf, const uint8
 
   return(b); // Point to just after CRC.
   }
-
-
-
 
 
 // Returns true unless the buffer clearly does not contain a possible valid raw JSON message.
@@ -1122,7 +1168,8 @@ p->print("FS20 msg HC "); p->print(command.hc1); p->print(' '); p->println(comma
 if(allGood) { p->println("FS20 ts"); }
 #endif
         // If frame looks good then capture it.
-        if(allGood) { recordCoreStats(false, &content); }
+//        if(allGood) { recordCoreStats(false, &content); }
+        if(allGood) { outputCoreStats(p, false, &content); }
 //            else { setLastRXErr(FHT8VRXErr_BAD_RX_SUBFRAME); }
         // TODO: record error with mismatched ID.
         }
@@ -1163,8 +1210,6 @@ if(allGood) { p->println("FS20 ts"); }
   return;
   }
 #endif
-
-
 
 
 // Decode and handle inbound raw message.
@@ -1333,7 +1378,8 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats IDx");
            DEBUG_SERIAL_PRINTFMT(content.id1, HEX);
            DEBUG_SERIAL_PRINTLN();
 #endif
-           recordCoreStats(false, &content);
+//           recordCoreStats(false, &content);
+           outputCoreStats(&Serial, secure, &content);
            }
          }
       return;
@@ -1395,41 +1441,41 @@ bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadi
     workDone = true;
     }
 
-#ifdef ALLOW_STATS_RX
-  // Look for binary-format message.
-  FullStatsMessageCore_t stats;
-  getLastCoreStats(&stats);
-  if(stats.containsID)
-    {
-    if(!neededWaking && wakeSerialIfNeeded && powerUpSerialIfDisabled()) { neededWaking = true; }
-    // Dump (remote) stats field '@<hexnodeID>;TnnCh[P;]'
-    // where the T field shows temperature in C with a hex digit after the binary point indicated by C
-    // and the optional P field indicates low power.
-    p->print(LINE_START_CHAR_RSTATS);
-    p->print((((uint16_t)stats.id0) << 8) | stats.id1, HEX);
-    if(stats.containsTempAndPower)
-      {
-      p->print(F(";T"));
-      p->print(stats.tempAndPower.tempC16 >> 4, DEC);
-      p->print('C');
-      p->print(stats.tempAndPower.tempC16 & 0xf, HEX);
-      if(stats.tempAndPower.powerLow) { p->print(F(";P")); } // Insert power-low field if needed.
-      }
-    if(stats.containsAmbL)
-      {
-      p->print(F(";L"));
-      p->print(stats.ambL);
-      }
-    if(0 != stats.occ)
-      {
-      p->print(F(";O"));
-      p->print(stats.occ);
-      }
-    p->println();
-
-    // Note that some work has been done.
-    workDone = true;
-    }
+//#ifdef ALLOW_STATS_RX
+//  // Look for binary-format message.
+//  FullStatsMessageCore_t stats;
+//  getLastCoreStats(&stats);
+//  if(stats.containsID)
+//    {
+//    if(!neededWaking && wakeSerialIfNeeded && powerUpSerialIfDisabled()) { neededWaking = true; }
+//    // Dump (remote) stats field '@<hexnodeID>;TnnCh[P;]'
+//    // where the T field shows temperature in C with a hex digit after the binary point indicated by C
+//    // and the optional P field indicates low power.
+//    p->print(LINE_START_CHAR_RSTATS);
+//    p->print((((uint16_t)stats.id0) << 8) | stats.id1, HEX);
+//    if(stats.containsTempAndPower)
+//      {
+//      p->print(F(";T"));
+//      p->print(stats.tempAndPower.tempC16 >> 4, DEC);
+//      p->print('C');
+//      p->print(stats.tempAndPower.tempC16 & 0xf, HEX);
+//      if(stats.tempAndPower.powerLow) { p->print(F(";P")); } // Insert power-low field if needed.
+//      }
+//    if(stats.containsAmbL)
+//      {
+//      p->print(F(";L"));
+//      p->print(stats.ambL);
+//      }
+//    if(0 != stats.occ)
+//      {
+//      p->print(F(";O"));
+//      p->print(stats.occ);
+//      }
+//    p->println();
+//
+//    // Note that some work has been done.
+//    workDone = true;
+//    }
 
 //  // Check for JSON/text-format message if no binary message waiting.
 //  char buf[MSG_JSON_MAX_LENGTH+1]; // FIXME: move this large stack burden elsewhere?
@@ -1442,7 +1488,7 @@ bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadi
 //    // Note that some work has been done.
 //    workDone = true;
 //    }
-#endif
+//#endif
 
   // Turn off serial at end, if this routine woke it.
   if(neededWaking) { flushSerialProductive(); powerDownSerial(); }
