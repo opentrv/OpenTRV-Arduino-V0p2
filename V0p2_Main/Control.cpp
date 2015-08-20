@@ -1431,7 +1431,8 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
     // Send it!
     RFM22RawStatsTXFFTerminated(buf, allowDoubleTX);
     // Record stats as if remote, and treat channel as secure.
-    recordCoreStats(true, &content);
+//    recordCoreStats(true, &content);
+    outputCoreStats(&Serial, true, &content);
     handleQueuedMessages(&Serial, false, &RFM23B); // Serial must already be running!
     }
 

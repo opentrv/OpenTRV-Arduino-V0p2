@@ -76,28 +76,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 // either _crc8_ccitt_update() or _crc_ibutton_update() is as good as can be done
 // which means that the supplied optimised implementations are probably good choices.
 
-//// Update 'C2' 8-bit CRC polynomial with next byte.
-//// Usually initialised with 0xff.
-//// Should work well from 10--119 bits (2--~14 bytes); best 27-50, 52, 56-119 bits.
-//// See: http://users.ece.cmu.edu/~koopman/roses/dsn04/koopman04_crc_poly_embedded.pdf
-//// Also: http://en.wikipedia.org/wiki/Cyclic_redundancy_check
-//uint8_t crc8_C2_update(uint8_t crc, uint8_t datum);
-
-
-// Moved to OTRadioLink::crc7_5B_update() in the OTRadioLink library.
-///**Update 7-bit CRC with next byte; result always has top bit zero.
-// * Polynomial 0x5B (1011011, Koopman) = (x+1)(x^6 + x^5 + x^3 + x^2 + 1) = 0x37 (0110111, Normal)
-// * <p>
-// * Should maybe initialise with 0x7f.
-// * <p>
-// * See: http://users.ece.cmu.edu/~koopman/roses/dsn04/koopman04_crc_poly_embedded.pdf
-// * <p>
-// * Should detect all 3-bit errors in up to 7 bytes of payload,
-// * see: http://users.ece.cmu.edu/~koopman/crc/0x5b.txt
-// * <p>
-// * For 2 or 3 byte payloads this should have a Hamming distance of 4 and be within a factor of 2 of optimal error detection.
-// */
-//uint8_t crc7_5B_update(uint8_t crc, uint8_t datum);
 
 
 
@@ -369,19 +347,6 @@ bool quickValidateRawSimpleJSONMessage(const char *buf);
 // NOTE: adjusts content in place.
 uint8_t adjustJSONMsgForTXAndComputeCRC(char *bptr);
 
-//// Extract/adjust raw RXed putative JSON message up to MSG_JSON_MAX_LENGTH chars.
-//// Returns length including bounding '{' and '}' iff message superficially valid
-//// (essentially as checked by quickValidateRawSimpleJSONMessage() for an in-memory message)
-//// and that the CRC matches as computed by adjustJSONMsgForTXAndComputeCRC(),
-//// else returns -1.
-//// Strips the high-bit off the final '}' and replaces the CRC with a '\0'
-//// iff the message appeared OK
-//// to allow easy handling with string functions.
-////  * bptr  pointer to first byte/char (which must be '{')
-////  * bufLen  remaining bytes in buffer starting at bptr
-//// NOTE: adjusts content in place iff the message appears to be valid JSON.
-//int8_t adjustJSONMsgForRXAndCheckCRC(char *bptr, uint8_t bufLen);
-
 // Checks received raw JSON message followed by CRC, up to MSG_JSON_ABS_MAX_LENGTH chars.
 // Returns length including bounding '{' and '}'|0x80 iff message superficially valid
 // (essentially as checked by quickValidateRawSimpleJSONMessage() for an in-memory message)
@@ -598,38 +563,6 @@ uint8_t *encodeFullStatsMessageCore(uint8_t *buf, uint8_t buflen, stats_TX_level
 //   * content will contain data decoded from the message; must be non-null
 const uint8_t *decodeFullStatsMessageCore(const uint8_t *buf, uint8_t buflen, stats_TX_level secLevel, bool secureChannel,
     FullStatsMessageCore_t *content);
-
-
-
-//#if defined(ALLOW_STATS_RX)
-//// Record core incoming stats; ID must be set as a minimum.
-//// If secure is true then this message arrived over a secure channel.
-//// Is thread/ISR-safe and fast.
-//// May be backed by a finite-depth queue, even zero-length (ie discarding); usually holds just one item.
-//void recordCoreStats(bool secure, const FullStatsMessageCore_t *stats);
-//
-//// Gets (and clears) the last core stats record received, if any, filling in the stats struct.
-//// If no minimal stats record has been received since the last call then the ID will be absent and the rest undefined.
-//void getLastCoreStats(FullStatsMessageCore_t *stats);
-//
-//// Get count of dropped inbound stats messages due to insufficient queue space.
-//uint16_t getInboundStatsQueueOverrun();
-//#else
-//#define recordCoreStats(secure, stats) {} // Do nothing.
-//#define getLastCoreStats(stats) {(stats)->containsID = false;} // Nothing to receive.
-//#define getInboundStatsQueueOverrun() 0 // No queue to overrun.
-//#endif
-
-//#if defined(ALLOW_STATS_RX) && defined(ALLOW_MINIMAL_STATS_TXRX)
-//// Record minimal incoming stats from given ID (if each byte < 100, then may be FHT8V-compatible house code).
-//// If secure is true then this message arrived over a secure channel.
-//// Is thread/ISR-safe and fast.
-//// May be backed by a finite-depth queue, even zero-length (ie discarding); usually holds just one item.
-//void recordMinimalStats(bool secure, uint8_t id0, uint8_t id1, const trailingMinimalStatsPayload_t *payload);
-//#else
-//#define recordMinimalStats(secure, id0, id1, payload) {} // Do nothing.
-//#endif
-
 
 // Send (valid) core binary stats to specified print channel, followed by "\r\n".
 // This does NOT attempt to flush output nor wait after writing.

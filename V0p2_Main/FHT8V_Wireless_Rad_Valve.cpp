@@ -334,8 +334,8 @@ uint8_t *FHT8VCreateValveSetCmdFrame_r(uint8_t *const bptr, fht8v_msg_t *command
   if(doTrailer)
     {
     populateCoreStats(&trailer);
-    // Record stats as if remote, but secure, and with ID.
-    recordCoreStats(true, &trailer);
+    // Record/log stats as if remote, but secure, and with ID.
+//    outputCoreStats(&Serial, true, &trailer); // FIXME
     // Ensure that no ID is encoded in the message sent on the air since it would be a repeat from the FHT8V frame.
     trailer.containsID = false;
     }

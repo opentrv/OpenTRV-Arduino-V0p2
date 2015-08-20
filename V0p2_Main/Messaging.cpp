@@ -153,136 +153,54 @@ uint16_t getInboundStatsQueueOverrun()
 #endif
 
 
-//// Last JSON (\0-terminated) stats record received, or with first byte \0 if none.
-//// Should only be accessed under a lock for thread safety.
-//static /* volatile */ char jsonStats[MSG_JSON_MAX_LENGTH + 1];
-
-// Record stats (local or remote) in JSON (ie non-empty, {}-surrounded, \0-terminated text) format.
-// If secure is true then this message arrived over a secure channel.
-// The supplied buffer's content is not altered.
-// The supplied JSON should already have been somewhat validated.
-// Is thread/ISR-safe and moderately fast (though will require a data copy).
-// May be backed by a finite-depth queue, even zero-length (ie discarding); usually holds just one item.
-//#if defined(ALLOW_STATS_RX)
-//#ifndef recordJSONStats
-//void recordJSONStats(bool secure, const char *json)
-//  {
-//#if 0 && defined(DEBUG)
-//  if(NULL == json) { panic(); }
-//  if('\0' == *json) { panic(); }
-//#endif
-//  ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
-//    {
-//    if('\0' != *jsonStats) { ++inboundStatsQueueOverrun; } // Dropped a frame.
-//    // Atomically overwrite existing buffer with new non-empty stats message.
-//    strncpy(jsonStats, json, MSG_JSON_MAX_LENGTH+1); // FIXME: will pad redundantly with trailing nulls.
-//    // Drop over-length message,
-//    if('\0' != jsonStats[sizeof(jsonStats) - 1]) { *jsonStats = '\0'; }
-//    }
-//  }
-//#endif
-//#endif
-
-// Gets (and clears) the last JSON record received, if any,
-// filling in the supplied buffer
-// else leaving it starting with '\0' if none available.
-// The buffer must be at least MSG_JSON_MAX_LENGTH+1 chars.
-//#if defined(ALLOW_STATS_RX)
-//#ifndef getLastJSONStats
-//void getLastJSONStats(char *buf)
-//  {
-//#if 0 && defined(DEBUG)
-//  if(NULL == buf) { panic(); }
-//#endif
-//  ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
-//    {
-//    if('\0' == *jsonStats)
-//      { *buf = '\0'; } // No message available.
-//    else
-//      {
-//      // Copy the message to the receiver.
-//      strcpy(buf, jsonStats);
-//      // Clear the buffer.
-//      *jsonStats = '\0';
-//      }
-//    }
-//  }
-//#endif
-//#endif
-
-
-// Last core stats record received, or with no ID set if none.
-// Should only be accessed under a lock for thread safety.
-static /* volatile */ FullStatsMessageCore_t coreStats; // Start up showing no record set.
-
-// Record minimal incoming stats from given ID (if each byte < 100, then may be FHT8V-compatible house code).
-// Is thread/ISR-safe and fast.
-// May be backed by a finite-depth queue, even zero-length (ie discarding); usually holds just one item.
-#if defined(ALLOW_STATS_RX) && defined(ALLOW_MINIMAL_STATS_TXRX)
-#ifndef recordMinimalStats
-void recordMinimalStats(const bool secure, const uint8_t id0, const uint8_t id1, const trailingMinimalStatsPayload_t * const payload)
+// Send (valid) core binary stats to specified print channel, followed by "\r\n".
+// This does NOT attempt to flush output nor wait after writing.
+// Will only write stats with a source ID.
+void outputCoreStats(Print *p, bool secure, const FullStatsMessageCore_t *stats)
   {
-#if 0 && defined(DEBUG)
-  if(NULL == payload) { panic(); }
-#endif
-   ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
+  if(stats->containsID)
     {
-    if(coreStats.containsID) { ++inboundStatsQueueOverrun; } // Dropped a frame.
-    clearFullStatsMessageCore(&coreStats);
-    coreStats.id0 = id0;
-    coreStats.id1 = id1;
-    coreStats.containsID = true;
-    memcpy((void *)&coreStats.tempAndPower, payload, sizeof(coreStats.tempAndPower));
-    coreStats.containsTempAndPower = true;
-    }
-  }
-#endif
-#endif
-
-// Record core incoming stats; ID must be set as a minimum.
-// Is thread/ISR-safe and fast.
-// May be backed by a finite-depth queue, even zero-length (ie discarding); usually holds just one item.
-#if defined(ALLOW_STATS_RX)
-#ifndef recordCoreStats
-void recordCoreStats(const bool secure, const FullStatsMessageCore_t * const stats)
-  {
-#if 0 && defined(DEBUG)
-  if(NULL == payload) { panic(); }
-#endif  // TODO
-   if(!stats->containsID) { return; } // Ignore if no ID.
-   ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
-    {
-    if(coreStats.containsID) { ++inboundStatsQueueOverrun; } // Dropped a frame.
-    memcpy((void *)&coreStats, stats, sizeof(coreStats));
-    }
-  }
-#endif
-#endif
-
-// Gets (and clears) the last core stats record received, if any, returning true and filling in the stats struct.
-// If no minimal stats record has been received since the last call then the ID will be absent and the rest undefined.
-#if defined(ALLOW_STATS_RX)
-#ifndef getLastCoreStats
-void getLastCoreStats(FullStatsMessageCore_t *stats)
-  {
-#if 0 && defined(DEBUG)
-  if(NULL == stats) { panic(); }
-#endif
-  ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
-    {
-    if(!coreStats.containsID)
-      { stats->containsID = false; } // Nothing there; just clear containsID field in response for speed.
-    else
+    // Dump (remote) stats field '@<hexnodeID>;TnnCh[P;]'
+    // where the T field shows temperature in C with a hex digit after the binary point indicated by C
+    // and the optional P field indicates low power.
+    p->print(LINE_START_CHAR_RSTATS);
+    p->print((((uint16_t)stats->id0) << 8) | stats->id1, HEX);
+    if(stats->containsTempAndPower)
       {
-      // Copy everything.
-      memcpy(stats, (void *)&coreStats, sizeof(*stats));
-      coreStats.containsID = false; // Mark stats as read.
+      p->print(F(";T"));
+      p->print(stats->tempAndPower.tempC16 >> 4, DEC);
+      p->print('C');
+      p->print(stats->tempAndPower.tempC16 & 0xf, HEX);
+      if(stats->tempAndPower.powerLow) { p->print(F(";P")); } // Insert power-low field if needed.
       }
+    if(stats->containsAmbL)
+      {
+      p->print(F(";L"));
+      p->print(stats->ambL);
+      }
+    if(0 != stats->occ)
+      {
+      p->print(F(";O"));
+      p->print(stats->occ);
+      }
+    p->println();
     }
   }
-#endif
-#endif
 
+// Send (valid) minimal binary stats to specified print channel, followed by "\r\n".
+// This does NOT attempt to flush output nor wait after writing.
+void outputMinimalStats(Print *p, bool secure, uint8_t id0, uint8_t id1, const trailingMinimalStatsPayload_t *stats)
+    {
+    // Convert to full stats for output.
+    FullStatsMessageCore_t fullstats;
+    clearFullStatsMessageCore(&fullstats);
+    fullstats.id0 = id0;
+    fullstats.id1 = id1;
+    fullstats.containsID = true;
+    memcpy((void *)&fullstats.tempAndPower, stats, sizeof(fullstats.tempAndPower));
+    fullstats.containsTempAndPower = true;
+    outputCoreStats(p, secure, &fullstats);
+    }
 
 #if defined(ALLOW_STATS_TX)
 #if !defined(enableTrailingStatsPayload)
@@ -535,9 +453,6 @@ const uint8_t *decodeFullStatsMessageCore(const uint8_t * const buf, const uint8
   }
 
 
-
-
-
 // Returns true unless the buffer clearly does not contain a possible valid raw JSON message.
 // This message is expected to be one object wrapped in '{' and '}'
 // and containing only ASCII printable/non-control characters in the range [32,126].
@@ -671,78 +586,6 @@ int8_t checkJSONMsgRXCRC(const uint8_t * const bptr, const uint8_t bufLen)
 #endif
   return(checkJSONMsgRXCRC_ERR); // Bad (unterminated) message.
   }
-
-
-// IF DEFINED: allow raw ASCII JSON message terminated with '}' and '\0' in adjustJSONMsgForRXAndCheckCRC().
-// This has no error checking other than none of the values straying out of the printable range.
-// Only intended as a transitional measure!
-//#define ALLOW_RAW_JSON_RX
-
-//// Extract/adjust raw RXed putative JSON message up to MSG_JSON_ABS_MAX_LENGTH chars.
-//// Returns length including bounding '{' and '}' iff message superficially valid
-//// (essentially as checked by quickValidateRawSimpleJSONMessage() for an in-memory message)
-//// and that the CRC matches as computed by adjustJSONMsgForTXAndComputeCRC(),
-//// else returns -1.
-//// Strips the high-bit off the final '}' and replaces the CRC with a '\0'
-//// iff the message appeared OK
-//// to allow easy handling with string functions.
-////  * bptr  pointer to first byte/char (which must be '{')
-////  * bufLen  remaining bytes in buffer starting at bptr
-//// NOTE: adjusts content in place iff the message appears to be valid JSON.
-//#define adjustJSONMsgForRXAndCheckCRC_ERR -1
-//int8_t adjustJSONMsgForRXAndCheckCRC(char * const bptr, const uint8_t bufLen)
-//  {
-//  if('{' != *bptr) { return(adjustJSONMsgForRXAndCheckCRC_ERR); }
-//#if 0 && defined(DEBUG)
-//  DEBUG_SERIAL_PRINT_FLASHSTRING("adjustJSONMsgForRXAndCheckCRC()... {");
-//#endif
-//  uint8_t crc = '{';
-//  // Scan up to maximum length for terminating '}'-with-high-bit.
-//  const uint8_t ml = min(MSG_JSON_ABS_MAX_LENGTH, bufLen);
-//  char *p = bptr + 1;
-//  for(int i = 1; i < ml; ++i)
-//    {
-//    const char c = *p++;
-//    crc = OTRadioLink::crc7_5B_update(crc, (uint8_t)c); // Update CRC.
-//#ifdef ALLOW_RAW_JSON_RX
-//    if(('}' == c) && ('\0' == *p))
-//      {
-//      // Return raw message as-is!
-//#if 0 && defined(DEBUG)
-//      DEBUG_SERIAL_PRINTLN_FLASHSTRING("} OK raw");
-//#endif
-//      return(i+1);
-//      }
-//#endif
-//    // With a terminating '}' (followed by '\0') the message is superficially valid.
-//    if((((char)('}' | 0x80)) == c) && (crc == (uint8_t)*p))
-//      {
-//      *(p - 1) = '}';
-//      *p = '\0'; // Null terminate for use as a text string.
-//#if 0 && defined(DEBUG)
-//      DEBUG_SERIAL_PRINTLN_FLASHSTRING("} OK with CRC");
-//#endif
-//      return(i+1);
-//      }
-//    // Non-printable/control character makes the message invalid.
-//    if((c < 32) || (c > 126))
-//      {
-//#if 0 && defined(DEBUG)
-//      DEBUG_SERIAL_PRINT_FLASHSTRING(" bad: char 0x");
-//      DEBUG_SERIAL_PRINTFMT(c, HEX);
-//      DEBUG_SERIAL_PRINTLN();
-//#endif
-//      return(adjustJSONMsgForRXAndCheckCRC_ERR);
-//      }
-//#if 0 && defined(DEBUG)
-//    DEBUG_SERIAL_PRINT(c);
-//#endif
-//    }
-//#if 0 && defined(DEBUG)
-//  DEBUG_SERIAL_PRINTLN_FLASHSTRING(" bad: unterminated");
-//#endif
-//  return(adjustJSONMsgForRXAndCheckCRC_ERR); // Bad (unterminated) message.
-//  }
 
 
 // Print a single char to a bounded buffer; returns 1 if successful, else 0 if full.
@@ -1122,7 +965,8 @@ p->print("FS20 msg HC "); p->print(command.hc1); p->print(' '); p->println(comma
 if(allGood) { p->println("FS20 ts"); }
 #endif
         // If frame looks good then capture it.
-        if(allGood) { recordCoreStats(false, &content); }
+//        if(allGood) { recordCoreStats(false, &content); }
+        if(allGood) { outputCoreStats(p, false, &content); }
 //            else { setLastRXErr(FHT8VRXErr_BAD_RX_SUBFRAME); }
         // TODO: record error with mismatched ID.
         }
@@ -1163,8 +1007,6 @@ if(allGood) { p->println("FS20 ts"); }
   return;
   }
 #endif
-
-
 
 
 // Decode and handle inbound raw message.
@@ -1333,7 +1175,8 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats IDx");
            DEBUG_SERIAL_PRINTFMT(content.id1, HEX);
            DEBUG_SERIAL_PRINTLN();
 #endif
-           recordCoreStats(false, &content);
+//           recordCoreStats(false, &content);
+           outputCoreStats(&Serial, secure, &content);
            }
          }
       return;
@@ -1394,55 +1237,6 @@ bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadi
     // Note that some work has been done.
     workDone = true;
     }
-
-#ifdef ALLOW_STATS_RX
-  // Look for binary-format message.
-  FullStatsMessageCore_t stats;
-  getLastCoreStats(&stats);
-  if(stats.containsID)
-    {
-    if(!neededWaking && wakeSerialIfNeeded && powerUpSerialIfDisabled()) { neededWaking = true; }
-    // Dump (remote) stats field '@<hexnodeID>;TnnCh[P;]'
-    // where the T field shows temperature in C with a hex digit after the binary point indicated by C
-    // and the optional P field indicates low power.
-    p->print(LINE_START_CHAR_RSTATS);
-    p->print((((uint16_t)stats.id0) << 8) | stats.id1, HEX);
-    if(stats.containsTempAndPower)
-      {
-      p->print(F(";T"));
-      p->print(stats.tempAndPower.tempC16 >> 4, DEC);
-      p->print('C');
-      p->print(stats.tempAndPower.tempC16 & 0xf, HEX);
-      if(stats.tempAndPower.powerLow) { p->print(F(";P")); } // Insert power-low field if needed.
-      }
-    if(stats.containsAmbL)
-      {
-      p->print(F(";L"));
-      p->print(stats.ambL);
-      }
-    if(0 != stats.occ)
-      {
-      p->print(F(";O"));
-      p->print(stats.occ);
-      }
-    p->println();
-
-    // Note that some work has been done.
-    workDone = true;
-    }
-
-//  // Check for JSON/text-format message if no binary message waiting.
-//  char buf[MSG_JSON_MAX_LENGTH+1]; // FIXME: move this large stack burden elsewhere?
-//  getLastJSONStats(buf);
-//  if('\0' != *buf)
-//    {
-//    if(!neededWaking && wakeSerialIfNeeded && powerUpSerialIfDisabled()) { neededWaking = true; }
-//    // Dump contained JSON message as-is at start of line.
-//    p->println(buf);
-//    // Note that some work has been done.
-//    workDone = true;
-//    }
-#endif
 
   // Turn off serial at end, if this routine woke it.
   if(neededWaking) { flushSerialProductive(); powerDownSerial(); }
