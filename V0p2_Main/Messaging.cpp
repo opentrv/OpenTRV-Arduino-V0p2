@@ -363,7 +363,7 @@ uint8_t *encodeFullStatsMessageCore(uint8_t * const buf, const uint8_t buflen, c
 
 // Decode core/common 'full' stats message.
 // If successful returns pointer to next byte of message, ie just after full stats message decoded.
-// Returns null if failed (eg because of corrupt message data) and state of 'content' result is undefined.
+// Returns null if failed (eg because of corrupt/insufficient message data) and state of 'content' result is undefined.
 // This will avoid copying into the result data (possibly tainted) that has arrived at an inappropriate security level.
 //   * content will contain data decoded from the message; must be non-null
 const uint8_t *decodeFullStatsMessageCore(const uint8_t * const buf, const uint8_t buflen, const stats_TX_level secLevel, const bool secureChannel,
@@ -417,9 +417,11 @@ const uint8_t *decodeFullStatsMessageCore(const uint8_t * const buf, const uint8
     }
 
   // If next header is temp/power then extract it, else must be the flags header.
+  if(b - buf >= buflen) { return(NULL); } // Fail if next byte not available.
   if(MESSAGING_TRAILING_MINIMAL_STATS_HEADER_MSBS == (*b & MESSAGING_TRAILING_MINIMAL_STATS_HEADER_MASK))
     {
 //DEBUG_SERIAL_PRINTLN_FLASHSTRING(" chk msh");
+    if(b - buf >= buflen-1) { return(NULL); } // Fail if 2 bytes not available for this section.
     if(0 != (0x80 & b[1])) { return(NULL); } // Following byte does not have msb correctly cleared.
     extractTrailingMinimalStatsPayload(b, &(content->tempAndPower));
     b += 2;
@@ -429,12 +431,14 @@ const uint8_t *decodeFullStatsMessageCore(const uint8_t * const buf, const uint8
   // If next header is flags then extract it.
   // FIXME: risk of misinterpretting CRC.
 //DEBUG_SERIAL_PRINTLN_FLASHSTRING(" chk flg");
+  if(b - buf >= buflen) { return(NULL); } // Fail if next byte not available.
   if(MESSAGING_FULL_STATS_FLAGS_HEADER_MSBS != (*b & MESSAGING_FULL_STATS_FLAGS_HEADER_MASK)) { return(NULL); } // Corrupt message.
   const uint8_t flagsHeader = *b++;
   content->occ = flagsHeader & 3;
   const bool containsAmbL = (0 != (flagsHeader & MESSAGING_FULL_STATS_FLAGS_HEADER_AMBL));
   if(containsAmbL)
     {
+    if(b - buf >= buflen) { return(NULL); } // Fail if next byte not available.
     const uint8_t ambL = *b++;
 //DEBUG_SERIAL_PRINTLN_FLASHSTRING(" chk aml");
     if((0 == ambL) || (ambL == (uint8_t)0xff)) { return(NULL); } // Illegal value.
@@ -444,6 +448,7 @@ const uint8_t *decodeFullStatsMessageCore(const uint8_t * const buf, const uint8
 
   // Finish off by computing and checking the CRC (and return pointer to just after CRC).
   // Assumes that b now points just beyond the end of the payload.
+  if(b - buf >= buflen) { return(NULL); } // Fail if next byte not available.
   uint8_t crc = MESSAGING_FULL_STATS_CRC_INIT; // Initialisation.
   for(const uint8_t *p = buf; p < b; ) { crc = OTRadioLink::crc7_5B_update(crc, *p++); }
 //DEBUG_SERIAL_PRINTLN_FLASHSTRING(" chk CRC");
@@ -928,6 +933,27 @@ static void decodeAndHandleFTp2_FS20_native(Print *p, const bool secure, const u
   fht8v_msg_t command;
   uint8_t const *lastByte = msg+msglen-1;
   uint8_t const *trailer = FHT8VDecodeBitStream(msg, lastByte, &command);
+
+#if 0 && defined(DEBUG)
+  OTRadioLink::printRXMsg(p, msg, msglen);
+#endif
+
+#if defined(ENABLE_BOILER_HUB)
+  // Potentially accept as call for heat only if command is 0x26 (38).
+  // Later filter on the valve being open enough for some water flow to be likely
+  // (for individual valves, and in aggregate)
+  // and the housecode being accepted.
+  if(0x26 == command.command)
+    {
+    const uint16_t compoundHC = (command.hc1 << 8) | command.hc2;
+#if 0 && defined(DEBUG)
+    p->println("FS20 0x26 RX"); // Just notes that a 'valve %' FS20 command has been overheard.
+#endif
+    // Process the common 'valve closed' case efficiently.
+    remoteCallForHeatRX(compoundHC, (0 == command.extension) ? 0 : (uint8_t) ((command.extension * 100) / 255));
+    }
+#endif
+
   if(NULL != trailer)
     {
 #if 0 && defined(DEBUG)
@@ -937,8 +963,7 @@ p->print("FS20 msg HC "); p->print(command.hc1); p->print(' '); p->println(comma
     // If whole FHT8V frame was OK then check if there is a valid stats trailer.
 
     // Check for 'core' stats trailer.
-    if((trailer + FullStatsMessageCore_MAX_BYTES_ON_WIRE <= lastByte) && // Enough space for minimum-stats trailer.
-       (MESSAGING_FULL_STATS_FLAGS_HEADER_MSBS == (trailer[0] & MESSAGING_FULL_STATS_FLAGS_HEADER_MASK)))
+    if(MESSAGING_FULL_STATS_FLAGS_HEADER_MSBS == (trailer[0] & MESSAGING_FULL_STATS_FLAGS_HEADER_MASK))
       {
       FullStatsMessageCore_t content;
       const uint8_t *tail = decodeFullStatsMessageCore(trailer, lastByte-trailer+1, stTXalwaysAll, false, &content);
@@ -962,7 +987,7 @@ p->print("FS20 msg HC "); p->print(command.hc1); p->print(' '); p->println(comma
           }
 
 #if 0 && defined(DEBUG)
-if(allGood) { p->println("FS20 ts"); }
+/*if(allGood)*/ { p->println("FS20 ts"); }
 #endif
         // If frame looks good then capture it.
 //        if(allGood) { recordCoreStats(false, &content); }
@@ -972,36 +997,21 @@ if(allGood) { p->println("FS20 ts"); }
         }
       }
 #if defined(ALLOW_MINIMAL_STATS_TXRX)
-    // Check for minimum stats trailer.
+    // Check for minimal stats trailer.
     else if((trailer + MESSAGING_TRAILING_MINIMAL_STATS_PAYLOAD_BYTES <= lastByte) && // Enough space for minimum-stats trailer.
        (MESSAGING_TRAILING_MINIMAL_STATS_HEADER_MSBS == (trailer[0] & MESSAGING_TRAILING_MINIMAL_STATS_HEADER_MASK)))
       {
       if(verifyHeaderAndCRCForTrailingMinimalStatsPayload(trailer)) // Valid header and CRC.
         {
 #if 0 && defined(DEBUG)
-      p->println("FS20 MS RX"); // Just notes that a 'valve %' FS20 command has been overheard.
+        p->println("FS20 tsm"); // Just notes that a 'valve %' FS20 command has been overheard.
 #endif
         trailingMinimalStatsPayload_t payload;
         extractTrailingMinimalStatsPayload(trailer, &payload);
-        recordMinimalStats(true, command.hc1, command.hc2, &payload); // Record stats; local loopback is secure.
+        // FIMXE // recordMinimalStats(true, command.hc1, command.hc2, &payload); // Record stats; local loopback is secure.
         }
       }
 #endif
-#endif
-
-#if defined(ENABLE_BOILER_HUB)
-    // Potentially accept as call for heat only if command is 0x26 (38).
-    // Later filter on the valve being open enough for some water flow to be likely
-    // (for individual valves, and in aggregate)
-    // and the housecode being accepted.
-    if(0x26 == command.command)
-      {
-      const uint16_t compoundHC = (command.hc1 << 8) | command.hc2;
-#if 0 && defined(DEBUG)
-      p->println("FS20 0x26 RX"); // Just notes that a 'valve %' FS20 command has been overheard.
-#endif
-      remoteCallForHeatRX(compoundHC, (0 == command.extension) ? 0 : (uint8_t) ((command.extension * 100) / 255));
-      }
 #endif
     }
   return;

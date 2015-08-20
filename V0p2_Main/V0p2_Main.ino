@@ -203,6 +203,48 @@ static bool FilterRXISR(const volatile uint8_t *buf, volatile uint8_t &buflen)
   buflen = 8; // Truncate message to correct size for efficiency.
   return(true); // Accept message.
   }
+#elif defined(ALLOW_STATS_RX)
+// If a stats hub then be prepared to accept a wide variety of binary and JSON message types.
+// It may yet be good to trim the smaller message types down to size in particular to help queueing.
+// It may also be kinder to some of the older FS20+trailer handling routines to not over-trim!
+// This does duplicate some of the handling work elsewhere, thus allowing room for confusion.
+// Allows all messages through by default for diagnostic purposes.
+static bool FilterRXISR(const volatile uint8_t *buf, volatile uint8_t &buflen)
+  {
+  const uint8_t initialBuflen = buflen;
+  if(initialBuflen < 1) { return(true); } // Accept everything, even empty message with no type byte.
+  // Fall through for message types not handled specifically.
+  switch(buf[0])
+    {
+    case OTRadioLink::FTp2_FullStatsIDL: case OTRadioLink::FTp2_FullStatsIDH:
+      {
+      // Maxmimum size is 8 including trailing CRC; fall through for possible further zeros trim.
+      buflen = min(initialBuflen, OTRadioLink::V0P2_MESSAGING_LEADING_FULL_STATS_MAX_BYTES_ON_WIRE);
+      break;
+      }
+
+    case OTRadioLink::FTp2_JSONRaw:
+      {
+      // Maxmimum size is 56 including trailing CRC; fall through for possible further zeros trim.
+      buflen = min(initialBuflen, MSG_JSON_ABS_MAX_LENGTH + 1);
+      break;
+      }
+
+    case OTRadioLink::FTp2_FS20_native:
+      {
+      // Maxmimum size is 53 including trailing stats+CRC; fall through for possible further zeros trim.
+      buflen = min(initialBuflen, 53);
+      break;
+      }
+    }
+
+  #if defined(CONFIG_TRAILING_ZEROS_FILTER_RX)
+  // By default apply heuristic trim of trailing zeros to almost all message types.
+  return(OTRadioLink::frameFilterTrailingZeros(buf, buflen)); // This will accept all messages.
+  #else
+  return(true); // Accept all messages.
+  #endif
+  }
 #elif defined(CONFIG_TRAILING_ZEROS_FILTER_RX)
 // Useful general heuristic to improve queueing, etc.
 #define FilterRXISR (OTRadioLink::frameFilterTrailingZeros)

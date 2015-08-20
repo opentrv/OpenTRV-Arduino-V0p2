@@ -558,7 +558,7 @@ uint8_t *encodeFullStatsMessageCore(uint8_t *buf, uint8_t buflen, stats_TX_level
 
 // Decode core/common 'full' stats message.
 // If successful returns pointer to next byte of message, ie just after full stats message decoded.
-// Returns null if failed (eg because of corrupt message data) and state of 'content' result is undefined.
+// Returns null if failed (eg because of corrupt/insufficient message data) and state of 'content' result is undefined.
 // This will avoid copying into the result data (possibly tainted) that has arrived at an inappropriate security level.
 //   * content will contain data decoded from the message; must be non-null
 const uint8_t *decodeFullStatsMessageCore(const uint8_t *buf, uint8_t buflen, stats_TX_level secLevel, bool secureChannel,

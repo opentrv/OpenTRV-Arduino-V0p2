@@ -219,22 +219,22 @@ static bool FilterRXISR(const volatile uint8_t *buf, volatile uint8_t &buflen)
     case OTRadioLink::FTp2_FullStatsIDL: case OTRadioLink::FTp2_FullStatsIDH:
       {
       // Maxmimum size is 8 including trailing CRC; fall through for possible further zeros trim.
-      buflen = min(initialBuflen, 8);
+      buflen = min(initialBuflen, OTRadioLink::V0P2_MESSAGING_LEADING_FULL_STATS_MAX_BYTES_ON_WIRE);
       break;
       }
 
     case OTRadioLink::FTp2_JSONRaw:
       {
       // Maxmimum size is 56 including trailing CRC; fall through for possible further zeros trim.
-      buflen = min(initialBuflen, 56);
+      buflen = min(initialBuflen, MSG_JSON_ABS_MAX_LENGTH + 1);
       break;
       }
 
     case OTRadioLink::FTp2_FS20_native:
       {
-      // Maxmimum size is 53 including trailing stats+CRC; DO NOT currently allow further zeros trim.
+      // Maxmimum size is 53 including trailing stats+CRC; fall through for possible further zeros trim.
       buflen = min(initialBuflen, 53);
-      return(true);
+      break;
       }
     }
 
