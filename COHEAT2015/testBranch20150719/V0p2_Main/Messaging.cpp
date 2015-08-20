@@ -928,9 +928,30 @@ static void decodeAndHandleFTp2_FS20_native(Print *p, const bool secure, const u
   fht8v_msg_t command;
   uint8_t const *lastByte = msg+msglen-1;
   uint8_t const *trailer = FHT8VDecodeBitStream(msg, lastByte, &command);
+
+#if 1 && defined(DEBUG)
+  OTRadioLink::printRXMsg(p, msg, msglen);
+#endif
+
+#if defined(ENABLE_BOILER_HUB)
+  // Potentially accept as call for heat only if command is 0x26 (38).
+  // Later filter on the valve being open enough for some water flow to be likely
+  // (for individual valves, and in aggregate)
+  // and the housecode being accepted.
+  if(0x26 == command.command)
+    {
+    const uint16_t compoundHC = (command.hc1 << 8) | command.hc2;
+#if 0 && defined(DEBUG)
+    p->println("FS20 0x26 RX"); // Just notes that a 'valve %' FS20 command has been overheard.
+#endif
+    // Process the common 'valve closed' case efficiently.
+    remoteCallForHeatRX(compoundHC, (0 == command.extension) ? 0 : (uint8_t) ((command.extension * 100) / 255));
+    }
+#endif
+
   if(NULL != trailer)
     {
-#if 0 && defined(DEBUG)
+#if 1 && defined(DEBUG)
 p->print("FS20 msg HC "); p->print(command.hc1); p->print(' '); p->println(command.hc2);
 #endif
 #if defined(ALLOW_STATS_RX) // Only look for the trailer if supported.
@@ -961,8 +982,8 @@ p->print("FS20 msg HC "); p->print(command.hc1); p->print(' '); p->println(comma
           content.containsID = true;
           }
 
-#if 0 && defined(DEBUG)
-if(allGood) { p->println("FS20 ts"); }
+#if 1 && defined(DEBUG)
+/*if(allGood)*/ { p->println("FS20 ts"); }
 #endif
         // If frame looks good then capture it.
 //        if(allGood) { recordCoreStats(false, &content); }
@@ -972,36 +993,21 @@ if(allGood) { p->println("FS20 ts"); }
         }
       }
 #if defined(ALLOW_MINIMAL_STATS_TXRX)
-    // Check for minimum stats trailer.
+    // Check for minimal stats trailer.
     else if((trailer + MESSAGING_TRAILING_MINIMAL_STATS_PAYLOAD_BYTES <= lastByte) && // Enough space for minimum-stats trailer.
        (MESSAGING_TRAILING_MINIMAL_STATS_HEADER_MSBS == (trailer[0] & MESSAGING_TRAILING_MINIMAL_STATS_HEADER_MASK)))
       {
       if(verifyHeaderAndCRCForTrailingMinimalStatsPayload(trailer)) // Valid header and CRC.
         {
 #if 0 && defined(DEBUG)
-      p->println("FS20 MS RX"); // Just notes that a 'valve %' FS20 command has been overheard.
+        p->println("FS20 tsm"); // Just notes that a 'valve %' FS20 command has been overheard.
 #endif
         trailingMinimalStatsPayload_t payload;
         extractTrailingMinimalStatsPayload(trailer, &payload);
-        recordMinimalStats(true, command.hc1, command.hc2, &payload); // Record stats; local loopback is secure.
+        // FIMXE // recordMinimalStats(true, command.hc1, command.hc2, &payload); // Record stats; local loopback is secure.
         }
       }
 #endif
-#endif
-
-#if defined(ENABLE_BOILER_HUB)
-    // Potentially accept as call for heat only if command is 0x26 (38).
-    // Later filter on the valve being open enough for some water flow to be likely
-    // (for individual valves, and in aggregate)
-    // and the housecode being accepted.
-    if(0x26 == command.command)
-      {
-      const uint16_t compoundHC = (command.hc1 << 8) | command.hc2;
-#if 0 && defined(DEBUG)
-      p->println("FS20 0x26 RX"); // Just notes that a 'valve %' FS20 command has been overheard.
-#endif
-      remoteCallForHeatRX(compoundHC, (0 == command.extension) ? 0 : (uint8_t) ((command.extension * 100) / 255));
-      }
 #endif
     }
   return;
