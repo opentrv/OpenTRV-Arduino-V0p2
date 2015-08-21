@@ -31,7 +31,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 #include "Sensor.h"
 
 // Base Actuator type.
-// All actuators are sensors for their requsted actuator setting/position by default.
+// All actuators are sensors for their requested actuator setting/position by default.
 // Templated on sensor value type, typically uint8_t or uint16_t or int.
 template <class T>
 class Actuator : public Sensor<T>
@@ -44,7 +44,7 @@ class Actuator : public Sensor<T>
 class SimpleTSUint8Actuator : public Actuator<uint8_t>
   {
   protected:
-    // Requested acuator value/position.
+    // Requested actuator value/position.
     volatile uint8_t value;
 
     // By default initialise the value to zero.
