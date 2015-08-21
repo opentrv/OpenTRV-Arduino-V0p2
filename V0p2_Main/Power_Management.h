@@ -33,7 +33,7 @@ including interrupts and sleep.
 
 #include "V0p2_Main.h"
 
-#include "Sensor.h"
+#include <OTV0p2Base.h>
 
 //#define USE_WDT_FOR_SHORT_DELAYS // If defined use WDT rather than slowing main system clock.
 
@@ -102,7 +102,7 @@ void powerSetup();
 
 
 // Sensor for supply (eg battery) voltage in millivolts.
-class SupplyVoltageMilliVolts : public Sensor<uint16_t>
+class SupplyVoltageMilliVolts : public OTV0P2BASE::Sensor<uint16_t>
   {
   private:
     // Internal bandgap (1.1V nominal, 1.0--1.2V) as fraction of Vcc [0,1023].

@@ -23,8 +23,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 #ifndef V0P2_ACTUATORS_H
 #define V0P2_ACTUATORS_H
 
-#include "Actuator.h"
-
 
 
 
@@ -32,7 +30,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 // Abstract class for motor drive.
 // Supports abstract model plus remote (wireless) and local/direct implementations.
 // Implementations may require poll() called at a fixed rate.
-class AbstractRadValve : public SimpleTSUint8Actuator
+class AbstractRadValve : public OTV0P2BASE::SimpleTSUint8Actuator
   {
   public:
     // Returns true if this sensor reading value passed is valid, eg in range [0,100].

@@ -28,7 +28,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 #include <OTV0p2Base.h>
 
 #include "V0p2_Main.h"
-#include "Sensor.h"
 
 
 // Create very light-weight standard-speed OneWire(TM) support if a pin has been allocated to it.
@@ -62,7 +61,7 @@ extern OTV0P2BASE::MinimalOneWire<PIN_OW_DQ_DATA> MinOW;
 // Provides temperature as a signed int value with 0C == 0 at all precisions.
 //template <template <class = float> class T> struct A 
 //template <template <uint8_t DigitalPin> class MOW, uint8_t bitsAfterPoint = 4, uint8_t busOrder = 0>
-class ExtTemperatureDS18B20C16 : public Sensor<int>
+class ExtTemperatureDS18B20C16 : public OTV0P2BASE::Sensor<int>
   {
   private:
     // Ordinal of this DS18B20 on the OW bus.
@@ -139,7 +138,7 @@ extern ExtTemperatureDS18B20C16 extDS18B20_0;
 
 #ifndef OMIT_MODULE_LDROCCUPANCYDETECTION
 // Sensor for ambient light level; 0 is dark, 255 is bright.
-class AmbientLight : public SimpleTSUint8Sensor
+class AmbientLight : public OTV0P2BASE::SimpleTSUint8Sensor
   {
   private:
     // Raw ambient light value [0,1023] dark--light.
@@ -223,7 +222,7 @@ extern AmbientLight AmbLight;
 
 // Sensor for ambient/room temperature in 1/16th of one degree Celsius.
 // An error may be indicated by returning a zero or (very) negative value.
-class RoomTemperatureC16 : public Sensor<int>
+class RoomTemperatureC16 : public OTV0P2BASE::Sensor<int>
   {
   private:
     // Room temperature in 16*C, eg 1 is 1/16 C, 32 is 2C, -64 is -4C.
@@ -296,7 +295,7 @@ extern RoomTemperatureC16 TemperatureC16;
 #if defined(SENSOR_SHT21_ENABLE)
 // Functionality and code only enabled if SENSOR_SHT21_ENABLE is defined.
 // Sensor for relative humidity percentage; 0 is dry, 100 is condensing humid, 255 for error.
-class HumiditySensorSHT21 : public SimpleTSUint8Sensor
+class HumiditySensorSHT21 : public OTV0P2BASE::SimpleTSUint8Sensor
   {
   private:
     // True if RH% is high, with hysteresis.

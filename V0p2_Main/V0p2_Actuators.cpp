@@ -25,8 +25,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 
 #include <Wire.h> // Arduino I2C library.
 
-#include "Actuator.h"
-
 #include "V0p2_Main.h"
 #include "V0p2_Board_IO_Config.h" // I/O pin allocation: include ahead of I/O module headers.
 #include "V0p2_Actuators.h" // I/O code access.

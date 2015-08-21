@@ -49,10 +49,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 
 #include "V0p2_Main.h"
 
+#include <OTV0p2Base.h>
 #include <OTRadioLink.h>
 
 #include "Security.h"
-#include "Sensor.h"
 
 
 
@@ -163,7 +163,7 @@ class SimpleStatsRotationBase
 
     // Create/update value for the given sensor.
     // True if successful, false otherwise (eg capacity already reached).
-    template <class T> bool put(const Sensor<T> &s) { return(put(s.tag(), s.get())); }
+    template <class T> bool put(const OTV0P2BASE::Sensor<T> &s) { return(put(s.tag(), s.get())); }
 
     // Create/update stat/key with specified descriptor/properties.
     // The name is taken from the descriptor.
