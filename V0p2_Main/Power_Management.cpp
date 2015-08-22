@@ -508,8 +508,8 @@ bool analogueVsBandgapRead(const uint8_t aiNumber, const bool napToSettle)
   }
 
 
-// Measure internal bandgap (1.1V nominal, 1.0--1.2V) as fraction of Vcc [0,1023].
-static uint16_t read1V1wrtBattery() { return(_analogueNoiseReducedReadM(_BV(REFS0) | 14)); }
+//// Measure internal bandgap (1.1V nominal, 1.0--1.2V) as fraction of Vcc [0,1023].
+//static uint16_t read1V1wrtBattery() { return(_analogueNoiseReducedReadM(_BV(REFS0) | 14)); }
 
 // Default low-battery threshold suitable for 2xAA NiMH, with AVR BOD at 1.8V.
 #define BATTERY_LOW_MV 2000
@@ -529,8 +529,9 @@ static uint16_t read1V1wrtBattery() { return(_analogueNoiseReducedReadM(_BV(REFS
 // NOT thread-safe nor usable within ISRs (Interrupt Service Routines).
 uint16_t SupplyVoltageMilliVolts::read()
   {
-  // Measure internal bandgap (1.1V nominal, 1.0--1.2V) as fraction of Vcc.
-  const uint16_t raw = read1V1wrtBattery();
+  // Measure internal bandgap (1.1V nominal, 1.0--1.2V) as fraction of Vcc [0,1023].
+//  const uint16_t raw = read1V1wrtBattery();
+  const uint16_t raw = _analogueNoiseReducedReadM(_BV(REFS0) | 14);
   // If Vcc was 1.1V ADC would give 1023.
   // If Vcc was 2.2V ADC would give 511.
   const uint16_t result = ((1023U<<6) / raw) * (1100U>>6);

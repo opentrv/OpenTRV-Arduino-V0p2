@@ -173,6 +173,7 @@ void sleepPwrSaveWithBODDisabled();
 // Sleep briefly in as lower-power mode as possible until the specified (watchdog) time expires.
 //   * watchdogSleep is one of the WDTO_XX values from <avr/wdt.h>
 // May be useful to call minimsePowerWithoutSleep() first, when not needing any modules left on.
+// NOTE: will stop clocks for UART, etc.
 void nap(int_fast8_t watchdogSleep);
 
 // Sleep briefly in as lower-power mode as possible until the specified (watchdog) time expires, or another interrupt.
@@ -180,6 +181,7 @@ void nap(int_fast8_t watchdogSleep);
 //   * allowPrematureWakeup if true then if woken before watchdog fires return false; default false
 // Returns false if the watchdog timer did not go off, true if it did.
 // May be useful to call minimsePowerWithoutSleep() first, when not needing any modules left on.
+// NOTE: will stop clocks for UART, etc.
 bool nap(int_fast8_t watchdogSleep, bool allowPrematureWakeup);
 
 #ifdef ENABLE_AVR_IDLE_MODE
