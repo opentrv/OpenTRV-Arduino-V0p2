@@ -637,7 +637,7 @@ bool inSmartMode();
 #define OCCUPATION_TIMEOUT_1_M ((OCCUPATION_TIMEOUT_M*2)/3)
 
 // Occupancy measure as a % confidence that the room/area controlled by this unit has active human occupants.
-class OccupancyTracker : public SimpleTSUint8Sensor
+class OccupancyTracker : public OTV0P2BASE::SimpleTSUint8Sensor
   {
   private:
     // Time until room regarded as unoccupied, in minutes; initially zero (ie treated as unoccupied at power-up).
