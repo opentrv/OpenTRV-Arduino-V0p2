@@ -157,33 +157,34 @@ int readInternalTemperatureC16();
 // Does NOT attempt to adjust serial power state.
 void minimisePowerWithoutSleep();
 
-// Sleep with BOD disabled in power-save mode; will wake on any interrupt.
-// This particular API is not guaranteed to be maintained: please use sleepUntilInt() instead.
-void sleepPwrSaveWithBODDisabled();
-
-// Sleep indefinitely in as lower-power mode as possible until a specified watchdog time expires, or another interrupt.
-// May be useful to call minimsePowerWithoutSleep() first, when not needing any modules left on.
-#define sleepUntilInt() sleepPwrSaveWithBODDisabled()
-
-// Sleep briefly in as lower-power mode as possible until the specified (watchdog) time expires.
-//   * watchdogSleep is one of the WDTO_XX values from <avr/wdt.h>
-// May be useful to call minimsePowerWithoutSleep() first, when not needing any modules left on.
-// NOTE: will stop clocks for UART, etc.
-void nap(int_fast8_t watchdogSleep);
-
-// Sleep briefly in as lower-power mode as possible until the specified (watchdog) time expires, or another interrupt.
-//   * watchdogSleep is one of the WDTO_XX values from <avr/wdt.h>
-//   * allowPrematureWakeup if true then if woken before watchdog fires return false; default false
-// Returns false if the watchdog timer did not go off, true if it did.
-// May be useful to call minimsePowerWithoutSleep() first, when not needing any modules left on.
-// NOTE: will stop clocks for UART, etc.
-bool nap(int_fast8_t watchdogSleep, bool allowPrematureWakeup);
-
-// Idle the CPU for specified time but leave everything else running (eg UART), returning on any interrupt or the watchdog timer.
-// Should reduce power consumption vs spinning the CPU >> 3x, though not nearly as much as nap().
-// True iff watchdog timer expired; false if something else woke the CPU.
-// Only use this if not disallowed for board type, eg with ENABLE_USE_OF_AVR_IDLE_MODE.
-bool idleCPU(int_fast8_t watchdogSleep);
+//// Sleep with BOD disabled in power-save mode; will wake on any interrupt.
+//// This particular API is not guaranteed to be maintained: please use sleepUntilInt() instead.
+//void sleepPwrSaveWithBODDisabled();
+//
+//// Sleep indefinitely in as lower-power mode as possible until a specified watchdog time expires, or another interrupt.
+//// May be useful to call minimsePowerWithoutSleep() first, when not needing any modules left on.
+//static inline void sleepUntilInt() { sleepPwrSaveWithBODDisabled(); }
+//
+//// Idle the CPU for specified time but leave everything else running (eg UART), returning on any interrupt or the watchdog timer.
+////   * watchdogSleep is one of the WDTO_XX values from <avr/wdt.h>
+//// Should reduce power consumption vs spinning the CPU more than 3x, though not nearly as much as nap().
+//// True iff watchdog timer expired; false if something else woke the CPU.
+//// Only use this if not disallowed for board type, eg with ENABLE_USE_OF_AVR_IDLE_MODE.
+//bool idleCPU(int_fast8_t watchdogSleep);
+//
+//// Sleep briefly in as lower-power mode as possible until the specified (watchdog) time expires.
+////   * watchdogSleep is one of the WDTO_XX values from <avr/wdt.h>
+//// May be useful to call minimsePowerWithoutSleep() first, when not needing any modules left on.
+//// NOTE: will stop clocks for UART, etc.
+//void nap(int_fast8_t watchdogSleep);
+//
+//// Sleep briefly in as lower-power mode as possible until the specified (watchdog) time expires, or another interrupt.
+////   * watchdogSleep is one of the WDTO_XX values from <avr/wdt.h>
+////   * allowPrematureWakeup if true then if woken before watchdog fires return false; default false
+//// Returns false if the watchdog timer did not go off, true if it did.
+//// May be useful to call minimsePowerWithoutSleep() first, when not needing any modules left on.
+//// NOTE: will stop clocks for UART, etc.
+//bool nap(int_fast8_t watchdogSleep, bool allowPrematureWakeup);
 
 // Call this to do an I/O poll if needed; returns true if something useful happened.
 // This call should typically take << 1ms at 1MHz CPU.
@@ -195,13 +196,13 @@ bool pollIO(bool force = false);
 // Nap productively polling I/O, etc, across the system while spending time in low-power mode if possible.
 // Typically sleeps for about 30ms; tries to allow earlier wakeup if interrupt is received, etc.
 // True iff watchdog timer expired; false if something else woke the CPU.
-static bool inline nap15AndPoll() { const bool wd = nap(WDTO_15MS, true); pollIO(!wd); return(wd); }
+static bool inline nap15AndPoll() { const bool wd = ::OTV0P2BASE::nap(WDTO_15MS, true); pollIO(!wd); return(wd); }
 // Idle productively polling I/O, etc, across the system while spending time in low-power mode if possible.
 // Typically sleeps for nominally up to 30ms; tries to allow earlier wakeup if interrupt is received, etc.
 // (Will often be prematurely woken by timer0 with ~16ms interval.)
 // True iff watchdog timer expired; false if something else woke the CPU.
 // Only use this if not disallowed for board type, eg with ENABLE_USE_OF_AVR_IDLE_MODE.
-static bool inline idle15AndPoll() { const bool wd = idleCPU(WDTO_15MS); pollIO(!wd); return(wd); }
+static bool inline idle15AndPoll() { const bool wd = ::OTV0P2BASE::idleCPU(WDTO_15MS, true); pollIO(!wd); return(wd); }
 
 // Call this to productively burn tens to hundreds of CPU cycles, and poll I/O, eg in a busy-wait loop.
 // This may churn PRNGs or gather entropy for example.
@@ -217,18 +218,18 @@ void burnHundredsOfCyclesProductivelyAndPoll();
 static void inline veryTinyPause() { sleepLowPowerMs(VERYTINY_PAUSE_MS); }
 // Tiny low-power sleep to approximately match the PICAXE V0.09 routine of the same name.
 #define TINY_PAUSE_MS 15
-static void inline tinyPause() { nap(WDTO_15MS); } // 15ms vs 18ms nominal for PICAXE V0.09 impl.
+static void inline tinyPause() { ::OTV0P2BASE::nap(WDTO_15MS); } // 15ms vs 18ms nominal for PICAXE V0.09 impl.
 // Small low-power sleep.
 #define SMALL_PAUSE_MS 30
-static void inline smallPause() { nap(WDTO_30MS); }
+static void inline smallPause() { ::OTV0P2BASE::nap(WDTO_30MS); }
 // Medium low-power sleep to approximately match the PICAXE V0.09 routine of the same name.
 // Premature wakeups MAY be allowed to avoid blocking I/O polling for too long.
 #define MEDIUM_PAUSE_MS 60
-static void inline mediumPause() { nap(WDTO_60MS); } // 60ms vs 144ms nominal for PICAXE V0.09 impl.
+static void inline mediumPause() { ::OTV0P2BASE::nap(WDTO_60MS); } // 60ms vs 144ms nominal for PICAXE V0.09 impl.
 // Big low-power sleep to approximately match the PICAXE V0.09 routine of the same name.
 // Premature wakeups MAY be allowed to avoid blocking I/O polling for too long.
 #define BIG_PAUSE_MS 120
-static void inline bigPause() { nap(WDTO_120MS); } // 120ms vs 288ms nominal for PICAXE V0.09 impl.
+static void inline bigPause() { ::OTV0P2BASE::nap(WDTO_120MS); } // 120ms vs 288ms nominal for PICAXE V0.09 impl.
 
 #if defined(WAKEUP_32768HZ_XTAL) || 1 // FIXME: avoid getSubCycleTime() where slow clock NOT available.
 // Get fraction of the way through the basic cycle in range [0,255].
