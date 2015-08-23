@@ -1652,7 +1652,7 @@ void setupOpenTRV()
   // or limit reached.
   for(uint8_t i = 5; --i > 0; )
     {
-    nap(WDTO_120MS, false); // Sleep long enough for receiver to have a chance to process previous TX.
+    ::OTV0P2BASE::nap(WDTO_120MS, false); // Sleep long enough for receiver to have a chance to process previous TX.
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING(" TX...");
 #endif
@@ -2087,13 +2087,13 @@ void loopOpenTRV()
       // then this can only sleep for a short time between explicit poll()s,
       // though in any case allow wake on interrupt to minimise loop timing jitter
       // when the slow RTC 'end of sleep' tick arrives.
-      nap(WDTO_15MS, true);
+      ::OTV0P2BASE::nap(WDTO_15MS, true);
       }
     else
       {
       // Normal long minimal-power sleep until wake-up interrupt.
       // Rely on interrupt to force quick loop round to I/O poll().
-      sleepUntilInt();
+      ::OTV0P2BASE::sleepUntilInt();
       }
 //    DEBUG_SERIAL_PRINTLN_FLASHSTRING("w"); // Wakeup.
     }

@@ -280,7 +280,7 @@ static int TMP112_readTemperatureC16()
     if(Wire.requestFrom(TMP102_I2C_ADDR, 1) != 1) { return(0); } // Exit if error.
     const byte b1 = Wire.read();
     if(b1 & TMP102_CTRL_B1_OS) { break; } // Conversion completed.
-    nap(WDTO_15MS); // One or two of these naps should allow typical ~26ms conversion to complete...
+    ::OTV0P2BASE::nap(WDTO_15MS); // One or two of these naps should allow typical ~26ms conversion to complete...
     }
 
   // Fetch temperature.

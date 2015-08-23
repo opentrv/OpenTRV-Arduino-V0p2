@@ -50,28 +50,28 @@ uint8_t getSecureRandomByte(const bool whiten)
 #ifdef WAKEUP_32768HZ_XTAL
   // Use various real noise sources and whiten with PRNG and other counters.
   // Mix the bits also to help ensure good distribution.
-  uint8_t w1 = clockJitterEntropyByte(); // Real noise.
+  uint8_t w1 = ::OTV0P2BASE::clockJitterEntropyByte(); // Real noise.
 #else // WARNING: poor substitute if 32768Hz xtal not available.
-  uint8_t w1 = clockJitterWDT() + (clockJitterWDT() << 5);
+  uint8_t w1 = clockJitterWDT() + (::OTV0P2BASE::clockJitterWDT() << 5);
   w1 ^= (w1 << 1); // Mix.
-  w1 ^= clockJitterWDT();
+  w1 ^= ::OTV0P2BASE::clockJitterWDT();
   w1 ^= (w1 >> 2); // Mix.
-  w1 ^= clockJitterWDT();
+  w1 ^= ::OTV0P2BASE::clockJitterWDT();
   w1 ^= (w1 << 2); // Mix.
-  w1 ^= clockJitterWDT();
+  w1 ^= ::OTV0P2BASE::clockJitterWDT();
   w1 ^= (w1 >> 3); // Mix.
-  w1 ^= clockJitterWDT();
+  w1 ^= ::OTV0P2BASE::clockJitterWDT();
   w1 ^= (w1 << 2); // Mix.
-  w1 ^= clockJitterWDT();
+  w1 ^= ::OTV0P2BASE::clockJitterWDT();
   w1 ^= (w1 >> 1); // Mix.
-  w1 ^= clockJitterWDT();
+  w1 ^= ::OTV0P2BASE::clockJitterWDT();
 #endif
   const uint8_t v1 = w1;
   w1 ^= (w1 << 3); // Mix.
   w1 ^= noisyADCRead(true); // Some more real noise, possibly ~1 bit.
   w1 ^= (w1 << 4); // Mix.
   const uint8_t v2 = w1;
-  w1 ^= clockJitterWDT(); // Possibly ~1 bit more of entropy.
+  w1 ^= ::OTV0P2BASE::clockJitterWDT(); // Possibly ~1 bit more of entropy.
   w1 ^= (w1 >> 4); // Mix.
   if(whiten)
     {

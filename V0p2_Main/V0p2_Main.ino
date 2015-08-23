@@ -307,8 +307,8 @@ void optionalPOST()
     // Attempt to capture some entropy while waiting, implicitly from oscillator start-up time if nothing else.
     for(uint8_t i = 255; (--i > 0) && (earlySCT == getSubCycleTime()); )
       {
-      addEntropyToPool(clockJitterWDT() ^ noisyADCRead(), 1); // Conservatively hope for at least 1 bit from combined sources!
-      nap(WDTO_15MS); // Ensure lower mount of ~3s until loop finishes.
+      addEntropyToPool(::OTV0P2BASE::clockJitterWDT() ^ noisyADCRead(), 1); // Conservatively hope for at least 1 bit from combined sources!
+      ::OTV0P2BASE::nap(WDTO_15MS); // Ensure lower mount of ~3s until loop finishes.
       captureEntropy1(); // Have other fun, though likely largely ineffective at this stage.
       }
 #endif
@@ -502,7 +502,7 @@ void setup()
   //const long seed1 = ((((long) clockJitterRTC()) << 13) ^ (((long)clockJitterWDT()) << 21) ^ (((long)(srseed^eeseed)) << 16)) + s16;
   // Seed simple/fast/small built-in PRNG.  (Smaller and faster than srandom()/random().)
   const uint8_t nar1 = noisyADCRead();
-  OTV0P2BASE::seedRNG8(nar1 ^ (uint8_t) s16, oldResetCount - (uint8_t)((s16+eeseed) >> 8), clockJitterWDT() ^ (uint8_t)srseed);
+  OTV0P2BASE::seedRNG8(nar1 ^ (uint8_t) s16, oldResetCount - (uint8_t)((s16+eeseed) >> 8), ::OTV0P2BASE::clockJitterWDT() ^ (uint8_t)srseed);
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINT_FLASHSTRING("nar ");
   DEBUG_SERIAL_PRINTFMT(nar1, BIN);
@@ -521,7 +521,7 @@ void setup()
   // This amounts to about a quarter of an erase/write cycle per reset/restart per byte, or 400k restarts endurance!
   // These 4 bytes should be picked up as part of the hash/CRC of EEPROM above, next time,
   // essentially forming a longish-cycle (poor) PRNG even with little new real entropy each time.
-  OTV0P2BASE::seedRNG8(nar1 ^ (uint8_t) s16, oldResetCount - (uint8_t)((s16+eeseed) >> 8), clockJitterWDT() ^ (uint8_t)srseed);
+  OTV0P2BASE::seedRNG8(nar1 ^ (uint8_t) s16, oldResetCount - (uint8_t)((s16+eeseed) >> 8), ::OTV0P2BASE::clockJitterWDT() ^ (uint8_t)srseed);
   uint8_t *const erp = (uint8_t *)(EE_START_SEED + (3&((s16)^((eeseed>>8)+(__TIME__[7]))))); // Use some new and some eeseed bits to choose which byte to updated.
   const uint8_t erv = eeprom_read_byte(erp);
   if(0 == erv) { eeprom_smart_erase_byte(erp); }
@@ -529,9 +529,9 @@ void setup()
     {
     eeprom_smart_clear_bits(erp,
 #if !defined(NO_clockJitterEntropyByte)
-      clockJitterEntropyByte()
+      ::OTV0P2BASE::clockJitterEntropyByte()
 #else
-      (clockJitterWDT() ^ nar1) // Less good fall-back when clockJitterEntropyByte() not available with more actual entropy.
+      (::OTV0P2BASE::clockJitterWDT() ^ nar1) // Less good fall-back when clockJitterEntropyByte() not available with more actual entropy.
 #endif
       + ((uint8_t)eeseed)); // Nominally include disjoint set of eeseed bits in choice of which to clear.
     }
