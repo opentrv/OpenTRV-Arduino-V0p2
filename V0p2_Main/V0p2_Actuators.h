@@ -405,7 +405,7 @@ class OnOffBoilerDriverLogic
 // but any non-zero value should be regarded as calling for heat from an on/off boiler,
 // and only values of 0 and 100 may be produced.
 // Implementations require poll() called at a fixed rate (every 2s).
-class BoilerDriver : public SimpleTSUint8Actuator
+class BoilerDriver : public OTV0P2BASE::SimpleTSUint8Actuator
   {
   private:
     OnOffBoilerDriverLogic logic;

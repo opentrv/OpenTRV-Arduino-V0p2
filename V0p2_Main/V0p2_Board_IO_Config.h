@@ -136,10 +136,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define PIN_OW_DQ_DATA 2
 //#endif
 
-//#if V0p2_REV >= 1
-// RFM23B nIRQ interrupt line; all boards now have it incl REV0/breadboard.
+// RFM23B nIRQ interrupt line; all boards now have it incl REV0/breadboard; REV0 *PCB* didn't.
 #define PIN_RFM_NIRQ 9 // ATMega328P-PU PDIP pin 15, PB1, PCINT1.
-//#endif
 
 // REV7 motor connections.
 #if (V0p2_REV == 7)

@@ -39,7 +39,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define CONFIG_Trial2013Winter_Round1 // REV1.
 //#define CONFIG_Trial2013Winter_Round2 // REV2 cut4.
 //#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as boiler hub.
-#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
+//#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
 //#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
 //#define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
 //#define CONFIG_DORM1 // REV7 / DORM1 Winter 2014/2015 all-in-one valve unit.
@@ -124,7 +124,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // Revision REV1 of V0.2 board.
 #define V0p2_REV 1
 // TODO-264: Find out why IDLE seems to crash some REV1 boards.
-#undef ENABLE_USE_OF_AVR_IDLE_MODE
+//#undef ENABLE_USE_OF_AVR_IDLE_MODE
 // IF UNDEFINED: this unit cannot act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
 #undef ENABLE_BOILER_HUB
 // IF UNDEFINED: don't allow RX of stats frames (since there is no easy way to plug in a serial connection to relay them!)
