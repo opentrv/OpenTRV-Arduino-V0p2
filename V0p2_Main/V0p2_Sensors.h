@@ -359,7 +359,7 @@ extern HumiditySensorSHT21 RelHumidity;
 #define TEMP_POT_RAW_MAX 1023 // Max value.
 
 // Sensor for temperature potentiometer/dial; 0 is coldest, 255 is hottest.
-class TemperaturePot : public SimpleTSUint8Sensor
+class TemperaturePot : public OTV0P2BASE::SimpleTSUint8Sensor
   {
   private:
     // Raw pot value [0,1023] if extra precision is required.

@@ -276,7 +276,6 @@ bool nap(int_fast8_t watchdogSleep, bool allowPrematureWakeup)
 #endif
 
 
-#ifdef ENABLE_AVR_IDLE_MODE
 // Idle the CPU for specified time but leave everything else running (eg UART), returning on any interrupt or the watchdog timer.
 // Should reduce power consumption vs spinning the CPU >> 3x, though not nearly as much as nap().
 // True iff watchdog timer expired; false if something else woke the CPU.
@@ -292,7 +291,6 @@ bool idleCPU(const int_fast8_t watchdogSleep)
   wdt_disable();
   return(0 != _watchdogFired);
   }
-#endif
 
 
 // Call this to productively burn tens to hundreds of CPU cycles, and poll I/O, eg in a busy-wait loop.
@@ -752,7 +750,7 @@ void flushSerialSCTSensitive()
 #if 0 && defined(DEBUG)
   if(!_serialIsPoweredUp()) { panic(); } // Trying to operate serial without it powered up.
 #endif
-#ifdef ENABLE_AVR_IDLE_MODE
+#ifdef ENABLE_USE_OF_AVR_IDLE_MODE
   while(serialTXInProgress() && (getSubCycleTime() < GSCT_MAX - 2 - (20/SUBCYCLE_TICK_MS_RD)))
     { idle15AndPoll(); } // Save much power by idling CPU, though everything else runs.
 #endif

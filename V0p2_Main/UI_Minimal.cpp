@@ -787,7 +787,7 @@ static void InvalidIgnored() { Serial.println(F("Invalid, ignored.")); }
 #endif
 #define MIN_RX_BUFFER 16 // Minimum Arduino Serial RX buffer size.
 // DHD20131213: CAN_IDLE_15MS true seemed to be causing intermittent crashes.
-#ifdef ENABLE_AVR_IDLE_MODE
+#ifdef ENABLE_USE_OF_AVR_IDLE_MODE
 #define CAN_IDLE_30MS ((BAUD <= 4800) || (MAXIMUM_CLI_RESPONSE_CHARS < MIN_RX_BUFFER)) // If true, cannot get RX overrun during 15--30ms idle.
 #else
 #define CAN_IDLE_30MS (false)

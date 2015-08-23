@@ -52,11 +52,6 @@ including interrupts and sleep.
 #define MAX_CPU_PRESCALE clock_div_256 // At least for the ATmega328P...
 #define MIN_CPU_HZ ((F_CPU) >> (((int) MAX_CPU_PRESCALE) - (DEFAULT_CPU_PRESCALE)))
 
-// By default allow use of IDLE mode to save some power while leaving most things running.
-#ifndef DISABLE_AVR_IDLE_MODE
-#define ENABLE_AVR_IDLE_MODE
-#endif
-
 
 // Sleep for specified number of _delay_loop2() loops at minimum available CPU speed.
 // Each loop takes 4 cycles at that minimum speed, but entry and exit overheads may take the equivalent of a loop or two.
@@ -184,12 +179,11 @@ void nap(int_fast8_t watchdogSleep);
 // NOTE: will stop clocks for UART, etc.
 bool nap(int_fast8_t watchdogSleep, bool allowPrematureWakeup);
 
-#ifdef ENABLE_AVR_IDLE_MODE
 // Idle the CPU for specified time but leave everything else running (eg UART), returning on any interrupt or the watchdog timer.
 // Should reduce power consumption vs spinning the CPU >> 3x, though not nearly as much as nap().
 // True iff watchdog timer expired; false if something else woke the CPU.
+// Only use this if not disallowed for board type, eg with ENABLE_USE_OF_AVR_IDLE_MODE.
 bool idleCPU(int_fast8_t watchdogSleep);
-#endif
 
 // Call this to do an I/O poll if needed; returns true if something useful happened.
 // This call should typically take << 1ms at 1MHz CPU.
@@ -202,14 +196,12 @@ bool pollIO(bool force = false);
 // Typically sleeps for about 30ms; tries to allow earlier wakeup if interrupt is received, etc.
 // True iff watchdog timer expired; false if something else woke the CPU.
 static bool inline nap15AndPoll() { const bool wd = nap(WDTO_15MS, true); pollIO(!wd); return(wd); }
-#ifdef ENABLE_AVR_IDLE_MODE
 // Idle productively polling I/O, etc, across the system while spending time in low-power mode if possible.
 // Typically sleeps for nominally up to 30ms; tries to allow earlier wakeup if interrupt is received, etc.
 // (Will often be prematurely woken by timer0 with ~16ms interval.)
 // True iff watchdog timer expired; false if something else woke the CPU.
+// Only use this if not disallowed for board type, eg with ENABLE_USE_OF_AVR_IDLE_MODE.
 static bool inline idle15AndPoll() { const bool wd = idleCPU(WDTO_15MS); pollIO(!wd); return(wd); }
-//static bool inline idle30AndPoll() { const bool wd = idleCPU(WDTO_30MS); pollIO(true); return(wd); }
-#endif
 
 // Call this to productively burn tens to hundreds of CPU cycles, and poll I/O, eg in a busy-wait loop.
 // This may churn PRNGs or gather entropy for example.
