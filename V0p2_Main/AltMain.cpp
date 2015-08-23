@@ -221,13 +221,6 @@ ISR(PCINT2_vect)
 
 
 
-//// Position to move the valve to [0,100].
-//static uint8_t valvePosition = 42; // <<<<<<<< YOUR STUFF SETS THIS!
-
-
-// Update in attached interrupt...
-static volatile uint8_t intCount;
-
 
 
 
@@ -330,14 +323,6 @@ void loopAlt()
 
 
 
-#if 1 && defined(DEBUG)
-    DEBUG_SERIAL_PRINT_FLASHSTRING("ms: ");
-    DEBUG_SERIAL_PRINT(millis());
-    DEBUG_SERIAL_PRINTLN();
-    DEBUG_SERIAL_PRINT_FLASHSTRING("int: ");
-    DEBUG_SERIAL_PRINT(intCount);
-    DEBUG_SERIAL_PRINTLN();
-#endif
 
 
 // EXPERIMENTAL TEST OF NEW RADIO CODE
