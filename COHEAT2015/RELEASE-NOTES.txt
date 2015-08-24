@@ -1,0 +1,6 @@
+Released versions:
+
+20150805-JV2-cut2:
+Application path: 20150805-JV2
+Should be built against 20150805-JV2 of OTRadioLink and and OTProtocolCC on Arduino IDE 1.0.5.
+Adjust config flags in V0p2_Generic_Config.h to switch between hub (CONFIG_Trial2013Winter_Round2_CC1HUB) and relay (CONFIG_REV9) boards.
