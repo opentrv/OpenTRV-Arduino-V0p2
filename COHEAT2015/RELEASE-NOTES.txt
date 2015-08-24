@@ -1,0 +1,6 @@
+Released versions:
+
+20150805-JV2-cut2:
+Patch to note fixes on REV9 cut2 board; no functionality changes other
+Should be built against 20150805-JV2 of OTRadioLink and and OTProtocolCC
+on Arduino IDE 1.0.5.
