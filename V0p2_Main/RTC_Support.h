@@ -23,6 +23,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 #include "V0p2_Main.h"
 
+// TODO: encapsulate in a class for robustness, testability and optimisation opportunities.
+
 // Number of minutes per day.
 #define MINS_PER_DAY 1440
 

@@ -23,8 +23,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 #ifndef SECURITY_H
 #define SECURITY_H
 
-// How much info does a leaf node transmit about stats such as temperature and occupancy?
-// This is a privacy level: the greater the value the less data is sent, eg over an insecure channel.
+// Leaf node privacy level: how much to transmit about stats such as temperature and occupancy?
+// The greater numerically the value, the less data is sent, especially over an insecure channel.
 // Excess unencrypted stats may, for example, allow a clever burglar to work out when no one is home.
 // Note that even in the 'always' setting,
 // some TXes may be selectively skipped or censored for energy saving and security reasons
