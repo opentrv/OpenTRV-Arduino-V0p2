@@ -136,8 +136,13 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define PIN_OW_DQ_DATA 2
 //#endif
 
-// RFM23B nIRQ interrupt line; all boards now have it incl REV0/breadboard; REV0 *PCB* didn't.
+// RFM23B nIRQ interrupt line; all boards *should* now have it incl REV0 as breadboard; REV0 *PCB* didn't.
+#if (V0p2_REV != 1) // DHD20150825: REV1 board currently under test behaves as if IRQ not fitted.
 #define PIN_RFM_NIRQ 9 // ATMega328P-PU PDIP pin 15, PB1, PCINT1.
+#else
+// Use weak pull-up to avoid contention current or floating.
+#define PIN_RFM_NIRQ_DUMMY 9 // ATMega328P-PU PDIP pin 15, PB1, PCINT1.
+#endif
 
 // REV7 motor connections.
 #if (V0p2_REV == 7)
@@ -211,6 +216,10 @@ static inline void IOSetup()
 #ifdef PIN_RFM_NIRQ 
       // Set as input to avoid contention current.
       case PIN_RFM_NIRQ: { pinMode(PIN_RFM_NIRQ, INPUT); break; }
+#endif
+#ifdef PIN_RFM_NIRQ_DUMMY
+      // Set as input to avoid contention current or float.
+      case PIN_RFM_NIRQ_DUMMY: { pinMode(PIN_RFM_NIRQ_DUMMY, INPUT_PULLUP); break; }
 #endif
 
       // Make button pins (and others) inputs with internal weak pull-ups
