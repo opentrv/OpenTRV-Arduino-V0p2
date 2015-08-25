@@ -55,11 +55,11 @@ stats_TX_level getStatsTXLevel();
 //      if false then it is easier to test if the underlying source provides new entropy reliably
 uint8_t getSecureRandomByte(bool whiten = true);
 
-// Add entropy to the pool, if any, along with an estimate of how many bits of real entropy are present.
-//   * data   byte containing 'random' bits.
-//   * estBits estimated number of truely securely random bits in range [0,8].
-// Not thread-/ISR- safe.
-void addEntropyToPool(uint8_t data, uint8_t estBits);
+//// Add entropy to the pool, if any, along with an estimate of how many bits of real entropy are present.
+////   * data   byte containing 'random' bits.
+////   * estBits estimated number of truely securely random bits in range [0,8].
+//// Not thread-/ISR- safe.
+//void addEntropyToPool(uint8_t data, uint8_t estBits);
 
 
 

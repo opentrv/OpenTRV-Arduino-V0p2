@@ -307,7 +307,7 @@ void optionalPOST()
     // Attempt to capture some entropy while waiting, implicitly from oscillator start-up time if nothing else.
     for(uint8_t i = 255; (--i > 0) && (earlySCT == getSubCycleTime()); )
       {
-      addEntropyToPool(::OTV0P2BASE::clockJitterWDT() ^ noisyADCRead(), 1); // Conservatively hope for at least 1 bit from combined sources!
+      ::OTV0P2BASE::addEntropyToPool(::OTV0P2BASE::clockJitterWDT() ^ noisyADCRead(), 1); // Conservatively hope for at least 1 bit from combined sources!
       ::OTV0P2BASE::nap(WDTO_15MS); // Ensure lower mount of ~3s until loop finishes.
       captureEntropy1(); // Have other fun, though likely largely ineffective at this stage.
       }
