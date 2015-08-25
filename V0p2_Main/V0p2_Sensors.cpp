@@ -163,7 +163,7 @@ uint8_t AmbientLight::read()
   power_intermittent_peripherals_disable();
 
   // Capture entropy from changed LS bits.
-  if((uint8_t)al != (uint8_t)rawValue) { addEntropyToPool((uint8_t)al ^ (uint8_t)rawValue, 0); } // Claim zero entropy as may be forced by Eve.
+  if((uint8_t)al != (uint8_t)rawValue) { ::OTV0P2BASE::addEntropyToPool((uint8_t)al ^ (uint8_t)rawValue, 0); } // Claim zero entropy as may be forced by Eve.
 
   // Adjust room-lit flag, with hysteresis.
   if(al <= LDR_THR_LOW)

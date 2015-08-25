@@ -307,7 +307,7 @@ void optionalPOST()
     // Attempt to capture some entropy while waiting, implicitly from oscillator start-up time if nothing else.
     for(uint8_t i = 255; (--i > 0) && (earlySCT == getSubCycleTime()); )
       {
-      addEntropyToPool(::OTV0P2BASE::clockJitterWDT() ^ noisyADCRead(), 1); // Conservatively hope for at least 1 bit from combined sources!
+      ::OTV0P2BASE::addEntropyToPool(::OTV0P2BASE::clockJitterWDT() ^ noisyADCRead(), 1); // Conservatively hope for at least 1 bit from combined sources!
       ::OTV0P2BASE::nap(WDTO_15MS); // Ensure lower mount of ~3s until loop finishes.
       captureEntropy1(); // Have other fun, though likely largely ineffective at this stage.
       }
@@ -510,12 +510,12 @@ void setup()
 #endif
   // TODO: seed other/better PRNGs.
   // Feed in mainly persistent/nonvolatile state explicitly. 
-  addEntropyToPool(oldResetCount ^ eeseed, 0);
-  addEntropyToPool((uint8_t)(eeseed >> 8) + nar1, 0);
-  addEntropyToPool((uint8_t)s16 ^ (uint8_t)(s16 >> 8), 0);
+  OTV0P2BASE::addEntropyToPool(oldResetCount ^ eeseed, 0);
+  OTV0P2BASE::addEntropyToPool((uint8_t)(eeseed >> 8) + nar1, 0);
+  OTV0P2BASE::addEntropyToPool((uint8_t)s16 ^ (uint8_t)(s16 >> 8), 0);
   for(uint8_t i = 0; i < EE_LEN_SEED; ++i)
-    { addEntropyToPool(eeprom_read_byte((uint8_t *)(EE_START_SEED + i)), 0); }
-  addEntropyToPool(noisyADCRead(), 1); // Conservative first push of noise into pool.
+    { OTV0P2BASE::addEntropyToPool(eeprom_read_byte((uint8_t *)(EE_START_SEED + i)), 0); }
+  OTV0P2BASE::addEntropyToPool(noisyADCRead(), 1); // Conservative first push of noise into pool.
   // Carry a few bits of entropy over a reset by picking one of the four designated EEPROM bytes at random;
   // if zero, erase to 0xff, else AND in part of the seed including some of the previous EEPROM hash (and write).
   // This amounts to about a quarter of an erase/write cycle per reset/restart per byte, or 400k restarts endurance!

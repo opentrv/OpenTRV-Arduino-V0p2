@@ -34,7 +34,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 stats_TX_level getStatsTXLevel() { return((stats_TX_level)eeprom_read_byte((uint8_t *)EE_START_STATS_TX_ENABLE)); }
 
 
-
 // Counter to help whiten getSecureRandomByte() output.
 static uint8_t count8;
 
@@ -83,12 +82,12 @@ uint8_t getSecureRandomByte(const bool whiten)
   return(w1);
   }
 
-// Add entropy to the pool, if any, along with an estimate of how many bits of real entropy are present.
-//   * data   byte containing 'random' bits.
-//   * estBits estimated number of truely securely random bits in range [0,8].
-// Not thread-/ISR- safe.
-void addEntropyToPool(uint8_t data, uint8_t estBits)
-  {
-  // TODO: no real entropy pool yet.
-  OTV0P2BASE::seedRNG8(data, cycleCountCPU(), getSubCycleTime());
-  }
+//// Add entropy to the pool, if any, along with an estimate of how many bits of real entropy are present.
+////   * data   byte containing 'random' bits.
+////   * estBits estimated number of truely securely random bits in range [0,8].
+//// Not thread-/ISR- safe.
+//void addEntropyToPool(uint8_t data, uint8_t estBits)
+//  {
+//  // TODO: no real entropy pool yet.
+//  OTV0P2BASE::seedRNG8(data, cycleCountCPU(), getSubCycleTime());
+//  }
