@@ -50,7 +50,32 @@ static void timer2XtalIntSetup()
   }
 #endif
 
-static bool _serialIsPoweredUp(); // Forward declaration.
+// Call from setup() to turn off unused modules, set up timers and interrupts, etc.
+// I/O pin setting is not done here.
+void powerSetup()
+  {
+#ifdef DEBUG
+  assert(OTV0P2BASE::DEFAULT_CPU_PRESCALE == clock_prescale_get()); // Verify that CPU prescaling is as expected.
+#endif
+
+  // Do normal gentle switch off, including analogue module/control in correct order.
+  minimisePowerWithoutSleep();
+
+  // Brutally force off all modules, then re-enable explicitly below any still needed.
+  power_all_disable(); 
+
+#if !defined(DONT_USE_TIMER0)
+  power_timer0_enable(); // Turning timer 0 off messes up some standard Arduino support such as delay() and millis().
+#endif
+  
+#if defined(WAKEUP_32768HZ_XTAL)
+  power_timer2_enable();
+  timer2XtalIntSetup();
+#endif
+  }
+
+
+//static bool _serialIsPoweredUp(); // Forward declaration.
 
 // Selectively turn off all modules that need not run continuously so as to minimise power without sleeping.
 // Suitable for start-up and for belt-and-braces use before main sleep on each cycle,
@@ -108,50 +133,6 @@ void minimisePowerWithoutSleep()
   power_timer2_disable();
 #endif
   }
-
-
-// Call from setup() to turn off unused modules, set up timers and interrupts, etc.
-// I/O pin setting is not done here.
-void powerSetup()
-  {
-#ifdef DEBUG
-  assert(OTV0P2BASE::DEFAULT_CPU_PRESCALE == clock_prescale_get()); // Verify that CPU prescaling is as expected.
-#endif
-
-  // Do normal gentle switch off, including analogue module/control in correct order.
-  minimisePowerWithoutSleep();
-
-  // Brutally force off all modules, then re-enable explicitly below any still needed.
-  power_all_disable(); 
-
-#if !defined(DONT_USE_TIMER0)
-  power_timer0_enable(); // Turning timer 0 off messes up some standard Arduino support such as delay() and millis().
-#endif
-  
-#if defined(WAKEUP_32768HZ_XTAL)
-  power_timer2_enable();
-  timer2XtalIntSetup();
-#endif
-  }
-
-
-
-//// Sleep for specified number of _delay_loop2() loops at minimum available CPU speed.
-//// Each loop takes 4 cycles at that minimum speed, but entry and exit overheads may take the equivalent of a loop or two.
-//// Note: inlining is prevented so as to avoid migrating anything into the section where the CPU is running slowly.
-////
-//// Note: may be dubious to run CPU clock less than 4x 32768Hz crystal speed,
-//// eg at 31250Hz for 8MHz RC clock and max prescale.
-//// Don't access timer 2 regs at low CPU speed, eg in ISRs.
-////
-//// This may only be safe to use with interrupts disabled.
-//__attribute__ ((noinline)) void _sleepLowPowerLoopsMinCPUSpeed(uint16_t loops)
-//  {
-//  const clock_div_t prescale = clock_prescale_get(); // Capture current prescale value.
-//  clock_prescale_set(MAX_CPU_PRESCALE); // Reduce clock speed (increase prescale) as far as possible.
-//  _delay_loop_2(loops); // Burn cycles...
-//  clock_prescale_set(prescale); // Restore clock prescale.
-//  }
 
 
 

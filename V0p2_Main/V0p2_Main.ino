@@ -152,9 +152,9 @@ static void posPOST(const uint8_t position, const __FlashStringHelper *s)
       }
     }
 
-  sleepLowPowerMs(PP_OFF_MS); // TODO: use this time to gather entropy.
+  OTV0P2BASE::sleepLowPowerMs(PP_OFF_MS); // TODO: use this time to gather entropy.
   LED_HEATCALL_ON();
-  sleepLowPowerMs(1000); // TODO: use this time to gather entropy.
+  OTV0P2BASE::sleepLowPowerMs(1000); // TODO: use this time to gather entropy.
   }
 
 // Rearrange date into sensible most-significant-first order.  (Would like it also to be fully numeric, but whatever...)
