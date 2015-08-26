@@ -36,62 +36,57 @@ including interrupts and sleep.
 #include <OTV0p2Base.h>
 
 
-// If CPU clock is 1MHz then *assume* that it is the 8MHz internal RC clock prescaled by 8 unless DEFAULT_CPU_PRESCALE is defined.
-#if F_CPU == 1000000L
-static const uint8_t DEFAULT_CPU_PRESCALE = 3;
-#else
-static const uint8_t DEFAULT_CPU_PRESCALE = 1;
-#endif
-
-//#ifndef DEFAULT_CPU_PRESCALE
-//// Default prescale value at start-up computed and stored once.
-//extern const clock_div_t DEFAULT_CPU_PRESCALE;
+//// If CPU clock is 1MHz then *assume* that it is the 8MHz internal RC clock prescaled by 8 unless DEFAULT_CPU_PRESCALE is defined.
+//#if F_CPU == 1000000L
+//static const uint8_t DEFAULT_CPU_PRESCALE = 3;
+//#else
+//static const uint8_t DEFAULT_CPU_PRESCALE = 1;
 //#endif
-
-static const clock_div_t MAX_CPU_PRESCALE = clock_div_256; // At least for the ATmega328P...
-// Minimum scaled CPU clock speed; expected to be 31250Hz when driven from 8MHz RC clock.
-#if F_CPU > 16000000L
-static const uint32_t MIN_CPU_HZ = ((F_CPU) >> (((int) MAX_CPU_PRESCALE) - (DEFAULT_CPU_PRESCALE)));
-#else
-static const uint16_t MIN_CPU_HZ = ((F_CPU) >> (((int) MAX_CPU_PRESCALE) - (DEFAULT_CPU_PRESCALE)));
-#endif
-
-// Sleep for specified number of _delay_loop2() loops at minimum available CPU speed.
-// Each loop takes 4 cycles at that minimum speed, but entry and exit overheads may take the equivalent of a loop or two.
-// Note: inlining is prevented so as to avoid migrating anything into the section where the CPU is running slowly.
-// Deprecated as may interact badly with interrupts if used naively (eg ISR code runs very slowly).
-// This may only be safe to use with interrupts disabled.
-void _sleepLowPowerLoopsMinCPUSpeed(uint16_t loops) __attribute__ ((noinline));
-
-// Sleep/spin for approx specified strictly-positive number of milliseconds, in as low-power mode as possible.
-// This may be achieved in part by dynamically slowing the CPU clock if possible.
-// Macro to allow some constant folding at compile time where the sleep-time argument is constant.
-// Should be good for values up to at least 1000, ie 1 second.
-// Assumes MIN_CPU_HZ >> 4000.
-// TODO: break out to non-inlined routine where arg is not constant (__builtin_constant_p).
-// Deprecated as may interact badly with interrupts if used naively (eg ISR code runs very slowly).
-static void inline _sleepLowPowerMs(const uint16_t ms) { _sleepLowPowerLoopsMinCPUSpeed((((MIN_CPU_HZ * (ms)) + 2000) / 4000) - ((MIN_CPU_HZ>=12000)?2:((MIN_CPU_HZ>=8000)?1:0))); }
-// Sleep/spin for (typically a little less than) strictly-positive specified number of milliseconds, in as low-power mode as possible.
-// This may be achieved in part by dynamically slowing the CPU clock if possible.
-// Macro to allow some constant folding at compile time where the sleep-time argument is constant.
-// Should be good for values up to at least 1000, ie 1 second.
-// Uses formulation likely to be quicker than _sleepLowPowerMs() for non-constant argument values,
-// and that results in a somewhat shorter sleep than _sleepLowPowerMs(ms).
-// Assumes MIN_CPU_HZ >> 4000.
-// TODO: break out to non-inlined routine where arg is not constant (__builtin_constant_p).
-// Deprecated as may interact badly with interrupts if used naively (eg ISR code runs very slowly).
-static void inline _sleepLowPowerLessThanMs(const uint16_t ms) { _sleepLowPowerLoopsMinCPUSpeed(((MIN_CPU_HZ/4000) * (ms)) - ((MIN_CPU_HZ>=12000)?2:((MIN_CPU_HZ>=8000)?1:0))); }
-
-// Sleep/spin for approx specified strictly-positive number of milliseconds, in as low-power mode as possible.
-// Nap() may be more efficient for intervals of longer than 15ms.
-// Interrupts are blocked for about 1ms at a time.
-// Should be good for the full range of values and should take no time where 0ms is specified.
-static void inline sleepLowPowerMs(uint16_t ms) { while(ms-- > 0) { ATOMIC_BLOCK(ATOMIC_RESTORESTATE) { _sleepLowPowerMs(1); } } }
-// Sleep/spin for (typically a little less than) strictly-positive specified number of milliseconds, in as low-power mode as possible.
-// Nap() may be more efficient for intervals of longer than 15ms.
-// Interrupts are blocked for about 1ms at a time.
-// Should be good for the full range of values and should take no time where 0ms is specified.
-static void inline sleepLowPowerLessThanMs(uint16_t ms) { while(ms-- > 0) { ATOMIC_BLOCK(ATOMIC_RESTORESTATE) { _sleepLowPowerLessThanMs(1); } } }
+//
+//static const clock_div_t MAX_CPU_PRESCALE = clock_div_256; // At least for the ATmega328P...
+//// Minimum scaled CPU clock speed; expected to be 31250Hz when driven from 8MHz RC clock.
+//#if F_CPU > 16000000L
+//static const uint32_t MIN_CPU_HZ = ((F_CPU) >> (((int) MAX_CPU_PRESCALE) - (DEFAULT_CPU_PRESCALE)));
+//#else
+//static const uint16_t MIN_CPU_HZ = ((F_CPU) >> (((int) MAX_CPU_PRESCALE) - (DEFAULT_CPU_PRESCALE)));
+//#endif
+//
+//// Sleep for specified number of _delay_loop2() loops at minimum available CPU speed.
+//// Each loop takes 4 cycles at that minimum speed, but entry and exit overheads may take the equivalent of a loop or two.
+//// Note: inlining is prevented so as to avoid migrating anything into the section where the CPU is running slowly.
+//// Deprecated as may interact badly with interrupts if used naively (eg ISR code runs very slowly).
+//// This may only be safe to use with interrupts disabled.
+//void _sleepLowPowerLoopsMinCPUSpeed(uint16_t loops) __attribute__ ((noinline));
+//
+//// Sleep/spin for approx specified strictly-positive number of milliseconds, in as low-power mode as possible.
+//// This may be achieved in part by dynamically slowing the CPU clock if possible.
+//// Macro to allow some constant folding at compile time where the sleep-time argument is constant.
+//// Should be good for values up to at least 1000, ie 1 second.
+//// Assumes MIN_CPU_HZ >> 4000.
+//// TODO: break out to non-inlined routine where arg is not constant (__builtin_constant_p).
+//// Deprecated as may interact badly with interrupts if used naively (eg ISR code runs very slowly).
+//static void inline _sleepLowPowerMs(const uint16_t ms) { _sleepLowPowerLoopsMinCPUSpeed((((MIN_CPU_HZ * (ms)) + 2000) / 4000) - ((MIN_CPU_HZ>=12000)?2:((MIN_CPU_HZ>=8000)?1:0))); }
+//// Sleep/spin for (typically a little less than) strictly-positive specified number of milliseconds, in as low-power mode as possible.
+//// This may be achieved in part by dynamically slowing the CPU clock if possible.
+//// Macro to allow some constant folding at compile time where the sleep-time argument is constant.
+//// Should be good for values up to at least 1000, ie 1 second.
+//// Uses formulation likely to be quicker than _sleepLowPowerMs() for non-constant argument values,
+//// and that results in a somewhat shorter sleep than _sleepLowPowerMs(ms).
+//// Assumes MIN_CPU_HZ >> 4000.
+//// TODO: break out to non-inlined routine where arg is not constant (__builtin_constant_p).
+//// Deprecated as may interact badly with interrupts if used naively (eg ISR code runs very slowly).
+//static void inline _sleepLowPowerLessThanMs(const uint16_t ms) { _sleepLowPowerLoopsMinCPUSpeed(((MIN_CPU_HZ/4000) * (ms)) - ((MIN_CPU_HZ>=12000)?2:((MIN_CPU_HZ>=8000)?1:0))); }
+//
+//// Sleep/spin for approx specified strictly-positive number of milliseconds, in as low-power mode as possible.
+//// Nap() may be more efficient for intervals of longer than 15ms.
+//// Interrupts are blocked for about 1ms at a time.
+//// Should be good for the full range of values and should take no time where 0ms is specified.
+//static void inline sleepLowPowerMs(uint16_t ms) { while(ms-- > 0) { ATOMIC_BLOCK(ATOMIC_RESTORESTATE) { _sleepLowPowerMs(1); } } }
+//// Sleep/spin for (typically a little less than) strictly-positive specified number of milliseconds, in as low-power mode as possible.
+//// Nap() may be more efficient for intervals of longer than 15ms.
+//// Interrupts are blocked for about 1ms at a time.
+//// Should be good for the full range of values and should take no time where 0ms is specified.
+//static void inline sleepLowPowerLessThanMs(uint16_t ms) { while(ms-- > 0) { ATOMIC_BLOCK(ATOMIC_RESTORESTATE) { _sleepLowPowerLessThanMs(1); } } }
 
 // Call from setup() to turn off unused modules, set up timers and interrupts, etc.
 // I/O pin setting is not done here.
@@ -218,7 +213,7 @@ void burnHundredsOfCyclesProductivelyAndPoll();
 // Use WDT-based timer for xxxPause() routines.
 // Very tiny low-power sleep to approximately match the PICAXE V0.09 routine of the same name.
 #define VERYTINY_PAUSE_MS 5
-static void inline veryTinyPause() { sleepLowPowerMs(VERYTINY_PAUSE_MS); }
+static void inline veryTinyPause() { OTV0P2BASE::sleepLowPowerMs(VERYTINY_PAUSE_MS); }
 // Tiny low-power sleep to approximately match the PICAXE V0.09 routine of the same name.
 #define TINY_PAUSE_MS 15
 static void inline tinyPause() { ::OTV0P2BASE::nap(WDTO_15MS); } // 15ms vs 18ms nominal for PICAXE V0.09 impl.

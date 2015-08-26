@@ -126,7 +126,7 @@ static uint16_t eeCRC()
 #define PP_OFF_MS 250
 static void posPOST(const uint8_t position, const __FlashStringHelper *s)
   {
-  sleepLowPowerMs(1000);
+  OTV0P2BASE::sleepLowPowerMs(1000);
 #ifdef DEBUG
   DEBUG_SERIAL_PRINT_FLASHSTRING("posPOST: "); // Can only be used once serial is set up.
   DEBUG_SERIAL_PRINT(position);
@@ -142,13 +142,13 @@ static void posPOST(const uint8_t position, const __FlashStringHelper *s)
   // Skip much of lightshow if '0'/end/none position.
   if(position > 0)
     {
-    sleepLowPowerMs(2*PP_OFF_MS); // TODO: use this time to gather entropy.
+    OTV0P2BASE::sleepLowPowerMs(2*PP_OFF_MS); // TODO: use this time to gather entropy.
     for(int i = position; --i >= 0; )
       {
       LED_HEATCALL_ON();
       tinyPause();
       LED_HEATCALL_OFF();
-      sleepLowPowerMs(PP_OFF_MS); // TODO: use this time to gather entropy.
+      OTV0P2BASE::sleepLowPowerMs(PP_OFF_MS); // TODO: use this time to gather entropy.
       }
     }
 

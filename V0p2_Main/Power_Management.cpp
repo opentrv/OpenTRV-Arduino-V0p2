@@ -115,7 +115,7 @@ void minimisePowerWithoutSleep()
 void powerSetup()
   {
 #ifdef DEBUG
-  assert(DEFAULT_CPU_PRESCALE == clock_prescale_get()); // Verify that CPU prescaling is as expected.
+  assert(OTV0P2BASE::DEFAULT_CPU_PRESCALE == clock_prescale_get()); // Verify that CPU prescaling is as expected.
 #endif
 
   // Do normal gentle switch off, including analogue module/control in correct order.
@@ -136,27 +136,22 @@ void powerSetup()
 
 
 
-//#ifndef DEFAULT_CPU_PRESCALE
-//// Default prescale value at start-up, fetched once.  Maybe could compute from prescaler fuse bit instead.
-//const clock_div_t DEFAULT_CPU_PRESCALE  = clock_prescale_get();
-//#endif
-
-// Sleep for specified number of _delay_loop2() loops at minimum available CPU speed.
-// Each loop takes 4 cycles at that minimum speed, but entry and exit overheads may take the equivalent of a loop or two.
-// Note: inlining is prevented so as to avoid migrating anything into the section where the CPU is running slowly.
-//
-// Note: may be dubious to run CPU clock less than 4x 32768Hz crystal speed,
-// eg at 31250Hz for 8MHz RC clock and max prescale.
-// Don't access timer 2 regs at low CPU speed, eg in ISRs.
-//
-// This may only be safe to use with interrupts disabled.
-__attribute__ ((noinline)) void _sleepLowPowerLoopsMinCPUSpeed(uint16_t loops)
-  {
-  const clock_div_t prescale = clock_prescale_get(); // Capture current prescale value.
-  clock_prescale_set(MAX_CPU_PRESCALE); // Reduce clock speed (increase prescale) as far as possible.
-  _delay_loop_2(loops); // Burn cycles...
-  clock_prescale_set(prescale); // Restore clock prescale.
-  }
+//// Sleep for specified number of _delay_loop2() loops at minimum available CPU speed.
+//// Each loop takes 4 cycles at that minimum speed, but entry and exit overheads may take the equivalent of a loop or two.
+//// Note: inlining is prevented so as to avoid migrating anything into the section where the CPU is running slowly.
+////
+//// Note: may be dubious to run CPU clock less than 4x 32768Hz crystal speed,
+//// eg at 31250Hz for 8MHz RC clock and max prescale.
+//// Don't access timer 2 regs at low CPU speed, eg in ISRs.
+////
+//// This may only be safe to use with interrupts disabled.
+//__attribute__ ((noinline)) void _sleepLowPowerLoopsMinCPUSpeed(uint16_t loops)
+//  {
+//  const clock_div_t prescale = clock_prescale_get(); // Capture current prescale value.
+//  clock_prescale_set(MAX_CPU_PRESCALE); // Reduce clock speed (increase prescale) as far as possible.
+//  _delay_loop_2(loops); // Burn cycles...
+//  clock_prescale_set(prescale); // Restore clock prescale.
+//  }
 
 
 
@@ -195,7 +190,7 @@ bool sleepUntilSubCycleTime(const uint8_t sleepUntil)
       // Take a very short sleep, much less than half a tick,
       // eg as may be some way into this tick already.
       //burnHundredsOfCyclesProductively();
-      sleepLowPowerLessThanMs(1);
+      OTV0P2BASE::sleepLowPowerLessThanMs(1);
       continue;
       }
 
@@ -229,7 +224,7 @@ bool sleepUntilSubCycleTime(const uint8_t sleepUntil)
 #ifdef DEBUG
     if((msLeft < 2) || (msLeft > 1000)) { panic(); }
 #endif
-    sleepLowPowerLessThanMs(msLeft - 1);
+    OTV0P2BASE::sleepLowPowerLessThanMs(msLeft - 1);
     }
   }
 
@@ -248,7 +243,7 @@ void power_intermittent_peripherals_enable(bool waitUntilStable)
   pinMode(IO_POWER_UP, OUTPUT);
   // If requested, wait long enough that I/O peripheral power should be stable.
   // Wait in a relatively low-power way...
-  if(waitUntilStable) { sleepLowPowerMs(1); }
+  if(waitUntilStable) { OTV0P2BASE::sleepLowPowerMs(1); }
   }
 
 // Disable/remove power to intermittent peripherals.

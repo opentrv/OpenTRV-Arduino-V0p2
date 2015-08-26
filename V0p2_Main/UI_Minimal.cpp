@@ -282,7 +282,7 @@ bool tickUI(const uint_fast8_t sec)
           offPause(); // V0.09 was mediumPause().
           LED_HEATCALL_ON(); // flash
           if(isEcoTemperature(wt)) { veryTinyPause(); }
-          else if(!isComfortTemperature(wt)) { sleepLowPowerMs((VERYTINY_PAUSE_MS + TINY_PAUSE_MS) / 2); }
+          else if(!isComfortTemperature(wt)) { OTV0P2BASE::sleepLowPowerMs((VERYTINY_PAUSE_MS + TINY_PAUSE_MS) / 2); }
           else { tinyPause(); }
 
 #ifdef SUPPORT_BAKE
