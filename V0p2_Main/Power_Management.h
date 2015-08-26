@@ -248,7 +248,7 @@ static void inline bigPause() { ::OTV0P2BASE::nap(WDTO_120MS); } // 120ms vs 288
 // So ~4ms per count for a 1s cycle time, ~8ms per count for a 2s cycle time.
 #define GSCT_MAX 255
 // Basic cycle length in milliseconds; strictly positive.
-#if defined(TWO_S_TICK_RTC_SUPPORT)
+#if defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
 #define BASIC_CYCLE_MS 2000
 #define SUB_CYCLE_TICKS_PER_S ((GSCT_MAX+1)/2) // Sub-cycle ticks per second.
 #else

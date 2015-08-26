@@ -393,7 +393,7 @@ void loopAlt()
 
 
 
-#if defined(USE_MODULE_FHT8VSIMPLE) && defined(TWO_S_TICK_RTC_SUPPORT)
+#if defined(USE_MODULE_FHT8VSIMPLE) && defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
   if(useExtraFHT8VTXSlots)
     {
     // ---------- HALF SECOND #2 -----------
@@ -406,7 +406,7 @@ void loopAlt()
 
 
 
-#if defined(USE_MODULE_FHT8VSIMPLE) && defined(TWO_S_TICK_RTC_SUPPORT)
+#if defined(USE_MODULE_FHT8VSIMPLE) && defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
   if(useExtraFHT8VTXSlots)
     {
     // ---------- HALF SECOND #3 -----------

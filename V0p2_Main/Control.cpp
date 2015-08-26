@@ -2169,7 +2169,7 @@ void loopOpenTRV()
   // Show status if the user changed something significant.
   // Must take ~300ms or less so as not to run over into next half second if two TXs are done.
   bool recompute = false; // Set true an extra recompute of target temperature should be done.
-#if !defined(TWO_S_TICK_RTC_SUPPORT)
+#if !defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
   if(0 == (TIME_LSD & 1))
 #endif
     {
@@ -2230,15 +2230,15 @@ void loopOpenTRV()
 
 #if defined(DONT_RANDOMISE_MINUTE_CYCLE)
   static uint8_t localTicks = XXX;
-#if defined(TWO_S_TICK_RTC_SUPPORT)
+#if defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
   localTicks += 2;
 #else
   localTicks += 1;
 #endif
   if(localTicks >= 60) { localTicks = 0; }
-  switch(localTicks) // With TWO_S_TICK_RTC_SUPPORT only even seconds are available.
+  switch(localTicks) // With V0P2BASE_TWO_S_TICK_RTC_SUPPORT only even seconds are available.
 #else
-  switch(TIME_LSD) // With TWO_S_TICK_RTC_SUPPORT only even seconds are available.
+  switch(TIME_LSD) // With V0P2BASE_TWO_S_TICK_RTC_SUPPORT only even seconds are available.
 #endif
     {
     case 0:
@@ -2396,7 +2396,7 @@ void loopOpenTRV()
       }
     }
 
-#if defined(USE_MODULE_FHT8VSIMPLE) && defined(TWO_S_TICK_RTC_SUPPORT)
+#if defined(USE_MODULE_FHT8VSIMPLE) && defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
   if(useExtraFHT8VTXSlots)
     {
     // ---------- HALF SECOND #2 -----------
@@ -2410,7 +2410,7 @@ void loopOpenTRV()
   // Generate periodic status reports.
   if(showStatus) { serialStatusReport(); }
 
-#if defined(USE_MODULE_FHT8VSIMPLE) && defined(TWO_S_TICK_RTC_SUPPORT)
+#if defined(USE_MODULE_FHT8VSIMPLE) && defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
   if(useExtraFHT8VTXSlots)
     {
     // ---------- HALF SECOND #3 -----------

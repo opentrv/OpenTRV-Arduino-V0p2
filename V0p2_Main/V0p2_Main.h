@@ -35,7 +35,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 //#define COMPAT_UNO // If defined, allow code to run on stock Arduino UNO board.  NOT IMPLEMENTED
 
-#define TWO_S_TICK_RTC_SUPPORT // Wake up every 2 seconds, rather than every 1s, to save power.
 //#define DONT_USE_TIMER0 // Avoid using timer 0 and thus delay(), millis(), PWM pins 5&6, etc.
 
 #ifndef BAUD

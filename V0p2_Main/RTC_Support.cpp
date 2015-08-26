@@ -150,7 +150,7 @@ bool restoreRTC()
 // Get local time seconds from RTC [0,59].
 // Is as fast as reasonably practical.
 // Returns a consistent atomic snapshot.
-// Note that if TWO_S_TICK_RTC_SUPPORT is defined then only even seconds will be seen.
+// Note that if V0P2BASE_TWO_S_TICK_RTC_SUPPORT is defined then only even seconds will be seen.
 #ifndef getSecondsLT
 uint_fast8_t getSecondsLT() { return(_secondsLT); } // Assumed atomic.
 #endif

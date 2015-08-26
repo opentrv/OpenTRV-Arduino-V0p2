@@ -517,7 +517,7 @@ static void valveSettingTX(const bool allowDoubleTX)
 
 // Half second count within current minor cycle for FHT8VPollSyncAndTX_XXX().
 static uint8_t halfSecondCount;
-#if defined(TWO_S_TICK_RTC_SUPPORT)
+#if defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
 #define MAX_HSC 3 // Max allowed value of halfSecondCount.
 #else
 #define MAX_HSC 1 // Max allowed value of halfSecondCount.

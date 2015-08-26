@@ -23,10 +23,19 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 #include "V0p2_Main.h"
 
-// TODO: encapsulate in a class for robustness, testability and optimisation opportunities.
+// TODO: encapsulate in a class for robustness, testability and optimisation.
+
+
+// Select cadence of main system tick.
+// Simple alternatives are 0.5Hz, 1Hz, 2Hz (based on async timer 2 clock).
+// Slower may allow lower energy consumption.
+// Faster may may some timing requirements, such as FS20 TX timing, easier.
+// V0p2 boards have traditionally been on 0.5Hz (2s main loop time) cadence.
+#define V0P2BASE_TWO_S_TICK_RTC_SUPPORT // Wake up every 2 seconds, rather than every 1s, to save power.
+
 
 // Number of minutes per day.
-#define MINS_PER_DAY 1440
+static const uint16_t MINS_PER_DAY = 1440;
 
 // Seconds for local time (and assumed UTC) in range [0,59].
 // Volatile to allow for async update.
@@ -94,22 +103,22 @@ uint_least16_t getDaysSince1999LT();
 // Returns true if all OK and the time has been set.
 // Does not attempt to set seconds.
 // Thread/interrupt safe, but do not call this from an ISR.
-// Will persist time to survive reset as neceessary.
+// Will persist time to survive reset as necessary.
 bool setHoursMinutesLT(int hours, int minutes);
 
 
 // Length of main loop and wakeup cycle/tick in seconds.
-#if defined(TWO_S_TICK_RTC_SUPPORT)
-#define MAIN_TICK_S 2
+#if defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
+static const uint_fast8_t MAIN_TICK_S = 2;
 #else
-#define MAIN_TICK_S 1
+static const uint_fast8_t MAIN_TICK_S = 1;
 #endif
 
 
 
 #ifdef USE_RTC_INTERNAL_SIMPLE // Provide software RTC support by default.
 // Declared inline to allow optimal generation of ISR by compiler (eg avoiding some register push/pop).
-#if defined(TWO_S_TICK_RTC_SUPPORT)
+#if defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
 // Call to indicate that two seconds have passed/rolled.
 // May be called from an ISR, so must not:
 //   * do anything expensive,

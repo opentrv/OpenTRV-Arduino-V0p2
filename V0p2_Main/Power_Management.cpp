@@ -39,7 +39,7 @@ static void timer2XtalIntSetup()
 
 #if defined(HALF_SECOND_RTC_SUPPORT)
   TCCR2B = (1<<CS22); // Set CLK/64 for overflow interrupt every 0.5s.
-#elif defined(TWO_S_TICK_RTC_SUPPORT)
+#elif defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
   TCCR2B = (1<<CS22)|(1<<CS21); // Set CLK/128 for overflow interrupt every 2s.
 #else
   TCCR2B = (1<<CS22)|(1<<CS20); // Set CLK/128 for overflow interrupt every 1s.
@@ -140,7 +140,7 @@ ISR(TIMER2_OVF_vect)
   {
   // Maintain RTC.
   // As long as this is very efficient the CPU can be left running slow.
-#if defined(TWO_S_TICK_RTC_SUPPORT)
+#if defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
   tickDoubleSecondISR();
 #else
   tickSecondISR();
