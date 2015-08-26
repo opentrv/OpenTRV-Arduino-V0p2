@@ -42,15 +42,15 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include <util/atomic.h>
 
 #include "Control.h"
-#include "EEPROM_Utils.h"
+
 #include "FHT8V_Wireless_Rad_Valve.h"
 #include "Messaging.h"
 #include "Power_Management.h"
 #include "RFM22_Radio.h"
-#include "RTC_Support.h"
 #include "Schedule.h"
 #include "Security.h"
 #include "Serial_IO.h"
+#include "UI_Minimal.h"
 
 
 // Error exit from failed unit test, one int parameter and the failing line number to print...
@@ -72,7 +72,7 @@ static void error(int err, int line)
     LED_HEATCALL_ON();
     tinyPause();
     LED_HEATCALL_OFF();
-    sleepLowPowerMs(1000);
+    OTV0P2BASE::sleepLowPowerMs(1000);
     }
   }
 
@@ -725,7 +725,7 @@ static void testQuartiles()
   // This does not write to EEPROM, so will not wear it out.
   // Make sure that nothing can be seen as top and bottom quartile at same time.
   // Make sure that there cannot be too many items reported in each quartile
-  for(uint8_t i = 0; i < EE_STATS_SETS; ++i)
+  for(uint8_t i = 0; i < V0P2BASE_EE_STATS_SETS; ++i)
     {
     int bQ = 0, tQ = 0;
     for(uint8_t j = 0; j < 24; ++j)
@@ -1049,7 +1049,7 @@ static void testFHTEncodingHeadAndTail()
 #endif
   FullStatsMessageCore_t fullStats;
   clearFullStatsMessageCore(&fullStats);
-  captureEntropy1(); // Try stir a little noise into the PRNG before using it.
+  OTV0P2BASE::captureEntropy1(); // Try stir a little noise into the PRNG before using it.
   const bool powerLow = !(OTV0P2BASE::randRNG8() & 0x40); // Random value.
   fullStats.containsTempAndPower = true;
   fullStats.tempAndPower.powerLow = powerLow;
@@ -1278,10 +1278,10 @@ static void testRTCPersist()
   bool minutesPersistOK;
   ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
     {
-    const uint_least16_t mb = getMinutesSinceMidnightLT();
-    persistRTC();
-    restoreRTC();
-    const uint_least16_t ma = getMinutesSinceMidnightLT();
+    const uint_least16_t mb = OTV0P2BASE::getMinutesSinceMidnightLT();
+    OTV0P2BASE::persistRTC();
+    OTV0P2BASE::restoreRTC();
+    const uint_least16_t ma = OTV0P2BASE::getMinutesSinceMidnightLT();
     // Check that persist/restore did not change live minutes value at least, within the 15-minute quantum used.
     minutesPersistOK = (mb/15 == ma/15);
     }
@@ -1546,7 +1546,7 @@ void loopUnitTest()
     serialPrintAndFlush(F("Tests starting... "));
     serialPrintAndFlush(i);
     serialPrintlnAndFlush();
-    sleepLowPowerMs(1000);
+    OTV0P2BASE::sleepLowPowerMs(1000);
     }
   serialPrintlnAndFlush();
 
@@ -1602,7 +1602,7 @@ void loopUnitTest()
   LED_HEATCALL_OFF();
   // Help avoid tests spinning too fast even to see!
   // Also make panic() state flash clearly different to (faster than) this loop success/repeat.
-  sleepLowPowerMs(2000);
+  OTV0P2BASE::sleepLowPowerMs(2000);
   }
 
 
