@@ -25,8 +25,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 #include "V0p2_Main.h"
 
-#include "EEPROM_Utils.h"
-
 // Granularity of simple schedule in minutes (values may be rounded/truncated to nearest); strictly positive.
 static const uint8_t SIMPLE_SCHEDULE_GRANULARITY_MINS = 6;
 

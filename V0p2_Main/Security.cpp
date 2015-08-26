@@ -24,7 +24,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 
 #include "Security.h"
 
-#include "EEPROM_Utils.h"
 #include "Power_Management.h"
 
 

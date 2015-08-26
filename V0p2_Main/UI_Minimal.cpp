@@ -28,11 +28,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include "V0p2_Main.h"
 #include "V0p2_Board_IO_Config.h" // I/O pin allocation: include ahead of I/O module headers.
 #include "Control.h"
-#include "EEPROM_Utils.h"
 #include "FHT8V_Wireless_Rad_Valve.h"
 #include "Messaging.h"
 #include "Power_Management.h"
-#include "RTC_Support.h"
 #include "Schedule.h"
 #include "Serial_IO.h"
 #include "UI_Minimal.h"

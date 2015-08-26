@@ -26,7 +26,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include "Power_Management.h"
 
 #include "RFM22_Radio.h"
-#include "RTC_Support.h"
 #include "Serial_IO.h"
 
 

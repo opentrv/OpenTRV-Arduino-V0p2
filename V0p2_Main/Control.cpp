@@ -25,11 +25,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 #include "Control.h"
 
-#include "EEPROM_Utils.h"
 #include "FHT8V_Wireless_Rad_Valve.h"
 #include "Power_Management.h"
 #include "RFM22_Radio.h"
-#include "RTC_Support.h"
 #include "Security.h"
 #include "Serial_IO.h"
 #include "Schedule.h"

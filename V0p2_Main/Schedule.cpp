@@ -26,8 +26,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include "Schedule.h"
 
 #include "Control.h"
-#include "RTC_Support.h"
-#include "EEPROM_Utils.h"
 
 
 
