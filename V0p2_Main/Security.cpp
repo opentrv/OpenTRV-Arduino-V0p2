@@ -31,7 +31,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 // Get the current stats transmission level (for data outbound from this node).
 // May not exactly match enumerated levels; use inequalities.
 // Not thread-/ISR- safe.
-stats_TX_level getStatsTXLevel() { return((stats_TX_level)eeprom_read_byte((uint8_t *)EE_START_STATS_TX_ENABLE)); }
+stats_TX_level getStatsTXLevel() { return((stats_TX_level)eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_STATS_TX_ENABLE)); }
 
 
 // Counter to help whiten getSecureRandomByte() output.

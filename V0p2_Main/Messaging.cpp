@@ -222,9 +222,9 @@ bool enableTrailingStatsPayload() { return(eeprom_read_byte((uint8_t *)EE_START_
 bool ensureIDCreated(const bool force)
   {
   bool allGood = true;
-  for(uint8_t i = 0; i < EE_LEN_ID; ++i)
+  for(uint8_t i = 0; i < V0P2BASE_EE_LEN_ID; ++i)
     {
-    uint8_t * const loc = i + (uint8_t *)EE_START_ID;
+    uint8_t * const loc = i + (uint8_t *)V0P2BASE_EE_START_ID;
     if(force || (0xff == eeprom_read_byte(loc))) // Byte is unset or change is being forced.
         {
         serialPrintAndFlush(F("Setting ID byte "));
@@ -238,7 +238,7 @@ bool ensureIDCreated(const bool force)
           // System will typically not have been running long when this is invoked.
           const uint8_t newValue = 0x80 | (getSecureRandomByte() ^ envNoise);
           if(0xff == newValue) { continue; } // Reject unusable value.
-          eeprom_smart_update_byte(loc, newValue);
+          OTV0P2BASE::eeprom_smart_update_byte(loc, newValue);
           serialPrintAndFlush(newValue, HEX);
           break;
           }
@@ -797,8 +797,8 @@ uint8_t SimpleStatsRotationBase::writeJSON(uint8_t *const buf, const uint8_t buf
     else
 #endif
       {
-      const uint8_t id1 = eeprom_read_byte(0 + (uint8_t *)EE_START_ID);
-      const uint8_t id2 = eeprom_read_byte(1 + (uint8_t *)EE_START_ID);
+      const uint8_t id1 = eeprom_read_byte(0 + (uint8_t *)V0P2BASE_EE_START_ID);
+      const uint8_t id2 = eeprom_read_byte(1 + (uint8_t *)V0P2BASE_EE_START_ID);
       bp.print(hexDigit(id1 >> 4));
       bp.print(hexDigit(id1));
       bp.print(hexDigit(id2 >> 4));

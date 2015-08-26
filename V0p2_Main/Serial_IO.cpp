@@ -146,8 +146,8 @@ void _debug_serial_timestamp()
   // Grab time values ASAP, fastest-incrementing first.
   // TODO: could lock out interrupts to capture atomically.
   const uint8_t ss = getSubCycleTime();
-  const uint8_t s = getSecondsLT();
-  const uint16_t m = getMinutesSinceMidnightLT();
+  const uint8_t s = OTV0P2BASE::getSecondsLT();
+  const uint16_t m = OTV0P2BASE::getMinutesSinceMidnightLT();
   Serial.print(m);
   Serial.print(':'); Serial.print(s);
   Serial.print(':'); Serial.print(ss);

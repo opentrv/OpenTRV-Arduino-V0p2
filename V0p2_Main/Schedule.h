@@ -28,11 +28,11 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include "EEPROM_Utils.h"
 
 // Granularity of simple schedule in minutes (values may be rounded/truncated to nearest); strictly positive.
-#define SIMPLE_SCHEDULE_GRANULARITY_MINS 6
+static const uint8_t SIMPLE_SCHEDULE_GRANULARITY_MINS = 6;
 
 // Expose number of supported schedules.
 // Can be more than the number of buttons, but later schedules will be CLI-only.
-#define MAX_SIMPLE_SCHEDULES EE_START_MAX_SIMPLE_SCHEDULES
+static const uint8_t MAX_SIMPLE_SCHEDULES = V0P2BASE_EE_START_MAX_SIMPLE_SCHEDULES;
 
 // Get the simple schedule on time, as minutes after midnight [0,1439]; invalid (eg ~0) if none set.
 // Will usually include a pre-warm time before the actual time set.

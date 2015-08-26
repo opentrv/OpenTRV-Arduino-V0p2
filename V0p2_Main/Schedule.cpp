@@ -51,7 +51,7 @@ void _TEST_set_schedule_override(const _TEST_schedule_override override)
 // All EEPROM activity is made atomic by locking out interrupts where necessary.
 
 // Maximum mins-after-midnight compacted value in one byte.
-#define MAX_COMPRESSED_MINS_AFTER_MIDNIGHT ((MINS_PER_DAY / SIMPLE_SCHEDULE_GRANULARITY_MINS) - 1)
+static const uint8_t MAX_COMPRESSED_MINS_AFTER_MIDNIGHT = ((OTV0P2BASE::MINS_PER_DAY / SIMPLE_SCHEDULE_GRANULARITY_MINS) - 1);
 
 
 // If LEARN_BUTTON_AVAILABLE then what is the schedule on time?
@@ -73,7 +73,7 @@ static uint8_t onTime()
 #endif
 
 // Pre-warm time before learned/scheduled WARM period.
-#define PREWARM_MINS ((SIMPLE_SCHEDULE_GRANULARITY_MINS/2) + (LEARNED_ON_PERIOD_M>>2))
+const uint8_t PREWARM_MINS = ((SIMPLE_SCHEDULE_GRANULARITY_MINS/2) + (LEARNED_ON_PERIOD_M>>2));
 // Setback period before WARM period to help ensure that the WARM target can be reached on time.
 // Important for slow-to-heat rooms that have become very cold.
 // Similar to PREWARM_MINS so that we can safely use this without causing distress, eg waking people up.
@@ -88,14 +88,14 @@ uint_least16_t getSimpleScheduleOn(const uint8_t which)
   if(which >= MAX_SIMPLE_SCHEDULES) { return(~0); } // Invalid schedule number.
   uint8_t startMM;
   ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
-    { startMM = eeprom_read_byte((uint8_t*)(EE_START_SIMPLE_SCHEDULE0_ON + which)); }
+    { startMM = eeprom_read_byte((uint8_t*)(V0P2BASE_EE_START_SIMPLE_SCHEDULE0_ON + which)); }
   if(startMM > MAX_COMPRESSED_MINS_AFTER_MIDNIGHT) { return(~0); } // No schedule set.
   // Compute start time from stored shedule value.
   uint_least16_t startTime = SIMPLE_SCHEDULE_GRANULARITY_MINS * startMM;
 // If LEARN_BUTTON_AVAILABLE then in the absence of anything better SUPPORT_SINGLETON_SCHEDULE should be supported.
 #ifdef LEARN_BUTTON_AVAILABLE
   const uint8_t windBackM = PREWARM_MINS; // Wind back start time by about 25% of full interval.
-  if(windBackM > startTime) { startTime += MINS_PER_DAY; } // Allow for wrap-around at midnight.
+  if(windBackM > startTime) { startTime += OTV0P2BASE::MINS_PER_DAY; } // Allow for wrap-around at midnight.
   startTime -= windBackM;
 #endif
   return(startTime);
@@ -110,7 +110,7 @@ uint_least16_t getSimpleScheduleOff(const uint8_t which)
   if(startMins == (uint_least16_t)~0) { return(~0); }
   // Compute end from start, allowing for wrap-around at midnight.
   uint_least16_t endTime = startMins + PREWARM_MINS + onTime();
-  if(endTime >= MINS_PER_DAY) { endTime -= MINS_PER_DAY; } // Allow for wrap-around at midnight.
+  if(endTime >= OTV0P2BASE::MINS_PER_DAY) { endTime -= OTV0P2BASE::MINS_PER_DAY; } // Allow for wrap-around at midnight.
   return(endTime);
   }
 
@@ -123,12 +123,12 @@ uint_least16_t getSimpleScheduleOff(const uint8_t which)
 bool setSimpleSchedule(const uint_least16_t startMinutesSinceMidnightLT, const uint8_t which)
   {
   if(which >= MAX_SIMPLE_SCHEDULES) { return(false); } // Invalid schedule number.
-  if(startMinutesSinceMidnightLT >= MINS_PER_DAY) { return(false); } // Invalid time.
+  if(startMinutesSinceMidnightLT >= OTV0P2BASE::MINS_PER_DAY) { return(false); } // Invalid time.
 
   // Set the schedule, minimising wear.
   const uint8_t startMM = startMinutesSinceMidnightLT / SIMPLE_SCHEDULE_GRANULARITY_MINS; // Round down...
   ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
-    { eeprom_smart_update_byte((uint8_t*)(EE_START_SIMPLE_SCHEDULE0_ON + which), startMM); }
+    { OTV0P2BASE::eeprom_smart_update_byte((uint8_t*)(V0P2BASE_EE_START_SIMPLE_SCHEDULE0_ON + which), startMM); }
   return(true); // Assume EEPROM programmed OK...
   }
 
@@ -140,7 +140,7 @@ void clearSimpleSchedule(const uint8_t which)
   if(which >= MAX_SIMPLE_SCHEDULES) { return; } // Invalid schedule number.
   // Clear the schedule back to 'unprogrammed' values, minimising wear.
   ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
-    { eeprom_smart_erase_byte((uint8_t*)(EE_START_SIMPLE_SCHEDULE0_ON + which)); }
+    { OTV0P2BASE::eeprom_smart_erase_byte((uint8_t*)(V0P2BASE_EE_START_SIMPLE_SCHEDULE0_ON + which)); }
   }
 
 // Returns true if any simple schedule is set, false otherwise.
@@ -162,7 +162,7 @@ bool isAnySimpleScheduleSet()
     {
     for(uint8_t which = 0; which < MAX_SIMPLE_SCHEDULES; ++which)
       {
-      if(eeprom_read_byte((uint8_t*)(EE_START_SIMPLE_SCHEDULE0_ON + which)) <= MAX_COMPRESSED_MINS_AFTER_MIDNIGHT)
+      if(eeprom_read_byte((uint8_t*)(V0P2BASE_EE_START_SIMPLE_SCHEDULE0_ON + which)) <= MAX_COMPRESSED_MINS_AFTER_MIDNIGHT)
         { return(true); }
       }
     }
@@ -187,14 +187,14 @@ bool isAnyScheduleOnWARMNow()
     }
 #endif
 
-  const uint_least16_t mm = getMinutesSinceMidnightLT();
+  const uint_least16_t mm = OTV0P2BASE::getMinutesSinceMidnightLT();
 
   for(uint8_t which = 0; which < MAX_SIMPLE_SCHEDULES; ++which)
     {
     const uint_least16_t s = getSimpleScheduleOn(which);
     if(mm < s) { continue; } // Also deals with case where this schedule is not set at all (s == ~0);
     uint_least16_t e = getSimpleScheduleOff(which);
-    if(e < s) { e += MINS_PER_DAY; } // Cope with schedule wrap around midnight.
+    if(e < s) { e += OTV0P2BASE::MINS_PER_DAY; } // Cope with schedule wrap around midnight.
     if(mm < e) { return(true); }
     }
 
@@ -219,15 +219,15 @@ bool isAnyScheduleOnWARMSoon()
     }
 #endif
 
-  const uint_least16_t mm0 = getMinutesSinceMidnightLT() + PREPREWARM_MINS; // Look forward...
-  const uint_least16_t mm = (mm0 >= MINS_PER_DAY) ? (mm0 - MINS_PER_DAY) : mm0;
+  const uint_least16_t mm0 = OTV0P2BASE::getMinutesSinceMidnightLT() + PREPREWARM_MINS; // Look forward...
+  const uint_least16_t mm = (mm0 >= OTV0P2BASE::MINS_PER_DAY) ? (mm0 - OTV0P2BASE::MINS_PER_DAY) : mm0;
 
   for(uint8_t which = 0; which < MAX_SIMPLE_SCHEDULES; ++which)
     {
     const uint_least16_t s = getSimpleScheduleOn(which);
     if(mm < s) { continue; } // Also deals with case where this schedule is not set at all (s == ~0);
     uint_least16_t e = getSimpleScheduleOff(which);
-    if(e < s) { e += MINS_PER_DAY; } // Cope with schedule wrap around midnight.
+    if(e < s) { e += OTV0P2BASE::MINS_PER_DAY; } // Cope with schedule wrap around midnight.
     if(mm < e) { return(true); }
     }
 

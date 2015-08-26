@@ -107,7 +107,7 @@ uint8_t getFROSTTargetC()
   // Prevent falling to lowest frost temperature if relative humidity is high (eg to avoid mould).
   const uint8_t result = (!hasEcoBias() || (RelHumidity.isAvailable() && RelHumidity.isRHHighWithHyst())) ? BIASCOM_FROST : BIASECO_FROST;
 #if defined(SETTABLE_TARGET_TEMPERATURES)
-  const uint8_t stored = eeprom_read_byte((uint8_t *)EE_START_FROST_C);
+  const uint8_t stored = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_FROST_C);
   // If stored value is set and in bounds and higher than computed value then use stored value instead.
   if((stored >= MIN_TARGET_C) && (stored <= MAX_TARGET_C) && (stored > result)) { return(stored); }
 #endif
@@ -228,7 +228,7 @@ bool setFROSTTargetC(uint8_t tempC)
   {
   if((tempC < MIN_TARGET_C) || (tempC > MAX_TARGET_C)) { return(false); } // Invalid temperature.
   if(tempC > getWARMTargetC()) { return(false); } // Cannot set above WARM target.
-  eeprom_smart_update_byte((uint8_t *)EE_START_FROST_C, tempC); // Update in EEPROM if necessary.
+  OTV0P2BASE::eeprom_smart_update_byte((uint8_t *)V0P2BASE_EE_START_FROST_C, tempC); // Update in EEPROM if necessary.
   return(true); // Assume value correctly written.
   }
 #endif
@@ -258,13 +258,13 @@ bool hasEcoBias() { return(getWARMTargetC() <= TEMP_SCALE_MID); }
 
 #ifndef getMinBoilerOnMinutes
 // Get minimum on (and off) time for pointer (minutes); zero if not in hub mode.
-uint8_t getMinBoilerOnMinutes() { return(~eeprom_read_byte((uint8_t *)EE_START_MIN_BOILER_ON_MINS_INV)); }
+uint8_t getMinBoilerOnMinutes() { return(~eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_MIN_BOILER_ON_MINS_INV)); }
 #endif
 
 #ifndef setMinBoilerOnMinutes
 // Set minimum on (and off) time for pointer (minutes); zero to disable hub mode.
 // Suggested minimum of 4 minutes for gas combi; much longer for heat pumps for example.
-void setMinBoilerOnMinutes(uint8_t mins) { eeprom_smart_update_byte((uint8_t *)EE_START_MIN_BOILER_ON_MINS_INV, ~(mins)); }
+void setMinBoilerOnMinutes(uint8_t mins) { OTV0P2BASE::eeprom_smart_update_byte((uint8_t *)V0P2BASE_EE_START_MIN_BOILER_ON_MINS_INV, ~(mins)); }
 #endif
 
 // Minimum slew/error % distance in central range; should be larger than smallest temperature-sensor-driven step (6) to be effective; [1,100].
@@ -394,9 +394,9 @@ bool inTopQuartile(const uint8_t *sE, const uint8_t sample)
 //   * hour  hour of day to use or ~0 for current hour.
 bool inOutlierQuartile(const uint8_t inTop, const uint8_t statsSet, const uint8_t hour)
   {
-  if(statsSet >= EE_STATS_SETS) { return(false); } // Bad stats set number, ie unsafe.
-  const uint8_t hh = (hour > 23) ? getHoursLT() : hour;
-  const uint8_t *ss = (uint8_t *)(EE_STATS_START_ADDR(statsSet));
+  if(statsSet >= V0P2BASE_EE_STATS_SETS) { return(false); } // Bad stats set number, ie unsafe.
+  const uint8_t hh = (hour > 23) ? OTV0P2BASE::getHoursLT() : hour;
+  const uint8_t *ss = (uint8_t *)(V0P2BASE_EE_STATS_START_ADDR(statsSet));
   const uint8_t sample = eeprom_read_byte(ss + hh);
   if(STATS_UNSET_INT == sample) { return(false); }
   if(inTop) { return(inTopQuartile(ss, sample)); }
@@ -466,7 +466,7 @@ uint8_t ModelledRadValve::mVPRO_cache = 0;
 uint8_t ModelledRadValve::getMinValvePcReallyOpen()
   {
   if(0 != mVPRO_cache) { return(mVPRO_cache); } // Return cached value if possible.
-  const uint8_t stored = eeprom_read_byte((uint8_t *)EE_START_MIN_VALVE_PC_REALLY_OPEN);
+  const uint8_t stored = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_MIN_VALVE_PC_REALLY_OPEN);
   const uint8_t result = ((stored > 0) && (stored <= 100)) ? stored : DEFAULT_MIN_VALVE_PC_REALLY_OPEN;
   mVPRO_cache = result; // Cache it.
   return(result);
@@ -480,13 +480,13 @@ void ModelledRadValve::setMinValvePcReallyOpen(const uint8_t percent)
   if((percent > 100) || (percent == 0) || (percent == DEFAULT_MIN_VALVE_PC_REALLY_OPEN))
     {
     // Bad / out-of-range / default value so erase stored value if not already so.
-    eeprom_smart_erase_byte((uint8_t *)EE_START_MIN_VALVE_PC_REALLY_OPEN);
+    OTV0P2BASE::eeprom_smart_erase_byte((uint8_t *)V0P2BASE_EE_START_MIN_VALVE_PC_REALLY_OPEN);
     // Cache logical default value.
     mVPRO_cache = DEFAULT_MIN_VALVE_PC_REALLY_OPEN;
     return;
     }
   // Store specified value with as low wear as possible.
-  eeprom_smart_update_byte((uint8_t *)EE_START_MIN_VALVE_PC_REALLY_OPEN, percent);
+  OTV0P2BASE::eeprom_smart_update_byte((uint8_t *)V0P2BASE_EE_START_MIN_VALVE_PC_REALLY_OPEN, percent);
   // Cache it.
   mVPRO_cache = percent;
   }
@@ -598,7 +598,7 @@ uint8_t ModelledRadValve::computeTargetTemp()
     // TODO: consider bottom quartile of amblient light as alternative setback trigger for near-continuously-lit spaces (aiming to spot daylight signature).
     const bool longLongVacant = Occupancy.longLongVacant();
     const bool longVacant = longLongVacant || Occupancy.longVacant();
-    const bool notLikelyOccupiedSoon = longLongVacant || (Occupancy.isLikelyUnoccupied() && inOutlierQuartile(false, EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED));
+    const bool notLikelyOccupiedSoon = longLongVacant || (Occupancy.isLikelyUnoccupied() && inOutlierQuartile(false, V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED));
     if(longVacant ||
        ((notLikelyOccupiedSoon || (AmbLight.getDarkMinutes() > 10)) && !isAnyScheduleOnWARMNow() && !recentUIControlUse()))
       {
@@ -613,7 +613,7 @@ uint8_t ModelledRadValve::computeTargetTemp()
       const uint8_t setback = (!hasEcoBias() ||
                                Occupancy.isLikelyOccupied() ||
                                (!longLongVacant && AmbLight.isRoomLit()) ||
-                               (!longLongVacant && inOutlierQuartile(true, EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED)) ||
+                               (!longLongVacant && inOutlierQuartile(true, V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED)) ||
                                (!longVacant && isAnyScheduleOnWARMSoon())) ?
               SETBACK_DEFAULT :
           ((longLongVacant || (notLikelyOccupiedSoon && isEcoTemperature(wt))) ?
@@ -1099,12 +1099,12 @@ static void simpleUpdateStatsPair_(uint8_t * const lastEEPtr, const uint8_t valu
   if(0xff == value) { panic(); }
 #endif
   // Update the last-sample slot using the mean samples value.
-  eeprom_smart_update_byte(lastEEPtr, value);
+  OTV0P2BASE::eeprom_smart_update_byte(lastEEPtr, value);
   // If existing smoothed value unset or invalid, use new one as is, else fold in.
   uint8_t * const pS = lastEEPtr + 24;
   const uint8_t smoothed = eeprom_read_byte(pS);
-  if(0xff == smoothed) { eeprom_smart_update_byte(pS, value); }
-  else { eeprom_smart_update_byte(pS, smoothStatsValue(smoothed, value)); }
+  if(0xff == smoothed) { OTV0P2BASE::eeprom_smart_update_byte(pS, value); }
+  else { OTV0P2BASE::eeprom_smart_update_byte(pS, smoothStatsValue(smoothed, value)); }
   }
 // Get some constant calculation done at compile time,
 //   * lastSetN  is the set number for the 'last' values, with 'smoothed' assumed to be the next set.
@@ -1121,7 +1121,7 @@ static inline void simpleUpdateStatsPair(const uint8_t lastSetN, const uint8_t h
     DEBUG_SERIAL_PRINT(value);
     DEBUG_SERIAL_PRINTLN();
 #endif
-  simpleUpdateStatsPair_((uint8_t *)(EE_STATS_START_ADDR(lastSetN) + (hh)), (value));
+  simpleUpdateStatsPair_((uint8_t *)(V0P2BASE_EE_STATS_START_ADDR(lastSetN) + (hh)), (value));
   }
 
 // Sample statistics once per hour as background to simple monitoring and adaptive behaviour.
@@ -1172,7 +1172,7 @@ void sampleStats(const bool fullSample)
   sampleCount_ = 0;
 
   // Get the current local-time hour...
-  const uint_least8_t hh = getHoursLT(); 
+  const uint_least8_t hh = OTV0P2BASE::getHoursLT(); 
 
   // Scale and constrain last-read temperature to valid range for stats.
 #if defined(STATS_MAX_2_SAMPLES)
@@ -1194,14 +1194,14 @@ void sampleStats(const bool fullSample)
   DEBUG_SERIAL_PRINT(expandTempC16(temp));
   DEBUG_SERIAL_PRINTLN();
 #endif
-  simpleUpdateStatsPair(EE_STATS_SET_TEMP_BY_HOUR, hh, temp);
+  simpleUpdateStatsPair(V0P2BASE_EE_STATS_SET_TEMP_BY_HOUR, hh, temp);
 
   // Ambient light; last and smoothed data sets,
-  simpleUpdateStatsPair(EE_STATS_SET_AMBLIGHT_BY_HOUR, hh, smartDivToU8(ambLightTotal, sc));
+  simpleUpdateStatsPair(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR, hh, smartDivToU8(ambLightTotal, sc));
 
 #ifdef OCCUPANCY_SUPPORT
   // Occupancy confidence percent, if supported; last and smoothed data sets,
-  simpleUpdateStatsPair(EE_STATS_SET_OCCPC_BY_HOUR, hh, smartDivToU8(occpcTotal, sc));
+  simpleUpdateStatsPair(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR, hh, smartDivToU8(occpcTotal, sc));
 #endif 
 
 #if defined(HUMIDITY_SENSOR_SUPPORT)
@@ -1239,9 +1239,9 @@ void sampleStats(const bool fullSample)
 // The stats set is determined by the order in memory.
 uint8_t getByHourStat(uint8_t hh, uint8_t statsSet)
   {
-  if(statsSet > (EE_END_STATS - EE_START_STATS) / EE_STATS_SET_SIZE) { return((uint8_t) 0xff); } // Invalid set.
+  if(statsSet > (V0P2BASE_EE_END_STATS - V0P2BASE_EE_START_STATS) / V0P2BASE_EE_STATS_SET_SIZE) { return((uint8_t) 0xff); } // Invalid set.
   if(hh > 23) { return((uint8_t) 0xff); } // Invalid hour.
-  return(eeprom_read_byte((uint8_t *)(EE_START_STATS + (statsSet * (int)EE_STATS_SET_SIZE) + (int)hh)));
+  return(eeprom_read_byte((uint8_t *)(V0P2BASE_EE_START_STATS + (statsSet * (int)V0P2BASE_EE_STATS_SET_SIZE) + (int)hh)));
   }
 
 
@@ -1251,8 +1251,8 @@ uint8_t getByHourStat(uint8_t hh, uint8_t statsSet)
 // Returns true if finished with all bytes erased.
 bool zapStats(uint16_t maxBytesToErase)
   {
-  for(uint8_t *p = (uint8_t *)EE_START_STATS; p <= (uint8_t *)EE_END_STATS; ++p)
-    { if(eeprom_smart_erase_byte(p)) { if(--maxBytesToErase == 0) { return(false); } } } // Stop if out of time...
+  for(uint8_t *p = (uint8_t *)V0P2BASE_EE_START_STATS; p <= (uint8_t *)V0P2BASE_EE_END_STATS; ++p)
+    { if(OTV0P2BASE::eeprom_smart_erase_byte(p)) { if(--maxBytesToErase == 0) { return(false); } } } // Stop if out of time...
   return(true); // All done.
   }
 
@@ -1329,8 +1329,8 @@ void populateCoreStats(FullStatsMessageCore_t *const content)
   else
     {
     // Use OpenTRV unique ID if no other higher-priority ID.
-    content->id0 = eeprom_read_byte(0 + (uint8_t *)EE_START_ID);
-    content->id1 = eeprom_read_byte(1 + (uint8_t *)EE_START_ID);
+    content->id0 = eeprom_read_byte(0 + (uint8_t *)V0P2BASE_EE_START_ID);
+    content->id1 = eeprom_read_byte(1 + (uint8_t *)V0P2BASE_EE_START_ID);
     }
   content->containsID = true;
   content->tempAndPower.tempC16 = TemperatureC16.get();
@@ -1675,7 +1675,7 @@ void setupOpenTRV()
   // Start local counters in randomised positions to help avoid inter-unit collisions,
   // but without (eg) breaking any of the logic about what order things will be run first time through.
   // Offsets based on whatever noise is in the simple PRNG plus some from the unique ID.
-  const uint8_t ID0 = eeprom_read_byte((uint8_t *)EE_START_ID);
+  const uint8_t ID0 = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_ID);
   localTicks = (OTV0P2BASE::randRNG8() ^ ID0) & 0x1f; // Start within bottom half of minute (or close to).
   if(0 != (ID0 & 0x20)) { minuteCount = OTV0P2BASE::randRNG8() | 2; } // Start at minute 2 or 3 out of 4 for some units.
 #endif
@@ -1685,7 +1685,7 @@ void setupOpenTRV()
 #endif
 
   // Set appropriate loop() values just before entering it.
-  TIME_LSD = getSecondsLT();
+  TIME_LSD = OTV0P2BASE::getSecondsLT();
   }
 
 #if !defined(ALT_MAIN_LOOP) // Do not define handlers here when alt main is in use.
@@ -2058,7 +2058,7 @@ void loopOpenTRV()
   // Power down most stuff (except radio for hub RX).
   minimisePowerWithoutSleep();
   uint_fast8_t newTLSD;
-  while(TIME_LSD == (newTLSD = getSecondsLT()))
+  while(TIME_LSD == (newTLSD = OTV0P2BASE::getSecondsLT()))
     {
     // Poll I/O and process message incrementally (in this otherwise idle time)
     // before sleep and on wakeup in case some IO needs further processing now,
@@ -2247,7 +2247,7 @@ void loopOpenTRV()
       ++minuteCount;
       checkUserSchedule(); // Force to user's programmed settings, if any, at the correct time.
       // Ensure that the RTC has been persisted promptly when necessary.
-      persistRTC();
+      OTV0P2BASE::persistRTC();
       break;
       }
 
@@ -2383,7 +2383,7 @@ void loopOpenTRV()
       // A small even number of samples (or 1 sample) is probably most efficient; the system supports 2 max as of 20150329.
       if(minute0From4ForSensors) // Use lowest-noise samples just taken in the special 0 minute out of each 4.
         {
-        const uint_least8_t mm = getMinutesLT();
+        const uint_least8_t mm = OTV0P2BASE::getMinutesLT();
         switch(mm)
           {
           case 26: case 27: case 28: case 29:
@@ -2456,11 +2456,11 @@ void loopOpenTRV()
 #endif
 
   // Detect and handle (actual or near) overrun, if it happens, though it should not.
-  if(TIME_LSD != getSecondsLT())
+  if(TIME_LSD != OTV0P2BASE::getSecondsLT())
     {
     // Increment the overrun counter (stored inverted, so 0xff initialised => 0 overruns).
-    const uint8_t orc = 1 + ~eeprom_read_byte((uint8_t *)EE_START_OVERRUN_COUNTER);
-    eeprom_smart_update_byte((uint8_t *)EE_START_OVERRUN_COUNTER, ~orc);
+    const uint8_t orc = 1 + ~eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_OVERRUN_COUNTER);
+    OTV0P2BASE::eeprom_smart_update_byte((uint8_t *)V0P2BASE_EE_START_OVERRUN_COUNTER, ~orc);
 #if 1 && defined(DEBUG)
     DEBUG_SERIAL_PRINTLN_FLASHSTRING("!loop overrun");
 //    DEBUG_SERIAL_PRINT(orc);
@@ -2469,7 +2469,7 @@ void loopOpenTRV()
 #if defined(USE_MODULE_FHT8VSIMPLE)
     FHT8VSyncAndTXReset(); // Assume that sync with valve may have been lost, so re-sync.
 #endif
-    TIME_LSD = getSecondsLT(); // Prepare to sleep until start of next full minor cycle.
+    TIME_LSD = OTV0P2BASE::getSecondsLT(); // Prepare to sleep until start of next full minor cycle.
     }
 #if 0 && defined(DEBUG) // Expect to pick up near overrun at start of next loop.
   else if(getSubCycleTime() >= nearOverrunThreshold)

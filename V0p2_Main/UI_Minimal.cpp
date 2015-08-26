@@ -100,7 +100,7 @@ bool recentUIControlUse() { return(0 != uiTimeoutM); }
 static void handleLEARN(const uint8_t which)
   {
   // Set simple schedule starting every 24h from a little before now and running for an hour or so.  
-  if(inWarmMode()) { setSimpleSchedule(getMinutesSinceMidnightLT(), which); }
+  if(inWarmMode()) { setSimpleSchedule(OTV0P2BASE::getMinutesSinceMidnightLT(), which); }
   // Clear simple schedule.
   else { clearSimpleSchedule(which); }
   }
@@ -373,7 +373,7 @@ bool tickUI(const uint_fast8_t sec)
 void checkUserSchedule()
   {
   // Get minutes since midnight local time [0,1439].
-  const uint_least16_t msm = getMinutesSinceMidnightLT();
+  const uint_least16_t msm = OTV0P2BASE::getMinutesSinceMidnightLT();
 
   // Check all available schedules.
   // FIXME: probably will NOT work as expected for overlapping schedules (ie will got to FROST at end of first one).
@@ -572,8 +572,8 @@ void serialStatusReport()
 
 #ifdef ENABLE_FULL_OT_CLI
   // *T* section: time and schedules.
-  const uint_least8_t hh = getHoursLT();
-  const uint_least8_t mm = getMinutesLT();
+  const uint_least8_t hh = OTV0P2BASE::getHoursLT();
+  const uint_least8_t mm = OTV0P2BASE::getMinutesLT();
   Serial.print(';'); // End previous section.
   Serial.print('T'); Serial.print(hh); Serial_print_space(); Serial.print(mm);
   // Show all schedules set.
@@ -581,13 +581,13 @@ void serialStatusReport()
     {
     Serial_print_space();
     uint_least16_t startMinutesSinceMidnightLT = getSimpleScheduleOn(scheduleNumber);
-    const bool invalidStartTime = startMinutesSinceMidnightLT >= MINS_PER_DAY;
+    const bool invalidStartTime = startMinutesSinceMidnightLT >= OTV0P2BASE::MINS_PER_DAY;
     const int startH = invalidStartTime ? 255 : (startMinutesSinceMidnightLT / 60);
     const int startM = invalidStartTime ? 0 : (startMinutesSinceMidnightLT % 60);
     Serial.print('W'); Serial.print(startH); Serial_print_space(); Serial.print(startM);
     Serial_print_space();
     uint_least16_t endMinutesSinceMidnightLT = getSimpleScheduleOff(scheduleNumber);
-    const bool invalidEndTime = endMinutesSinceMidnightLT >= MINS_PER_DAY;
+    const bool invalidEndTime = endMinutesSinceMidnightLT >= OTV0P2BASE::MINS_PER_DAY;
     const int endH = invalidEndTime ? 255 : (endMinutesSinceMidnightLT / 60);
     const int endM = invalidEndTime ? 0 : (endMinutesSinceMidnightLT % 60);
     Serial.print('F'); Serial.print(endH); Serial_print_space(); Serial.print(endM);
@@ -972,11 +972,11 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
       case 'S':
         {
         Serial.print(F("Resets: "));
-        const uint8_t resetCount = eeprom_read_byte((uint8_t *)EE_START_RESET_COUNT);
+        const uint8_t resetCount = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_RESET_COUNT);
         Serial.print(resetCount);
         Serial.println();
         Serial.print(F("Overruns: "));
-        const uint8_t overrunCount = (~eeprom_read_byte((uint8_t *)EE_START_OVERRUN_COUNTER)) & 0xff;
+        const uint8_t overrunCount = (~eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_OVERRUN_COUNTER)) & 0xff;
         Serial.print(overrunCount);
         Serial.println();
         break; // Note that status is by default printed after processing input line.
@@ -1064,19 +1064,30 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         if((n >= 3) && (NULL != (tok1 = strtok_r(buf+2, " ", &last))))
           {
           const uint8_t setN = (uint8_t) atoi(tok1);
-          const uint8_t thisHH = getHoursLT();
+          const uint8_t thisHH = OTV0P2BASE::getHoursLT();
 //          const uint8_t lastHH = (thisHH > 0) ? (thisHH-1) : 23;
           // Print label.
           switch(setN)
             {
             default: { Serial.print('?'); break; }
-            case EE_STATS_SET_TEMP_BY_HOUR: case EE_STATS_SET_TEMP_BY_HOUR_SMOOTHED: { Serial.print('C'); break; }
-            case EE_STATS_SET_AMBLIGHT_BY_HOUR: case EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED: { Serial.print(F("ambl")); break; }
-            case EE_STATS_SET_OCCPC_BY_HOUR: case EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED: { Serial.print(F("occ%")); break; }
-            case EE_STATS_SET_RHPC_BY_HOUR: case EE_STATS_SET_RHPC_BY_HOUR_SMOOTHED: { Serial.print(F("RH%")); break; }
-            case EE_STATS_SET_USER1_BY_HOUR: case EE_STATS_SET_USER1_BY_HOUR_SMOOTHED: { Serial.print('u'); break; }
-#if defined(EE_STATS_SET_WARMMODE_BY_HOUR_OF_WK)
-            case EE_STATS_SET_WARMMODE_BY_HOUR_OF_WK: { Serial.print('W'); break; }
+            case V0P2BASE_EE_STATS_SET_TEMP_BY_HOUR:
+            case V0P2BASE_EE_STATS_SET_TEMP_BY_HOUR_SMOOTHED:
+                { Serial.print('C'); break; }
+            case V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR:
+            case V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED:
+                { Serial.print(F("ambl")); break; }
+            case V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR:
+            case V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED:
+                { Serial.print(F("occ%")); break; }
+            case V0P2BASE_EE_STATS_SET_RHPC_BY_HOUR:
+            case V0P2BASE_EE_STATS_SET_RHPC_BY_HOUR_SMOOTHED:
+                { Serial.print(F("RH%")); break; }
+            case V0P2BASE_EE_STATS_SET_USER1_BY_HOUR:
+            case V0P2BASE_EE_STATS_SET_USER1_BY_HOUR_SMOOTHED:
+                { Serial.print('u'); break; }
+#if defined(V0P2BASE_EE_STATS_SET_WARMMODE_BY_HOUR_OF_WK)
+            case V0P2BASE_EE_STATS_SET_WARMMODE_BY_HOUR_OF_WK:
+                { Serial.print('W'); break; }
 #endif
             }
           Serial_print_space();
@@ -1094,11 +1105,12 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
               default: { Serial.print(statRaw); break; } // Generic decimal stats.
 
               // Special formatting cases.
-              case EE_STATS_SET_TEMP_BY_HOUR: case EE_STATS_SET_TEMP_BY_HOUR_SMOOTHED:
+              case V0P2BASE_EE_STATS_SET_TEMP_BY_HOUR:
+              case V0P2BASE_EE_STATS_SET_TEMP_BY_HOUR_SMOOTHED:
                 // Uncompanded temperature, rounded.
                 { Serial.print((expandTempC16(statRaw)+8) >> 4); break; }
-#if defined(EE_STATS_SET_WARMMODE_BY_HOUR_OF_WK)
-              case EE_STATS_SET_WARMMODE_BY_HOUR_OF_WK:
+#if defined(V0P2BASE_EE_STATS_SET_WARMMODE_BY_HOUR_OF_WK)
+              case V0P2BASE_EE_STATS_SET_WARMMODE_BY_HOUR_OF_WK:
                 // Warm mode usage bitmap by hour over week.
                 { Serial.print(statRaw, HEX); break; }
 #endif
@@ -1222,7 +1234,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
             const int hh = atoi(tok1);
             const int mm = atoi(tok2);
             // TODO: zap collected stats if time change too large (eg >> 1h).
-            if(!setHoursMinutesLT(hh, mm)) { InvalidIgnored(); }
+            if(!OTV0P2BASE::setHoursMinutesLT(hh, mm)) { InvalidIgnored(); }
             }
           }
         break;
@@ -1260,7 +1272,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         if((n >= 3) && (NULL != (tok1 = strtok_r(buf+2, " ", &last))))
           {
           const uint8_t nn = (uint8_t) atoi(tok1);
-          eeprom_smart_update_byte((uint8_t *)EE_START_STATS_TX_ENABLE, nn);
+          OTV0P2BASE::eeprom_smart_update_byte((uint8_t *)V0P2BASE_EE_START_STATS_TX_ENABLE, nn);
           }
         break;
         }

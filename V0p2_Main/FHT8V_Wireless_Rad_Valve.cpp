@@ -346,17 +346,17 @@ uint8_t *FHT8VCreateValveSetCmdFrame_r(uint8_t *const bptr, fht8v_msg_t *command
 // Clear both housecode parts (and thus disable local valve).
 void FHT8VClearHC()
   {
-  eeprom_smart_erase_byte((uint8_t*)EE_START_FHT8V_HC1);
-  eeprom_smart_erase_byte((uint8_t*)EE_START_FHT8V_HC2);
+  OTV0P2BASE::eeprom_smart_erase_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC1);
+  OTV0P2BASE::eeprom_smart_erase_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC2);
   }
 
 // Set (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control.
-void FHT8VSetHC1(uint8_t hc) { eeprom_smart_update_byte((uint8_t*)EE_START_FHT8V_HC1, hc); }
-void FHT8VSetHC2(uint8_t hc) { eeprom_smart_update_byte((uint8_t*)EE_START_FHT8V_HC2, hc); }
+void FHT8VSetHC1(uint8_t hc) { OTV0P2BASE::eeprom_smart_update_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC1, hc); }
+void FHT8VSetHC2(uint8_t hc) { OTV0P2BASE::eeprom_smart_update_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC2, hc); }
 
 // Get (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control (will be 0xff until set).
-uint8_t FHT8VGetHC1() { return(eeprom_read_byte((uint8_t*)EE_START_FHT8V_HC1)); }
-uint8_t FHT8VGetHC2() { return(eeprom_read_byte((uint8_t*)EE_START_FHT8V_HC2)); }
+uint8_t FHT8VGetHC1() { return(eeprom_read_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC1)); }
+uint8_t FHT8VGetHC2() { return(eeprom_read_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC2)); }
 
 #ifndef localFHT8VTRVEnabled
 // Returns TRV if valve/radiator is to be controlled by this unit.

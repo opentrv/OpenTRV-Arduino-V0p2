@@ -875,28 +875,28 @@ static void testJSONForTX()
   }
 
 
-// Self-test of EEPROM functioning (and smart/split erase/write).
-// Will not usually perform any wear-inducing activity (is idempotent).
-// Aborts with panic() upon failure.
-static void testEEPROM()
-  {
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("EEPROM");
-
-  if((uint8_t) 0xff != eeprom_read_byte((uint8_t*)EE_START_TEST_LOC))
-    {
-    if(!eeprom_smart_erase_byte((uint8_t*)EE_START_TEST_LOC)) { panic(); } // Should have attempted erase.
-    if((uint8_t) 0xff != eeprom_read_byte((uint8_t*)EE_START_TEST_LOC)) { panic(); } // Should have erased.
-    }
-  if(eeprom_smart_erase_byte((uint8_t*)EE_START_TEST_LOC)) { panic(); } // Should not need erase nor attempt one.
-
-  const uint8_t eaTestPattern = 0xa5; // Test pattern for masking (selective bit clearing).
-  if(0 != ((~eaTestPattern) & eeprom_read_byte((uint8_t*)EE_START_TEST_LOC2))) // Will need to clear some bits.
-    {
-      if(!eeprom_smart_clear_bits((uint8_t*)EE_START_TEST_LOC2, eaTestPattern)) { panic(); } // Should have attempted write.
-      if(0 != ((~eaTestPattern) & eeprom_read_byte((uint8_t*)EE_START_TEST_LOC2))) { panic(); } // Should have written.
-    }
-  if(eeprom_smart_clear_bits((uint8_t*)EE_START_TEST_LOC2, eaTestPattern)) { panic(); } // Should not need write nor attempt one.
-  }
+//// Self-test of EEPROM functioning (and smart/split erase/write).
+//// Will not usually perform any wear-inducing activity (is idempotent).
+//// Aborts with panic() upon failure.
+//static void testEEPROM()
+//  {
+//  DEBUG_SERIAL_PRINTLN_FLASHSTRING("EEPROM");
+//
+//  if((uint8_t) 0xff != eeprom_read_byte((uint8_t*)EE_START_TEST_LOC))
+//    {
+//    if(!eeprom_smart_erase_byte((uint8_t*)EE_START_TEST_LOC)) { panic(); } // Should have attempted erase.
+//    if((uint8_t) 0xff != eeprom_read_byte((uint8_t*)EE_START_TEST_LOC)) { panic(); } // Should have erased.
+//    }
+//  if(eeprom_smart_erase_byte((uint8_t*)EE_START_TEST_LOC)) { panic(); } // Should not need erase nor attempt one.
+//
+//  const uint8_t eaTestPattern = 0xa5; // Test pattern for masking (selective bit clearing).
+//  if(0 != ((~eaTestPattern) & eeprom_read_byte((uint8_t*)EE_START_TEST_LOC2))) // Will need to clear some bits.
+//    {
+//      if(!eeprom_smart_clear_bits((uint8_t*)EE_START_TEST_LOC2, eaTestPattern)) { panic(); } // Should have attempted write.
+//      if(0 != ((~eaTestPattern) & eeprom_read_byte((uint8_t*)EE_START_TEST_LOC2))) { panic(); } // Should have written.
+//    }
+//  if(eeprom_smart_clear_bits((uint8_t*)EE_START_TEST_LOC2, eaTestPattern)) { panic(); } // Should not need write nor attempt one.
+//  }
 
 // Test of FHT8V bitstream encoding and decoding.
 static void testFHTEncoding()
@@ -1564,7 +1564,7 @@ void loopUnitTest()
   testTempCompand();
   testEntropyGathering();
   testRTCPersist();
-  testEEPROM();
+  //testEEPROM();
   testQuartiles();
   testSmoothStatsValue();
   testSleepUntilSubCycleTime();

@@ -374,31 +374,5 @@ bool analogueVsBandgapRead(uint8_t aiNumber, bool napToSettle);
 //   powerUpIO if true then power up I/O (and power down after if so)
 uint8_t noisyADCRead(bool powerUpIO = true);
 
-// Capture a little system entropy.
-// This call should typically take << 1ms at 1MHz CPU.
-// Does not change CPU clock speeds, mess with interrupts (other than possible brief blocking), or do I/O, or sleep.
-// Should inject some noise into secure (TBD) and non-secure (RNG8) PRNGs, or at least churn them.
-void captureEntropy1();
-
-// Capture a little entropy from clock jitter between CPU and WDT clocks; possibly one bit of entropy captured.
-// Expensive in terms of CPU time and thus energy.
-uint_fast8_t clockJitterWDT();
-
-// Capture a little entropy from clock jitter between CPU and 32768Hz RTC clocks; possibly up to 2 bits of entropy captured.
-// Expensive in terms of CPU time and thus energy.
-#ifdef WAKEUP_32768HZ_XTAL
-uint_fast8_t clockJitterRTC();
-#else
-#define NO_clockJitterRTC
-#endif
-
-// Combined clock jitter techniques to generate approximately 8 bits (the entire result byte) of entropy efficiently on demand.
-// Expensive in terms of CPU time and thus energy, though possibly more efficient than basic clockJitterXXX() routines.
-#ifdef WAKEUP_32768HZ_XTAL
-uint_fast8_t clockJitterEntropyByte();
-#else
-#define NO_clockJitterEntropyByte
-#endif
-
 #endif
 
