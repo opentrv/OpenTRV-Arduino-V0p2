@@ -27,7 +27,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include "Serial_IO.h"
 
 #include "Power_Management.h"
-#include "RTC_Support.h"
 
 
 // Flush to use for all serialPrintXXX() and DEBUG_PRINTXXX routines.

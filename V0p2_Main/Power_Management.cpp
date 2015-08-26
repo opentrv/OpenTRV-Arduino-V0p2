@@ -26,7 +26,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include "Power_Management.h"
 
 #include "RFM22_Radio.h"
-#include "RTC_Support.h"
 #include "Serial_IO.h"
 
 
@@ -59,7 +58,7 @@ static bool _serialIsPoweredUp(); // Forward declaration.
 // Any module that may need to run all the time should not be turned off here.
 // May be called from panic(), so do not be too clever.
 // Does NOT attempt to power down the radio, eg in case that needs to be left in RX mode.
-// Does NOT attempt to power down the UART/serial.
+// Does NOT attempt to power down the hardware serial/UART.
 void minimisePowerWithoutSleep()
   {
   // Disable the watchdog timer.
@@ -134,20 +133,6 @@ void powerSetup()
   timer2XtalIntSetup();
 #endif
   }
-
-//#ifdef WAKEUP_32768HZ_XTAL
-//ISR(TIMER2_OVF_vect)
-//  {
-//  // Maintain RTC.
-//  // As long as this is very efficient the CPU can be left running slow.
-//#if defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
-//  tickDoubleSecondISR();
-//#else
-//  tickSecondISR();
-//#endif
-//  }
-//#endif
-
 
 
 
@@ -237,7 +222,7 @@ bool sleepUntilSubCycleTime(const uint8_t sleepUntil)
       continue;
       }
 
-    // Use low-power CPU sleep for residual time, but being very careful not to oversleep.
+    // Use low-power CPU sleep for residual time, but being very careful not to over-sleep.
     // Aim to sleep somewhat under residual time, eg to allow for overheads, interrupts, and other slippages.
     // Assumed to be > 1 else would have been special-cased above.
     // Assumed to be << 1s else a nap() would have been used above.
@@ -330,6 +315,7 @@ uint16_t analogueNoiseReducedRead(const uint8_t aiNumber, const uint8_t mode)
   { return(_analogueNoiseReducedReadM((mode << 6) | (aiNumber & 7))); }
 
 // Read from the specified analogue input vs the band-gap reference; true means AI > Vref.
+// Uses the comparator.
 //   * aiNumber is the analogue input number [0,7] for ATMega328P
 //   * napToSettle  if true then take a minimal sleep/nap to allow voltage to settle
 //       if input source relatively high impedance (>>10k)
@@ -387,9 +373,6 @@ bool analogueVsBandgapRead(const uint8_t aiNumber, const bool napToSettle)
   return(result);
   }
 
-
-//// Measure internal bandgap (1.1V nominal, 1.0--1.2V) as fraction of Vcc [0,1023].
-//static uint16_t read1V1wrtBattery() { return(_analogueNoiseReducedReadM(_BV(REFS0) | 14)); }
 
 // Default low-battery threshold suitable for 2xAA NiMH, with AVR BOD at 1.8V.
 #define BATTERY_LOW_MV 2000

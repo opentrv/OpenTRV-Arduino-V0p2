@@ -32,7 +32,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #ifdef USE_MODULE_FHT8VSIMPLE
 
 #include "Control.h"
-#include "EEPROM_Utils.h"
 #include "RFM22_Radio.h"
 #include "Messaging.h"
 #include "Power_Management.h"

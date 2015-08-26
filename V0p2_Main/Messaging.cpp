@@ -29,7 +29,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 
 #include <util/atomic.h>
 
-#include "EEPROM_Utils.h"
 #include "Control.h"
 #include "Power_Management.h"
 #include "RFM22_Radio.h"
