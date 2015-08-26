@@ -35,13 +35,12 @@ including interrupts and sleep.
 
 #include <OTV0p2Base.h>
 
-//#define USE_WDT_FOR_SHORT_DELAYS // If defined use WDT rather than slowing main system clock.
 
 // If CPU clock is 1MHz then *assume* that it is the 8MHz internal RC clock prescaled by 8 unless DEFAULT_CPU_PRESCALE is defined.
 #if F_CPU == 1000000L
-#ifndef DEFAULT_CPU_PRESCALE
-#define DEFAULT_CPU_PRESCALE 3
-#endif
+static const uint8_t DEFAULT_CPU_PRESCALE = 3;
+#else
+static const uint8_t DEFAULT_CPU_PRESCALE = 1;
 #endif
 
 //#ifndef DEFAULT_CPU_PRESCALE
@@ -49,9 +48,13 @@ including interrupts and sleep.
 //extern const clock_div_t DEFAULT_CPU_PRESCALE;
 //#endif
 
-#define MAX_CPU_PRESCALE clock_div_256 // At least for the ATmega328P...
-#define MIN_CPU_HZ ((F_CPU) >> (((int) MAX_CPU_PRESCALE) - (DEFAULT_CPU_PRESCALE)))
-
+static const clock_div_t MAX_CPU_PRESCALE = clock_div_256; // At least for the ATmega328P...
+// Minimum scaled CPU clock speed; expected to be 31250Hz when driven from 8MHz RC clock.
+#if F_CPU > 16000000L
+static const uint32_t MIN_CPU_HZ = ((F_CPU) >> (((int) MAX_CPU_PRESCALE) - (DEFAULT_CPU_PRESCALE)));
+#else
+static const uint16_t MIN_CPU_HZ = ((F_CPU) >> (((int) MAX_CPU_PRESCALE) - (DEFAULT_CPU_PRESCALE)));
+#endif
 
 // Sleep for specified number of _delay_loop2() loops at minimum available CPU speed.
 // Each loop takes 4 cycles at that minimum speed, but entry and exit overheads may take the equivalent of a loop or two.
@@ -154,8 +157,37 @@ int readInternalTemperatureC16();
 // Any module that may need to run all the time should not be turned off here.
 // May be called from panic(), so do not be too clever.
 // Does NOT attempt to power down the radio, eg in case that needs to be left in RX mode.
-// Does NOT attempt to power down the hardware serial/UART.
+// Does NOT attempt to adjust serial power state.
 void minimisePowerWithoutSleep();
+
+//// Sleep with BOD disabled in power-save mode; will wake on any interrupt.
+//// This particular API is not guaranteed to be maintained: please use sleepUntilInt() instead.
+//void sleepPwrSaveWithBODDisabled();
+//
+//// Sleep indefinitely in as lower-power mode as possible until a specified watchdog time expires, or another interrupt.
+//// May be useful to call minimsePowerWithoutSleep() first, when not needing any modules left on.
+//static inline void sleepUntilInt() { sleepPwrSaveWithBODDisabled(); }
+//
+//// Idle the CPU for specified time but leave everything else running (eg UART), returning on any interrupt or the watchdog timer.
+////   * watchdogSleep is one of the WDTO_XX values from <avr/wdt.h>
+//// Should reduce power consumption vs spinning the CPU more than 3x, though not nearly as much as nap().
+//// True iff watchdog timer expired; false if something else woke the CPU.
+//// Only use this if not disallowed for board type, eg with ENABLE_USE_OF_AVR_IDLE_MODE.
+//bool idleCPU(int_fast8_t watchdogSleep);
+//
+//// Sleep briefly in as lower-power mode as possible until the specified (watchdog) time expires.
+////   * watchdogSleep is one of the WDTO_XX values from <avr/wdt.h>
+//// May be useful to call minimsePowerWithoutSleep() first, when not needing any modules left on.
+//// NOTE: will stop clocks for UART, etc.
+//void nap(int_fast8_t watchdogSleep);
+//
+//// Sleep briefly in as lower-power mode as possible until the specified (watchdog) time expires, or another interrupt.
+////   * watchdogSleep is one of the WDTO_XX values from <avr/wdt.h>
+////   * allowPrematureWakeup if true then if woken before watchdog fires return false; default false
+//// Returns false if the watchdog timer did not go off, true if it did.
+//// May be useful to call minimsePowerWithoutSleep() first, when not needing any modules left on.
+//// NOTE: will stop clocks for UART, etc.
+//bool nap(int_fast8_t watchdogSleep, bool allowPrematureWakeup);
 
 // Call this to do an I/O poll if needed; returns true if something useful happened.
 // This call should typically take << 1ms at 1MHz CPU.
@@ -313,6 +345,7 @@ void powerDownTWI();
 //// Power down SPI.
 //void powerDownSPI();
 
+
 // Enable power to intermittent peripherals.
 //   * waitUntilStable  wait long enough (and maybe test) for I/O power to become stable.
 // Waiting for stable may only be necessary for those items hung from IO_POWER cap;
@@ -330,7 +363,6 @@ void power_intermittent_peripherals_disable();
 uint16_t analogueNoiseReducedRead(uint8_t aiNumber, uint8_t mode);
 
 // Read from the specified analogue input vs the band-gap reference; true means AI > Vref.
-// Uses the comparator.
 //   * aiNumber is the analogue input number [0,7] for ATMega328P
 //   * napToSettle  if true then take a minimal sleep/nap to allow voltage to settle
 //       if input source relatively high impedance (>>10k)
