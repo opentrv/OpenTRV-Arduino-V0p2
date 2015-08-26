@@ -213,7 +213,7 @@ class SimpleStatsRotationBase
     //       to allow for a trailing null and one extra byte/char to ensure that the message is not over-large
     //   * sensitivity  threshold below which (sensitive) stats will not be included; 0 means include everything
     //   * maximise  if true attempt to maximise the number of stats squeezed into each frame,
-    //       potentially at the cost of signficant CPU time
+    //       potentially at the cost of significant CPU time
     //   * suppressClearChanged  if true then 'changed' flag for included fields is not cleared by this
     //       allowing them to continue to be treated as higher priority
     uint8_t writeJSON(uint8_t * const buf, const uint8_t bufSize, const uint8_t sensitivity,
