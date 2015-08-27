@@ -135,11 +135,11 @@ void POSTalt()
     }
 
 
-  RFM23B.listen(true);
+//  RFM23B.listen(true);
   }
 
 
-#if defined(ALT_MAIN_LOOP) // Do not define handlers here when alt main is in use.
+#if defined(ALT_MAIN_LOOP)
 
 #if defined(MASK_PB) && (MASK_PB != 0) // If PB interrupts required.
 //// Interrupt count.  Marked volatile so safe to read without a lock as is a single byte.
@@ -189,26 +189,7 @@ ISR(PCINT2_vect)
 //  const uint8_t changes = pins ^ prevStatePD;
 //  prevStatePD = pins;
 //
-//#if defined(ENABLE_VOICE_SENSOR)
-////  // Voice detection is a falling edge.
-////  // Handler routine not required/expected to 'clear' this interrupt.
-////  // FIXME: ensure that Voice.handleInterruptSimple() is inlineable to minimise ISR prologue/epilogue time and space.
-////  if((changes & VOICE_INT_MASK) && !(pins & VOICE_INT_MASK))
-//  // Voice detection is a RISING edge.
-//  // Handler routine not required/expected to 'clear' this interrupt.
-//  // FIXME: ensure that Voice.handleInterruptSimple() is inlineable to minimise ISR prologue/epilogue time and space.
-//  if((changes & VOICE_INT_MASK) && (pins & VOICE_INT_MASK))
-//    { Voice.handleInterruptSimple(); }
-//#endif
-//
-//  // TODO: MODE button and other things...
-//
-//  // If an interrupt arrived from no other masked source then wake the CLI.
-//  // The will ensure that the CLI is active, eg from RX activity,
-//  // eg it is possible to wake the CLI subsystem with an extra CR or LF.
-//  // It is OK to trigger this from other things such as button presses.
-//  // FIXME: ensure that resetCLIActiveTimer() is inlineable to minimise ISR prologue/epilogue time and space.
-//  if(!(changes & MASK_PD & ~1)) { resetCLIActiveTimer(); }
+// ....
   }
 #endif
 
@@ -236,11 +217,10 @@ void loopAlt()
   powerDownSerial(); // Ensure that serial I/O is off.
   // Power down most stuff (except radio for hub RX).
   minimisePowerWithoutSleep();
-//  RFM22ModeStandbyAndClearState();
 #endif
   static uint_fast8_t TIME_LSD; // Controller's notion of seconds within major cycle.
   uint_fast8_t newTLSD;
-  while(TIME_LSD == (newTLSD = getSecondsLT()))
+  while(TIME_LSD == (newTLSD = OTV0P2BASE::getSecondsLT()))
     {
     // Poll I/O and process message incrementally (in this otherwise idle time)
     // before sleep and on wakeup in case some IO needs further processing now,
@@ -272,13 +252,13 @@ void loopAlt()
       // No h/w interrupt wakeup on receipt of frame,
       // so can only sleep for a short time between explicit poll()s,
       // though allow wake on interrupt anyway to minimise loop timing jitter.
-      nap(WDTO_15MS, true);
+      OTV0P2BASE::nap(WDTO_15MS, true);
       }
     else
       {
       // Normal long minimal-power sleep until wake-up interrupt.
       // Rely on interrupt to force fall through to I/O poll() below.
-      sleepUntilInt();
+      OTV0P2BASE::sleepUntilInt();
       }
 //    DEBUG_SERIAL_PRINTLN_FLASHSTRING("w"); // Wakeup.
 
@@ -300,14 +280,14 @@ void loopAlt()
   const bool neededWaking = powerUpSerialIfDisabled();
 
 
-#if defined(USE_MODULE_FHT8VSIMPLE)
-  // Try for double TX for more robust conversation with valve?
-  const bool doubleTXForFTH8V = false;
-  // FHT8V is highest priority and runs first.
-  // ---------- HALF SECOND #0 -----------
-  bool useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_First(doubleTXForFTH8V); // Time for extra TX before UI.
-//  if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@0"); }
-#endif
+//#if defined(USE_MODULE_FHT8VSIMPLE)
+//  // Try for double TX for more robust conversation with valve?
+//  const bool doubleTXForFTH8V = false;
+//  // FHT8V is highest priority and runs first.
+//  // ---------- HALF SECOND #0 -----------
+//  bool useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_First(doubleTXForFTH8V); // Time for extra TX before UI.
+////  if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@0"); }
+//#endif
 
 
 
@@ -377,41 +357,41 @@ void loopAlt()
 //#endif
 
 
-#if defined(USE_MODULE_FHT8VSIMPLE)
-  if(useExtraFHT8VTXSlots)
-    {
-    // Time for extra TX before other actions, but don't bother if minimising power in frost mode.
-    // ---------- HALF SECOND #1 -----------
-    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V); 
-//    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@1"); }
-    }
-#endif
+//#if defined(USE_MODULE_FHT8VSIMPLE)
+//  if(useExtraFHT8VTXSlots)
+//    {
+//    // Time for extra TX before other actions, but don't bother if minimising power in frost mode.
+//    // ---------- HALF SECOND #1 -----------
+//    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V); 
+////    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@1"); }
+//    }
+//#endif
 
 
 
 
 
-#if defined(USE_MODULE_FHT8VSIMPLE) && defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
-  if(useExtraFHT8VTXSlots)
-    {
-    // ---------- HALF SECOND #2 -----------
-    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V); 
-//    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@2"); }
-    }
-#endif
+//#if defined(USE_MODULE_FHT8VSIMPLE) && defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
+//  if(useExtraFHT8VTXSlots)
+//    {
+//    // ---------- HALF SECOND #2 -----------
+//    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V); 
+////    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@2"); }
+//    }
+//#endif
 
 
 
 
 
-#if defined(USE_MODULE_FHT8VSIMPLE) && defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
-  if(useExtraFHT8VTXSlots)
-    {
-    // ---------- HALF SECOND #3 -----------
-    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V); 
-//    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@3"); }
-    }
-#endif
+//#if defined(USE_MODULE_FHT8VSIMPLE) && defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
+//  if(useExtraFHT8VTXSlots)
+//    {
+//    // ---------- HALF SECOND #3 -----------
+//    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V); 
+////    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@3"); }
+//    }
+//#endif
 
 
 
