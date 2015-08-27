@@ -135,7 +135,7 @@ void POSTalt()
     }
 
 
-//  RFM23B.listen(true);
+  RFM23B.listen(true);
   }
 
 
@@ -228,17 +228,6 @@ void loopAlt()
     // or the in a previous orbit of this loop sleep or nap was terminated by an I/O interrupt.
     // Come back and have another go if work was done, until the next tick at most.
     if(handleQueuedMessages(&Serial, true, &RFM23B)) { continue; }
-
-//    RFM23B.poll();
-//    while(0 != RFM23B.getRXMsgsQueued())
-//      {
-//      uint8_t buf[65];
-//      const uint8_t msglen = RFM23B.getRXMsg(buf, sizeof(buf));
-//      const bool neededWaking = powerUpSerialIfDisabled();
-//      OTRadioLink::dumpRXMsg(buf, msglen);
-//      Serial.flush();
-//      if(neededWaking) { powerDownSerial(); }
-//      }
 
 // If missing h/w interrupts for anything that needs rapid response
 // then AVOID the lowest-power long sleep.
