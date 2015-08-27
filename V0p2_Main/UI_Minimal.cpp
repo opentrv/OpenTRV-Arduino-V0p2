@@ -785,11 +785,12 @@ static void InvalidIgnored() { Serial.println(F("Invalid, ignored.")); }
 #error "MIN_POLL_SCT > CLI_POLL_MIN_SCT" 
 #endif
 #define MIN_RX_BUFFER 16 // Minimum Arduino Serial RX buffer size.
-// DHD20131213: CAN_IDLE_15MS true seemed to be causing intermittent crashes.
-#ifdef ENABLE_USE_OF_AVR_IDLE_MODE
-#define CAN_IDLE_30MS ((BAUD <= 4800) || (MAXIMUM_CLI_RESPONSE_CHARS < MIN_RX_BUFFER)) // If true, cannot get RX overrun during 15--30ms idle.
+// DHD20131213: CAN_IDLE_15MS/idle15AndPoll() true seemed to be causing intermittent crashes.
+// DHD20150827: CAN_IDLE_15MS/idle15AndPoll() true causing crashes on 7% of REV9 boards.
+#if 1 // Allow use of IDLE mode.
+#define CAN_IDLE_15MS ((BAUD <= 4800) || (MAXIMUM_CLI_RESPONSE_CHARS < MIN_RX_BUFFER)) // If true, cannot get RX overrun during 15--30ms idle.
 #else
-#define CAN_IDLE_30MS (false)
+#define CAN_IDLE_15MS (false)
 #endif
 // Used to poll user side for CLI input until specified sub-cycle time.
 // Commands should be sent terminated by CR *or* LF; both may prevent 'E' (exit) from working properly.
@@ -876,11 +877,19 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
       break;
       }
     // Idle waiting for input, to save power, then/else do something useful with some CPU cycles...
-#if CAN_IDLE_30MS
+#if CAN_IDLE_15MS
     // Minimise power consumption leaving CPU/UART clock running, if no danger of RX overrun.
     // Don't do this too close to end of target end time to avoid missing it.
     // Note: may get woken on timer0 interrupts as well as RX and watchdog.
-    if(sct < targetMaxSCT-2) { idle15AndPoll(); continue; }
+    if(sct < targetMaxSCT-2)
+      {
+//      idle15AndPoll(); // COH-63 and others: crashes some REV0 and REV9 boards (reset).
+      // Rely on being woken by UART, or timer 0 (every ~16ms with 1MHz CPU), or backstop of timer 2.
+      set_sleep_mode(SLEEP_MODE_IDLE); // Leave everything running but the CPU...
+      sleep_mode();
+      pollIO(false);
+      continue;
+      }
 #endif
     burnHundredsOfCyclesProductivelyAndPoll(); // Use time time to poll for I/O, etc.
     }
