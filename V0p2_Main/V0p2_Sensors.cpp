@@ -394,9 +394,9 @@ static int Sensor_SHT21_readTemperatureC16()
   Wire.beginTransmission(SHT21_I2C_ADDR);
   Wire.write((byte) SHT21_I2C_CMD_TEMP_HOLD); // Select control register.
 #if defined(SHT21_USE_REDUCED_PRECISION)
-  nap(WDTO_30MS); // Should cover 12-bit conversion (22ms).
+  OTV0P2BASE::nap(WDTO_30MS); // Should cover 12-bit conversion (22ms).
 #else
-  sleepLowPowerMs(90); // Should be plenty for slowest (14-bit) conversion (85ms).
+  OTV0P2BASE::sleepLowPowerMs(90); // Should be plenty for slowest (14-bit) conversion (85ms).
 #endif
   //delay(100);
   Wire.endTransmission();
@@ -443,9 +443,9 @@ uint8_t HumiditySensorSHT21::read()
   Wire.beginTransmission(SHT21_I2C_ADDR);
   Wire.write((byte) SHT21_I2C_CMD_RH_HOLD); // Select control register.
 #if defined(SHT21_USE_REDUCED_PRECISION)
-  sleepLowPowerMs(5); // Should cover 8-bit conversion (4ms).
+  OTV0P2BASE::sleepLowPowerMs(5); // Should cover 8-bit conversion (4ms).
 #else
-  nap(WDTO_30MS); // Should cover even 12-bit conversion (29ms).
+  OTV0P2BASE::nap(WDTO_30MS); // Should cover even 12-bit conversion (29ms).
 #endif
   Wire.endTransmission();
   Wire.requestFrom(SHT21_I2C_ADDR, 3);
@@ -469,7 +469,7 @@ uint8_t HumiditySensorSHT21::read()
 
   // Capture entropy from raw status bits
   // iff (transformed) reading has changed.
-  if(value != result) { addEntropyToPool(rawRL ^ rawRH, 1); }
+  if(value != result) { OTV0P2BASE::addEntropyToPool(rawRL ^ rawRH, 1); }
 
   value = result;
   if(result > (HUMIDTY_HIGH_RHPC+HUMIDITY_EPSILON_RHPC)) { highWithHyst = true; }
@@ -747,7 +747,7 @@ int ExtTemperatureDS18B20C16::read()
   MinOW.write(0x44); // Start conversion without parasite power.
   //delay(750); // 750ms should be enough.
   // Poll for conversion complete (bus released)...
-  while(MinOW.read_bit() == 0) { nap(WDTO_15MS); }
+  while(MinOW.read_bit() == 0) { OTV0P2BASE::nap(WDTO_15MS); }
 
   // Fetch temperature (scratchpad read).
   MinOW.reset();

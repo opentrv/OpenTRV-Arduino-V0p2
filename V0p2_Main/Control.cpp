@@ -1204,7 +1204,7 @@ void sampleStats(const bool fullSample)
 
 #if defined(HUMIDITY_SENSOR_SUPPORT)
   // Relative humidity percent, if supported; last and smoothed data sets,
-  simpleUpdateStatsPair(EE_STATS_SET_RHPC_BY_HOUR, hh, smartDivToU8(rhpcTotal, sc));
+  simpleUpdateStatsPair(V0P2BASE_EE_STATS_SET_RHPC_BY_HOUR, hh, smartDivToU8(rhpcTotal, sc));
 #endif
 
 #if defined(EE_STATS_SET_WARMMODE_BY_HOUR_OF_WK)
@@ -1216,7 +1216,7 @@ void sampleStats(const bool fullSample)
   // Designed to enable low-wear no-write or selective erase/write use much of the time;
   // periods which are always the same mode will achieve a steady-state value (eliminating most EEPROM wear)
   // while even some of the rest (while switching over from all-WARM to all-FROST) will only need pure writes (no erase).
-  uint8_t *const phW = (uint8_t *)(EE_STATS_START_ADDR(EE_STATS_SET_WARMMODE_BY_HOUR_OF_WK) + hh);
+  uint8_t *const phW = (uint8_t *)(V0P2BASE_EE_STATS_START_ADDR(EE_STATS_SET_WARMMODE_BY_HOUR_OF_WK) + hh);
   const uint8_t warmHistory = eeprom_read_byte(phW);
   if(warmHistory & 0x80) { eeprom_smart_clear_bits(phW, inWarmMode() ? 0x7f : 0); } // First use sets all history bits to current sample value.
   else // Shift in today's sample bit value for this hour at bit 6...
