@@ -364,7 +364,7 @@ void setup()
   serialPrintAndFlush(F("\r\nOpenTRV: ")); // Leading CRLF to clear leading junk, eg from bootloader.
     serialPrintlnBuildVersion();
 #ifdef LED_UI2_EXISTS
-  nap(WDTO_120MS); // Sleep to let UI2 LED be seen.
+  OTV0P2BASE::nap(WDTO_120MS); // Sleep to let UI2 LED be seen.
   LED_UI2_OFF();
 #endif
 #endif
