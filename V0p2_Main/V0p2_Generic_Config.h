@@ -40,11 +40,11 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_Trial2013Winter_Round2 // REV2 cut4.
 //#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
-//#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
+#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
 //#define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
 //#define CONFIG_DORM1 // REV7 / DORM1 Winter 2014/2015 all-in-one valve unit.
 //#define CONFIG_DORM1_BOILER // REV8 / DORM1 Winter 2014/2015 boiler-control unit.
-#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
+//#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
 
 
 // One-offs and special cases.
@@ -90,6 +90,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define ALLOW_STATS_RX
 // IF DEFINED: allow TX of stats frames.
 #define ALLOW_STATS_TX
+// IF DEFINED: allow minimal binary format in addition to more generic one: ~400 bytes code cost.
+#undef ALLOW_MINIMAL_STATS_TXRX
 // IF DEFINED: allow JSON stats frames alongside binary ones.
 #define ALLOW_JSON_OUTPUT
 // IF DEFINED: (default) forced always-on radio listen/RX, eg not requiring setup to explicitly enable.
@@ -390,6 +392,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #undef ENABLE_FULL_OT_UI
 // IF DEFINED: basic FROST/WARM temperatures are settable.
 #undef SETTABLE_TARGET_TEMPERATURES
+// IF DEFINED: this unit supports CLI over the USB/serial connection, eg for run-time reconfig.
+#define SUPPORT_CLI
 // IF DEFINED: enable and extended CLI with a longer input buffer for example.
 #define ENABLE_EXTENDED_CLI
 // IF DEFINED: support for general timed and multi-input occupancy detection / use.
@@ -405,7 +409,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #endif
 
 
-#ifdef CONFIG_REV9_STATS // REV9 cut2, derived from REV4, as stats node.
+#ifdef CONFIG_REV9_STATS // REV9 cut2, derived from REV4, as stats node, for testing.
 #define V0p2_REV 9
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
 #define SENSOR_SHT21_ENABLE
@@ -511,14 +515,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define USE_RTC_INTERNAL_SIMPLE // Provide software RTC support by default.
 // IF DEFINED: support one on and one off time per day (possibly in conjunction with 'learn' button).
 #define SUPPORT_SINGLETON_SCHEDULE
-// IF DEFINED: this unit can act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
-//#define ENABLE_BOILER_HUB // NOT defined by default to allow omission for pure leaf nodes.
-//// IF DEFINED: allow TX of stats frames.
-//#define ALLOW_STATS_TX
-// IF DEFINED: allow RX of stats frames.
-//#define ALLOW_STATS_RX
-// IF DEFINED: allow minimal binary format in addition to more generic one: ~400 bytes.
-//#define ALLOW_MINIMAL_STATS_TXRX
 #endif
 
 

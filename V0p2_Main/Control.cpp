@@ -2271,7 +2271,7 @@ void loopOpenTRV()
         {
         pollIO(); // Deal with any pending I/O.
         // Sleep randomly up to 128ms to spread transmissions and thus help avoid collisions.
-        sleepLowPowerLessThanMs(1 + (OTV0P2BASE::randRNG8() & 0x7f));
+        OTV0P2BASE::sleepLowPowerLessThanMs(1 + (OTV0P2BASE::randRNG8() & 0x7f));
 //        nap(randRNG8NextBoolean() ? WDTO_60MS : WDTO_120MS); // FIXME: need a different random interval generator!
         handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O.
         // Send it!

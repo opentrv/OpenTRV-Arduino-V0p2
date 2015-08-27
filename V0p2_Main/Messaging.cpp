@@ -207,7 +207,7 @@ void outputMinimalStats(Print *p, bool secure, uint8_t id0, uint8_t id1, const t
 // True if the TX_ENABLE value is no higher than stTXmostUnsec.
 // Some filtering may be required even if this is true.
 // TODO: allow cacheing in RAM for speed.
-bool enableTrailingStatsPayload() { return(eeprom_read_byte((uint8_t *)EE_START_STATS_TX_ENABLE) <= stTXmostUnsec); }
+bool enableTrailingStatsPayload() { return(eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_STATS_TX_ENABLE) <= stTXmostUnsec); }
 #endif
 #endif
 
