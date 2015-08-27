@@ -1351,7 +1351,7 @@ bool getSwitchToggleStateCO() { return(switch_toggle_state); }
 // The boost button for the CO relay is BUTTON_MODE_L.
 // This routine/UI cares about off-to-on active edges of the button, ie the moment of being pressed,
 // at which it will:
-//    * turn the user0visible LED solid red (for a while)
+//    * turn the user-visible LED solid red (for a while)
 //    * flip the status flag providing it has been more than 30 minutes since the last one
 //      (this 30 minutes being the time at which contact with the hub would be deemed lost if no comms)
 //    * send an alert message immediately (with the usual 'likely-to-get-heard loudness settings)
