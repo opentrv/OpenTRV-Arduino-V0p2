@@ -264,9 +264,9 @@ void loopAlt()
 
 //  DEBUG_SERIAL_PRINTLN_FLASHSTRING("*");
 
-  // Power up serail for the loop body.
-  // May just want to turn it on in POSTalt() and leave it on...
-  const bool neededWaking = powerUpSerialIfDisabled();
+//  // Power up serail for the loop body.
+//  // May just want to turn it on in POSTalt() and leave it on...
+//  const bool neededWaking = powerUpSerialIfDisabled();
 
 
 //#if defined(USE_MODULE_FHT8VSIMPLE)
@@ -384,6 +384,24 @@ void loopAlt()
 
 
 
+  // Command-Line Interface (CLI) polling.
+  // If a reasonable chunk of the minor cycle remains after all other work is done
+  // AND the CLI is / should be active OR a status line has just been output
+  // then poll/prompt the user for input
+  // using a timeout which should safely avoid overrun, ie missing the next basic tick,
+  // and which should also allow some energy-saving sleep.
+#if 1 // && defined(SUPPORT_CLI)
+  if(true)
+    {
+    const uint8_t sct = getSubCycleTime();
+    const uint8_t listenTime = max(GSCT_MAX/16, CLI_POLL_MIN_SCT);
+    if(sct < (GSCT_MAX - 2*listenTime))
+      // Don't listen beyond the last 16th of the cycle,
+      // or a minimal time if only prodding for interaction with automated front-end,
+      // as listening for UART RX uses lots of power.
+      { pollCLI(OTV0P2BASE::randRNG8NextBoolean() ? (GSCT_MAX-listenTime) : (sct+CLI_POLL_MIN_SCT), 0 == TIME_LSD); }
+    }
+#endif
 
 
 
@@ -395,9 +413,9 @@ void loopAlt()
 
 
 
-  // Force any pending output before return / possible UART power-down.
-  flushSerialSCTSensitive();
-  if(neededWaking) { powerDownSerial(); }
+//  // Force any pending output before return / possible UART power-down.
+//  flushSerialSCTSensitive();
+//  if(neededWaking) { powerDownSerial(); }
   }
 
 
