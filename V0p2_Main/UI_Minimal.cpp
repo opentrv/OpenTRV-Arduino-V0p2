@@ -786,10 +786,11 @@ static void InvalidIgnored() { Serial.println(F("Invalid, ignored.")); }
 #endif
 #define MIN_RX_BUFFER 16 // Minimum Arduino Serial RX buffer size.
 // DHD20131213: CAN_IDLE_15MS true seemed to be causing intermittent crashes.
-#ifdef ENABLE_USE_OF_AVR_IDLE_MODE
-#define CAN_IDLE_30MS ((BAUD <= 4800) || (MAXIMUM_CLI_RESPONSE_CHARS < MIN_RX_BUFFER)) // If true, cannot get RX overrun during 15--30ms idle.
+// DHD20150827: CAN_IDLE_15MS true causing crashes on 7% of REV9 boards.
+#if 0 && defined(ENABLE_USE_OF_AVR_IDLE_MODE)
+#define CAN_IDLE_15MS ((BAUD <= 4800) || (MAXIMUM_CLI_RESPONSE_CHARS < MIN_RX_BUFFER)) // If true, cannot get RX overrun during 15--30ms idle.
 #else
-#define CAN_IDLE_30MS (false)
+#define CAN_IDLE_15MS (false)
 #endif
 // Used to poll user side for CLI input until specified sub-cycle time.
 // Commands should be sent terminated by CR *or* LF; both may prevent 'E' (exit) from working properly.
@@ -876,7 +877,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
       break;
       }
     // Idle waiting for input, to save power, then/else do something useful with some CPU cycles...
-#if CAN_IDLE_30MS
+#if CAN_IDLE_15MS
     // Minimise power consumption leaving CPU/UART clock running, if no danger of RX overrun.
     // Don't do this too close to end of target end time to avoid missing it.
     // Note: may get woken on timer0 interrupts as well as RX and watchdog.
