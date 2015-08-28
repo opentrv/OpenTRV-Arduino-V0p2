@@ -231,25 +231,27 @@ void loopAlt()
 
 // If missing h/w interrupts for anything that needs rapid response
 // then AVOID the lowest-power long sleep.
-#if CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX && !defined(PIN_RFM_NIRQ)
-#define MUST_POLL_FREQUENTLY true
-#else
-#define MUST_POLL_FREQUENTLY false
-#endif
-    if(MUST_POLL_FREQUENTLY /** && in hub mode */ )
-      {
-      // No h/w interrupt wakeup on receipt of frame,
-      // so can only sleep for a short time between explicit poll()s,
-      // though allow wake on interrupt anyway to minimise loop timing jitter.
-      OTV0P2BASE::nap(WDTO_15MS, true);
-      }
-    else
-      {
-      // Normal long minimal-power sleep until wake-up interrupt.
-      // Rely on interrupt to force fall through to I/O poll() below.
-      OTV0P2BASE::sleepUntilInt();
-      }
-//    DEBUG_SERIAL_PRINTLN_FLASHSTRING("w"); // Wakeup.
+//#if CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX && !defined(PIN_RFM_NIRQ)
+//#define MUST_POLL_FREQUENTLY true
+//#else
+//#define MUST_POLL_FREQUENTLY false
+//#endif
+//    if(MUST_POLL_FREQUENTLY /** && in hub mode */ )
+//      {
+//      // No h/w interrupt wakeup on receipt of frame,
+//      // so can only sleep for a short time between explicit poll()s,
+//      // though allow wake on interrupt anyway to minimise loop timing jitter.
+//      OTV0P2BASE::nap(WDTO_15MS, true);
+//      }
+//    else
+//      {
+//      // Normal long minimal-power sleep until wake-up interrupt.
+//      // Rely on interrupt to force fall through to I/O poll() below.
+//      OTV0P2BASE::sleepUntilInt();
+//      }
+////    DEBUG_SERIAL_PRINTLN_FLASHSTRING("w"); // Wakeup.
+
+    idle15AndPoll(); // Attempt to crash the board!
 
     }
   TIME_LSD = newTLSD;
