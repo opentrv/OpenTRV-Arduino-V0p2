@@ -1917,7 +1917,7 @@ void loopOpenTRV()
         if(getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
         else { serialPrintlnAndFlush(F("RCfH1")); } // Remote call for heat on.
         }
-      boilerCountdownTicks = getMinBoilerOnMinutes() * (60/MAIN_TICK_S);
+      boilerCountdownTicks = getMinBoilerOnMinutes() * (60 / OTV0P2BASE::MAIN_TICK_S);
       boilerNoCallM = 0; // No time has passed since the last call.
       }
     // Else count down towards boiler off.
@@ -1949,12 +1949,12 @@ void loopOpenTRV()
     //    Longish period without any RX listening may allow hub unit to cool and get better sample of local temperature if marginal.
     // Aim to listen in one stretch for greater than full FHT8V TX cycle of ~2m to avoid missing a call for heat.
     // MUST listen for all of final 2 mins of boiler-on to avoid missing TX (without forcing boiler over-run).
-    else if((boilerCountdownTicks <= ((MAX_FHT8V_TX_CYCLE_HS+1)/(2*MAIN_TICK_S))) && // Don't miss a final TX that would keep the boiler on...
+    else if((boilerCountdownTicks <= ((MAX_FHT8V_TX_CYCLE_HS+1)/(2 * OTV0P2BASE::MAIN_TICK_S))) && // Don't miss a final TX that would keep the boiler on...
        (boilerCountdownTicks != 0)) // But don't force unit to listen/RX all the time if no recent call for heat.
       { needsToEavesdrop = true; }
     else if((!heardIt) &&
        (!minute0From4ForSensors) &&
-       (boilerCountdownTicks <= (RX_REDUCE_MIN_M*(60/MAIN_TICK_S)))) // Listen eagerly for fresh calls for heat for last few minutes before turning boiler off.
+       (boilerCountdownTicks <= (RX_REDUCE_MIN_M*(60 / OTV0P2BASE::MAIN_TICK_S)))) // Listen eagerly for fresh calls for heat for last few minutes before turning boiler off.
       {
 #if defined(RX_REDUCE_MAX_M) && defined(LOCAL_TRV)
       // Skip the minute before the 'quiet' minute also in very quiet mode to improve local temp measurement.
@@ -2361,7 +2361,7 @@ void loopOpenTRV()
           {
 #if 1 && defined(DEBUG)
           DEBUG_SERIAL_PRINT_FLASHSTRING("Boiler on, s: ");
-          DEBUG_SERIAL_PRINT(boilerCountdownTicks * MAIN_TICK_S);
+          DEBUG_SERIAL_PRINT(boilerCountdownTicks * OTV0P2BASE::MAIN_TICK_S);
           DEBUG_SERIAL_PRINTLN();
 #endif
           }
