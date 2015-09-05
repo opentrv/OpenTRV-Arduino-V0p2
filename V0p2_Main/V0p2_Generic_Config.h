@@ -37,6 +37,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 // Production configs.
 //#define CONFIG_Trial2013Winter_Round1 // REV1.
+#define CONFIG_Trial2013Winter_Round1_BOILERHUB // REV1 as boiler node.
 //#define CONFIG_Trial2013Winter_Round2 // REV2 cut4.
 //#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
@@ -44,7 +45,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
 //#define CONFIG_DORM1 // REV7 / DORM1 Winter 2014/2015 all-in-one valve unit.
 //#define CONFIG_DORM1_BOILER // REV8 / DORM1 Winter 2014/2015 boiler-control unit.
-#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
+//#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
 
 
 // One-offs and special cases.
@@ -132,6 +133,22 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #undef ENABLE_BOILER_HUB
 // IF UNDEFINED: don't allow RX of stats frames (since there is no easy way to plug in a serial connection to relay them!)
 #undef ALLOW_STATS_RX
+// Use common settings.
+#define COMMON_SETTINGS
+#endif
+
+#ifdef CONFIG_Trial2013Winter_Round1_BOILERHUB // REV1 as boiler hub.
+#define V0p2_REV 1
+// IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
+#define LOCAL_TRV
+// IF DEFINED: this unit controls a valve, but provides slave valve control only.
+#undef SLAVE_TRV
+// IF DEFINED: this unit *can* act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
+#define ENABLE_BOILER_HUB
+// IF DEFINED: allow RX of stats frames.
+#undef ALLOW_STATS_RX
+// IF DEFINED: allow TX of stats frames.
+#undef ALLOW_STATS_TX
 // Use common settings.
 #define COMMON_SETTINGS
 #endif
