@@ -37,7 +37,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 // Production configs.
 //#define CONFIG_Trial2013Winter_Round1 // REV1 default config.
-#define CONFIG_Trial2013Winter_Round1_LVBHSH // REV1: local valve control, boiler hub, stats hub & TX.
+//#define CONFIG_Trial2013Winter_Round1_LVBHSH // REV1: local valve control, boiler hub, stats hub & TX.
+#define CONFIG_Trial2013Winter_Round1_NOHUB // REV1 as TX-only leaf node.
 //#define CONFIG_Trial2013Winter_Round1_BOILERHUB // REV1 as plain boiler node.
 //#define CONFIG_Trial2013Winter_Round2 // REV2 cut4 default config.
 //#define CONFIG_Trial2013Winter_Round2_LVBHSH // REV2 cut4: local valve control, boiler hub, stats hub & TX.
@@ -167,6 +168,16 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define ALLOW_STATS_RX
 // IF DEFINED: allow TX of stats frames.
 #undef ALLOW_STATS_TX // Don't allow it to TX its own...
+#endif
+
+#ifdef CONFIG_Trial2013Winter_Round1_NOHUB // REV1 as TX-only leaf node.
+#define CONFIG_Trial2013Winter_Round1 // Just like normal REV2 except...
+// IF DEFINED: this unit can act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
+#undef ENABLE_BOILER_HUB
+// IF DEFINED: allow RX of stats frames.
+#undef ALLOW_STATS_RX
+// IF DEFINED: allow TX of stats frames.
+#define ALLOW_STATS_TX
 #endif
 
 #ifdef CONFIG_Trial2013Winter_Round1 // For trial over winter of 2013--4, first round (REV1).
