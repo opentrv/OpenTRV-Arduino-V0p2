@@ -258,16 +258,20 @@ void optionalPOST()
 //  posPOST(1, F("about to test radio module"));
 
 #ifdef USE_MODULE_RFM22RADIOSIMPLE
+// TODO-547: why does nested SPI enable break things?
+//  const bool neededToWakeSPI = OTV0P2BASE::powerUpSPIIfDisabled();
+//  DEBUG_SERIAL_PRINT(neededToWakeSPI);
+//  DEBUG_SERIAL_PRINTLN();
 #if !defined(RFM22_IS_ACTUALLY_RFM23) && defined(DEBUG) && !defined(MIN_ENERGY_BOOT)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("(Using RFM22.)");
 #endif
   // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
-  //RFM22PowerOnInit();
   RFM23B.preinit(NULL);
   // Check that the radio is correctly connected; panic if not...
   if(!RFM23B.configure(1, &RFMConfig) || !RFM23B.begin()) { panic(); }
   // Apply filtering, if any, while we're having fun...
   RFM23B.setFilterRXISR(FilterRXISR);
+//  if(neededToWakeSPI) { OTV0P2BASE::powerDownSPI(); }
 #endif
 
 //  posPOST(1, F("Radio OK, checking buttons/sensors and xtal"));
