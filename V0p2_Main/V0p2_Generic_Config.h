@@ -116,7 +116,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
 #undef SENSOR_SHT21_ENABLE
 // IF DEFINED: enable use AVR's 'idle' mode to stop the CPU but leave I/O (eg Serial) running to save power.
-#define ENABLE_USE_OF_AVR_IDLE_MODE
+// DHD20150920: CURRENTLY NOT RECOMMENDED AS STILL SEEMS TO CAUSE SOME BOARDS TO CRASH.
+#undef ENABLE_USE_OF_AVR_IDLE_MODE
 
 
 

@@ -112,12 +112,15 @@ bool pollIO(bool force = false);
 // Typically sleeps for about 30ms; tries to allow earlier wakeup if interrupt is received, etc.
 // True iff watchdog timer expired; false if something else woke the CPU.
 static bool inline nap15AndPoll() { const bool wd = ::OTV0P2BASE::nap(WDTO_15MS, true); pollIO(!wd); return(wd); }
+
+#if !defined(OTV0P2BASE_IDLE_NOT_RECOMMENDED) && defined(ENABLE_USE_OF_AVR_IDLE_MODE)
 // Idle productively polling I/O, etc, across the system while spending time in low-power mode if possible.
 // Typically sleeps for nominally up to 30ms; tries to allow earlier wakeup if interrupt is received, etc.
 // (Will often be prematurely woken by timer0 with ~16ms interval.)
 // True iff watchdog timer expired; false if something else woke the CPU.
 // Only use this if not disallowed for board type, eg with ENABLE_USE_OF_AVR_IDLE_MODE.
-static bool inline idle15AndPoll() { const bool wd = ::OTV0P2BASE::idleCPU(WDTO_15MS, true); pollIO(!wd); return(wd); }
+static bool inline idle15AndPoll() { const bool wd = ::OTV0P2BASE::_idleCPU(WDTO_15MS, true); pollIO(!wd); return(wd); }
+#endif
 
 // Call this to productively burn tens to hundreds of CPU cycles, and poll I/O, eg in a busy-wait loop.
 // This may churn PRNGs or gather entropy for example.
