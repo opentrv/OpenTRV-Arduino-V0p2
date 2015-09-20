@@ -1707,7 +1707,7 @@ ISR(PCINT0_vect)
   }
 #endif
 
-#if defined(MASK_PC) && (MASK_PC != 0) // If PB interrupts required.
+#if defined(MASK_PC) && (MASK_PC != 0) // If PC interrupts required.
 // Previous state of port C pins to help detect changes.
 static volatile uint8_t prevStatePC;
 // Interrupt service routine for PC I/O port transition changes.
@@ -1721,6 +1721,7 @@ ISR(PCINT1_vect)
   }
 #endif
 
+#if defined(MASK_PD) && (MASK_PD != 0) // If PD interrupts required.
 // Previous state of port D pins to help detect changes.
 static volatile uint8_t prevStatePD;
 // Interrupt service routine for PD I/O port transition changes (including RX).
@@ -1752,6 +1753,8 @@ ISR(PCINT2_vect)
   if(!(changes & MASK_PD & ~1)) { resetCLIActiveTimer(); }
   }
 #endif
+
+#endif // !defined(ALT_MAIN_LOOP) // Do not define handlers here when alt main is in use.
 
 
 #ifdef ENABLE_BOILER_HUB
