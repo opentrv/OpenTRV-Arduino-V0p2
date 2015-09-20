@@ -37,8 +37,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 // Production configs.
 //#define CONFIG_Trial2013Winter_Round1 // REV1.
-#define CONFIG_Trial2013Winter_Round1_BOILERHUB // REV1 as boiler node.
-//#define CONFIG_Trial2013Winter_Round2 // REV2 cut4.
+//#define CONFIG_Trial2013Winter_Round1_BOILERHUB // REV1 as boiler node.
+//#define CONFIG_Trial2013Winter_Round2 // REV2 cut4 default config (local valve, boiler hub, stats hub).
+#define CONFIG_Trial2013Winter_Round2_LVBHSH // REV2 cut4: local valve, boiler hub, stats hub.
 //#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
 //#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
@@ -122,7 +123,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 
 
-// -------------------------
+// ------------------------- REV1
 
 #ifdef CONFIG_Trial2013Winter_Round1 // For trial over winter of 2013--4, first round (REV1).
 // Revision REV1 of V0.2 board.
@@ -170,7 +171,27 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #endif
 
 
-// -------------------------
+// ------------------------- REV2
+
+#ifdef CONFIG_Trial2013Winter_Round2_LVBHSH // REV2 cut4: valve controller, boiler hub, stats hub.
+#define CONFIG_Trial2013Winter_Round2 // Just like normal REV2 except...
+// IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
+#define LOCAL_TRV
+// IF DEFINED: this unit controls a valve, but provides slave valve control only.
+#undef SLAVE_TRV
+// IF DEFINED: this unit can act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
+#define ENABLE_BOILER_HUB
+// IF DEFINED: allow RX of stats frames.
+#define ALLOW_STATS_RX
+// IF DEFINED: allow TX of stats frames.
+#define ALLOW_STATS_TX
+// IF DEFINED: use active-low LEARN button(s).  Needs SUPPORT_SINGLETON_SCHEDULE.
+#define LEARN_BUTTON_AVAILABLE // OPTIONAL ON V0.09 PCB1
+// IF DEFINED: this unit supports CLI over the USB/serial connection, eg for run-time reconfig.
+#define SUPPORT_CLI
+// IF DEFINED: support for general timed and multi-input occupancy detection / use.
+#define OCCUPANCY_SUPPORT
+#endif
 
 #ifdef CONFIG_Trial2013Winter_Round2_BOILERHUB // For trial over winter of 2013--4, second round (REV2), as pure boiler hub.
 #define CONFIG_Trial2013Winter_Round2 // Just like normal REV2 except...
@@ -204,6 +225,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define ALLOW_STATS_TX
 #endif
 
+
 #ifdef CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
 #define CONFIG_Trial2013Winter_Round2 // Just like normal REV2 except...
 // IF DEFINED: this unit can act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
@@ -232,6 +254,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define ALLOW_CC1_SUPPORT
 #define ALLOW_CC1_SUPPORT_HUB
 #endif
+
 
 #ifdef CONFIG_Trial2013Winter_Round2 // For trial over winter of 2013--4, second round (REV2).
 // Revision REV2 (cut4+) of V0.2 board.

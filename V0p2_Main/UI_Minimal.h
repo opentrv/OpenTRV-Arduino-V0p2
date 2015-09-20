@@ -64,6 +64,7 @@ The OpenTRV project licenses this file to you
 #include <stdint.h>
 
 #include "V0p2_Main.h"
+#include "Control.h" // To get ENABLE_NOMINAL_RAD_VALVE etc.
 
 
 

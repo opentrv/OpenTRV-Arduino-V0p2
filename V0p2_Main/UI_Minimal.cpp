@@ -551,7 +551,7 @@ void serialStatusReport()
 #else
   Serial.print(inWarmMode() ? 'W' : 'F');
 #endif
-#ifdef ENABLE_NOMINAL_RAD_VALVE
+#if defined(ENABLE_NOMINAL_RAD_VALVE)
   Serial.print(NominalRadValve.get()); Serial.print('%'); // Target valve position.
 #endif
   const int temp = TemperatureC16.get();
