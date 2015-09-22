@@ -545,7 +545,6 @@ bool powerUpSerialIfDisabled()
   return(true);
   }
 
-#if 1
 // Flush any pending UART TX bytes in the hardware if UART is enabled, eg useful after Serial.flush() and before sleep.
 void flushSerialHW()
   {
@@ -558,7 +557,6 @@ void flushSerialHW()
   while(!(UCSR0A & _BV(TXC0))) { } // Wait for the transmission to complete.
   return;
   }
-#endif
 
 #ifndef flushSerialProductive
 // Does a Serial.flush() attempting to do some useful work (eg I/O polling) while waiting for output to drain.
