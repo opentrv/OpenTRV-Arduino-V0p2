@@ -46,7 +46,9 @@ void loopOpenTRV();
 // Default frost (minimum) temperature in degrees C, strictly positive, in range [MIN_TARGET_C,MAX_TARGET_C].
 // Setting frost temperatures at a level likely to protect (eg) fridge/freezers as well as water pipes.
 // Note that 5C or below carries a risk of hypothermia: http://ipc.brookes.ac.uk/publications/pdf/Identifying_the_health_gain_from_retirement_housing.pdf
-#define BIASECO_FROST (max(7,MIN_TARGET_C)) // Target FROST temperature for ECO bias; must be in range [MIN_TARGET_C,BIASCOM_FROST[.
+// Other parts of the room may be somewhat colder than where the sensor is, so aim a little over 5C.
+// Note: BS EN 215:2004 S5.3.5 says maximum setting must be <= 32C, minimum in range [5C,12C].
+#define BIASECO_FROST (max(6,MIN_TARGET_C)) // Target FROST temperature for ECO bias; must be in range [MIN_TARGET_C,BIASCOM_FROST[.
 #define BIASCOM_FROST (max(12,MIN_TARGET_C)) // Target FROST temperature for Comfort bias; must be in range ]BIASECO_FROST,MAX_TARGET_C].
 #define FROST BIASECO_FROST
 // 18C is a safe room temperature even for the slightly infirm according to NHS England 2014:
@@ -62,6 +64,7 @@ void loopOpenTRV();
 // Set so that mid-point is at ~19C (BRE and others regard this as minimum comfort temperature)
 // and half the scale will be below 19C and thus save ('eco') compared to typical UK room temperatures.
 // (17/18 good for energy saving at ~1C below typical UK room temperatures of ~19C in 2012).
+// Note: BS EN 215:2004 S5.3.5 says maximum setting must be <= 32C, minimum in range [5C,12C].
 #define BIASECO_WARM 17 // Target WARM temperature for ECO bias; must be in range ]BIASCOM_FROST+1,BIASCOM_WARM[.
 #define BIASCOM_WARM 21 // Target WARM temperature for Comfort bias; must be in range ]BIASECO_WARM,MAX_TARGET_C-BAKE_UPLIFT-1].
 #else // Default settings for DHW control.
