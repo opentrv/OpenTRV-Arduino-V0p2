@@ -59,8 +59,8 @@ void loopOpenTRV();
 #define SAFE_ROOM_TEMPERATURE 18 // Safe for most purposes.
 // Default warm/comfort room (air) temperature in degrees C; strictly greater than FROST, in range [MIN_TARGET_C,MAX_TARGET_C].
 // Control loop effectively targets upper end of this 1C window as of 20130518, middle as of 20141209.
-#ifndef DHW_TEMPERATURES
 
+#ifndef DHW_TEMPERATURES // Settings for room TRV.
 // Set so that mid-point is at ~19C (BRE and others regard this as minimum comfort temperature)
 // and half the scale will be below 19C and thus save ('eco') compared to typical UK room temperatures.
 // (17/18 good for energy saving at ~1C below typical UK room temperatures of ~19C in 2012).
