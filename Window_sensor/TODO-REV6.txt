@@ -1,0 +1,18 @@
+Outstanding issues with the PCB for rev 6.
+
+
+
+TODO (initials/date for who noted the issue) - FIRST STEP IS ONLY ONE ALLOWED TO BE WORKED ON SO FAR
+
+
+
+
+
+
+
+
+BELOW is things to remember when sending off to fab:
+
+BH20130916: for reflow go with ENIG finish - also important for TMP
+DHD20130703: Send *ALL* generated Gerbers (eg including GML for milling)! 
+BH20130916: TIP: normal I just zip up the gerbers and eagle files.. fab house did not have a problem with this last i send something off
