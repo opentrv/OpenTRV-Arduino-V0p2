@@ -34,6 +34,11 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include "UI_Minimal.h"
 
 
+#ifdef ENABLE_BOILER_HUB
+// True if boiler should be on.
+static bool isBoilerOn();
+#endif
+
 // If true then is in WARM (or BAKE) mode; defaults to (starts as) false/FROST.
 // Should be only be set when 'debounced'.
 // Defaults to (starts as) false/FROST.
@@ -1376,13 +1381,13 @@ bool pollIO(const bool force)
   return(false);
   }
 
+#ifdef ALLOW_STATS_TX
 
 #if defined(ALLOW_JSON_OUTPUT)
 // Managed JSON stats.
-static SimpleStatsRotation<8> ss1; // Configured for maximum different stats.
+static SimpleStatsRotation<9> ss1; // Configured for maximum different stats.
 #endif
 
-#ifdef ALLOW_STATS_TX
 // Do bare stats transmission.
 // Output should be filtered for items appropriate
 // to current channel security and sensitivity level.
@@ -1431,7 +1436,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
     }
 
 #if defined(ALLOW_JSON_OUTPUT)
-  else // Send binary or JSON on each attempt so as not to overwhelm the receiver.
+  else // Send binary *or* JSON on each attempt so as not to overwhelm the receiver.
     {
     // Send JSON message.        
     uint8_t *bptr = buf + STATS_MSG_START_OFFSET;
@@ -1443,9 +1448,9 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
     const bool maximise = true; // Make best use of available bandwidth...
     if(ss1.isEmpty())
       {
-#ifdef DEBUG
+//#ifdef DEBUG
       ss1.enableCount(true); // For diagnostic purposes, eg while TX is lossy.
-#endif
+//#endif
 //      // Try and get as much out on the first TX as possible.
 //      maximise = true;
       }
@@ -1460,8 +1465,12 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
     // OPTIONAL items
     // Only TX supply voltage for units apparently not mains powered.
     if(!Supply_mV.isMains()) { ss1.put(Supply_mV); } else { ss1.remove(Supply_mV.tag()); }
+#ifdef ENABLE_BOILER_HUB
+    // Show boiler state for boiler hubs.
+    ss1.put("b", (int) isBoilerOn());
+#endif
 #if !defined(LOCAL_TRV) // Deploying as sensor unit, not TRV controller, so show all sensors and no TRV stuff.
-    // Only show ambient light levels for non-TRV pure-sensor units.
+    // Only show raw ambient light levels for non-TRV pure-sensor units.
     ss1.put(AmbLight);
 #else
     ss1.put(NominalRadValve);
@@ -1470,6 +1479,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
     ss1.put(NominalRadValve.tagCMPC(), NominalRadValve.getCumulativeMovementPC()); // EXPERIMENTAL
 #endif
 #endif
+
     // If not doing a doubleTX then consider sometimes suppressing the change-flag clearing for this send
     // to reduce the chance of important changes being missed by the receiver.
     wrote = ss1.writeJSON(bptr, sizeof(buf) - (bptr-buf), getStatsTXLevel(), maximise); // , !allowDoubleTX && randRNG8NextBoolean());
@@ -1479,12 +1489,6 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
       return;
       }
 
-#if 0 /* || !defined(ENABLE_BOILER_HUB) */ && defined(DEBUG)
-    DEBUG_SERIAL_PRINT((const char *)bptr);
-    DEBUG_SERIAL_PRINTLN(); 
-#endif
-    // Record stats as if local, and treat channel as secure.
-//    recordJSONStats(true, (const char *)bptr);
     outputJSONStats(&Serial, true, bptr, sizeof(buf) - (bptr-buf)); // Serial must already be running!
     handleQueuedMessages(&Serial, false, &RFM23B); // Serial must already be running!
     // Adjust JSON message for transmission.
@@ -1542,6 +1546,8 @@ static uint8_t localTicks;
 // Ticks are the mail loop time, 1s or 2s.
 // Used in hub mode only.
 static uint16_t boilerCountdownTicks;
+// True if boiler should be on.
+static bool isBoilerOn() { return(0 != boilerCountdownTicks); }
 // Minutes since boiler last on as result of remote call for heat.
 // Reducing listening if quiet for a while helps reduce self-heating temperature error
 // (~2C as of 2013/12/24 at 100% RX, ~100mW heat dissipation in V0.2 REV1 box) and saves some energy.
@@ -1835,7 +1841,7 @@ void loopOpenTRV()
   const bool conserveBattery =
     (batteryLow || !inWarmMode() || Occupancy.longVacant()) &&
 #if defined(ENABLE_BOILER_HUB)
-    (0 == boilerCountdownTicks) && // Unless the boiler is off, stay responsive.
+    (!isBoilerOn()) && // Unless the boiler is off, stay responsive.
 #endif
 #ifdef ENABLE_NOMINAL_RAD_VALVE
     (!NominalRadValve.isControlledValveReallyOpen()); // &&  // Run at full speed until valve(s) should actually have shut and the boiler gone off.
@@ -1861,7 +1867,7 @@ void loopOpenTRV()
   // TODO: These optimisation are more important when hub unit is running a local valve
   // to avoid temperature over-estimates from self-heating,
   // and could be disabled if no local valve is being run to provide better response to remote nodes.
-  bool hubModeBoilerOn = false; // If true then remote call for heat is in progress.
+//  bool hubModeBoilerOn = false; // If true then remote call for heat is in progress.
 //#if defined(USE_MODULE_FHT8VSIMPLE)
 #ifdef ENABLE_DEFAULT_ALWAYS_RX
   bool needsToEavesdrop = true; // By default listen.
@@ -1874,7 +1880,6 @@ void loopOpenTRV()
 #if defined(ENABLE_BOILER_HUB) // && defined(USE_MODULE_FHT8VSIMPLE)   // ***** FIXME *******
     // Final poll to to cover up to end of previous minor loop.
     // Keep time from here to following SetupToEavesdropOnFHT8V() as short as possible to avoid missing remote calls.
-//    FHT8VCallForHeatPoll();
 
     // Check if call-for-heat has been received, and clear the flag.
     bool _h;
@@ -1892,8 +1897,6 @@ void loopOpenTRV()
     const uint16_t hcRequest = heardIt ? _hID : 0; // Only valid if heardIt is true.
 
 //    // Fetch and clear current pending sample house code calling for heat.
-//    const uint16_t hcRequest = FHT8VCallForHeatHeardGetAndClear();
-//    const bool heardIt = (hcRequest != ((uint16_t)~0));
     // Don't log call for hear if near overrun,
     // and leave any error queued for next time.
     if(getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
@@ -1918,7 +1921,7 @@ void loopOpenTRV()
       {
       const uint8_t minOnMins = getMinBoilerOnMinutes();
       bool ignoreRCfH = false;
-      if(0 == boilerCountdownTicks)
+      if(!isBoilerOn())
         {
         // Boiler was off.
         // Ignore new call for heat if boiler has not been off long enough,
@@ -1940,7 +1943,7 @@ void loopOpenTRV()
       }
 
     // If boiler is on, then count down towards boiler off.
-    if(boilerCountdownTicks > 0)
+    if(isBoilerOn())
       {
       if(0 == --boilerCountdownTicks)
         {
@@ -1953,8 +1956,8 @@ void loopOpenTRV()
     else if(second0 && (boilerNoCallM < 255))
         { ++boilerNoCallM; }         
 
-    // Turn boiler output on or off in response to calls for heat.
-    hubModeBoilerOn = (boilerCountdownTicks > 0);
+//    // Turn boiler output on or off in response to calls for heat.
+//    hubModeBoilerOn = isBoilerOn();
 
     // If in stats hub mode then always listen; don't attempt to save power.
     if(inStatsHubMode())
@@ -2054,7 +2057,7 @@ void loopOpenTRV()
   // Set BOILER_OUT as appropriate for local and/or remote calls for heat.
   // FIXME: local valve-driven boiler on does not obey normal on/off run-time rules.
 #if defined(ENABLE_BOILER_HUB)
-  fastDigitalWrite(OUT_HEATCALL, ((hubModeBoilerOn
+  fastDigitalWrite(OUT_HEATCALL, ((isBoilerOn()
     #ifdef ENABLE_NOMINAL_RAD_VALVE
       || NominalRadValve.isControlledValveReallyOpen()
     #endif
@@ -2378,7 +2381,7 @@ void loopOpenTRV()
       // Track how long since remote call for heat last heard.
       if(hubMode)
         {
-        if(boilerCountdownTicks != 0)
+        if(isBoilerOn())
           {
 #if 1 && defined(DEBUG)
           DEBUG_SERIAL_PRINT_FLASHSTRING("Boiler on, s: ");

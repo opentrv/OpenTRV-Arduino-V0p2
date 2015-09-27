@@ -148,14 +148,14 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define OCCUPANCY_SUPPORT
 #endif
 
-#ifdef CONFIG_Trial2013Winter_Round1_BOILERHUB // REV1 as plain boiler hub.
+#ifdef CONFIG_Trial2013Winter_Round1_BOILERHUB // REV1 as plain boiler hub + can TX stats.
 #define CONFIG_Trial2013Winter_Round1 // Just like normal REV1 except...
 // IF DEFINED: this unit can act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
 #define ENABLE_BOILER_HUB
 // IF DEFINED: allow RX of stats frames.
 #undef ALLOW_STATS_RX
 // IF DEFINED: allow TX of stats frames.
-#undef ALLOW_STATS_TX
+#define ALLOW_STATS_TX
 // IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
 #undef LOCAL_TRV
 #endif
@@ -212,14 +212,14 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define OCCUPANCY_SUPPORT
 #endif
 
-#ifdef CONFIG_Trial2013Winter_Round2_BOILERHUB // For trial over winter of 2013--4, second round (REV2), as pure boiler hub.
+#ifdef CONFIG_Trial2013Winter_Round2_BOILERHUB // For trial over winter of 2013--4, second round (REV2), as pure boiler hub + can TX stats.
 #define CONFIG_Trial2013Winter_Round2 // Just like normal REV2 except...
 // IF DEFINED: this unit can act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
 #define ENABLE_BOILER_HUB
 // IF DEFINED: allow RX of stats frames.
 #undef ALLOW_STATS_RX
 // IF DEFINED: allow TX of stats frames.
-#undef ALLOW_STATS_TX
+#define ALLOW_STATS_TX
 // IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
 #undef LOCAL_TRV
 #endif
@@ -396,7 +396,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define V0p2_REV 8
 // No working xtal on initial batch.
 #undef WAKEUP_32768HZ_XTAL
-//// IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
+// IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
 //#define SENSOR_SHT21_ENABLE
 // Using RoHS-compliant phototransistor in place of LDR.
 #define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
@@ -576,7 +576,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define SUPPORT_SINGLETON_SCHEDULE
 #endif
 
-
 // If LEARN_BUTTON_AVAILABLE then in the absence of anything better SUPPORT_SINGLETON_SCHEDULE should be supported.
 #ifdef LEARN_BUTTON_AVAILABLE
 #ifndef SUPPORT_SINGLETON_SCHEDULE
@@ -584,7 +583,12 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #endif
 #endif
 
-
+// For now (DHD20150927) allowing stats TX forces JSON to allos JSON stats.
+// IF DEFINED: allow TX of stats frames.
+#ifdef ALLOW_STATS_TX
+// IF DEFINED: allow JSON stats frames alongside binary ones.
+#define ALLOW_JSON_OUTPUT
+#endif
 
 // If (potentially) needing to run in some sort of continuous RX mode, define a flag true (else false).
 #if defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX) || defined(ENABLE_DEFAULT_ALWAYS_RX)
@@ -607,12 +611,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #endif
 #endif
 
-//// Supporting library required for OneWire-connected sensors.
-//// Will also need a #include in the .ino file because of Arduino's pre-preprocessing logic (IDE 1.0.x).
-//#if defined(SENSOR_DS18B20_ENABLE)
-//#define REQUIRES_ONEWIRE22_LIB // Requires V2.2 of OneWire lib.
-//#include <OneWire.h>
-//#endif
 
 #endif
 
