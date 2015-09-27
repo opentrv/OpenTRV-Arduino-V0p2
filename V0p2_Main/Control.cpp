@@ -1362,12 +1362,11 @@ void populateCoreStats(FullStatsMessageCore_t *const content)
 // Not thread-safe, eg not to be called from within an ISR.
 bool pollIO(const bool force)
   {
-//#if defined(ENABLE_BOILER_HUB) && defined(USE_MODULE_FHT8VSIMPLE)
 //  if(inHubMode())
 //    {
     static volatile uint8_t _pO_lastPoll;
 
-    // Poll RX at most about every ~8ms to help approx match spil rate when called in loop with 30ms nap.
+    // Poll RX at most about every ~8ms.
     const uint8_t sct = getSubCycleTime();
     if(force || (sct != _pO_lastPoll))
       {
@@ -1377,17 +1376,14 @@ bool pollIO(const bool force)
       RFM23B.poll();
       }
 //    }
-//#endif
   return(false);
   }
 
 #ifdef ALLOW_STATS_TX
-
 #if defined(ALLOW_JSON_OUTPUT)
 // Managed JSON stats.
 static SimpleStatsRotation<9> ss1; // Configured for maximum different stats.
 #endif
-
 // Do bare stats transmission.
 // Output should be filtered for items appropriate
 // to current channel security and sensitivity level.
@@ -1781,16 +1777,27 @@ static volatile uint16_t receivedCallForHeatID;
 // Does not have to be thread-/ISR- safe.
 void remoteCallForHeatRX(const uint16_t id, const uint8_t percentOpen)
   {
-  // Should be filtering first by housecode
+  // TODO: Should be filtering first by housecode
   // then by individual and tracked aggregate valve-open percentage.
-  // Initial fix for TODO-520: Bad comparison screening incoming calls for heat at boiler hub.
+  // Only individual valve levels used here; no state is retained.
+
+  // Normal minimum single-valve percentage open that is not ignored.
 #ifdef ENABLE_NOMINAL_RAD_VALVE
-  const uint8_t mvro = NominalRadValve.getMinValvePcReallyOpen();
+  const uint8_t minvro = NominalRadValve.getMinValvePcReallyOpen();
 #else
-  const uint8_t mvro = DEFAULT_MIN_VALVE_PC_REALLY_OPEN;
+  const uint8_t minvro = DEFAULT_MIN_VALVE_PC_REALLY_OPEN;
 #endif
-  if(percentOpen >= mvro)
-    // FHT8VHubAcceptedHouseCode(command.hc1, command.hc2))) // Accept if house code OK.
+
+  // TODO-555: apply some basic hysteresis to help reduce boiler short-cycling.
+  // Try to force a higher single-valve-%age threshold to start boiler if off,
+  // at a level where at least a single valve is moderately open.
+  // Selecting "quick heat" at a valve should immediately pass this.
+  // (Will not provide hysteresis for very high min really open value.)
+  const uint8_t threshold = isBoilerOn() ?
+      minvro : max(minvro, DEFAULT_VALVE_PC_MODERATELY_OPEN);
+
+  if(percentOpen >= threshold)
+    // && FHT8VHubAcceptedHouseCode(command.hc1, command.hc2))) // Accept if house code OK.
     {
     receivedCallForHeat = true; // FIXME
     receivedCallForHeatID = id;
