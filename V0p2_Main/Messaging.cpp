@@ -929,14 +929,14 @@ uint8_t SimpleStatsRotationBase::writeJSON(uint8_t *const buf, const uint8_t buf
 #define LISTEN_FOR_FTp2_FS20_native
 static void decodeAndHandleFTp2_FS20_native(Print *p, const bool secure, const uint8_t * const msg, const uint8_t msglen)
 {
+#if 0 && defined(DEBUG)
+  OTRadioLink::printRXMsg(p, msg, msglen);
+#endif
+
   // Decode the FS20/FHT8V command into the buffer/struct.
   fht8v_msg_t command;
   uint8_t const *lastByte = msg+msglen-1;
   uint8_t const *trailer = FHT8VDecodeBitStream(msg, lastByte, &command);
-
-#if 0 && defined(DEBUG)
-  OTRadioLink::printRXMsg(p, msg, msglen);
-#endif
 
 #if defined(ENABLE_BOILER_HUB)
   // Potentially accept as call for heat only if command is 0x26 (38).
@@ -945,9 +945,11 @@ static void decodeAndHandleFTp2_FS20_native(Print *p, const bool secure, const u
   // and the housecode being accepted.
   if(0x26 == command.command)
     {
-    const uint16_t compoundHC = (command.hc1 << 8) | command.hc2;
+    const uint16_t compoundHC = (((uint16_t)command.hc1) << 8) | command.hc2;
 #if 0 && defined(DEBUG)
-    p->println("FS20 0x26 RX"); // Just notes that a 'valve %' FS20 command has been overheard.
+    p->print("FS20 RX 0x26 "); // Just notes that a 'valve %' FS20 command has been overheard.
+    p->print(command.hc1); p->print(' ');
+    p->println(command.hc2);
 #endif
     // Process the common 'valve closed' and valve open cases efficiently.
     // Nominally conversion to % should be (uint8_t) ((command.extension * 100) / 255)

@@ -1878,18 +1878,18 @@ void loopOpenTRV()
 
     // Check if call-for-heat has been received, and clear the flag.
     bool _h;
-    bool _hID; // Only valid if _h is true.
+    uint16_t _hID; // Only valid if _h is true.
     ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
       {
       _h = receivedCallForHeat;
       if(_h)
         {
-        receivedCallForHeat = false;
         _hID = receivedCallForHeatID;
+        receivedCallForHeat = false;
         }
       }
     const bool heardIt = _h;
-    const bool hcRequest = heardIt ? _hID : 0; // Only valid if heardIt is true.
+    const uint16_t hcRequest = heardIt ? _hID : 0; // Only valid if heardIt is true.
 
 //    // Fetch and clear current pending sample house code calling for heat.
 //    const uint16_t hcRequest = FHT8VCallForHeatHeardGetAndClear();
@@ -1912,28 +1912,46 @@ void loopOpenTRV()
       }
 
     // Record call for heat, both to start boiler-on cycle and to defer need to listen again. 
-    // Optimisation: may be able to stop RX if boiler is on for local demand (can measure local temp better: less self-heating).
+    // Ignore new calls for heat until minimum off/quiet period has been reached.
+    // Possible optimisation: may be able to stop RX if boiler is on for local demand (can measure local temp better: less self-heating) and not collecting stats.
     if(heardIt)
       {
+      const uint8_t minOnMins = getMinBoilerOnMinutes();
+      bool ignoreRCfH = false;
       if(0 == boilerCountdownTicks)
         {
+        // Boiler was off.
+        // Ignore new call for heat if boiler has not been off long enough,
+        // forcing a time longer than the specified minimum,
+        // regardless of when second0 happens to be.
+        // (The min(254, ...) is to ensure that the boiler can come on even if minOnMins == 255.)
+        if(boilerNoCallM <= min(254, minOnMins)) { ignoreRCfH = true; }
         if(getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
+        else if(ignoreRCfH) { serialPrintlnAndFlush(F("RCfH-")); } // Remote call for heat ignored.
         else { serialPrintlnAndFlush(F("RCfH1")); } // Remote call for heat on.
         }
-      boilerCountdownTicks = getMinBoilerOnMinutes() * (60 / OTV0P2BASE::MAIN_TICK_S);
-      boilerNoCallM = 0; // No time has passed since the last call.
+      if(!ignoreRCfH)
+        {
+        const uint8_t onTimeTicks = minOnMins * (60 / OTV0P2BASE::MAIN_TICK_S);
+        // Restart count-down time (keeping boiler on) with new call for heat.
+        boilerCountdownTicks = onTimeTicks;
+        boilerNoCallM = 0; // No time has passed since the last call.
+        }
       }
-    // Else count down towards boiler off.
-    else if(boilerCountdownTicks > 0)
+
+    // If boiler is on, then count down towards boiler off.
+    if(boilerCountdownTicks > 0)
       {
       if(0 == --boilerCountdownTicks)
         {
+        // Boiler should now be switched off.
         if(getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
         else { serialPrintlnAndFlush(F("RCfH0")); } // Remote call for heat off
         }
       }
-    // Else already off so count up quiet minutes...
-    else if(second0 && (boilerNoCallM < (uint8_t)~0)) { ++boilerNoCallM; }         
+    // Else boiler is off so count up quiet minutes until at max...
+    else if(second0 && (boilerNoCallM < 255))
+        { ++boilerNoCallM; }         
 
     // Turn boiler output on or off in response to calls for heat.
     hubModeBoilerOn = (boilerCountdownTicks > 0);
