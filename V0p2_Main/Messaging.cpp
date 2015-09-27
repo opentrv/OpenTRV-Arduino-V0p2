@@ -929,6 +929,7 @@ uint8_t SimpleStatsRotationBase::writeJSON(uint8_t *const buf, const uint8_t buf
 #define LISTEN_FOR_FTp2_FS20_native
 static void decodeAndHandleFTp2_FS20_native(Print *p, const bool secure, const uint8_t * const msg, const uint8_t msglen)
 {
+  // Decode the FS20/FHT8V command into the buffer/struct.
   fht8v_msg_t command;
   uint8_t const *lastByte = msg+msglen-1;
   uint8_t const *trailer = FHT8VDecodeBitStream(msg, lastByte, &command);
@@ -948,8 +949,14 @@ static void decodeAndHandleFTp2_FS20_native(Print *p, const bool secure, const u
 #if 0 && defined(DEBUG)
     p->println("FS20 0x26 RX"); // Just notes that a 'valve %' FS20 command has been overheard.
 #endif
-    // Process the common 'valve closed' case efficiently.
-    remoteCallForHeatRX(compoundHC, (0 == command.extension) ? 0 : (uint8_t) ((command.extension * 100) / 255));
+    // Process the common 'valve closed' and valve open cases efficiently.
+    // Nominally conversion to % should be (uint8_t) ((command.extension * 100) / 255)
+    // but approximation with /256, ie >>8, probably fine.
+    const uint8_t percentOpen =
+        (0 == command.extension) ? 0 :
+        ((255 == command.extension) ? 100 :
+        ((uint8_t) ((command.extension * (int)100) >> 8)));
+    remoteCallForHeatRX(compoundHC, percentOpen);
     }
 #endif
 
@@ -1025,8 +1032,7 @@ p->print("FS20 msg HC "); p->print(command.hc1); p->print(' '); p->println(comma
 // If secure is true then this message arrived over a secure channel.
 // This will write any output to the supplied Print object,
 // typically the Serial output (which must be running if so).
-// This routine is allowed to alter the contents of the buffer passed
-// to help avoid extra copies, etc.
+// This routine is NOT allowed to alter the contents of the buffer passed.
 static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uint8_t * const msg, const uint8_t msglen)
   {
   // TODO: consider extracting hash of all message data (good/bad) and injecting into entropy pool.

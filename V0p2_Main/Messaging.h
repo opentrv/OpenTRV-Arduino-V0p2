@@ -624,7 +624,7 @@ bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadi
 // FUNCTIONALITY REQUIRED (NOT SUPPLIED) BY MESSAGING.
 // Raw notification of received call for heat from remote (eg FHT8V) unit.
 // This form has a 16-bit ID (eg FHT8V housecode) and percent-open value [0,100].
-// Note that this may include 0 percent values for a remote unit explcitly confirming
+// Note that this may include 0 percent values for a remote unit explicitly confirming
 // that is is not, or has stopped, calling for heat (eg instead of replying on a timeout).
 // This is not filtered, and can be delivered at any time from RX data, from a non-ISR thread.
 // Does not have to be thread-/ISR- safe.
