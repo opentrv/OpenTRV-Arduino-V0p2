@@ -1796,7 +1796,7 @@ void remoteCallForHeatRX(const uint16_t id, const uint8_t percentOpen)
 // Most combis have power far higher than needed to run rads at full blast
 // and have only limited ability to modulate down,
 // so end up cycling anyway while running the circulation pump if left on.
-// Modelled on DHD long habit of having many of 15-minute boiler timer segments
+// Modelled on DHD habit of having many of 15-minute boiler timer segments
 // in 'off' period even during the day for many years!
 
   // TODO-555: apply some basic hysteresis to help reduce boiler short-cycling.
