@@ -1788,6 +1788,15 @@ void remoteCallForHeatRX(const uint16_t id, const uint8_t percentOpen)
   const uint8_t minvro = DEFAULT_MIN_VALVE_PC_REALLY_OPEN;
 #endif
 
+// TODO-553: after 30--45m continuous on time raise threshold to same as if off.
+// Aim is to allow a (combi) boiler to have reached maximum efficiency
+// and made a signficant difference to room temperature
+// but now turn off for a while if demand is a little lower
+// to allow it to run a little harder/better when turned on again.
+// Most combis have power far higher than needed to run rads at full blast
+// and have only limited ability to modulate down,
+// so end up cycling anyway while running the circulation pump if left on.
+
   // TODO-555: apply some basic hysteresis to help reduce boiler short-cycling.
   // Try to force a higher single-valve-%age threshold to start boiler if off,
   // at a level where at least a single valve is moderately open.
