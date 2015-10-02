@@ -50,7 +50,7 @@ uint8_t getSecureRandomByte(const bool whiten)
   // Mix the bits also to help ensure good distribution.
   uint8_t w1 = ::OTV0P2BASE::clockJitterEntropyByte(); // Real noise.
 #else // WARNING: poor substitute if 32768Hz xtal not available.
-  uint8_t w1 = clockJitterWDT() + (::OTV0P2BASE::clockJitterWDT() << 5);
+  uint8_t w1 = ::OTV0P2BASE::clockJitterWDT() + (::OTV0P2BASE::clockJitterWDT() << 5);
   w1 ^= (w1 << 1); // Mix.
   w1 ^= ::OTV0P2BASE::clockJitterWDT();
   w1 ^= (w1 >> 2); // Mix.

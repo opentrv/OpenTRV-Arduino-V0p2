@@ -41,13 +41,13 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_Trial2013Winter_Round1_NOHUB // REV1 as TX-only leaf node.
 //#define CONFIG_Trial2013Winter_Round1_BOILERHUB // REV1 as plain boiler node.
 //#define CONFIG_Trial2013Winter_Round2 // REV2 cut4 default config.
-#define CONFIG_Trial2013Winter_Round2_LVBHSH // REV2 cut4: local valve control, boiler hub, stats hub & TX.
+//#define CONFIG_Trial2013Winter_Round2_LVBHSH // REV2 cut4: local valve control, boiler hub, stats hub & TX.
 //#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as plain boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
 //#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
 //#define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
 //#define CONFIG_DORM1 // REV7 / DORM1 Winter 2014/2015 all-in-one valve unit.
-//#define CONFIG_DORM1_BOILER // REV8 / DORM1 Winter 2014/2015 boiler-control unit.
+#define CONFIG_DORM1_BOILER // REV8 / DORM1 Winter 2014/2015 boiler-control unit.
 //#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
 
 
@@ -391,17 +391,23 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define COMMON_SETTINGS
 #endif
 
-#ifdef CONFIG_DORM1_BOILER // For trial over winter of 2014--5, REV8 boiler-control counterpart to REV7.
-// Revision REV8 of V0.2 board, boiler control unit.
+#ifdef CONFIG_DORM1_BOILER // REV8 boiler-control counterpart to REV7.
+// Revision REV8.B of V0.2 board, boiler control unit.
+// NO LIGHT SENSOR FITTED ON REV8.B BOARDS.
+// BOTH TMP112 AND SHT21 FITTED on REV8.B BOARDS.
 #define V0p2_REV 8
-// No working xtal on initial batch.
-#undef WAKEUP_32768HZ_XTAL
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
-//#define SENSOR_SHT21_ENABLE
+#define SENSOR_SHT21_ENABLE
 // Using RoHS-compliant phototransistor in place of LDR.
-#define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
-// IF UNDEFINED: do not allow JSON stats frames (to save ~3kB Flash at 20141210).
-//#undef ALLOW_JSON_OUTPUT
+//#define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
+// IF DEFINED: this unit can act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
+#define ENABLE_BOILER_HUB
+// IF DEFINED: allow RX of stats frames.
+#undef ALLOW_STATS_RX
+// IF DEFINED: allow TX of stats frames.
+#define ALLOW_STATS_TX
+// IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
+#undef LOCAL_TRV
 // Use common settings.
 #define COMMON_SETTINGS
 #endif
