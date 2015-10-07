@@ -887,6 +887,7 @@ uint8_t VoiceDetection::read()
   DEBUG_SERIAL_PRINT(value);
   DEBUG_SERIAL_PRINTLN();
 #endif
+  return(value);
   }
 
 // Handle simple interrupt.
