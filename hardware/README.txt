@@ -1,0 +1,1 @@
+Schematics, PCB designs and similar.
