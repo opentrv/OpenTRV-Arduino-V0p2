@@ -396,7 +396,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // Revision REV7 of V0.2 board, all-in-one valve unit with local motor drive.
 // In this off-label mode being used as stats gatherers or relays.
 #define V0p2_REV 7
-// IF DEFINED: initial direct motor drive design.  Doesn't imply it get used.
+// IF DEFINED: initial direct motor drive design.  Doesn't imply it gets used, but I/O can be set up safely.
 #define DIRECT_MOTOR_DRIVE_V1
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
 #define SENSOR_SHT21_ENABLE
