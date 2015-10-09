@@ -2017,11 +2017,11 @@ Grid 5.00 mm&lt;p&gt;
 <attribute name="NAME" x="64.77" y="8.89" size="1.27" layer="25" ratio="10"/>
 <attribute name="VALUE" x="77.47" y="10.16" size="1.27" layer="27" rot="R180"/>
 </element>
-<element name="X1" library="con-wago-500" package="W237-102" value="" x="3.81" y="73.66" rot="R90">
-<attribute name="OC_NEWARK" value="70K9898" x="3.81" y="73.66" size="1.778" layer="27" rot="R90" display="off"/>
-<attribute name="MF" value="" x="3.81" y="73.66" size="1.778" layer="27" rot="R90" display="off"/>
-<attribute name="MPN" value="237-102" x="3.81" y="73.66" size="1.778" layer="27" rot="R90" display="off"/>
-<attribute name="OC_FARNELL" value="unknown" x="3.81" y="73.66" size="1.778" layer="27" rot="R90" display="off"/>
+<element name="X1" library="con-wago-500" package="W237-102" value="" x="5.08" y="74.93" rot="R90">
+<attribute name="OC_NEWARK" value="70K9898" x="5.08" y="74.93" size="1.778" layer="27" rot="R90" display="off"/>
+<attribute name="MF" value="" x="5.08" y="74.93" size="1.778" layer="27" rot="R90" display="off"/>
+<attribute name="MPN" value="237-102" x="5.08" y="74.93" size="1.778" layer="27" rot="R90" display="off"/>
+<attribute name="OC_FARNELL" value="unknown" x="5.08" y="74.93" size="1.778" layer="27" rot="R90" display="off"/>
 </element>
 <element name="IC2" library="Arduino-AVR" package="TQFP32-08" value="ATMEGA168-AU" x="19.05" y="39.37" smashed="yes">
 <attribute name="NAME" x="18.1864" y="38.735" size="0.8128" layer="25"/>
@@ -2118,8 +2118,8 @@ Grid 5.00 mm&lt;p&gt;
 <wire x1="11.803065625" y1="39.436453125" x2="23.3426" y2="39.77" width="0" layer="19" extent="1-16"/>
 <wire x1="26.53130625" y1="42.2006125" x2="11.803065625" y2="39.436453125" width="0" layer="19" extent="16-16"/>
 <wire x1="26.0543875" y1="37.98630625" x2="26.53130625" y2="42.2006125" width="0" layer="19" extent="16-16"/>
-<wire x1="5.08" y1="76.16" x2="26.0543875" y2="37.98630625" width="0" layer="19" extent="16-16"/>
-<wire x1="4" y1="4" x2="5.08" y2="76.16" width="0" layer="19" extent="1-1"/>
+<wire x1="6.35" y1="77.43" x2="26.0543875" y2="37.98630625" width="0" layer="19" extent="16-16"/>
+<wire x1="4" y1="4" x2="6.35" y2="77.43" width="0" layer="19" extent="1-1"/>
 <wire x1="5.3" y1="4" x2="4" y2="4" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="BOILER">
