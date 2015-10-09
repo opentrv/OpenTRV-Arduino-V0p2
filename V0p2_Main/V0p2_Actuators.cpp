@@ -57,10 +57,10 @@ void ValveMotorDirectV1HardwareDriver::motorRun(const motor_drive dir)
       // (Has no effect if motor is already running in the correct direction.)
       fastDigitalWrite(MOTOR_DRIVE_ML, HIGH);
       pinMode(MOTOR_DRIVE_ML, OUTPUT); // Ensure that the HIGH side is an output (can be done after, as else will be safe weak pull-up).
-      nap(WDTO_120MS); // Let H-bridge respond and settle, and motor slow down.
+      OTV0P2BASE::nap(WDTO_120MS); // Let H-bridge respond and settle, and motor slow down.
       pinMode(MOTOR_DRIVE_MR, OUTPUT); // Ensure that the LOW side is an output.
       fastDigitalWrite(MOTOR_DRIVE_MR, LOW); // Pull LOW last.
-      nap(WDTO_15MS); // Let H-bridge respond and settle.
+      OTV0P2BASE::nap(WDTO_15MS); // Let H-bridge respond and settle.
 //LED_HEATCALL_ON();
 //LED_UI2_OFF();
       break; // Fall through to common case.
@@ -73,10 +73,10 @@ void ValveMotorDirectV1HardwareDriver::motorRun(const motor_drive dir)
       // (Has no effect if motor is already running in the correct direction.)
       fastDigitalWrite(MOTOR_DRIVE_MR, HIGH); 
       pinMode(MOTOR_DRIVE_MR, OUTPUT); // Ensure that the HIGH side is an output (can be done after, as else will be safe weak pull-up).
-      nap(WDTO_120MS); // Let H-bridge respond and settle, and motor slow down.
+      OTV0P2BASE::nap(WDTO_120MS); // Let H-bridge respond and settle, and motor slow down.
       pinMode(MOTOR_DRIVE_ML, OUTPUT); // Ensure that the LOW side is an output.
       fastDigitalWrite(MOTOR_DRIVE_ML, LOW); // Pull LOW last.
-      nap(WDTO_15MS); // Let H-bridge respond and settle.
+      OTV0P2BASE::nap(WDTO_15MS); // Let H-bridge respond and settle.
 //LED_HEATCALL_OFF();
 //LED_UI2_ON();
       break; // Fall through to common case.
@@ -87,10 +87,10 @@ void ValveMotorDirectV1HardwareDriver::motorRun(const motor_drive dir)
       // Everything off...
       fastDigitalWrite(MOTOR_DRIVE_MR, HIGH); // Belt and braces force pin logical output state high.
       pinMode(MOTOR_DRIVE_MR, INPUT_PULLUP); // Switch to weak pull-up; slow but possibly marginally safer.
-      nap(WDTO_15MS); // Let H-bridge respond and settle.
+      OTV0P2BASE::nap(WDTO_15MS); // Let H-bridge respond and settle.
       fastDigitalWrite(MOTOR_DRIVE_ML, HIGH); // Belt and braces force pin logical output state high.
       pinMode(MOTOR_DRIVE_ML, INPUT_PULLUP); // Switch to weak pull-up; slow but possibly marginally safer.
-      nap(WDTO_15MS); // Let H-bridge respond and settle.
+      OTV0P2BASE::nap(WDTO_15MS); // Let H-bridge respond and settle.
       return; // Return, not fall through.
       }
     }

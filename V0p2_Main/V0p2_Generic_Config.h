@@ -47,7 +47,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
 //#define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
 //#define CONFIG_DORM1 // REV7 / DORM1 Winter 2014/2015 all-in-one valve unit.
-#define CONFIG_DORM1_BOILER // REV8 / DORM1 Winter 2014/2015 boiler-control unit.
+//#define CONFIG_DORM1_BOILER // REV8 / DORM1 Winter 2014/2015 boiler-control unit.
 //#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
 
 
@@ -61,6 +61,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_BH_TESTLAB // Bo's test environment.
 //#define CONFIG_DORM1_SANS32K // REV7 / DORM1 without working 32768Hz clock.
 //#define CONFIG_REV7N // REV7 with external "Model N" valve.
+#define CONFIG_REV7_STATSLH // REV7 as stats leaf and/or hub.
 //#define CONFIG_REV9_STATS // REV9 as stats node, cut 2 of the board.
 //#define CONFIG_REV9_cut1 // REV9 as CC1 relay, cut1 of board.
 
@@ -316,7 +317,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define COMMON_SETTINGS
 #endif
 
-// -------------------------
+// ------------------------- REV1
 
 #ifdef CONFIG_DHD_TESTLAB_REV1 // DHD's test lab on REV1.
 // Revision of V0.2 board.
@@ -339,7 +340,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define COMMON_SETTINGS
 #endif
 
-// -------------------------
+// ------------------------- REV4
 
 #ifdef CONFIG_DHD_TESTLAB_REV4_NOHUB // REV4 board but no listening...
 #define CONFIG_DHD_TESTLAB_REV4
@@ -364,7 +365,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define COMMON_SETTINGS
 #endif
 
-// -------------------------
+// ------------------------- REV7
 
 #ifdef CONFIG_DORM1_SANS32K // REV7 / DORM1 without working 32768Hz clock.
 #define CONFIG_DORM1
@@ -391,6 +392,30 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define COMMON_SETTINGS
 #endif
 
+#ifdef CONFIG_REV7_STATSLH // REV7 as stats leaf and/or hub.
+// Revision REV7 of V0.2 board, all-in-one valve unit with local motor drive.
+// In this off-label mode being used as stats gatherers or relays.
+#define V0p2_REV 7
+// IF DEFINED: initial direct motor drive design.  Doesn't imply it get used.
+#define DIRECT_MOTOR_DRIVE_V1
+// IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
+#define SENSOR_SHT21_ENABLE
+// Using RoHS-compliant phototransistor in place of LDR.
+#define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
+// IF DEFINED: this unit can act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
+#undef ENABLE_BOILER_HUB // NO BOILER CODE
+// IF DEFINED: allow RX of stats frames.
+#define ALLOW_STATS_RX
+// IF DEFINED: allow TX of stats frames.
+#define ALLOW_STATS_TX
+// IF DEFINED: allow JSON stats frames.
+#define ALLOW_JSON_OUTPUT
+// Use common settings.
+#define COMMON_SETTINGS
+#endif
+
+// ------------------------- REV8
+
 #ifdef CONFIG_DORM1_BOILER // REV8 boiler-control counterpart to REV7.
 // Revision REV8.B of V0.2 board, boiler control unit.
 // NO LIGHT SENSOR FITTED ON REV8.B BOARDS.
@@ -412,7 +437,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define COMMON_SETTINGS
 #endif
 
-// -------------------------
+// ------------------------- REV9
 
 #ifdef CONFIG_REV9_cut1
 #define V0p2_REV 9 // Just like cut2 but with some bugs...
@@ -473,7 +498,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define COMMON_SETTINGS
 #endif
 
-
 #ifdef CONFIG_REV9_STATS // REV9 cut2, derived from REV4, as stats node, for testing.
 #define V0p2_REV 9
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
@@ -499,6 +523,14 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // Use common settings.
 #define COMMON_SETTINGS
 #endif
+
+// ------------------------- REV10
+
+// REV8 + GSM Arduino shield + I2CEXT, see TODO-551
+
+// ------------------------- REV11
+
+// REV4 (ie SHT21 sensor and phototransistor) + PCB antenna + PCB battery back (probably AAA), see TODO-566
 
 // -------------------------
 
