@@ -334,20 +334,18 @@ void loopAlt()
 //#endif
 
 
-//  motorDriveClosing
-//  HardwareMotorDriverInterface::motor_drive
 
 
-    // Run motor a little longer if not at end stop,
-    // else stop now, and reverse on next pass.
-    DEBUG_SERIAL_PRINT_FLASHSTRING("Running: ");
-    DEBUG_SERIAL_PRINT(mdir);
-    DEBUG_SERIAL_PRINTLN();
-    V1D.motorRun(mdir);
-    OTV0P2BASE::nap(WDTO_120MS);
-    OTV0P2BASE::nap(WDTO_120MS);
-    // Detect if end-stop is reached or motor current otherwise very high.
-  if(V1D.isCurrentHigh())
+  // Run motor a little; reverse at end stop.
+  DEBUG_SERIAL_PRINT_FLASHSTRING("Dir: ");
+  DEBUG_SERIAL_PRINT(HardwareMotorDriverInterface::motorDriveClosing == mdir ? "closing" : "opening");
+  DEBUG_SERIAL_PRINTLN();
+  V1D.motorRun(mdir);
+  OTV0P2BASE::nap(WDTO_120MS);
+  bool currentHigh = false;
+  for(int i = 16; i-- > 0 && !(currentHigh = V1D.isCurrentHigh(mdir)); ) { OTV0P2BASE::nap(WDTO_60MS); }
+  // Detect if end-stop is reached or motor current otherwise very high.
+  if(currentHigh)
     {
     DEBUG_SERIAL_PRINTLN_FLASHSTRING("Current high (reversing)");
     mdir = (HardwareMotorDriverInterface::motorDriveClosing == mdir) ?
@@ -355,6 +353,7 @@ void loopAlt()
     }
   // Stop motor until next pass.
   V1D.motorRun(HardwareMotorDriverInterface::motorOff);
+
 
 
 

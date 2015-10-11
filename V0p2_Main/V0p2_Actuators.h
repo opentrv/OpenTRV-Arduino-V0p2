@@ -217,7 +217,7 @@ class ValveMotorDirectV1HardwareDriver : public HardwareMotorDriverInterface
     virtual void motorRun(motor_drive dir);
 
     // Detect if end-stop is reached or motor current otherwise very high.
-    virtual bool isCurrentHigh() const;
+    virtual bool isCurrentHigh(HardwareMotorDriverInterface::motor_drive mdir = motorDriveOpening) const;
 
     // Enable/disable end-stop detection and shaft-encoder.
     // Disabling should usually force the motor off,
