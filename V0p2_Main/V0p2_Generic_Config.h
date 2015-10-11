@@ -185,7 +185,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // Revision REV1 of V0.2 board.
 #define V0p2_REV 1
 // TODO-264: Find out why IDLE seems to crash some REV1 boards.
-//#undef ENABLE_USE_OF_AVR_IDLE_MODE
+#undef ENABLE_USE_OF_AVR_IDLE_MODE
 // Use common settings.
 #define COMMON_SETTINGS
 #endif
@@ -292,6 +292,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // NON-STANDARD DEFINITIONS
 // -------------------------
 
+// ------------------------- REV0 / breadboard
+
 #ifdef CONFIG_DHD_TESTLAB_REV0 // DHD's test lab breadboard with TRV.
 // Revision of V0.2 board.
 #define V0p2_REV 0 // REV0 covers DHD's breadboard (was first V0.2 PCB).
@@ -386,8 +388,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #undef ENABLE_BOILER_HUB
 // IF UNDEFINED: do not allow RX of stats frames.
 #undef ALLOW_STATS_RX
-// IF UNDEFINED: do not allow JSON stats frames (to save ~3kB Flash at 20141210).
-//#undef ALLOW_JSON_OUTPUT
+// IF DEFINED: allow JSON stats frames.
+#define ALLOW_JSON_OUTPUT
 // Use common settings.
 #define COMMON_SETTINGS
 #endif
