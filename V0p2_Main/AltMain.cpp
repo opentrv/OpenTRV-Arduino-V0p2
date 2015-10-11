@@ -335,7 +335,7 @@ void loopAlt()
 
 
 
-  // Run motor a little in current direction; reverse at end of travel.
+  // Run motor a ~1s in the current direction; reverse at end of travel.
   DEBUG_SERIAL_PRINT_FLASHSTRING("Dir: ");
   DEBUG_SERIAL_PRINT(HardwareMotorDriverInterface::motorDriveClosing == mdir ? "closing" : "opening");
   DEBUG_SERIAL_PRINTLN();
