@@ -92,6 +92,9 @@ class HardwareMotorDriverInterface
     // May take as much as 200ms eg to change direction.
     // Stopping (removing power) should typically be very fast, << 100ms.
     virtual void motorRun(motor_drive dir) = 0;
+//
+//    // Detect if end-stop is reached or motor current otherwise very high.
+//    virtual bool isCurrentHigh();
 
     // Enable/disable end-stop detection and shaft-encoder.
     // Disabling should usually forces the motor off,
@@ -123,7 +126,7 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
       initCalibrating, // Calibrating full valve travel.
       motorNormal, // Normal operating state: values lower than this indicate that power-up is not complete.
       decalcinating, // TODO: running decalcination cycle (and can recalibrate and mitigate valve seating issues).
-      motorDriverWrror // Error state can only nomrally be cleared by power-cycling.
+      motorDriverError // Error state can only normally be cleared by power-cycling.
       };
 
   private:
@@ -202,7 +205,7 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
   };
 
 #if defined(LOCAL_TRV) && defined(DIRECT_MOTOR_DRIVE_V1)
-// Implementation for V1 motor.
+// Implementation for V1 (REV7/DORM1) motor.
 // Usually not instantaited except within ValveMotorDirectV1.
 // Creating multiple instances almost certaintly a BAD IDEA.
 class ValveMotorDirectV1HardwareDriver : public HardwareMotorDriverInterface
@@ -212,6 +215,9 @@ class ValveMotorDirectV1HardwareDriver : public HardwareMotorDriverInterface
     // May take as much as 200ms eg to change direction.
     // Stopping (removing power) should typically be very fast, << 100ms.
     virtual void motorRun(motor_drive dir);
+
+    // Detect if end-stop is reached or motor current otherwise very high.
+    virtual bool isCurrentHigh() const;
 
     // Enable/disable end-stop detection and shaft-encoder.
     // Disabling should usually force the motor off,

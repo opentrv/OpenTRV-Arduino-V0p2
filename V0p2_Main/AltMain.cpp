@@ -200,7 +200,8 @@ ISR(PCINT2_vect)
 
 
 
-
+static ValveMotorDirectV1HardwareDriver V1D;
+static HardwareMotorDriverInterface::motor_drive mdir = HardwareMotorDriverInterface::motorDriveOpening;
 
 
 // Called from loop().
@@ -231,27 +232,27 @@ void loopAlt()
 
 // If missing h/w interrupts for anything that needs rapid response
 // then AVOID the lowest-power long sleep.
-//#if CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX && !defined(PIN_RFM_NIRQ)
-//#define MUST_POLL_FREQUENTLY true
-//#else
-//#define MUST_POLL_FREQUENTLY false
-//#endif
-//    if(MUST_POLL_FREQUENTLY /** && in hub mode */ )
-//      {
-//      // No h/w interrupt wakeup on receipt of frame,
-//      // so can only sleep for a short time between explicit poll()s,
-//      // though allow wake on interrupt anyway to minimise loop timing jitter.
-//      OTV0P2BASE::nap(WDTO_15MS, true);
-//      }
-//    else
-//      {
-//      // Normal long minimal-power sleep until wake-up interrupt.
-//      // Rely on interrupt to force fall through to I/O poll() below.
-//      OTV0P2BASE::sleepUntilInt();
-//      }
-////    DEBUG_SERIAL_PRINTLN_FLASHSTRING("w"); // Wakeup.
+#if CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX && !defined(PIN_RFM_NIRQ)
+#define MUST_POLL_FREQUENTLY true
+#else
+#define MUST_POLL_FREQUENTLY false
+#endif
+    if(MUST_POLL_FREQUENTLY /** && in hub mode */ )
+      {
+      // No h/w interrupt wakeup on receipt of frame,
+      // so can only sleep for a short time between explicit poll()s,
+      // though allow wake on interrupt anyway to minimise loop timing jitter.
+      OTV0P2BASE::nap(WDTO_15MS, true);
+      }
+    else
+      {
+      // Normal long minimal-power sleep until wake-up interrupt.
+      // Rely on interrupt to force fall through to I/O poll() below.
+      OTV0P2BASE::sleepUntilInt();
+      }
+//    DEBUG_SERIAL_PRINTLN_FLASHSTRING("w"); // Wakeup.
 
-    idle15AndPoll(); // Attempt to crash the board!
+//    idle15AndPoll(); // Attempt to crash the board!
 
     }
   TIME_LSD = newTLSD;
@@ -266,7 +267,7 @@ void loopAlt()
 
 //  DEBUG_SERIAL_PRINTLN_FLASHSTRING("*");
 
-//  // Power up serail for the loop body.
+//  // Power up serial for the loop body.
 //  // May just want to turn it on in POSTalt() and leave it on...
 //  const bool neededWaking = powerUpSerialIfDisabled();
 
@@ -294,58 +295,6 @@ void loopAlt()
 
 
 
-// EXPERIMENTAL TEST OF NEW RADIO CODE
-#if 1 && defined(DEBUG)
-
-//    DEBUG_SERIAL_PRINT_FLASHSTRING("ints ");
-//    DEBUG_SERIAL_PRINT(intCountPB);
-//    DEBUG_SERIAL_PRINTLN();
-
-//    DEBUG_SERIAL_PRINT_FLASHSTRING("listening to channel: ");
-//    DEBUG_SERIAL_PRINT(RFM23B.getListenChannel());
-//    DEBUG_SERIAL_PRINTLN();
-
-//    RFM23B.listen(false);
-//    DEBUG_SERIAL_PRINT_FLASHSTRING("MODE ");
-//    DEBUG_SERIAL_PRINT(RFM23B.getMode());
-//    DEBUG_SERIAL_PRINTLN();
-//    RFM23B.listen(true);
-//    DEBUG_SERIAL_PRINT_FLASHSTRING("MODE ");
-//    DEBUG_SERIAL_PRINT(RFM23B.getMode());
-//    DEBUG_SERIAL_PRINTLN();
-//    RFM23B.poll();
-    for(uint8_t lastErr; 0 != (lastErr = RFM23B.getRXErr()); )
-      {
-      DEBUG_SERIAL_PRINT_FLASHSTRING("err ");
-      DEBUG_SERIAL_PRINT(lastErr);
-      DEBUG_SERIAL_PRINTLN();
-      }
-    DEBUG_SERIAL_PRINT_FLASHSTRING("RSSI ");
-    DEBUG_SERIAL_PRINT(RFM23B.getRSSI());
-    DEBUG_SERIAL_PRINTLN();
-    static uint8_t oldDroppedRecent;
-    const uint8_t droppedRecent = RFM23B.getRXMsgsDroppedRecent();
-    if(droppedRecent != oldDroppedRecent)
-      {
-      DEBUG_SERIAL_PRINT_FLASHSTRING("?DROPPED recent: ");
-      DEBUG_SERIAL_PRINT(droppedRecent);
-      DEBUG_SERIAL_PRINTLN();
-      oldDroppedRecent = droppedRecent;
-      }
-#endif
-
-
-
-
-
-
-//#if defined(USE_MODULE_FHT8VSIMPLE)
-//  if(0 == TIME_LSD)
-//    {
-//    // Once per minute regenerate valve-setting command ready to transmit.
-//    FHT8VCreateValveSetCmdFrame(valvePosition);
-//    }
-//#endif
 
 
 //#if defined(USE_MODULE_FHT8VSIMPLE)
@@ -383,6 +332,29 @@ void loopAlt()
 ////    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@3"); }
 //    }
 //#endif
+
+
+//  motorDriveClosing
+//  HardwareMotorDriverInterface::motor_drive
+
+
+    // Run motor a little longer if not at end stop,
+    // else stop now, and reverse on next pass.
+    DEBUG_SERIAL_PRINT_FLASHSTRING("Running: ");
+    DEBUG_SERIAL_PRINT(mdir);
+    DEBUG_SERIAL_PRINTLN();
+    V1D.motorRun(mdir);
+    OTV0P2BASE::nap(WDTO_120MS);
+    OTV0P2BASE::nap(WDTO_120MS);
+    // Detect if end-stop is reached or motor current otherwise very high.
+  if(V1D.isCurrentHigh())
+    {
+    DEBUG_SERIAL_PRINTLN_FLASHSTRING("Current high (reversing)");
+    mdir = (HardwareMotorDriverInterface::motorDriveClosing == mdir) ?
+      HardwareMotorDriverInterface::motorDriveOpening : HardwareMotorDriverInterface::motorDriveClosing;
+    }
+  // Stop motor until next pass.
+  V1D.motorRun(HardwareMotorDriverInterface::motorOff);
 
 
 

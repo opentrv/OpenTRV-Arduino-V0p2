@@ -99,10 +99,9 @@ void ValveMotorDirectV1HardwareDriver::motorRun(const motor_drive dir)
 
 #define MI_NEEDS_ADC // Defined if MI output swing is not enough to use fast comparator.
 
-// Enable/disable end-stop detection and shaft-encoder.
-// Disabling should usually forces the motor off,
-// with a small pause for any residual movement to complete.
-void ValveMotorDirectV1HardwareDriver::enableFeedback(const bool enable, HardwareMotorDriverInterfaceCallbackHandler &callback)
+
+// Detect if end-stop is reached or motor current otherwise very high.
+bool ValveMotorDirectV1HardwareDriver::isCurrentHigh() const
   {
   // Check for high motor current indicating hitting an end-stop.
 #if !defined(MI_NEEDS_ADC)
@@ -116,8 +115,19 @@ void ValveMotorDirectV1HardwareDriver::enableFeedback(const bool enable, Hardwar
     (analogueNoiseReducedRead(MOTOR_DRIVE_MI_AIN, INTERNAL) > miHigh) && (analogueNoiseReducedRead(MOTOR_DRIVE_MI_AIN, INTERNAL) > miHigh);
   if(mi > ((3*miHigh)/4)) { DEBUG_SERIAL_PRINT(mi); DEBUG_SERIAL_PRINTLN(); }
 #endif
-  if(currentSense) { LED_UI2_ON(); } else { LED_UI2_OFF(); }
-  if(currentSense) { callback.signalHittingEndStop(); } 
+  return(currentSense);
+  }
+
+
+// Enable/disable end-stop detection and shaft-encoder.
+// Disabling should usually force the motor off,
+// with a small pause for any residual movement to complete.
+void ValveMotorDirectV1HardwareDriver::enableFeedback(const bool enable, HardwareMotorDriverInterfaceCallbackHandler &callback)
+  {
+  // Check for high motor current indicating hitting an end-stop.
+  const bool highI = isCurrentHigh();
+//  if(highI) { LED_UI2_ON(); } else { LED_UI2_OFF(); }
+  if(highI) { callback.signalHittingEndStop(); } 
   }
 
 
@@ -129,6 +139,7 @@ uint8_t ValveMotorDirectV1::read()
 
   // TODO
 
+  return(0);
   }
 
 //#if 1 && defined(ALT_MAIN_LOOP) && defined(DEBUG)
@@ -220,6 +231,13 @@ void ValveMotorDirectV1::wiggle()
 // Singleton implementation/instance.
 ValveMotorDirectV1 ValveDirect;
 #endif
+
+
+
+
+
+
+
 
 
 
