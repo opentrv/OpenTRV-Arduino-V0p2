@@ -99,6 +99,10 @@ void ValveMotorDirectV1HardwareDriver::motorRun(const motor_drive dir)
 
 #define MI_NEEDS_ADC // Defined if MI output swing is not enough to use fast comparator.
 
+// Maximum current reading allowed when closing the valve (against the spring).
+static const uint16_t maxCurrentReadingClosing = 600;
+// Maximum current reading allowed when opening the valve (retracting the pin, no resisting force).
+static const uint16_t maxCurrentReadingOpening = 400;
 
 // Detect if end-stop is reached or motor current otherwise very high.] indicating stall.
 bool ValveMotorDirectV1HardwareDriver::isCurrentHigh(HardwareMotorDriverInterface::motor_drive mdir) const
@@ -111,11 +115,11 @@ bool ValveMotorDirectV1HardwareDriver::isCurrentHigh(HardwareMotorDriverInterfac
   const uint16_t mi = analogueNoiseReducedRead(MOTOR_DRIVE_MI_AIN, INTERNAL);
 //  const uint16_t miHigh = 250; // Typical *start* current 430 observed at 2.4V, REV7 board DHD20150205 (370@2.0V, 550@3.3V).
   const uint16_t miHigh = (HardwareMotorDriverInterface::motorDriveClosing == mdir) ?
-      600 : 300; // May need to depend on supply voltage and movement direction?
+      maxCurrentReadingClosing : maxCurrentReadingOpening;
   const bool currentSense = (mi > miHigh) &&
     // Recheck the value read in case spiky.
     (analogueNoiseReducedRead(MOTOR_DRIVE_MI_AIN, INTERNAL) > miHigh) && (analogueNoiseReducedRead(MOTOR_DRIVE_MI_AIN, INTERNAL) > miHigh);
-  if(mi > ((2*miHigh)/4)) { DEBUG_SERIAL_PRINT(mi); DEBUG_SERIAL_PRINTLN(); }
+//  if(mi > ((2*miHigh)/4)) { DEBUG_SERIAL_PRINT(mi); DEBUG_SERIAL_PRINTLN(); }
 #endif
   return(currentSense);
   }
