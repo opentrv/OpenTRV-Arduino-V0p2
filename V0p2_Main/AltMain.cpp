@@ -335,7 +335,6 @@ void loopAlt()
 
 
 
-
   // Run motor a little; reverse at end stop.
   DEBUG_SERIAL_PRINT_FLASHSTRING("Dir: ");
   DEBUG_SERIAL_PRINT(HardwareMotorDriverInterface::motorDriveClosing == mdir ? "closing" : "opening");
