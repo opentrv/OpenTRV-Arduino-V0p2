@@ -340,9 +340,9 @@ void loopAlt()
   DEBUG_SERIAL_PRINT(HardwareMotorDriverInterface::motorDriveClosing == mdir ? "closing" : "opening");
   DEBUG_SERIAL_PRINTLN();
   V1D.motorRun(mdir);
-  OTV0P2BASE::nap(WDTO_120MS); // Run for minimum of 120ms to overcome initial initia.
+  OTV0P2BASE::nap(WDTO_30MS); // Run for minimum time to overcome initial initia.
   bool currentHigh = false;
-  for(int i = 16; i-- > 0 && !(currentHigh = V1D.isCurrentHigh(mdir)); ) { OTV0P2BASE::nap(WDTO_60MS); }
+  for(int i = 33; i-- > 0 && !(currentHigh = V1D.isCurrentHigh(mdir)); ) { OTV0P2BASE::nap(WDTO_30MS); }
   // Detect if end-stop is reached or motor current otherwise very high.
   if(currentHigh)
     {
