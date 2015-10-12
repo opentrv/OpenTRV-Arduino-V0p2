@@ -1372,6 +1372,21 @@ chip</description>
 <rectangle x1="0.3302" y1="-0.4699" x2="0.8303" y2="0.4801" layer="51"/>
 <rectangle x1="-0.1999" y1="-0.3" x2="0.1999" y2="0.3" layer="35"/>
 </package>
+<package name="0309V">
+<description>&lt;b&gt;RESISTOR&lt;/b&gt;&lt;p&gt;
+type 0309, grid 2.5 mm</description>
+<wire x1="1.27" y1="0" x2="0.635" y2="0" width="0.6096" layer="51"/>
+<wire x1="-0.635" y1="0" x2="-1.27" y2="0" width="0.6096" layer="51"/>
+<circle x="-1.27" y="0" radius="1.524" width="0.1524" layer="21"/>
+<circle x="-1.27" y="0" radius="0.762" width="0.1524" layer="51"/>
+<pad name="1" x="-1.27" y="0" drill="0.8128" shape="octagon"/>
+<pad name="2" x="1.27" y="0" drill="0.8128" shape="octagon"/>
+<text x="0.254" y="1.016" size="1.27" layer="25" ratio="10">&gt;NAME</text>
+<text x="0.254" y="-2.2098" size="1.27" layer="27" ratio="10">&gt;VALUE</text>
+<rectangle x1="0.254" y1="-0.3048" x2="0.5588" y2="0.3048" layer="51"/>
+<rectangle x1="-0.635" y1="-0.3048" x2="-0.3302" y2="0.3048" layer="51"/>
+<rectangle x1="-0.3302" y1="-0.3048" x2="0.254" y2="0.3048" layer="21"/>
+</package>
 </packages>
 </library>
 <library name="logo">
@@ -1716,6 +1731,28 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 </package>
 </packages>
 </library>
+<library name="opto-trans-siemens">
+<description>&lt;b&gt;Siemens Opto Transistors&lt;/b&gt;&lt;p&gt;
+&lt;author&gt;Created by librarian@cadsoft.de&lt;/author&gt;</description>
+<packages>
+<package name="BPX65">
+<description>&lt;B&gt;PHOTO DIODE&lt;/B&gt;</description>
+<wire x1="-2.7432" y1="0.4572" x2="-3.556" y2="0.4572" width="0.1524" layer="21"/>
+<wire x1="-3.556" y1="0.4572" x2="-3.556" y2="-0.4826" width="0.1524" layer="21"/>
+<wire x1="-3.556" y1="-0.4826" x2="-2.7178" y2="-0.4826" width="0.1524" layer="21"/>
+<wire x1="-1.905" y1="0" x2="0" y2="1.905" width="0.1524" layer="21" curve="-90"/>
+<wire x1="-1.27" y1="0" x2="0" y2="1.27" width="0.1524" layer="21" curve="-90"/>
+<wire x1="0" y1="-1.27" x2="1.27" y2="0" width="0.1524" layer="21" curve="90"/>
+<wire x1="0" y1="-1.905" x2="1.905" y2="0" width="0.1524" layer="21" curve="90"/>
+<circle x="0" y="-0.0254" radius="2.7686" width="0.1524" layer="21"/>
+<circle x="0" y="0" radius="2.159" width="0.1524" layer="21"/>
+<pad name="A" x="-0.889" y="-0.889" drill="0.8128" shape="octagon"/>
+<pad name="K" x="0.889" y="0.889" drill="0.8128" shape="octagon"/>
+<text x="3.175" y="0" size="1.27" layer="25" ratio="10">&gt;NAME</text>
+<text x="3.175" y="-1.905" size="1.27" layer="27" ratio="10">&gt;VALUE</text>
+</package>
+</packages>
+</library>
 </libraries>
 <attributes>
 </attributes>
@@ -1929,14 +1966,14 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <element name="C10" library="resistor" package="C0603" value="100nF" x="26.9043875" y="37.98630625" smashed="yes" rot="R180">
 <attribute name="NAME" x="28.79625" y="37.4661" size="1" layer="25" font="vector" ratio="10"/>
 </element>
-<element name="R4" library="resistor" package="R0603" value="4.7K" x="66.135875" y="15.0529125" smashed="yes" rot="R270">
-<attribute name="NAME" x="66.664153125" y="16.658984375" size="1" layer="25" font="vector" ratio="10" rot="R90"/>
+<element name="R4" library="resistor" package="R0603" value="4.7K" x="62.325875" y="15.0529125" smashed="yes" rot="R270">
+<attribute name="NAME" x="62.854153125" y="16.658984375" size="1" layer="25" font="vector" ratio="10" rot="R90"/>
 </element>
-<element name="R5" library="resistor" package="R0603" value="4.7K" x="68.677090625" y="15.0070875" smashed="yes" rot="R270">
-<attribute name="NAME" x="69.041478125" y="16.658984375" size="1" layer="25" font="vector" ratio="10" rot="R90"/>
+<element name="R5" library="resistor" package="R0603" value="4.7K" x="59.787090625" y="15.0070875" smashed="yes" rot="R270">
+<attribute name="NAME" x="60.151478125" y="16.658984375" size="1" layer="25" font="vector" ratio="10" rot="R90"/>
 </element>
-<element name="C11" library="resistor" package="C0603" value="100nF" x="63.343821875" y="15.0529125" smashed="yes" rot="R270">
-<attribute name="NAME" x="64.023653125" y="16.658984375" size="1" layer="25" font="vector" ratio="10" rot="R90"/>
+<element name="C11" library="resistor" package="C0603" value="100nF" x="70.963821875" y="15.0529125" smashed="yes" rot="R270">
+<attribute name="NAME" x="71.643653125" y="16.658984375" size="1" layer="25" font="vector" ratio="10" rot="R90"/>
 </element>
 <element name="U$1" library="ohw-logo" package="OSHW_10X200_NOTEXT" value="" x="37.534165625" y="51.58610625"/>
 <element name="C12" library="resistor" package="C0603" value="100nF" x="26.53130625" y="41.3506125" smashed="yes" rot="R90">
@@ -1975,6 +2012,15 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 </element>
 <element name="+" library="wirepad" package="2,15/1,0" value="" x="2.54" y="76.2" rot="R270"/>
 <element name="-" library="wirepad" package="2,15/1,0" value="" x="2.54" y="72.39" rot="R270"/>
+<element name="GPIO" library="pinhead" package="2X07" value="" x="10.16" y="-5.08"/>
+<element name="R1" library="resistor" package="R0603" value="220K" x="2.54" y="-17.78"/>
+<element name="PHT" library="opto-trans-siemens" package="BPX65" value="BPX65" x="3.81" y="-11.43">
+<attribute name="OC_NEWARK" value="06WX2764" x="3.81" y="-17.78" size="1.778" layer="27" display="off"/>
+<attribute name="OC_FARNELL" value="327451" x="3.81" y="-17.78" size="1.778" layer="27" display="off"/>
+<attribute name="MF" value="" x="3.81" y="-17.78" size="1.778" layer="27" display="off"/>
+<attribute name="MPN" value="BPX65." x="3.81" y="-17.78" size="1.778" layer="27" display="off"/>
+</element>
+<element name="R3" library="resistor" package="0309V" value="" x="3.81" y="-24.13"/>
 </elements>
 <signals>
 <signal name="VCC" class="1">
@@ -2033,6 +2079,8 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <contactref element="U$4" pad="2"/>
 <contactref element="-" pad="1"/>
 <contactref element="I2C_EXT" pad="6"/>
+<contactref element="R1" pad="2"/>
+<contactref element="R3" pad="1"/>
 <wire x1="70.879840625" y1="54.6883" x2="73.07053125" y2="54.67946875" width="0" layer="19" extent="1-1"/>
 <wire x1="68.03278125" y1="55.259175" x2="70.879840625" y2="54.6883" width="0" layer="19" extent="1-1"/>
 <wire x1="75.12" y1="48.54" x2="73.07053125" y2="54.67946875" width="0" layer="19" extent="1-1"/>
@@ -2049,6 +2097,8 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <wire x1="2.54" y1="72.39" x2="14.7574" y2="40.57" width="0" layer="19" extent="1-1"/>
 <wire x1="5.3" y1="4" x2="11.803065625" y2="39.436453125" width="0" layer="19" extent="1-1"/>
 <wire x1="4" y1="4" x2="5.3" y2="4" width="0" layer="19" extent="1-1"/>
+<wire x1="3.39" y1="-17.78" x2="4" y2="4" width="0" layer="19" extent="1-1"/>
+<wire x1="2.54" y1="-24.13" x2="3.39" y2="-17.78" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="D6">
 <contactref element="IC2" pad="10"/>
@@ -2111,7 +2161,7 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <contactref element="R2" pad="2"/>
 <contactref element="C11" pad="1"/>
 <contactref element="IC2" pad="29"/>
-<wire x1="17.78" y1="46.775" x2="63.343821875" y2="15.9029125" width="0" layer="19" extent="16-16"/>
+<wire x1="17.78" y1="46.775" x2="70.963821875" y2="15.9029125" width="0" layer="19" extent="16-16"/>
 <wire x1="18.65" y1="43.6626" x2="17.78" y2="46.775" width="0" layer="19" extent="1-16"/>
 </signal>
 <signal name="XTAL1">
@@ -2127,17 +2177,17 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <signal name="TX">
 <contactref element="R5" pad="1"/>
 <contactref element="IC2" pad="30"/>
-<wire x1="17.85" y1="43.6626" x2="68.677090625" y2="15.8570875" width="0" layer="19" extent="1-16"/>
+<wire x1="17.85" y1="43.6626" x2="59.787090625" y2="15.8570875" width="0" layer="19" extent="1-16"/>
 </signal>
 <signal name="RX">
 <contactref element="R4" pad="1"/>
 <contactref element="IC2" pad="31"/>
-<wire x1="17.05" y1="43.6626" x2="66.135875" y2="15.9029125" width="0" layer="19" extent="1-16"/>
+<wire x1="17.05" y1="43.6626" x2="62.325875" y2="15.9029125" width="0" layer="19" extent="1-16"/>
 </signal>
 <signal name="N$1">
 <contactref element="C11" pad="2"/>
 <contactref element="I2C_EXT" pad="5"/>
-<wire x1="63.343821875" y1="14.2029125" x2="69.85" y2="8.255" width="0" layer="19" extent="1-1"/>
+<wire x1="70.963821875" y1="14.2029125" x2="69.85" y2="8.255" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="N$2">
 </signal>
@@ -2148,7 +2198,7 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <signal name="N$3">
 <contactref element="R5" pad="2"/>
 <contactref element="I2C_EXT" pad="12"/>
-<wire x1="62.23" y1="5.715" x2="68.677090625" y2="14.1570875" width="0" layer="19" extent="1-1"/>
+<wire x1="62.23" y1="5.715" x2="59.787090625" y2="14.1570875" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="N$23">
 </signal>
@@ -2193,17 +2243,11 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <wire x1="23.52" y1="77.2" x2="24.765" y2="77.2" width="0.4064" layer="1"/>
 <wire x1="24.765" y1="77.2" x2="24.765" y2="76.835" width="0.4064" layer="1"/>
 </signal>
-<signal name="A0">
-<contactref element="IC2" pad="23"/>
-</signal>
 <signal name="A2">
 <contactref element="IC2" pad="25"/>
 </signal>
 <signal name="D5">
 <contactref element="IC2" pad="9"/>
-</signal>
-<signal name="D8">
-<contactref element="IC2" pad="12"/>
 </signal>
 <signal name="D2">
 <contactref element="IC2" pad="32"/>
@@ -2226,7 +2270,7 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <signal name="A7">
 <contactref element="IC2" pad="22"/>
 </signal>
-<signal name="LED">
+<signal name="LED_HEATCALL_L">
 <contactref element="IC2" pad="2"/>
 <contactref element="R7" pad="1"/>
 <wire x1="11.938165625" y1="42.57678125" x2="14.7574" y2="41.37" width="0" layer="19" extent="1-1"/>
@@ -2234,7 +2278,21 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <signal name="N$4">
 <contactref element="R4" pad="2"/>
 <contactref element="I2C_EXT" pad="11"/>
-<wire x1="62.23" y1="8.255" x2="66.135875" y2="14.2029125" width="0" layer="19" extent="1-1"/>
+<wire x1="62.23" y1="8.255" x2="62.325875" y2="14.2029125" width="0" layer="19" extent="1-1"/>
+</signal>
+<signal name="LDR">
+<contactref element="R1" pad="1"/>
+<contactref element="PHT" pad="A"/>
+<contactref element="R3" pad="2"/>
+<contactref element="IC2" pad="23"/>
+<wire x1="2.921" y1="-12.319" x2="23.3426" y2="41.37" width="0" layer="19" extent="1-1"/>
+<wire x1="1.69" y1="-17.78" x2="2.921" y2="-12.319" width="0" layer="19" extent="1-1"/>
+<wire x1="5.08" y1="-24.13" x2="1.69" y2="-17.78" width="0" layer="19" extent="1-1"/>
+</signal>
+<signal name="IO_POWER_UP" class="1">
+<contactref element="PHT" pad="K"/>
+<contactref element="IC2" pad="12"/>
+<wire x1="4.699" y1="-10.541" x2="18.65" y2="35.0774" width="0" layer="19" extent="1-1"/>
 </signal>
 </signals>
 <errors>

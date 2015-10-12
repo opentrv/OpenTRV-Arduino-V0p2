@@ -1987,7 +1987,6 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <contactref element="RFM23B" pad="5"/>
 <contactref element="C7" pad="1"/>
 <contactref element="C8" pad="A"/>
-<contactref element="FTDI+I2C" pad="14"/>
 <contactref element="IC2" pad="4"/>
 <contactref element="IC2" pad="18"/>
 <contactref element="IC2" pad="6"/>
@@ -1998,19 +1997,18 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <wire x1="70.879840625" y1="52.9883" x2="73.07053125" y2="52.97946875" width="0" layer="19" extent="1-1"/>
 <wire x1="68.03278125" y1="52.459175" x2="70.879840625" y2="52.9883" width="0" layer="19" extent="1-1"/>
 <wire x1="69.12" y1="48.54" x2="68.03278125" y2="52.459175" width="0" layer="19" extent="1-1"/>
-<wire x1="17.78" y1="48.475" x2="69.12" y2="48.54" width="0" layer="19" extent="1-1"/>
-<wire x1="60.96" y1="4.445" x2="17.78" y2="48.475" width="0" layer="19" extent="1-1"/>
 <wire x1="27.7543875" y1="37.98630625" x2="69.12" y2="48.54" width="0" layer="19" extent="1-1"/>
 <wire x1="23.3426" y1="37.37" x2="27.7543875" y2="37.98630625" width="0" layer="19" extent="1-1"/>
 <wire x1="14.7574" y1="38.17" x2="23.3426" y2="37.37" width="0" layer="19" extent="1-1"/>
 <wire x1="14.7574" y1="39.77" x2="14.7574" y2="38.17" width="0" layer="19" extent="1-1"/>
 <wire x1="10.103065625" y1="39.436453125" x2="14.7574" y2="39.77" width="0" layer="19" extent="1-1"/>
 <wire x1="15.24" y1="46.775" x2="14.7574" y2="39.77" width="0" layer="19" extent="1-1"/>
-<wire x1="20.32" y1="48.475" x2="15.24" y2="46.775" width="0" layer="19" extent="1-1"/>
+<wire x1="17.78" y1="48.475" x2="15.24" y2="46.775" width="0" layer="19" extent="1-1"/>
+<wire x1="20.32" y1="48.475" x2="17.78" y2="48.475" width="0" layer="19" extent="1-1"/>
 <wire x1="22.86" y1="48.475" x2="20.32" y2="48.475" width="0" layer="19" extent="1-1"/>
-<wire x1="2.05" y1="51.705" x2="10.103065625" y2="39.436453125" width="0" layer="19" extent="1-1"/>
+<wire x1="2.05" y1="51.705" x2="15.24" y2="46.775" width="0" layer="19" extent="1-1"/>
+<wire x1="2.54" y1="76.2" x2="2.05" y2="51.705" width="0" layer="19" extent="1-1"/>
 <wire x1="2.7" y1="4" x2="10.103065625" y2="39.436453125" width="0" layer="19" extent="1-1"/>
-<wire x1="2.54" y1="76.2" x2="2.7" y2="4" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="GND" class="1">
 <contactref element="C9" pad="2"/>
@@ -2026,8 +2024,6 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <contactref element="C7" pad="2"/>
 <contactref element="C4" pad="1"/>
 <contactref element="C8" pad="C"/>
-<contactref element="FTDI+I2C" pad="1"/>
-<contactref element="FTDI+I2C" pad="3"/>
 <contactref element="IC2" pad="21"/>
 <contactref element="IC2" pad="5"/>
 <contactref element="IC2" pad="3"/>
@@ -2040,17 +2036,15 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <wire x1="75.12" y1="32.54" x2="75.12" y2="48.54" width="0" layer="19" extent="1-1"/>
 <wire x1="77.12" y1="32.54" x2="75.12" y2="32.54" width="0" layer="19" extent="1-1"/>
 <wire x1="63.12" y1="32.54" x2="75.12" y2="32.54" width="0" layer="19" extent="1-1"/>
-<wire x1="76.2" y1="6.985" x2="77.12" y2="32.54" width="0" layer="19" extent="1-1"/>
-<wire x1="73.66" y1="6.985" x2="76.2" y2="6.985" width="0" layer="19" extent="1-1"/>
 <wire x1="26.0543875" y1="37.98630625" x2="63.12" y2="32.54" width="0" layer="19" extent="1-1"/>
 <wire x1="23.3426" y1="39.77" x2="26.0543875" y2="37.98630625" width="0" layer="19" extent="1-1"/>
 <wire x1="26.53130625" y1="42.2006125" x2="23.3426" y2="39.77" width="0" layer="19" extent="1-1"/>
 <wire x1="14.7574" y1="38.97" x2="23.3426" y2="39.77" width="0" layer="19" extent="1-1"/>
 <wire x1="14.7574" y1="40.57" x2="14.7574" y2="38.97" width="0" layer="19" extent="1-1"/>
 <wire x1="11.803065625" y1="39.436453125" x2="14.7574" y2="38.97" width="0" layer="19" extent="1-1"/>
+<wire x1="2.54" y1="72.39" x2="14.7574" y2="40.57" width="0" layer="19" extent="1-1"/>
 <wire x1="5.3" y1="4" x2="11.803065625" y2="39.436453125" width="0" layer="19" extent="1-1"/>
 <wire x1="4" y1="4" x2="5.3" y2="4" width="0" layer="19" extent="1-1"/>
-<wire x1="2.54" y1="72.39" x2="4" y2="4" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="D6">
 <contactref element="IC2" pad="10"/>
@@ -2084,22 +2078,18 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <signal name="1HZ">
 </signal>
 <signal name="SDA">
-<contactref element="FTDI+I2C" pad="4"/>
 <contactref element="IC2" pad="27"/>
 <contactref element="R6" pad="2"/>
 <contactref element="U$4" pad="1"/>
-<wire x1="20.25" y1="43.6626" x2="73.66" y2="4.445" width="0" layer="19" extent="1-1"/>
-<wire x1="22.86" y1="46.775" x2="20.25" y2="43.6626" width="0" layer="19" extent="1-1"/>
-<wire x1="5.3" y1="3" x2="22.86" y2="46.775" width="0" layer="19" extent="1-1"/>
+<wire x1="20.25" y1="43.6626" x2="22.86" y2="46.775" width="0" layer="19" extent="1-1"/>
+<wire x1="5.3" y1="3" x2="20.25" y2="43.6626" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="SCL">
-<contactref element="FTDI+I2C" pad="2"/>
 <contactref element="IC2" pad="28"/>
 <contactref element="R8" pad="1"/>
 <contactref element="U$4" pad="6"/>
-<wire x1="19.45" y1="43.6626" x2="76.2" y2="4.445" width="0" layer="19" extent="1-1"/>
-<wire x1="20.32" y1="46.775" x2="19.45" y2="43.6626" width="0" layer="19" extent="1-1"/>
-<wire x1="2.7" y1="3" x2="20.32" y2="46.775" width="0" layer="19" extent="1-1"/>
+<wire x1="19.45" y1="43.6626" x2="20.32" y2="46.775" width="0" layer="19" extent="1-1"/>
+<wire x1="2.7" y1="3" x2="19.45" y2="43.6626" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="RESET">
 <contactref element="R2" pad="2"/>
@@ -2130,8 +2120,6 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 </signal>
 <signal name="N$1">
 <contactref element="C11" pad="2"/>
-<contactref element="FTDI+I2C" pad="11"/>
-<wire x1="63.343821875" y1="14.2029125" x2="63.5" y2="6.985" width="0" layer="19" extent="16-16"/>
 </signal>
 <signal name="N$2">
 </signal>
@@ -2141,13 +2129,6 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 </signal>
 <signal name="N$3">
 <contactref element="R5" pad="2"/>
-<contactref element="FTDI+I2C" pad="7"/>
-<wire x1="68.677090625" y1="14.1570875" x2="68.58" y2="6.985" width="0" layer="19" extent="16-16"/>
-</signal>
-<signal name="N$5">
-<contactref element="R4" pad="2"/>
-<contactref element="FTDI+I2C" pad="9"/>
-<wire x1="66.135875" y1="14.2029125" x2="66.04" y2="6.985" width="0" layer="19" extent="16-16"/>
 </signal>
 <signal name="N$23">
 </signal>
@@ -2227,6 +2208,9 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <contactref element="IC2" pad="2"/>
 <contactref element="R7" pad="1"/>
 <wire x1="11.938165625" y1="42.57678125" x2="14.7574" y2="41.37" width="0" layer="19" extent="1-1"/>
+</signal>
+<signal name="N$4">
+<contactref element="R4" pad="2"/>
 </signal>
 </signals>
 <errors>

@@ -8160,8 +8160,6 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <text x="7.62" y="17.78" size="1.778" layer="91">Unless required by applicable law or agreed to in writing, </text>
 <text x="7.62" y="15.24" size="1.778" layer="91">software, hardware and materials distributed under this Licence</text>
 <text x="7.62" y="12.7" size="1.778" layer="91">is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS</text>
-<text x="7.62" y="2.54" size="1.778" layer="91">Author(s) / Copyright (s): Bo Herrmannsen 2013--2014, Damon Hart-Davis 2013--2014, Mike Stirling 2013</text>
-<text x="289.56" y="33.02" size="1.778" layer="91">OpenTRV Wireless TRV Controller</text>
 <text x="7.62" y="10.16" size="1.778" layer="91"></text>
 <text x="7.62" y="10.16" size="1.778" layer="91">OF ANY KIND, either express or implied. See the Licence for the</text>
 <text x="7.62" y="7.62" size="1.778" layer="91">specific language governing permissions and limitations under the Licence.</text>
@@ -8176,7 +8174,6 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <wire x1="93.98" y1="208.28" x2="93.98" y2="160.02" width="0.3048" layer="94"/>
 <wire x1="93.98" y1="160.02" x2="157.48" y2="160.02" width="0.3048" layer="94"/>
 <wire x1="93.98" y1="264.16" x2="93.98" y2="208.28" width="0.3048" layer="94"/>
-<text x="378.46" y="10.16" size="1.778" layer="91">2</text>
 <wire x1="157.48" y1="208.28" x2="157.48" y2="160.02" width="0.3048" layer="94"/>
 <text x="350.52" y="251.46" size="1.778" layer="91">50 ohm track 86mm</text>
 <wire x1="93.98" y1="160.02" x2="0" y2="160.02" width="0.3048" layer="94"/>

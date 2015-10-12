@@ -8096,6 +8096,76 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 </deviceset>
 </devicesets>
 </library>
+<library name="opto-trans-siemens">
+<description>&lt;b&gt;Siemens Opto Transistors&lt;/b&gt;&lt;p&gt;
+&lt;author&gt;Created by librarian@cadsoft.de&lt;/author&gt;</description>
+<packages>
+<package name="BPX65">
+<description>&lt;B&gt;PHOTO DIODE&lt;/B&gt;</description>
+<wire x1="-2.7432" y1="0.4572" x2="-3.556" y2="0.4572" width="0.1524" layer="21"/>
+<wire x1="-3.556" y1="0.4572" x2="-3.556" y2="-0.4826" width="0.1524" layer="21"/>
+<wire x1="-3.556" y1="-0.4826" x2="-2.7178" y2="-0.4826" width="0.1524" layer="21"/>
+<wire x1="-1.905" y1="0" x2="0" y2="1.905" width="0.1524" layer="21" curve="-90"/>
+<wire x1="-1.27" y1="0" x2="0" y2="1.27" width="0.1524" layer="21" curve="-90"/>
+<wire x1="0" y1="-1.27" x2="1.27" y2="0" width="0.1524" layer="21" curve="90"/>
+<wire x1="0" y1="-1.905" x2="1.905" y2="0" width="0.1524" layer="21" curve="90"/>
+<circle x="0" y="-0.0254" radius="2.7686" width="0.1524" layer="21"/>
+<circle x="0" y="0" radius="2.159" width="0.1524" layer="21"/>
+<pad name="A" x="-0.889" y="-0.889" drill="0.8128" shape="octagon"/>
+<pad name="K" x="0.889" y="0.889" drill="0.8128" shape="octagon"/>
+<text x="3.175" y="0" size="1.27" layer="25" ratio="10">&gt;NAME</text>
+<text x="3.175" y="-1.905" size="1.27" layer="27" ratio="10">&gt;VALUE</text>
+</package>
+</packages>
+<symbols>
+<symbol name="OED">
+<wire x1="1.27" y1="0" x2="0" y2="-2.54" width="0.254" layer="94"/>
+<wire x1="0" y1="-2.54" x2="-1.27" y2="0" width="0.254" layer="94"/>
+<wire x1="1.27" y1="-2.54" x2="0" y2="-2.54" width="0.254" layer="94"/>
+<wire x1="0" y1="-2.54" x2="-1.27" y2="-2.54" width="0.254" layer="94"/>
+<wire x1="1.27" y1="0" x2="0" y2="0" width="0.254" layer="94"/>
+<wire x1="0" y1="2.54" x2="0" y2="0" width="0.1524" layer="94"/>
+<wire x1="0" y1="0" x2="-1.27" y2="0" width="0.254" layer="94"/>
+<wire x1="0" y1="0" x2="0" y2="-2.54" width="0.254" layer="94"/>
+<wire x1="-3.683" y1="-3.048" x2="-2.286" y2="-1.651" width="0.1524" layer="94"/>
+<wire x1="-2.286" y1="-1.651" x2="-3.175" y2="-2.032" width="0.1524" layer="94"/>
+<wire x1="-3.175" y1="-2.032" x2="-2.667" y2="-2.54" width="0.1524" layer="94"/>
+<wire x1="-2.667" y1="-2.54" x2="-2.286" y2="-1.651" width="0.1524" layer="94"/>
+<wire x1="-2.413" y1="-0.508" x2="-3.302" y2="-0.889" width="0.1524" layer="94"/>
+<wire x1="-3.302" y1="-0.889" x2="-2.794" y2="-1.397" width="0.1524" layer="94"/>
+<wire x1="-2.794" y1="-1.397" x2="-2.413" y2="-0.508" width="0.1524" layer="94"/>
+<wire x1="-3.81" y1="-1.905" x2="-2.413" y2="-0.508" width="0.1524" layer="94"/>
+<text x="3.556" y="-4.318" size="1.778" layer="95" rot="R90">&gt;NAME</text>
+<text x="5.715" y="-4.318" size="1.778" layer="96" rot="R90">&gt;VALUE</text>
+<pin name="C" x="0" y="-5.08" visible="off" length="short" direction="pas" rot="R90"/>
+<pin name="A" x="0" y="2.54" visible="off" length="point" direction="pas" rot="R270"/>
+</symbol>
+</symbols>
+<devicesets>
+<deviceset name="BPX65" prefix="D">
+<description>&lt;B&gt;PHOTO DIODE&lt;/B&gt;</description>
+<gates>
+<gate name="1" symbol="OED" x="0" y="0"/>
+</gates>
+<devices>
+<device name="" package="BPX65">
+<connects>
+<connect gate="1" pin="A" pad="A"/>
+<connect gate="1" pin="C" pad="K"/>
+</connects>
+<technologies>
+<technology name="">
+<attribute name="MF" value="" constant="no"/>
+<attribute name="MPN" value="BPX65." constant="no"/>
+<attribute name="OC_FARNELL" value="327451" constant="no"/>
+<attribute name="OC_NEWARK" value="06WX2764" constant="no"/>
+</technology>
+</technologies>
+</device>
+</devices>
+</deviceset>
+</devicesets>
+</library>
 </libraries>
 <attributes>
 </attributes>
@@ -8149,6 +8219,11 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <part name="P+5" library="SparkFun-Aesthetics" deviceset="VCC" device=""/>
 <part name="+" library="wirepad" deviceset="2,15/1,0" device=""/>
 <part name="-" library="wirepad" deviceset="2,15/1,0" device=""/>
+<part name="GPIO" library="pinhead" deviceset="PINHD-2X7" device=""/>
+<part name="GND7" library="SparkFun-Aesthetics" deviceset="GND" device=""/>
+<part name="R1" library="resistor" deviceset="R-EU_" device="R0603" value="220K"/>
+<part name="PHT" library="opto-trans-siemens" deviceset="BPX65" device=""/>
+<part name="R3" library="resistor" deviceset="R-EU_" device="0309/V"/>
 </parts>
 <sheets>
 <sheet>
@@ -8236,6 +8311,13 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <instance part="P+5" gate="G$1" x="25.4" y="243.84"/>
 <instance part="+" gate="1" x="12.7" y="238.76"/>
 <instance part="-" gate="1" x="12.7" y="233.68"/>
+<instance part="GPIO" gate="A" x="279.4" y="111.76" rot="R180"/>
+<instance part="GND7" gate="1" x="180.34" y="187.96"/>
+<instance part="R1" gate="G$1" x="187.96" y="190.5" rot="R180"/>
+<instance part="PHT" gate="1" x="198.12" y="184.404" smashed="yes">
+<attribute name="NAME" x="201.676" y="172.466" size="1.778" layer="95" rot="R90"/>
+</instance>
+<instance part="R3" gate="G$1" x="187.96" y="195.58"/>
 </instances>
 <busses>
 </busses>
@@ -8393,6 +8475,15 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <wire x1="116.84" y1="231.14" x2="116.84" y2="218.44" width="0.1524" layer="91"/>
 <label x="116.84" y="243.84" size="1.778" layer="95" rot="R270"/>
 <pinref part="I2C_EXT" gate="A" pin="6"/>
+</segment>
+<segment>
+<pinref part="GND7" gate="1" pin="GND"/>
+<wire x1="180.34" y1="190.5" x2="182.88" y2="190.5" width="0.1524" layer="91"/>
+<pinref part="R1" gate="G$1" pin="2"/>
+<pinref part="R3" gate="G$1" pin="1"/>
+<wire x1="182.88" y1="195.58" x2="180.34" y2="195.58" width="0.1524" layer="91"/>
+<wire x1="180.34" y1="195.58" x2="180.34" y2="190.5" width="0.1524" layer="91"/>
+<junction x="180.34" y="190.5"/>
 </segment>
 </net>
 <net name="D6" class="0">
@@ -8641,16 +8732,11 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <pinref part="ANT" gate="1" pin="P"/>
 </segment>
 </net>
-<net name="A0" class="0">
-<segment>
-<wire x1="248.92" y1="119.38" x2="228.6" y2="119.38" width="0.1524" layer="91"/>
-<pinref part="IC2" gate="1" pin="ANALOG_0"/>
-<label x="251.46" y="119.38" size="1.778" layer="95"/>
-</segment>
-</net>
 <net name="A2" class="0">
 <segment>
-<wire x1="248.92" y1="114.3" x2="228.6" y2="114.3" width="0.1524" layer="91"/>
+<wire x1="274.32" y1="116.84" x2="259.08" y2="116.84" width="0.1524" layer="91"/>
+<wire x1="259.08" y1="116.84" x2="259.08" y2="114.3" width="0.1524" layer="91"/>
+<wire x1="259.08" y1="114.3" x2="228.6" y2="114.3" width="0.1524" layer="91"/>
 <pinref part="IC2" gate="1" pin="ANALOG_2"/>
 <label x="251.46" y="114.3" size="1.778" layer="95"/>
 </segment>
@@ -8669,16 +8755,11 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <label x="251.46" y="78.74" size="1.778" layer="95"/>
 </segment>
 </net>
-<net name="D8" class="0">
-<segment>
-<wire x1="228.6" y1="73.66" x2="248.92" y2="73.66" width="0.1524" layer="91"/>
-<pinref part="IC2" gate="1" pin="DIGITAL_8"/>
-<label x="251.46" y="73.66" size="1.778" layer="95"/>
-</segment>
-</net>
 <net name="D2" class="0">
 <segment>
-<wire x1="248.92" y1="91.44" x2="228.6" y2="91.44" width="0.1524" layer="91"/>
+<wire x1="274.32" y1="106.68" x2="269.24" y2="106.68" width="0.1524" layer="91"/>
+<wire x1="269.24" y1="106.68" x2="269.24" y2="91.44" width="0.1524" layer="91"/>
+<wire x1="269.24" y1="91.44" x2="228.6" y2="91.44" width="0.1524" layer="91"/>
 <pinref part="IC2" gate="1" pin="DIGITAL_2"/>
 <label x="251.46" y="91.44" size="1.778" layer="95"/>
 </segment>
@@ -8686,39 +8767,51 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <net name="A1" class="0">
 <segment>
 <pinref part="IC2" gate="1" pin="ANALOG_1"/>
-<wire x1="228.6" y1="116.84" x2="248.92" y2="116.84" width="0.1524" layer="91"/>
+<wire x1="228.6" y1="116.84" x2="256.54" y2="116.84" width="0.1524" layer="91"/>
+<wire x1="256.54" y1="116.84" x2="256.54" y2="119.38" width="0.1524" layer="91"/>
+<wire x1="256.54" y1="119.38" x2="274.32" y2="119.38" width="0.1524" layer="91"/>
 <label x="251.46" y="116.84" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="D3" class="0">
 <segment>
 <pinref part="IC2" gate="1" pin="DIGITAL_3(PWM)"/>
-<wire x1="228.6" y1="88.9" x2="248.92" y2="88.9" width="0.1524" layer="91"/>
+<wire x1="228.6" y1="88.9" x2="271.78" y2="88.9" width="0.1524" layer="91"/>
+<wire x1="271.78" y1="88.9" x2="271.78" y2="104.14" width="0.1524" layer="91"/>
+<wire x1="271.78" y1="104.14" x2="274.32" y2="104.14" width="0.1524" layer="91"/>
 <label x="251.46" y="88.9" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="A3" class="0">
 <segment>
 <pinref part="IC2" gate="1" pin="ANALOG_3"/>
-<wire x1="228.6" y1="111.76" x2="248.92" y2="111.76" width="0.1524" layer="91"/>
+<wire x1="228.6" y1="111.76" x2="261.62" y2="111.76" width="0.1524" layer="91"/>
+<wire x1="261.62" y1="111.76" x2="261.62" y2="114.3" width="0.1524" layer="91"/>
+<wire x1="261.62" y1="114.3" x2="274.32" y2="114.3" width="0.1524" layer="91"/>
 <label x="251.46" y="111.76" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="A6" class="0">
 <segment>
 <pinref part="IC2" gate="1" pin="ANALOG_6"/>
-<wire x1="228.6" y1="104.14" x2="248.92" y2="104.14" width="0.1524" layer="91"/>
+<wire x1="228.6" y1="104.14" x2="261.62" y2="104.14" width="0.1524" layer="91"/>
+<wire x1="261.62" y1="104.14" x2="261.62" y2="109.22" width="0.1524" layer="91"/>
+<wire x1="261.62" y1="109.22" x2="264.16" y2="109.22" width="0.1524" layer="91"/>
+<wire x1="264.16" y1="109.22" x2="264.16" y2="111.76" width="0.1524" layer="91"/>
+<wire x1="264.16" y1="111.76" x2="274.32" y2="111.76" width="0.1524" layer="91"/>
 <label x="251.46" y="104.14" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="A7" class="0">
 <segment>
 <pinref part="IC2" gate="1" pin="ANALOG_7"/>
-<wire x1="228.6" y1="101.6" x2="248.92" y2="101.6" width="0.1524" layer="91"/>
+<wire x1="228.6" y1="101.6" x2="266.7" y2="101.6" width="0.1524" layer="91"/>
+<wire x1="266.7" y1="101.6" x2="266.7" y2="109.22" width="0.1524" layer="91"/>
+<wire x1="266.7" y1="109.22" x2="274.32" y2="109.22" width="0.1524" layer="91"/>
 <label x="251.46" y="101.6" size="1.778" layer="95"/>
 </segment>
 </net>
-<net name="LED" class="0">
+<net name="LED_HEATCALL_L" class="0">
 <segment>
 <wire x1="228.6" y1="86.36" x2="248.92" y2="86.36" width="0.1524" layer="91"/>
 <label x="251.46" y="86.36" size="1.778" layer="95"/>
@@ -8735,6 +8828,36 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <pinref part="R4" gate="G$1" pin="2"/>
 <wire x1="124.46" y1="210.82" x2="124.46" y2="205.74" width="0.1524" layer="91"/>
 <pinref part="I2C_EXT" gate="A" pin="11"/>
+</segment>
+</net>
+<net name="LDR" class="0">
+<segment>
+<wire x1="198.12" y1="195.58" x2="198.12" y2="190.5" width="0.1524" layer="91"/>
+<pinref part="R1" gate="G$1" pin="1"/>
+<wire x1="198.12" y1="190.5" x2="198.12" y2="186.944" width="0.1524" layer="91"/>
+<wire x1="193.04" y1="190.5" x2="198.12" y2="190.5" width="0.1524" layer="91"/>
+<junction x="198.12" y="190.5"/>
+<pinref part="PHT" gate="1" pin="A"/>
+<pinref part="R3" gate="G$1" pin="2"/>
+<wire x1="198.12" y1="195.58" x2="193.04" y2="195.58" width="0.1524" layer="91"/>
+<label x="198.12" y="195.58" size="1.778" layer="95"/>
+</segment>
+<segment>
+<wire x1="228.6" y1="119.38" x2="248.92" y2="119.38" width="0.1524" layer="91"/>
+<label x="251.46" y="119.38" size="1.778" layer="95"/>
+<pinref part="IC2" gate="1" pin="ANALOG_0"/>
+</segment>
+</net>
+<net name="IO_POWER_UP" class="1">
+<segment>
+<label x="203.2" y="170.18" size="1.778" layer="95" rot="R180"/>
+<pinref part="PHT" gate="1" pin="C"/>
+<wire x1="198.12" y1="179.324" x2="198.12" y2="172.72" width="0.1524" layer="91"/>
+</segment>
+<segment>
+<wire x1="228.6" y1="73.66" x2="247.904" y2="73.66" width="0.1524" layer="91"/>
+<label x="251.46" y="73.66" size="1.778" layer="95"/>
+<pinref part="IC2" gate="1" pin="DIGITAL_8"/>
 </segment>
 </net>
 </nets>
