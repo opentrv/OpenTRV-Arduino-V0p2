@@ -97,6 +97,29 @@ void ValveMotorDirectV1HardwareDriver::motorRun(const motor_drive dir)
   }
 
 
+// DHD20151013: possible basis of calibration code
+//  // Run motor ~1s in the current direction; reverse at end of travel.
+//  DEBUG_SERIAL_PRINT_FLASHSTRING("Dir: ");
+//  DEBUG_SERIAL_PRINT(HardwareMotorDriverInterface::motorDriveClosing == mdir ? "closing" : "opening");
+//  DEBUG_SERIAL_PRINTLN();
+//  V1D.motorRun(mdir);
+//  OTV0P2BASE::nap(WDTO_30MS); // Run for minimum time to overcome initial initia.
+//  bool currentHigh = false;
+//  for(int i = 33; i-- > 0 && !(currentHigh = V1D.isCurrentHigh(mdir)); ) { OTV0P2BASE::nap(WDTO_30MS); }
+//  // Detect if end-stop is reached or motor current otherwise very high.
+//  if(currentHigh)
+//    {
+//    mdir = (HardwareMotorDriverInterface::motorDriveClosing == mdir) ?
+//      HardwareMotorDriverInterface::motorDriveOpening : HardwareMotorDriverInterface::motorDriveClosing;
+//    }
+//  // Stop motor until next loop.
+//  V1D.motorRun(HardwareMotorDriverInterface::motorOff);
+//
+//  if(currentHigh) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("Current high (reversing)"); }
+
+
+
+
 #define MI_NEEDS_ADC // Defined if MI output swing is not enough to use fast comparator.
 
 // Maximum current reading allowed when closing the valve (against the spring).
