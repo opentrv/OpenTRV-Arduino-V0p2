@@ -337,14 +337,6 @@ void loopAlt()
 
 
 
-  // Measure motor count against (fixed) internal reference.
-  power_intermittent_peripherals_enable(true);
-  const uint16_t mc = analogueNoiseReducedRead(MOTOR_DRIVE_MC_AIN, INTERNAL);
-  void power_intermittent_peripherals_disable();
-  DEBUG_SERIAL_PRINT_FLASHSTRING("Count input: ");
-  DEBUG_SERIAL_PRINT(mc);
-  DEBUG_SERIAL_PRINTLN();
-
 
   // Run motor ~1s in the current direction; reverse at end of travel.
   DEBUG_SERIAL_PRINT_FLASHSTRING("Dir: ");
@@ -352,24 +344,21 @@ void loopAlt()
   DEBUG_SERIAL_PRINTLN();
   bool currentHigh = false;
   V1D.motorRun(mdir);
-  for(int i = 33; i-- > 0 && !(currentHigh = V1D.isCurrentHigh(mdir)); )
-      {
-      const bool odd = 0 != (i & 1);
-      bool reducedDutyCycle = false;
-      if(odd)
+  uint8_t sct;
+  while(((sct = getSubCycleTime()) <= GSCT_MAX/2) && !(currentHigh = V1D.isCurrentHigh(mdir)))
+      { 
+      const uint8_t stopBy = sct+4; // One time chunk is ~32ms.
+      if(HardwareMotorDriverInterface::motorDriveClosing == mdir)
         {
-        if(HardwareMotorDriverInterface::motorDriveClosing == mdir)
-          {
-          // BE VERY CAREFUL HERE: a wrong move could destroy the H-bridge.
-          fastDigitalWrite(MOTOR_DRIVE_MR, HIGH); // Blip high to remove drive.
-          OTV0P2BASE::nap(WDTO_15MS);
-          fastDigitalWrite(MOTOR_DRIVE_MR, LOW); // Pull LOW last.
-          }
+        // BE VERY CAREFUL HERE: a wrong move could destroy the H-bridge.
+        fastDigitalWrite(MOTOR_DRIVE_MR, HIGH); // Blip high to remove power.
+        while(getSubCycleTime() == sct) { } // Off for ~8ms.
+        fastDigitalWrite(MOTOR_DRIVE_MR, LOW); // Pull LOW to re-enable power.
         }
-      if(reducedDutyCycle) { OTV0P2BASE::nap(WDTO_15MS); continue; }
-      OTV0P2BASE::nap(WDTO_30MS);
+      // Spin for up to ~32ms.
+      while(getSubCycleTime() < stopBy) { }
       }
-  // Stop motor until next loop.
+  // Stop motor until next loop (also ensures power off).
   V1D.motorRun(HardwareMotorDriverInterface::motorOff);
   // Detect if end-stop is reached or motor current otherwise very high.
   if(currentHigh)
@@ -380,6 +369,14 @@ void loopAlt()
 
   if(currentHigh) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("Current high (reversing)"); }
 
+
+  // Measure motor count against (fixed) internal reference.
+  power_intermittent_peripherals_enable(true);
+  const uint16_t mc = analogueNoiseReducedRead(MOTOR_DRIVE_MC_AIN, INTERNAL);
+  void power_intermittent_peripherals_disable();
+  DEBUG_SERIAL_PRINT_FLASHSTRING("Count input: ");
+  DEBUG_SERIAL_PRINT(mc);
+  DEBUG_SERIAL_PRINTLN();
 
 
   // Command-Line Interface (CLI) polling.
