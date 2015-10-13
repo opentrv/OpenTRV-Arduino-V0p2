@@ -8434,12 +8434,12 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <part name="-" library="wirepad" deviceset="2,15/1,0" device=""/>
 <part name="GND7" library="SparkFun-Aesthetics" deviceset="GND" device=""/>
 <part name="R1" library="resistor" deviceset="R-EU_" device="R0603" value="220K"/>
-<part name="PHT" library="opto-trans-siemens" deviceset="BPX65" device=""/>
 <part name="R3" library="resistor" deviceset="R-EU_" device="0309/V"/>
 <part name="R9" library="resistor" deviceset="R-EU_" device="R0603" value="4.7K"/>
 <part name="P+1" library="SparkFun-Aesthetics" deviceset="VCC" device=""/>
 <part name="DQ" library="wirepad" deviceset="2,15/1,0" device=""/>
 <part name="JP1" library="pinhead" deviceset="PINHD-1X9" device=""/>
+<part name="PHT1" library="opto-trans-siemens" deviceset="BPX65" device=""/>
 </parts>
 <sheets>
 <sheet>
@@ -8534,9 +8534,6 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <instance part="-" gate="1" x="12.7" y="233.68"/>
 <instance part="GND7" gate="1" x="180.34" y="187.96"/>
 <instance part="R1" gate="G$1" x="187.96" y="190.5" rot="R180"/>
-<instance part="PHT" gate="1" x="198.12" y="184.404" smashed="yes">
-<attribute name="NAME" x="201.676" y="172.466" size="1.778" layer="95" rot="R90"/>
-</instance>
 <instance part="R3" gate="G$1" x="187.96" y="195.58"/>
 <instance part="R9" gate="G$1" x="236.22" y="175.26" smashed="yes">
 <attribute name="NAME" x="237.49" y="176.7586" size="1.778" layer="95"/>
@@ -8545,6 +8542,9 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <instance part="P+1" gate="G$1" x="241.3" y="167.64" rot="R270"/>
 <instance part="DQ" gate="1" x="231.14" y="195.58" rot="R270"/>
 <instance part="JP1" gate="A" x="297.18" y="109.22"/>
+<instance part="PHT1" gate="1" x="198.12" y="181.864" smashed="yes" rot="R180">
+<attribute name="NAME" x="194.564" y="193.802" size="1.778" layer="95" rot="R270"/>
+</instance>
 </instances>
 <busses>
 </busses>
@@ -9091,10 +9091,10 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <wire x1="198.12" y1="190.5" x2="198.12" y2="186.944" width="0.1524" layer="91"/>
 <wire x1="193.04" y1="190.5" x2="198.12" y2="190.5" width="0.1524" layer="91"/>
 <junction x="198.12" y="190.5"/>
-<pinref part="PHT" gate="1" pin="A"/>
 <pinref part="R3" gate="G$1" pin="2"/>
 <wire x1="198.12" y1="195.58" x2="193.04" y2="195.58" width="0.1524" layer="91"/>
 <label x="198.12" y="195.58" size="1.778" layer="95"/>
+<pinref part="PHT1" gate="1" pin="C"/>
 </segment>
 <segment>
 <wire x1="228.6" y1="119.38" x2="248.92" y2="119.38" width="0.1524" layer="91"/>
@@ -9105,8 +9105,8 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <net name="IO_POWER_UP" class="1">
 <segment>
 <label x="203.2" y="170.18" size="1.778" layer="95" rot="R180"/>
-<pinref part="PHT" gate="1" pin="C"/>
 <wire x1="198.12" y1="179.324" x2="198.12" y2="172.72" width="0.1524" layer="91"/>
+<pinref part="PHT1" gate="1" pin="A"/>
 </segment>
 <segment>
 <wire x1="228.6" y1="73.66" x2="247.904" y2="73.66" width="0.1524" layer="91"/>

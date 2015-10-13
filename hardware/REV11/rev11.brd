@@ -2102,13 +2102,6 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <element name="R1" library="resistor" package="R0603" value="220K" x="3.81" y="16.51" smashed="yes">
 <attribute name="NAME" x="2.921" y="17.399" size="1.27" layer="25"/>
 </element>
-<element name="PHT" library="opto-trans-siemens" package="BPX65" value="BPX65" x="3.81" y="22.86" smashed="yes" rot="R180">
-<attribute name="OC_NEWARK" value="06WX2764" x="3.81" y="29.21" size="1.778" layer="27" rot="R180" display="off"/>
-<attribute name="OC_FARNELL" value="327451" x="3.81" y="29.21" size="1.778" layer="27" rot="R180" display="off"/>
-<attribute name="MF" value="" x="3.81" y="29.21" size="1.778" layer="27" rot="R180" display="off"/>
-<attribute name="MPN" value="BPX65." x="3.81" y="29.21" size="1.778" layer="27" rot="R180" display="off"/>
-<attribute name="NAME" x="5.715" y="27.94" size="1.27" layer="25" ratio="10" rot="R180"/>
-</element>
 <element name="R3" library="resistor" package="0309V" value="" x="3.81" y="12.7" rot="R180"/>
 <element name="R9" library="resistor" package="R0603" value="4.7K" x="17.78" y="12.7" smashed="yes" rot="R180">
 <attribute name="NAME" x="18.669" y="11.811" size="1.27" layer="25" rot="R180"/>
@@ -2117,6 +2110,13 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <element name="JP1" library="pinhead" package="1X09" value="" x="40.64" y="5.08" smashed="yes" rot="R180">
 <attribute name="NAME" x="41.3512" y="8.9662" size="1.27" layer="25" ratio="10" rot="R180"/>
 <attribute name="VALUE" x="52.07" y="8.89" size="1.27" layer="27" rot="R180"/>
+</element>
+<element name="PHT1" library="opto-trans-siemens" package="BPX65" value="BPX65" x="3.81" y="25.4" smashed="yes" rot="R180">
+<attribute name="OC_FARNELL" value="327451" x="3.81" y="25.4" size="1.778" layer="27" rot="R180" display="off"/>
+<attribute name="MPN" value="BPX65." x="3.81" y="25.4" size="1.778" layer="27" rot="R180" display="off"/>
+<attribute name="MF" value="" x="3.81" y="25.4" size="1.778" layer="27" rot="R180" display="off"/>
+<attribute name="OC_NEWARK" value="06WX2764" x="3.81" y="25.4" size="1.778" layer="27" rot="R180" display="off"/>
+<attribute name="NAME" x="6.985" y="30.48" size="1.27" layer="25" ratio="10" rot="R180"/>
 </element>
 </elements>
 <signals>
@@ -2403,17 +2403,17 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 </signal>
 <signal name="LDR">
 <contactref element="R1" pad="1"/>
-<contactref element="PHT" pad="A"/>
 <contactref element="R3" pad="2"/>
 <contactref element="IC2" pad="23"/>
-<wire x1="4.699" y1="23.749" x2="23.3426" y2="41.37" width="0" layer="19" extent="1-1"/>
-<wire x1="2.96" y1="16.51" x2="4.699" y2="23.749" width="0" layer="19" extent="1-1"/>
+<contactref element="PHT1" pad="K"/>
+<wire x1="2.96" y1="16.51" x2="23.3426" y2="41.37" width="0" layer="19" extent="1-1"/>
 <wire x1="2.54" y1="12.7" x2="2.96" y2="16.51" width="0" layer="19" extent="1-1"/>
+<wire x1="2.921" y1="24.511" x2="2.54" y2="12.7" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="IO_POWER_UP" class="1">
-<contactref element="PHT" pad="K"/>
 <contactref element="IC2" pad="12"/>
-<wire x1="2.921" y1="21.971" x2="18.65" y2="35.0774" width="0" layer="19" extent="1-1"/>
+<contactref element="PHT1" pad="A"/>
+<wire x1="4.699" y1="26.289" x2="18.65" y2="35.0774" width="0" layer="19" extent="1-1"/>
 </signal>
 </signals>
 <errors>
