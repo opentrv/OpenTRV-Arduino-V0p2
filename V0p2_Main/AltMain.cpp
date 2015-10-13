@@ -350,10 +350,23 @@ void loopAlt()
   DEBUG_SERIAL_PRINT_FLASHSTRING("Dir: ");
   DEBUG_SERIAL_PRINT(HardwareMotorDriverInterface::motorDriveClosing == mdir ? "closing" : "opening");
   DEBUG_SERIAL_PRINTLN();
-  V1D.motorRun(mdir);
   bool currentHigh = false;
+  V1D.motorRun(mdir);
   for(int i = 33; i-- > 0 && !(currentHigh = V1D.isCurrentHigh(mdir)); )
       {
+      const bool odd = 0 != (i & 1);
+      bool reducedDutyCycle = false;
+      if(odd)
+        {
+        if(HardwareMotorDriverInterface::motorDriveClosing == mdir)
+          {
+          // BE VERY CAREFUL HERE: a wrong move could destroy the H-bridge.
+          fastDigitalWrite(MOTOR_DRIVE_MR, HIGH); // Blip high to remove drive.
+          OTV0P2BASE::nap(WDTO_15MS);
+          fastDigitalWrite(MOTOR_DRIVE_MR, LOW); // Pull LOW last.
+          }
+        }
+      if(reducedDutyCycle) { OTV0P2BASE::nap(WDTO_15MS); continue; }
       OTV0P2BASE::nap(WDTO_30MS);
       }
   // Stop motor until next loop.
