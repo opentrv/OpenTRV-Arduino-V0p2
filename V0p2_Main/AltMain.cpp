@@ -381,8 +381,8 @@ void loopAlt()
     //Min run period to avoid false end-stop reports
     //is ~30ms or ~4 ticks.
     //
-    //Implies a nomial precision of ~4/1400 or << 1%,
-    //but an accuracy of ~1500/1400 as poor as 10%.
+    //Implies a nominal precision of ~4/1400 or << 1%,
+    //but an accuracy of ~1500/1400 as poor as ~10%.
     count = 0;
     // Reverse.
     mdir = (HardwareMotorDriverInterface::motorDriveClosing == mdir) ?

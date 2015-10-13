@@ -137,8 +137,13 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
     // ISR-/thread- safe with a mutex.
     volatile uint16_t clicksFromClosed;
 
+    // Measured (during calibration) sub-cycle ticks (1/128s) from open to closed.
+    uint16_t ticksFromOpen;
+    // Measured (during calibration) sub-cycle ticks (1/128s) from open to closed.
+    uint16_t ticksFromClosed;
+
     // Basic state of driver.
-    // Marked volatile so that indivdual reads are ISR-/thread- safe without a mutex.
+    // Marked volatile so that individual reads are ISR-/thread- safe without a mutex.
     // Hold a mutex to do compund operations sucn as read/modify/write.
     volatile /*driverState*/ uint8_t state;
 
