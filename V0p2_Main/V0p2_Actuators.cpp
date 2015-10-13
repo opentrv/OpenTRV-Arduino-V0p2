@@ -60,7 +60,7 @@ void ValveMotorDirectV1HardwareDriver::motorRun(const motor_drive dir)
       OTV0P2BASE::nap(WDTO_120MS); // Let H-bridge respond and settle, and motor slow down.
       pinMode(MOTOR_DRIVE_MR, OUTPUT); // Ensure that the LOW side is an output.
       fastDigitalWrite(MOTOR_DRIVE_MR, LOW); // Pull LOW last.
-      OTV0P2BASE::nap(WDTO_15MS); // Let H-bridge respond and settle.
+      OTV0P2BASE::nap(WDTO_60MS); // Let H-bridge respond and settle and let motor run up.
 //LED_HEATCALL_ON();
 //LED_UI2_OFF();
       break; // Fall through to common case.
@@ -76,7 +76,7 @@ void ValveMotorDirectV1HardwareDriver::motorRun(const motor_drive dir)
       OTV0P2BASE::nap(WDTO_120MS); // Let H-bridge respond and settle, and motor slow down.
       pinMode(MOTOR_DRIVE_ML, OUTPUT); // Ensure that the LOW side is an output.
       fastDigitalWrite(MOTOR_DRIVE_ML, LOW); // Pull LOW last.
-      OTV0P2BASE::nap(WDTO_15MS); // Let H-bridge respond and settle.
+      OTV0P2BASE::nap(WDTO_60MS); // Let H-bridge respond and settle and let motor run up.
 //LED_HEATCALL_OFF();
 //LED_UI2_ON();
       break; // Fall through to common case.
@@ -223,7 +223,7 @@ void ValveMotorDirectV1::wiggle()
 //    case motorDriveClosing:
 //      {
 //      fastDigitalWrite(MOTOR_DRIVE_MR, HIGH); // Pull one side high immediately *FIRST* for safety.
-//      nap(WDTO_120MS); // Let H-bridge respond and settle, and motor slow down.
+//      nap(WDTO_120MS); // Let H-bridge respond and settle.
 //      pinMode(MOTOR_DRIVE_ML, OUTPUT); // Ensure that the LOW side is an output.
 //      fastDigitalWrite(MOTOR_DRIVE_ML, LOW); // Pull other side side low after.
 //      nap(WDTO_15MS); // Let H-bridge respond and settle.
