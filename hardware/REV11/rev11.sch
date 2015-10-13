@@ -8531,6 +8531,7 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <wire x1="215.9" y1="208.28" x2="215.9" y2="160.02" width="0.3048" layer="94"/>
 <wire x1="157.48" y1="160.02" x2="256.54" y2="160.02" width="0.3048" layer="94"/>
 <wire x1="256.54" y1="208.28" x2="256.54" y2="160.02" width="0.3048" layer="94"/>
+<text x="7.62" y="2.54" size="1.778" layer="91">Copyright: Bo Herrmannsen 2015</text>
 </plain>
 <instances>
 <instance part="C8" gate="G$1" x="274.32" y="233.68"/>
