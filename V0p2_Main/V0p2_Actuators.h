@@ -127,11 +127,11 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
     enum driverState
       {
       init = 0, // Power-up state.
-      initPinWithdrawn, // Allows valve to be fitted.
-      initCalibrating, // Calibrating full valve travel.
-      normal, // Normal operating state: values lower than this indicate that power-up is not complete.
-      decalcinating, // TODO: running decalcination cycle (and can recalibrate and mitigate valve seating issues).
-      motorDriverError // Error state can only normally be cleared by power-cycling.
+      valvePinWithdrawn, // Allows valve to be fitted.
+      valveCalibrating, // Calibrating full valve travel.
+      valveNormal, // Normal operating state: values lower than this indicate that power-up is not complete.
+      valveDecalcinating, // TODO: running decalcination cycle (and can recalibrate and mitigate valve seating issues).
+      valveDriverError // Error state can only normally be cleared by power-cycling.
       };
 
   private:
@@ -199,7 +199,7 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
 
     // Returns true iff not (re)calibrating/(re)initialising/(re)syncing.
     // Initially false until power-up and at least initial calibration are complete.
-    bool isCalibrated() const { return((state > (uint8_t)initCalibrating) && (0 != clicksFullTravel)); }
+    bool isCalibrated() const { return((state > (uint8_t)valveCalibrating) && (0 != clicksFullTravel)); }
 
     // Returns true if device can track movement between end stops.
     // Without this at best the logic has to guess and the valve control logic
@@ -208,7 +208,7 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
     bool hasMovementTracker() const { return(0 != clicksFullTravel); }
 
     // True iff power-up initialisation (eg including allowing user to fit to valve base) is done.
-    bool isPowerUpDone() const { return(state >= (uint8_t)motorNormal); }
+    bool isPowerUpDone() const { return(state >= (uint8_t)valveNormal); }
 
     // Get current motor drive status (off else direction of running).
     HardwareMotorDriverInterface::motor_drive getMotorDriveStatus() const { return((HardwareMotorDriverInterface::motor_drive) motorDriveStatus); }
