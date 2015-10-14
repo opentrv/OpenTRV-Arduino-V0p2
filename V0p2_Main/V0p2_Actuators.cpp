@@ -41,7 +41,12 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 // Call to actually run/stop low-level motor.
 // May take as much as 200ms eg to change direction.
 // Stopping (removing power) should typically be very fast, << 100ms.
-void ValveMotorDirectV1HardwareDriver::motorRun(const motor_drive dir)
+//   * start  if true then this routine starts the motor from cold,
+//            else this runs the motor for a short continuation period;
+//            at least one continuation should be performed before testing
+//            for high current loads at end stops
+// TODO: implement start
+void ValveMotorDirectV1HardwareDriver::motorRun(const motor_drive dir, const bool start)
   {
   // *** MUST NEVER HAVE L AND R LOW AT THE SAME TIME else board may be destroyed at worst. ***
   // Operates as quickly as reasonably possible, eg to move to stall detection quickly...

@@ -91,7 +91,11 @@ class HardwareMotorDriverInterface
     // Call to actually run/stop low-level motor.
     // May take as much as 200ms eg to change direction.
     // Stopping (removing power) should typically be very fast, << 100ms.
-    virtual void motorRun(motor_drive dir) = 0;
+    //   * start  if true then this routine starts the motor from cold,
+    //            else this runs the motor for a short continuation period;
+    //            at least one continuation should be performed before testing
+    //            for high current loads at end stops
+    virtual void motorRun(motor_drive dir, bool start = true) = 0;
 //
 //    // Detect if end-stop is reached or motor current otherwise very high.
 //    virtual bool isCurrentHigh();
@@ -219,7 +223,11 @@ class ValveMotorDirectV1HardwareDriver : public HardwareMotorDriverInterface
     // Call to actually run/stop low-level motor.
     // May take as much as 200ms eg to change direction.
     // Stopping (removing power) should typically be very fast, << 100ms.
-    virtual void motorRun(motor_drive dir);
+    //   * start  if true then this routine starts the motor from cold,
+    //            else this runs the motor for a short continuation period;
+    //            at least one continuation should be performed before testing
+    //            for high current loads at end stops
+    virtual void motorRun(motor_drive dir, bool start = true);
 
     // Detect if end-stop is reached or motor current otherwise very high.
     virtual bool isCurrentHigh(HardwareMotorDriverInterface::motor_drive mdir = motorDriveOpening) const;
@@ -285,12 +293,15 @@ extern ValveMotorDirectV1 ValveDirect;
 // DHD20130522: FHT8V + valve heads I have been using are not typically open until around 6%; at least one opens at ~20%.
 // Allowing valve to linger at just below this level without calling for heat when shutting
 // may allow comfortable bolier pump overrun in older systems with no/poor bypass to avoid overheating.
+// DHD20151014: may need reduction to <5 for use in high-pressure systems.
 #define DEFAULT_MIN_VALVE_PC_REALLY_OPEN 11
 
 // Default valve percentage at which significant heating power is being provided.
 // For many valves much of the time this may be effectively fully open,
 // ie no change beyond this makes significant difference to heat delivery.
-#define DEFAULT_VALVE_PC_MODERATELY_OPEN 34
+// Should be significantly higher than DEFAULT_MIN_VALVE_PC_REALLY_OPEN.
+// DHD20151014: may need boost to ~50 for tricky all-in-one units.
+#define DEFAULT_VALVE_PC_MODERATELY_OPEN 35
 
 
 
