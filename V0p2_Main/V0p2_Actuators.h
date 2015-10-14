@@ -148,7 +148,7 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
 
     // Basic state of driver.
     // Marked volatile so that individual reads are ISR-/thread- safe without a mutex.
-    // Hold a mutex to do compund operations sucn as read/modify/write.
+    // Hold a mutex to do compound operations such as read/modify/write.
     volatile /*driverState*/ uint8_t state;
 
     // Nominal motor drive status, ie what it should be doing.
@@ -215,8 +215,8 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
 
 #if defined(LOCAL_TRV) && defined(DIRECT_MOTOR_DRIVE_V1)
 // Implementation for V1 (REV7/DORM1) motor.
-// Usually not instantaited except within ValveMotorDirectV1.
-// Creating multiple instances almost certaintly a BAD IDEA.
+// Usually not instantiated except within ValveMotorDirectV1.
+// Creating multiple instances almost certainly a BAD IDEA.
 class ValveMotorDirectV1HardwareDriver : public HardwareMotorDriverInterface
   {
   public:
@@ -292,7 +292,7 @@ extern ValveMotorDirectV1 ValveDirect;
 // (It may however be possible to scavenge some heat if a particular valve opens below this and the circulation pump is already running, for example.)
 // DHD20130522: FHT8V + valve heads I have been using are not typically open until around 6%; at least one opens at ~20%.
 // Allowing valve to linger at just below this level without calling for heat when shutting
-// may allow comfortable bolier pump overrun in older systems with no/poor bypass to avoid overheating.
+// may allow comfortable boiler pump overrun in older systems with no/poor bypass to avoid overheating.
 // DHD20151014: may need reduction to <5 for use in high-pressure systems.
 #define DEFAULT_MIN_VALVE_PC_REALLY_OPEN 11
 
@@ -313,7 +313,7 @@ class OnOffBoilerDriverLogic
     // MAximum distinct radiators tracked by this system.
     // The algorithms uses will assume that this is a smallish number,
     // and may work best of a power of two.
-    // Reasonable candidiates are 8 or 16.
+    // Reasonable candidates are 8 or 16.
     static const uint8_t maxRadiators = 8;
 
     // Per-radiator data status.
@@ -351,7 +351,7 @@ class OnOffBoilerDriverLogic
     // Minimum individual valve percentage to be considered open [1,100].
     uint8_t minIndividualPC;
 
-    // Minimum aggreate valve percentage to be considered open, no lower than minIndividualPC; [1,100].
+    // Minimum aggrigate valve percentage to be considered open, no lower than minIndividualPC; [1,100].
     uint8_t minAggregatePC;
 
     // 'Bad' (never valid as housecode or OpenTRV code) ID.
@@ -361,7 +361,7 @@ class OnOffBoilerDriverLogic
     // List of authorised IDs.
     // Entries beyond the last valid authorised ID are set to 0xffffu (never a valid ID);
     // if there are none then [0] is set to 0xffffu.
-    // If no authorised IDs then no authorisation is done and alls IDs are accepted
+    // If no authorised IDs then no authorisation is done and all IDs are accepted
     // and kicked out expiry-first if there is a shortage of slots.
     uint16_t authedIDs[maxRadiators];
 #endif
@@ -400,7 +400,7 @@ class OnOffBoilerDriverLogic
     // ISR-/thread- safe to allow for interrupt-driven comms, and as quick as possible.
     // Returns false if the signal is rejected, eg from an unauthorised ID.
     // The basic behaviour is that a signal with sufficient percent open
-    // is good for 2 minutes (120s, 60 ticks) unless explicitly cancelled earler,
+    // is good for 2 minutes (120s, 60 ticks) unless explicitly cancelled earlier,
     // for all valve types including FS20/FHT8V-style.
     // That may be slightly adjusted for IDs that indicate FS20 housecodes, etc.
     //   * id  is the two-byte ID or house code; 0xffffu is never valid
@@ -416,7 +416,7 @@ class OnOffBoilerDriverLogic
     // such as incremental clean-up.
     // Because this does not assume a tick is in real time
     // this remains entirely unit testable,
-    // and no use of wall-clack time is made within this or sibling class methods.
+    // and no use of wall-clock time is made within this or sibling class methods.
     void tick2s();
 
     // Fetches statuses of valves recently heard from and returns the count; 0 if none.
