@@ -59,14 +59,22 @@ static const uint8_t MAX_COMPRESSED_MINS_AFTER_MIDNIGHT = ((OTV0P2BASE::MINS_PER
 // TODO: make gradual.
 static uint8_t onTime()
   {
+#if LEARNED_ON_PERIOD_M == LEARNED_ON_PERIOD_COMFORT_M
+  // Simplify the logic where no variation in on time is required.
+  return(LEARNED_ON_PERIOD_M); 
+#else
+  // Variable 'on' time depending on how 'eco' the settings are.
+
 //  // Simple and fast binary choice.
 //  return(hasEcoBias() ? LEARNED_ON_PERIOD_M : LEARNED_ON_PERIOD_COMFORT_M);
 
-  // Three-way split based on current WARM target temperature.
+  // Three-way split based on current WARM target temperature,
+  // for a relatively gentle change in behaviour along the valve dial for example.
   const uint8_t wt = getWARMTargetC();
   if(isEcoTemperature(wt)) { return(LEARNED_ON_PERIOD_M); }
   else if(isComfortTemperature(wt)) { return(LEARNED_ON_PERIOD_COMFORT_M); }
   else { return((LEARNED_ON_PERIOD_M + LEARNED_ON_PERIOD_COMFORT_M) / 2); }
+#endif
   }
 #endif
 

@@ -99,9 +99,15 @@ void loopOpenTRV();
 
 #ifdef LEARN_BUTTON_AVAILABLE
 // Period in minutes for simple learned on-time; strictly positive (and less than 256).
+#ifndef LEARNED_ON_PERIOD_M
 #define LEARNED_ON_PERIOD_M 60
+#endif
 // Period in minutes for simple learned on-time with comfort bias; strictly positive (and less than 256).
-#define LEARNED_ON_PERIOD_COMFORT_M 120
+// Defaults to twice LEARNED_ON_PERIOD_M.
+// Should be no shorter/less than LEARNED_ON_PERIOD_M to avoid confusion.
+#ifndef LEARNED_ON_PERIOD_COMFORT_M
+#define LEARNED_ON_PERIOD_COMFORT_M (min(2*(LEARNED_ON_PERIOD_M),255))
+#endif
 #endif
 
 

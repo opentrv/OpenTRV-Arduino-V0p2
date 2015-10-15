@@ -46,7 +46,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
 //#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
 //#define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
-#define CONFIG_DORM1 // REV7 / DORM1 Winter 2014/2015 all-in-one valve unit.
+//#define CONFIG_DORM1 // REV7 / DORM1 Winter 2014/2015 all-in-one valve unit.
 //#define CONFIG_DORM1_BOILER // REV8 / DORM1 Winter 2014/2015 boiler-control unit.
 //#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
 
@@ -57,7 +57,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_Trial2013Winter_Round1_STATSHUB // REV1 as stats hub.
 //#define CONFIG_DHD_TESTLAB_REV4 // REV4 cut2.
 //#define CONFIG_DHD_TESTLAB_REV4_NOHUB // REV4 cut2, no hub.
-//#define CONFIG_BH_DHW // Bo's hot water.
+#define CONFIG_BH_DHW // Bo's hot water.
 //#define CONFIG_BH_TESTLAB // Bo's test environment.
 //#define CONFIG_DORM1_SANS32K // REV7 / DORM1 without working 32768Hz clock.
 //#define CONFIG_REV7N // REV7 with external "Model N" valve.
@@ -554,12 +554,19 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define DHW_TEMPERATURES
 // Must minimise water flow.
 #define TRV_SLEW_GLACIAL
-// Set max percentage open: BH reports 30% to be optimal 2015/03.
-#define TRV_MAX_PC_OPEN 30
+// Set max percentage open: BH reports 30% to be (near) optimal 2015/03; BH requested 20% at 2015/10/15.
+#define TRV_MAX_PC_OPEN 20
 // IF UNDEFINED: this unit cannot act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
 #undef ENABLE_BOILER_HUB
 // IF UNDEFINED: don't allow RX of stats frames (since there is no easy way to plug in a serial connection to relay them!)
 #undef ALLOW_STATS_RX
+// IF DEFINED: allow TX of stats frames.
+#define ALLOW_STATS_TX
+// TODO-264: Find out why IDLE seems to crash some REV1 boards.
+#undef ENABLE_USE_OF_AVR_IDLE_MODE
+// Override schedule on time to simple fixed value of 2h per BH request 2015/10/15.
+#define LEARNED_ON_PERIOD_M 120 // Must be <= 255.
+#define LEARNED_ON_PERIOD_COMFORT_M LEARNED_ON_PERIOD_M
 // Use common settings.
 #define COMMON_SETTINGS
 #endif

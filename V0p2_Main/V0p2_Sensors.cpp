@@ -580,7 +580,7 @@ static int Sensor_DS18B10_readTemperatureC16()
   MinOW.write(0x44); // Start conversion without parasite power.
   //delay(750); // 750ms should be enough.
   // Poll for conversion complete (bus released)...
-  while(MinOW.read_bit() == 0) { nap(WDTO_30MS); }
+  while(MinOW.read_bit() == 0) { OTV0P2BASE::nap(WDTO_30MS); }
 
   // Fetch temperature (scratchpad read).
   MinOW.reset();
