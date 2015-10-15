@@ -157,7 +157,8 @@ void ValveMotorDirectV1HardwareDriver::motorRun(const motor_drive dir, HardwareM
 //    }
 
 
-#define MI_NEEDS_ADC // Defined if MI output swing is not enough to use fast comparator.
+// IF DEFINED: MI output swing asymmetric or is not enough to use fast comparator.
+#define MI_NEEDS_ADC
 
 // Maximum current reading allowed when closing the valve (against the spring).
 static const uint16_t maxCurrentReadingClosing = 600;
@@ -208,18 +209,8 @@ uint8_t ValveMotorDirectV1::read()
   return(0);
   }
 
-//#if 1 && defined(ALT_MAIN_LOOP) && defined(DEBUG)
-//// Drive motor back and forth (toggle direction each call) just for testing/fun.
-//void ValveMotorDirectV1::flip()
-//  {
-//  static bool open;
-//  open = !open;
-//  motorDrive(open ? motorDriveOpening : motorDriveClosing);
-//  }
-//#endif
 
 // Minimally wiggles the motor to give tactile feedback and/or show to be working.
-// Does not itself track movement against shaft encoder, etc, or check for stall.
 // May take a significant fraction of a second.
 // Finishes with the motor turned off.
 void ValveMotorDirectV1::wiggle()

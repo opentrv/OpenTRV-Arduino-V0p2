@@ -27,18 +27,21 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 
 // Abstract class for motor drive.
 // Supports abstract model plus remote (wireless) and local/direct implementations.
-// Implementations may require poll() called at a fixed rate.
+// Implementations may require read() called at a fixed rate,
+// though should tolerate calls being skipped when time is tight for other operations,
+// since read() may take substantial time (hundreds of milliseconds).
 class AbstractRadValve : public OTV0P2BASE::SimpleTSUint8Actuator
   {
   public:
-    // Returns true if this sensor reading value passed is valid, eg in range [0,100].
+    // Returns true if this target valve open % value passed is valid, ie in range [0,100].
     virtual bool isValid(const uint8_t value) const { return(value <= 100); }
 
     // Returns true iff not in error state and not (re)calibrating/(re)initialising/(re)syncing.
     // By default there is no recalibration step.
     virtual bool isInNormalRunState() const { return(true); }
 
-    // Returns true if in an error state,
+    // Returns true if in an error state.
+    // May be recoverable by forcing recalibration.
     virtual bool isInErrorState() const { return(false); }
 
     // True if the controlled physical valve is thought to be at least partially open right now.

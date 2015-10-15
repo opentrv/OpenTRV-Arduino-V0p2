@@ -334,6 +334,11 @@ void loopAlt()
 //#endif
 
 
+  // Provide regular poll to motor driver.
+  // May take significant time to run
+  // so don't call when timing is critical or not much left,
+  // eg around critical TXes.
+  ValveDirect.read();
 
 
 
