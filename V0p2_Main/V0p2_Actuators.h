@@ -79,15 +79,9 @@ class ValveMotorDirectV1 : public AbstractRadValve
 
 
     // Minimally wiggles the motor to give tactile feedback and/or show to be working.
-    // Does not itself track movement against shaft encoder, etc, or check for stall.
     // May take a significant fraction of a second.
     // Finishes with the motor turned off.
     void wiggle();
-
-//#if defined(ALT_MAIN_LOOP) && defined(DEBUG)
-//  // Drive motor back and forth (toggle direction each call) just for testing/fun.
-//  void flip();
-//#endif
   };
 // Singleton implementation/instance.
 extern ValveMotorDirectV1 ValveDirect;
