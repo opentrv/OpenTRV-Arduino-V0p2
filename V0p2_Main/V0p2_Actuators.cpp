@@ -41,12 +41,14 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 // Call to actually run/stop low-level motor.
 // May take as much as 200ms eg to change direction.
 // Stopping (removing power) should typically be very fast, << 100ms.
+//   * dir    direction to run motor (or off/stop)
+//   * callback  callback handler
 //   * start  if true then this routine starts the motor from cold,
 //            else this runs the motor for a short continuation period;
 //            at least one continuation should be performed before testing
 //            for high current loads at end stops
 // TODO: implement start
-void ValveMotorDirectV1HardwareDriver::motorRun(const motor_drive dir, const bool start)
+void ValveMotorDirectV1HardwareDriver::motorRun(const motor_drive dir, HardwareMotorDriverInterfaceCallbackHandler &callback, const bool start)
   {
   // *** MUST NEVER HAVE L AND R LOW AT THE SAME TIME else board may be destroyed at worst. ***
   // Operates as quickly as reasonably possible, eg to move to stall detection quickly...
@@ -183,16 +185,16 @@ bool ValveMotorDirectV1HardwareDriver::isCurrentHigh(HardwareMotorDriverInterfac
   }
 
 
-// Enable/disable end-stop detection and shaft-encoder.
-// Disabling should usually force the motor off,
-// with a small pause for any residual movement to complete.
-void ValveMotorDirectV1HardwareDriver::enableFeedback(const bool enable, HardwareMotorDriverInterfaceCallbackHandler &callback)
-  {
-  // Check for high motor current indicating hitting an end-stop.
-  const bool highI = isCurrentHigh();
-//  if(highI) { LED_UI2_ON(); } else { LED_UI2_OFF(); }
-  if(highI) { callback.signalHittingEndStop(); } 
-  }
+//// Enable/disable end-stop detection and shaft-encoder.
+//// Disabling should usually force the motor off,
+//// with a small pause for any residual movement to complete.
+//void ValveMotorDirectV1HardwareDriver::enableFeedback(const bool enable, HardwareMotorDriverInterfaceCallbackHandler &callback)
+//  {
+//  // Check for high motor current indicating hitting an end-stop.
+//  const bool highI = isCurrentHigh();
+////  if(highI) { LED_UI2_ON(); } else { LED_UI2_OFF(); }
+//  if(highI) { callback.signalHittingEndStop(); } 
+//  }
 
 
 // Actuator/driver for direct local (radiator) valve motor control.

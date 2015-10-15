@@ -33,55 +33,50 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 // Creating multiple instances almost certainly a BAD IDEA.
 class ValveMotorDirectV1HardwareDriver : public HardwareMotorDriverInterface
   {
+  protected:
+    // Detect if end-stop is reached or motor current otherwise very high.
+    virtual bool isCurrentHigh(HardwareMotorDriverInterface::motor_drive mdir = motorDriveOpening) const;
+
   public:
     // Call to actually run/stop low-level motor.
     // May take as much as 200ms eg to change direction.
     // Stopping (removing power) should typically be very fast, << 100ms.
+    //   * dir    direction to run motor (or off/stop)
+    //   * callback  callback handler
     //   * start  if true then this routine starts the motor from cold,
     //            else this runs the motor for a short continuation period;
     //            at least one continuation should be performed before testing
     //            for high current loads at end stops
-    virtual void motorRun(motor_drive dir, bool start = true);
-
-    // Detect if end-stop is reached or motor current otherwise very high.
-    virtual bool isCurrentHigh(HardwareMotorDriverInterface::motor_drive mdir = motorDriveOpening) const;
-
-    // Enable/disable end-stop detection and shaft-encoder.
-    // Disabling should usually force the motor off,
-    // with a small pause for any residual movement to complete.
-    virtual void enableFeedback(bool enable, HardwareMotorDriverInterfaceCallbackHandler &callback);
-
-    // If true then enableFeedback(true) needs to be called in a fairly tight loop
-    // while the motor is running and for a short while after
-    // to capture end-stop hits, etc.
-    // Always true for this driver.
-    virtual bool needsPoll() const { return(true); }
+    virtual void motorRun(motor_drive dir, HardwareMotorDriverInterfaceCallbackHandler &callback, bool start = true);
   };
 
 // Actuator/driver for direct local (radiator) valve motor control.
 class ValveMotorDirectV1 : public AbstractRadValve
   {
   private:
-//    CurrentSenseValveMotorDirect logic;
 
-  protected:
-    // Turn motor off, or on in a given drive direction.
-    // This routine is very careful to avoid setting outputs into any illegal/'bad' state.
-    // Sets flags accordingly.
-    // Does not provide any monitoring of stall, position encoding, etc.
-    // May take significant time (~150ms) to gently stop motor.
-//    void motorDrive(motor_drive dir) { logic.setMotorDrive(dir); }
+
+//    CurrentSenseValveMotorDirect logic;
 
   public:
     // Regular poll/update.
     virtual uint8_t read();
 
-//    // Handle simple interrupt.
-//    // Fast and ISR (Interrupt Service Routines) safe.
-//    // Returns true if interrupt was successfully handled and cleared
-//    // else another interrupt handler in the chain may be called
-//    // to attempt to clear the interrupt.
-//    virtual bool handleInterruptSimple();
+    // Handle simple interrupt.
+    // Fast and ISR (Interrupt Service Routines) safe.
+    // Returns true if interrupt was successfully handled and cleared
+    // else another interrupt handler in the chain may be called
+    // to attempt to clear the interrupt.
+    virtual bool handleInterruptSimple() { /* TODO */ }
+
+
+    // Returns true iff not in error state and not (re)calibrating/(re)initialising/(re)syncing.
+    // By default there is no recalibration step.
+    virtual bool isInNormalRunState() const { return(false); }
+
+    // Returns true if in an error state,
+    virtual bool isInErrorState() const { return(false); }
+
 
     // Minimally wiggles the motor to give tactile feedback and/or show to be working.
     // Does not itself track movement against shaft encoder, etc, or check for stall.
