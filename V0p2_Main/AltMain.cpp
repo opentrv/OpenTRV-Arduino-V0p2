@@ -391,14 +391,14 @@ void loopAlt()
 
 
 
-
-  // Measure motor count against (fixed) internal reference.
-  power_intermittent_peripherals_enable(true);
-  const uint16_t mc = analogueNoiseReducedRead(MOTOR_DRIVE_MC_AIN, INTERNAL);
-  void power_intermittent_peripherals_disable();
-  DEBUG_SERIAL_PRINT_FLASHSTRING("Count input: ");
-  DEBUG_SERIAL_PRINT(mc);
-  DEBUG_SERIAL_PRINTLN();
+//  // Reading shaft encoder.
+//  // Measure motor count against (fixed) internal reference.
+//  power_intermittent_peripherals_enable(true);
+//  const uint16_t mc = analogueNoiseReducedRead(MOTOR_DRIVE_MC_AIN, INTERNAL);
+//  void power_intermittent_peripherals_disable();
+//  DEBUG_SERIAL_PRINT_FLASHSTRING("Count input: ");
+//  DEBUG_SERIAL_PRINT(mc);
+//  DEBUG_SERIAL_PRINTLN();
 
 
   // Command-Line Interface (CLI) polling.
