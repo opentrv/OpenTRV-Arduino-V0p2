@@ -201,12 +201,12 @@ bool ValveMotorDirectV1HardwareDriver::isCurrentHigh(HardwareMotorDriverInterfac
 // Actuator/driver for direct local (radiator) valve motor control.
 uint8_t ValveMotorDirectV1::read()
   {
-  // Call the generic read() first.
-//  AbstractCurrentSenseValveMotorDirectV1::read();
+  // For now, just wiggle.
+  wiggle();
 
   // TODO
 
-  return(0);
+  return(value);
   }
 
 
@@ -215,75 +215,11 @@ uint8_t ValveMotorDirectV1::read()
 // Finishes with the motor turned off.
 void ValveMotorDirectV1::wiggle()
   {
-//  motorDrive(motorOff);
-//  motorDrive(motorDriveOpening);
-//  nap(WDTO_120MS);
-//  motorDrive(motorDriveClosing);
-//  nap(WDTO_120MS);
-//  motorDrive(motorOff);
+  driver.motorRun(HardwareMotorDriverInterface::motorOff, logic);
+  driver.motorRun(HardwareMotorDriverInterface::motorDriveOpening, logic, true);
+  driver.motorRun(HardwareMotorDriverInterface::motorDriveClosing, logic, true);
+  driver.motorRun(HardwareMotorDriverInterface::motorOff, logic);
   }
-
-//// Turn motor off, or on for a given drive direction.
-//// This routine is very careful to avoid setting outputs into any illegal/'bad' state.
-//// Sets flags accordingly.
-//// Does not provide any monitoring of stall, position encoding, etc.
-//// May take significant time (~150ms) to gently stop motor.
-//void ValveMotorDirectV1::motorDrive(const motor_drive dir)
-//  {
-//  // *** MUST NEVER HAVE L AND R LOW AT THE SAME TIME else board may be destroyed at worst. ***
-//  // Operates as quickly as reasonably possible, eg to move to stall detection quickly...
-//  // TODO: consider making atomic to block some interrupt-related accidents...
-//  // TODO: note that the mapping between L/R and open/close not yet defined.
-//  switch(dir)
-//    {
-//    case motorDriveOpening:
-//      {
-//      fastDigitalWrite(MOTOR_DRIVE_ML, HIGH); // Pull one side high immediately *FIRST* for safety.
-//      nap(WDTO_120MS); // Let H-bridge respond and settle, and motor slow down.
-//      pinMode(MOTOR_DRIVE_MR, OUTPUT); // Ensure that the LOW side is an output.
-//      fastDigitalWrite(MOTOR_DRIVE_MR, LOW); // Pull other side side low after.
-//      nap(WDTO_15MS); // Let H-bridge respond and settle.
-////LED_HEATCALL_ON();
-////LED_UI2_OFF();
-//      break; // Fall through to common case.
-//      }
-//
-//    case motorDriveClosing:
-//      {
-//      fastDigitalWrite(MOTOR_DRIVE_MR, HIGH); // Pull one side high immediately *FIRST* for safety.
-//      nap(WDTO_120MS); // Let H-bridge respond and settle.
-//      pinMode(MOTOR_DRIVE_ML, OUTPUT); // Ensure that the LOW side is an output.
-//      fastDigitalWrite(MOTOR_DRIVE_ML, LOW); // Pull other side side low after.
-//      nap(WDTO_15MS); // Let H-bridge respond and settle.
-////LED_HEATCALL_OFF();
-////LED_UI2_ON();
-//      break; // Fall through to common case.
-//      }
-//
-//    case motorOff: default: // Explicit off, and default for safety.
-//      {
-//      // Everything off...
-//      fastDigitalWrite(MOTOR_DRIVE_MR, HIGH); // Belt and braces force pin logical output state high.
-//      pinMode(MOTOR_DRIVE_MR, INPUT_PULLUP); // Switch to weak pull-up; slow but possibly marginally safer.
-//      nap(WDTO_15MS); // Let H-bridge respond and settle.
-//      fastDigitalWrite(MOTOR_DRIVE_ML, HIGH); // Belt and braces force pin logical output state high.
-//      pinMode(MOTOR_DRIVE_ML, INPUT_PULLUP); // Switch to weak pull-up; slow but possibly marginally safer.
-//      nap(WDTO_15MS); // Let H-bridge respond and settle.
-//      motorDriveStatus = motorOff; // Ensure value state even if 'dir' invalid.
-//      return; // Return, not fall through.
-//      }
-//    }
-//
-//  // If state has changed to new 'active' state,
-//  // force both lines to outputs (which may be relatively slow)
-//  // and update this instance's state.
-//  if(motorDriveStatus != dir) 
-//    {
-//    pinMode(MOTOR_DRIVE_ML, OUTPUT);
-//    pinMode(MOTOR_DRIVE_MR, OUTPUT);
-//    motorDriveStatus = dir;
-//    }
-//  }
 
 // Singleton implementation/instance.
 ValveMotorDirectV1 ValveDirect;
