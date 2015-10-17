@@ -145,6 +145,8 @@ static void testCurrentSenseValveMotorDirect()
   AssertIsTrue(!csvmd1.isInNormalRunState());
   // Verify NOT marked as in error state immediately upon initialisation.
   AssertIsTrue(!csvmd1.isInErrorState());
+  // Target % open must start off in a sensible state; fully-closed is good.
+  AssertIsEqual(0, csvmd1.getTargetPC());
 
 
 

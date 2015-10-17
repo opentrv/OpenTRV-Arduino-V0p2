@@ -90,9 +90,10 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
     uint8_t targetPC;
 
   public:
-    // Create an instance, passing in a reference to the hardware driver.
+    // Create an instance, passing in a reference to the non-NULL hardware driver.
+    // The hardware driver instance lifetime must be longer than this instance.
     CurrentSenseValveMotorDirect(HardwareMotorDriverInterface const * hwDriver) :
-        state(init), hw(hwDriver)
+        hw(hwDriver), state(init), targetPC(0)
         { }
 
     // Poll.
