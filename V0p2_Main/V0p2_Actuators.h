@@ -31,6 +31,11 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 // Designed to be embedded in a motor controller instance.
 class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallbackHandler
   {
+  private:
+    // Hardware interface instance, passed by reference.
+    // Must have a lifetime exceeding that of this enclosing object.
+    HardwareMotorDriverInterface const * hw;
+
   public:
     // Basic/coarse state of driver.
     // There are microstates within most of these basic states.
@@ -92,7 +97,12 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
     void setMotorDrive(HardwareMotorDriverInterface::motor_drive dir) { motorDriveStatus = min((uint8_t)dir, (uint8_t)HardwareMotorDriverInterface::motorStateInvalid - 1); }
 
   public:
-    CurrentSenseValveMotorDirect() : state(init), motorDriveStatus(HardwareMotorDriverInterface::motorOff) { }
+    // Create an instance, passing in a reference to the hardware driver.
+    CurrentSenseValveMotorDirect(HardwareMotorDriverInterface const * hwDriver) :
+        state(init),
+        motorDriveStatus(HardwareMotorDriverInterface::motorOff),
+        hw(hwDriver)
+        { }
 
     // Called when end stop hit, eg by overcurrent detection.
     // Can be called while run() is in progress.
@@ -182,6 +192,8 @@ class ValveMotorDirectV1 : public AbstractRadValve
     CurrentSenseValveMotorDirect logic;
 
   public:
+    ValveMotorDirectV1() : logic(&driver) { }
+
     // Regular poll/update.
     virtual uint8_t read();
 
@@ -193,11 +205,10 @@ class ValveMotorDirectV1 : public AbstractRadValve
     virtual bool handleInterruptSimple() { /* TODO */ }
 
     // Returns true iff not in error state and not (re)calibrating/(re)initialising/(re)syncing.
-    // By default there is no recalibration step.
-    virtual bool isInNormalRunState() const { return(false); }
+    virtual bool isInNormalRunState() const { return(logic.isInNormalRunState()); }
 
     // Returns true if in an error state,
-    virtual bool isInErrorState() const { return(false); }
+    virtual bool isInErrorState() const { return(logic.isInErrorState()); }
 
     // Minimally wiggles the motor to give tactile feedback and/or show to be working.
     // May take a significant fraction of a second.

@@ -114,11 +114,32 @@ static void testLibVersions()
 
 
 
+class DummyHardwareDriver : public HardwareMotorDriverInterface
+  {
+  protected:
+    // Detect if end-stop is reached or motor current otherwise very high.
+    virtual bool isCurrentHigh(HardwareMotorDriverInterface::motor_drive mdir = motorDriveOpening) const { return(false); }
+
+  public:
+    // Call to actually run/stop low-level motor.
+    // May take as much as 200ms eg to change direction.
+    // Stopping (removing power) should typically be very fast, << 100ms.
+    //   * dir    direction to run motor (or off/stop)
+    //   * callback  callback handler
+    //   * start  if true then this routine starts the motor from cold,
+    //            else this runs the motor for a short continuation period;
+    //            at least one continuation should be performed before testing
+    //            for high current loads at end stops
+    virtual void motorRun(motor_drive dir, HardwareMotorDriverInterfaceCallbackHandler &callback, bool start = true) { }
+  };
+
+
 // Test that direct abstract motor drive logic is sane.
 static void testCurrentSenseValveMotorDirect()
   {
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("CurrentSenseValveMotorDirect");
-  CurrentSenseValveMotorDirect csvmd1;
+  DummyHardwareDriver dhw;
+  CurrentSenseValveMotorDirect csvmd1(&dhw);
   // Verify NOT marked as in normal run state immediately upon initialisation.
   AssertIsTrue(!csvmd1.isInNormalRunState());
   // Verify NOT marked as in error state immediately upon initialisation.
