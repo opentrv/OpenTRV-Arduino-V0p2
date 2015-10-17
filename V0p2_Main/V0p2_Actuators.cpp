@@ -38,6 +38,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 
 #ifdef DIRECT_MOTOR_DRIVE_V1
 
+// IF DEFINED: turn on lights to match motor drive for debug purposes.
+#define MOTOR_DEBUG_LEDS
+
 // Call to actually run/stop low-level motor.
 // May take as much as 200ms eg to change direction.
 // Stopping (removing power) should typically be very fast, << 100ms.
@@ -64,12 +67,16 @@ void ValveMotorDirectV1HardwareDriver::motorRun(const motor_drive dir, HardwareM
       // (Has no effect if motor is already running in the correct direction.)
       fastDigitalWrite(MOTOR_DRIVE_ML, HIGH);
       pinMode(MOTOR_DRIVE_ML, OUTPUT); // Ensure that the HIGH side is an output (can be done after, as else will be safe weak pull-up).
+#ifdef MOTOR_DEBUG_LEDS
+LED_UI2_OFF();
+#endif
       OTV0P2BASE::nap(WDTO_120MS); // Let H-bridge respond and settle, and motor slow down.
       pinMode(MOTOR_DRIVE_MR, OUTPUT); // Ensure that the LOW side is an output.
       fastDigitalWrite(MOTOR_DRIVE_MR, LOW); // Pull LOW last.
+#ifdef MOTOR_DEBUG_LEDS
+LED_HEATCALL_ON();
+#endif
       OTV0P2BASE::nap(WDTO_60MS); // Let H-bridge respond and settle and let motor run up.
-//LED_HEATCALL_ON();
-//LED_UI2_OFF();
       break; // Fall through to common case.
       }
 
@@ -80,12 +87,16 @@ void ValveMotorDirectV1HardwareDriver::motorRun(const motor_drive dir, HardwareM
       // (Has no effect if motor is already running in the correct direction.)
       fastDigitalWrite(MOTOR_DRIVE_MR, HIGH); 
       pinMode(MOTOR_DRIVE_MR, OUTPUT); // Ensure that the HIGH side is an output (can be done after, as else will be safe weak pull-up).
+#ifdef MOTOR_DEBUG_LEDS
+LED_HEATCALL_OFF();
+#endif
       OTV0P2BASE::nap(WDTO_120MS); // Let H-bridge respond and settle, and motor slow down.
       pinMode(MOTOR_DRIVE_ML, OUTPUT); // Ensure that the LOW side is an output.
-      fastDigitalWrite(MOTOR_DRIVE_ML, LOW); // Pull LOW last.
+      fastDigitalWrite(MOTOR_DRIVE_ML, LOW); // Pull LOW last.   
+#ifdef MOTOR_DEBUG_LEDS
+LED_UI2_ON();
+#endif
       OTV0P2BASE::nap(WDTO_60MS); // Let H-bridge respond and settle and let motor run up.
-//LED_HEATCALL_OFF();
-//LED_UI2_ON();
       break; // Fall through to common case.
       }
 
@@ -94,9 +105,15 @@ void ValveMotorDirectV1HardwareDriver::motorRun(const motor_drive dir, HardwareM
       // Everything off...
       fastDigitalWrite(MOTOR_DRIVE_MR, HIGH); // Belt and braces force pin logical output state high.
       pinMode(MOTOR_DRIVE_MR, INPUT_PULLUP); // Switch to weak pull-up; slow but possibly marginally safer.
+#ifdef MOTOR_DEBUG_LEDS
+LED_HEATCALL_OFF();
+#endif
       OTV0P2BASE::nap(WDTO_15MS); // Let H-bridge respond and settle.
       fastDigitalWrite(MOTOR_DRIVE_ML, HIGH); // Belt and braces force pin logical output state high.
       pinMode(MOTOR_DRIVE_ML, INPUT_PULLUP); // Switch to weak pull-up; slow but possibly marginally safer.
+#ifdef MOTOR_DEBUG_LEDS
+LED_UI2_OFF();
+#endif
       OTV0P2BASE::nap(WDTO_15MS); // Let H-bridge respond and settle.
       return; // Return, not fall through.
       }

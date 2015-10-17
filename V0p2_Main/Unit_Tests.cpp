@@ -113,6 +113,27 @@ static void testLibVersions()
   }
 
 
+
+// Test sane direct abstract motor drive behaviour.
+static void testCurrentSenseValveMotorDirect()
+  {
+
+// TODO
+
+    
+  DEBUG_SERIAL_PRINTLN_FLASHSTRING("CurrentSenseValveMotorDirect");
+  CurrentSenseValveMotorDirect csvmd1;
+//  // Verify that power-up step is NOT marked as complete upon initialisation.
+//  AssertIsTrue(!csvmd1.isPowerUpDone());
+//  // Verify that calibration is NOT marked as complete upon initialisation.
+//  AssertIsTrue(!csvmd1.isCalibrated());
+  }
+
+
+
+
+
+
 #ifdef ENABLE_BOILER_HUB
 // Test simple on/off boiler-driver behaviour.
 static void testOnOffBoilerDriverLogic()
@@ -135,16 +156,7 @@ static void testOnOffBoilerDriverLogic()
   }
 #endif
 
-// Test sane direct abstract motor drive behaviour.
-static void testCurrentSenseValveMotorDirect()
-  {
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("CurrentSenseValveMotorDirect");
-  CurrentSenseValveMotorDirect csvmd1;
-  // Verify that power-up step is NOT marked as complete upon initialisation.
-  AssertIsTrue(!csvmd1.isPowerUpDone());
-  // Verify that calibration is NOT marked as complete upon initialisation.
-  AssertIsTrue(!csvmd1.isCalibrated());
-  }
+
 
 // Test for general sanity of computation of desired valve position.
 static void testComputeRequiredTRVPercentOpen()
@@ -645,9 +657,10 @@ static void testSensorMocking()
     AmbLight._TEST_set_multi_(((uint16_t)nal)<<2, nil, OTV0P2BASE::randRNG8());
     AssertIsEqual(nal, AmbLight.get());
     AssertIsTrue(nil == AmbLight.isRoomLit());
-    const uint8_t nal2 = OTV0P2BASE::randRNG8();
-    AmbLight._TEST_set_(nal2);
-    AssertIsEqual(nal2, AmbLight.get());
+// DHD20151017: temporarily disabled.
+//    const uint8_t nal2 = OTV0P2BASE::randRNG8();
+//    AmbLight._TEST_set_(nal2);
+//    AssertIsEqual(nal2, AmbLight.get());
     }
 #endif
 #ifdef OCCUPANCY_SUPPORT
@@ -1053,7 +1066,7 @@ static void testFHTEncodingHeadAndTail()
   const bool powerLow = !(OTV0P2BASE::randRNG8() & 0x40); // Random value.
   fullStats.containsTempAndPower = true;
   fullStats.tempAndPower.powerLow = powerLow;
-  const int tempC16 = (OTV0P2BASE::randRNG8()&0xff) + (10 << 16); // Random value in range [10C, 25C[.
+  const int tempC16 = (OTV0P2BASE::randRNG8()&0xff) + (10 << 4); // Random value in range [10C, 25C[.
   fullStats.tempAndPower.tempC16 = tempC16;
   memset(buf, 0xff, sizeof(buf));
   result1 = FHT8VCreateValveSetCmdFrameHT_r(buf, true, &command, 0, &fullStats);
