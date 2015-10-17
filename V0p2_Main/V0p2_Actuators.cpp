@@ -35,7 +35,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 
 
 
-
 #ifdef DIRECT_MOTOR_DRIVE_V1
 
 // IF DEFINED: turn on lights to match motor drive for debug purposes.
@@ -191,7 +190,6 @@ bool ValveMotorDirectV1HardwareDriver::isCurrentHigh(HardwareMotorDriverInterfac
 #else
   // Measure motor current against (fixed) internal reference.
   const uint16_t mi = analogueNoiseReducedRead(MOTOR_DRIVE_MI_AIN, INTERNAL);
-//  const uint16_t miHigh = 250; // Typical *start* current 430 observed at 2.4V, REV7 board DHD20150205 (370@2.0V, 550@3.3V).
   const uint16_t miHigh = (HardwareMotorDriverInterface::motorDriveClosing == mdir) ?
       maxCurrentReadingClosing : maxCurrentReadingOpening;
   const bool currentSense = (mi > miHigh) &&
@@ -218,12 +216,11 @@ bool ValveMotorDirectV1HardwareDriver::isCurrentHigh(HardwareMotorDriverInterfac
 // Actuator/driver for direct local (radiator) valve motor control.
 uint8_t ValveMotorDirectV1::read()
   {
-  // For now, just wiggle.
-  wiggle();
+//  // For now, just wiggle.
+//  wiggle();
 
-  // TODO
-
-  return(value);
+  logic.poll();
+  return(logic.getTargetPC());
   }
 
 
@@ -241,6 +238,24 @@ void ValveMotorDirectV1::wiggle()
 // Singleton implementation/instance.
 ValveMotorDirectV1 ValveDirect;
 #endif
+
+
+
+
+// Poll.
+// Regular poll every 1s or 2s,
+// though tolerates missed polls eg because of other time-critical activity.
+// May block for hundreds of milliseconds.
+void CurrentSenseValveMotorDirect::poll()
+  {
+    
+  }
+
+
+
+
+
+
 
 
 

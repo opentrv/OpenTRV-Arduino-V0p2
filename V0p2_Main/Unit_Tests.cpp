@@ -140,6 +140,7 @@ static void testCurrentSenseValveMotorDirect()
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("CurrentSenseValveMotorDirect");
   DummyHardwareDriver dhw;
   CurrentSenseValveMotorDirect csvmd1(&dhw);
+  AssertIsEqual(CurrentSenseValveMotorDirect::init, csvmd1.getState()); // Whitebox test of internal state.
   // Verify NOT marked as in normal run state immediately upon initialisation.
   AssertIsTrue(!csvmd1.isInNormalRunState());
   // Verify NOT marked as in error state immediately upon initialisation.

@@ -32,17 +32,18 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallbackHandler
   {
   public:
-    // Maximum time to move pin between fully retracted and extended and vv, milliseconds, strictly positive.
+    // Maximum time to move pin between fully retracted and extended and vv, seconds, strictly positive.
     // Set as a limit to allow a timeout when things go wrong. 
-    static const uint32_t MAX_TRAVEL_MS = 5 * 60 * 1000UL; // 5 minutes.
+    static const uint8_t MAX_TRAVEL_S = 4 * 60; // 4 minutes.
 
   private:
     // Hardware interface instance, passed by reference.
     // Must have a lifetime exceeding that of this enclosing object.
     HardwareMotorDriverInterface const * hw;
 
+  public:
     // Basic/coarse state of driver.
-    // There are microstates within most of these basic states.
+    // There may be microstates within most these basic states.
     //
     // Power-up sequence will often require something like:
     //   * withdrawing the pin completely (to make valve easy to fit)
@@ -60,6 +61,7 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
       valveError // Error state can only normally be cleared by power-cycling.
       };
 
+  private:
     // Major state of driver.
     // On power-up (or full reset) should be 0/init.
     // Stored as a uint8_t to save a little space and to make atomic operations easier.
@@ -87,32 +89,23 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
     // Target % open in range [0,100].
     uint8_t targetPC;
 
-//    // True if movement can be 'lazy'.
-//    bool lazy;
-
-//    // Nominal motor drive status, ie what it should be doing.
-//    // (Motor may not actually be running all the time that this indicates itself not off.)
-//    /*motor_drive*/ uint8_t motorDriveStatus;
-
-//    // Turn motor off, or on in a given drive direction.
-//    // Sets state accordingly.
-//    // Does not provide any monitoring of stall, position encoding, etc.
-//    // May take significant time and have to be done very carefully in concrete implementations.
-//    void setMotorDrive(HardwareMotorDriverInterface::motor_drive dir) { motorDriveStatus = min((uint8_t)dir, (uint8_t)HardwareMotorDriverInterface::motorStateInvalid - 1); }
-
   public:
     // Create an instance, passing in a reference to the hardware driver.
     CurrentSenseValveMotorDirect(HardwareMotorDriverInterface const * hwDriver) :
-        state(init),
-//        motorDriveStatus(HardwareMotorDriverInterface::motorOff),
-        hw(hwDriver)
+        state(init), hw(hwDriver)
         { }
 
     // Poll.
     // Regular poll every 1s or 2s,
     // though tolerates missed polls eg because of other time-critical activity.
     // May block for hundreds of milliseconds.
-    void poll() { }
+    void poll();
+
+    // Get major state, mostly for testing.
+    driverState getState() const { return((driverState) state); }
+
+    // Get current target % open in range [0,100].
+    uint8_t getTargetPC() { return(targetPC); }
 
     // Called when end stop hit, eg by overcurrent detection.
     // Can be called while run() is in progress.
