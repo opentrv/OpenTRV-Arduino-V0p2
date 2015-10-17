@@ -52,7 +52,7 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
       valveCalibrating, // Calibrating full valve travel.
       valveNormal, // Normal operating state: values lower than this indicate that power-up is not complete.
       valveDecalcinating, // TODO: running decalcination cycle (and can recalibrate and mitigate valve seating issues).
-      valveDriverError // Error state can only normally be cleared by power-cycling.
+      valveError // Error state can only normally be cleared by power-cycling.
       };
 
   private:
@@ -60,7 +60,7 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
     // On power-up (or full reset) should be 0/init.
     // Stored as a uint8_t to save a little space and to make atomic operations easier.
     // Marked volatile so that individual reads are ISR-/thread- safe without a mutex.
-    // Hold a mutex to do compound operations such as read/modify/write.
+    // Hold a mutex to perform compound operations such as read/modify/write.
     volatile /*driverState*/ uint8_t state;
 
     // Clicks from one end of the range to the other; 0 if not initialised or no movement tracker.
@@ -104,6 +104,12 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
         hw(hwDriver)
         { }
 
+    // Poll.
+    // Regular poll every 1s or 2s,
+    // though tolerates missed polls eg because of other time-critical activity.
+    // May block for hundreds of milliseconds.
+    void poll() { }
+
     // Called when end stop hit, eg by overcurrent detection.
     // Can be called while run() is in progress.
     // Is ISR-/thread- safe.
@@ -116,11 +122,11 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
 
     // Returns true iff not in error state and not (re)calibrating/(re)initialising/(re)syncing.
     // By default there is no recalibration step.
-    virtual bool isInNormalRunState() const { return(false); }
+    virtual bool isInNormalRunState() const { return(state >= (uint8_t)valveNormal); }
 
     // Returns true if in an error state.
     // May be recoverable by forcing recalibration.
-    virtual bool isInErrorState() const { return(false); }
+    virtual bool isInErrorState() const { return(state >= (uint8_t)valveError); }
 
 
 
