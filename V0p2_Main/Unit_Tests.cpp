@@ -114,19 +114,21 @@ static void testLibVersions()
 
 
 
-// Test sane direct abstract motor drive behaviour.
+// Test that direct abstract motor drive logic is sane.
 static void testCurrentSenseValveMotorDirect()
   {
-
-// TODO
-
-    
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("CurrentSenseValveMotorDirect");
   CurrentSenseValveMotorDirect csvmd1;
-//  // Verify that power-up step is NOT marked as complete upon initialisation.
-//  AssertIsTrue(!csvmd1.isPowerUpDone());
-//  // Verify that calibration is NOT marked as complete upon initialisation.
-//  AssertIsTrue(!csvmd1.isCalibrated());
+  // Verify NOT marked as in normal run state immediately upon initialisation.
+  AssertIsTrue(!csvmd1.isInNormalRunState());
+  // Verify NOT marked as in error state immediately upon initialisation.
+  AssertIsTrue(!csvmd1.isInErrorState());
+
+
+
+
+  // TODO
+
   }
 
 

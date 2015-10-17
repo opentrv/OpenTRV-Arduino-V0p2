@@ -104,6 +104,19 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
     // Is ISR-/thread- safe.
     virtual void signalShaftEncoderMarkStart() { /* TODO */ }
 
+    // Returns true iff not in error state and not (re)calibrating/(re)initialising/(re)syncing.
+    // By default there is no recalibration step.
+    virtual bool isInNormalRunState() const { return(false); }
+
+    // Returns true if in an error state.
+    // May be recoverable by forcing recalibration.
+    virtual bool isInErrorState() const { return(false); }
+
+
+
+
+
+
 //    // Call when given user signal that valve has been fitted (ie is fully on).
 //    // Can be called while run() is in progress.
 //    // Is ISR-/thread- safe.
