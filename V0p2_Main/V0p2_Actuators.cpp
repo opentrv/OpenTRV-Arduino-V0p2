@@ -265,7 +265,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("  init");
     case valvePinWithdrawing:
       {
 DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valvePinWithdrawing");
-      endStopDetected = false; // Clear end-stop detection flag.
+      endStopDetected = false; // Clear the end-stop detection flag.
       bool currentHigh = false;
       hw->motorRun(HardwareMotorDriverInterface::motorDriveOpening, *this, true);
       uint8_t sctStart = getSubCycleTime();
