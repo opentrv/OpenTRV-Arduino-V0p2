@@ -29,6 +29,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 
 // Generic (unit-testable) motor diver login using end-stop detection and simple shaft-encoder.
 // Designed to be embedded in a motor controller instance.
+// This used the sub-cycle clock for timing.
+// This is sensitive to sub-cycle position, ie will try to avoid causing a main loop overrun.
 class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallbackHandler
   {
   public:
@@ -55,6 +57,7 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
       init = 0, // Power-up state.
       valvePinWithdrawing, // Retracting pin at power-up.
       valvePinWithdrawn, // Allows valve to be fitted.
+      valveWaitingForFit, // Wait for user signal that valve has been fitted.
       valveCalibrating, // Calibrating full valve travel.
       valveNormal, // Normal operating state: values lower than this indicate that power-up is not complete.
       valveDecalcinating, // TODO: running decalcination cycle (and can recalibrate and mitigate valve seating issues).
@@ -68,6 +71,10 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
     // Marked volatile so that individual reads are ISR-/thread- safe without a mutex.
     // Hold a mutex to perform compound operations such as read/modify/write.
     volatile /*driverState*/ uint8_t state;
+
+    // Flag set on callback from end-top / stall / high-current input.
+    // Marked volatile for thread-safe lock-free access (with care).
+    volatile bool endStopDetected;
 
     // Clicks from one end of the range to the other; 0 if not initialised or no movement tracker.
     // Set during calibration.
@@ -119,7 +126,7 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
     // Called when end stop hit, eg by overcurrent detection.
     // Can be called while run() is in progress.
     // Is ISR-/thread- safe.
-    virtual void signalHittingEndStop() { /* TODO */ }
+    virtual void signalHittingEndStop() { endStopDetected = true; }
 
     // Called when encountering leading edge of a mark in the shaft rotation in forward direction (falling edge in reverse).
     // Can be called while run() is in progress.
