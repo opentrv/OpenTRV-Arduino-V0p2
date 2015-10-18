@@ -57,29 +57,50 @@ static const uint8_t minMotorReverseMS = 128;
 static const uint8_t minMotorReverseTicks = max(1, minMotorReverseMS / SUBCYCLE_TICK_MS_RD);
 
 // Spin for up to the specified number of SCT ticks, monitoring current and position encoding.
-// If too few ticks remain before the end of the sub-cycle then this will return immediately.
-// Invokes callbacks for high current (end stop) and position (shaft) encoder.
-// Aborts early if high current is detected.
-// Returns true if aborted early, running out of time or by high current (assumed end-stop hit).
-bool ValveMotorDirectV1HardwareDriver::spinSCTTicks(const uint8_t ticks, const uint8_t minTicksBeforeAbort, const motor_drive dir, HardwareMotorDriverInterfaceCallbackHandler &callback)
+//   * maxRunTicks  maximum sub-cycle ticks to attempt to run/spin for); strictly positive
+//   * minTicksBeforeAbort  minimum ticks before abort for end-stop / high-current,
+//       don't attempt to run at all if less than this time available before (close to) end of sub-cycle;
+//       strictly positive and should be no less than maxRunTicks
+//   * dir  direction to run motor (open or closed) or off if waiting for motor to stop
+//   * callback  handler to deliver end-stop and position-encoder callbacks to;
+//     non-null and callbacks must return very quickly
+// If too few ticks remain before the end of the sub-cycle for the minimum run,
+// then this will return true immediately.
+// Invokes callbacks for high current (end stop) and position (shaft) encoder where applicable.
+// Aborts early if high current is detected at the start,
+// or after the minimum run period.
+// Returns true if aborted early from too little time to start, or by high current (assumed end-stop hit).
+bool ValveMotorDirectV1HardwareDriver::spinSCTTicks(const uint8_t maxRunTicks, const uint8_t minTicksBeforeAbort, const motor_drive dir, HardwareMotorDriverInterfaceCallbackHandler &callback)
   {
   // Sub-cycle time now.
   const uint8_t sctStart = getSubCycleTime();
-  // Only run up to 75% of the minor cycle time.
-  const uint8_t sctLimit = (3*GSCT_MAX)/4;
-  const uint8_t sctMinRunTime = sctStart + minMotorRunupTicks; // Min run time 32ms to avoid false readings.
-  uint8_t sct;
-  bool currentHigh;
-  while(!(currentHigh = isCurrentHigh(dir)) && ((sct = getSubCycleTime()) <= ((3*GSCT_MAX)/4)))
+  // Only run up to ~80% of the minor cycle time to leave time for other processing.
+  const uint8_t sctAbsLimit = GSCT_MAX - (GSCT_MAX/5);
+  uint8_t sct = getSubCycleTime();
+  const uint8_t maxTicksBeforeAbsLimit = (sctAbsLimit - sct);
+  // Abort immediately if not enough time to do minimum run.
+  if((sct > sctAbsLimit) || (maxTicksBeforeAbsLimit < minTicksBeforeAbort)) { return(true); }
+  // Don't spin at all if current is already high before starting.
+  bool currentHigh = isCurrentHigh(dir);
+  if(!currentHigh)
     {
-      
+    // Set time minimum time before return, then target time before stop/return.
+    const uint8_t sctMinRunTime = sctStart + minTicksBeforeAbort; // Min run time to avoid false readings.
+    const uint8_t sctMaxRunTime = sctStart + min(maxRunTicks, maxTicksBeforeAbsLimit);
+    // Do minimum run time, NOT checking for end-stop / high current.
+    while((sct = getSubCycleTime()) < sctMinRunTime)
+      {
+      // Poll shaft encoder output and update tick counter.
+      }
+    // Do as much of requested above-minimum run-time as possible.
+    while(!(currentHigh = isCurrentHigh(dir)) && ((sct = getSubCycleTime()) < sctMaxRunTime))
+      {
+      // Poll shaft encoder output and update tick counter.
+      }
     }
-
-
-    
-  // TODO
-
-  return(true); // Aborted.
+  if(currentHigh)
+      { callback.signalHittingEndStop(HardwareMotorDriverInterface::motorDriveOpening == dir); return(true); }
+  return(false);
   }
 
 // Low-level call to actually run/stop motor.

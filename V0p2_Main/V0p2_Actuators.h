@@ -192,11 +192,20 @@ class ValveMotorDirectV1HardwareDriver : public HardwareMotorDriverInterface
     virtual bool isCurrentHigh(HardwareMotorDriverInterface::motor_drive mdir = motorDriveOpening) const;
 
     // Spin for up to the specified number of SCT ticks, monitoring current and position encoding.
-    // If too few ticks remain before the end of the sub-cycle then this will return immediately.
-    // Invokes callbacks for high current (end stop) and position (shaft) encoder.
-    // Aborts early if high current is detected.
-    // Returns true if aborted early, running out of time or by high current (assumed end-stop hit).
-    virtual bool spinSCTTicks(uint8_t ticks, uint8_t minTicksBeforeAbort, motor_drive dir, HardwareMotorDriverInterfaceCallbackHandler &callback);
+    //   * maxRunTicks  maximum sub-cycle ticks to attempt to run/spin for); strictly positive
+    //   * minTicksBeforeAbort  minimum ticks before abort for end-stop / high-current,
+    //       don't attempt to run at all if less than this time available before (close to) end of sub-cycle;
+    //       strictly positive and should be no less than maxRunTicks
+    //   * dir  direction to run motor (open or closed) or off if waiting for motor to stop
+    //   * callback  handler to deliver end-stop and position-encoder callbacks to;
+    //     non-null and callbacks must return very quickly
+    // If too few ticks remain before the end of the sub-cycle for the minimum run,
+    // then this will return true immediately.
+    // Invokes callbacks for high current (end stop) and position (shaft) encoder where applicable.
+    // Aborts early if high current is detected at the start,
+    // or after the minimum run period.
+    // Returns true if aborted early from too little time to start, or by high current (assumed end-stop hit).
+    virtual bool spinSCTTicks(uint8_t maxRunTicks, uint8_t minTicksBeforeAbort, motor_drive dir, HardwareMotorDriverInterfaceCallbackHandler &callback);
 
     // Low-level call to actually run/stop motor.
     // May take as much as 200ms eg to change direction.
