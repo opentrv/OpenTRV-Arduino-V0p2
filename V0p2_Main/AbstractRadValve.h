@@ -108,9 +108,10 @@ class HardwareMotorDriverInterface
     virtual bool isCurrentHigh(HardwareMotorDriverInterface::motor_drive mdir = motorDriveOpening) const = 0;
 
     // Spin for up to the specified number of SCT ticks, monitoring current and position encoding.
+    // If too few ticks remain before the end of the sub-cycle then this will return immediately.
     // Invokes callbacks for high current (end stop) and position (shaft) encoder.
     // Aborts early if high current is detected.
-    // Returns true if aborted by high current (assumed end-stop hit).
+    // Returns true if aborted early, running out of time or by high current (assumed end-stop hit).
     virtual bool spinSCTTicks(uint8_t ticks, uint8_t minTicksBeforeAbort, motor_drive dir, HardwareMotorDriverInterfaceCallbackHandler &callback) = 0;
 
     // Call to actually run/stop low-level motor.
