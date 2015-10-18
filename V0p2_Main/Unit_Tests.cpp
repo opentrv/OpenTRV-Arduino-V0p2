@@ -150,7 +150,14 @@ static void testCurrentSenseValveMotorDirect()
   // Target % open must start off in a sensible state; fully-closed is good.
   AssertIsEqual(0, csvmd1.getTargetPC());
 
-  // FIRST POLL(S) AFTER POWER_UP.
+  // FIRST POLL(S) AFTER POWER_UP; RETRACTING THE PIN.
+  csvmd1.poll();
+  // Whitebox test of internal state: should be valvePinWithdrawing.
+  AssertIsEqual(CurrentSenseValveMotorDirect::valvePinWithdrawing, csvmd1.getState());
+  // More polls shouldn't make any difference initially.
+  csvmd1.poll();
+  // Whitebox test of internal state: should be valvePinWithdrawing.
+  AssertIsEqual(CurrentSenseValveMotorDirect::valvePinWithdrawing, csvmd1.getState());
   csvmd1.poll();
   // Whitebox test of internal state: should be valvePinWithdrawing.
   AssertIsEqual(CurrentSenseValveMotorDirect::valvePinWithdrawing, csvmd1.getState());
