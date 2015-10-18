@@ -140,7 +140,9 @@ static void testCurrentSenseValveMotorDirect()
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("CurrentSenseValveMotorDirect");
   DummyHardwareDriver dhw;
   CurrentSenseValveMotorDirect csvmd1(&dhw);
-  AssertIsEqual(CurrentSenseValveMotorDirect::init, csvmd1.getState()); // Whitebox test of internal state.
+  // POWER IP
+  // Whitebox test of internal state: should be init.
+  AssertIsEqual(CurrentSenseValveMotorDirect::init, csvmd1.getState());
   // Verify NOT marked as in normal run state immediately upon initialisation.
   AssertIsTrue(!csvmd1.isInNormalRunState());
   // Verify NOT marked as in error state immediately upon initialisation.
@@ -148,6 +150,11 @@ static void testCurrentSenseValveMotorDirect()
   // Target % open must start off in a sensible state; fully-closed is good.
   AssertIsEqual(0, csvmd1.getTargetPC());
 
+  // FIRST POLL(S) AFTER POWER_UP.
+  csvmd1.poll();
+  // Whitebox test of internal state: should be valvePinWithdrawing.
+  AssertIsEqual(CurrentSenseValveMotorDirect::valvePinWithdrawing, csvmd1.getState());
+  
 
 
 

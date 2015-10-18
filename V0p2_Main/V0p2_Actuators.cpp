@@ -220,19 +220,7 @@ uint8_t ValveMotorDirectV1::read()
 //  wiggle();
 
   logic.poll();
-  return(logic.getTargetPC());
-  }
-
-
-// Minimally wiggles the motor to give tactile feedback and/or show to be working.
-// May take a significant fraction of a second.
-// Finishes with the motor turned off.
-void ValveMotorDirectV1::wiggle()
-  {
-  driver.motorRun(HardwareMotorDriverInterface::motorOff, logic);
-  driver.motorRun(HardwareMotorDriverInterface::motorDriveOpening, logic, true);
-  driver.motorRun(HardwareMotorDriverInterface::motorDriveClosing, logic, true);
-  driver.motorRun(HardwareMotorDriverInterface::motorOff, logic);
+  return(value);
   }
 
 // Singleton implementation/instance.
@@ -242,13 +230,46 @@ ValveMotorDirectV1 ValveDirect;
 
 
 
+// Minimally wiggles the motor to give tactile feedback and/or show to be working.
+// May take a significant fraction of a second.
+// Finishes with the motor turned off.
+void CurrentSenseValveMotorDirect::wiggle()
+  {
+  hw->motorRun(HardwareMotorDriverInterface::motorOff, *this);
+  hw->motorRun(HardwareMotorDriverInterface::motorDriveOpening, *this, true);
+  hw->motorRun(HardwareMotorDriverInterface::motorDriveClosing, *this, true);
+  hw->motorRun(HardwareMotorDriverInterface::motorOff, *this);
+  }
+
+
 // Poll.
 // Regular poll every 1s or 2s,
 // though tolerates missed polls eg because of other time-critical activity.
 // May block for hundreds of milliseconds.
 void CurrentSenseValveMotorDirect::poll()
   {
-    
+  // Run the state machine based on the major state.
+  switch(state)
+    {
+    // Power-up: move to 'pin withdrawing' state and possibly start a timer.
+    case init:
+      wiggle(); // Tactile feedback and ensure that the motor is left stopped.
+      state = valvePinWithdrawing;
+      break;
+
+    case valvePinWithdrawing:
+      // TODO
+      break;
+
+    // Unexpected: go to error state, stop motor and panic.
+    default:
+      {
+      state = valveError;
+      hw->motorRun(HardwareMotorDriverInterface::motorOff, *this);
+      panic(); // Not expected to return.
+      return;
+      }
+    }
   }
 
 

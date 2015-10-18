@@ -39,7 +39,7 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
   private:
     // Hardware interface instance, passed by reference.
     // Must have a lifetime exceeding that of this enclosing object.
-    HardwareMotorDriverInterface const * hw;
+    HardwareMotorDriverInterface * const hw;
 
   public:
     // Basic/coarse state of driver.
@@ -92,7 +92,7 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
   public:
     // Create an instance, passing in a reference to the non-NULL hardware driver.
     // The hardware driver instance lifetime must be longer than this instance.
-    CurrentSenseValveMotorDirect(HardwareMotorDriverInterface const * hwDriver) :
+    CurrentSenseValveMotorDirect(HardwareMotorDriverInterface * const hwDriver) :
         hw(hwDriver), state(init), targetPC(0)
         { }
 
@@ -107,6 +107,14 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
 
     // Get current target % open in range [0,100].
     uint8_t getTargetPC() { return(targetPC); }
+
+    // Set current target % open in range [0,100].
+    void setTargetPC(const uint8_t newPC) { targetPC = newPC; }
+
+    // Minimally wiggles the motor to give tactile feedback and/or show to be working.
+    // May take a significant fraction of a second.
+    // Finishes with the motor turned off.
+    virtual void wiggle();
 
     // Called when end stop hit, eg by overcurrent detection.
     // Can be called while run() is in progress.
@@ -217,7 +225,7 @@ class ValveMotorDirectV1 : public AbstractRadValve
     // Minimally wiggles the motor to give tactile feedback and/or show to be working.
     // May take a significant fraction of a second.
     // Finishes with the motor turned off.
-    virtual void wiggle();
+    virtual void wiggle() { logic.wiggle(); }
   };
 // Singleton implementation/instance.
 extern ValveMotorDirectV1 ValveDirect;
