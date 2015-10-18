@@ -56,8 +56,7 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
       {
       init = 0, // Power-up state.
       valvePinWithdrawing, // Retracting pin at power-up.
-      valvePinWithdrawn, // Allows valve to be fitted.
-      valveWaitingForFit, // Wait for user signal that valve has been fitted.
+      valvePinWithdrawn, // Allows valve to be fitted; wait for user signal that valve has been fitted.
       valveCalibrating, // Calibrating full valve travel.
       valveNormal, // Normal operating state: values lower than this indicate that power-up is not complete.
       valveDecalcinating, // TODO: running decalcination cycle (and can recalibrate and mitigate valve seating issues).

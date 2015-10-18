@@ -260,7 +260,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valvePinWithdrawing");
       uint8_t sctStart = getSubCycleTime();
       uint8_t sctMinRunTime = sctStart + 4; // Min run time 32ms to avoid false readings.
       uint8_t sct;
-      while(((sct = getSubCycleTime()) <= ((3*GSCT_MAX)/4)) && !(currentHigh = hw->isCurrentHigh(HardwareMotorDriverInterface::motorDriveOpening)))
+      while(!(currentHigh = hw->isCurrentHigh(HardwareMotorDriverInterface::motorDriveOpening)) && ((sct = getSubCycleTime()) <= ((3*GSCT_MAX)/4)))
         { 
         // Wait until end of tick or minimum period.
         if(sct < sctMinRunTime) { while(getSubCycleTime() <= sctMinRunTime) { } }
@@ -269,14 +269,15 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valvePinWithdrawing");
       // Stop motor until next loop (also ensures power off).
       hw->motorRun(HardwareMotorDriverInterface::motorOff, *this);
       // Once end-stop has been hit, move to state to wait for user signal and then start calibration. 
-      if(currentHigh) { state = valveWaitingForFit; }
+if(currentHigh) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("    currentHigh"); }
+      if(currentHigh) { state = valvePinWithdrawn; }
       break;
       }
 
     // Running (initial) calibration cycle.
-    case valveWaitingForFit:
+    case valvePinWithdrawn:
       {
-DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valveWaitingForFit");
+DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valvePinWithdrawn");
       // TODO
       break;
       }

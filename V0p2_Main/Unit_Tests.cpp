@@ -116,11 +116,13 @@ static void testLibVersions()
 
 class DummyHardwareDriver : public HardwareMotorDriverInterface
   {
-  protected:
+  public:
     // Detect if end-stop is reached or motor current otherwise very high.
-    virtual bool isCurrentHigh(HardwareMotorDriverInterface::motor_drive mdir = motorDriveOpening) const { return(false); }
+    virtual bool isCurrentHigh(HardwareMotorDriverInterface::motor_drive mdir = motorDriveOpening) const { return(currentHigh); }
 
   public:
+    DummyHardwareDriver() : currentHigh(false) { }
+
     // Call to actually run/stop low-level motor.
     // May take as much as 200ms eg to change direction.
     // Stopping (removing power) should typically be very fast, << 100ms.
@@ -131,6 +133,9 @@ class DummyHardwareDriver : public HardwareMotorDriverInterface
     //            at least one continuation should be performed before testing
     //            for high current loads at end stops
     virtual void motorRun(motor_drive dir, HardwareMotorDriverInterfaceCallbackHandler &callback, bool start = true) { }
+
+    // isCurrentHigh() returns this value.
+    bool currentHigh;
   };
 
 
@@ -161,7 +166,12 @@ static void testCurrentSenseValveMotorDirect()
   csvmd1.poll();
   // Whitebox test of internal state: should be valvePinWithdrawing.
   AssertIsEqual(CurrentSenseValveMotorDirect::valvePinWithdrawing, csvmd1.getState());
-  
+  // Simulate hitting end-stop (high current).
+  dhw.currentHigh = true;
+  AssertIsTrue(dhw.isCurrentHigh());
+  csvmd1.poll();
+  // Whitebox test of internal state: should be valvePinWithdrawn.
+  AssertIsEqual(CurrentSenseValveMotorDirect::valvePinWithdrawn, csvmd1.getState());
 
 
 
