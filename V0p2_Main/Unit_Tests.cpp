@@ -172,6 +172,7 @@ static void testCurrentSenseValveMotorDirect()
   csvmd1.poll();
   // Whitebox test of internal state: should be valvePinWithdrawn.
   AssertIsEqual(CurrentSenseValveMotorDirect::valvePinWithdrawn, csvmd1.getState());
+  dhw.currentHigh = false;
 
 
 

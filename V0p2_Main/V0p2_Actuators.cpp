@@ -181,6 +181,9 @@ static const uint16_t maxCurrentReadingClosing = 600;
 // Maximum current reading allowed when opening the valve (retracting the pin, no resisting force).
 static const uint16_t maxCurrentReadingOpening = 400;
 
+// Approx minimum runtime to get motor up to speed and not give false high-current readings (ms).
+static const uint8_t minMotorRunupMS = 32;
+
 // Detect if end-stop is reached or motor current otherwise very high.] indicating stall.
 bool ValveMotorDirectV1HardwareDriver::isCurrentHigh(HardwareMotorDriverInterface::motor_drive mdir) const
   {
@@ -279,11 +282,30 @@ if(currentHigh) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("    currentHigh"); }
       {
 DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valvePinWithdrawn");
       // TODO
+
+      // TEMPORARILY ... RUN BACK TO START AND CYCLE ...
+      endStopDetected = false; // Clear the end-stop detection flag ready.
+      bool currentHigh = false;
+      hw->motorRun(HardwareMotorDriverInterface::motorDriveClosing, *this, true);
+      uint8_t sctStart = getSubCycleTime();
+      uint8_t sctMinRunTime = sctStart + 4; // Min run time 32ms to avoid false readings.
+      uint8_t sct;
+      while(!(currentHigh = hw->isCurrentHigh(HardwareMotorDriverInterface::motorDriveClosing)) && ((sct = getSubCycleTime()) <= ((3*GSCT_MAX)/4)))
+        { 
+        // Wait until end of tick or minimum period.
+        if(sct < sctMinRunTime) { while(getSubCycleTime() <= sctMinRunTime) { } }
+        else { while(getSubCycleTime() == sct) { } }
+        }
+      // Stop motor until next loop (also ensures power off).
+      hw->motorRun(HardwareMotorDriverInterface::motorOff, *this);
+      if(currentHigh) { state = valveCalibrating; }
+
       break;
       }
 
     // Running (initial) calibration cycle.
     case valveCalibrating:
+DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valveCalibrating");
       // TODO
       break;
 
