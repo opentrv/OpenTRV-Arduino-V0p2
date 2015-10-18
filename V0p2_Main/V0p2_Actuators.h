@@ -214,14 +214,14 @@ class ValveMotorDirectV1 : public AbstractRadValve
     ValveMotorDirectV1() : logic(&driver) { }
 
     // Regular poll/update.
-    virtual uint8_t read();
+    virtual uint8_t read() { logic.poll(); return(value); }
 
-    // Handle simple interrupt.
-    // Fast and ISR (Interrupt Service Routines) safe.
-    // Returns true if interrupt was successfully handled and cleared
-    // else another interrupt handler in the chain may be called
-    // to attempt to clear the interrupt.
-    virtual bool handleInterruptSimple() { /* TODO */ }
+//    // Handle simple interrupt.
+//    // Fast and ISR (Interrupt Service Routines) safe.
+//    // Returns true if interrupt was successfully handled and cleared
+//    // else another interrupt handler in the chain may be called
+//    // to attempt to clear the interrupt.
+//    virtual bool handleInterruptSimple() { /* TODO */ }
 
     // Returns true iff not in error state and not (re)calibrating/(re)initialising/(re)syncing.
     virtual bool isInNormalRunState() const { return(logic.isInNormalRunState()); }

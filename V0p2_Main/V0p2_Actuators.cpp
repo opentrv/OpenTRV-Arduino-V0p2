@@ -212,17 +212,6 @@ bool ValveMotorDirectV1HardwareDriver::isCurrentHigh(HardwareMotorDriverInterfac
 //  if(highI) { callback.signalHittingEndStop(); } 
 //  }
 
-
-// Actuator/driver for direct local (radiator) valve motor control.
-uint8_t ValveMotorDirectV1::read()
-  {
-//  // For now, just wiggle.
-//  wiggle();
-
-  logic.poll();
-  return(value);
-  }
-
 // Singleton implementation/instance.
 ValveMotorDirectV1 ValveDirect;
 #endif
@@ -265,7 +254,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("  init");
     case valvePinWithdrawing:
       {
 DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valvePinWithdrawing");
-      endStopDetected = false; // Clear the end-stop detection flag.
+      endStopDetected = false; // Clear the end-stop detection flag ready.
       bool currentHigh = false;
       hw->motorRun(HardwareMotorDriverInterface::motorDriveOpening, *this, true);
       uint8_t sctStart = getSubCycleTime();
