@@ -40,6 +40,22 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 // IF DEFINED: turn on lights to match motor drive for debug purposes.
 #define MOTOR_DEBUG_LEDS
 
+
+// Approx minimum time to let H-bridge settle/stabilise (ms).
+static const uint8_t minMotorHBridgeSettleMS = 16;
+// Min sub-cycle ticks for H-bridge to settle.
+static const uint8_t minMotorHBridgeSettleTicks = max(1, minMotorHBridgeSettleMS / SUBCYCLE_TICK_MS_RD);
+
+// Approx minimum runtime to get motor up to speed and not give false high-current readings (ms).
+static const uint8_t minMotorRunupMS = 32;
+// Min sub-cycle ticks to run up.
+static const uint8_t minMotorRunupTicks = max(1, minMotorRunupMS / SUBCYCLE_TICK_MS_RD);
+
+// Approx minimum runtime to get motor to reverse and up to speed and not give false high-current readings (ms).
+static const uint8_t minMotorReverseMS = 128;
+// Min sub-cycle ticks to run up.
+static const uint8_t minMotorReverseTicks = max(1, minMotorReverseMS / SUBCYCLE_TICK_MS_RD);
+
 // Call to actually run/stop low-level motor.
 // May take as much as 200ms eg to change direction.
 // Stopping (removing power) should typically be very fast, << 100ms.
@@ -279,11 +295,30 @@ if(currentHigh) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("    currentHigh"); }
       {
 DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valvePinWithdrawn");
       // TODO
+
+      // TEMPORARILY ... RUN BACK TO START AND CYCLE ...
+      endStopDetected = false; // Clear the end-stop detection flag ready.
+      bool currentHigh = false;
+      hw->motorRun(HardwareMotorDriverInterface::motorDriveClosing, *this, true);
+      uint8_t sctStart = getSubCycleTime();
+      uint8_t sctMinRunTime = sctStart + 4; // Min run time 32ms to avoid false readings.
+      uint8_t sct;
+      while(!(currentHigh = hw->isCurrentHigh(HardwareMotorDriverInterface::motorDriveClosing)) && ((sct = getSubCycleTime()) <= ((3*GSCT_MAX)/4)))
+        { 
+        // Wait until end of tick or minimum period.
+        if(sct < sctMinRunTime) { while(getSubCycleTime() <= sctMinRunTime) { } }
+        else { while(getSubCycleTime() == sct) { } }
+        }
+      // Stop motor until next loop (also ensures power off).
+      hw->motorRun(HardwareMotorDriverInterface::motorOff, *this);
+      if(currentHigh) { state = valveCalibrating; }
+
       break;
       }
 
     // Running (initial) calibration cycle.
     case valveCalibrating:
+DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valveCalibrating");
       // TODO
       break;
 
