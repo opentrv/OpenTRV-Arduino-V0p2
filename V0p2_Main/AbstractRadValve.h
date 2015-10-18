@@ -99,10 +99,10 @@ class HardwareMotorDriverInterface
   protected:
     ~HardwareMotorDriverInterface() {}
 
-    // Detect if end-stop is reached or motor current otherwise very high.
+  public:
+    // Detect (poll) if end-stop is reached or motor current otherwise very high.
     virtual bool isCurrentHigh(HardwareMotorDriverInterface::motor_drive mdir = motorDriveOpening) const = 0;
 
-  public:
     // Call to actually run/stop low-level motor.
     // May take as much as 200ms eg to change direction.
     // Stopping (removing power) should typically be very fast, << 100ms.

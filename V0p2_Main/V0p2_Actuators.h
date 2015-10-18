@@ -29,6 +29,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 
 // Generic (unit-testable) motor diver login using end-stop detection and simple shaft-encoder.
 // Designed to be embedded in a motor controller instance.
+// This used the sub-cycle clock for timing.
+// This is sensitive to sub-cycle position, ie will try to avoid causing a main loop overrun.
 class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallbackHandler
   {
   public:
@@ -55,6 +57,7 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
       init = 0, // Power-up state.
       valvePinWithdrawing, // Retracting pin at power-up.
       valvePinWithdrawn, // Allows valve to be fitted.
+      valveWaitingForFit, // Wait for user signal that valve has been fitted.
       valveCalibrating, // Calibrating full valve travel.
       valveNormal, // Normal operating state: values lower than this indicate that power-up is not complete.
       valveDecalcinating, // TODO: running decalcination cycle (and can recalibrate and mitigate valve seating issues).

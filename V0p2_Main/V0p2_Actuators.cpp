@@ -253,11 +253,46 @@ void CurrentSenseValveMotorDirect::poll()
     {
     // Power-up: move to 'pin withdrawing' state and possibly start a timer.
     case init:
+      {
+DEBUG_SERIAL_PRINTLN_FLASHSTRING("  init");
       wiggle(); // Tactile feedback and ensure that the motor is left stopped.
       state = valvePinWithdrawing;
+      // TODO: record time withdrawl starts (to allow time out).
       break;
+      }
 
+    // Fully withdrawing pin (nominally opening valve) to make valve head easy to fit.
     case valvePinWithdrawing:
+      {
+DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valvePinWithdrawing");
+      bool currentHigh = false;
+      hw->motorRun(HardwareMotorDriverInterface::motorDriveOpening, *this, true);
+      uint8_t sctStart = getSubCycleTime();
+      uint8_t sctMinRunTime = sctStart + 4; // Min run time 32ms to avoid false readings.
+      uint8_t sct;
+      while(((sct = getSubCycleTime()) <= ((3*GSCT_MAX)/4)) && !(currentHigh = hw->isCurrentHigh(HardwareMotorDriverInterface::motorDriveOpening)))
+        { 
+        // Wait until end of tick or minimum period.
+        if(sct < sctMinRunTime) { while(getSubCycleTime() <= sctMinRunTime) { } }
+        else { while(getSubCycleTime() == sct) { } }
+        }
+      // Stop motor until next loop (also ensures power off).
+      hw->motorRun(HardwareMotorDriverInterface::motorOff, *this);
+      // Once end-stop has been hit, move to state to wait for user signal and then start calibration. 
+      if(currentHigh) { state = valveWaitingForFit; }
+      break;
+      }
+
+    // Running (initial) calibration cycle.
+    case valveWaitingForFit:
+      {
+DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valveWaitingForFit");
+      // TODO
+      break;
+      }
+
+    // Running (initial) calibration cycle.
+    case valveCalibrating:
       // TODO
       break;
 
