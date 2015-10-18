@@ -56,7 +56,16 @@ static const uint8_t minMotorReverseMS = 128;
 // Min sub-cycle ticks to run up.
 static const uint8_t minMotorReverseTicks = max(1, minMotorReverseMS / SUBCYCLE_TICK_MS_RD);
 
-// Call to actually run/stop low-level motor.
+// Spin for up to the specified number of SCT ticks, monitoring current and position encoding.
+// Invokes callbacks for high current (end stop) and position (shaft) encoder.
+// Aborts early if high current is detected.
+// Returns true if aborted by high current (assumed end-stop hit).
+bool ValveMotorDirectV1HardwareDriver::spinSCTTicks(const uint8_t ticks, const uint8_t minTicksBeforeAbort, const motor_drive dir, HardwareMotorDriverInterfaceCallbackHandler &callback)
+  {
+  // TODO
+  }
+
+// Low-level call to actually run/stop motor.
 // May take as much as 200ms eg to change direction.
 // Stopping (removing power) should typically be very fast, << 100ms.
 //   * dir    direction to run motor (or off/stop)

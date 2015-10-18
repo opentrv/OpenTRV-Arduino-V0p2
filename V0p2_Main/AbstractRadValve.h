@@ -75,12 +75,16 @@ class HardwareMotorDriverInterfaceCallbackHandler
     // Called when end stop hit, eg by overcurrent detection.
     // Can be called while run() is in progress.
     // Is ISR-/thread- safe.
-    virtual void signalHittingEndStop() = 0;
+    virtual void signalHittingEndStop(bool opening) = 0;
   
     // Called when encountering leading edge of a mark in the shaft rotation in forward direction (falling edge in reverse).
     // Can be called while run() is in progress.
     // Is ISR-/thread- safe.
-    virtual void signalShaftEncoderMarkStart() = 0;
+    virtual void signalShaftEncoderMarkStart(bool opening) = 0;
+
+    // Called with each motor run sub-cycle tick.
+    // Is ISR-/thread- safe.
+    virtual void signalRunSCTTick(bool opening) = 0;
   };
 
 // Interface for low-level hardware motor driver.
@@ -102,6 +106,12 @@ class HardwareMotorDriverInterface
   public:
     // Detect (poll) if end-stop is reached or motor current otherwise very high.
     virtual bool isCurrentHigh(HardwareMotorDriverInterface::motor_drive mdir = motorDriveOpening) const = 0;
+
+    // Spin for up to the specified number of SCT ticks, monitoring current and position encoding.
+    // Invokes callbacks for high current (end stop) and position (shaft) encoder.
+    // Aborts early if high current is detected.
+    // Returns true if aborted by high current (assumed end-stop hit).
+    virtual bool spinSCTTicks(uint8_t ticks, uint8_t minTicksBeforeAbort, motor_drive dir, HardwareMotorDriverInterfaceCallbackHandler &callback) = 0;
 
     // Call to actually run/stop low-level motor.
     // May take as much as 200ms eg to change direction.

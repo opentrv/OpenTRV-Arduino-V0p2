@@ -125,12 +125,16 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
     // Called when end stop hit, eg by overcurrent detection.
     // Can be called while run() is in progress.
     // Is ISR-/thread- safe.
-    virtual void signalHittingEndStop() { endStopDetected = true; }
+    virtual void signalHittingEndStop(bool opening) { endStopDetected = true; }
 
     // Called when encountering leading edge of a mark in the shaft rotation in forward direction (falling edge in reverse).
     // Can be called while run() is in progress.
     // Is ISR-/thread- safe.
-    virtual void signalShaftEncoderMarkStart() { /* TODO */ }
+    virtual void signalShaftEncoderMarkStart(bool opening) { /* TODO */ }
+
+    // Called with each motor run sub-cycle tick.
+    // Is ISR-/thread- safe.
+    virtual void signalRunSCTTick(bool opening) { /* TODO */ }
 
     // Returns true iff not in error state and not (re)calibrating/(re)initialising/(re)syncing.
     // By default there is no recalibration step.
@@ -183,12 +187,17 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
 // Creating multiple instances almost certainly a BAD IDEA.
 class ValveMotorDirectV1HardwareDriver : public HardwareMotorDriverInterface
   {
-  protected:
+  public:
     // Detect if end-stop is reached or motor current otherwise very high.
     virtual bool isCurrentHigh(HardwareMotorDriverInterface::motor_drive mdir = motorDriveOpening) const;
 
-  public:
-    // Call to actually run/stop low-level motor.
+    // Spin for up to the specified number of SCT ticks, monitoring current and position encoding.
+    // Invokes callbacks for high current (end stop) and position (shaft) encoder.
+    // Aborts early if high current is detected.
+    // Returns true if aborted by high current (assumed end-stop hit).
+    virtual bool spinSCTTicks(uint8_t ticks, uint8_t minTicksBeforeAbort, motor_drive dir, HardwareMotorDriverInterfaceCallbackHandler &callback);
+
+    // Low-level call to actually run/stop motor.
     // May take as much as 200ms eg to change direction.
     // Stopping (removing power) should typically be very fast, << 100ms.
     //   * dir    direction to run motor (or off/stop)
