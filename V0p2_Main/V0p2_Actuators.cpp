@@ -197,6 +197,9 @@ static const uint16_t maxCurrentReadingClosing = 600;
 // Maximum current reading allowed when opening the valve (retracting the pin, no resisting force).
 static const uint16_t maxCurrentReadingOpening = 400;
 
+// Approx minimum runtime to get motor up to speed and not give false high-current readings (ms).
+static const uint8_t minMotorRunupMS = 32;
+
 // Detect if end-stop is reached or motor current otherwise very high.] indicating stall.
 bool ValveMotorDirectV1HardwareDriver::isCurrentHigh(HardwareMotorDriverInterface::motor_drive mdir) const
   {
