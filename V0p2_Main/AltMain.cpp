@@ -200,9 +200,6 @@ ISR(PCINT2_vect)
 
 
 
-//static ValveMotorDirectV1HardwareDriver V1D;
-//static HardwareMotorDriverInterface::motor_drive mdir = HardwareMotorDriverInterface::motorDriveOpening;
-
 
 // Called from loop().
 void loopAlt()
@@ -334,11 +331,13 @@ void loopAlt()
 //#endif
 
 
+#ifdef HAS_DORM1_VALVE_DRIVE
   // Provide regular poll to motor driver.
   // May take significant time to run
   // so don't call when timing is critical or not much left,
   // eg around critical TXes.
   ValveDirect.read();
+#endif
 
 
 

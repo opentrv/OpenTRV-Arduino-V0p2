@@ -35,7 +35,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 
 
 
-#ifdef DIRECT_MOTOR_DRIVE_V1
+#ifdef HAS_DORM1_VALVE_DRIVE
+//#ifdef DIRECT_MOTOR_DRIVE_V1
 
 // IF DEFINED: turn on lights to match motor drive for debug purposes.
 //#define MOTOR_DEBUG_LEDS
@@ -309,10 +310,18 @@ bool ValveMotorDirectV1HardwareDriver::isCurrentHigh(HardwareMotorDriverInterfac
   return(currentSense);
   }
 
+// Set new target value (if in range).
+// Returns true if specified value accepted.
+bool ValveMotorDirectV1::set(const uint8_t newValue)
+  {
+  if(newValue > 100) { return(false); }
+  value = newValue; 
+  logic.setTargetPC(newValue);
+  return(true);
+  }
 // Singleton implementation/instance.
 ValveMotorDirectV1 ValveDirect;
 #endif
-
 
 
 
@@ -359,7 +368,7 @@ void CurrentSenseValveMotorDirect::poll()
     // Power-up: move to 'pin withdrawing' state and possibly start a timer.
     case init:
       {
-DEBUG_SERIAL_PRINTLN_FLASHSTRING("  init");
+//DEBUG_SERIAL_PRINTLN_FLASHSTRING("  init");
       wiggle(); // Tactile feedback and ensure that the motor is left stopped.
       changeState(valvePinWithdrawing);
       // TODO: record time withdrawl starts (to allow time out).
@@ -369,7 +378,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("  init");
     // Fully withdrawing pin (nominally opening valve) to make valve head easy to fit.
     case valvePinWithdrawing:
       {
-DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valvePinWithdrawing");
+//DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valvePinWithdrawing");
       endStopDetected = false; // Clear the end-stop detection flag ready.
       // Run motor as far as possible on this sub-cycle.
       hw->motorRun(~0, HardwareMotorDriverInterface::motorDriveOpening, *this);
@@ -383,17 +392,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valvePinWithdrawing");
     // Running (initial) calibration cycle.
     case valvePinWithdrawn:
       {
-DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valvePinWithdrawn");
-//      // TODO
-//
-//      // TEMPORARILY ... RUN BACK TO WITHDRAWN, AND THEN STOP ...
-//      endStopDetected = false; // Clear the end-stop detection flag ready.
-//      // Run motor as far as possible on this sub-cycle.
-//      hw->motorRun(~0, HardwareMotorDriverInterface::motorDriveClosing, *this);
-//      // Stop motor until next loop (also ensures power off).
-//      hw->motorRun(0, HardwareMotorDriverInterface::motorOff, *this);
-//      // FIXME
-//      if(endStopDetected) { changeState(valveCalibrating); }
+//DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valvePinWithdrawn");
 
       // TODO: wait for signal from user that valve has been fitted...
 
@@ -405,7 +404,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valvePinWithdrawn");
     // Running (initial) calibration cycle.
     case valveCalibrating:
       {
-DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valveCalibrating");
+//DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valveCalibrating");
       DEBUG_SERIAL_PRINT_FLASHSTRING("    calibState: ");
       DEBUG_SERIAL_PRINT(perState.calibrating.calibState);
       DEBUG_SERIAL_PRINTLN();
@@ -499,8 +498,25 @@ DEBUG_SERIAL_PRINTLN();
     // Normal running state: attempt to track the specified target valve open percentage.
     case valveNormal:
       {
-DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valveNormal");
+//DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valveNormal");
+
+      // If the current estimated position does not match the target
+      // then (incrementally) try to adjust to match.
+      if(currentPC != targetPC)
+        {
+#if 1 && defined(DEBUG)
+DEBUG_SERIAL_PRINT_FLASHSTRING("  valve needs adj: ");
+DEBUG_SERIAL_PRINT(currentPC);
+DEBUG_SERIAL_PRINT_FLASHSTRING(" vs target ");
+DEBUG_SERIAL_PRINT(targetPC);
+DEBUG_SERIAL_PRINTLN();
+#endif
+
+        // TODO
+        }
+
       // TODO
+
       break;
       }
 
@@ -515,6 +531,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valveNormal");
       }
     }
   }
+
 
 
 

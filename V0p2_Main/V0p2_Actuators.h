@@ -207,8 +207,8 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
   };
 
 
-#if defined(LOCAL_TRV) && defined(DIRECT_MOTOR_DRIVE_V1)
-#define HAS_VALVEDIRECT
+#if /* defined(LOCAL_TRV) && */ defined(DIRECT_MOTOR_DRIVE_V1)
+#define HAS_DORM1_VALVE_DRIVE
 // Implementation for V1 (REV7/DORM1) motor.
 // Usually not instantiated except within ValveMotorDirectV1.
 // Creating multiple instances almost certainly a BAD IDEA.
@@ -259,12 +259,9 @@ class ValveMotorDirectV1 : public AbstractRadValve
     // Regular poll/update.
     virtual uint8_t read() { logic.poll(); return(value); }
 
-//    // Handle simple interrupt.
-//    // Fast and ISR (Interrupt Service Routines) safe.
-//    // Returns true if interrupt was successfully handled and cleared
-//    // else another interrupt handler in the chain may be called
-//    // to attempt to clear the interrupt.
-//    virtual bool handleInterruptSimple() { /* TODO */ }
+    // Set new target value (if in range).
+    // Returns true if specified value accepted.
+    virtual bool set(const uint8_t newValue);
 
     // Returns true iff not in error state and not (re)calibrating/(re)initialising/(re)syncing.
     virtual bool isInNormalRunState() const { return(logic.isInNormalRunState()); }

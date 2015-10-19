@@ -591,9 +591,9 @@ class SimpleSlaveRadValve : public AbstractRadValve
     // Returns true if this sensor/actuator value is potentially valid, eg in-range.
     virtual bool isValid(const uint8_t value) const { return(value <= 100); }
 
-    // Set new value.
+    // Set new target valve percent open.
     // Ignores invalid values.
-    bool set(const uint8_t newValue);
+    virtual bool set(const uint8_t newValue);
 
     // Do any regular work that needs doing.
     // Deals with timeout and reversion to 'safe' valve position if the controller goes quiet.

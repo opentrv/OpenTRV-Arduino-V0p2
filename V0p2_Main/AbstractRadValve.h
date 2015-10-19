@@ -36,6 +36,12 @@ class AbstractRadValve : public OTV0P2BASE::SimpleTSUint8Actuator
     // Returns true if this target valve open % value passed is valid, ie in range [0,100].
     virtual bool isValid(const uint8_t value) const { return(value <= 100); }
 
+    // Set new target valve percent open.
+    // Ignores invalid values.
+    // Some implementations may ignore/reject all attempts to directly set the values.
+    // If true then the new target value was accepted.
+    virtual bool set(const uint8_t newValue) { return(false); }
+
     // Returns true iff not in error state and not (re)calibrating/(re)initialising/(re)syncing.
     // By default there is no recalibration step.
     virtual bool isInNormalRunState() const { return(true); }
