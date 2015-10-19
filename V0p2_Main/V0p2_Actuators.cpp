@@ -38,7 +38,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 #ifdef DIRECT_MOTOR_DRIVE_V1
 
 // IF DEFINED: turn on lights to match motor drive for debug purposes.
-#define MOTOR_DEBUG_LEDS
+//#define MOTOR_DEBUG_LEDS
 
 
 // Approx minimum time to let H-bridge settle/stabilise (ms).
