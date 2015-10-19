@@ -132,11 +132,11 @@ bool ValveMotorDirectV1HardwareDriver::spinSCTTicks(const uint8_t maxRunTicks, c
   return(false);
   }
 
-// Low-level call to actually run/stop motor.
-// May take as much as 200ms eg to change direction.
+// Call to actually run/stop motor.
+// May take as much as (say) 200ms eg to change direction.
 // Stopping (removing power) should typically be very fast, << 100ms.
-//   * maxRunTicks  maximum sub-cycle ticks to attempt to run/spin for); strictly positive
-//   * dir    direction to run motor (or off/stop)
+//   * maxRunTicks  maximum sub-cycle ticks to attempt to run/spin for); zero will run for shortest reasonable time
+//   * dir  direction to run motor (or off/stop)
 //   * callback  callback handler
 void ValveMotorDirectV1HardwareDriver::motorRun(const uint8_t maxRunTicks,
                                                 const motor_drive dir,
@@ -309,18 +309,6 @@ bool ValveMotorDirectV1HardwareDriver::isCurrentHigh(HardwareMotorDriverInterfac
 #endif
   return(currentSense);
   }
-
-
-//// Enable/disable end-stop detection and shaft-encoder.
-//// Disabling should usually force the motor off,
-//// with a small pause for any residual movement to complete.
-//void ValveMotorDirectV1HardwareDriver::enableFeedback(const bool enable, HardwareMotorDriverInterfaceCallbackHandler &callback)
-//  {
-//  // Check for high motor current indicating hitting an end-stop.
-//  const bool highI = isCurrentHigh();
-////  if(highI) { LED_UI2_ON(); } else { LED_UI2_OFF(); }
-//  if(highI) { callback.signalHittingEndStop(); } 
-//  }
 
 // Singleton implementation/instance.
 ValveMotorDirectV1 ValveDirect;

@@ -208,11 +208,11 @@ class ValveMotorDirectV1HardwareDriver : public HardwareMotorDriverInterface
     // Detect if end-stop is reached or motor current otherwise very high.
     virtual bool isCurrentHigh(HardwareMotorDriverInterface::motor_drive mdir = motorDriveOpening) const;
 
-    // Call to actually run/stop low-level motor.
-    // May take as much as 200ms eg to change direction.
+    // Call to actually run/stop motor.
+    // May take as much as (say) 200ms eg to change direction.
     // Stopping (removing power) should typically be very fast, << 100ms.
     //   * maxRunTicks  maximum sub-cycle ticks to attempt to run/spin for); zero will run for shortest reasonable time
-    //   * dir    direction to run motor (or off/stop)
+    //   * dir  direction to run motor (or off/stop)
     //   * callback  callback handler
     virtual void motorRun(uint8_t maxRunTicks, motor_drive dir, HardwareMotorDriverInterfaceCallbackHandler &callback);
   };
