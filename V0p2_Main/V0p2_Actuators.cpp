@@ -42,7 +42,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 
 
 // Approx minimum time to let H-bridge settle/stabilise (ms).
-static const uint8_t minMotorHBridgeSettleMS = 16;
+static const uint8_t minMotorHBridgeSettleMS = 8;
 // Min sub-cycle ticks for H-bridge to settle.
 static const uint8_t minMotorHBridgeSettleTicks = max(1, minMotorHBridgeSettleMS / SUBCYCLE_TICK_MS_RD);
 
@@ -60,7 +60,7 @@ static const uint8_t minMotorReverseTicks = max(1, minMotorReverseMS / SUBCYCLE_
 //   * maxRunTicks  maximum sub-cycle ticks to attempt to run/spin for); strictly positive
 //   * minTicksBeforeAbort  minimum ticks before abort for end-stop / high-current,
 //       don't attempt to run at all if less than this time available before (close to) end of sub-cycle;
-//       strictly positive and should be no less than maxRunTicks
+//       should be no greater than maxRunTicks
 //   * dir  direction to run motor (open or closed) or off if waiting for motor to stop
 //   * callback  handler to deliver end-stop and position-encoder callbacks to;
 //     non-null and callbacks must return very quickly
@@ -92,7 +92,6 @@ bool ValveMotorDirectV1HardwareDriver::spinSCTTicks(const uint8_t maxRunTicks, c
     const uint8_t sctMaxRunTime = sctStart + min(maxRunTicks, maxTicksBeforeAbsLimit);
     // Do minimum run time, NOT checking for end-stop / high current.
     for( ; ; )
-//    while((sct = getSubCycleTime()) < sctMinRunTime)
       {
       // Poll shaft encoder output and update tick counter.
       const uint8_t newSct = getSubCycleTime();
@@ -140,6 +139,10 @@ bool ValveMotorDirectV1HardwareDriver::spinSCTTicks(const uint8_t maxRunTicks, c
 // TODO: implement start
 void ValveMotorDirectV1HardwareDriver::motorRun(const motor_drive dir, HardwareMotorDriverInterfaceCallbackHandler &callback, const bool start)
   {
+  // Remember previous state of motor.
+  // This may help to correctly allow for (eg) position encoding inputs while a motor is slowing.
+  const uint8_t prev_dir = last_dir;
+
   // *** MUST NEVER HAVE L AND R LOW AT THE SAME TIME else board may be destroyed at worst. ***
   // Operates as quickly as reasonably possible, eg to move to stall detection quickly...
   // TODO: consider making atomic to block some interrupt-related accidents...
@@ -189,22 +192,31 @@ LED_UI2_ON();
 
     case motorOff: default: // Explicit off, and default for safety.
       {
-      // Everything off...
+      // Everything off, unconditionally.
+      //
+      // Turn one side of bridge off ASAP.
       fastDigitalWrite(MOTOR_DRIVE_MR, HIGH); // Belt and braces force pin logical output state high.
       pinMode(MOTOR_DRIVE_MR, INPUT_PULLUP); // Switch to weak pull-up; slow but possibly marginally safer.
 #ifdef MOTOR_DEBUG_LEDS
 LED_HEATCALL_OFF();
 #endif
-      OTV0P2BASE::nap(WDTO_15MS); // Let H-bridge respond and settle.
+      // Let H-bridge respond and settle.
+//      OTV0P2BASE::nap(WDTO_15MS);
+      spinSCTTicks(minMotorHBridgeSettleMS, 0, (motor_drive)prev_dir, callback); 
       fastDigitalWrite(MOTOR_DRIVE_ML, HIGH); // Belt and braces force pin logical output state high.
       pinMode(MOTOR_DRIVE_ML, INPUT_PULLUP); // Switch to weak pull-up; slow but possibly marginally safer.
 #ifdef MOTOR_DEBUG_LEDS
 LED_UI2_OFF();
 #endif
-      OTV0P2BASE::nap(WDTO_15MS); // Let H-bridge respond and settle.
-      return; // Return, not fall through.
+      // Let H-bridge respond and settle.
+//      OTV0P2BASE::nap(WDTO_15MS);
+      spinSCTTicks(minMotorHBridgeSettleMS, 0, (motor_drive)prev_dir, callback); 
+      break; // Fall through to common case.
       }
     }
+
+  // Record new direction.
+  last_dir = dir;
   }
 
 

@@ -101,7 +101,7 @@ class HardwareMotorDriverInterface
       };
 
   protected:
-    HardwareMotorDriverInterface() : dir((uint8_t)motorOff) { }
+    HardwareMotorDriverInterface() : last_dir((uint8_t)motorOff) { }
 
 //    // Could attempt to force motor off at destruction...
 //    ~HardwareMotorDriverInterface() : { }
@@ -109,7 +109,7 @@ class HardwareMotorDriverInterface
     // Last recorded direction.
     // Helpful to record shaft-encoder and other behaviour correctly around direction changes.
     // Marked volatile and stored as uint8_t to help thread-safety, and potentially save space.
-    volatile uint8_t dir;
+    volatile uint8_t last_dir;
 
   public:
     // Detect (poll) if end-stop is reached or motor current otherwise very high.
@@ -119,7 +119,7 @@ class HardwareMotorDriverInterface
     //   * maxRunTicks  maximum sub-cycle ticks to attempt to run/spin for); strictly positive
     //   * minTicksBeforeAbort  minimum ticks before abort for end-stop / high-current,
     //       don't attempt to run at all if less than this time available before (close to) end of sub-cycle;
-    //       strictly positive and should be no less than maxRunTicks
+    //       should be no greater than maxRunTicks
     //   * dir  direction to run motor (open or closed) or off if waiting for motor to stop
     //   * callback  handler to deliver end-stop and position-encoder callbacks to;
     //     non-null and callbacks must return very quickly

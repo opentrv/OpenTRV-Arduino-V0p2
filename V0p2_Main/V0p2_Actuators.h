@@ -195,7 +195,7 @@ class ValveMotorDirectV1HardwareDriver : public HardwareMotorDriverInterface
     //   * maxRunTicks  maximum sub-cycle ticks to attempt to run/spin for); strictly positive
     //   * minTicksBeforeAbort  minimum ticks before abort for end-stop / high-current,
     //       don't attempt to run at all if less than this time available before (close to) end of sub-cycle;
-    //       strictly positive and should be no less than maxRunTicks
+    //       should be no greater than maxRunTicks
     //   * dir  direction to run motor (open or closed) or off if waiting for motor to stop
     //   * callback  handler to deliver end-stop and position-encoder callbacks to;
     //     non-null and callbacks must return very quickly
