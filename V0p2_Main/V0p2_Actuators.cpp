@@ -165,7 +165,7 @@ LED_UI2_OFF();
 #endif
       // Let H-bridge respond and settle, and motor slow down if changing direction.
       // Otherwise there is a risk of browning out the device with a big current surge. 
-      if(prev_dir != dir) { OTV0P2BASE::nap(WDTO_15MS); } // Enforced low-power sleep on change of direction....
+      if(prev_dir != dir) { OTV0P2BASE::nap(WDTO_120MS); } // Enforced low-power sleep on change of direction....
       pinMode(MOTOR_DRIVE_MR, OUTPUT); // Ensure that the LOW side is an output.
       fastDigitalWrite(MOTOR_DRIVE_MR, LOW); // Pull LOW last.
 #ifdef MOTOR_DEBUG_LEDS
@@ -188,7 +188,7 @@ LED_HEATCALL_OFF();
 #endif
       // Let H-bridge respond and settle, and motor slow down if changing direction.
       // Otherwise there is a risk of browning out the device with a big current surge. 
-      if(prev_dir != dir) { OTV0P2BASE::nap(WDTO_15MS); } // Enforced low-power sleep on change of direction....
+      if(prev_dir != dir) { OTV0P2BASE::nap(WDTO_120MS); } // Enforced low-power sleep on change of direction....
       pinMode(MOTOR_DRIVE_ML, OUTPUT); // Ensure that the LOW side is an output.
       fastDigitalWrite(MOTOR_DRIVE_ML, LOW); // Pull LOW last.   
 #ifdef MOTOR_DEBUG_LEDS
@@ -219,6 +219,7 @@ LED_UI2_OFF();
 #endif
       // Let H-bridge respond and settle.
       spinSCTTicks(minMotorHBridgeSettleTicks, 0, HardwareMotorDriverInterface::motorOff, callback); 
+      if(prev_dir != dir) { OTV0P2BASE::nap(WDTO_60MS); } // Enforced low-power sleep on change of direction....
       break; // Fall through to common case.
       }
     }
@@ -381,6 +382,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valvePinWithdrawn");
     // Running (initial) calibration cycle.
     case valveCalibrating:
 DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valveCalibrating");
+wiggle(); // Tactile feedback.
       // TODO
       break;
 
