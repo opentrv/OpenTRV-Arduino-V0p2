@@ -342,7 +342,7 @@ void CurrentSenseValveMotorDirect::poll()
       {
 DEBUG_SERIAL_PRINTLN_FLASHSTRING("  init");
       wiggle(); // Tactile feedback and ensure that the motor is left stopped.
-      state = valvePinWithdrawing;
+      changeState(valvePinWithdrawing);
       // TODO: record time withdrawl starts (to allow time out).
       break;
       }
@@ -357,7 +357,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valvePinWithdrawing");
       // Stop motor until next loop (also ensures power off).
       hw->motorRun(0, HardwareMotorDriverInterface::motorOff, *this);
       // Once end-stop has been hit, move to state to wait for user signal and then start calibration. 
-      if(endStopDetected) { state = valvePinWithdrawn; }
+      if(endStopDetected) { changeState(valvePinWithdrawn); }
       break;
       }
 
@@ -365,31 +365,56 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valvePinWithdrawing");
     case valvePinWithdrawn:
       {
 DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valvePinWithdrawn");
-      // TODO
+//      // TODO
+//
+//      // TEMPORARILY ... RUN BACK TO WITHDRAWN, AND THEN STOP ...
+//      endStopDetected = false; // Clear the end-stop detection flag ready.
+//      // Run motor as far as possible on this sub-cycle.
+//      hw->motorRun(~0, HardwareMotorDriverInterface::motorDriveClosing, *this);
+//      // Stop motor until next loop (also ensures power off).
+//      hw->motorRun(0, HardwareMotorDriverInterface::motorOff, *this);
+//      // FIXME
+//      if(endStopDetected) { changeState(valveCalibrating); }
 
-      // TEMPORARILY ... RUN BACK TO WITHDRAWN, AND THEN STOP ...
-      endStopDetected = false; // Clear the end-stop detection flag ready.
-      // Run motor as far as possible on this sub-cycle.
-      hw->motorRun(~0, HardwareMotorDriverInterface::motorDriveClosing, *this);
-      // Stop motor until next loop (also ensures power off).
-      hw->motorRun(0, HardwareMotorDriverInterface::motorOff, *this);
-      // FIXME
-      if(endStopDetected) { state = valveCalibrating; }
+      // TODO: wait for signal from user that valve has been fitted...
 
+      // Once fitted, move to calibration.
+      changeState(valveCalibrating);
       break;
       }
 
     // Running (initial) calibration cycle.
     case valveCalibrating:
+      {
 DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valveCalibrating");
-wiggle(); // Tactile feedback.
+      DEBUG_SERIAL_PRINT_FLASHSTRING("    calibState: ");
+      DEBUG_SERIAL_PRINT(perState.calibrating.calibState);
+      DEBUG_SERIAL_PRINTLN();
+      // Select activity based on micro-state.
+      switch(perState.calibrating.calibState)
+        {
+        case 0:
+        case 1:
+        case 2:
+          {
+          ++perState.calibrating.calibState; // Move to next micro state.
+          break;
+          }
+        case 3:
+          {
+          // TODO: move to next major state...
+          break;
+          }
+        }
+
       // TODO
       break;
+      }
 
     // Unexpected: go to error state, stop motor and panic.
     default:
       {
-      state = valveError;
+      changeState(valveError);
       hw->motorRun(0, HardwareMotorDriverInterface::motorOff, *this);
       panic(); // Not expected to return.
       return;

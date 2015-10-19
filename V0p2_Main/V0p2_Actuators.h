@@ -69,7 +69,26 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
     // Stored as a uint8_t to save a little space and to make atomic operations easier.
     // Marked volatile so that individual reads are ISR-/thread- safe without a mutex.
     // Hold a mutex to perform compound operations such as read/modify/write.
+    // Change state with changeState() which will do some other book-keeping.
     volatile /*driverState*/ uint8_t state;
+    // Change state and perform some book-keeping.
+    inline void changeState(const driverState newState) { state = (uint8_t)newState; clearPerState(); }
+
+    // Data used only within one major state and not needing to be saved between state.
+    // Thus it can be shared in a union to save space.
+    // This can be cleared to all zeros with clearPerState(), so starts each state as all zeros.
+    union
+      {
+      // State used while calibrating.
+      struct
+        {
+//        uint8_t runCount; // Completed round-trip calibration runs.
+        uint8_t calibState; // Current motor direction: 0 is off, 1 is closing, 2 is opening, 3 is done.
+        uint16_t ticksFromOpenToClosed;
+        uint16_t ticksFromClosedToOpen;
+        } calibrating;
+      } perState;
+    inline void clearPerState() { if(sizeof(perState) > 0) { memset(&perState, 0, sizeof(perState)); } }
 
     // Flag set on callback from end-top / stall / high-current input.
     // Marked volatile for thread-safe lock-free access (with care).
@@ -99,8 +118,8 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
     // Create an instance, passing in a reference to the non-NULL hardware driver.
     // The hardware driver instance lifetime must be longer than this instance.
     CurrentSenseValveMotorDirect(HardwareMotorDriverInterface * const hwDriver) :
-        hw(hwDriver), state(init), targetPC(0)
-        { }
+        hw(hwDriver), targetPC(0)
+        { changeState(init); }
 
     // Poll.
     // Regular poll every 1s or 2s,
