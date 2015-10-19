@@ -101,7 +101,15 @@ class HardwareMotorDriverInterface
       };
 
   protected:
-    ~HardwareMotorDriverInterface() {}
+    HardwareMotorDriverInterface() : dir((uint8_t)motorOff) { }
+
+//    // Could attempt to force motor off at destruction...
+//    ~HardwareMotorDriverInterface() : { }
+
+    // Last recorded direction.
+    // Helpful to record shaft-encoder and other behaviour correctly around direction changes.
+    // Marked volatile and stored as uint8_t to help thread-safety, and potentially save space.
+    volatile uint8_t dir;
 
   public:
     // Detect (poll) if end-stop is reached or motor current otherwise very high.

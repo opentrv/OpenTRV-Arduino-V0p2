@@ -74,8 +74,9 @@ bool ValveMotorDirectV1HardwareDriver::spinSCTTicks(const uint8_t maxRunTicks, c
   {
   // Sub-cycle time now.
   const uint8_t sctStart = getSubCycleTime();
-  // Only run up to ~80% of the minor cycle time to leave time for other processing.
-  const uint8_t sctAbsLimit = GSCT_MAX - (GSCT_MAX/5);
+  // Only run up to ~90% of the minor cycle time to leave time for other processing.
+  // Always leave at least one tick clear below maximum.
+  const uint8_t sctAbsLimit = GSCT_MAX - max(1, (GSCT_MAX/10));
   uint8_t sct = getSubCycleTime();
   const uint8_t maxTicksBeforeAbsLimit = (sctAbsLimit - sct);
   // Abort immediately if not enough time to do minimum run.
@@ -342,22 +343,16 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("  init");
       {
 DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valvePinWithdrawing");
       endStopDetected = false; // Clear the end-stop detection flag ready.
-      bool currentHigh = false;
+//      bool currentHigh = false;
       hw->motorRun(HardwareMotorDriverInterface::motorDriveOpening, *this, true);
-      uint8_t sctStart = getSubCycleTime();
-      uint8_t sctMinRunTime = sctStart + 4; // Min run time 32ms to avoid false readings.
-      uint8_t sct;
-      while(!(currentHigh = hw->isCurrentHigh(HardwareMotorDriverInterface::motorDriveOpening)) && ((sct = getSubCycleTime()) <= ((3*GSCT_MAX)/4)))
-        { 
-        // Wait until end of tick or minimum period.
-        if(sct < sctMinRunTime) { while(getSubCycleTime() <= sctMinRunTime) { } }
-        else { while(getSubCycleTime() == sct) { } }
-        }
+
+      const bool aborted = hw->spinSCTTicks(~0, minMotorRunupMS, HardwareMotorDriverInterface::motorDriveOpening, *this);
+
       // Stop motor until next loop (also ensures power off).
       hw->motorRun(HardwareMotorDriverInterface::motorOff, *this);
       // Once end-stop has been hit, move to state to wait for user signal and then start calibration. 
-if(currentHigh) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("    currentHigh"); }
-      if(currentHigh) { state = valvePinWithdrawn; }
+if(endStopDetected) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("    currentHigh"); }
+      if(endStopDetected) { state = valvePinWithdrawn; }
       break;
       }
 
@@ -367,22 +362,18 @@ if(currentHigh) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("    currentHigh"); }
 DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valvePinWithdrawn");
       // TODO
 
-      // TEMPORARILY ... RUN BACK TO START AND CYCLE ...
+      // TEMPORARILY ... RUN BACK TO START AND STOP ...
       endStopDetected = false; // Clear the end-stop detection flag ready.
       bool currentHigh = false;
       hw->motorRun(HardwareMotorDriverInterface::motorDriveClosing, *this, true);
-      uint8_t sctStart = getSubCycleTime();
-      uint8_t sctMinRunTime = sctStart + 4; // Min run time 32ms to avoid false readings.
-      uint8_t sct;
-      while(!(currentHigh = hw->isCurrentHigh(HardwareMotorDriverInterface::motorDriveClosing)) && ((sct = getSubCycleTime()) <= ((3*GSCT_MAX)/4)))
-        { 
-        // Wait until end of tick or minimum period.
-        if(sct < sctMinRunTime) { while(getSubCycleTime() <= sctMinRunTime) { } }
-        else { while(getSubCycleTime() == sct) { } }
-        }
+
+const bool aborted = hw->spinSCTTicks(~0, minMotorRunupMS, HardwareMotorDriverInterface::motorDriveClosing, *this);
+
       // Stop motor until next loop (also ensures power off).
       hw->motorRun(HardwareMotorDriverInterface::motorOff, *this);
-      if(currentHigh) { state = valveCalibrating; }
+
+if(endStopDetected) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("    currentHigh"); }
+      if(endStopDetected) { state = valveCalibrating; }
 
       break;
       }
