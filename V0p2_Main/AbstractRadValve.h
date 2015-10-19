@@ -136,11 +136,7 @@ class HardwareMotorDriverInterface
     // Stopping (removing power) should typically be very fast, << 100ms.
     //   * dir    direction to run motor (or off/stop)
     //   * callback  callback handler
-    //   * start  if true then this routine starts the motor from cold,
-    //            else this runs the motor for a short continuation period;
-    //            at least one continuation should be performed before testing
-    //            for high current loads at end stops
-    virtual void motorRun(motor_drive dir, HardwareMotorDriverInterfaceCallbackHandler &callback, bool start = true) = 0;
+    virtual void motorRun(motor_drive dir, HardwareMotorDriverInterfaceCallbackHandler &callback) = 0;
   };
 
 #endif

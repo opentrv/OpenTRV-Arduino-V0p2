@@ -137,12 +137,7 @@ bool ValveMotorDirectV1HardwareDriver::spinSCTTicks(const uint8_t maxRunTicks, c
 // Stopping (removing power) should typically be very fast, << 100ms.
 //   * dir    direction to run motor (or off/stop)
 //   * callback  callback handler
-//   * start  if true then this routine starts the motor from cold,
-//            else this runs the motor for a short continuation period;
-//            at least one continuation should be performed before testing
-//            for high current loads at end stops
-// TODO: implement start
-void ValveMotorDirectV1HardwareDriver::motorRun(const motor_drive dir, HardwareMotorDriverInterfaceCallbackHandler &callback, const bool start)
+void ValveMotorDirectV1HardwareDriver::motorRun(const motor_drive dir, HardwareMotorDriverInterfaceCallbackHandler &callback)
   {
   // Remember previous state of motor.
   // This may help to correctly allow for (eg) position encoding inputs while a motor is slowing.
@@ -335,8 +330,8 @@ ValveMotorDirectV1 ValveDirect;
 void CurrentSenseValveMotorDirect::wiggle()
   {
   hw->motorRun(HardwareMotorDriverInterface::motorOff, *this);
-  hw->motorRun(HardwareMotorDriverInterface::motorDriveOpening, *this, false);
-  hw->motorRun(HardwareMotorDriverInterface::motorDriveClosing, *this, false);
+  hw->motorRun(HardwareMotorDriverInterface::motorDriveOpening, *this);
+  hw->motorRun(HardwareMotorDriverInterface::motorDriveClosing, *this);
   hw->motorRun(HardwareMotorDriverInterface::motorOff, *this);
   }
 
@@ -365,18 +360,12 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("  init");
       {
 DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valvePinWithdrawing");
       endStopDetected = false; // Clear the end-stop detection flag ready.
-      hw->motorRun(HardwareMotorDriverInterface::motorDriveOpening, *this, true);
-if(endStopDetected) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("    I1!"); }
-
-      const bool aborted = hw->spinSCTTicks(~0, minMotorRunupMS, HardwareMotorDriverInterface::motorDriveOpening, *this);
-if(endStopDetected) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("    I2!"); }
-
+      // Run motor as far as possible on this sub-cycle.
+      hw->motorRun(HardwareMotorDriverInterface::motorDriveOpening, *this);
+      hw->spinSCTTicks(~0, minMotorRunupMS, HardwareMotorDriverInterface::motorDriveOpening, *this);
       // Stop motor until next loop (also ensures power off).
       hw->motorRun(HardwareMotorDriverInterface::motorOff, *this);
-if(endStopDetected) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("    I3!"); }
-
       // Once end-stop has been hit, move to state to wait for user signal and then start calibration. 
-if(endStopDetected) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("    currentHigh"); }
       if(endStopDetected) { state = valvePinWithdrawn; }
       break;
       }
@@ -389,14 +378,12 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valvePinWithdrawn");
 
       // TEMPORARILY ... RUN BACK TO WITHDRAWN, AND THEN STOP ...
       endStopDetected = false; // Clear the end-stop detection flag ready.
-      hw->motorRun(HardwareMotorDriverInterface::motorDriveClosing, *this, true);
-
-const bool aborted = hw->spinSCTTicks(~0, minMotorRunupMS, HardwareMotorDriverInterface::motorDriveClosing, *this);
-
+      // Run motor as far as possible on this sub-cycle.
+      hw->motorRun(HardwareMotorDriverInterface::motorDriveClosing, *this);
+      hw->spinSCTTicks(~0, minMotorRunupMS, HardwareMotorDriverInterface::motorDriveClosing, *this);
       // Stop motor until next loop (also ensures power off).
       hw->motorRun(HardwareMotorDriverInterface::motorOff, *this);
-
-if(endStopDetected) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("    currentHigh"); }
+      // FIXME
       if(endStopDetected) { state = valveCalibrating; }
 
       break;
