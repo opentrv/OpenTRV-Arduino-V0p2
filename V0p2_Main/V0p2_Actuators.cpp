@@ -172,7 +172,6 @@ LED_UI2_OFF();
 LED_HEATCALL_ON();
 #endif
       // Let H-bridge respond and settle and let motor run up.
-//      spinSCTTicks(minMotorRunupTicks, minMotorRunupTicks, dir, callback);
       spinSCTTicks(max(maxRunTicks, minMotorRunupTicks), minMotorRunupTicks, dir, callback);
       break; // Fall through to common case.
       }
@@ -196,7 +195,6 @@ LED_HEATCALL_OFF();
 LED_UI2_ON();
 #endif
       // Let H-bridge respond and settle and let motor run up.
-//      spinSCTTicks(minMotorRunupTicks, minMotorRunupTicks, dir, callback);
       spinSCTTicks(max(maxRunTicks, minMotorRunupTicks), minMotorRunupTicks, dir, callback);
       break; // Fall through to common case.
       }
@@ -355,7 +353,6 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valvePinWithdrawing");
       endStopDetected = false; // Clear the end-stop detection flag ready.
       // Run motor as far as possible on this sub-cycle.
       hw->motorRun(~0, HardwareMotorDriverInterface::motorDriveOpening, *this);
-//      hw->spinSCTTicks(~0, minMotorRunupMS, HardwareMotorDriverInterface::motorDriveOpening, *this);
       // Stop motor until next loop (also ensures power off).
       hw->motorRun(0, HardwareMotorDriverInterface::motorOff, *this);
       // Once end-stop has been hit, move to state to wait for user signal and then start calibration. 
@@ -373,7 +370,6 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valvePinWithdrawn");
       endStopDetected = false; // Clear the end-stop detection flag ready.
       // Run motor as far as possible on this sub-cycle.
       hw->motorRun(~0, HardwareMotorDriverInterface::motorDriveClosing, *this);
-//      hw->spinSCTTicks(~0, minMotorRunupMS, HardwareMotorDriverInterface::motorDriveClosing, *this);
       // Stop motor until next loop (also ensures power off).
       hw->motorRun(0, HardwareMotorDriverInterface::motorOff, *this);
       // FIXME
