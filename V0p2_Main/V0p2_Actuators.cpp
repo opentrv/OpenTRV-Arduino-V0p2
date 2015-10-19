@@ -328,6 +328,25 @@ void CurrentSenseValveMotorDirect::wiggle()
   }
 
 
+// Called with each motor run sub-cycle tick.
+// Is ISR-/thread- safe.
+void CurrentSenseValveMotorDirect::signalRunSCTTick(const bool opening)
+  {
+  ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
+    {
+    // Crudely avoid/ignore underflow/overflow for now.
+    if(!opening)
+      {
+      if(ticksFromOpen < MAX_TICKS_FROM_OPEN) { ++ticksFromOpen; }
+      }
+    else
+      {
+      if(ticksFromOpen > 0) { --ticksFromOpen; }
+      }
+    }
+  }
+
+
 // Poll.
 // Regular poll every 1s or 2s,
 // though tolerates missed polls eg because of other time-critical activity.
@@ -394,24 +413,99 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valveCalibrating");
       switch(perState.calibrating.calibState)
         {
         case 0:
+          {
+          // Ensure pin is fully withdrawn before starting calibration proper.
+          endStopDetected = false; // Clear the end-stop detection flag ready.
+          // Run motor as far as possible on this sub-cycle.
+          hw->motorRun(~0, HardwareMotorDriverInterface::motorDriveOpening, *this);
+          // Stop motor until next loop (also ensures power off).
+          hw->motorRun(0, HardwareMotorDriverInterface::motorOff, *this);
+          // Once end-stop has been hit, prepare to start calibration run in opposite direction. 
+          if(endStopDetected)
+            {
+            endStopDetected = false;
+            ticksFromOpen = 0; // Reset tick count.
+            ++perState.calibrating.calibState; // Move to next micro state.
+            }
+          break;
+          }
         case 1:
+          {
+          // Run pin to fully extended (valve closed).
+          endStopDetected = false; // Clear the end-stop detection flag ready.
+          // Run motor as far as possible on this sub-cycle.
+          hw->motorRun(~0, HardwareMotorDriverInterface::motorDriveClosing, *this);
+          // Stop motor until next loop (also ensures power off).
+          hw->motorRun(0, HardwareMotorDriverInterface::motorOff, *this);
+          // Once end-stop has been hit, capture run length and prepare to run in opposite direction. 
+          if(endStopDetected)
+            {
+            endStopDetected = false;
+            const uint16_t tfotc = ticksFromOpen;
+            perState.calibrating.ticksFromOpenToClosed = tfotc;
+DEBUG_SERIAL_PRINT_FLASHSTRING("    ticksFromOpenToClosed: ");
+DEBUG_SERIAL_PRINT(tfotc);
+DEBUG_SERIAL_PRINTLN();
+            ticksFromOpen = MAX_TICKS_FROM_OPEN; // Reset tick count to maximum.
+            ++perState.calibrating.calibState; // Move to next micro state.
+            }
+          break;
+          }
         case 2:
           {
-          ++perState.calibrating.calibState; // Move to next micro state.
+          // Run pin to fully retracted again (valve open).
+          endStopDetected = false; // Clear the end-stop detection flag ready.
+          // Run motor as far as possible on this sub-cycle.
+          hw->motorRun(~0, HardwareMotorDriverInterface::motorDriveOpening, *this);
+          // Stop motor until next loop (also ensures power off).
+          hw->motorRun(0, HardwareMotorDriverInterface::motorOff, *this);
+          // Once end-stop has been hit, capture run length and prepare to run in opposite direction. 
+          if(endStopDetected)
+            {
+            endStopDetected = false;
+            const uint16_t tfcto = MAX_TICKS_FROM_OPEN - ticksFromOpen;
+            perState.calibrating.ticksFromClosedToOpen = tfcto;
+DEBUG_SERIAL_PRINT_FLASHSTRING("    ticksFromClosedToOpen: ");
+DEBUG_SERIAL_PRINT(tfcto);
+DEBUG_SERIAL_PRINTLN();
+            ticksFromOpen = 0; // Reset tick count.
+            ++perState.calibrating.calibState; // Move to next micro state.
+            }
           break;
           }
         case 3:
           {
-          // TODO: move to next major state...
+          // Set all calibration parameters and current position.
+          ticksFromOpenToClosed = perState.calibrating.ticksFromOpenToClosed;
+          ticksFromClosedToOpen = perState.calibrating.ticksFromClosedToOpen;
+
+
+
+          // TODO
+
+
+
+          // Move to normal valve running state...
+          currentPC = 100; // Valve is currently fully open.
+          changeState(valveNormal);
           break;
           }
+        // In case of unexpected microstate shut down gracefully.
+        default: { changeState(valveError); break; }
         }
+      break;
+      }
 
+    // Normal running state: attempt to track the specified target valve open percentage.
+    case valveNormal:
+      {
+DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valveNormal");
       // TODO
       break;
       }
 
     // Unexpected: go to error state, stop motor and panic.
+    valveError:
     default:
       {
       changeState(valveError);

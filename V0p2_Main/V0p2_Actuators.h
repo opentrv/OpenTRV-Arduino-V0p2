@@ -82,36 +82,44 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
       // State used while calibrating.
       struct
         {
+        uint8_t calibState; // Current micro-state, starting at zero.
 //        uint8_t runCount; // Completed round-trip calibration runs.
-        uint8_t calibState; // Current motor direction: 0 is off, 1 is closing, 2 is opening, 3 is done.
         uint16_t ticksFromOpenToClosed;
         uint16_t ticksFromClosedToOpen;
         } calibrating;
       } perState;
     inline void clearPerState() { if(sizeof(perState) > 0) { memset(&perState, 0, sizeof(perState)); } }
 
-    // Flag set on callback from end-top / stall / high-current input.
+    // Flag set on signalHittingEndStop() callback from end-top / stall / high-current input.
     // Marked volatile for thread-safe lock-free access (with care).
     volatile bool endStopDetected;
 
-    // Clicks from one end of the range to the other; 0 if not initialised or no movement tracker.
-    // Set during calibration.
-    uint16_t clicksFullTravel;
+//    // Set when valve needs recalibration, eg because dead-reckoning found to be significantly wrong.
+//    // May also need recalibrating after (say) a few weeks to allow for battery/speed droop.
+//    bool needsRecalibrating;
 
-    // Current clicks from closed end of travel.
     // Set during calibration.
+    uint16_t ticksFromOpenToClosed;
+    uint16_t ticksFromClosedToOpen;
+    // Ticks per percent in the open-to-closed direction; computed during tracking.
+    uint8_t ticksPerPercentOpenToClosed;
+
+    // Current sub-cycle ticks from fully-open (reference) end of travel, towards fully closed.
+    // This is nominally ticks in the open-to-closed direction
+    // since those may differ from the other direction.
+    // Reset during calibration and upon hitting an end-stop.
+    // Recalibration, full or partial, may be forced if this overflows or underflows significantly.
+    // Significant underflow might be (say) the minimum valve-open percentage.
     // ISR-/thread- safe with a mutex.
-    volatile uint16_t clicksFromClosed;
-
-    // Measured (during calibration) sub-cycle ticks (1/128s) from open to closed.
-    uint16_t ticksFromOpen;
-    // Measured (during calibration) sub-cycle ticks (1/128s) from open to closed.
-    uint16_t ticksFromClosed;
+    volatile uint16_t ticksFromOpen;
+    // Maximum permitted value of ticksFromOpen;
+    static const uint16_t MAX_TICKS_FROM_OPEN = ~0;
 
     // Current nominal percent open in range [0,100].
     uint8_t currentPC;
 
     // Target % open in range [0,100].
+    // Maintained across all states; defaults to 'closed'/0.
     uint8_t targetPC;
 
   public:
@@ -153,7 +161,7 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
 
     // Called with each motor run sub-cycle tick.
     // Is ISR-/thread- safe.
-    virtual void signalRunSCTTick(bool opening) { /* TODO */ }
+    virtual void signalRunSCTTick(bool opening);
 
     // Returns true iff not in error state and not (re)calibrating/(re)initialising/(re)syncing.
     // By default there is no recalibration step.
