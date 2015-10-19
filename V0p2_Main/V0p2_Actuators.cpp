@@ -46,12 +46,13 @@ static const uint8_t minMotorHBridgeSettleMS = 8;
 // Min sub-cycle ticks for H-bridge to settle.
 static const uint8_t minMotorHBridgeSettleTicks = max(1, minMotorHBridgeSettleMS / SUBCYCLE_TICK_MS_RD);
 
-// Approx minimum runtime to get motor up to speed and not give false high-current readings (ms).
-static const uint8_t minMotorRunupMS = 32;
+// Approx minimum runtime to get motor up to speed (from stopped) and not give false high-current readings (ms).
+// Based on DHD20151019 DORM1 prototype rig-up and NiMH battery.
+static const uint8_t minMotorRunupMS = 64;
 // Min sub-cycle ticks to run up.
 static const uint8_t minMotorRunupTicks = max(1, minMotorRunupMS / SUBCYCLE_TICK_MS_RD);
 
-// Approx minimum runtime to get motor to reverse and up to speed and not give false high-current readings (ms).
+// Approx minimum runtime to get motor to reverse and stop and not give false high-current readings (ms).
 static const uint8_t minMotorReverseMS = 128;
 // Min sub-cycle ticks to run up.
 static const uint8_t minMotorReverseTicks = max(1, minMotorReverseMS / SUBCYCLE_TICK_MS_RD);
@@ -82,28 +83,30 @@ bool ValveMotorDirectV1HardwareDriver::spinSCTTicks(const uint8_t maxRunTicks, c
   // Abort immediately if not enough time to do minimum run.
   if((sct > sctAbsLimit) || (maxTicksBeforeAbsLimit < minTicksBeforeAbort)) { return(true); }
   // Note if opening or closing...
-  const bool isOpening = HardwareMotorDriverInterface::motorDriveOpening == dir;
-  // Don't spin at all if current is already high before starting.
-  bool currentHigh = isCurrentHigh(dir);
-  if(!currentHigh)
+  const bool isOpening = (HardwareMotorDriverInterface::motorDriveOpening == dir);
+  bool currentHigh = false;
+  // Compute time minimum time before return, then target time before stop/return.
+  const uint8_t sctMinRunTime = sctStart + minTicksBeforeAbort; // Min run time to avoid false readings.
+  const uint8_t sctMaxRunTime = sctStart + min(maxRunTicks, maxTicksBeforeAbsLimit);
+  // Do minimum run time, NOT checking for end-stop / high current.
+  for( ; ; )
     {
-    // Set time minimum time before return, then target time before stop/return.
-    const uint8_t sctMinRunTime = sctStart + minTicksBeforeAbort; // Min run time to avoid false readings.
-    const uint8_t sctMaxRunTime = sctStart + min(maxRunTicks, maxTicksBeforeAbsLimit);
-    // Do minimum run time, NOT checking for end-stop / high current.
-    for( ; ; )
+    // Poll shaft encoder output and update tick counter.
+    const uint8_t newSct = getSubCycleTime();
+    if(newSct != sct)
       {
-      // Poll shaft encoder output and update tick counter.
-      const uint8_t newSct = getSubCycleTime();
-      if(newSct != sct)
-        {
-        sct = newSct; // Assumes no intermediate values missed.
-        callback.signalRunSCTTick(isOpening);
-        if(sct >= sctMinRunTime) { break; }
-        }
-      // TODO: shaft encoder
+      sct = newSct; // Assumes no intermediate values missed.
+      callback.signalRunSCTTick(isOpening);
+      if(sct >= sctMinRunTime) { break; }
       }
-    // Do as much of requested above-minimum run-time as possible.
+    // TODO: shaft encoder
+    }
+
+  // Do as much of requested above-minimum run-time as possible,
+  // iff run time beyond the minimum was actually requested
+  // (else avoid the current sampling entirely).
+  if(sctMaxRunTime > sctMinRunTime)
+    {
     for( ; ; )
       {
       // Check for high current and abort if detected.
@@ -118,6 +121,7 @@ bool ValveMotorDirectV1HardwareDriver::spinSCTTicks(const uint8_t maxRunTicks, c
         }
       }
     }
+
   // Call back and return true if current high / end-stop seen.
   if(currentHigh)
     {
@@ -166,7 +170,10 @@ LED_UI2_OFF();
 #ifdef MOTOR_DEBUG_LEDS
 LED_HEATCALL_ON();
 #endif
-      OTV0P2BASE::nap(WDTO_60MS); // Let H-bridge respond and settle and let motor run up.
+      // Let H-bridge respond and settle and let motor run up.
+//      OTV0P2BASE::nap(WDTO_60MS);
+      const bool aborted = spinSCTTicks(minMotorRunupTicks, minMotorRunupTicks, dir, callback);
+if(aborted) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("aborted"); }
       break; // Fall through to common case.
       }
 
@@ -186,7 +193,10 @@ LED_HEATCALL_OFF();
 #ifdef MOTOR_DEBUG_LEDS
 LED_UI2_ON();
 #endif
-      OTV0P2BASE::nap(WDTO_60MS); // Let H-bridge respond and settle and let motor run up.
+      // Let H-bridge respond and settle and let motor run up.
+//      OTV0P2BASE::nap(WDTO_60MS);
+      const bool aborted = spinSCTTicks(minMotorRunupTicks, minMotorRunupTicks, dir, callback);
+if(aborted) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("aborted"); }
       break; // Fall through to common case.
       }
 
@@ -201,16 +211,14 @@ LED_UI2_ON();
 LED_HEATCALL_OFF();
 #endif
       // Let H-bridge respond and settle.
-//      OTV0P2BASE::nap(WDTO_15MS);
-      spinSCTTicks(minMotorHBridgeSettleMS, 0, (motor_drive)prev_dir, callback); 
+      spinSCTTicks(minMotorHBridgeSettleTicks, 0, (motor_drive)prev_dir, callback); 
       fastDigitalWrite(MOTOR_DRIVE_ML, HIGH); // Belt and braces force pin logical output state high.
       pinMode(MOTOR_DRIVE_ML, INPUT_PULLUP); // Switch to weak pull-up; slow but possibly marginally safer.
 #ifdef MOTOR_DEBUG_LEDS
 LED_UI2_OFF();
 #endif
       // Let H-bridge respond and settle.
-//      OTV0P2BASE::nap(WDTO_15MS);
-      spinSCTTicks(minMotorHBridgeSettleMS, 0, (motor_drive)prev_dir, callback); 
+      spinSCTTicks(minMotorHBridgeSettleTicks, 0, (motor_drive)prev_dir, callback); 
       break; // Fall through to common case.
       }
     }
@@ -355,13 +363,16 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("  init");
       {
 DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valvePinWithdrawing");
       endStopDetected = false; // Clear the end-stop detection flag ready.
-//      bool currentHigh = false;
       hw->motorRun(HardwareMotorDriverInterface::motorDriveOpening, *this, true);
+if(endStopDetected) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("    I1!"); }
 
       const bool aborted = hw->spinSCTTicks(~0, minMotorRunupMS, HardwareMotorDriverInterface::motorDriveOpening, *this);
+if(endStopDetected) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("    I2!"); }
 
       // Stop motor until next loop (also ensures power off).
       hw->motorRun(HardwareMotorDriverInterface::motorOff, *this);
+if(endStopDetected) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("    I3!"); }
+
       // Once end-stop has been hit, move to state to wait for user signal and then start calibration. 
 if(endStopDetected) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("    currentHigh"); }
       if(endStopDetected) { state = valvePinWithdrawn; }
@@ -374,9 +385,8 @@ if(endStopDetected) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("    currentHigh"); }
 DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valvePinWithdrawn");
       // TODO
 
-      // TEMPORARILY ... RUN BACK TO START AND STOP ...
+      // TEMPORARILY ... RUN BACK TO WITHDRAWN, AND THEN STOP ...
       endStopDetected = false; // Clear the end-stop detection flag ready.
-      bool currentHigh = false;
       hw->motorRun(HardwareMotorDriverInterface::motorDriveClosing, *this, true);
 
 const bool aborted = hw->spinSCTTicks(~0, minMotorRunupMS, HardwareMotorDriverInterface::motorDriveClosing, *this);
