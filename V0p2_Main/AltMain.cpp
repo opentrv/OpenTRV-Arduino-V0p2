@@ -210,7 +210,7 @@ void loopAlt()
   // Sleep in low-power mode (waiting for interrupts) until seconds roll.
   // NOTE: sleep at the top of the loop to minimise timing jitter/delay from Arduino background activity after loop() returns.
   // DHD20130425: waking up from sleep and getting to start processing below this block may take >10ms.
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("*E"); // End-of-cycle sleep.
 #endif
 
