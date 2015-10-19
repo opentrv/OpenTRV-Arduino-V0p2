@@ -1121,7 +1121,7 @@ static void testFHTEncodingHeadAndTail()
 #if defined(ALLOW_MINIMAL_STATS_TXRX)
   AssertIsTrueWithErr((result1 - buf == 41 + RFM22_PREAMBLE_BYTES), result1-buf); // Check correct length:preamble + 38-byte body + 3-byte trailer.
 #else // Expect longer encoding in this case...
-//  AssertIsTrueWithErr((result1 - buf == 43 + RFM22_PREAMBLE_BYTES), result1-buf); // Check correct length:preamble + 38-byte body + 5-byte trailer.
+  AssertIsTrueWithErr((result1 - buf == 43 + RFM22_PREAMBLE_BYTES), result1-buf); // Check correct length:preamble + 38-byte body + 5-byte trailer.
 #endif
   AssertIsTrueWithErr(((uint8_t)0xaa) == buf[0], buf[0]); // Check that result starts with FHT8V 0xcc preamble.
   AssertIsTrueWithErr(((uint8_t)0xcc) == buf[RFM22_PREAMBLE_BYTES], buf[RFM22_PREAMBLE_BYTES]); // Check that result starts with FHT8V 0xcc preamble.

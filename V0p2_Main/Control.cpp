@@ -2466,14 +2466,17 @@ void loopOpenTRV()
 
 
 #ifdef HAS_DORM1_VALVE_DRIVE
+  // Handle local direct-drive valve, eg DORM1.
+#ifdef ENABLE_NOMINAL_RAD_VALVE
+  // Get current modelled valve position into abstract driver.
+  ValveDirect.set(NominalRadValve.get());
+#endif
   // Provide regular poll to motor driver.
   // May take significant time to run
   // so don't call when timing is critical or not much time left this cycle.
   // Only calling this after most other heavy-lifting work is likely done.
   if(!showStatus && (getSubCycleTime() < GSCT_MAX/2))
-    {
-    ValveDirect.read();
-    }
+    { ValveDirect.read(); }
 #endif
 
 

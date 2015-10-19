@@ -124,15 +124,16 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // Ambient light sensor (eg LDR) analogue input: higher voltage means more light.
 #define LDR_SENSOR_AIN 0 // ATMega328P-PU PDIP pin 23, PC0.
 
-#if (V0p2_REV >= 2) && (V0p2_REV <= 4)
+// Temperature potentiometer is present in REV 2/3/4/7.
+#if ((V0p2_REV >= 2) && (V0p2_REV <= 4)) || (V0p2_REV == 7)
 // Analogue input from pot.
 #define TEMP_POT_AIN 1 // ATMega328P-PU PDIP pin 24, PC1.
-// IF DEFINED: reverse the direction of REV2/3/4 temperature pot polarity.
+// IF DEFINED: reverse the direction of temperature pot polarity.
 #define TEMP_POT_REVERSE
 #endif
 
 //#if V0p2_REV >= 1 // REV0 now means DHD test bench rather than REV0 PCB...
-// One-wire (eg DS18B20) DQ/data/pullup line; REV1.
+// One-wire (eg DS18B20) DQ/data/pullup line; REV1+.
 #define PIN_OW_DQ_DATA 2
 //#endif
 

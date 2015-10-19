@@ -387,13 +387,13 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF UNDEFINED: this unit cannot act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
 #undef ENABLE_BOILER_HUB
 // IF UNDEFINED: do not allow TX of stats frames.
-#undef ALLOW_STATS_TX
+#define ALLOW_STATS_TX
 // IF UNDEFINED: do not allow RX of stats frames.
 #undef ALLOW_STATS_RX
 // IF DEFINED: allow JSON stats frames.
-#undef ALLOW_JSON_OUTPUT
+#define ALLOW_JSON_OUTPUT
 // IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
-#undef LOCAL_TRV
+#define LOCAL_TRV
 // Use common settings.
 #define COMMON_SETTINGS
 #endif
