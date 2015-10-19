@@ -110,37 +110,34 @@ class HardwareMotorDriverInterface
     // Helpful to record shaft-encoder and other behaviour correctly around direction changes.
     // Marked volatile and stored as uint8_t to help thread-safety, and potentially save space.
     volatile uint8_t last_dir;
+//
+//    // Spin for up to the specified number of SCT ticks, monitoring current and position encoding.
+//    //   * maxRunTicks  maximum sub-cycle ticks to attempt to run/spin for); strictly positive
+//    //   * minTicksBeforeAbort  minimum ticks before abort for end-stop / high-current,
+//    //       don't attempt to run at all if less than this time available before (close to) end of sub-cycle;
+//    //       should be no greater than maxRunTicks
+//    //   * dir  direction to run motor (open or closed) or off if waiting for motor to stop
+//    //   * callback  handler to deliver end-stop and position-encoder callbacks to;
+//    //     non-null and callbacks must return very quickly
+//    // If too few ticks remain before the end of the sub-cycle for the minimum run,
+//    // then this will return true immediately.
+//    // Invokes callbacks for high current (end stop) and position (shaft) encoder where applicable.
+//    // Aborts early if high current is detected at the start,
+//    // or after the minimum run period.
+//    // Returns true if aborted early from too little time to start, or by high current (assumed end-stop hit).
+//    virtual bool spinSCTTicks(uint8_t maxRunTicks, uint8_t minTicksBeforeAbort, motor_drive dir, HardwareMotorDriverInterfaceCallbackHandler &callback) = 0;
 
   public:
     // Detect (poll) if end-stop is reached or motor current otherwise very high.
     virtual bool isCurrentHigh(HardwareMotorDriverInterface::motor_drive mdir = motorDriveOpening) const = 0;
 
-    // Spin for up to the specified number of SCT ticks, monitoring current and position encoding.
-    //   * maxRunTicks  maximum sub-cycle ticks to attempt to run/spin for); strictly positive
-    //   * minTicksBeforeAbort  minimum ticks before abort for end-stop / high-current,
-    //       don't attempt to run at all if less than this time available before (close to) end of sub-cycle;
-    //       should be no greater than maxRunTicks
-    //   * dir  direction to run motor (open or closed) or off if waiting for motor to stop
-    //   * callback  handler to deliver end-stop and position-encoder callbacks to;
-    //     non-null and callbacks must return very quickly
-    // If too few ticks remain before the end of the sub-cycle for the minimum run,
-    // then this will return true immediately.
-    // Invokes callbacks for high current (end stop) and position (shaft) encoder where applicable.
-    // Aborts early if high current is detected at the start,
-    // or after the minimum run period.
-    // Returns true if aborted early from too little time to start, or by high current (assumed end-stop hit).
-    virtual bool spinSCTTicks(uint8_t maxRunTicks, uint8_t minTicksBeforeAbort, motor_drive dir, HardwareMotorDriverInterfaceCallbackHandler &callback) = 0;
-
     // Call to actually run/stop low-level motor.
     // May take as much as 200ms eg to change direction.
     // Stopping (removing power) should typically be very fast, << 100ms.
+    //   * maxRunTicks  maximum sub-cycle ticks to attempt to run/spin for); zero will run for shortest reasonable time
     //   * dir    direction to run motor (or off/stop)
     //   * callback  callback handler
-    //   * start  if true then this routine starts the motor from cold,
-    //            else this runs the motor for a short continuation period;
-    //            at least one continuation should be performed before testing
-    //            for high current loads at end stops
-    virtual void motorRun(motor_drive dir, HardwareMotorDriverInterfaceCallbackHandler &callback, bool start = true) = 0;
+    virtual void motorRun(uint8_t maxRunTicks, motor_drive dir, HardwareMotorDriverInterfaceCallbackHandler &callback) = 0;
   };
 
 #endif

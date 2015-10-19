@@ -187,10 +187,7 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
 // Creating multiple instances almost certainly a BAD IDEA.
 class ValveMotorDirectV1HardwareDriver : public HardwareMotorDriverInterface
   {
-  public:
-    // Detect if end-stop is reached or motor current otherwise very high.
-    virtual bool isCurrentHigh(HardwareMotorDriverInterface::motor_drive mdir = motorDriveOpening) const;
-
+  private:
     // Spin for up to the specified number of SCT ticks, monitoring current and position encoding.
     //   * maxRunTicks  maximum sub-cycle ticks to attempt to run/spin for); strictly positive
     //   * minTicksBeforeAbort  minimum ticks before abort for end-stop / high-current,
@@ -205,18 +202,19 @@ class ValveMotorDirectV1HardwareDriver : public HardwareMotorDriverInterface
     // Aborts early if high current is detected at the start,
     // or after the minimum run period.
     // Returns true if aborted early from too little time to start, or by high current (assumed end-stop hit).
-    virtual bool spinSCTTicks(uint8_t maxRunTicks, uint8_t minTicksBeforeAbort, motor_drive dir, HardwareMotorDriverInterfaceCallbackHandler &callback);
+    bool spinSCTTicks(uint8_t maxRunTicks, uint8_t minTicksBeforeAbort, motor_drive dir, HardwareMotorDriverInterfaceCallbackHandler &callback);
 
-    // Low-level call to actually run/stop motor.
+  public:
+    // Detect if end-stop is reached or motor current otherwise very high.
+    virtual bool isCurrentHigh(HardwareMotorDriverInterface::motor_drive mdir = motorDriveOpening) const;
+
+    // Call to actually run/stop low-level motor.
     // May take as much as 200ms eg to change direction.
     // Stopping (removing power) should typically be very fast, << 100ms.
+    //   * maxRunTicks  maximum sub-cycle ticks to attempt to run/spin for); zero will run for shortest reasonable time
     //   * dir    direction to run motor (or off/stop)
     //   * callback  callback handler
-    //   * start  if true then this routine starts the motor from cold,
-    //            else this runs the motor for a short continuation period;
-    //            at least one continuation should be performed before testing
-    //            for high current loads at end stops
-    virtual void motorRun(motor_drive dir, HardwareMotorDriverInterfaceCallbackHandler &callback, bool start = true);
+    virtual void motorRun(uint8_t maxRunTicks, motor_drive dir, HardwareMotorDriverInterfaceCallbackHandler &callback);
   };
 
 // Actuator/driver for direct local (radiator) valve motor control.
