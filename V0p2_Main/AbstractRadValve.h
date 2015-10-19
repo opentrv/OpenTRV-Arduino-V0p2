@@ -133,16 +133,6 @@ class HardwareMotorDriverInterface
     //            at least one continuation should be performed before testing
     //            for high current loads at end stops
     virtual void motorRun(motor_drive dir, HardwareMotorDriverInterfaceCallbackHandler &callback, bool start = true) = 0;
-
-//    // Enable/disable end-stop detection and shaft-encoder.
-//    // Disabling should usually forces the motor off,
-//    // with a small pause for any residual movement to complete.
-//    virtual void enableFeedback(bool enable, HardwareMotorDriverInterfaceCallbackHandler &callback) = 0;
-//
-//    // If true then enableFeedback(true) needs to be called in a fairly tight loop
-//    // while the motor is running and for a short while after
-//    // to capture end-stop hits, etc.
-//    virtual bool needsPoll() const = 0;
   };
 
 #endif

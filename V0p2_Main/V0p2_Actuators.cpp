@@ -80,6 +80,8 @@ bool ValveMotorDirectV1HardwareDriver::spinSCTTicks(const uint8_t maxRunTicks, c
   const uint8_t maxTicksBeforeAbsLimit = (sctAbsLimit - sct);
   // Abort immediately if not enough time to do minimum run.
   if((sct > sctAbsLimit) || (maxTicksBeforeAbsLimit < minTicksBeforeAbort)) { return(true); }
+  // Note if opening or closing...
+  const bool isOpening = HardwareMotorDriverInterface::motorDriveOpening == dir;
   // Don't spin at all if current is already high before starting.
   bool currentHigh = isCurrentHigh(dir);
   if(!currentHigh)
@@ -88,18 +90,40 @@ bool ValveMotorDirectV1HardwareDriver::spinSCTTicks(const uint8_t maxRunTicks, c
     const uint8_t sctMinRunTime = sctStart + minTicksBeforeAbort; // Min run time to avoid false readings.
     const uint8_t sctMaxRunTime = sctStart + min(maxRunTicks, maxTicksBeforeAbsLimit);
     // Do minimum run time, NOT checking for end-stop / high current.
-    while((sct = getSubCycleTime()) < sctMinRunTime)
+    for( ; ; )
+//    while((sct = getSubCycleTime()) < sctMinRunTime)
       {
       // Poll shaft encoder output and update tick counter.
+      const uint8_t newSct = getSubCycleTime();
+      if(newSct != sct)
+        {
+        sct = newSct; // Assumes no intermediate values missed.
+        callback.signalRunSCTTick(isOpening);
+        if(sct >= sctMinRunTime) { break; }
+        }
+      // TODO: shaft encoder
       }
     // Do as much of requested above-minimum run-time as possible.
-    while(!(currentHigh = isCurrentHigh(dir)) && ((sct = getSubCycleTime()) < sctMaxRunTime))
+    for( ; ; )
       {
+      // Check for high current and abort if detected.
+      if(isCurrentHigh(dir)) { currentHigh = true; break; }
       // Poll shaft encoder output and update tick counter.
+      const uint8_t newSct = getSubCycleTime();
+      if(newSct != sct)
+        {
+        sct = newSct; // Assumes no intermediate values missed.
+        callback.signalRunSCTTick(isOpening);
+        if(sct >= sctMaxRunTime) { break; }
+        }
       }
     }
+  // Call back and return true if current high / end-stop seen.
   if(currentHigh)
-      { callback.signalHittingEndStop(HardwareMotorDriverInterface::motorDriveOpening == dir); return(true); }
+    {
+    callback.signalHittingEndStop(isOpening);
+    return(true);
+    }
   return(false);
   }
 
