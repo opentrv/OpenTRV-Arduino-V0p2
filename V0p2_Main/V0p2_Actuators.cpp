@@ -47,15 +47,15 @@ static const uint8_t minMotorHBridgeSettleMS = 8;
 static const uint8_t minMotorHBridgeSettleTicks = max(1, minMotorHBridgeSettleMS / SUBCYCLE_TICK_MS_RD);
 
 // Approx minimum runtime to get motor up to speed (from stopped) and not give false high-current readings (ms).
-// Based on DHD20151019 DORM1 prototype rig-up and NiMH battery.
-static const uint8_t minMotorRunupMS = 64;
+// Based on DHD20151019 DORM1 prototype rig-up and NiMH battery; 32ms+ seems good.
+static const uint8_t minMotorRunupMS = 32;
 // Min sub-cycle ticks to run up.
 static const uint8_t minMotorRunupTicks = max(1, minMotorRunupMS / SUBCYCLE_TICK_MS_RD);
 
-// Approx minimum runtime to get motor to reverse and stop and not give false high-current readings (ms).
-static const uint8_t minMotorReverseMS = 128;
-// Min sub-cycle ticks to run up.
-static const uint8_t minMotorReverseTicks = max(1, minMotorReverseMS / SUBCYCLE_TICK_MS_RD);
+//// Approx minimum runtime to get motor to reverse and stop and not give false high-current readings (ms).
+//static const uint8_t minMotorReverseMS = 128;
+//// Min sub-cycle ticks to run up.
+//static const uint8_t minMotorReverseTicks = max(1, minMotorReverseMS / SUBCYCLE_TICK_MS_RD);
 
 // Spin for up to the specified number of SCT ticks, monitoring current and position encoding.
 //   * maxRunTicks  maximum sub-cycle ticks to attempt to run/spin for); strictly positive
@@ -83,6 +83,7 @@ bool ValveMotorDirectV1HardwareDriver::spinSCTTicks(const uint8_t maxRunTicks, c
   // Abort immediately if not enough time to do minimum run.
   if((sct > sctAbsLimit) || (maxTicksBeforeAbsLimit < minTicksBeforeAbort)) { return(true); }
   // Note if opening or closing...
+  const bool stopped = (HardwareMotorDriverInterface::motorOff == dir);
   const bool isOpening = (HardwareMotorDriverInterface::motorDriveOpening == dir);
   bool currentHigh = false;
   // Compute time minimum time before return, then target time before stop/return.
@@ -96,7 +97,7 @@ bool ValveMotorDirectV1HardwareDriver::spinSCTTicks(const uint8_t maxRunTicks, c
     if(newSct != sct)
       {
       sct = newSct; // Assumes no intermediate values missed.
-      callback.signalRunSCTTick(isOpening);
+      if(!stopped) { callback.signalRunSCTTick(isOpening); }
       if(sct >= sctMinRunTime) { break; }
       }
     // TODO: shaft encoder
@@ -116,7 +117,7 @@ bool ValveMotorDirectV1HardwareDriver::spinSCTTicks(const uint8_t maxRunTicks, c
       if(newSct != sct)
         {
         sct = newSct; // Assumes no intermediate values missed.
-        callback.signalRunSCTTick(isOpening);
+        if(!stopped) { callback.signalRunSCTTick(isOpening); }
         if(sct >= sctMaxRunTime) { break; }
         }
       }
@@ -164,16 +165,16 @@ void ValveMotorDirectV1HardwareDriver::motorRun(const motor_drive dir, HardwareM
 #ifdef MOTOR_DEBUG_LEDS
 LED_UI2_OFF();
 #endif
-      OTV0P2BASE::nap(WDTO_120MS); // Let H-bridge respond and settle, and motor slow down.
+      // Let H-bridge respond and settle, and motor slow down if changing direction.
+      // Otherwise there is a risk of browning out the device with a big current surge. 
+      if(prev_dir != dir) { OTV0P2BASE::nap(WDTO_15MS); } // Enforced low-power sleep on change of direction....
       pinMode(MOTOR_DRIVE_MR, OUTPUT); // Ensure that the LOW side is an output.
       fastDigitalWrite(MOTOR_DRIVE_MR, LOW); // Pull LOW last.
 #ifdef MOTOR_DEBUG_LEDS
 LED_HEATCALL_ON();
 #endif
       // Let H-bridge respond and settle and let motor run up.
-//      OTV0P2BASE::nap(WDTO_60MS);
-      const bool aborted = spinSCTTicks(minMotorRunupTicks, minMotorRunupTicks, dir, callback);
-if(aborted) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("aborted"); }
+      spinSCTTicks(minMotorRunupTicks, minMotorRunupTicks, dir, callback);
       break; // Fall through to common case.
       }
 
@@ -187,16 +188,16 @@ if(aborted) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("aborted"); }
 #ifdef MOTOR_DEBUG_LEDS
 LED_HEATCALL_OFF();
 #endif
-      OTV0P2BASE::nap(WDTO_120MS); // Let H-bridge respond and settle, and motor slow down.
+      // Let H-bridge respond and settle, and motor slow down if changing direction.
+      // Otherwise there is a risk of browning out the device with a big current surge. 
+      if(prev_dir != dir) { OTV0P2BASE::nap(WDTO_15MS); } // Enforced low-power sleep on change of direction....
       pinMode(MOTOR_DRIVE_ML, OUTPUT); // Ensure that the LOW side is an output.
       fastDigitalWrite(MOTOR_DRIVE_ML, LOW); // Pull LOW last.   
 #ifdef MOTOR_DEBUG_LEDS
 LED_UI2_ON();
 #endif
       // Let H-bridge respond and settle and let motor run up.
-//      OTV0P2BASE::nap(WDTO_60MS);
-      const bool aborted = spinSCTTicks(minMotorRunupTicks, minMotorRunupTicks, dir, callback);
-if(aborted) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("aborted"); }
+      spinSCTTicks(minMotorRunupTicks, minMotorRunupTicks, dir, callback);
       break; // Fall through to common case.
       }
 
@@ -211,6 +212,7 @@ if(aborted) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("aborted"); }
 LED_HEATCALL_OFF();
 #endif
       // Let H-bridge respond and settle.
+      // Accumulate any shaft movement & time to the previous direction if not already stopped.
       spinSCTTicks(minMotorHBridgeSettleTicks, 0, (motor_drive)prev_dir, callback); 
       fastDigitalWrite(MOTOR_DRIVE_ML, HIGH); // Belt and braces force pin logical output state high.
       pinMode(MOTOR_DRIVE_ML, INPUT_PULLUP); // Switch to weak pull-up; slow but possibly marginally safer.
@@ -218,7 +220,7 @@ LED_HEATCALL_OFF();
 LED_UI2_OFF();
 #endif
       // Let H-bridge respond and settle.
-      spinSCTTicks(minMotorHBridgeSettleTicks, 0, (motor_drive)prev_dir, callback); 
+      spinSCTTicks(minMotorHBridgeSettleTicks, 0, HardwareMotorDriverInterface::motorOff, callback); 
       break; // Fall through to common case.
       }
     }
@@ -333,8 +335,8 @@ ValveMotorDirectV1 ValveDirect;
 void CurrentSenseValveMotorDirect::wiggle()
   {
   hw->motorRun(HardwareMotorDriverInterface::motorOff, *this);
-  hw->motorRun(HardwareMotorDriverInterface::motorDriveOpening, *this, true);
-  hw->motorRun(HardwareMotorDriverInterface::motorDriveClosing, *this, true);
+  hw->motorRun(HardwareMotorDriverInterface::motorDriveOpening, *this, false);
+  hw->motorRun(HardwareMotorDriverInterface::motorDriveClosing, *this, false);
   hw->motorRun(HardwareMotorDriverInterface::motorOff, *this);
   }
 
