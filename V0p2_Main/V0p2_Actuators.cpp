@@ -67,10 +67,10 @@ static const uint8_t minMotorRunupTicks = max(1, minMotorRunupMS / SUBCYCLE_TICK
 //static const uint8_t minMotorReverseTicks = max(1, minMotorReverseMS / SUBCYCLE_TICK_MS_RD);
 
 // Runtime for dead-reckoning adjustments (from stopped) (ms).
-// Based on DHD20151020 DORM1 prototype rig-up and NiMH battery; 255ms+ seems good.
-static const uint8_t minMotorDRMS = 255;
+// Based on DHD20151020 DORM1 prototype rig-up and NiMH battery; 250ms+ seems good.
+static const uint16_t minMotorDRMS = 500;
 // Min sub-cycle ticks for dead reckoning.
-static const uint8_t minMotorDRTicks = max(1, minMotorDRMS / SUBCYCLE_TICK_MS_RD);
+static const uint8_t minMotorDRTicks = max(1, (uint8_t)(minMotorDRMS / SUBCYCLE_TICK_MS_RD));
 
 
 // Spin for up to the specified number of SCT ticks, monitoring current and position encoding.
@@ -475,9 +475,13 @@ void CurrentSenseValveMotorDirect::poll()
             {
             endStopDetected = false;
             const uint16_t tfcto = MAX_TICKS_FROM_OPEN - ticksFromOpen;
-            perState.calibrating.ticksFromClosedToOpen = tfcto;
-            ticksFromOpen = 0; // Reset tick count.
-            ++perState.calibrating.calibState; // Move to next micro state.
+            if(tfcto >= (perState.calibrating.ticksFromOpenToClosed >> 1))
+              {
+              // Help avoid premature termination of this direction.
+              perState.calibrating.ticksFromClosedToOpen = tfcto;
+              ticksFromOpen = 0; // Reset tick count.
+              ++perState.calibrating.calibState; // Move to next micro state.
+              }
             }
           break;
           }
