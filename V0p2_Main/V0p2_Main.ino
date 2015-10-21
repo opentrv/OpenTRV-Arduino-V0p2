@@ -14,6 +14,7 @@ specific language governing permissions and limitations
 under the Licence.
 
 Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
+                           Deniz Erbilgin 2015
 */
 
 /*
@@ -45,6 +46,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include <SPI.h>
 #include <Wire.h>
 #include <OTRadioLink.h>
+#include <OTNullRadioLink.h> // as in separate library to OTRadioLink
+#include <OTSIM900Link.h>
 
 #include "V0p2_Sensors.h"
 
@@ -87,7 +90,7 @@ void panic()
 void panic(const __FlashStringHelper *s)
   {
   serialPrintlnAndFlush(s); // May fail.
-  panic();  
+  panic();
   }
 
 
@@ -511,7 +514,7 @@ void setup()
   DEBUG_SERIAL_PRINTLN();
 #endif
   // TODO: seed other/better PRNGs.
-  // Feed in mainly persistent/nonvolatile state explicitly. 
+  // Feed in mainly persistent/nonvolatile state explicitly.
   OTV0P2BASE::addEntropyToPool(oldResetCount ^ eeseed, 0);
   OTV0P2BASE::addEntropyToPool((uint8_t)(eeseed >> 8) + nar1, 0);
   OTV0P2BASE::addEntropyToPool((uint8_t)s16 ^ (uint8_t)(s16 >> 8), 0);
@@ -591,7 +594,7 @@ void setup()
   // Initialised: turn heatcall UI LED off.
 //  pinMode(LED_HEATCALL, OUTPUT);
   LED_HEATCALL_OFF();
-  
+
 #if defined(SUPPORT_CLI) && !defined(ALT_MAIN_LOOP) && !defined(UNIT_TESTS)
   // Help user get to CLI.
   serialPrintlnAndFlush(F("At CLI > prompt enter ? for help"));
@@ -623,7 +626,7 @@ void loop()
 #endif
 
 
-#if defined(UNIT_TESTS) // Run unit tests *instead* of normal loop() code. 
+#if defined(UNIT_TESTS) // Run unit tests *instead* of normal loop() code.
   loopUnitTest();
 #elif defined(ALT_MAIN_LOOP) // Run alternative main loop.
   loopAlt();
