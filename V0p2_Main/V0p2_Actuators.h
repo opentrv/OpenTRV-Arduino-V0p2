@@ -38,6 +38,33 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
     // Set as a limit to allow a timeout when things go wrong. 
     static const uint8_t MAX_TRAVEL_S = 4 * 60; // 4 minutes.
 
+    // Calibration parameters.
+    // Data received during the calibration process,
+    // and outputs derived from it.
+    // Contains (unit-testable) computations.
+    class CalibrationParameters
+        {
+        private:
+          // Data gathered during calibration process.
+          // Ticks counted (sub-cycle ticks for complete run from fully-open to fully-closed, end-stop to end-stop).
+          uint16_t ticksFromOpenToClosed;
+          // Ticks counted (sub-cycle ticks for complete run from fully-closed to fully-open, end-stop to end-stop).
+          uint16_t ticksFromClosedToOpen;
+  
+          // Computed parameters based on measurements during calibration process.
+          // Ticks per percent in the open-to-closed direction; computed during tracking.
+          uint8_t ticksPerPercentOpenToClosed;
+
+        public:
+          CalibrationParameters() : ticksFromOpenToClosed(0), ticksFromClosedToOpen(0) { }
+
+          // (Re)populate structure and compute derived parameters.
+          // Ensures that all necessary items are gathered at once and none forgotten!
+          // Returns true in case of success.
+          // May return false and force error state if inputs unusable.
+          bool updateAndCompute(uint16_t ticksFromOpenToClosed, uint16_t ticksFromClosedToOpen);
+        };
+
   private:
     // Hardware interface instance, passed by reference.
     // Must have a lifetime exceeding that of this enclosing object.
@@ -98,11 +125,9 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
 //    // May also need recalibrating after (say) a few weeks to allow for battery/speed droop.
 //    bool needsRecalibrating;
 
-    // Set during calibration.
-    uint16_t ticksFromOpenToClosed;
-    uint16_t ticksFromClosedToOpen;
-    // Ticks per percent in the open-to-closed direction; computed during tracking.
-    uint8_t ticksPerPercentOpenToClosed;
+    // Calibration parameters gathered/computed from the calibration step.
+    // Logically read-only other than during (re)calibration.
+    CalibrationParameters cp;
 
     // Current sub-cycle ticks from fully-open (reference) end of travel, towards fully closed.
     // This is nominally ticks in the open-to-closed direction
