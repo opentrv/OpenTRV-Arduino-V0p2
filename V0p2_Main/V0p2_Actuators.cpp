@@ -35,21 +35,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 
 
 
-#ifdef HAS_DORM1_VALVE_DRIVE
-//#ifdef DIRECT_MOTOR_DRIVE_V1
-
-// IF DEFINED: turn on lights to match motor drive for debug purposes.
-//#define MOTOR_DEBUG_LEDS
-
-//DHD20151020:
-//Suggested features/impl:
-//1) Try calibration and movement in minimum-size steps.
-//2) Possibly try taking larger steps when very far from target.
-//3) Make targetPC vs currentPC tolerance >=1.5* actual minimum movement size.
-//4) Auto-continue set-up without explicit signal from user that the valve has been fitted to the tail after 10--15m esp if temperatures v out of range, eg to assist with auto recovery from unit restart.
-//5) Don't recalibrate in the dark to avoid waking/disturbing occupants.
-//6) When driving to target 0% or 100% actually force feedback from end-stop to effectively recalibrate on the fly.
-
 // Approx minimum time to let H-bridge settle/stabilise (ms).
 static const uint8_t minMotorHBridgeSettleMS = 8;
 // Min sub-cycle ticks for H-bridge to settle.
@@ -74,6 +59,24 @@ static const uint8_t minMotorDRMS = 250;
 // Min sub-cycle ticks for dead reckoning.
 static const uint8_t minMotorDRTicks = max(1, (uint8_t)(minMotorDRMS / SUBCYCLE_TICK_MS_RD));
 
+
+
+
+
+#ifdef HAS_DORM1_VALVE_DRIVE
+//#ifdef DIRECT_MOTOR_DRIVE_V1
+
+// IF DEFINED: turn on lights to match motor drive for debug purposes.
+//#define MOTOR_DEBUG_LEDS
+
+//DHD20151020:
+//Suggested features/impl:
+//1) Try calibration and movement in minimum-size steps.
+//2) Possibly try taking larger steps when very far from target.
+//3) Make targetPC vs currentPC tolerance >=1.5* actual minimum movement size.
+//4) Auto-continue set-up without explicit signal from user that the valve has been fitted to the tail after 10--15m esp if temperatures v out of range, eg to assist with auto recovery from unit restart.
+//5) Don't recalibrate in the dark to avoid waking/disturbing occupants.
+//6) When driving to target 0% or 100% actually force feedback from end-stop to effectively recalibrate on the fly.
 
 // Spin for up to the specified number of SCT ticks, monitoring current and position encoding.
 //   * maxRunTicks  maximum sub-cycle ticks to attempt to run/spin for); strictly positive

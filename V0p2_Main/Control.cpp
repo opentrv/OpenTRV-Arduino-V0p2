@@ -1808,7 +1808,7 @@ void remoteCallForHeatRX(const uint16_t id, const uint8_t percentOpen)
   // Selecting "quick heat" at a valve should immediately pass this.
   // (Will not provide hysteresis for very high min really open value.)
   const uint8_t threshold = isBoilerOn() ?
-      minvro : fnmax(minvro, DEFAULT_VALVE_PC_MODERATELY_OPEN);
+      minvro : fnmax(minvro, (uint8_t) DEFAULT_VALVE_PC_MODERATELY_OPEN);
 
   if(percentOpen >= threshold)
     // && FHT8VHubAcceptedHouseCode(command.hc1, command.hc2))) // Accept if house code OK.

@@ -132,6 +132,15 @@ class DummyHardwareDriver : public HardwareMotorDriverInterface
   };
 
 
+// Test calibration calculations in CurrentSenseValveMotorDirect.
+static void testCSVMDC()
+  {
+  DEBUG_SERIAL_PRINTLN_FLASHSTRING("CSVMDC");
+  CurrentSenseValveMotorDirect::CalibrationParameters cp;
+  // Test the calculations with one plausible calibration data set.
+  AssertIsTrue(cp.updateAndCompute(1601U, 1105U)); // Must not fail...
+  }
+
 // Test that direct abstract motor drive logic is sane.
 static void testCurrentSenseValveMotorDirect()
   {
@@ -189,14 +198,14 @@ static void testOnOffBoilerDriverLogic()
   // Verify that power-up state is boiler off.
   AssertIsTrue(!oobdl1.isCallingForHeat());
   // Calling tick one or more times makes no difference by itself...
-  for(uint8_t i = 2 + (randRNG8() & 0x1fu); --i > 0; ) { oobdl1.tick2s(); }
+  for(uint8_t i = 2 + (OTV0P2BASE::randRNG8() & 0x1fu); --i > 0; ) { oobdl1.tick2s(); }
   AssertIsTrue(!oobdl1.isCallingForHeat());
   // Ensure bogus update/signal is rejected.
-  AssertIsTrue(!oobdl1.receiveSignal(0xffffu, randRNG8()));
+  AssertIsTrue(!oobdl1.receiveSignal(0xffffu, OTV0P2BASE::randRNG8()));
   AssertIsTrue(!oobdl1.isCallingForHeat());
   // Ensure no 'live' or other records created.
   OnOffBoilerDriverLogic::PerIDStatus valves1[1];
-  AssertIsEqual(0, oobdl1.valvesStatus(valves1, 1, randRNG8NextBoolean()));
+  AssertIsEqual(0, oobdl1.valvesStatus(valves1, 1, OTV0P2BASE::randRNG8NextBoolean()));
   }
 #endif
 
@@ -1612,6 +1621,7 @@ void loopUnitTest()
 
   // Run the tests, fastest / newest / most-fragile / most-interesting first...
   testLibVersions();
+  testCSVMDC();
   testCurrentSenseValveMotorDirect();
   testComputeRequiredTRVPercentOpen();
   testFastDigitalIOCalcs();
