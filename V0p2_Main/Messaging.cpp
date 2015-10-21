@@ -1216,7 +1216,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats IDx");
         // Write out the JSON message.
         outputJSONStats(&Serial, secure, msg, msglen);
         // Attempt to ensure that trailing characters are pushed out fully.
-        flushSerialProductive();
+        OTV0P2BASE::flushSerialProductive();
         }
       return;
       }

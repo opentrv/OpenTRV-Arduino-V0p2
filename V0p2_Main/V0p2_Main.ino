@@ -47,7 +47,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include <Wire.h>
 #include <OTRadioLink.h>
 #include <OTNullRadioLink.h> // as in separate library to OTRadioLink
-#include <OTSoftSerial.h>
 #include <OTSIM900Link.h>
 
 #include "V0p2_Sensors.h"

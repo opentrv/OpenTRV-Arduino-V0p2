@@ -35,7 +35,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 
 
 
-#ifdef HAS_DORM1_VALVE_DRIVE
 //#ifdef DIRECT_MOTOR_DRIVE_V1
 
 // IF DEFINED: turn on lights to match motor drive for debug purposes.
@@ -74,7 +73,7 @@ static const uint8_t minMotorDRMS = 250;
 // Min sub-cycle ticks for dead reckoning.
 static const uint8_t minMotorDRTicks = max(1, (uint8_t)(minMotorDRMS / SUBCYCLE_TICK_MS_RD));
 
-
+#ifdef HAS_DORM1_VALVE_DRIVE // FIXME check if in correct place
 // Spin for up to the specified number of SCT ticks, monitoring current and position encoding.
 //   * maxRunTicks  maximum sub-cycle ticks to attempt to run/spin for); strictly positive
 //   * minTicksBeforeAbort  minimum ticks before abort for end-stop / high-current,

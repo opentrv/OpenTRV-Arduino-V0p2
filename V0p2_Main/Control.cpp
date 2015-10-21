@@ -14,6 +14,7 @@ specific language governing permissions and limitations
 under the Licence.
 
 Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
+                           Deniz Erbilgin 2015
 */
 
 /*
@@ -1807,8 +1808,8 @@ void remoteCallForHeatRX(const uint16_t id, const uint8_t percentOpen)
   // at a level where at least a single valve is moderately open.
   // Selecting "quick heat" at a valve should immediately pass this.
   // (Will not provide hysteresis for very high min really open value.)
-  const uint8_t threshold = isBoilerOn() ?
-      minvro : fnmax(minvro, DEFAULT_VALVE_PC_MODERATELY_OPEN);
+  const uint8_t threshold = (uint8_t)isBoilerOn() ?
+      minvro : fnmax(minvro, (uint8_t)DEFAULT_VALVE_PC_MODERATELY_OPEN);
 
   if(percentOpen >= threshold)
     // && FHT8VHubAcceptedHouseCode(command.hc1, command.hc2))) // Accept if house code OK.
