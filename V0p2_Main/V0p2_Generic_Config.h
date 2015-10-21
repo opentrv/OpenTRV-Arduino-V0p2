@@ -25,7 +25,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #ifndef V0P2_GENERIC_CONFIG_H
 #define V0P2_GENERIC_CONFIG_H
 
-
 // Define/uncomment exactly one of the CONFIG_XXX labels to enable a configuration set below.
 // Some can be specific to particular locations and boards,
 // others can be vanilla ready to be configured by the end-user one way or another.

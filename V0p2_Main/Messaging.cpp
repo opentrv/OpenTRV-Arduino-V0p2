@@ -1246,7 +1246,7 @@ bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadi
   const volatile uint8_t *pb;
   if(NULL != (pb = rl->peekRXMsg(msglen)))
     {
-    if(!neededWaking && wakeSerialIfNeeded && OTV0P2BASE::powerUpSerialIfDisabled()) { neededWaking = true; }
+    if(!neededWaking && wakeSerialIfNeeded && OTV0P2BASE::powerUpSerialIfDisabled<V0P2_UART_BAUD>()) { neededWaking = true; } // FIXME
     // Don't currently regard anything arriving over the air as 'secure'.
     // FIXME: cast away volatile to process the message content.
     decodeAndHandleRawRXedMessage(p, false, (const uint8_t *)pb, msglen);

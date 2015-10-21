@@ -212,7 +212,7 @@ void loopAlt()
 #endif
 
 #if !defined(MIN_ENERGY_BOOT)
-  powerDownSerial(); // Ensure that serial I/O is off.
+  OTV0P2BASE::powerDownSerial(); // Ensure that serial I/O is off.
   // Power down most stuff (except radio for hub RX).
   minimisePowerWithoutSleep();
 #endif
@@ -382,7 +382,7 @@ void loopAlt()
 
 //  // Force any pending output before return / possible UART power-down.
 //  flushSerialSCTSensitive();
-//  if(neededWaking) { powerDownSerial(); }
+//  if(neededWaking) { OTV0P2BASE::powerDownSerial(); }
   }
 
 

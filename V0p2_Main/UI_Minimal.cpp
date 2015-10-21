@@ -539,7 +539,7 @@ HChc1 hc2 are the house codes 1 and 2 for an FHT8V valve.
 */
 void serialStatusReport()
   {
-  const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled();
+  const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled<V0P2_UART_BAUD>(); // FIXME
 
   // Aim to overlap CPU usage with characters being TXed for throughput determined primarily by output size and baud.
 
@@ -814,7 +814,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
   const uint8_t targetMaxSCT = (maxSCT <= MIN_POLL_SCT) ? ((uint8_t) 0) : ((uint8_t) (maxSCT - 1 - MIN_POLL_SCT));
   if(getSubCycleTime() >= targetMaxSCT) { return; } // Too short to try.
 
-  const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled();
+  const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled<V0P2_UART_BAUD>();
 
   // Purge any stray pending input, such as a trailing LF from previous input.
   while(Serial.available() > 0) { Serial.read(); }

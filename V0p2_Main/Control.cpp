@@ -1392,7 +1392,7 @@ static SimpleStatsRotation<9> ss1; // Configured for maximum different stats.
 //   * doBinary  send binary form, else JSON form if supported
 static void bareStatsTX(const bool allowDoubleTX, const bool doBinary)
   {
-  const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled();
+  const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled<V0P2_UART_BAUD>(); // FIXME
 
 #if (FullStatsMessageCore_MAX_BYTES_ON_WIRE > STATS_MSG_MAX_LEN)
 #error FullStatsMessageCore_MAX_BYTES_ON_WIRE too big
@@ -2095,7 +2095,7 @@ void loopOpenTRV()
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("*E"); // End-of-cycle sleep.
 #endif
 //  // Ensure that serial I/O is off while sleeping, unless listening with radio.
-//  if(!needsToEavesdrop) { powerDownSerial(); } else { powerUpSerialIfDisabled(); }
+//  if(!needsToEavesdrop) { powerDownSerial(); } else { powerUpSerialIfDisabled<V0P2_UART_BAUD>(); }
   // Ensure that serial I/O is off while sleeping.
   OTV0P2BASE::powerDownSerial();
   // Power down most stuff (except radio for hub RX).
