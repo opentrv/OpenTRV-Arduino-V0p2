@@ -1392,7 +1392,7 @@ static SimpleStatsRotation<9> ss1; // Configured for maximum different stats.
 //   * doBinary  send binary form, else JSON form if supported
 static void bareStatsTX(const bool allowDoubleTX, const bool doBinary)
   {
-  const bool neededWaking = powerUpSerialIfDisabled();
+  const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled();
 
 #if (FullStatsMessageCore_MAX_BYTES_ON_WIRE > STATS_MSG_MAX_LEN)
 #error FullStatsMessageCore_MAX_BYTES_ON_WIRE too big
@@ -1515,7 +1515,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
 #endif // defined(ALLOW_JSON_OUTPUT)
 
 //DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats TX");
-  if(neededWaking) { flushSerialProductive(); powerDownSerial(); }
+  if(neededWaking) { OTV0P2BASE::flushSerialProductive(); OTV0P2BASE::powerDownSerial(); }
   }
 #endif // defined(ALLOW_STATS_TX)
 
@@ -1927,11 +1927,11 @@ void loopOpenTRV()
         {
 //        DEBUG_SERIAL_TIMESTAMP();
 //        DEBUG_SERIAL_PRINT(' ');
-        serialPrintAndFlush(F("CfH ")); // Call for heat from 
-        serialPrintAndFlush((hcRequest >> 8) & 0xff);
-        serialPrintAndFlush(' ');
-        serialPrintAndFlush(hcRequest & 0xff);
-        serialPrintlnAndFlush();
+        OTV0P2BASE::serialPrintAndFlush(F("CfH ")); // Call for heat from 
+        OTV0P2BASE::serialPrintAndFlush((hcRequest >> 8) & 0xff);
+        OTV0P2BASE::serialPrintAndFlush(' ');
+        OTV0P2BASE::serialPrintAndFlush(hcRequest & 0xff);
+        OTV0P2BASE::serialPrintlnAndFlush();
         }
       }
 
@@ -1951,8 +1951,8 @@ void loopOpenTRV()
         // (The min(254, ...) is to ensure that the boiler can come on even if minOnMins == 255.)
         if(boilerNoCallM <= min(254, minOnMins)) { ignoreRCfH = true; }
         if(getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
-        else if(ignoreRCfH) { serialPrintlnAndFlush(F("RCfH-")); } // Remote call for heat ignored.
-        else { serialPrintlnAndFlush(F("RCfH1")); } // Remote call for heat on.
+        else if(ignoreRCfH) { OTV0P2BASE::serialPrintlnAndFlush(F("RCfH-")); } // Remote call for heat ignored.
+        else { OTV0P2BASE::serialPrintlnAndFlush(F("RCfH1")); } // Remote call for heat on.
         }
       if(!ignoreRCfH)
         {
@@ -1970,7 +1970,7 @@ void loopOpenTRV()
         {
         // Boiler should now be switched off.
         if(getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
-        else { serialPrintlnAndFlush(F("RCfH0")); } // Remote call for heat off
+        else { OTV0P2BASE::serialPrintlnAndFlush(F("RCfH0")); } // Remote call for heat off
         }
       }
     // Else boiler is off so count up quiet minutes until at max...
@@ -2097,7 +2097,7 @@ void loopOpenTRV()
 //  // Ensure that serial I/O is off while sleeping, unless listening with radio.
 //  if(!needsToEavesdrop) { powerDownSerial(); } else { powerUpSerialIfDisabled(); }
   // Ensure that serial I/O is off while sleeping.
-  powerDownSerial();
+  OTV0P2BASE::powerDownSerial();
   // Power down most stuff (except radio for hub RX).
   minimisePowerWithoutSleep();
   uint_fast8_t newTLSD;
@@ -2176,7 +2176,7 @@ void loopOpenTRV()
 
 
 //  // Warn if too near overrun before.
-//  if(tooNearOverrun) { serialPrintlnAndFlush(F("?near overrun")); }
+//  if(tooNearOverrun) { OTV0P2BASE::serialPrintlnAndFlush(F("?near overrun")); }
 
 
   // Get current power supply voltage.

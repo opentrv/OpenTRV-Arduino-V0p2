@@ -198,33 +198,6 @@ bool powerUpADCIfDisabled();
 // Power ADC down.
 void powerDownADC();
 
-// If serial (UART/USART0) was disabled, power it up, do Serial.begin(), and return true.
-// If already powered up then do nothing other than return false.
-// If this returns true then a matching powerDownSerial() may be advisable.
-bool powerUpSerialIfDisabled();
-// Flush any pending serial (UART/USART0) output and power it down.
-void powerDownSerial();
-#ifdef __AVR_ATmega328P__
-// Returns true if hardware USART0 buffer in ATMmega328P is non-empty; may occasionally return a spurious false.
-// There may still be a byte in the process of being transmitted when this is false.
-// This should not interfere with HardwareSerial's handling.
-#define serialTXInProgress() (!(UCSR0A & _BV(UDRE0)))
-// Does a Serial.flush() attempting to do some useful work (eg I/O polling) while waiting for output to drain.
-// Assumes hundreds of CPU cycles available for each character queued for TX.
-// Does not change CPU clock speed or disable or mess with USART0, though may poll it.
-void flushSerialProductive();
-// Does a Serial.flush() idling for 30ms at a time while waiting for output to drain.
-// Does not change CPU clock speed or disable or mess with USART0, though may poll it.
-// Sleeps in IDLE mode for up to 15ms at a time (using watchdog) waking early on interrupt
-// so the caller must be sure RX overrun (etc) will not be an issue.
-// Switches to flushSerialProductive() behaviour
-// if in danger of overrunning a minor cycle while idling.
-void flushSerialSCTSensitive();
-#else
-#define flushSerialProductive() Serial.flush()
-#define flushSerialSCTSensitive() Serial.flush()
-#endif
-
 
 // If TWI (I2C) was disabled, power it up, do Wire.begin(), and return true.
 // If already powered up then do nothing other than return false.

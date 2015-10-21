@@ -52,11 +52,11 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 // Send simple string or numeric to serial port and wait for it to have been sent.
 // Make sure that Serial.begin() has been invoked, etc.
-#define DEBUG_SERIAL_PRINT(s) { serialPrintAndFlush(s); }
-#define DEBUG_SERIAL_PRINTFMT(s, fmt) { serialPrintAndFlush((s), (fmt)); }
-#define DEBUG_SERIAL_PRINT_FLASHSTRING(fs) { serialPrintAndFlush(F(fs)); }
-#define DEBUG_SERIAL_PRINTLN_FLASHSTRING(fs) { serialPrintlnAndFlush(F(fs)); }
-#define DEBUG_SERIAL_PRINTLN() { serialPrintlnAndFlush(); }
+#define DEBUG_SERIAL_PRINT(s) { OTV0P2BASE::serialPrintAndFlush(s); }
+#define DEBUG_SERIAL_PRINTFMT(s, fmt) { OTV0P2BASE::serialPrintAndFlush((s), (fmt)); }
+#define DEBUG_SERIAL_PRINT_FLASHSTRING(fs) { OTV0P2BASE::serialPrintAndFlush(F(fs)); }
+#define DEBUG_SERIAL_PRINTLN_FLASHSTRING(fs) { OTV0P2BASE::serialPrintlnAndFlush(F(fs)); }
+#define DEBUG_SERIAL_PRINTLN() { OTV0P2BASE::serialPrintlnAndFlush(); }
 // Print timestamp with no newline in format: MinutesSinceMidnight:Seconds:SubCycleTime
 extern void _debug_serial_timestamp();
 #define DEBUG_SERIAL_TIMESTAMP() _debug_serial_timestamp()
