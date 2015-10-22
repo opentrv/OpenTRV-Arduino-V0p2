@@ -54,6 +54,9 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
           // Computed parameters based on measurements during calibration process.
           // Approx precision in % as min ticks / DR size in range [1,100].
           uint8_t approxPrecisionPC;
+          // A reduced ticks open/closed in ratio to allow small conversions.
+          uint8_t tfotcSmall, tfctoSmall;
+
 //          // Ticks per percent in the open-to-closed direction; computed during tracking.
 //          uint8_t ticksPerPercentOpenToClosed;
 
@@ -68,6 +71,11 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
 
           // Approx precision in % as min ticks / DR size in range [1,100].
           uint8_t getApproxPrecisionPC() { return(approxPrecisionPC); }
+
+          // Get a reduced ticks open/closed in ratio to allow small conversions; at least a few bits.
+          uint8_t getTfotcSmall() { return(tfotcSmall); }
+          uint8_t getTfctoSmall() { return(tfctoSmall); }
+
         };
 
   private:

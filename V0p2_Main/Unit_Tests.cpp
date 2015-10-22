@@ -140,6 +140,11 @@ static void testCSVMDC()
   // Test the calculations with one plausible calibration data set.
   AssertIsTrue(cp.updateAndCompute(1601U, 1105U)); // Must not fail...
   AssertIsEqual(4, cp.getApproxPrecisionPC());
+  AssertIsEqual(25, cp.getTfotcSmall());
+  AssertIsEqual(17, cp.getTfctoSmall());
+
+  // TODO
+
   }
 
 // Test that direct abstract motor drive logic is sane.

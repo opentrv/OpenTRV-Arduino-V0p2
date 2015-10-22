@@ -394,6 +394,20 @@ bool CurrentSenseValveMotorDirect::CalibrationParameters::updateAndCompute(const
   // Round up slightly to allow for inertia, etc.
   approxPrecisionPC = max(1, min(100, (130 * minMotorDRTicks) / min(_ticksFromOpenToClosed, _ticksFromClosedToOpen)));
 
+  // Compute a small conversion ratio back and forth
+  // which does not add too much error but allows single dead-reckoning steps
+  // to be converted back and forth.
+  uint16_t tfotc = _ticksFromOpenToClosed;
+  uint16_t tfcto = _ticksFromClosedToOpen;
+  while(max(tfotc, tfcto) > minMotorDRTicks)
+    {
+    tfotc >>= 1;
+    tfcto >>= 1;
+    }
+  // Check smaller value not so low (< 4 bits) as to introduce huge error.
+  if(min(tfotc, tfcto) < 8) { return(false); }
+  tfotcSmall = tfotc;
+  tfctoSmall = tfcto;
 
 // TODO
 
