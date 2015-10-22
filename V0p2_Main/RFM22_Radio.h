@@ -28,7 +28,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 #include <OTRadioLink.h>
 #include <OTRFM23BLink.h>
-#include <OTNullRadioLink.h>
+//#include <OTNullRadioLink.h>
 #include <OTSIM900Link.h>
 
 #ifdef USE_NULLRADIO
