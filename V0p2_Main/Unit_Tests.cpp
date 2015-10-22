@@ -59,16 +59,16 @@ static void error(int err, int line)
   {
   for( ; ; )
     {
-    serialPrintAndFlush(F("***Test FAILED*** val="));
-    serialPrintAndFlush(err, DEC);
-    serialPrintAndFlush(F(" =0x"));
-    serialPrintAndFlush(err, HEX);
+    OTV0P2BASE::serialPrintAndFlush(F("***Test FAILED*** val="));
+    OTV0P2BASE::serialPrintAndFlush(err, DEC);
+    OTV0P2BASE::serialPrintAndFlush(F(" =0x"));
+    OTV0P2BASE::serialPrintAndFlush(err, HEX);
     if(0 != line)
       {
-      serialPrintAndFlush(F(" at line "));
-      serialPrintAndFlush(line);
+      OTV0P2BASE::serialPrintAndFlush(F(" at line "));
+      OTV0P2BASE::serialPrintAndFlush(line);
       }
-    serialPrintlnAndFlush();
+    OTV0P2BASE::serialPrintlnAndFlush();
     LED_HEATCALL_ON();
     tinyPause();
     LED_HEATCALL_OFF();
@@ -821,7 +821,7 @@ static void testJSONStats()
   char buf[MSG_JSON_MAX_LENGTH + 2]; // Allow for trailing '\0' and spare byte.
   // Create minimal JSON message with no data content. just the (supplied) ID.
   const uint8_t l1 = ss1.writeJSON((uint8_t*)buf, sizeof(buf), OTV0P2BASE::randRNG8(), OTV0P2BASE::randRNG8NextBoolean());
-//serialPrintAndFlush(buf); serialPrintlnAndFlush();
+//OTV0P2BASE::serialPrintAndFlush(buf); OTV0P2BASE::serialPrintlnAndFlush();
   AssertIsEqual(12, l1);
   const char PROGMEM *t1 = (const char PROGMEM *)F("{\"@\":\"1234\"}");
   AssertIsTrue(0 == strcmp_P(buf, t1));
@@ -832,7 +832,7 @@ static void testJSONStats()
   ss1.enableCount(true);
   AssertIsEqual(0, ss1.size());
   AssertIsEqual(18, ss1.writeJSON((uint8_t*)buf, sizeof(buf), OTV0P2BASE::randRNG8(), OTV0P2BASE::randRNG8NextBoolean()));
-//serialPrintAndFlush(buf); serialPrintlnAndFlush();
+//OTV0P2BASE::serialPrintAndFlush(buf); OTV0P2BASE::serialPrintlnAndFlush();
   AssertIsTrue(0 == strcmp_P(buf, (const char PROGMEM *)F("{\"@\":\"1234\",\"+\":2}")));
   // Turn count off for rest of tests.
   ss1.enableCount(false);
@@ -845,7 +845,7 @@ static void testJSONStats()
   AssertIsEqual(1, ss1.size());
   AssertIsEqual(20, ss1.writeJSON((uint8_t*)buf, sizeof(buf), 0, OTV0P2BASE::randRNG8NextBoolean()));
 #if 0 // Short of Flash space!
-//serialPrintAndFlush(buf); serialPrintlnAndFlush();
+//OTV0P2BASE::serialPrintAndFlush(buf); OTV0P2BASE::serialPrintlnAndFlush();
   AssertIsTrue(0 == strcmp_P(buf, (const char PROGMEM *)F("{\"@\":\"1234\",\"f1\":42}")));
 #endif
   ss1.put("f1", -111);
@@ -1144,13 +1144,13 @@ static void testFHTEncodingHeadAndTail()
   AssertIsTrueWithErr(0x26 == commandDecoded.command, commandDecoded.command);
   AssertIsTrueWithErr(0 == commandDecoded.extension, commandDecoded.extension);
 #if 0 && defined(ALLOW_MINIMAL_STATS_TXRX)
-  serialPrintAndFlush(F("  Minimal trailer bytes: "));
-  serialPrintAndFlush(afterBody[0], HEX);
-  serialPrintAndFlush(' ');
-  serialPrintAndFlush(afterBody[1], HEX);
-  serialPrintAndFlush(' ');
-  serialPrintAndFlush(afterBody[2], HEX);
-  serialPrintlnAndFlush();
+  OTV0P2BASE::serialPrintAndFlush(F("  Minimal trailer bytes: "));
+  OTV0P2BASE::serialPrintAndFlush(afterBody[0], HEX);
+  OTV0P2BASE::serialPrintAndFlush(' ');
+  OTV0P2BASE::serialPrintAndFlush(afterBody[1], HEX);
+  OTV0P2BASE::serialPrintAndFlush(' ');
+  OTV0P2BASE::serialPrintAndFlush(afterBody[2], HEX);
+  OTV0P2BASE::serialPrintlnAndFlush();
 #endif
   // Verify (start of) trailer is OK.
   for(uint8_t i = 0; i < 3; ++i)
@@ -1183,7 +1183,7 @@ static void testFHTEncodingHeadAndTail()
 #endif
   memset(buf, 0xff, sizeof(buf));
   result1 = FHT8VCreateValveSetCmdFrameHT_r(buf, true, &command, 0, &fullStats);
-//serialPrintAndFlush(result1 - buf); serialPrintlnAndFlush();
+//OTV0P2BASE::serialPrintAndFlush(result1 - buf); OTV0P2BASE::serialPrintlnAndFlush();
   AssertIsTrueWithErr((result1 - buf) < sizeof(buf), (result1 - buf) - sizeof(buf)); // result1 points to the terminating 0xff, not just after it.
   AssertIsTrueWithErr(((uint8_t)~0U) == *result1, *result1); // Check that result points at terminator value 0xff/~0.
   //AssertIsTrue((result1 - buf < MIN_FHT8V_200US_BIT_STREAM_BUF_SIZE), result1-buf); // Check not overflowing the buffer.
@@ -1197,7 +1197,7 @@ static void testFHTEncodingHeadAndTail()
   // Attempt to decode.
   afterBody = FHT8VDecodeBitStream(buf + RFM22_PREAMBLE_BYTES, buf + MIN_FHT8V_200US_BIT_STREAM_BUF_SIZE - 1, &commandDecoded);
   AssertIsTrue(0 != afterBody);
-//serialPrintAndFlush(afterBody - buf); serialPrintlnAndFlush();
+//OTV0P2BASE::serialPrintAndFlush(afterBody - buf); OTV0P2BASE::serialPrintlnAndFlush();
   AssertIsEqual(5, (result1 - buf) - (afterBody - buf));
   AssertIsTrueWithErr(65 == commandDecoded.hc1, commandDecoded.hc1);
   AssertIsTrueWithErr(74 == commandDecoded.hc2, commandDecoded.hc2);
@@ -1550,11 +1550,11 @@ static void testTempSensor()
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("TempSensor");
   const int temp = TemperatureC16.read();
 #if 0
-  serialPrintAndFlush("  temp: ");
-  serialPrintAndFlush(temp >> 4, DEC);
-  serialPrintAndFlush('C');
-  serialPrintAndFlush(temp & 0xf, HEX);
-  serialPrintlnAndFlush();
+  OTV0P2BASE::serialPrintAndFlush("  temp: ");
+  OTV0P2BASE::serialPrintAndFlush(temp >> 4, DEC);
+  OTV0P2BASE::serialPrintAndFlush('C');
+  OTV0P2BASE::serialPrintAndFlush(temp & 0xf, HEX);
+  OTV0P2BASE::serialPrintlnAndFlush();
 #endif
   // During testing temp should be above 0C (0C might indicate a missing/broken sensor) and below 50C.
   AssertIsTrueWithErr((temp > 0) && (temp < (50 << 4)), temp);
@@ -1569,11 +1569,11 @@ static void testInternalTempSensor()
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("InternalTempSensor");
   const int temp = readInternalTemperatureC16();
 #if 0
-  serialPrintAndFlush("  int temp: ");
-  serialPrintAndFlush(temp >> 4, DEC);
-  serialPrintAndFlush('C');
-  serialPrintAndFlush(temp & 0xf, HEX);
-  serialPrintlnAndFlush();
+  OTV0P2BASE::serialPrintAndFlush("  int temp: ");
+  OTV0P2BASE::serialPrintAndFlush(temp >> 4, DEC);
+  OTV0P2BASE::serialPrintAndFlush('C');
+  OTV0P2BASE::serialPrintAndFlush(temp & 0xf, HEX);
+  OTV0P2BASE::serialPrintlnAndFlush();
 #endif
   // During testing temp should be above 0C (0C might indicate a missing/broken sensor) and below 50C.
   // Internal sensor may be +/- 10C out.
@@ -1588,9 +1588,9 @@ static void testSupplyVoltageMonitor()
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("SupplyVoltageMonitor");
   const int mv = Supply_mV.read();
 #if 0
-  serialPrintAndFlush("  Battery mv: ");
-  serialPrintAndFlush(mv, DEC);
-  serialPrintlnAndFlush();
+  OTV0P2BASE::serialPrintAndFlush("  Battery mv: ");
+  OTV0P2BASE::serialPrintAndFlush(mv, DEC);
+  OTV0P2BASE::serialPrintlnAndFlush();
 #endif
   // During testing power supply voltage should be above ~1.7V BOD limit,
   // and no higher than 3.6V for V0p2 boards which is RFM22 Vss limit.
@@ -1611,12 +1611,12 @@ void loopUnitTest()
   // Allow the terminal console to be brought up.
   for(int i = 3; i > 0; --i)
     {
-    serialPrintAndFlush(F("Tests starting... "));
-    serialPrintAndFlush(i);
-    serialPrintlnAndFlush();
+    OTV0P2BASE::serialPrintAndFlush(F("Tests starting... "));
+    OTV0P2BASE::serialPrintAndFlush(i);
+    OTV0P2BASE::serialPrintlnAndFlush();
     OTV0P2BASE::sleepLowPowerMs(1000);
     }
-  serialPrintlnAndFlush();
+  OTV0P2BASE::serialPrintlnAndFlush();
 
 
   // Run the tests, fastest / newest / most-fragile / most-interesting first...
@@ -1658,12 +1658,12 @@ void loopUnitTest()
 
   // Announce successful loop completion and count.
   ++loopCount;
-  serialPrintlnAndFlush();
-  serialPrintAndFlush(F("%%% All tests completed OK, round "));
-  serialPrintAndFlush(loopCount);
-  serialPrintlnAndFlush();
-  serialPrintlnAndFlush();
-  serialPrintlnAndFlush();
+  OTV0P2BASE::serialPrintlnAndFlush();
+  OTV0P2BASE::serialPrintAndFlush(F("%%% All tests completed OK, round "));
+  OTV0P2BASE::serialPrintAndFlush(loopCount);
+  OTV0P2BASE::serialPrintlnAndFlush();
+  OTV0P2BASE::serialPrintlnAndFlush();
+  OTV0P2BASE::serialPrintlnAndFlush();
   // Briefly flash the LED once to indicate successful completion of the tests.
   // (Panic/failure causes repeated rapid flash by contrast, and a hang may result in no flashes.)
   LED_HEATCALL_ON();

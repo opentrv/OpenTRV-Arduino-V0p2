@@ -30,6 +30,11 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 #include <OTV0p2Base.h> // Underlying hardware support definitions.
 
+
+#ifndef V0P2_UART_BAUD
+#define V0P2_UART_BAUD 4800
+#endif // V0P2_UART_BAUD
+
 #if !defined(V0p2_REV)
 #error Board revision not defined.
 #endif

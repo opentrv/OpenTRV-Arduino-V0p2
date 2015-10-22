@@ -580,7 +580,7 @@ static bool doSync(const bool allowDoubleTX)
     DEBUG_SERIAL_PRINT(' ');
     //DEBUG_SERIAL_PRINTLN_FLASHSTRING("FHT8V syncing...");
 #endif
-    serialPrintlnAndFlush(F("FHT8V SYNC..."));
+    OTV0P2BASE::serialPrintlnAndFlush(F("FHT8V SYNC..."));
     }
 
   if(syncStateFHT8V >= 2)
@@ -639,7 +639,7 @@ static bool doSync(const bool allowDoubleTX)
       DEBUG_SERIAL_PRINT(' ');
       //DEBUG_SERIAL_PRINTLN_FLASHSTRING(" FHT8V SYNC FINAL");
 #endif
-      serialPrintlnAndFlush(F("FHT8V SYNC FINAL"));
+      OTV0P2BASE::serialPrintlnAndFlush(F("FHT8V SYNC FINAL"));
 
       // Assume now in sync...
       syncedWithFHT8V = true;
@@ -714,7 +714,7 @@ bool FHT8VPollSyncAndTX_First(const bool allowDoubleTX)
     DEBUG_SERIAL_TIMESTAMP();
     DEBUG_SERIAL_PRINT(' ');
     // DEBUG_SERIAL_PRINTLN_FLASHSTRING(" FHT8V TX");
-    serialPrintlnAndFlush(F("FHT8V TX"));
+    OTV0P2BASE::serialPrintlnAndFlush(F("FHT8V TX"));
 #endif
     // Set up correct delay to next TX.
     halfSecondsToNextFHT8VTX = FHT8VTXGapHalfSeconds(FHT8VGetHC2(), 0);
@@ -772,7 +772,7 @@ bool FHT8VPollSyncAndTX_Next(const bool allowDoubleTX)
     DEBUG_SERIAL_PRINT(' ');
     // DEBUG_SERIAL_PRINTLN_FLASHSTRING(" FHT8V TX");
 #endif
-    serialPrintlnAndFlush(F("FHT8V TX"));
+    OTV0P2BASE::serialPrintlnAndFlush(F("FHT8V TX"));
     handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O built up while waiting.
 
     // Set up correct delay to next TX.

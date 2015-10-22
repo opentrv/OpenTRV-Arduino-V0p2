@@ -226,9 +226,9 @@ bool ensureIDCreated(const bool force)
     uint8_t * const loc = i + (uint8_t *)V0P2BASE_EE_START_ID;
     if(force || (0xff == eeprom_read_byte(loc))) // Byte is unset or change is being forced.
         {
-        serialPrintAndFlush(F("Setting ID byte "));
-        serialPrintAndFlush(i);
-        serialPrintAndFlush(' ');
+        OTV0P2BASE::serialPrintAndFlush(F("Setting ID byte "));
+        OTV0P2BASE::serialPrintAndFlush(i);
+        OTV0P2BASE::serialPrintAndFlush(' ');
         const uint8_t envNoise = ((i & 1) ? TemperatureC16.get() : ((uint8_t)AmbLight.getRaw()));
         for( ; ; )
           {
@@ -238,21 +238,21 @@ bool ensureIDCreated(const bool force)
           const uint8_t newValue = 0x80 | (getSecureRandomByte() ^ envNoise);
           if(0xff == newValue) { continue; } // Reject unusable value.
           OTV0P2BASE::eeprom_smart_update_byte(loc, newValue);
-          serialPrintAndFlush(newValue, HEX);
+          OTV0P2BASE::serialPrintAndFlush(newValue, HEX);
           break;
           }
-        serialPrintlnAndFlush();
+        OTV0P2BASE::serialPrintlnAndFlush();
         }
     // Validate.
     const uint8_t v2 = eeprom_read_byte(loc);
     if(!validIDByte(v2))
         {
         allGood = false;
-        serialPrintAndFlush(F("Invalid byte "));
-        serialPrintAndFlush(i);
-        serialPrintAndFlush(F(" ... "));
-        serialPrintAndFlush(v2, HEX);
-        serialPrintlnAndFlush();
+        OTV0P2BASE::serialPrintAndFlush(F("Invalid byte "));
+        OTV0P2BASE::serialPrintAndFlush(i);
+        OTV0P2BASE::serialPrintAndFlush(F(" ... "));
+        OTV0P2BASE::serialPrintAndFlush(v2, HEX);
+        OTV0P2BASE::serialPrintlnAndFlush();
         }
      }
   return(allGood);
@@ -1216,7 +1216,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats IDx");
         // Write out the JSON message.
         outputJSONStats(&Serial, secure, msg, msglen);
         // Attempt to ensure that trailing characters are pushed out fully.
-        flushSerialProductive();
+        OTV0P2BASE::flushSerialProductive();
         }
       return;
       }
@@ -1246,7 +1246,7 @@ bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadi
   const volatile uint8_t *pb;
   if(NULL != (pb = rl->peekRXMsg(msglen)))
     {
-    if(!neededWaking && wakeSerialIfNeeded && powerUpSerialIfDisabled()) { neededWaking = true; }
+    if(!neededWaking && wakeSerialIfNeeded && OTV0P2BASE::powerUpSerialIfDisabled<V0P2_UART_BAUD>()) { neededWaking = true; } // FIXME
     // Don't currently regard anything arriving over the air as 'secure'.
     // FIXME: cast away volatile to process the message content.
     decodeAndHandleRawRXedMessage(p, false, (const uint8_t *)pb, msglen);
@@ -1256,7 +1256,7 @@ bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadi
     }
 
   // Turn off serial at end, if this routine woke it.
-  if(neededWaking) { flushSerialProductive(); powerDownSerial(); }
+  if(neededWaking) { OTV0P2BASE::flushSerialProductive(); OTV0P2BASE::powerDownSerial(); }
   return(workDone);
   }
 

@@ -539,7 +539,7 @@ HChc1 hc2 are the house codes 1 and 2 for an FHT8V valve.
 */
 void serialStatusReport()
   {
-  const bool neededWaking = powerUpSerialIfDisabled();
+  const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled<V0P2_UART_BAUD>(); // FIXME
 
   // Aim to overlap CPU usage with characters being TXed for throughput determined primarily by output size and baud.
 
@@ -678,9 +678,9 @@ void serialStatusReport()
   Serial.println();
 
   // Ensure that all text is sent before this routine returns, in case any sleep/powerdown follows that kills the UART.
-  flushSerialSCTSensitive();
+  OTV0P2BASE::flushSerialSCTSensitive();
 
-  if(neededWaking) { powerDownSerial(); }
+  if(neededWaking) { OTV0P2BASE::powerDownSerial(); }
   }
 
 #define SYNTAX_COL_WIDTH 10 // Width of 'syntax' column; strictly positive.
@@ -693,7 +693,7 @@ void serialStatusReport()
 static void printCLILine(const uint8_t deadline, __FlashStringHelper const *syntax, __FlashStringHelper const *description)
   {
   Serial.print(syntax);
-  flushSerialProductive(); // Ensure all pending output is flushed before sampling current position in minor cycle.
+  OTV0P2BASE::flushSerialProductive(); // Ensure all pending output is flushed before sampling current position in minor cycle.
   if(getSubCycleTime() >= deadline) { Serial.println(); return; }
   for(int8_t padding = SYNTAX_COL_WIDTH - strlen_P((const char *)syntax); --padding >= 0; ) { Serial_print_space(); }
   Serial.println(description);
@@ -703,7 +703,7 @@ static void printCLILine(const uint8_t deadline, __FlashStringHelper const *synt
 static void printCLILine(const uint8_t deadline, const char syntax, __FlashStringHelper const *description)
   {
   Serial.print(syntax);
-  flushSerialProductive(); // Ensure all pending output is flushed before sampling current position in minor cycle.
+  OTV0P2BASE::flushSerialProductive(); // Ensure all pending output is flushed before sampling current position in minor cycle.
   if(getSubCycleTime() >= deadline) { Serial.println(); return; }
   for(int8_t padding = SYNTAX_COL_WIDTH - 1; --padding >= 0; ) { Serial_print_space(); }
   Serial.println(description);
@@ -814,7 +814,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
   const uint8_t targetMaxSCT = (maxSCT <= MIN_POLL_SCT) ? ((uint8_t) 0) : ((uint8_t) (maxSCT - 1 - MIN_POLL_SCT));
   if(getSubCycleTime() >= targetMaxSCT) { return; } // Too short to try.
 
-  const bool neededWaking = powerUpSerialIfDisabled();
+  const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled<V0P2_UART_BAUD>();
 
   // Purge any stray pending input, such as a trailing LF from previous input.
   while(Serial.available() > 0) { Serial.read(); }
@@ -824,7 +824,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
   Serial.println();
   Serial.print(CLIPromptChar);
   // Idle a short while to try to save energy, waiting for serial TX end and possible RX response start.
-  flushSerialSCTSensitive();
+  OTV0P2BASE::flushSerialSCTSensitive();
 
 
   // Wait for input command line from the user (received characters may already have been queued)...
@@ -905,8 +905,8 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
       {
       Serial.println(F("? for CLI help"));
       // Force any pending output before return / possible UART power-down.
-      flushSerialSCTSensitive();
-      if(neededWaking) { powerDownSerial(); }
+      OTV0P2BASE::flushSerialSCTSensitive();
+      if(neededWaking) { OTV0P2BASE::powerDownSerial(); }
       return;
       }
 
@@ -1307,9 +1307,9 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
   else { Serial.println(); } // Terminate empty/partial CLI input line after timeout.
 
   // Force any pending output before return / possible UART power-down.
-  flushSerialSCTSensitive();
+  OTV0P2BASE::flushSerialSCTSensitive();
 
-  if(neededWaking) { powerDownSerial(); }
+  if(neededWaking) { OTV0P2BASE::powerDownSerial(); }
   }
 
 

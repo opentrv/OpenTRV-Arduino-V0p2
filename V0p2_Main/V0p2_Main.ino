@@ -14,6 +14,7 @@ specific language governing permissions and limitations
 under the Licence.
 
 Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
+                           Deniz Erbilgin 2015
 */
 
 /*
@@ -45,6 +46,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include <SPI.h>
 #include <Wire.h>
 #include <OTRadioLink.h>
+#include <OTNullRadioLink.h> // as in separate library to OTRadioLink
+#include <OTSIM900Link.h>
 
 #include "V0p2_Sensors.h"
 
@@ -86,8 +89,8 @@ void panic()
 // Panic with fixed message.
 void panic(const __FlashStringHelper *s)
   {
-  serialPrintlnAndFlush(s); // May fail.
-  panic();  
+  OTV0P2BASE::serialPrintlnAndFlush(s); // May fail.
+  panic();
   }
 
 
@@ -134,7 +137,7 @@ static void posPOST(const uint8_t position, const __FlashStringHelper *s)
   DEBUG_SERIAL_PRINT(s);
   DEBUG_SERIAL_PRINTLN();
 #else
-  serialPrintlnAndFlush(s);
+  OTV0P2BASE::serialPrintlnAndFlush(s);
 #endif
 //  pinMode(LED_HEATCALL, OUTPUT);
   LED_HEATCALL_OFF();
@@ -172,12 +175,12 @@ static const char _YYYYMmmDD[] =
 // Format: "board VXXXX REVY; code YYYY/Mmm/DD HH:MM:SS".
 void serialPrintlnBuildVersion()
   {
-  serialPrintAndFlush(F("board V0.2 REV"));
-  serialPrintAndFlush(V0p2_REV);
-  serialPrintAndFlush(F(" "));
-  serialPrintAndFlush(_YYYYMmmDD);
-  serialPrintAndFlush(F(" " __TIME__));
-  serialPrintlnAndFlush();
+  OTV0P2BASE::serialPrintAndFlush(F("board V0.2 REV"));
+  OTV0P2BASE::serialPrintAndFlush(V0p2_REV);
+  OTV0P2BASE::serialPrintAndFlush(F(" "));
+  OTV0P2BASE::serialPrintAndFlush(_YYYYMmmDD);
+  OTV0P2BASE::serialPrintAndFlush(F(" " __TIME__));
+  OTV0P2BASE::serialPrintlnAndFlush();
   }
 
 static const OTRadioLink::OTRadioChannelConfig RFMConfig(FHT8V_RFM22_Reg_Values, true, true, true);
@@ -365,7 +368,7 @@ void setup()
 #ifdef LED_UI2_EXISTS
   LED_UI2_ON();
 #endif
-  serialPrintAndFlush(F("\r\nOpenTRV: ")); // Leading CRLF to clear leading junk, eg from bootloader.
+  OTV0P2BASE::serialPrintAndFlush(F("\r\nOpenTRV: ")); // Leading CRLF to clear leading junk, eg from bootloader.
     serialPrintlnBuildVersion();
 #ifdef LED_UI2_EXISTS
   OTV0P2BASE::nap(WDTO_120MS); // Sleep to let UI2 LED be seen.
@@ -511,7 +514,7 @@ void setup()
   DEBUG_SERIAL_PRINTLN();
 #endif
   // TODO: seed other/better PRNGs.
-  // Feed in mainly persistent/nonvolatile state explicitly. 
+  // Feed in mainly persistent/nonvolatile state explicitly.
   OTV0P2BASE::addEntropyToPool(oldResetCount ^ eeseed, 0);
   OTV0P2BASE::addEntropyToPool((uint8_t)(eeseed >> 8) + nar1, 0);
   OTV0P2BASE::addEntropyToPool((uint8_t)s16 ^ (uint8_t)(s16 >> 8), 0);
@@ -591,10 +594,10 @@ void setup()
   // Initialised: turn heatcall UI LED off.
 //  pinMode(LED_HEATCALL, OUTPUT);
   LED_HEATCALL_OFF();
-  
+
 #if defined(SUPPORT_CLI) && !defined(ALT_MAIN_LOOP) && !defined(UNIT_TESTS)
   // Help user get to CLI.
-  serialPrintlnAndFlush(F("At CLI > prompt enter ? for help"));
+  OTV0P2BASE::serialPrintlnAndFlush(F("At CLI > prompt enter ? for help"));
 #endif
 
 #if !defined(ALT_MAIN_LOOP) && !defined(UNIT_TESTS)
@@ -623,7 +626,7 @@ void loop()
 #endif
 
 
-#if defined(UNIT_TESTS) // Run unit tests *instead* of normal loop() code. 
+#if defined(UNIT_TESTS) // Run unit tests *instead* of normal loop() code.
   loopUnitTest();
 #elif defined(ALT_MAIN_LOOP) // Run alternative main loop.
   loopAlt();
