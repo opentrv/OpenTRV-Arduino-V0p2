@@ -52,8 +52,10 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
           uint16_t ticksFromClosedToOpen;
   
           // Computed parameters based on measurements during calibration process.
-          // Ticks per percent in the open-to-closed direction; computed during tracking.
-          uint8_t ticksPerPercentOpenToClosed;
+          // Approx precision in % as min ticks / DR size in range [1,100].
+          uint8_t approxPrecisionPC;
+//          // Ticks per percent in the open-to-closed direction; computed during tracking.
+//          uint8_t ticksPerPercentOpenToClosed;
 
         public:
           CalibrationParameters() : ticksFromOpenToClosed(0), ticksFromClosedToOpen(0) { }
@@ -63,6 +65,9 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
           // Returns true in case of success.
           // May return false and force error state if inputs unusable.
           bool updateAndCompute(uint16_t ticksFromOpenToClosed, uint16_t ticksFromClosedToOpen);
+
+          // Approx precision in % as min ticks / DR size in range [1,100].
+          uint8_t getApproxPrecisionPC() { return(approxPrecisionPC); }
         };
 
   private:

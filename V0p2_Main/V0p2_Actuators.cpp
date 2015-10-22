@@ -390,6 +390,10 @@ bool CurrentSenseValveMotorDirect::CalibrationParameters::updateAndCompute(const
   ticksFromOpenToClosed = _ticksFromOpenToClosed;
   ticksFromClosedToOpen = _ticksFromClosedToOpen;
 
+  // Compute approx precision in % as min ticks / DR size, [1,100].
+  // Round up slightly to allow for inertia, etc.
+  approxPrecisionPC = max(1, min(100, (130 * minMotorDRTicks) / min(_ticksFromOpenToClosed, _ticksFromClosedToOpen)));
+
 // TODO
 
 

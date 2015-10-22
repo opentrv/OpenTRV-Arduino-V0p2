@@ -97,12 +97,12 @@ static void testLibVersions()
 #if !(0 == ARDUINO_LIB_OTV0P2BASE_VERSION_MAJOR) || !(8 <= ARDUINO_LIB_OTV0P2BASE_VERSION_MINOR)
 #error Wrong OTV0p2Base library version!
 #endif
-#if !(0 == ARDUINO_LIB_OTRADIOLINK_VERSION_MAJOR) || !(8 <= ARDUINO_LIB_OTRADIOLINK_VERSION_MINOR)
+#if !(0 == ARDUINO_LIB_OTRADIOLINK_VERSION_MAJOR) || !(9 <= ARDUINO_LIB_OTRADIOLINK_VERSION_MINOR)
 #error Wrong OTRadioLink library version!
 #endif
 //  AssertIsEqual(0, ARDUINO_LIB_OTRADIOLINK_VERSION_MAJOR);
 //  AssertIsTrue(1 <= ARDUINO_LIB_OTRADIOLINK_VERSION_MINOR); // Minimum acceptable minor version.
-#if !(0 == ARDUINO_LIB_OTRFM23BLINK_VERSION_MAJOR) || !(8 <= ARDUINO_LIB_OTRFM23BLINK_VERSION_MINOR)
+#if !(0 == ARDUINO_LIB_OTRFM23BLINK_VERSION_MAJOR) || !(9 <= ARDUINO_LIB_OTRFM23BLINK_VERSION_MINOR)
 #error Wrong OTRFM23BLink library version!
 #endif
 #ifdef ALLOW_CC1_SUPPORT
@@ -139,6 +139,7 @@ static void testCSVMDC()
   CurrentSenseValveMotorDirect::CalibrationParameters cp;
   // Test the calculations with one plausible calibration data set.
   AssertIsTrue(cp.updateAndCompute(1601U, 1105U)); // Must not fail...
+  AssertIsEqual(4, cp.getApproxPrecisionPC());
   }
 
 // Test that direct abstract motor drive logic is sane.
