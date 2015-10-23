@@ -165,10 +165,17 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
     // Run fast towards/to end stop as far as possible in this call.
     // Terminates significantly before the end of the sub-cycle.
     // Possibly allows partial recalibration, or at least re-homing.
-    // Returns true when end-stop is hit,
+    // Returns true if end-stop has apparently been hit,
     // else will require one or more further calls in new sub-cycles
     // to hit the end-stop.
     bool runFastTowardsEndStop(bool toOpen);
+
+    // Run at 'normal' speed towards/to end for a fixed time/distance.
+    // Terminates significantly before the end of the sub-cycle.
+    // Runs at same speed as during calibration.
+    // Does the right thing with dead-reckoning and/or position detection.
+    // Returns true if end-stop has apparently been hit.
+    bool runTowardsEndStop(bool toOpen);
 
   public:
     // Create an instance, passing in a reference to the non-NULL hardware driver.
