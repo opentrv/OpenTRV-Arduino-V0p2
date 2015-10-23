@@ -314,7 +314,7 @@ LED_UI2_OFF();
 // Maximum current reading allowed when closing the valve (against the spring).
 static const uint16_t maxCurrentReadingClosing = 600;
 // Maximum current reading allowed when opening the valve (retracting the pin, no resisting force).
-static const uint16_t maxCurrentReadingOpening = 400;
+static const uint16_t maxCurrentReadingOpening = 500; // DHD20151023: 400 seemed marginal.
 
 // Detect if end-stop is reached or motor current otherwise very high.] indicating stall.
 bool ValveMotorDirectV1HardwareDriver::isCurrentHigh(HardwareMotorDriverInterface::motor_drive mdir) const
@@ -369,13 +369,15 @@ void CurrentSenseValveMotorDirect::signalRunSCTTick(const bool opening)
   ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
     {
     // Crudely avoid/ignore underflow/overflow for now.
+    // Accumulate ticks in different directions in different counters
+    // and resolve/reconcile later in significant chunks.
     if(!opening)
       {
       if(ticksFromOpen < MAX_TICKS_FROM_OPEN) { ++ticksFromOpen; }
       }
     else
       {
-      if(ticksFromOpen > 0) { --ticksFromOpen; }
+      if(ticksReverse < MAX_TICKS_FROM_OPEN) { ++ticksReverse; }
       }
     }
   }
@@ -483,7 +485,9 @@ void CurrentSenseValveMotorDirect::poll()
           if(endStopDetected)
             {
             endStopDetected = false;
-            ticksFromOpen = 0; // Reset tick count.
+            // Reset tick count.
+            ticksFromOpen = 0;
+            ticksReverse = 0;
             ++perState.calibrating.calibState; // Move to next micro state.
             }
           break;
@@ -507,7 +511,7 @@ void CurrentSenseValveMotorDirect::poll()
               endStopDetected = false;
               const uint16_t tfotc = ticksFromOpen;
               perState.calibrating.ticksFromOpenToClosed = tfotc;
-              ticksFromOpen = MAX_TICKS_FROM_OPEN; // Reset tick count to maximum.
+//              ticksFromOpen = MAX_TICKS_FROM_OPEN; // Reset tick count to maximum.
               ++perState.calibrating.calibState; // Move to next micro state.
               break;
               }
@@ -530,16 +534,18 @@ void CurrentSenseValveMotorDirect::poll()
             if(endStopDetected)
               {
               endStopDetected = false;
-              const uint16_t tfcto = MAX_TICKS_FROM_OPEN - ticksFromOpen;
+              const uint16_t tfcto = ticksReverse;
               // Help avoid premature termination of this direction
               // by NOT terminating this run if much shorter than run in other direction.
               if(tfcto >= (perState.calibrating.ticksFromOpenToClosed >> 1))
                 {
                 perState.calibrating.ticksFromClosedToOpen = tfcto;
-                ticksFromOpen = 0; // Reset tick count.
+                // Reset tick count.
+                ticksFromOpen = 0;
+                ticksReverse = 0;
                 ++perState.calibrating.calibState; // Move to next micro state.
                 }
-              break; // In all cases when end-stop hit don't run further this sub-cycle.
+              break; // In all cases when end-stop hit don't try to run further in this sub-cycle.
               }
             } while(getSubCycleTime() <= GSCT_MAX/2);
           break;

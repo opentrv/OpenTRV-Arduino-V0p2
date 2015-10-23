@@ -150,7 +150,9 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
     // Significant underflow might be (say) the minimum valve-open percentage.
     // ISR-/thread- safe with a mutex.
     volatile uint16_t ticksFromOpen;
-    // Maximum permitted value of ticksFromOpen;
+    // Reverse ticks not yet folded into ticksFromOpen;
+    volatile uint16_t ticksReverse;
+    // Maximum permitted value of ticksFromOpen (and ticksReverse).
     static const uint16_t MAX_TICKS_FROM_OPEN = ~0;
 
     // Current nominal percent open in range [0,100].
