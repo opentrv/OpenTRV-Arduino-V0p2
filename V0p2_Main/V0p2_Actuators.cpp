@@ -350,17 +350,6 @@ ValveMotorDirectV1 ValveDirect;
 
 
 
-// Minimally wiggles the motor to give tactile feedback and/or show to be working.
-// May take a significant fraction of a second.
-// Finishes with the motor turned off.
-void CurrentSenseValveMotorDirect::wiggle()
-  {
-  hw->motorRun(0, HardwareMotorDriverInterface::motorOff, *this);
-  hw->motorRun(0, HardwareMotorDriverInterface::motorDriveOpening, *this);
-  hw->motorRun(0, HardwareMotorDriverInterface::motorDriveClosing, *this);
-  hw->motorRun(0, HardwareMotorDriverInterface::motorOff, *this);
-  }
-
 
 // Called with each motor run sub-cycle tick.
 // Is ISR-/thread- safe.
@@ -418,6 +407,36 @@ bool CurrentSenseValveMotorDirect::CalibrationParameters::updateAndCompute(const
   }
 
 
+// Minimally wiggles the motor to give tactile feedback and/or show to be working.
+// May take a significant fraction of a second.
+// Finishes with the motor turned off.
+void CurrentSenseValveMotorDirect::wiggle()
+  {
+  hw->motorRun(0, HardwareMotorDriverInterface::motorOff, *this);
+  hw->motorRun(0, HardwareMotorDriverInterface::motorDriveOpening, *this);
+  hw->motorRun(0, HardwareMotorDriverInterface::motorDriveClosing, *this);
+  hw->motorRun(0, HardwareMotorDriverInterface::motorOff, *this);
+  }
+
+// Run fast towards/to end stop as far as possible in this call.
+// Terminates significantly before the end of the sub-cycle.
+// Possibly allows partial recalibration, or at least re-homing.
+// Returns true when end-stop is hit,
+// else will require one or more further calls in new sub-cycles
+// to hit the end-stop.
+bool CurrentSenseValveMotorDirect::runFastTowardsEndStop(const bool toOpen)
+  {
+  endStopDetected = false; // Clear the end-stop detection flag ready.
+  // Run motor as far as possible on this sub-cycle.
+  hw->motorRun(~0, toOpen ?
+      HardwareMotorDriverInterface::motorDriveOpening
+    : HardwareMotorDriverInterface::motorDriveClosing, *this);
+  // Stop motor until next loop (also ensures power off).
+  hw->motorRun(0, HardwareMotorDriverInterface::motorOff, *this);
+  // Report if end-stop has apparently been hit. 
+  return(endStopDetected);
+  }
+
 // Poll.
 // Regular poll every 1s or 2s,
 // though tolerates missed polls eg because of other time-critical activity.
@@ -441,13 +460,13 @@ void CurrentSenseValveMotorDirect::poll()
     case valvePinWithdrawing:
       {
 //DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valvePinWithdrawing");
-      endStopDetected = false; // Clear the end-stop detection flag ready.
-      // Run motor as far as possible on this sub-cycle.
-      hw->motorRun(~0, HardwareMotorDriverInterface::motorDriveOpening, *this);
-      // Stop motor until next loop (also ensures power off).
-      hw->motorRun(0, HardwareMotorDriverInterface::motorOff, *this);
+//      endStopDetected = false; // Clear the end-stop detection flag ready.
+//      // Run motor as far as possible on this sub-cycle.
+//      hw->motorRun(~0, HardwareMotorDriverInterface::motorDriveOpening, *this);
+//      // Stop motor until next loop (also ensures power off).
+//      hw->motorRun(0, HardwareMotorDriverInterface::motorOff, *this);
       // Once end-stop has been hit, move to state to wait for user signal and then start calibration. 
-      if(endStopDetected) { changeState(valvePinWithdrawn); }
+      if(runFastTowardsEndStop(true)) { changeState(valvePinWithdrawn); }
       break;
       }
 

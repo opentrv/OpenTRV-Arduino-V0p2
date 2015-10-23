@@ -162,6 +162,14 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
     // Maintained across all states; defaults to 'closed'/0.
     uint8_t targetPC;
 
+    // Run fast towards/to end stop as far as possible in this call.
+    // Terminates significantly before the end of the sub-cycle.
+    // Possibly allows partial recalibration, or at least re-homing.
+    // Returns true when end-stop is hit,
+    // else will require one or more further calls in new sub-cycles
+    // to hit the end-stop.
+    bool runFastTowardsEndStop(bool toOpen);
+
   public:
     // Create an instance, passing in a reference to the non-NULL hardware driver.
     // The hardware driver instance lifetime must be longer than this instance.
