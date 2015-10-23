@@ -421,21 +421,42 @@ void CurrentSenseValveMotorDirect::wiggle()
 // Run fast towards/to end stop as far as possible in this call.
 // Terminates significantly before the end of the sub-cycle.
 // Possibly allows partial recalibration, or at least re-homing.
-// Returns true when end-stop is hit,
+// Returns true if end-stop has apparently been hit,
 // else will require one or more further calls in new sub-cycles
 // to hit the end-stop.
 bool CurrentSenseValveMotorDirect::runFastTowardsEndStop(const bool toOpen)
   {
-  endStopDetected = false; // Clear the end-stop detection flag ready.
+  // Clear the end-stop detection flag ready.
+  endStopDetected = false;
   // Run motor as far as possible on this sub-cycle.
   hw->motorRun(~0, toOpen ?
       HardwareMotorDriverInterface::motorDriveOpening
     : HardwareMotorDriverInterface::motorDriveClosing, *this);
-  // Stop motor until next loop (also ensures power off).
+  // Stop motor and ensure power off.
   hw->motorRun(0, HardwareMotorDriverInterface::motorOff, *this);
   // Report if end-stop has apparently been hit. 
   return(endStopDetected);
   }
+
+// Run at 'normal' speed towards/to end for a fixed time/distance.
+// Terminates significantly before the end of the sub-cycle.
+// Runs at same speed as during calibration.
+// Does the right thing with dead-reckoning and/or position detection.
+// Returns true if end-stop has apparently been hit.
+bool CurrentSenseValveMotorDirect::runTowardsEndStop(bool toOpen)
+  {
+  // Clear the end-stop detection flag ready.
+  endStopDetected = false;
+  // Run motor as far as possible on this sub-cycle.
+  hw->motorRun(minMotorDRTicks, toOpen ?
+      HardwareMotorDriverInterface::motorDriveOpening
+    : HardwareMotorDriverInterface::motorDriveClosing, *this);
+  // Stop motor and ensure power off.
+  hw->motorRun(0, HardwareMotorDriverInterface::motorOff, *this);
+  // Report if end-stop has apparently been hit. 
+  return(endStopDetected);
+  }
+
 
 // Poll.
 // Regular poll every 1s or 2s,
@@ -460,11 +481,6 @@ void CurrentSenseValveMotorDirect::poll()
     case valvePinWithdrawing:
       {
 //DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valvePinWithdrawing");
-//      endStopDetected = false; // Clear the end-stop detection flag ready.
-//      // Run motor as far as possible on this sub-cycle.
-//      hw->motorRun(~0, HardwareMotorDriverInterface::motorDriveOpening, *this);
-//      // Stop motor until next loop (also ensures power off).
-//      hw->motorRun(0, HardwareMotorDriverInterface::motorOff, *this);
       // Once end-stop has been hit, move to state to wait for user signal and then start calibration. 
       if(runFastTowardsEndStop(true)) { changeState(valvePinWithdrawn); }
       break;
@@ -494,16 +510,9 @@ void CurrentSenseValveMotorDirect::poll()
         {
         case 0:
           {
-          // Ensure pin is fully withdrawn before starting calibration proper.
-          endStopDetected = false; // Clear the end-stop detection flag ready.
-          // Run motor as far as possible on this sub-cycle.
-          hw->motorRun(~0, HardwareMotorDriverInterface::motorDriveOpening, *this);
-          // Stop motor until next loop (also ensures power off).
-          hw->motorRun(0, HardwareMotorDriverInterface::motorOff, *this);
-          // Once end-stop has been hit, prepare to start calibration run in opposite direction. 
-          if(endStopDetected)
+          // Once end-stop has been hit, move to state to wait for user signal and then start calibration. 
+          if(runFastTowardsEndStop(true))
             {
-            endStopDetected = false;
             // Reset tick count.
             ticksFromOpen = 0;
             ticksReverse = 0;
@@ -514,23 +523,14 @@ void CurrentSenseValveMotorDirect::poll()
         case 1:
           {
           // Run pin to fully extended (valve closed).
-          endStopDetected = false; // Clear the end-stop detection flag ready.
-
           // Be prepared to run the (usually small) dead-reckoning pulse while lots of sub-cycle still available.
           do
             {
-            // Run motor for standard 'dead reckoning' pulse time.
-            hw->motorRun(minMotorDRTicks, HardwareMotorDriverInterface::motorDriveClosing, *this);
-            // Stop motor until next loop (also ensures power off).
-            hw->motorRun(0, HardwareMotorDriverInterface::motorOff, *this);
-
             // Once end-stop has been hit, capture run length and prepare to run in opposite direction. 
-            if(endStopDetected)
+            if(runTowardsEndStop(false))
               {
-              endStopDetected = false;
               const uint16_t tfotc = ticksFromOpen;
               perState.calibrating.ticksFromOpenToClosed = tfotc;
-//              ticksFromOpen = MAX_TICKS_FROM_OPEN; // Reset tick count to maximum.
               ++perState.calibrating.calibState; // Move to next micro state.
               break;
               }
@@ -539,20 +539,13 @@ void CurrentSenseValveMotorDirect::poll()
           }
         case 2:
           {
-          // Run pin to fully retracted again (valve open).
-          endStopDetected = false; // Clear the end-stop detection flag ready.
- 
+          // Run pin to fully retracted again (valve open). 
           // Be prepared to run the (usually small) pulse while lots of sub-cycle still available.
           do
             {
-            // Run motor for standard 'dead reckoning' pulse time.
-            hw->motorRun(minMotorDRTicks, HardwareMotorDriverInterface::motorDriveOpening, *this);
-            // Stop motor until next loop (also ensures power off).
-            hw->motorRun(0, HardwareMotorDriverInterface::motorOff, *this);
             // Once end-stop has been hit, capture run length and prepare to run in opposite direction. 
-            if(endStopDetected)
+            if(runTowardsEndStop(true))
               {
-              endStopDetected = false;
               const uint16_t tfcto = ticksReverse;
               // Help avoid premature termination of this direction
               // by NOT terminating this run if much shorter than run in other direction.
@@ -582,13 +575,11 @@ DEBUG_SERIAL_PRINT_FLASHSTRING("    ticksFromClosedToOpen: ");
 DEBUG_SERIAL_PRINT(perState.calibrating.ticksFromClosedToOpen);
 DEBUG_SERIAL_PRINTLN();
 
-
-          // TODO
-
-
-
           // Move to normal valve running state...
           currentPC = 100; // Valve is currently fully open.
+          // Reset tick count.
+          ticksFromOpen = 0;
+          ticksReverse = 0;
           changeState(valveNormal);
           break;
           }
