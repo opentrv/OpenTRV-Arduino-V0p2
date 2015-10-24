@@ -78,6 +78,14 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
 
         };
 
+    // Reconcile/adjust ticks and compute % position [0,100].
+    // Reconcile any reverse ticks (and adjust with forward ticks if needed).
+    // Called after moving the valve in normal mode.
+    // Unit testable.
+    static uint8_t computePosition(const CalibrationParameters &cp,
+                                   volatile uint16_t &ticksFromOpen,
+                                   volatile uint16_t &ticksReverse);
+
   private:
     // Hardware interface instance, passed by reference.
     // Must have a lifetime exceeding that of this enclosing object.

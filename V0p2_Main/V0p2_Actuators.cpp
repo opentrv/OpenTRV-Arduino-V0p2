@@ -407,6 +407,19 @@ bool CurrentSenseValveMotorDirect::CalibrationParameters::updateAndCompute(const
   }
 
 
+// Reconcile/adjust ticks and compute % position [0,100].
+// Reconcile any reverse ticks (and adjust with forward ticks if needed).
+// Called after moving the valve in normal mode.
+// Unit testable.
+uint8_t computePosition(const CurrentSenseValveMotorDirect::CalibrationParameters &cp,
+                               volatile uint16_t &ticksFromOpen,
+                               volatile uint16_t &ticksReverse)
+  {
+  // TODO
+
+  return(0);
+  }
+
 // Minimally wiggles the motor to give tactile feedback and/or show to be working.
 // May take a significant fraction of a second.
 // Finishes with the motor turned off.
