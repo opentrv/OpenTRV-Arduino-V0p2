@@ -607,10 +607,12 @@ DEBUG_SERIAL_PRINTLN();
       {
 //DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valveNormal");
 
-      // If the current estimated position does not match the target
+      // If the current estimated position matched the target
+      // then there is usually nothing to do.
+      if(currentPC == targetPC) { break; }
+
+      // If the current estimated position does NOT match the target
       // then (incrementally) try to adjust to match.
-      if(currentPC != targetPC)
-        {
 #if 1 && defined(DEBUG)
 DEBUG_SERIAL_PRINT_FLASHSTRING("  valve needs adj: ");
 DEBUG_SERIAL_PRINT(currentPC);
@@ -619,8 +621,25 @@ DEBUG_SERIAL_PRINT(targetPC);
 DEBUG_SERIAL_PRINTLN();
 #endif
 
-        // TODO
+      // Special case where target is an end-point.
+      // Run fast to the end-stop and partly recalibrate.
+      if((0 == targetPC) || (100 == targetPC))
+        {
+        const bool toOpen = (0 != targetPC);
+        if(runFastTowardsEndStop(toOpen))
+            {
+            // TODO: may need to protect against suprious stickiness before end...
+            // Reset positional values.
+            currentPC = targetPC;
+            ticksReverse = 0;
+            ticksFromOpen = toOpen ? 0 : cp.getTfotcSmall();
+            }
+        break;
         }
+
+      // More general case were target position is somewhere between end-stops.
+
+      // TODO: don't do anything if close enough, ie within computed precision.
 
       // TODO
 

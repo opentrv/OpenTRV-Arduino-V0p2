@@ -205,7 +205,8 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
     uint8_t getTargetPC() { return(targetPC); }
 
     // Set current target % open in range [0,100].
-    void setTargetPC(const uint8_t newPC) { targetPC = newPC; }
+    // Coerced into range.
+    void setTargetPC(uint8_t newPC) { targetPC = min(newPC, 100); }
 
     // Minimally wiggles the motor to give tactile feedback and/or show to be working.
     // May take a significant fraction of a second.
