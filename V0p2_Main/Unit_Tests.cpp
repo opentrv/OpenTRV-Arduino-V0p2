@@ -162,6 +162,18 @@ static void testCSVMDC()
   AssertIsEqual(0, cp.computePosition(ticksFromOpen, ticksReverse));
   AssertIsEqual(tfo2, ticksFromOpen);
   AssertIsEqual(0, ticksReverse);
+  // Simple case: fully open, no accumulated reverse ticks.
+  ticksFromOpen = 0;
+  ticksReverse = 0;
+  AssertIsEqual(100, cp.computePosition(ticksFromOpen, ticksReverse));
+  AssertIsEqual(0, ticksFromOpen);
+  AssertIsEqual(0, ticksReverse);
+  // Try at half-way mark, no reverse ticks.
+  ticksFromOpen = tfo2 / 2;
+  ticksReverse = 0;
+  AssertIsEqual(50, cp.computePosition(ticksFromOpen, ticksReverse));
+  AssertIsEqual(tfo2/2, ticksFromOpen);
+  AssertIsEqual(0, ticksReverse);
 
 
   // TODO

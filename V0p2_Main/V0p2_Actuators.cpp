@@ -414,7 +414,7 @@ uint8_t CurrentSenseValveMotorDirect::CalibrationParameters::computePosition(
             volatile uint16_t &ticksFromOpen,
             volatile uint16_t &ticksReverse) const
   {
-  // Back out the effect of reverse ticks in blocks...
+  // Back out the effect of reverse ticks in blocks for dead-reckoning...
   // Should only usually be about 1 block at a time,
   // so don't do anything too clever here.
   while(ticksReverse >= tfctoSmall)
@@ -639,6 +639,7 @@ DEBUG_SERIAL_PRINTLN();
 
       // Special case where target is an end-point.
       // Run fast to the end-stop and partly recalibrate.
+      // TODO: consider being more eager and doing this if within eps of end-points.
       if((0 == targetPC) || (100 == targetPC))
         {
         const bool toOpen = (0 != targetPC);
@@ -655,9 +656,12 @@ DEBUG_SERIAL_PRINTLN();
 
       // More general case were target position is somewhere between end-stops.
 
-      // TODO: don't do anything if close enough, ie within computed precision.
+      // TODO: don't do anything if close enough, ie within computed precision (eps).
 
       // TODO
+
+      // If valve position moved, recompute estimate of actual position.
+      recomputePosition();
 
       break;
       }
