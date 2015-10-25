@@ -436,6 +436,13 @@ bool CurrentSenseValveMotorDirect::runTowardsEndStop(const bool toOpen)
   }
 
 
+// Report an apparent serious tracking error that may need full recalibration.
+void CurrentSenseValveMotorDirect::trackingError()
+  {
+  // TODO: possibly ignore tracking errors for a minimum interval.
+  needsRecalibrating = true;
+  }
+
 // Poll.
 // Regular poll every 1s or 2s,
 // though tolerates missed polls eg because of other time-critical activity.
@@ -476,7 +483,7 @@ void CurrentSenseValveMotorDirect::poll()
       break;
       }
 
-    // Running (initial) calibration cycle.
+    // Running (initial or re-) calibration cycle.
     case valveCalibrating:
       {
 //DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valveCalibrating");
@@ -488,6 +495,14 @@ void CurrentSenseValveMotorDirect::poll()
         {
         case 0:
           {
+#if 1 && defined(DEBUG)
+DEBUG_SERIAL_PRINTLN_FLASHSTRING("+calibrating");
+#endif            
+          ++perState.calibrating.calibState; // Move to next micro state.
+          break;
+          }
+        case 1:
+          {
           // Once end-stop has been hit, move to state to wait for user signal and then start calibration. 
           if(runFastTowardsEndStop(true))
             {
@@ -498,7 +513,7 @@ void CurrentSenseValveMotorDirect::poll()
             }
           break;
           }
-        case 1:
+        case 2:
           {
           // Run pin to fully extended (valve closed).
           // Be prepared to run the (usually small) dead-reckoning pulse while lots of sub-cycle still available.
@@ -515,7 +530,7 @@ void CurrentSenseValveMotorDirect::poll()
             } while(getSubCycleTime() <= sctAbsLimitDR);
           break;
           }
-        case 2:
+        case 3:
           {
           // Run pin to fully retracted again (valve open). 
           // Be prepared to run the (usually small) pulse while lots of sub-cycle still available.
@@ -540,7 +555,7 @@ void CurrentSenseValveMotorDirect::poll()
             } while(getSubCycleTime() <= sctAbsLimitDR);
           break;
           }
-        case 3:
+        case 4:
           {
           // Set all measured calibration input parameters and current position.
           cp.updateAndCompute(perState.calibrating.ticksFromOpenToClosed, perState.calibrating.ticksFromClosedToOpen);
@@ -575,6 +590,16 @@ DEBUG_SERIAL_PRINTLN();
     case valveNormal:
       {
 //DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valveNormal");
+
+      // Recalibrate if a serious tracking error was detected.
+      if(needsRecalibrating)
+        {
+#if 1 && defined(DEBUG)
+DEBUG_SERIAL_PRINTLN_FLASHSTRING("!needsRecalibrating");
+#endif
+        changeState(valveCalibrating);
+        break;
+        }
 
       // If the current estimated position matches the target
       // then there is usually nothing to do.
@@ -613,10 +638,10 @@ if(toOpenFast) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("-->"); } else { DEBUG_SERIAL_
         break;
         }
 
-      // More general case were target position is somewhere between end-stops.
+      // More general case where target position is somewhere between end-stops.
       // Don't do anything if close enough, ie within computed precision (eps).
       // Else move incrementally to reduce the error.
-      // (Incremental small move may also help when absolute accuracy not that good,
+      // (Incremental small moves may also help when absolute accuracy not that good,
       // allowing closed-loop feedback time to work.)
 
       // Not open enough.
@@ -625,6 +650,19 @@ if(toOpenFast) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("-->"); } else { DEBUG_SERIAL_
         // TODO: use shaft encoder positioning by preference, ie when available.
         const bool hitEndStop = runTowardsEndStop(true);
         recomputePosition();
+        // Hit the end-stop, possibly prematurely.
+        if(hitEndStop)
+          {
+          // Note serious tracking error.
+          if(currentPC < min(75, 100 - 2*eps)) { trackingError(); }
+          // Silently auto-adjust when end-stop hit close to expected position.
+          else
+            {
+            currentPC = 100;
+            ticksReverse = 0;
+            ticksFromOpen = 0;
+            }
+          }
 #if 1 && defined(DEBUG)
 DEBUG_SERIAL_PRINTLN_FLASHSTRING("->");
 #endif
@@ -636,6 +674,19 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("->");
         // TODO: use shaft encoder positioning by preference, ie when available.
         const bool hitEndStop = runTowardsEndStop(false);
         recomputePosition();
+        // Hit the end-stop, possibly prematurely.
+        if(hitEndStop)
+          {
+          // Note serious tracking error.
+          if(currentPC > max(DEFAULT_MIN_VALVE_PC_REALLY_OPEN, 2*eps)) { trackingError(); }
+          // Silently auto-adjust when end-stop hit close to expected position.
+          else
+            {
+            currentPC = 0;
+            ticksReverse = 0;
+            ticksFromOpen = cp.getTicksFromOpenToClosed();
+            }
+          }
 #if 1 && defined(DEBUG)
 DEBUG_SERIAL_PRINTLN_FLASHSTRING("-<");
 #endif

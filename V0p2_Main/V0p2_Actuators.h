@@ -144,9 +144,9 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
     // Marked volatile for thread-safe lock-free access (with care).
     volatile bool endStopDetected;
 
-//    // Set when valve needs recalibration, eg because dead-reckoning found to be significantly wrong.
-//    // May also need recalibrating after (say) a few weeks to allow for battery/speed droop.
-//    bool needsRecalibrating;
+    // Set when valve needs recalibration, eg because dead-reckoning found to be significantly wrong.
+    // May also need recalibrating after (say) a few weeks to allow for battery/speed droop.
+    bool needsRecalibrating;
 
     // Calibration parameters gathered/computed from the calibration step.
     // Logically read-only other than during (re)calibration.
@@ -191,6 +191,9 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
     // Uses computePosition() to adjust internal state.
     // Call after moving the valve in normal mode.    
     void recomputePosition() { currentPC = cp.computePosition(ticksFromOpen, ticksReverse); }
+
+    // Report an apparent serious tracking error that may need full recalibration.
+    void trackingError();
 
   public:
     // Create an instance, passing in a reference to the non-NULL hardware driver.
