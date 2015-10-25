@@ -332,6 +332,9 @@ void loopAlt()
 
 
 #ifdef HAS_DORM1_VALVE_DRIVE
+  // Yank valve to random target every minute to try to upset it!
+  if(0 == TIME_LSD) { ValveDirect.set(OTV0P2BASE::randRNG8() % 101); }
+
   // Provide regular poll to motor driver.
   // May take significant time to run
   // so don't call when timing is critical or not much left,
@@ -351,24 +354,24 @@ void loopAlt()
 //  DEBUG_SERIAL_PRINTLN();
 
 
-  // Command-Line Interface (CLI) polling.
-  // If a reasonable chunk of the minor cycle remains after all other work is done
-  // AND the CLI is / should be active OR a status line has just been output
-  // then poll/prompt the user for input
-  // using a timeout which should safely avoid overrun, ie missing the next basic tick,
-  // and which should also allow some energy-saving sleep.
-#if 1 // && defined(SUPPORT_CLI)
-  if(true)
-    {
-    const uint8_t sct = getSubCycleTime();
-    const uint8_t listenTime = max(GSCT_MAX/16, CLI_POLL_MIN_SCT);
-    if(sct < (GSCT_MAX - 2*listenTime))
-      // Don't listen beyond the last 16th of the cycle,
-      // or a minimal time if only prodding for interaction with automated front-end,
-      // as listening for UART RX uses lots of power.
-      { pollCLI(OTV0P2BASE::randRNG8NextBoolean() ? (GSCT_MAX-listenTime) : (sct+CLI_POLL_MIN_SCT), 0 == TIME_LSD); }
-    }
-#endif
+//  // Command-Line Interface (CLI) polling.
+//  // If a reasonable chunk of the minor cycle remains after all other work is done
+//  // AND the CLI is / should be active OR a status line has just been output
+//  // then poll/prompt the user for input
+//  // using a timeout which should safely avoid overrun, ie missing the next basic tick,
+//  // and which should also allow some energy-saving sleep.
+//#if 1 // && defined(SUPPORT_CLI)
+//  if(true)
+//    {
+//    const uint8_t sct = getSubCycleTime();
+//    const uint8_t listenTime = max(GSCT_MAX/16, CLI_POLL_MIN_SCT);
+//    if(sct < (GSCT_MAX - 2*listenTime))
+//      // Don't listen beyond the last 16th of the cycle,
+//      // or a minimal time if only prodding for interaction with automated front-end,
+//      // as listening for UART RX uses lots of power.
+//      { pollCLI(OTV0P2BASE::randRNG8NextBoolean() ? (GSCT_MAX-listenTime) : (sct+CLI_POLL_MIN_SCT), 0 == TIME_LSD); }
+//    }
+//#endif
 
 
 
