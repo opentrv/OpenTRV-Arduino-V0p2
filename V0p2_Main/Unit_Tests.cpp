@@ -133,10 +133,12 @@ class DummyHardwareDriver : public HardwareMotorDriverInterface
 
 
 // Test calibration calculations in CurrentSenseValveMotorDirect.
+// Also check some of the use of those calculations.
 static void testCSVMDC()
   {
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("CSVMDC");
   CurrentSenseValveMotorDirect::CalibrationParameters cp;
+  uint16_t ticksFromOpen, ticksReverse;
   // Test the calculations with one plausible calibration data set.
   AssertIsTrue(cp.updateAndCompute(1601U, 1105U)); // Must not fail...
   AssertIsEqual(4, cp.getApproxPrecisionPC());
@@ -151,6 +153,9 @@ static void testCSVMDC()
   AssertIsEqual(3, cp.getApproxPrecisionPC());
   AssertIsEqual(28, cp.getTfotcSmall());
   AssertIsEqual(21, cp.getTfctoSmall());
+  // Check that computing position works...
+//  currentPC = computePosition(cp, ticksFromOpen, ticksReverse);
+
 
   // TODO
 

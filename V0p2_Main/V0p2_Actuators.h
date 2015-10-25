@@ -78,14 +78,6 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
 
         };
 
-    // Reconcile/adjust ticks and compute % position [0,100].
-    // Reconcile any reverse ticks (and adjust with forward ticks if needed).
-    // Called after moving the valve in normal mode.
-    // Unit testable.
-    static uint8_t computePosition(const CalibrationParameters &cp,
-                                   volatile uint16_t &ticksFromOpen,
-                                   volatile uint16_t &ticksReverse);
-
   private:
     // Hardware interface instance, passed by reference.
     // Must have a lifetime exceeding that of this enclosing object.
@@ -184,6 +176,17 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
     // Does the right thing with dead-reckoning and/or position detection.
     // Returns true if end-stop has apparently been hit.
     bool runTowardsEndStop(bool toOpen);
+
+    // Reconcile/adjust ticks and compute % position [0,100].
+    // Reconcile any reverse ticks (and adjust with forward ticks if needed).
+    // Call after moving the valve in normal mode.
+    // Unit testable.
+    static uint8_t computePosition(const CalibrationParameters &cp,
+                                   volatile uint16_t &ticksFromOpen,
+                                   volatile uint16_t &ticksReverse);
+    // Use computePosition() to adjust internal state.
+    // Call after moving the valve in normal mode.    
+    void recomputePosition() { currentPC = computePosition(cp, ticksFromOpen, ticksReverse); }
 
   public:
     // Create an instance, passing in a reference to the non-NULL hardware driver.
