@@ -617,10 +617,8 @@ DEBUG_SERIAL_PRINTLN();
 
       // Special case where target is an end-point (or very close to).
       // Run fast to the end-stop and partly recalibrate.
-      // Be eager and do this if within epsilon/precision of end-points.
-      const uint8_t eps = cp.getApproxPrecisionPC();
-      const bool toOpenFast = (targetPC >= 100 - eps);
-      if(toOpenFast || (targetPC <= eps))
+      const bool toOpenFast = (100 == targetPC);
+      if(toOpenFast || (0 == targetPC))
         {
         if(runFastTowardsEndStop(toOpenFast))
             {
@@ -643,9 +641,10 @@ if(toOpenFast) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("-->"); } else { DEBUG_SERIAL_
       // Else move incrementally to reduce the error.
       // (Incremental small moves may also help when absolute accuracy not that good,
       // allowing closed-loop feedback time to work.)
+      const uint8_t eps = cp.getApproxPrecisionPC();
 
       // Not open enough.
-      else if(targetPC > currentPC + eps) // Overflow not possible with eps addition.
+      if(targetPC > currentPC + eps) // Overflow not possible with eps addition.
         {
         // TODO: use shaft encoder positioning by preference, ie when available.
         const bool hitEndStop = runTowardsEndStop(true);
