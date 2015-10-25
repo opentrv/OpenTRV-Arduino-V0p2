@@ -644,7 +644,7 @@ if(toOpenFast) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("-->"); } else { DEBUG_SERIAL_
       const uint8_t eps = cp.getApproxPrecisionPC();
 
       // Not open enough.
-      if(targetPC > currentPC + eps) // Overflow not possible with eps addition.
+      if((targetPC > currentPC) && (targetPC >= currentPC + eps)) // Overflow not possible with eps addition.
         {
         // TODO: use shaft encoder positioning by preference, ie when available.
         const bool hitEndStop = runTowardsEndStop(true);
@@ -653,7 +653,7 @@ if(toOpenFast) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("-->"); } else { DEBUG_SERIAL_
         if(hitEndStop)
           {
           // Report serious tracking error.
-          if(currentPC < min(75, 100 - 4*eps)) { trackingError(); }
+          if(currentPC < min(DEFAULT_VALVE_PC_MODERATELY_OPEN, 100 - 4*eps)) { trackingError(); }
           // Silently auto-adjust when end-stop hit close to expected position.
           else
             {
@@ -668,7 +668,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("->");
         break;
         }
       // Not closed enough.
-      else if(targetPC + eps < currentPC) // Overflow not possible with eps addition.
+      else if((targetPC < currentPC) && (targetPC + eps <= currentPC)) // Overflow not possible with eps addition.
         {
         // TODO: use shaft encoder positioning by preference, ie when available.
         const bool hitEndStop = runTowardsEndStop(false);
