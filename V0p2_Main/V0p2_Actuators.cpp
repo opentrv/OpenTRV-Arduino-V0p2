@@ -503,7 +503,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("+calibrating");
           }
         case 1:
           {
-          // Once end-stop has been hit, move to state to wait for user signal and then start calibration. 
+          // Run fast to fully open. 
           if(runFastTowardsEndStop(true))
             {
             // Reset tick count.
@@ -653,8 +653,8 @@ if(toOpenFast) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("-->"); } else { DEBUG_SERIAL_
         // Hit the end-stop, possibly prematurely.
         if(hitEndStop)
           {
-          // Note serious tracking error.
-          if(currentPC < min(75, 100 - 2*eps)) { trackingError(); }
+          // Report serious tracking error.
+          if(currentPC < min(75, 100 - 4*eps)) { trackingError(); }
           // Silently auto-adjust when end-stop hit close to expected position.
           else
             {
@@ -677,8 +677,8 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("->");
         // Hit the end-stop, possibly prematurely.
         if(hitEndStop)
           {
-          // Note serious tracking error.
-          if(currentPC > max(DEFAULT_MIN_VALVE_PC_REALLY_OPEN, 2*eps)) { trackingError(); }
+          // Report serious tracking error.
+          if(currentPC > max(DEFAULT_MIN_VALVE_PC_REALLY_OPEN, 4*eps)) { trackingError(); }
           // Silently auto-adjust when end-stop hit close to expected position.
           else
             {
