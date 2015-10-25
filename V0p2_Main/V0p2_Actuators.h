@@ -211,7 +211,7 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
     // Coerced into range.
     void setTargetPC(uint8_t newPC) { targetPC = min(newPC, 100); }
 
-    // Minimally wiggles the motor to give tactile feedback and/or show to be working.
+    // Minimally wiggle the motor to give tactile feedback and/or show to be working.
     // May take a significant fraction of a second.
     // Finishes with the motor turned off.
     virtual void wiggle();

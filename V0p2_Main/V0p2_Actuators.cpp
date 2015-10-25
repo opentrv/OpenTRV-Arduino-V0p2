@@ -430,13 +430,13 @@ uint8_t CurrentSenseValveMotorDirect::CalibrationParameters::computePosition(
   // Do simple % open calcs for range extremes, based on dead-reckoning.
   if(0 == ticksFromOpen) { return(100); }
   if(ticksFromOpen >= ticksFromOpenToClosed) { return(0); }
-  // Compute percentage to closed for intermediate position, based on dead-reckoning.
+  // Compute percentage open for intermediate position, based on dead-reckoning.
   // TODO: optimise!
   return((uint8_t) (((ticksFromOpenToClosed - ticksFromOpen) * 100UL) / ticksFromOpenToClosed));
   }
 
 
-// Minimally wiggles the motor to give tactile feedback and/or show to be working.
+// Minimally wiggle the motor to give tactile feedback and/or show to be working.
 // May take a significant fraction of a second.
 // Finishes with the motor turned off.
 void CurrentSenseValveMotorDirect::wiggle()
