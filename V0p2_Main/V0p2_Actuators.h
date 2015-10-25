@@ -69,12 +69,16 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
           // May return false and force error state if inputs unusable.
           bool updateAndCompute(uint16_t ticksFromOpenToClosed, uint16_t ticksFromClosedToOpen);
 
+          // Get a ticks either way.
+          inline uint16_t getTicksFromOpenToClosed() { return(ticksFromOpenToClosed); }
+          inline uint16_t getTicksFromClosedToOpen() { return(ticksFromClosedToOpen); }
+
           // Approx precision in % as min ticks / DR size in range [1,100].
-          uint8_t getApproxPrecisionPC() { return(approxPrecisionPC); }
+          inline uint8_t getApproxPrecisionPC() { return(approxPrecisionPC); }
 
           // Get a reduced ticks open/closed in ratio to allow small conversions; at least a few bits.
-          uint8_t getTfotcSmall() { return(tfotcSmall); }
-          uint8_t getTfctoSmall() { return(tfctoSmall); }
+          inline uint8_t getTfotcSmall() { return(tfotcSmall); }
+          inline uint8_t getTfctoSmall() { return(tfctoSmall); }
 
           // Compute reconciliation/adjustment of ticks, and compute % position [0,100].
           // Reconcile any reverse ticks (and adjust with forward ticks if needed).
