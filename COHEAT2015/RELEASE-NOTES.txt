@@ -19,6 +19,6 @@ Adjust config flags in V0p2_Generic_Config.h to switch between hub (CONFIG_Trial
 Date: 2015/09/16:
 JIRA/ID for patch issue: COH-69
 Reason for patch: window sensor in one state was causing POST to panic(); for REV9 input is NOT momentary.
-Code pathL COHEAT2015/20150805-JV2-patch-20150916-window-switch
+Code path: COHEAT2015/20150805-JV2-patch-20150916-window-switch
 Should be built against 20150805-JV2 of OTRadioLink and and OTProtocolCC on Arduino IDE 1.0.5 or 1.6.5.
 Adjust config flags in V0p2_Generic_Config.h to switch between hub (CONFIG_Trial2013Winter_Round2_CC1HUB) and relay (CONFIG_REV9) boards.
