@@ -984,6 +984,7 @@ static void testJSONForTX()
 // Test of FHT8V bitstream encoding and decoding.
 static void testFHTEncoding()
   {
+#ifdef USE_MODULE_FHT8VSIMPLE_RX
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("FHTEncoding");
   
   uint8_t buf[FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE];
@@ -1056,11 +1057,13 @@ static void testFHTEncoding()
 #endif
   AssertIsTrueWithErr(0xff == commandDecoded.command, commandDecoded.command);
   AssertIsTrueWithErr(0xff == commandDecoded.extension, commandDecoded.extension);
+#endif
   }
 
 // Test of heat and tail of FHT8V bitstream encoding and decoding.
 static void testFHTEncodingHeadAndTail()
   {
+#ifdef USE_MODULE_FHT8VSIMPLE_RX
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("FHTEncodingHeadAndTail");
 
 //// Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) at bptr with optional headers and trailers.
@@ -1238,8 +1241,8 @@ static void testFHTEncodingHeadAndTail()
   AssertIsEqual(powerLow, statsDecoded.tempAndPower.powerLow);
   AssertIsEqual(tempC16, statsDecoded.tempAndPower.tempC16);
 #endif
+#endif
   }
-
 
 // Test elements of encoding and decoding FullStatsMessageCore_t.
 // These are the routines primarily under test:

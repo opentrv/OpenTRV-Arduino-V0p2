@@ -46,7 +46,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
 //#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
 //#define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
-#define CONFIG_DORM1 // REV7 / DORM1 Winter 2014/2015 all-in-one valve unit.
+//#define CONFIG_DORM1 // REV7 / DORM1 Winter 2014/2015 all-in-one valve unit.
 //#define CONFIG_DORM1_BOILER // REV8 / DORM1 Winter 2014/2015 boiler-control unit.
 //#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
 
@@ -60,6 +60,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_BH_DHW // Bo's hot water.
 //#define CONFIG_BH_TESTLAB // Bo's test environment.
 //#define CONFIG_DORM1_SANS32K // REV7 / DORM1 without working 32768Hz clock.
+#define CONFIG_DORM1_MUT // REV7 / DORM1 Winter 2014/2015 minimal for unit testing.
 //#define CONFIG_REV7N // REV7 with external "Model N" valve.
 //#define CONFIG_REV7_STATSLH // REV7 as stats leaf and/or hub.
 //#define CONFIG_REV9_STATS // REV9 as stats node, cut 2 of the board.
@@ -104,10 +105,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #undef ENABLE_DEFAULT_ALWAYS_RX
 // IF DEFINED: use active-low LEARN button(s).  Needs SUPPORT_SINGLETON_SCHEDULE.
 #define LEARN_BUTTON_AVAILABLE // OPTIONAL ON V0.09 PCB1
-// IF DEFINED: this unit supports CLI over the USB/serial connection, eg for run-time reconfig.
-#define SUPPORT_CLI
 // IF DEFINED: support for general timed and multi-input occupancy detection / use.
 #define OCCUPANCY_SUPPORT
+// IF DEFINED: this unit supports CLI over the USB/serial connection, eg for run-time reconfig.
+#define SUPPORT_CLI
 // IF DEFINED: enable a full OpenTRV CLI.
 #define ENABLE_FULL_OT_CLI
 // IF DEFINED: enable a full OpenTRV UI with normal LEDs etc.
@@ -120,7 +121,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #undef SENSOR_SHT21_ENABLE
 // IF DEFINED: enable use AVR's 'idle' mode to stop the CPU but leave I/O (eg Serial) running to save power.
 // DHD20150920: CURRENTLY NOT RECOMMENDED AS STILL SEEMS TO CAUSE SOME BOARDS TO CRASH.
-#define ENABLE_USE_OF_AVR_IDLE_MODE
+#if 1 || defined(OTV0P2BASE_IDLE_NOT_RECOMMENDED)
+#undef ENABLE_USE_OF_AVR_IDLE_MODE
+#endif
 
 
 
@@ -417,6 +420,40 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define ALLOW_STATS_TX
 // IF DEFINED: allow JSON stats frames.
 #define ALLOW_JSON_OUTPUT
+// Use common settings.
+#define COMMON_SETTINGS
+#endif
+
+
+
+#ifdef CONFIG_DORM1_MUT // REV7 / DORM1 Winter 2014/2015 minimal for unit testing.
+// Revision REV7 of V0.2 board, all-in-one valve unit with local motor drive.
+// Does not ever need to act as a boiler hub nor to receive stats.
+#define V0p2_REV 7
+// IF DEFINED: initial direct motor drive design.
+#undef DIRECT_MOTOR_DRIVE_V1
+// IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
+#define SENSOR_SHT21_ENABLE
+// Using RoHS-compliant phototransistor in place of LDR.
+#define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
+// IF UNDEFINED: this unit cannot act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
+#undef ENABLE_BOILER_HUB
+// IF UNDEFINED: do not allow TX of stats frames.
+#undef ALLOW_STATS_TX
+// IF UNDEFINED: do not allow RX of stats frames.
+#undef ALLOW_STATS_RX
+// IF DEFINED: allow JSON stats frames.
+#undef ALLOW_JSON_OUTPUT
+// IF DEFINED: this unit supports CLI over the USB/serial connection, eg for run-time reconfig.
+#undef SUPPORT_CLI
+// IF DEFINED: enable a full OpenTRV CLI.
+#undef ENABLE_FULL_OT_CLI
+// IF DEFINED: enable a full OpenTRV UI with normal LEDs etc.
+#undef ENABLE_FULL_OT_UI
+// IF DEFINED: enable and extended CLI with a longer input buffer for example.
+#undef ENABLE_EXTENDED_CLI
+// IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
+#define LOCAL_TRV
 // Use common settings.
 #define COMMON_SETTINGS
 #endif
