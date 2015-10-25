@@ -138,7 +138,7 @@ static void testCSVMDC()
   {
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("CSVMDC");
   CurrentSenseValveMotorDirect::CalibrationParameters cp;
-  uint16_t ticksFromOpen, ticksReverse;
+  volatile uint16_t ticksFromOpen, ticksReverse;
   // Test the calculations with one plausible calibration data set.
   AssertIsTrue(cp.updateAndCompute(1601U, 1105U)); // Must not fail...
   AssertIsEqual(4, cp.getApproxPrecisionPC());
@@ -149,12 +149,19 @@ static void testCSVMDC()
 
 
   // Check that calibration instance can be reused correctly.
-  AssertIsTrue(cp.updateAndCompute(1803U, 1373U)); // Must not fail...
+  const uint16_t tfo2 = 1803U;
+  const uint16_t tfc2 = 1373U;
+  AssertIsTrue(cp.updateAndCompute(tfo2, tfc2)); // Must not fail...
   AssertIsEqual(3, cp.getApproxPrecisionPC());
   AssertIsEqual(28, cp.getTfotcSmall());
   AssertIsEqual(21, cp.getTfctoSmall());
   // Check that computing position works...
-//  currentPC = computePosition(cp, ticksFromOpen, ticksReverse);
+  // Simple case: fully closed, no accumulated reverse ticks.
+  ticksFromOpen = tfo2;
+  ticksReverse = 0;
+  AssertIsEqual(0, cp.computePosition(ticksFromOpen, ticksReverse));
+  AssertIsEqual(tfo2, ticksFromOpen);
+  AssertIsEqual(0, ticksReverse);
 
 
   // TODO
