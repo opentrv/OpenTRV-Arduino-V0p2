@@ -182,6 +182,9 @@ static void testCSVMDC()
   AssertIsEqual(51, cp.computePosition(ticksFromOpen, ticksReverse));
   AssertIsEqual(tfo2/2 - cp.getTfotcSmall(), ticksFromOpen);
   AssertIsEqual(0, ticksReverse);
+// DHD20151025: one set of actual measurements during calibration.
+//    ticksFromOpenToClosed: 1529
+//    ticksFromClosedToOpen: 1295
   }
 
 // Test that direct abstract motor drive logic is sane.

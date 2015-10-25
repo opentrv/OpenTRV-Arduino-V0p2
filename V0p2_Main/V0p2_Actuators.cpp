@@ -72,8 +72,14 @@ static const uint8_t minMotorDRMS = 250;
 // Min sub-cycle ticks for dead reckoning.
 static const uint8_t minMotorDRTicks = max(1, (uint8_t)(minMotorDRMS / SUBCYCLE_TICK_MS_RD));
 
+// Absolute limit in sub-cycle beyond which motor should not be started.
+// This should allow meaningful movement and stop and settle and no sub-cycle overrun.
+// Allows for up to 120ms enforced sleep after motor off for example.
+static const uint8_t sctAbsLimit = GSCT_MAX - max(1, ((GSCT_MAX+1)/10)) - minMotorRunupTicks - (uint8_t)(120 / SUBCYCLE_TICK_MS_RD);
 
-
+// Absolute limit in sub-cycle beyond which motor should not be started for dead-reckoning pulse.
+// This should allow meaningful movement and no sub-cycle overrun.
+static const uint8_t sctAbsLimitDR = sctAbsLimit - minMotorDRTicks;
 
 
 #ifdef HAS_DORM1_VALVE_DRIVE
@@ -98,8 +104,6 @@ bool ValveMotorDirectV1HardwareDriver::spinSCTTicks(const uint8_t maxRunTicks, c
   // Sub-cycle time now.
   const uint8_t sctStart = getSubCycleTime();
   // Only run up to ~90% point of the minor cycle to leave time for other processing.
-  // Always leave at least one tick clear below maximum.
-  const uint8_t sctAbsLimit = GSCT_MAX - max(1, ((GSCT_MAX+1)/10));
   uint8_t sct = getSubCycleTime();
   const uint8_t maxTicksBeforeAbsLimit = (sctAbsLimit - sct);
   // Abort immediately if not enough time to do minimum run.
@@ -255,59 +259,6 @@ LED_UI2_OFF();
   }
 
 
-// DHD20151015: possible basis of calibration code
-// Run motor ~1s in the current direction; reverse at end of travel.
-//  DEBUG_SERIAL_PRINT_FLASHSTRING("Dir: ");
-//  DEBUG_SERIAL_PRINT(HardwareMotorDriverInterface::motorDriveClosing == mdir ? "closing" : "opening");
-//  DEBUG_SERIAL_PRINTLN();
-//  bool currentHigh = false;
-//  V1D.motorRun(mdir);
-//  static uint16_t count;
-//  uint8_t sctStart = getSubCycleTime();
-//  uint8_t sctMinRunTime = sctStart + 4; // Min run time 32ms to avoid false readings.
-//  uint8_t sct;
-//  while(((sct = getSubCycleTime()) <= ((3*GSCT_MAX)/4)) && !(currentHigh = V1D.isCurrentHigh(mdir)))
-//      { 
-////      if(HardwareMotorDriverInterface::motorDriveClosing == mdir)
-////        {
-////        // BE VERY CAREFUL HERE: a wrong move could destroy the H-bridge.
-////        fastDigitalWrite(MOTOR_DRIVE_MR, HIGH); // Blip high to remove power.
-////        while(getSubCycleTime() == sct) { } // Off for ~8ms.
-////        fastDigitalWrite(MOTOR_DRIVE_MR, LOW); // Pull LOW to re-enable power.
-////        }
-//      // Wait until end of tick or minimum period.
-//      if(sct < sctMinRunTime) { while(getSubCycleTime() <= sctMinRunTime) { } }
-//      else { while(getSubCycleTime() == sct) { } }
-//      }
-//  uint8_t sctEnd = getSubCycleTime();
-//  // Stop motor until next loop (also ensures power off).
-//  V1D.motorRun(HardwareMotorDriverInterface::motorOff);
-//  // Detect if end-stop is reached or motor current otherwise very high and reverse.
-//  count += (sctEnd - sctStart);
-//  if(currentHigh)
-//    {
-//    DEBUG_SERIAL_PRINT_FLASHSTRING("Current high (reversing) at tick count ");
-//    DEBUG_SERIAL_PRINT(count);
-//    DEBUG_SERIAL_PRINTLN();
-//    // DHD20151013:
-//    //Typical run is 1400 to 1500 ticks
-//    //(128 ticks = 1s, so 1 tick ~7.8ms)
-//    //with closing taking longer
-//    //(against the valve spring)
-//    //than opening.
-//    //
-//    //Min run period to avoid false end-stop reports
-//    //is ~30ms or ~4 ticks.
-//    //
-//    //Implies a nominal precision of ~4/1400 or << 1%,
-//    //but an accuracy of ~1500/1400 as poor as ~10%.
-//    count = 0;
-//    // Reverse.
-//    mdir = (HardwareMotorDriverInterface::motorDriveClosing == mdir) ?
-//      HardwareMotorDriverInterface::motorDriveOpening : HardwareMotorDriverInterface::motorDriveClosing;
-//    }
-
-
 // IF DEFINED: MI output swing asymmetric or is not enough to use fast comparator.
 #define MI_NEEDS_ADC
 
@@ -399,8 +350,6 @@ bool CurrentSenseValveMotorDirect::CalibrationParameters::updateAndCompute(const
   if(min(tfotc, tfcto) < 8) { return(false); }
   tfotcSmall = tfotc;
   tfctoSmall = tfcto;
-
-// TODO
 
   return(true); // All done.
   }
@@ -531,9 +480,9 @@ void CurrentSenseValveMotorDirect::poll()
     case valveCalibrating:
       {
 //DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valveCalibrating");
-      DEBUG_SERIAL_PRINT_FLASHSTRING("    calibState: ");
-      DEBUG_SERIAL_PRINT(perState.calibrating.calibState);
-      DEBUG_SERIAL_PRINTLN();
+//      DEBUG_SERIAL_PRINT_FLASHSTRING("    calibState: ");
+//      DEBUG_SERIAL_PRINT(perState.calibrating.calibState);
+//      DEBUG_SERIAL_PRINTLN();
       // Select activity based on micro-state.
       switch(perState.calibrating.calibState)
         {
@@ -563,7 +512,7 @@ void CurrentSenseValveMotorDirect::poll()
               ++perState.calibrating.calibState; // Move to next micro state.
               break;
               }
-            } while(getSubCycleTime() <= GSCT_MAX/2);
+            } while(getSubCycleTime() <= sctAbsLimitDR);
           break;
           }
         case 2:
@@ -588,7 +537,7 @@ void CurrentSenseValveMotorDirect::poll()
                 }
               break; // In all cases when end-stop hit don't try to run further in this sub-cycle.
               }
-            } while(getSubCycleTime() <= GSCT_MAX/2);
+            } while(getSubCycleTime() <= sctAbsLimitDR);
           break;
           }
         case 3:
@@ -599,7 +548,6 @@ void CurrentSenseValveMotorDirect::poll()
 DEBUG_SERIAL_PRINT_FLASHSTRING("    ticksFromOpenToClosed: ");
 DEBUG_SERIAL_PRINT(perState.calibrating.ticksFromOpenToClosed);
 DEBUG_SERIAL_PRINTLN();
-
 DEBUG_SERIAL_PRINT_FLASHSTRING("    ticksFromClosedToOpen: ");
 DEBUG_SERIAL_PRINT(perState.calibrating.ticksFromClosedToOpen);
 DEBUG_SERIAL_PRINTLN();
