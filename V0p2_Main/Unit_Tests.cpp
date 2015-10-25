@@ -145,9 +145,6 @@ static void testCSVMDC()
   AssertIsEqual(25, cp.getTfotcSmall());
   AssertIsEqual(17, cp.getTfctoSmall());
 
-  // TODO
-
-
   // Check that calibration instance can be reused correctly.
   const uint16_t tfo2 = 1803U;
   const uint16_t tfc2 = 1373U;
@@ -162,10 +159,30 @@ static void testCSVMDC()
   AssertIsEqual(0, cp.computePosition(ticksFromOpen, ticksReverse));
   AssertIsEqual(tfo2, ticksFromOpen);
   AssertIsEqual(0, ticksReverse);
-
-
-  // TODO
-
+  // Simple case: fully open, no accumulated reverse ticks.
+  ticksFromOpen = 0;
+  ticksReverse = 0;
+  AssertIsEqual(100, cp.computePosition(ticksFromOpen, ticksReverse));
+  AssertIsEqual(0, ticksFromOpen);
+  AssertIsEqual(0, ticksReverse);
+  // Try at half-way mark, no reverse ticks.
+  ticksFromOpen = tfo2 / 2;
+  ticksReverse = 0;
+  AssertIsEqual(50, cp.computePosition(ticksFromOpen, ticksReverse));
+  AssertIsEqual(tfo2/2, ticksFromOpen);
+  AssertIsEqual(0, ticksReverse);
+  // Try at half-way mark with just one reverse tick (nothing should change).
+  ticksFromOpen = tfo2 / 2;
+  ticksReverse = 1;
+  AssertIsEqual(50, cp.computePosition(ticksFromOpen, ticksReverse));
+  AssertIsEqual(tfo2/2, ticksFromOpen);
+  AssertIsEqual(1, ticksReverse);
+  // Try at half-way mark with a big-enough block of reverse ticks to be significant.
+  ticksFromOpen = tfo2 / 2;
+  ticksReverse = cp.getTfctoSmall();
+  AssertIsEqual(51, cp.computePosition(ticksFromOpen, ticksReverse));
+  AssertIsEqual(tfo2/2 - cp.getTfotcSmall(), ticksFromOpen);
+  AssertIsEqual(0, ticksReverse);
   }
 
 // Test that direct abstract motor drive logic is sane.

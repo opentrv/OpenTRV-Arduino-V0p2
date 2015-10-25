@@ -239,38 +239,10 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
     virtual bool isInErrorState() const { return(state >= (uint8_t)valveError); }
 
 
-
-
-
-
 //    // Call when given user signal that valve has been fitted (ie is fully on).
 //    // Can be called while run() is in progress.
 //    // Is ISR-/thread- safe.
 //    void signalValveFitted();
-//
-//    // Set target % open.
-//    // Can optionally be 'lazy' eg move more slowly or avoid tiny movements entirely.
-//    void setTargetPercentOpen(uint8_t newTargetPC, bool beLazy = false) { targetPC = min(newTargetPC, 100); lazy = beLazy; }
-//
-//    // Used to run motor, adjust state, etc for up to specified maximum number of milliseconds.
-//    // Returns true if more work remaining to get into target state.
-//    bool run(uint16_t maxms, HardwareMotorDriverInterface &driver);
-//
-//    // Returns true iff not (re)calibrating/(re)initialising/(re)syncing.
-//    // Initially false until power-up and at least initial calibration are complete.
-//    bool isCalibrated() const { return((state > (uint8_t)valveCalibrating) && (0 != clicksFullTravel)); }
-//
-//    // Returns true if device can track movement between end stops.
-//    // Without this at best the logic has to guess and the valve control logic
-//    // should possibly be more concerned with nudging open/closed
-//    // than trying to hit some arbitrary percentage open.
-//    bool hasMovementTracker() const { return(0 != clicksFullTravel); }
-//
-//    // True iff power-up initialisation (eg including allowing user to fit to valve base) is done.
-//    bool isPowerUpDone() const { return(state >= (uint8_t)valveNormal); }
-//
-//    // Get current motor drive status (off else direction of running).
-//    HardwareMotorDriverInterface::motor_drive getMotorDriveStatus() const { return((HardwareMotorDriverInterface::motor_drive) motorDriveStatus); }
   };
 
 
