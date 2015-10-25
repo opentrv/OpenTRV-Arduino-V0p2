@@ -74,8 +74,8 @@ static const uint8_t minMotorDRTicks = max(1, (uint8_t)(minMotorDRMS / SUBCYCLE_
 
 // Absolute limit in sub-cycle beyond which motor should not be started.
 // This should allow meaningful movement and stop and settle and no sub-cycle overrun.
-// Allows for up to 120ms enforced sleep after motor off for example.
-static const uint8_t sctAbsLimit = GSCT_MAX - max(1, ((GSCT_MAX+1)/10)) - minMotorRunupTicks - (uint8_t)(120 / SUBCYCLE_TICK_MS_RD);
+// Allows for up to 120ms enforced sleep either side of motor run for example.
+static const uint8_t sctAbsLimit = GSCT_MAX - max(1, ((GSCT_MAX+1)/10)) - minMotorRunupTicks - (uint8_t)(240 / SUBCYCLE_TICK_MS_RD);
 
 // Absolute limit in sub-cycle beyond which motor should not be started for dead-reckoning pulse.
 // This should allow meaningful movement and no sub-cycle overrun.
@@ -333,8 +333,8 @@ bool CurrentSenseValveMotorDirect::CalibrationParameters::updateAndCompute(const
   ticksFromClosedToOpen = _ticksFromClosedToOpen;
 
   // Compute approx precision in % as min ticks / DR size, [1,100].
-  // Round up slightly to allow for inertia, etc.
-  approxPrecisionPC = max(1, min(100, (130 * minMotorDRTicks) / min(_ticksFromOpenToClosed, _ticksFromClosedToOpen)));
+  // Push up slightly to allow for inertia, etc.
+  approxPrecisionPC = max(1, min(100, (110 * minMotorDRTicks) / min(_ticksFromOpenToClosed, _ticksFromClosedToOpen)));
 
   // Compute a small conversion ratio back and forth
   // which does not add too much error but allows single dead-reckoning steps
@@ -421,7 +421,7 @@ bool CurrentSenseValveMotorDirect::runFastTowardsEndStop(const bool toOpen)
 // Runs at same speed as during calibration.
 // Does the right thing with dead-reckoning and/or position detection.
 // Returns true if end-stop has apparently been hit.
-bool CurrentSenseValveMotorDirect::runTowardsEndStop(bool toOpen)
+bool CurrentSenseValveMotorDirect::runTowardsEndStop(const bool toOpen)
   {
   // Clear the end-stop detection flag ready.
   endStopDetected = false;
@@ -545,12 +545,17 @@ void CurrentSenseValveMotorDirect::poll()
           // Set all measured calibration input parameters and current position.
           cp.updateAndCompute(perState.calibrating.ticksFromOpenToClosed, perState.calibrating.ticksFromClosedToOpen);
 
+#if 1 && defined(DEBUG)
 DEBUG_SERIAL_PRINT_FLASHSTRING("    ticksFromOpenToClosed: ");
-DEBUG_SERIAL_PRINT(perState.calibrating.ticksFromOpenToClosed);
+DEBUG_SERIAL_PRINT(cp.getTicksFromOpenToClosed());
 DEBUG_SERIAL_PRINTLN();
 DEBUG_SERIAL_PRINT_FLASHSTRING("    ticksFromClosedToOpen: ");
-DEBUG_SERIAL_PRINT(perState.calibrating.ticksFromClosedToOpen);
+DEBUG_SERIAL_PRINT(cp.getTicksFromClosedToOpen());
 DEBUG_SERIAL_PRINTLN();
+DEBUG_SERIAL_PRINT_FLASHSTRING("    precision %: ");
+DEBUG_SERIAL_PRINT(cp.getApproxPrecisionPC());
+DEBUG_SERIAL_PRINTLN();
+#endif
 
           // Move to normal valve running state...
           currentPC = 100; // Valve is currently fully open.
@@ -571,45 +576,73 @@ DEBUG_SERIAL_PRINTLN();
       {
 //DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valveNormal");
 
-      // If the current estimated position matched the target
+      // If the current estimated position matches the target
       // then there is usually nothing to do.
       if(currentPC == targetPC) { break; }
 
       // If the current estimated position does NOT match the target
       // then (incrementally) try to adjust to match.
 #if 1 && defined(DEBUG)
-DEBUG_SERIAL_PRINT_FLASHSTRING("  valve needs adj: ");
+DEBUG_SERIAL_PRINT_FLASHSTRING("  valve err, @");
 DEBUG_SERIAL_PRINT(currentPC);
 DEBUG_SERIAL_PRINT_FLASHSTRING(" vs target ");
 DEBUG_SERIAL_PRINT(targetPC);
 DEBUG_SERIAL_PRINTLN();
 #endif
 
-      // Special case where target is an end-point.
+      // Special case where target is an end-point (or very close to).
       // Run fast to the end-stop and partly recalibrate.
-      // TODO: consider being more eager and doing this if within eps of end-points.
-      if((0 == targetPC) || (100 == targetPC))
+      // Be eager and do this if within epsilon/precision of end-points.
+      const uint8_t eps = cp.getApproxPrecisionPC();
+      const bool toOpenFast = (targetPC >= 100 - eps);
+      if(toOpenFast || (targetPC <= eps))
         {
-        const bool toOpen = (0 != targetPC);
-        if(runFastTowardsEndStop(toOpen))
+        if(runFastTowardsEndStop(toOpenFast))
             {
-            // TODO: may need to protect against suprious stickiness before end...
+            // TODO: may need to protect against spurious stickiness before end...
             // Reset positional values.
-            currentPC = targetPC;
+            currentPC = toOpenFast ? 100 : 0;
             ticksReverse = 0;
-            ticksFromOpen = toOpen ? 0 : cp.getTfotcSmall();
+            ticksFromOpen = toOpenFast ? 0 : cp.getTicksFromOpenToClosed();
             }
+        // Estimate intermediate position
+        else { recomputePosition(); }
+#if 1 && defined(DEBUG)
+if(toOpenFast) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("-->"); } else { DEBUG_SERIAL_PRINTLN_FLASHSTRING("--<"); }
+#endif
         break;
         }
 
       // More general case were target position is somewhere between end-stops.
+      // Don't do anything if close enough, ie within computed precision (eps).
+      // Else move incrementally to reduce the error.
+      // (Incremental small move may also help when absolute accuracy not that good,
+      // allowing closed-loop feedback time to work.)
 
-      // TODO: don't do anything if close enough, ie within computed precision (eps).
+      // Not open enough.
+      else if(targetPC > currentPC + eps) // Overflow not possible with eps addition.
+        {
+        // TODO: use shaft encoder positioning by preference, ie when available.
+        const bool hitEndStop = runTowardsEndStop(true);
+        recomputePosition();
+#if 1 && defined(DEBUG)
+DEBUG_SERIAL_PRINTLN_FLASHSTRING("->");
+#endif
+        break;
+        }
+      // Not closed enough.
+      else if(targetPC + eps < currentPC) // Overflow not possible with eps addition.
+        {
+        // TODO: use shaft encoder positioning by preference, ie when available.
+        const bool hitEndStop = runTowardsEndStop(false);
+        recomputePosition();
+#if 1 && defined(DEBUG)
+DEBUG_SERIAL_PRINTLN_FLASHSTRING("-<");
+#endif
+        break;
+        }
 
-      // TODO
-
-      // If valve position moved, recompute estimate of actual position.
-      recomputePosition();
+      // Within eps; do nothing.
 
       break;
       }
