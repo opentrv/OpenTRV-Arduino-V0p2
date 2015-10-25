@@ -1466,9 +1466,10 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
     // Show boiler state for boiler hubs.
     ss1.put("b", (int) isBoilerOn());
 #endif
+    ss1.put(AmbLight); // Always send ambient light level (assuming sensor is present).
 #if !defined(LOCAL_TRV) // Deploying as sensor unit, not TRV controller, so show all sensors and no TRV stuff.
-    // Only show raw ambient light levels for non-TRV pure-sensor units.
-    ss1.put(AmbLight);
+//    // Only show raw ambient light levels for non-TRV pure-sensor units.
+//    ss1.put(AmbLight);
 #else
     ss1.put(NominalRadValve);
     ss1.put(NominalRadValve.tagTTC(), NominalRadValve.getTargetTempC());
