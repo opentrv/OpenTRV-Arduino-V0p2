@@ -144,8 +144,7 @@ static void testCSVMDC()
   AssertIsEqual(4, cp.getApproxPrecisionPC());
   AssertIsEqual(25, cp.getTfotcSmall());
   AssertIsEqual(17, cp.getTfctoSmall());
-
-  // Check that calibration instance can be reused correctly.
+  // Check that a calibration instance can be reused correctly.
   const uint16_t tfo2 = 1803U;
   const uint16_t tfc2 = 1373U;
   AssertIsTrue(cp.updateAndCompute(tfo2, tfc2)); // Must not fail...
