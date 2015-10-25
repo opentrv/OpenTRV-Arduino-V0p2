@@ -414,9 +414,25 @@ uint8_t CurrentSenseValveMotorDirect::CalibrationParameters::computePosition(
             volatile uint16_t &ticksFromOpen,
             volatile uint16_t &ticksReverse) const
   {
-  // TODO
+  // Back out the effect of reverse ticks in blocks...
+  // Should only usually be about 1 block at a time,
+  // so don't do anything too clever here.
+  while(ticksReverse >= tfctoSmall)
+    {
+    if(0 == tfctoSmall) { break; } // Prevent hang if not initialised correctly.
+    ticksReverse -= tfctoSmall;
+    if(ticksFromOpen > tfotcSmall) { ticksFromOpen -= tfotcSmall; }
+    else { ticksFromOpen = 0; }
+    }
 
-  return(0);
+  // TODO: use shaft encoder tracking by preference, ie when available.
+
+  // Do simple % open calcs for range extremes, based on dead-reckoning.
+  if(0 == ticksFromOpen) { return(100); }
+  if(ticksFromOpen >= ticksFromOpenToClosed) { return(0); }
+  // Compute percentage to closed for intermediate position, based on dead-reckoning.
+  // TODO: optimise!
+  return((uint8_t) (((ticksFromOpenToClosed - ticksFromOpen) * 100UL) / ticksFromOpenToClosed));
   }
 
 
