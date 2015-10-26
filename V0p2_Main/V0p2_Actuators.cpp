@@ -332,9 +332,9 @@ bool CurrentSenseValveMotorDirect::CalibrationParameters::updateAndCompute(const
   ticksFromOpenToClosed = _ticksFromOpenToClosed;
   ticksFromClosedToOpen = _ticksFromClosedToOpen;
 
-  // Compute approx precision in % as min ticks / DR size, [1,100].
+  // Compute approx precision in % as min ticks / DR size, [0,100].
   // Push up slightly to allow for inertia, etc.
-  approxPrecisionPC = max(1, min(100, (110 * minMotorDRTicks) / min(_ticksFromOpenToClosed, _ticksFromClosedToOpen)));
+  approxPrecisionPC = min(100, (110 * minMotorDRTicks) / min(_ticksFromOpenToClosed, _ticksFromClosedToOpen));
 
   // Compute a small conversion ratio back and forth
   // which does not add too much error but allows single dead-reckoning steps
@@ -608,7 +608,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("!needsRecalibrating");
       // If the current estimated position does NOT match the target
       // then (incrementally) try to adjust to match.
 #if 1 && defined(DEBUG)
-DEBUG_SERIAL_PRINT_FLASHSTRING("  valve err, @");
+DEBUG_SERIAL_PRINT_FLASHSTRING("  valve err: @");
 DEBUG_SERIAL_PRINT(currentPC);
 DEBUG_SERIAL_PRINT_FLASHSTRING(" vs target ");
 DEBUG_SERIAL_PRINT(targetPC);
@@ -617,10 +617,17 @@ DEBUG_SERIAL_PRINTLN();
 
       // Special case where target is an end-point (or very close to).
       // Run fast to the end-stop and partly recalibrate.
-      const bool toOpenFast = (100 == targetPC);
-      if(toOpenFast || (0 == targetPC))
+      // Be eager and pull to end stop if nearby to help auto-recalibration.
+      // Must work when eps is zero (ie with sub-percent precision).
+      const uint8_t eps = cp.getApproxPrecisionPC();
+      const bool toOpenFast = (targetPC >= (100 - 2*eps));
+      if(toOpenFast || (targetPC <= max(2*eps, DEFAULT_MIN_VALVE_PC_REALLY_OPEN/2)))
         {
-        if(runFastTowardsEndStop(toOpenFast))
+        // If not apparently done
+        // (at correct end stop and with no spurious unreconciled ticks)
+        // then try again to run to end-stop.
+        if((0 == ticksReverse) && (currentPC == (toOpenFast ? 100 : 0))) { break; } // Done
+        else if(runFastTowardsEndStop(toOpenFast))
             {
             // TODO: may need to protect against spurious stickiness before end...
             // Reset positional values.
@@ -628,7 +635,7 @@ DEBUG_SERIAL_PRINTLN();
             ticksReverse = 0;
             ticksFromOpen = toOpenFast ? 0 : cp.getTicksFromOpenToClosed();
             }
-        // Estimate intermediate position
+        // Estimate intermediate position.
         else { recomputePosition(); }
 #if 1 && defined(DEBUG)
 if(toOpenFast) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("-->"); } else { DEBUG_SERIAL_PRINTLN_FLASHSTRING("--<"); }
@@ -641,7 +648,6 @@ if(toOpenFast) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("-->"); } else { DEBUG_SERIAL_
       // Else move incrementally to reduce the error.
       // (Incremental small moves may also help when absolute accuracy not that good,
       // allowing closed-loop feedback time to work.)
-      const uint8_t eps = cp.getApproxPrecisionPC();
 
       // Not open enough.
       if((targetPC > currentPC) && (targetPC >= currentPC + eps)) // Overflow not possible with eps addition.
@@ -653,7 +659,7 @@ if(toOpenFast) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("-->"); } else { DEBUG_SERIAL_
         if(hitEndStop)
           {
           // Report serious tracking error.
-          if(currentPC < min(DEFAULT_VALVE_PC_MODERATELY_OPEN, 100 - 4*eps)) { trackingError(); }
+          if(currentPC < min(DEFAULT_VALVE_PC_MODERATELY_OPEN, 100 - 8*eps)) { trackingError(); }
           // Silently auto-adjust when end-stop hit close to expected position.
           else
             {
@@ -677,7 +683,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("->");
         if(hitEndStop)
           {
           // Report serious tracking error.
-          if(currentPC > max(DEFAULT_MIN_VALVE_PC_REALLY_OPEN, 4*eps)) { trackingError(); }
+          if(currentPC > max(DEFAULT_MIN_VALVE_PC_REALLY_OPEN, 8*eps)) { trackingError(); }
           // Silently auto-adjust when end-stop hit close to expected position.
           else
             {

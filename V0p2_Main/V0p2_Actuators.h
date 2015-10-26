@@ -73,7 +73,8 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
           inline uint16_t getTicksFromOpenToClosed() { return(ticksFromOpenToClosed); }
           inline uint16_t getTicksFromClosedToOpen() { return(ticksFromClosedToOpen); }
 
-          // Approx precision in % as min ticks / DR size in range [1,100].
+          // Approx precision in % as min ticks / DR size in range [0,100].
+          // A return value of zero indicates that sub-percent precision is possible.
           inline uint8_t getApproxPrecisionPC() { return(approxPrecisionPC); }
 
           // Get a reduced ticks open/closed in ratio to allow small conversions; at least a few bits.
