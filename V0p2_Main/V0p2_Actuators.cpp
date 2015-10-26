@@ -623,8 +623,8 @@ DEBUG_SERIAL_PRINTLN();
       const bool toOpenFast = (targetPC >= (100 - 2*eps));
       if(toOpenFast || (targetPC <= max(2*eps, DEFAULT_MIN_VALVE_PC_REALLY_OPEN/2)))
         {
-        // If not apparently done
-        // (at correct end stop and with no spurious unreconciled ticks)
+        // If not apparently yet at end-stop
+        // (ie not at correct end stop or with spurious unreconciled ticks)
         // then try again to run to end-stop.
         if((0 == ticksReverse) && (currentPC == (toOpenFast ? 100 : 0))) { break; } // Done
         else if(runFastTowardsEndStop(toOpenFast))
