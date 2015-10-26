@@ -335,15 +335,16 @@ void CurrentSenseValveMotorDirect::signalRunSCTTick(const bool opening)
 // (Re)populate structure and compute derived parameters.
 // Ensures that all necessary items are gathered at once and none forgotten!
 // Returns true in case of success.
-// May return false and force error state if inputs unusable.
+// May return false and force error state if inputs unusable,
+// though will still try to compute all values.
 bool CurrentSenseValveMotorDirect::CalibrationParameters::updateAndCompute(const uint16_t _ticksFromOpenToClosed, const uint16_t _ticksFromClosedToOpen)
   {
   ticksFromOpenToClosed = _ticksFromOpenToClosed;
   ticksFromClosedToOpen = _ticksFromClosedToOpen;
 
-  // Compute approx precision in % as min ticks / DR size, [0,100].
-  // Push up slightly to allow for inertia, etc.
-  approxPrecisionPC = min(100, (110 * minMotorDRTicks) / min(_ticksFromOpenToClosed, _ticksFromClosedToOpen));
+  // Compute approx precision in % as min ticks / DR size in range [0,100].
+  // Inflate estimate slightly to allow for inertia, etc.
+  approxPrecisionPC = (uint8_t) min(100, (128UL*minMotorDRTicks) / min(_ticksFromOpenToClosed, _ticksFromClosedToOpen));
 
   // Compute a small conversion ratio back and forth
   // which does not add too much error but allows single dead-reckoning steps
@@ -355,12 +356,16 @@ bool CurrentSenseValveMotorDirect::CalibrationParameters::updateAndCompute(const
     tfotc >>= 1;
     tfcto >>= 1;
     }
-  // Check smaller value not so low (< 4 bits) as to introduce huge error.
-  if(min(tfotc, tfcto) < 8) { return(false); }
   tfotcSmall = tfotc;
   tfctoSmall = tfcto;
 
-  return(true); // All done.
+  // Fail if precision far too poor to be usable.
+  if(approxPrecisionPC > 25) { return(false); }
+  // Fail if lower ratio value so low (< 4 bits) as to introduce huge error.
+  if(min(tfotc, tfcto) < 8) { return(false); }
+
+  // All OK.
+  return(true);
   }
 
 
