@@ -615,16 +615,16 @@ DEBUG_SERIAL_PRINT(targetPC);
 DEBUG_SERIAL_PRINTLN();
 #endif
 
-      // Special case where target is an end-point (or very close to).
-      // Run fast to the end-stop and partly recalibrate.
-      // Be eager and pull to end stop if nearby to help auto-recalibration.
+      // Special case where target is an end-point (or close to).
+      // Run fast to the end-stop.
+      // Be eager and pull to end stop if near for continuous auto-recalibration.
       // Must work when eps is zero (ie with sub-percent precision).
       const uint8_t eps = cp.getApproxPrecisionPC();
       const bool toOpenFast = (targetPC >= (100 - 2*eps));
       if(toOpenFast || (targetPC <= max(2*eps, DEFAULT_MIN_VALVE_PC_REALLY_OPEN/2)))
         {
-        // If not apparently done
-        // (at correct end stop and with no spurious unreconciled ticks)
+        // If not apparently yet at end-stop
+        // (ie not at correct end stop or with spurious unreconciled ticks)
         // then try again to run to end-stop.
         if((0 == ticksReverse) && (currentPC == (toOpenFast ? 100 : 0))) { break; } // Done
         else if(runFastTowardsEndStop(toOpenFast))
