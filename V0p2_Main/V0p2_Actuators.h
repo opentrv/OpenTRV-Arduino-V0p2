@@ -200,7 +200,7 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
     // Create an instance, passing in a reference to the non-NULL hardware driver.
     // The hardware driver instance lifetime must be longer than this instance.
     CurrentSenseValveMotorDirect(HardwareMotorDriverInterface * const hwDriver) :
-        hw(hwDriver), targetPC(0)
+        hw(hwDriver), currentPC(0), targetPC(0)
         { changeState(init); }
 
     // Poll.
@@ -211,6 +211,9 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
 
     // Get major state, mostly for testing.
     driverState getState() const { return((driverState) state); }
+
+    // Get current estimated actual % open in range [0,100].
+    uint8_t getCurrentPC() { return(currentPC); }
 
     // Get current target % open in range [0,100].
     uint8_t getTargetPC() { return(targetPC); }
@@ -304,7 +307,8 @@ class ValveMotorDirectV1 : public AbstractRadValve
     ValveMotorDirectV1() : logic(&driver) { }
 
     // Regular poll/update.
-    virtual uint8_t read() { logic.poll(); return(value); }
+    // This and get() return the actual estimated valve position.
+    virtual uint8_t read();
 
     // Set new target value (if in range).
     // Returns true if specified value accepted.

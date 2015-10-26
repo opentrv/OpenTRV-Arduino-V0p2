@@ -286,12 +286,21 @@ bool ValveMotorDirectV1HardwareDriver::isCurrentHigh(HardwareMotorDriverInterfac
   return(currentSense);
   }
 
+// Regular poll/update.
+// This and get() return the actual estimated valve position.
+uint8_t ValveMotorDirectV1::read()
+  {
+  logic.poll();
+  value = logic.getCurrentPC();
+  return(value);
+  }
+
 // Set new target value (if in range).
 // Returns true if specified value accepted.
+// Does not set 'value' as that tracks actual position, not target.
 bool ValveMotorDirectV1::set(const uint8_t newValue)
   {
   if(newValue > 100) { return(false); }
-  value = newValue; 
   logic.setTargetPC(newValue);
   return(true);
   }
@@ -573,6 +582,7 @@ DEBUG_SERIAL_PRINTLN();
 #endif
 
           // Move to normal valve running state...
+          needsRecalibrating = false;
           currentPC = 100; // Valve is currently fully open.
           // Reset tick count.
           ticksFromOpen = 0;
@@ -659,7 +669,8 @@ if(toOpenFast) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("-->"); } else { DEBUG_SERIAL_
         if(hitEndStop)
           {
           // Report serious tracking error.
-          if(currentPC < min(DEFAULT_VALVE_PC_MODERATELY_OPEN, 100 - 8*eps)) { trackingError(); }
+          if(currentPC < min(DEFAULT_VALVE_PC_MODERATELY_OPEN, 100 - 8*eps))
+            { trackingError(); }
           // Silently auto-adjust when end-stop hit close to expected position.
           else
             {
@@ -683,7 +694,8 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("->");
         if(hitEndStop)
           {
           // Report serious tracking error.
-          if(currentPC > max(DEFAULT_MIN_VALVE_PC_REALLY_OPEN, 8*eps)) { trackingError(); }
+          if(currentPC > max(min(DEFAULT_VALVE_PC_MODERATELY_OPEN-1, 2*DEFAULT_VALVE_PC_MODERATELY_OPEN), 8*eps))
+            { trackingError(); }
           // Silently auto-adjust when end-stop hit close to expected position.
           else
             {
