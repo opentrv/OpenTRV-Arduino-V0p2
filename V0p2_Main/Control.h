@@ -95,6 +95,8 @@ void loopOpenTRV();
 #define SETBACK_ECO (1+SETBACK_DEFAULT)
 // Full setback degrees C (strictly positive and significantly, ie several degrees, greater than SETBACK_DEFAULT, less than MIN_TARGET_C).
 // Deeper setbacks increase energy savings at the cost of longer times to return to target temperatures.
+// See also (recommending 13F/7C setback to 55F/12C): https://www.mge.com/images/pdf/brochures/residential/setbackthermostat.pdf
+// See also (suggesting for an 8hr setback, 1F set-back = 1% energy savings): http://joneakes.com/jons-fixit-database/1270-How-far-back-should-a-set-back-thermostat-be-set
 // This must set back to no more than than MIN_TARGET_C to avoid problems with unsigned arithmetic.
 #define SETBACK_FULL 4
 // Prolonged inactivity time deemed to indicate room(s) really unoccupied to trigger full setback (minutes, strictly positive).
