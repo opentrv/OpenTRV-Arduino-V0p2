@@ -595,28 +595,31 @@ uint8_t ModelledRadValve::computeTargetTemp()
     // but should also work in artificially-lit offices (maybe ~12h continuous lighting).
     // No 'lights-on' signal for a whole day is a fairly strong indication that the heat can be turned down.
     // TODO-451: TODO-453: ignore a short lights-off, eg from someone briefly leaving room or a transient shadow.
-    // TODO: consider bottom quartile of amblient light as alternative setback trigger for near-continuously-lit spaces (aiming to spot daylight signature).
+    // TODO: consider bottom quartile of ambient light as alternative setback trigger for near-continuously-lit spaces (aiming to spot daylight signature).
+    // Note that deeper setbacks likely offer more savings than faster (but shallower) setbacks.
     const bool longLongVacant = Occupancy.longLongVacant();
     const bool longVacant = longLongVacant || Occupancy.longVacant();
     const bool notLikelyOccupiedSoon = longLongVacant || (Occupancy.isLikelyUnoccupied() && inOutlierQuartile(false, V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED));
     if(longVacant ||
        ((notLikelyOccupiedSoon || (AmbLight.getDarkMinutes() > 10)) && !isAnyScheduleOnWARMNow() && !recentUIControlUse()))
       {
-      // Use a default minimal non-annoying setback if in comfort mode
+      // Use a default minimal non-annoying setback if
+      //   in upper part of comfort range
       //   or if the room is likely occupied now
       //   or if the room is lit and hasn't been vacant for a very long time (TODO-107)
       //   or if the room is commonly occupied at this time and hasn't been vacant for a very long time
       //   or if a scheduled WARM period is due soon and the room hasn't been vacant for a moderately long time,
       // else a bigger 'eco' setback
-      // unless an even bigger 'full' setback if the room has been vacant for a very long time
-      //   or is unlikely to be unoccupied at this time of day and the target WARM temperature is at the 'eco' end.
-      const uint8_t setback = (!hasEcoBias() ||
+      // or an even bigger 'full' setback if the valve is in the eco region and
+      //   the room has been vacant for a very long time
+      //   or is unlikely to be unoccupied at this time of day and in the lower part of the 'eco' range.
+      const uint8_t setback = (isComfortTemperature(wt) ||
                                Occupancy.isLikelyOccupied() ||
                                (!longLongVacant && AmbLight.isRoomLit()) ||
                                (!longLongVacant && inOutlierQuartile(true, V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED)) ||
                                (!longVacant && isAnyScheduleOnWARMSoon())) ?
               SETBACK_DEFAULT :
-          ((longLongVacant || (notLikelyOccupiedSoon && isEcoTemperature(wt))) ?
+          ((hasEcoBias() && (longLongVacant || (notLikelyOccupiedSoon && isEcoTemperature(wt)))) ?
               SETBACK_FULL : SETBACK_ECO);
 
       return(fnmax((uint8_t)(wt - setback), getFROSTTargetC())); // Target must never be set low enough to create a frost/freeze hazard.
