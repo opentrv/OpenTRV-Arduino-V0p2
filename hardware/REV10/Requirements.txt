@@ -1,25 +1,27 @@
 See https://docs.google.com/document/d/1RM6_tcC0Uajx6D2YfQV9GoQAOvQpk6TpT7khfn3ezBs/edit?usp=sharing
 
-Copy as at 2015/10/28 16:34 UTC:
+Copy (minus table) as at 2015/10/28 17:11 UTC:
 
 OpenTRV REV10 Requirements
 On Board Hardware
 Mains Power (modular switch mode)
+REV8 style boiler control transistor and LED and boiler relay
 3.3V regulator
 32,768 Hz Crystal
 Micro USB for a power input
 Mains for an alternate power input
-I2CEXT connections - must not be covered by GSM module
-Light sensor - must not be covered by GSM module
-TMP112 with extended pad layout, may never be fitted - must not be covered by GSM module
-Pads for DS18B20 - must not be covered by GSM module
-RFM23B - must not be covered by GSM module
-Header pins for GSM module
+I2CEXT connections - must not be covered by GSM module or antenna
+Light sensor - must not be covered by GSM module or antenna
+TMP112 with extended pad layout, may never be fitted - must not be covered by GSM module or antenna
+Pads for DS18B20 - must not be covered by GSM module or antenna
+RFM23B - must not be covered by GSM module or antenna
+Header pins for GSM module with space for antenna SMA connection
 Through hole for voice detector
 Through hole for mobile phone detector
-Through hole solder pad for any extra pins
+Through hole solder pad for any extra pins + DQ
 Through hole pads for power input
 FTDI connection if space
+LED (on HEAT_CALL)
 Off Board Hardware
 GSM module (SIM900)
 Voice detector
@@ -27,8 +29,15 @@ Mobile phone detector
 5 V, 20Wh+ battery
 
 Target enclosure(s)
-Must fit in box 3 and another that Mark will specify, see http://www.earth.org.uk/note-on-IoT-leaf-enclosure-sizing.html#conclusions
+Must fit in box 3 and ALSO in another that Mark will specify.  For box 3 see http://www.earth.org.uk/note-on-IoT-leaf-enclosure-sizing.html#conclusions
 
 Comments
 Open chat :-D
 This document is now public.
+yes in chat but off for dinner
+
+How about this for the PSU: http://uk.farnell.com/vigortronix/vtx-214-010-205/power-supply-ac-dc-5v-2a/dp/2464685?mckv=zxyNm49I&CMP=KNC-GUK-FUK-GEN-SHOPPING-VIGORTRONIX&categoryName=&CAGPSPN=pla&gclid=Cj0KEQjw5MGxBRDiuZm2icXX2-sBEiQA619bq8Id24Vw7Fil-afLh8vBFX_kSEQbA4ECrOXaFTRW750aAvvO8P8HAQ&gross_price=true&ost=2464685&categoryId=&CAWELAID=120173390001498203
+
+
+
+When spec is ok mark the small ball in turquoise is better visible 
