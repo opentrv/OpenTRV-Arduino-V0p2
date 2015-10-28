@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE eagle SYSTEM "eagle.dtd">
-<eagle version="7.3.0">
+<eagle version="7.4.0">
 <drawing>
 <settings>
 <setting alwaysvectorfont="no"/>
@@ -8553,6 +8553,8 @@ Grid 5.00 mm&lt;p&gt;
 <part name="C5" library="resistor" deviceset="C-EU" device="C0603" value="100nF"/>
 <part name="I2C_EXT" library="pinhead" deviceset="PINHD-2X7" device=""/>
 <part name="IC2" library="Arduino-AVR" deviceset="ATMEGA168" device="-AU"/>
+<part name="R4" library="resistor" deviceset="R-EU_" device="R0603" value="4.7K"/>
+<part name="R5" library="resistor" deviceset="R-EU_" device="R0603" value="330R"/>
 </parts>
 <sheets>
 <sheet>
@@ -8640,6 +8642,12 @@ Grid 5.00 mm&lt;p&gt;
 </instance>
 <instance part="I2C_EXT" gate="A" x="124.46" y="213.36" rot="R90"/>
 <instance part="IC2" gate="1" x="195.58" y="91.44"/>
+<instance part="R4" gate="G$1" x="198.12" y="78.74" smashed="yes" rot="R180">
+<attribute name="NAME" x="196.85" y="82.3214" size="1.778" layer="95" rot="R180"/>
+</instance>
+<instance part="R5" gate="G$1" x="200.66" y="73.66" smashed="yes" rot="R180">
+<attribute name="NAME" x="199.39" y="77.2414" size="1.778" layer="95" rot="R180"/>
+</instance>
 </instances>
 <busses>
 </busses>
@@ -9149,19 +9157,18 @@ Grid 5.00 mm&lt;p&gt;
 </net>
 <net name="N$21" class="0">
 <segment>
-<wire x1="226.06" y1="78.74" x2="193.04" y2="78.74" width="0.1524" layer="91"/>
 <wire x1="193.04" y1="78.74" x2="193.04" y2="162.56" width="0.1524" layer="91"/>
 <wire x1="193.04" y1="162.56" x2="167.64" y2="162.56" width="0.1524" layer="91"/>
-<pinref part="IC2" gate="1" pin="DIGITAL_7"/>
+<pinref part="R4" gate="G$1" pin="2"/>
 </segment>
 </net>
 <net name="N$19" class="0">
 <segment>
-<wire x1="226.06" y1="73.66" x2="190.5" y2="73.66" width="0.1524" layer="91"/>
 <wire x1="190.5" y1="73.66" x2="190.5" y2="157.48" width="0.1524" layer="91"/>
 <pinref part="U2" gate="G$1" pin="D8"/>
 <wire x1="190.5" y1="157.48" x2="167.64" y2="157.48" width="0.1524" layer="91"/>
-<pinref part="IC2" gate="1" pin="DIGITAL_8"/>
+<pinref part="R5" gate="G$1" pin="2"/>
+<wire x1="195.58" y1="73.66" x2="190.5" y2="73.66" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="N$22" class="0">
@@ -9208,6 +9215,20 @@ Grid 5.00 mm&lt;p&gt;
 <pinref part="R1" gate="G$1" pin="2"/>
 <wire x1="129.54" y1="210.82" x2="129.54" y2="205.74" width="0.1524" layer="91"/>
 <pinref part="I2C_EXT" gate="A" pin="11"/>
+</segment>
+</net>
+<net name="N$1" class="0">
+<segment>
+<pinref part="R4" gate="G$1" pin="1"/>
+<pinref part="IC2" gate="1" pin="DIGITAL_7"/>
+<wire x1="203.2" y1="78.74" x2="226.06" y2="78.74" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="N$3" class="0">
+<segment>
+<pinref part="R5" gate="G$1" pin="1"/>
+<pinref part="IC2" gate="1" pin="DIGITAL_8"/>
+<wire x1="205.74" y1="73.66" x2="226.06" y2="73.66" width="0.1524" layer="91"/>
 </segment>
 </net>
 </nets>

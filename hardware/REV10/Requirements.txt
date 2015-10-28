@@ -1,9 +1,8 @@
 See https://docs.google.com/document/d/1RM6_tcC0Uajx6D2YfQV9GoQAOvQpk6TpT7khfn3ezBs/edit?usp=sharing
 
-Copy as at 2015/10/28 16:26 UTC:
+Copy as at 2015/10/28 16:34 UTC:
 
 OpenTRV REV10 Requirements
-
 On Board Hardware
 Mains Power (modular switch mode)
 3.3V regulator
@@ -19,7 +18,8 @@ Header pins for GSM module
 Through hole for voice detector
 Through hole for mobile phone detector
 Through hole solder pad for any extra pins
-
+Through hole pads for power input
+FTDI connection if space
 Off Board Hardware
 GSM module (SIM900)
 Voice detector
@@ -32,7 +32,3 @@ Must fit in box 3 and another that Mark will specify, see http://www.earth.org.u
 Comments
 Open chat :-D
 This document is now public.
-yes in chat but off for dinner
-
-
-When spec is ok mark the small ball in turquoise is better visible 

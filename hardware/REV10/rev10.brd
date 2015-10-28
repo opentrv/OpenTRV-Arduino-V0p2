@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE eagle SYSTEM "eagle.dtd">
-<eagle version="7.3.0">
+<eagle version="7.4.0">
 <drawing>
 <settings>
 <setting alwaysvectorfont="yes"/>
@@ -126,13 +126,9 @@
 <plain>
 <wire x1="0" y1="0" x2="50" y2="0" width="0" layer="20"/>
 <wire x1="0" y1="50" x2="0" y2="0" width="0" layer="20"/>
-<text x="89.931028125" y="41.91376875" size="1" layer="25" font="vector" ratio="10" rot="R180">20140910</text>
-<text x="69.830803125" y="34.704378125" size="1" layer="22" font="vector" ratio="10" rot="MR180">License: http://goo.gl/3d71UJ</text>
-<text x="74.661121875" y="52.14046875" size="1" layer="25" font="vector" ratio="10">OpenTRV.org.uk</text>
-<text x="76.1413" y="20.8341625" size="1.27" layer="25" font="vector" rot="SR0">B</text>
-<text x="73.963396875" y="23.354459375" size="1.27" layer="25" font="vector" rot="SR0">3.3</text>
-<text x="71.094565625" y="29.078415625" size="1.27" layer="25" font="vector" rot="SR0">GND</text>
-<text x="72.521103125" y="25.9296625" size="1.27" layer="25" font="vector" ratio="10" rot="SR0">5</text>
+<text x="11.191028125" y="1.27376875" size="1" layer="25" font="vector" ratio="10" rot="R180">20140910</text>
+<text x="10.140803125" y="46.134378125" size="1" layer="22" font="vector" ratio="10" rot="MR180">License: http://goo.gl/3d71UJ</text>
+<text x="1.83453125" y="0.366121875" size="1" layer="25" font="vector" ratio="10" rot="R90">OpenTRV.org.uk</text>
 <text x="12.7" y="26.67" size="0.8128" layer="26" rot="MR90">Seal of solderpads with
  hotmelt glue or silicone
  glue</text>
@@ -2037,8 +2033,8 @@ Grid 5.00 mm&lt;p&gt;
 <element name="C4" library="resistor" package="C0603" value="100pF" x="42.939840625" y="44.9483" smashed="yes" rot="R270">
 <attribute name="NAME" x="42.21066875" y="42.1472375" size="1" layer="25" font="vector" ratio="10"/>
 </element>
-<element name="R7" library="resistor" package="R0603" value="470R" x="71.78678125" y="11.771834375" smashed="yes" rot="MR90">
-<attribute name="NAME" x="69.68328125" y="11.138834375" size="1" layer="26" font="vector" ratio="10" rot="MR90"/>
+<element name="R7" library="resistor" package="R0603" value="470R" x="19.978165625" y="13.36678125" smashed="yes">
+<attribute name="NAME" x="19.345165625" y="11.26328125" size="1" layer="25" font="vector" ratio="10"/>
 </element>
 <element name="C1" library="resistor" package="C0603" value="10uF 10V" x="38.357740625" y="36.628115625" smashed="yes">
 <attribute name="NAME" x="40.997215625" y="36.010290625" size="1" layer="25" font="vector" ratio="10" rot="R90"/>
@@ -2052,7 +2048,7 @@ Grid 5.00 mm&lt;p&gt;
 <element name="U1" library="3.3VREG" package="TC1185" value="TC1185SMD" x="38.405234375" y="33.00194375" smashed="yes" rot="R180">
 <attribute name="NAME" x="39.00734375" y="33.491321875" size="1" layer="25" font="vector" ratio="10" rot="R180"/>
 </element>
-<element name="U$2" library="logo" package="TONNE" value="" x="77.335" y="39.15211875"/>
+<element name="U$2" library="logo" package="TONNE" value="" x="23.995" y="32.80211875"/>
 <element name="R2" library="resistor" package="R0603" value="4.7K" x="44.288953125" y="19.2370875" smashed="yes" rot="R270">
 <attribute name="NAME" x="44.7578" y="20.87400625" size="1" layer="25" font="vector" ratio="10" rot="R90"/>
 </element>
@@ -2069,16 +2065,16 @@ Grid 5.00 mm&lt;p&gt;
 <element name="C10" library="resistor" package="C0603" value="100nF" x="52.3043875" y="8.77630625" smashed="yes" rot="R180">
 <attribute name="NAME" x="54.19625" y="8.2561" size="1" layer="25" font="vector" ratio="10"/>
 </element>
-<element name="U$1" library="ohw-logo" package="OSHW_10X200_NOTEXT" value="" x="68.014165625" y="47.77610625"/>
+<element name="U$1" library="ohw-logo" package="OSHW_10X200_NOTEXT" value="" x="18.484165625" y="3.32610625"/>
 <element name="C12" library="resistor" package="C0603" value="100nF" x="51.93130625" y="12.1406125" smashed="yes" rot="R90">
 <attribute name="NAME" x="52.41930625" y="13.7516125" size="1" layer="25" font="vector" ratio="10" rot="R90"/>
 </element>
 <element name="R10" library="resistor" package="R0603" value="1K" x="54.4229125" y="26.5596125" smashed="yes" rot="R180">
 <attribute name="NAME" x="49.786653125" y="26.223978125" size="1" layer="25" font="vector" ratio="10"/>
 </element>
-<element name="LED" library="adafruit" package="LED3MM" value="" x="71.9" y="16.895" smashed="yes">
-<attribute name="NAME" x="73.31055625" y="21.25808125" size="1" layer="25" font="vector" ratio="10" rot="R180"/>
-<attribute name="VALUE" x="74.44" y="14.609" size="1.27" layer="27" ratio="10"/>
+<element name="LED" library="adafruit" package="LED3MM" value="" x="14.75" y="13.085" smashed="yes">
+<attribute name="NAME" x="16.16055625" y="17.44808125" size="1" layer="25" font="vector" ratio="10" rot="R180"/>
+<attribute name="VALUE" x="17.29" y="10.799" size="1.27" layer="27" ratio="10"/>
 </element>
 <element name="RFM23B" library="SparkFun-RF" package="RFM23-XXX-S1" value="RFM23B" x="55.245" y="38.735" smashed="yes" rot="R270">
 <attribute name="NAME" x="61.945" y="41.56" size="1" layer="25" font="vector" rot="R270"/>
@@ -2114,6 +2110,12 @@ Grid 5.00 mm&lt;p&gt;
 <element name="IC2" library="Arduino-AVR" package="TQFP32-08" value="ATMEGA168-AU" x="44.45" y="11.43" smashed="yes">
 <attribute name="NAME" x="43.5864" y="10.795" size="0.8128" layer="25"/>
 </element>
+<element name="R4" library="resistor" package="R0603" value="4.7K" x="36.83" y="21.59" smashed="yes" rot="R90">
+<attribute name="NAME" x="35.941" y="20.701" size="1.27" layer="25" rot="R90"/>
+</element>
+<element name="R5" library="resistor" package="R0603" value="330R" x="40.64" y="21.59" smashed="yes" rot="R90">
+<attribute name="NAME" x="39.751" y="20.701" size="1.27" layer="25" rot="R90"/>
+</element>
 </elements>
 <signals>
 <signal name="VCC" class="1">
@@ -2135,11 +2137,11 @@ Grid 5.00 mm&lt;p&gt;
 <wire x1="45.13053125" y1="44.08946875" x2="54.245" y2="46.735" width="0" layer="19" extent="16-16"/>
 <wire x1="42.939840625" y1="44.0983" x2="45.13053125" y2="44.08946875" width="0" layer="19" extent="16-16"/>
 <wire x1="40.09278125" y1="42.299175" x2="42.939840625" y2="44.0983" width="0" layer="19" extent="16-16"/>
-<wire x1="70.63" y1="16.895" x2="40.09278125" y2="42.299175" width="0" layer="19" extent="16-16"/>
-<wire x1="39.146290625" y1="29.38355625" x2="70.63" y2="16.895" width="0" layer="19" extent="16-16"/>
+<wire x1="13.48" y1="13.085" x2="40.09278125" y2="42.299175" width="0" layer="19" extent="16-16"/>
+<wire x1="39.146290625" y1="29.38355625" x2="13.48" y2="13.085" width="0" layer="19" extent="16-16"/>
 <wire x1="39.355234375" y1="31.70184375" x2="39.146290625" y2="29.38355625" width="0" layer="19" extent="16-16"/>
 <wire x1="44.288953125" y1="20.0870875" x2="45.13053125" y2="44.08946875" width="0" layer="19" extent="16-16"/>
-<wire x1="34.346934375" y1="13.903546875" x2="70.63" y2="16.895" width="0" layer="19" extent="16-16"/>
+<wire x1="34.346934375" y1="13.903546875" x2="13.48" y2="13.085" width="0" layer="19" extent="16-16"/>
 <wire x1="53.1543875" y1="8.77630625" x2="34.346934375" y2="13.903546875" width="0" layer="19" extent="16-16"/>
 <wire x1="43.18" y1="35.98" x2="53.1543875" y2="8.77630625" width="0" layer="19" extent="16-16"/>
 <wire x1="64.77" y1="12.7" x2="43.18" y2="35.98" width="0" layer="19" extent="16-16"/>
@@ -2257,7 +2259,7 @@ Grid 5.00 mm&lt;p&gt;
 <signal name="LED_HEATCALL_L">
 <contactref element="R7" pad="1"/>
 <contactref element="IC2" pad="2"/>
-<wire x1="40.1574" y1="13.43" x2="71.78678125" y2="10.921834375" width="0" layer="19" extent="1-16"/>
+<wire x1="40.1574" y1="13.43" x2="19.128165625" y2="13.36678125" width="0" layer="19" extent="1-16"/>
 </signal>
 <signal name="RESET">
 <contactref element="R2" pad="2"/>
@@ -2324,7 +2326,7 @@ Grid 5.00 mm&lt;p&gt;
 <signal name="N$13">
 <contactref element="R7" pad="2"/>
 <contactref element="LED" pad="K"/>
-<wire x1="71.78678125" y1="12.621834375" x2="73.17" y2="16.895" width="0" layer="19" extent="16-16"/>
+<wire x1="20.828165625" y1="13.36678125" x2="16.02" y2="13.085" width="0" layer="19" extent="16-16"/>
 </signal>
 <signal name="N$31" class="2">
 <contactref element="ANT1" pad="1"/>
@@ -2384,8 +2386,8 @@ Grid 5.00 mm&lt;p&gt;
 </signal>
 <signal name="N$19">
 <contactref element="U2" pad="D8"/>
-<contactref element="IC2" pad="12"/>
-<wire x1="44.05" y1="7.1374" x2="41.656" y2="50.8" width="0" layer="19" extent="1-1"/>
+<contactref element="R5" pad="2"/>
+<wire x1="40.64" y1="22.44" x2="41.656" y2="50.8" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="N$22">
 <contactref element="U2" pad="D2"/>
@@ -2415,11 +2417,21 @@ Grid 5.00 mm&lt;p&gt;
 <signal name="D2">
 <contactref element="I2C_EXT" pad="14"/>
 </signal>
-<signal name="N$21">
-<contactref element="IC2" pad="11"/>
-</signal>
 <signal name="BOILER">
 <contactref element="IC2" pad="10"/>
+</signal>
+<signal name="N$21">
+<contactref element="R4" pad="2"/>
+</signal>
+<signal name="N$1">
+<contactref element="R4" pad="1"/>
+<contactref element="IC2" pad="11"/>
+<wire x1="36.83" y1="20.74" x2="43.25" y2="7.1374" width="0" layer="19" extent="1-1"/>
+</signal>
+<signal name="N$3">
+<contactref element="R5" pad="1"/>
+<contactref element="IC2" pad="12"/>
+<wire x1="40.64" y1="20.74" x2="44.05" y2="7.1374" width="0" layer="19" extent="1-1"/>
 </signal>
 </signals>
 <errors>
