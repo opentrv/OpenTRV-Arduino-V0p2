@@ -387,724 +387,6 @@ bool inTopQuartile(const uint8_t *sE, const uint8_t sample)
   }
 
 // Get next hour in current local time, wrapping round from 23 back to 0.
-// Returns true if specified hour is (conservatively) in the specifed outlier quartile for the specified stats set.
-// Returns false if a full set of stats not available, eg including the specified hour.
-// Always returns false if all samples are the same.
-//   * inTop  test for membership of the top quartile if true, bottom quartile if false
-//   * statsSet  stats set number to use.
-//   * hour  hour of day to use or ~0 for current hour.
-void loopOpenTRV()
-  {
-#if 0 && defined(DEBUG) // Indicate loop start.
-  DEBUG_SERIAL_PRINT('L');
-  DEBUG_SERIAL_PRINT(TIME_LSD);
-  DEBUG_SERIAL_PRINTLN();
-#endif
-
-
-  // Set up some variables before sleeping to minimise delay/jitter after the RTC tick.
-  bool showStatus = false; // Show status at end of loop?
-
-  // Use the zeroth second in each minute to force extra deep device sleeps/resets, etc.
-  const bool second0 = (0 == TIME_LSD);
-  // Sensor readings are taken late in each minute (where they are taken)
-  // and if possible noise and heat and light should be minimised in this part of each minute to improve readings.
-//  const bool sensorReading30s = (TIME_LSD >= 30);
-  // Sensor readings and (stats transmissions) are nominally on a 4-minute cycle.
-  const uint8_t minuteFrom4 = (minuteCount & 3);
-  // The 0th minute in each group of four is always used for measuring where possible (possibly amongst others)
-  // and where possible locally-generated noise and heat and light should be minimised in this minute
-  // to give the best possible readings.
-  // True if this is the first (0th) minute in each group of four.
-  const bool minute0From4ForSensors = (0 == minuteFrom4);
-  // True if this is the minute after all sensors should have been sampled.
-  const bool minute1From4AfterSensors = (1 == minuteFrom4);
-
-  // Note last-measured battery status.
-  const bool batteryLow = Supply_mV.isSupplyVoltageLow();
-
-  // Run some tasks less often when not demanding heat (at the valve or boiler), so as to conserve battery/energy.
-  // Spare the batteries if they are low, or the unit is in FROST mode, or if the room/area appears to be vacant.
-  // Stay responsive if the valve is open and/or we are otherwise calling for heat.
-  const bool conserveBattery =
-    (batteryLow || !inWarmMode() || Occupancy.longVacant()) &&
-#if defined(ENABLE_BOILER_HUB)
-    (!isBoilerOn()) && // Unless the boiler is off, stay responsive.
-#endif
-#ifdef ENABLE_NOMINAL_RAD_VALVE
-    (!NominalRadValve.isControlledValveReallyOpen()); // &&  // Run at full speed until valve(s) should actually have shut and the boiler gone off.
-//    (!NominalRadValve.isCallingForHeat()); // Run at full speed until not nominally demanding heat, eg even during FROST mode or pre-heating.
-#else
-    true; // Allow local power conservation if all other factors are right.
-#endif
-
-  // Try if very near to end of cycle and thus causing an overrun.
-  // Conversely, if not true, should have time to savely log outputs, etc.
-  const uint8_t nearOverrunThreshold = GSCT_MAX - 8; // ~64ms/~32 serial TX chars of grace time...
-//  bool tooNearOverrun = false; // Set flag that can be checked later.
-
-  // Is this unit currently in central hub listener mode?
-  const bool hubMode = inHubMode();
-
-//  if(getSubCycleTime() >= nearOverrunThreshold) { tooNearOverrun = true; }
-
-#if CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX
-  // IF IN CENTRAL HUB MODE: listen out for OpenTRV units calling for heat.
-  // Power optimisation 1: when >> 1 TX cycle (of ~2mins) need not listen, ie can avoid enabling receiver.
-  // Power optimisation 2: TODO: when (say) >>30m since last call for heat then only sample listen for (say) 3 minute in 10 (not at a TX cycle multiple).
-  // TODO: These optimisation are more important when hub unit is running a local valve
-  // to avoid temperature over-estimates from self-heating,
-  // and could be disabled if no local valve is being run to provide better response to remote nodes.
-//  bool hubModeBoilerOn = false; // If true then remote call for heat is in progress.
-//#if defined(USE_MODULE_FHT8VSIMPLE)
-#ifdef ENABLE_DEFAULT_ALWAYS_RX
-  bool needsToEavesdrop = true; // By default listen.
-#else
-  bool needsToEavesdrop = false; // By default assume no need to eavesdrop.
-#endif
-//#endif
-  if(hubMode)
-    {
-#if defined(ENABLE_BOILER_HUB) // && defined(USE_MODULE_FHT8VSIMPLE)   // ***** FIXME *******
-    // Final poll to to cover up to end of previous minor loop.
-    // Keep time from here to following SetupToEavesdropOnFHT8V() as short as possible to avoid missing remote calls.
-
-    // Check if call-for-heat has been received, and clear the flag.
-    bool _h;
-    uint16_t _hID; // Only valid if _h is true.
-    ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
-      {
-      _h = receivedCallForHeat;
-      if(_h)
-        {
-        _hID = receivedCallForHeatID;
-        receivedCallForHeat = false;
-        }
-      }
-    const bool heardIt = _h;
-    const uint16_t hcRequest = heardIt ? _hID : 0; // Only valid if heardIt is true.
-
-//    // Fetch and clear current pending sample house code calling for heat.
-    // Don't log call for hear if near overrun,
-    // and leave any error queued for next time.
-    if(getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
-    else
-      {
-      if(heardIt)
-        {
-//        DEBUG_SERIAL_TIMESTAMP();
-//        DEBUG_SERIAL_PRINT(' ');
-        OTV0P2BASE::serialPrintAndFlush(F("CfH ")); // Call for heat from
-        OTV0P2BASE::serialPrintAndFlush((hcRequest >> 8) & 0xff);
-        OTV0P2BASE::serialPrintAndFlush(' ');
-        OTV0P2BASE::serialPrintAndFlush(hcRequest & 0xff);
-        OTV0P2BASE::serialPrintlnAndFlush();
-        }
-      }
-
-    // Record call for heat, both to start boiler-on cycle and to defer need to listen again.
-    // Ignore new calls for heat until minimum off/quiet period has been reached.
-    // Possible optimisation: may be able to stop RX if boiler is on for local demand (can measure local temp better: less self-heating) and not collecting stats.
-    if(heardIt)
-      {
-      const uint8_t minOnMins = getMinBoilerOnMinutes();
-      bool ignoreRCfH = false;
-      if(!isBoilerOn())
-        {
-        // Boiler was off.
-        // Ignore new call for heat if boiler has not been off long enough,
-        // forcing a time longer than the specified minimum,
-        // regardless of when second0 happens to be.
-        // (The min(254, ...) is to ensure that the boiler can come on even if minOnMins == 255.)
-        if(boilerNoCallM <= min(254, minOnMins)) { ignoreRCfH = true; }
-        if(getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
-        else if(ignoreRCfH) { OTV0P2BASE::serialPrintlnAndFlush(F("RCfH-")); } // Remote call for heat ignored.
-        else { OTV0P2BASE::serialPrintlnAndFlush(F("RCfH1")); } // Remote call for heat on.
-        }
-      if(!ignoreRCfH)
-        {
-        const uint8_t onTimeTicks = minOnMins * (60 / OTV0P2BASE::MAIN_TICK_S);
-        // Restart count-down time (keeping boiler on) with new call for heat.
-        boilerCountdownTicks = onTimeTicks;
-        boilerNoCallM = 0; // No time has passed since the last call.
-        }
-      }
-
-    // If boiler is on, then count down towards boiler off.
-    if(isBoilerOn())
-      {
-      if(0 == --boilerCountdownTicks)
-        {
-        // Boiler should now be switched off.
-        if(getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
-        else { OTV0P2BASE::serialPrintlnAndFlush(F("RCfH0")); } // Remote call for heat off
-        }
-      }
-    // Else boiler is off so count up quiet minutes until at max...
-    else if(second0 && (boilerNoCallM < 255))
-        { ++boilerNoCallM; }
-
-//    // Turn boiler output on or off in response to calls for heat.
-//    hubModeBoilerOn = isBoilerOn();
-
-    // If in stats hub mode then always listen; don't attempt to save power.
-    if(inStatsHubMode())
-      { needsToEavesdrop = true; }
-    // If not running a local TRV, and thus without local temperature measurement problems from self-heating,
-    // then just listen all the time for maximum simplicity and responsiveness at some cost in extra power consumption.
-    // (At least as long as power is not running low for some reason.)
-    else if(!localFHT8VTRVEnabled() && !batteryLow)
-      { needsToEavesdrop = true; }
-    // Try to avoid listening in the 'quiet' sensor minute in order to minimise noise and power consumption and self-heating.
-    // Optimisation: if just heard a call need not listen on this next cycle.
-    // Optimisation: if boiler timeout is a long time away (>> one FHT8V TX cycle, ~2 minutes excl quiet minute), then can avoid listening for now.
-    //    Longish period without any RX listening may allow hub unit to cool and get better sample of local temperature if marginal.
-    // Aim to listen in one stretch for greater than full FHT8V TX cycle of ~2m to avoid missing a call for heat.
-    // MUST listen for all of final 2 mins of boiler-on to avoid missing TX (without forcing boiler over-run).
-    else if((boilerCountdownTicks <= ((MAX_FHT8V_TX_CYCLE_HS+1)/(2 * OTV0P2BASE::MAIN_TICK_S))) && // Don't miss a final TX that would keep the boiler on...
-       (boilerCountdownTicks != 0)) // But don't force unit to listen/RX all the time if no recent call for heat.
-      { needsToEavesdrop = true; }
-    else if((!heardIt) &&
-       (!minute0From4ForSensors) &&
-       (boilerCountdownTicks <= (RX_REDUCE_MIN_M*(60 / OTV0P2BASE::MAIN_TICK_S)))) // Listen eagerly for fresh calls for heat for last few minutes before turning boiler off.
-      {
-#if defined(RX_REDUCE_MAX_M) && defined(LOCAL_TRV)
-      // Skip the minute before the 'quiet' minute also in very quiet mode to improve local temp measurement.
-      // (Should still catch at least one TX per 4 minutes at worst.)
-      needsToEavesdrop =
-          ((boilerNoCallM <= RX_REDUCE_MAX_M) || (3 != (minuteCount & 3)));
-#else
-      needsToEavesdrop = true;
-#endif
-      }
-
-#else
-      needsToEavesdrop = true; // Listen if in hub mode.
-#endif
-    }
-#endif
-
-
-
-
-
-
-
-
-
-
-
-
-#if CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX
-  // Act on eavesdropping need, setting up or clearing down hooks as required.
-  RFM23B.listen(needsToEavesdrop);
-//#if defined(USE_MODULE_FHT8VSIMPLE)
-  if(needsToEavesdrop)
-    {
-#if 1 && defined(DEBUG)
-    for(uint8_t lastErr; 0 != (lastErr = RFM23B.getRXErr()); )
-      {
-      DEBUG_SERIAL_PRINT_FLASHSTRING("!RX err ");
-      DEBUG_SERIAL_PRINT(lastErr);
-      DEBUG_SERIAL_PRINTLN();
-      }
-    const uint8_t dropped = RFM23B.getRXMsgsDroppedRecent();
-    static uint8_t oldDropped;
-    if(dropped != oldDropped)
-      {
-      DEBUG_SERIAL_PRINT_FLASHSTRING("!RX DROP ");
-      DEBUG_SERIAL_PRINT(dropped);
-      DEBUG_SERIAL_PRINTLN();
-      oldDropped = dropped;
-      }
-#endif
-#if 0 && defined(DEBUG)
-    // Filtered out messages are not any sort of error.
-    const uint8_t filtered = RFM23B.getRXMsgsFilteredRecent();
-    static uint8_t oldFiltered;
-    if(filtered != oldFiltered)
-      {
-      DEBUG_SERIAL_PRINT_FLASHSTRING("RX filtered ");
-      DEBUG_SERIAL_PRINT(filtered);
-      DEBUG_SERIAL_PRINTLN();
-      oldFiltered = filtered;
-      }
-#endif
-#if 0 && defined(DEBUG)
-    DEBUG_SERIAL_PRINT_FLASHSTRING("hub listen, on/cd ");
-    DEBUG_SERIAL_PRINT(boilerCountdownTicks);
-    DEBUG_SERIAL_PRINT_FLASHSTRING("t quiet ");
-    DEBUG_SERIAL_PRINT(boilerNoCallM);
-    DEBUG_SERIAL_PRINTLN_FLASHSTRING("m");
-#endif
-    }
-//#endif
-#endif
-
-
-  // Set BOILER_OUT as appropriate for local and/or remote calls for heat.
-  // FIXME: local valve-driven boiler on does not obey normal on/off run-time rules.
-#if defined(ENABLE_BOILER_HUB)
-  fastDigitalWrite(OUT_HEATCALL, ((isBoilerOn()
-    #ifdef ENABLE_NOMINAL_RAD_VALVE
-      || NominalRadValve.isControlledValveReallyOpen()
-    #endif
-      ) ? HIGH : LOW));
-#elif defined(OUT_HEATCALL) && defined(ENABLE_NOMINAL_RAD_VALVE) // May not be available on all boards.
-  fastDigitalWrite(OUT_HEATCALL, NominalRadValve.isControlledValveReallyOpen() ? HIGH : LOW);
-#endif
-
-
-  // Sleep in low-power mode (waiting for interrupts) until seconds roll.
-  // NOTE: sleep at the top of the loop to minimise timing jitter/delay from Arduino background activity after loop() returns.
-  // DHD20130425: waking up from sleep and getting to start processing below this block may take >10ms.
-#if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("*E"); // End-of-cycle sleep.
-#endif
-//  // Ensure that serial I/O is off while sleeping, unless listening with radio.
-//  if(!needsToEavesdrop) { powerDownSerial(); } else { powerUpSerialIfDisabled<V0P2_UART_BAUD>(); }
-  // Ensure that serial I/O is off while sleeping.
-  OTV0P2BASE::powerDownSerial();
-  // Power down most stuff (except radio for hub RX).
-  minimisePowerWithoutSleep();
-  uint_fast8_t newTLSD;
-  while(TIME_LSD == (newTLSD = OTV0P2BASE::getSecondsLT()))
-    {
-    // Poll I/O and process message incrementally (in this otherwise idle time)
-    // before sleep and on wakeup in case some IO needs further processing now,
-    // eg work was accrued during the previous major slow/outer loop
-    // or the in a previous orbit of this loop sleep or nap was terminated by an I/O interrupt.
-    // May generate output to host on Serial.
-    // Come back and have another go if work was done, until the next tick at most.
-    if(handleQueuedMessages(&Serial, true, &RFM23B)) { continue; }
-
-//#if defined(USE_MODULE_RFM22RADIOSIMPLE) // Force radio to power-saving standby state if appropriate.
-//    // Force radio to known-low-power state from time to time (not every time to avoid unnecessary SPI work, LED flicker, etc.)
-//    if(batteryLow || second0) { RFM22ModeStandbyAndClearState(); } // FIXME: old world
-//#endif
-
-// If missing h/w interrupts for anything that needs rapid response
-// then AVOID the lowest-power long sleep.
-#if CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX && !defined(PIN_RFM_NIRQ)
-#define MUST_POLL_FREQUENTLY true
-    if(MUST_POLL_FREQUENTLY && needsToEavesdrop)
-#else
-#define MUST_POLL_FREQUENTLY false
-    if(false)
-#endif
-      {
-      // If there is not hardware interrupt wakeup on receipt of a frame,
-      // then this can only sleep for a short time between explicit poll()s,
-      // though in any case allow wake on interrupt to minimise loop timing jitter
-      // when the slow RTC 'end of sleep' tick arrives.
-      ::OTV0P2BASE::nap(WDTO_15MS, true);
-      }
-    else
-      {
-      // Normal long minimal-power sleep until wake-up interrupt.
-      // Rely on interrupt to force quick loop round to I/O poll().
-      ::OTV0P2BASE::sleepUntilInt();
-      }
-//    DEBUG_SERIAL_PRINTLN_FLASHSTRING("w"); // Wakeup.
-    }
-  TIME_LSD = newTLSD;
-#if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("*S"); // Start-of-cycle wake.
-#endif
-
-//#if defined(ENABLE_BOILER_HUB) && defined(USE_MODULE_FHT8VSIMPLE) // Deal with FHT8V eavesdropping if needed.
-//  // Check RSSI...
-//  if(needsToEavesdrop)
-//    {
-//    const uint8_t rssi = RFM23.getRSSI();
-//    static uint8_t lastRSSI;
-//    if((rssi > 0) && (lastRSSI != rssi))
-//      {
-//      lastRSSI = rssi;
-//      addEntropyToPool(rssi, 0); // Probably some real entropy but don't assume it.
-//#if 0 && defined(DEBUG)
-//      DEBUG_SERIAL_PRINT_FLASHSTRING("RSSI=");
-//      DEBUG_SERIAL_PRINT(rssi);
-//      DEBUG_SERIAL_PRINTLN();
-//#endif
-//      }
-//    }
-//#endif
-
-#if 0 && defined(DEBUG) // Show CPU cycles.
-  DEBUG_SERIAL_PRINT('C');
-  DEBUG_SERIAL_PRINT(cycleCountCPU());
-  DEBUG_SERIAL_PRINTLN();
-#endif
-
-
-  // START LOOP BODY
-  // ===============
-
-
-//  // Warn if too near overrun before.
-//  if(tooNearOverrun) { OTV0P2BASE::serialPrintlnAndFlush(F("?near overrun")); }
-
-
-  // Get current power supply voltage.
-#if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("Vcc: ");
-  DEBUG_SERIAL_PRINT(Supply_mV.read());
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("mV");
-#endif
-
-
-
-
-
-#if defined(USE_MODULE_FHT8VSIMPLE)
-  // Try for double TX for more robust conversation with valve unless:
-  //   * battery is low
-  //   * the valve is not required to be wide open (ie a reasonable temperature is currently being maintained).
-  //   * this is a hub and has to listen as much as possible
-  // to conserve battery and bandwidth.
-  #ifdef ENABLE_NOMINAL_RAD_VALVE
-  const bool doubleTXForFTH8V = !conserveBattery && !hubMode && (NominalRadValve.get() >= 50);
-  #else
-  const bool doubleTXForFTH8V = false;
-  #endif
-  // FHT8V is highest priority and runs first.
-  // ---------- HALF SECOND #0 -----------
-  bool useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_First(doubleTXForFTH8V); // Time for extra TX before UI.
-//  if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@0"); }
-#endif
-
-
-  // High-priority UI handing, every other/even second.
-  // Show status if the user changed something significant.
-  // Must take ~300ms or less so as not to run over into next half second if two TXs are done.
-  bool recompute = false; // Set true an extra recompute of target temperature should be done.
-#if !defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
-  if(0 == (TIME_LSD & 1))
-#endif
-    {
-#ifdef ENABLE_FULL_OT_UI
-    // Run the OpenTRV button/LED UI if required.
-    if(tickUI(TIME_LSD))
-      {
-      showStatus = true;
-      recompute = true;
-      }
-#endif
-  // Alternative UI tickers...
-#ifdef ALLOW_CC1_SUPPORT_RELAY_IO // REV9 CC1 relay...
-    // Run the CC1 relay UI.
-    if(tickUICO(TIME_LSD))
-      {
-      showStatus = true;
-      }
-#endif
-    }
-  // Handling the UI may have taken a little while, so process I/O a little.
-  handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O.
-
-
-
-#ifdef ENABLE_MODELLED_RAD_VALVE
-  if(recompute || veryRecentUIControlUse())
-    {
-    // Force immediate recompute of target temperature for (UI) responsiveness.
-    NominalRadValve.computeTargetTemperature();
-    }
-#endif
-
-
-#if defined(USE_MODULE_FHT8VSIMPLE)
-  if(useExtraFHT8VTXSlots)
-    {
-    // Time for extra TX before other actions, but don't bother if minimising power in frost mode.
-    // ---------- HALF SECOND #1 -----------
-    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V);
-//    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@1"); }
-    // Handling the FHT8V may have taken a little while, so process I/O a little.
-    handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O.
-    }
-#endif
-
-
-
-
-  // DO SCHEDULING
-
-  // Once-per-minute tasks: all must take << 0.3s.
-  // Run tasks spread throughout the minute to be as kind to batteries (etc) as possible.
-  // Only when runAll is true run less-critical tasks that be skipped sometimes when particularly conserving energy.
-  // TODO: coordinate temperature reading with time when radio and other heat-generating items are off for more accurate readings.
-  // TODO: ensure only take ambient light reading at times when all LEDs are off.
-  const bool runAll = (!conserveBattery) || minute0From4ForSensors;
-
-#if defined(DONT_RANDOMISE_MINUTE_CYCLE)
-  static uint8_t localTicks = XXX;
-#if defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
-  localTicks += 2;
-#else
-  localTicks += 1;
-#endif
-  if(localTicks >= 60) { localTicks = 0; }
-  switch(localTicks) // With V0P2BASE_TWO_S_TICK_RTC_SUPPORT only even seconds are available.
-#else
-  switch(TIME_LSD) // With V0P2BASE_TWO_S_TICK_RTC_SUPPORT only even seconds are available.
-#endif
-    {
-    case 0:
-      {
-      // Tasks that must be run every minute.
-      ++minuteCount;
-      checkUserSchedule(); // Force to user's programmed settings, if any, at the correct time.
-      // Ensure that the RTC has been persisted promptly when necessary.
-      OTV0P2BASE::persistRTC();
-      break;
-      }
-
-    // Churn/reseed PRNG(s) a little to improve unpredictability in use: should be lightweight.
-    case 2: { if(runAll) { OTV0P2BASE::seedRNG8(minuteCount ^ cycleCountCPU() ^ (uint8_t)Supply_mV.get(), _getSubCycleTime() ^ AmbLight.get(), (uint8_t)TemperatureC16.get()); } break; }
-    // Force read of supply/battery voltage; measure and recompute status (etc) less often when already thought to be low, eg when conserving.
-    case 4: { if(runAll) { Supply_mV.read(); } break; }
-
-#ifdef ALLOW_STATS_TX
-    // Regular transmission of stats if NOT driving a local valve (else stats can be piggybacked onto that).
-    case 10:
-      {
-      if(!enableTrailingStatsPayload()) { break; } // Not allowed to send stuff like this.
-#if defined(USE_MODULE_FHT8VSIMPLE)
-      // Avoid transmit conflict with FS20; just drop the slot.
-      // We should possibly choose between this and piggybacking stats to avoid busting duty-cycle rules.
-      if(localFHT8VTRVEnabled() && useExtraFHT8VTXSlots) { break; }
-#endif
-
-      // Generally only attempt stats TX in the minute after all sensors should have been polled (so that readings are fresh).
-      if(minute1From4AfterSensors ||
-        (!batteryLow && (0 == (0x24 & OTV0P2BASE::randRNG8())))) // Occasional additional TX when not conserving power.
-        {
-        pollIO(); // Deal with any pending I/O.
-        // Sleep randomly up to 128ms to spread transmissions and thus help avoid collisions.
-        OTV0P2BASE::sleepLowPowerLessThanMs(1 + (OTV0P2BASE::randRNG8() & 0x7f));
-//        nap(randRNG8NextBoolean() ? WDTO_60MS : WDTO_120MS); // FIXME: need a different random interval generator!
-        handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O.
-        // Send it!
-        // Try for double TX for extra robustness unless:
-        //   * this is a speculative 'extra' TX
-        //   * battery is low
-        //   * this node is a hub so needs to listen as much as possible
-        // This doesn't generally/always need to send binary/both formats
-        // if this is controlling a local FHT8V on which the binary stats can be piggybacked.
-        // Ie, if doesn't have a local TRV then it must send binary some of the time.
-        // Any recently-changed stats value is a hint that a strong transmission might be a good idea.
-        const bool doBinary = !localFHT8VTRVEnabled() && OTV0P2BASE::randRNG8NextBoolean();
-        bareStatsTX(!batteryLow && !hubMode && ss1.changedValue(), doBinary);
-        }
-      break;
-      }
-#endif
-
-// SENSOR READ AND STATS
-//
-// All external sensor reads should be in the second half of the minute (>32) if possible.
-// This is to have them as close to stats collection at the end of the minute as possible,
-// and to allow randmisation of the start-up cycle position in the first 32s to help avoid inter-unit collisions.
-// Also all sources of noise, self-heating, etc, may be turned off for the 'sensor read minute'
-// and thus will have diminished by this point.
-
-#ifdef ENABLE_VOICE_SENSOR
-    // Poll voice detection sensor at a fixed rate.
-    case 46: { Voice.read(); break; }
-#endif
-
-#ifdef TEMP_POT_AVAILABLE
-    // Sample the user-selected WARM temperature target at a fixed rate.
-    // This allows the unit to stay reasonably responsive to adjusting the temperature dial.
-    case 48: { TempPot.read(); break; }
-#endif
-
-    // Read all environmental inputs, late in the cycle.
-#ifdef HUMIDITY_SENSOR_SUPPORT
-    // Sample humidity.
-    case 50: { if(runAll) { RelHumidity.read(); } break; }
-#endif
-
-    // Poll ambient light level at a fixed rate.
-    // This allows the unit to respond consistently to (eg) switching lights on (eg TODO-388).
-    case 52: { AmbLight.read(); break; }
-
-    // At a hub, sample temperature regularly as late as possible in the minute just before recomputing valve position.
-    // Force a regular read to make stats such as rate-of-change simple and to minimise lag.
-    // TODO: optimise to reduce power consumption when not calling for heat.
-    // TODO: optimise to reduce self-heating jitter when in hub/listen/RX mode.
-    case 54: { TemperatureC16.read(); break; }
-//    // A regular (slow) read is forced if filtering is on to reduce jitter in the results.
-//    case 54: { if((hubMode || TemperatureC16.isFilteringOn()) ? minute0From4ForSensors : runAll) { TemperatureC16.read(); } break; }
-
-    // Compute targets and heat demand based on environmental inputs and occupancy.
-    // This should happen as soon after the latest readings as possible (temperature especially).
-    case 56:
-      {
-#ifdef OCCUPANCY_SUPPORT
-      // Update occupancy status (fresh for target recomputation) at a fixed rate.
-      Occupancy.read();
-#endif
-
-#ifdef ENABLE_NOMINAL_RAD_VALVE
-      // Recompute target, valve position and call for heat, etc.
-      // Should be called once per minute to work correctly.
-      NominalRadValve.read();
-#endif
-
-#if defined(USE_MODULE_FHT8VSIMPLE) && defined(LOCAL_TRV) // Only regen when needed.
-      // If there was a change in target valve position,
-      // or periodically in the minute after all sensors should have been read,
-      // precompute some or all of any outgoing frame/stats/etc ready for the next transmission.
-      if(NominalRadValve.isValveMoved() ||
-         (minute1From4AfterSensors && enableTrailingStatsPayload()))
-        {
-        if(localFHT8VTRVEnabled()) { FHT8VCreateValveSetCmdFrame(NominalRadValve); }
-        }
-#endif
-
-#if defined(ENABLE_BOILER_HUB)
-      // Track how long since remote call for heat last heard.
-      if(hubMode)
-        {
-        if(isBoilerOn())
-          {
-#if 1 && defined(DEBUG)
-          DEBUG_SERIAL_PRINT_FLASHSTRING("Boiler on, s: ");
-          DEBUG_SERIAL_PRINT(boilerCountdownTicks * OTV0P2BASE::MAIN_TICK_S);
-          DEBUG_SERIAL_PRINTLN();
-#endif
-          }
-        }
-#endif
-
-      // Show current status if appropriate.
-      if(runAll) { showStatus = true; }
-      break;
-      }
-
-    // Stats samples; should never be missed.
-    case 58:
-      {
-      // Take full stats sample as near the end of the hour as reasonably possible (without danger of overrun),
-      // and with other optional non-full samples evenly spaced throughout the hour (if not low on battery).
-      // A small even number of samples (or 1 sample) is probably most efficient; the system supports 2 max as of 20150329.
-      if(minute0From4ForSensors) // Use lowest-noise samples just taken in the special 0 minute out of each 4.
-        {
-        const uint_least8_t mm = OTV0P2BASE::getMinutesLT();
-        switch(mm)
-          {
-          case 26: case 27: case 28: case 29:
-            { if(!batteryLow) { sampleStats(false); } break; } // Skip sub-samples if short of energy.
-          case 56: case 57: case 58: case 59:
-            { sampleStats(true); break; } // Always take the full sample at the end of each hour.
-          }
-        }
-      break;
-      }
-    }
-
-#if defined(USE_MODULE_FHT8VSIMPLE) && defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
-  if(useExtraFHT8VTXSlots)
-    {
-    // ---------- HALF SECOND #2 -----------
-    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V);
-//    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@2"); }
-    // Handling the FHT8V may have taken a little while, so process I/O a little.
-    handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O.
-    }
-#endif
-
-  // Generate periodic status reports.
-  if(showStatus) { serialStatusReport(); }
-
-#if defined(USE_MODULE_FHT8VSIMPLE) && defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
-  if(useExtraFHT8VTXSlots)
-    {
-    // ---------- HALF SECOND #3 -----------
-    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V);
-//    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@3"); }
-    // Handling the FHT8V may have taken a little while, so process I/O a little.
-    handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O.
-    }
-#endif
-
-
-#ifdef HAS_DORM1_VALVE_DRIVE
-  // Handle local direct-drive valve, eg DORM1.
-#ifdef ENABLE_NOMINAL_RAD_VALVE
-  // Get current modelled valve position into abstract driver.
-  ValveDirect.set(NominalRadValve.get());
-#endif
-  // Provide regular poll to motor driver.
-  // May take significant time to run
-  // so don't call when timing is critical or not much time left this cycle.
-  // Only calling this after most other heavy-lifting work is likely done.
-  if(!showStatus && (getSubCycleTime() < GSCT_MAX/2))
-    { ValveDirect.read(); }
-#endif
-
-
-  // Command-Line Interface (CLI) polling.
-  // If a reasonable chunk of the minor cycle remains after all other work is done
-  // AND the CLI is / should be active OR a status line has just been output
-  // then poll/prompt the user for input
-  // using a timeout which should safely avoid overrun, ie missing the next basic tick,
-  // and which should also allow some energy-saving sleep.
-#if 1 && defined(SUPPORT_CLI)
-  const bool humanCLIUse = isCLIActive(); // Keeping CLI active for human interaction rather than for automated interaction.
-  if(showStatus || humanCLIUse)
-    {
-    const uint8_t sct = getSubCycleTime();
-    const uint8_t listenTime = max(GSCT_MAX/16, CLI_POLL_MIN_SCT);
-    if(sct < (GSCT_MAX - 2*listenTime))
-      // Don't listen beyond the last 16th of the cycle,
-      // or a minimal time if only prodding for interaction with automated front-end,
-      // as listening for UART RX uses lots of power.
-      { pollCLI(humanCLIUse ? (GSCT_MAX-listenTime) : (sct+CLI_POLL_MIN_SCT), 0 == TIME_LSD); }
-    }
-#endif
-
-
-
-#if 0 && defined(DEBUG)
-  const int tDone = getSubCycleTime();
-  if(tDone > 1) // Ignore for trivial 1-click time.
-    {
-    DEBUG_SERIAL_PRINT_FLASHSTRING("done in "); // Indicates what fraction of available loop time was used / 256.
-    DEBUG_SERIAL_PRINT(tDone);
-    DEBUG_SERIAL_PRINT_FLASHSTRING(" @ ");
-    DEBUG_SERIAL_TIMESTAMP();
-    DEBUG_SERIAL_PRINTLN();
-    }
-#endif
-
-  // Detect and handle (actual or near) overrun, if it happens, though it should not.
-  if(TIME_LSD != OTV0P2BASE::getSecondsLT())
-    {
-    // Increment the overrun counter (stored inverted, so 0xff initialised => 0 overruns).
-    const uint8_t orc = 1 + ~eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_OVERRUN_COUNTER);
-    OTV0P2BASE::eeprom_smart_update_byte((uint8_t *)V0P2BASE_EE_START_OVERRUN_COUNTER, ~orc);
-#if 1 && defined(DEBUG)
-    DEBUG_SERIAL_PRINTLN_FLASHSTRING("!loop overrun");
-//    DEBUG_SERIAL_PRINT(orc);
-//    DEBUG_SERIAL_PRINTLN();
-#endif
-#if defined(USE_MODULE_FHT8VSIMPLE)
-    FHT8VSyncAndTXReset(); // Assume that sync with valve may have been lost, so re-sync.
-#endif
-    TIME_LSD = OTV0P2BASE::getSecondsLT(); // Prepare to sleep until start of next full minor cycle.
-    }
-#if 0 && defined(DEBUG) // Expect to pick up near overrun at start of next loop.
-  else if(getSubCycleTime() >= nearOverrunThreshold)
-    {
-    DEBUG_SERIAL_PRINTLN_FLASHSTRING("?O"); // Near overrun.  Note 2ms/char to send...
-    }
-#endif
-  }
-
 static uint8_t _getNextHour()
   {
   const uint8_t h = OTV0P2BASE::getHoursLT();
@@ -1112,6 +394,12 @@ static uint8_t _getNextHour()
   return(h + 1);
   }
 
+// Returns true if specified hour is (conservatively) in the specifed outlier quartile for the specified stats set.
+// Returns false if a full set of stats not available, eg including the specified hour.
+// Always returns false if all samples are the same.
+//   * inTop  test for membership of the top quartile if true, bottom quartile if false
+//   * statsSet  stats set number to use.
+//   * hour  hour of day to use or ~0 for current hour.
 bool inOutlierQuartile(const uint8_t inTop, const uint8_t statsSet, const uint8_t hour)
   {
   if(statsSet >= V0P2BASE_EE_STATS_SETS) { return(false); } // Bad stats set number, ie unsafe.
@@ -2556,3 +1844,714 @@ void remoteCallForHeatRX(const uint16_t id, const uint8_t percentOpen)
 
 // Main loop for OpenTRV radiator control.
 // Note: exiting and re-entering can take a little while, handling Arduino background tasks such as serial.
+void loopOpenTRV()
+  {
+#if 0 && defined(DEBUG) // Indicate loop start.
+  DEBUG_SERIAL_PRINT('L');
+  DEBUG_SERIAL_PRINT(TIME_LSD);
+  DEBUG_SERIAL_PRINTLN();
+#endif
+
+
+  // Set up some variables before sleeping to minimise delay/jitter after the RTC tick.
+  bool showStatus = false; // Show status at end of loop?
+
+  // Use the zeroth second in each minute to force extra deep device sleeps/resets, etc.
+  const bool second0 = (0 == TIME_LSD);
+  // Sensor readings are taken late in each minute (where they are taken)
+  // and if possible noise and heat and light should be minimised in this part of each minute to improve readings.
+//  const bool sensorReading30s = (TIME_LSD >= 30);
+  // Sensor readings and (stats transmissions) are nominally on a 4-minute cycle.
+  const uint8_t minuteFrom4 = (minuteCount & 3);
+  // The 0th minute in each group of four is always used for measuring where possible (possibly amongst others)
+  // and where possible locally-generated noise and heat and light should be minimised in this minute
+  // to give the best possible readings.
+  // True if this is the first (0th) minute in each group of four.
+  const bool minute0From4ForSensors = (0 == minuteFrom4);
+  // True if this is the minute after all sensors should have been sampled.
+  const bool minute1From4AfterSensors = (1 == minuteFrom4);
+
+  // Note last-measured battery status.
+  const bool batteryLow = Supply_mV.isSupplyVoltageLow();
+
+  // Run some tasks less often when not demanding heat (at the valve or boiler), so as to conserve battery/energy.
+  // Spare the batteries if they are low, or the unit is in FROST mode, or if the room/area appears to be vacant.
+  // Stay responsive if the valve is open and/or we are otherwise calling for heat.
+  const bool conserveBattery =
+    (batteryLow || !inWarmMode() || Occupancy.longVacant()) &&
+#if defined(ENABLE_BOILER_HUB)
+    (!isBoilerOn()) && // Unless the boiler is off, stay responsive.
+#endif
+#ifdef ENABLE_NOMINAL_RAD_VALVE
+    (!NominalRadValve.isControlledValveReallyOpen()); // &&  // Run at full speed until valve(s) should actually have shut and the boiler gone off.
+//    (!NominalRadValve.isCallingForHeat()); // Run at full speed until not nominally demanding heat, eg even during FROST mode or pre-heating.
+#else
+    true; // Allow local power conservation if all other factors are right.
+#endif
+
+  // Try if very near to end of cycle and thus causing an overrun.
+  // Conversely, if not true, should have time to savely log outputs, etc.
+  const uint8_t nearOverrunThreshold = GSCT_MAX - 8; // ~64ms/~32 serial TX chars of grace time...
+//  bool tooNearOverrun = false; // Set flag that can be checked later.
+
+  // Is this unit currently in central hub listener mode?
+  const bool hubMode = inHubMode();
+
+//  if(getSubCycleTime() >= nearOverrunThreshold) { tooNearOverrun = true; }
+
+#if CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX
+  // IF IN CENTRAL HUB MODE: listen out for OpenTRV units calling for heat.
+  // Power optimisation 1: when >> 1 TX cycle (of ~2mins) need not listen, ie can avoid enabling receiver.
+  // Power optimisation 2: TODO: when (say) >>30m since last call for heat then only sample listen for (say) 3 minute in 10 (not at a TX cycle multiple).
+  // TODO: These optimisation are more important when hub unit is running a local valve
+  // to avoid temperature over-estimates from self-heating,
+  // and could be disabled if no local valve is being run to provide better response to remote nodes.
+//  bool hubModeBoilerOn = false; // If true then remote call for heat is in progress.
+//#if defined(USE_MODULE_FHT8VSIMPLE)
+#ifdef ENABLE_DEFAULT_ALWAYS_RX
+  bool needsToEavesdrop = true; // By default listen.
+#else
+  bool needsToEavesdrop = false; // By default assume no need to eavesdrop.
+#endif
+//#endif
+  if(hubMode)
+    {
+#if defined(ENABLE_BOILER_HUB) // && defined(USE_MODULE_FHT8VSIMPLE)   // ***** FIXME *******
+    // Final poll to to cover up to end of previous minor loop.
+    // Keep time from here to following SetupToEavesdropOnFHT8V() as short as possible to avoid missing remote calls.
+
+    // Check if call-for-heat has been received, and clear the flag.
+    bool _h;
+    uint16_t _hID; // Only valid if _h is true.
+    ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
+      {
+      _h = receivedCallForHeat;
+      if(_h)
+        {
+        _hID = receivedCallForHeatID;
+        receivedCallForHeat = false;
+        }
+      }
+    const bool heardIt = _h;
+    const uint16_t hcRequest = heardIt ? _hID : 0; // Only valid if heardIt is true.
+
+//    // Fetch and clear current pending sample house code calling for heat.
+    // Don't log call for hear if near overrun,
+    // and leave any error queued for next time.
+    if(getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
+    else
+      {
+      if(heardIt)
+        {
+//        DEBUG_SERIAL_TIMESTAMP();
+//        DEBUG_SERIAL_PRINT(' ');
+        OTV0P2BASE::serialPrintAndFlush(F("CfH ")); // Call for heat from
+        OTV0P2BASE::serialPrintAndFlush((hcRequest >> 8) & 0xff);
+        OTV0P2BASE::serialPrintAndFlush(' ');
+        OTV0P2BASE::serialPrintAndFlush(hcRequest & 0xff);
+        OTV0P2BASE::serialPrintlnAndFlush();
+        }
+      }
+
+    // Record call for heat, both to start boiler-on cycle and to defer need to listen again.
+    // Ignore new calls for heat until minimum off/quiet period has been reached.
+    // Possible optimisation: may be able to stop RX if boiler is on for local demand (can measure local temp better: less self-heating) and not collecting stats.
+    if(heardIt)
+      {
+      const uint8_t minOnMins = getMinBoilerOnMinutes();
+      bool ignoreRCfH = false;
+      if(!isBoilerOn())
+        {
+        // Boiler was off.
+        // Ignore new call for heat if boiler has not been off long enough,
+        // forcing a time longer than the specified minimum,
+        // regardless of when second0 happens to be.
+        // (The min(254, ...) is to ensure that the boiler can come on even if minOnMins == 255.)
+        if(boilerNoCallM <= min(254, minOnMins)) { ignoreRCfH = true; }
+        if(getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
+        else if(ignoreRCfH) { OTV0P2BASE::serialPrintlnAndFlush(F("RCfH-")); } // Remote call for heat ignored.
+        else { OTV0P2BASE::serialPrintlnAndFlush(F("RCfH1")); } // Remote call for heat on.
+        }
+      if(!ignoreRCfH)
+        {
+        const uint8_t onTimeTicks = minOnMins * (60 / OTV0P2BASE::MAIN_TICK_S);
+        // Restart count-down time (keeping boiler on) with new call for heat.
+        boilerCountdownTicks = onTimeTicks;
+        boilerNoCallM = 0; // No time has passed since the last call.
+        }
+      }
+
+    // If boiler is on, then count down towards boiler off.
+    if(isBoilerOn())
+      {
+      if(0 == --boilerCountdownTicks)
+        {
+        // Boiler should now be switched off.
+        if(getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
+        else { OTV0P2BASE::serialPrintlnAndFlush(F("RCfH0")); } // Remote call for heat off
+        }
+      }
+    // Else boiler is off so count up quiet minutes until at max...
+    else if(second0 && (boilerNoCallM < 255))
+        { ++boilerNoCallM; }
+
+//    // Turn boiler output on or off in response to calls for heat.
+//    hubModeBoilerOn = isBoilerOn();
+
+    // If in stats hub mode then always listen; don't attempt to save power.
+    if(inStatsHubMode())
+      { needsToEavesdrop = true; }
+    // If not running a local TRV, and thus without local temperature measurement problems from self-heating,
+    // then just listen all the time for maximum simplicity and responsiveness at some cost in extra power consumption.
+    // (At least as long as power is not running low for some reason.)
+    else if(!localFHT8VTRVEnabled() && !batteryLow)
+      { needsToEavesdrop = true; }
+    // Try to avoid listening in the 'quiet' sensor minute in order to minimise noise and power consumption and self-heating.
+    // Optimisation: if just heard a call need not listen on this next cycle.
+    // Optimisation: if boiler timeout is a long time away (>> one FHT8V TX cycle, ~2 minutes excl quiet minute), then can avoid listening for now.
+    //    Longish period without any RX listening may allow hub unit to cool and get better sample of local temperature if marginal.
+    // Aim to listen in one stretch for greater than full FHT8V TX cycle of ~2m to avoid missing a call for heat.
+    // MUST listen for all of final 2 mins of boiler-on to avoid missing TX (without forcing boiler over-run).
+    else if((boilerCountdownTicks <= ((MAX_FHT8V_TX_CYCLE_HS+1)/(2 * OTV0P2BASE::MAIN_TICK_S))) && // Don't miss a final TX that would keep the boiler on...
+       (boilerCountdownTicks != 0)) // But don't force unit to listen/RX all the time if no recent call for heat.
+      { needsToEavesdrop = true; }
+    else if((!heardIt) &&
+       (!minute0From4ForSensors) &&
+       (boilerCountdownTicks <= (RX_REDUCE_MIN_M*(60 / OTV0P2BASE::MAIN_TICK_S)))) // Listen eagerly for fresh calls for heat for last few minutes before turning boiler off.
+      {
+#if defined(RX_REDUCE_MAX_M) && defined(LOCAL_TRV)
+      // Skip the minute before the 'quiet' minute also in very quiet mode to improve local temp measurement.
+      // (Should still catch at least one TX per 4 minutes at worst.)
+      needsToEavesdrop =
+          ((boilerNoCallM <= RX_REDUCE_MAX_M) || (3 != (minuteCount & 3)));
+#else
+      needsToEavesdrop = true;
+#endif
+      }
+
+#else
+      needsToEavesdrop = true; // Listen if in hub mode.
+#endif
+    }
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+#if CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX
+  // Act on eavesdropping need, setting up or clearing down hooks as required.
+  RFM23B.listen(needsToEavesdrop);
+//#if defined(USE_MODULE_FHT8VSIMPLE)
+  if(needsToEavesdrop)
+    {
+#if 1 && defined(DEBUG)
+    for(uint8_t lastErr; 0 != (lastErr = RFM23B.getRXErr()); )
+      {
+      DEBUG_SERIAL_PRINT_FLASHSTRING("!RX err ");
+      DEBUG_SERIAL_PRINT(lastErr);
+      DEBUG_SERIAL_PRINTLN();
+      }
+    const uint8_t dropped = RFM23B.getRXMsgsDroppedRecent();
+    static uint8_t oldDropped;
+    if(dropped != oldDropped)
+      {
+      DEBUG_SERIAL_PRINT_FLASHSTRING("!RX DROP ");
+      DEBUG_SERIAL_PRINT(dropped);
+      DEBUG_SERIAL_PRINTLN();
+      oldDropped = dropped;
+      }
+#endif
+#if 0 && defined(DEBUG)
+    // Filtered out messages are not any sort of error.
+    const uint8_t filtered = RFM23B.getRXMsgsFilteredRecent();
+    static uint8_t oldFiltered;
+    if(filtered != oldFiltered)
+      {
+      DEBUG_SERIAL_PRINT_FLASHSTRING("RX filtered ");
+      DEBUG_SERIAL_PRINT(filtered);
+      DEBUG_SERIAL_PRINTLN();
+      oldFiltered = filtered;
+      }
+#endif
+#if 0 && defined(DEBUG)
+    DEBUG_SERIAL_PRINT_FLASHSTRING("hub listen, on/cd ");
+    DEBUG_SERIAL_PRINT(boilerCountdownTicks);
+    DEBUG_SERIAL_PRINT_FLASHSTRING("t quiet ");
+    DEBUG_SERIAL_PRINT(boilerNoCallM);
+    DEBUG_SERIAL_PRINTLN_FLASHSTRING("m");
+#endif
+    }
+//#endif
+#endif
+
+
+  // Set BOILER_OUT as appropriate for local and/or remote calls for heat.
+  // FIXME: local valve-driven boiler on does not obey normal on/off run-time rules.
+#if defined(ENABLE_BOILER_HUB)
+  fastDigitalWrite(OUT_HEATCALL, ((isBoilerOn()
+    #ifdef ENABLE_NOMINAL_RAD_VALVE
+      || NominalRadValve.isControlledValveReallyOpen()
+    #endif
+      ) ? HIGH : LOW));
+#elif defined(OUT_HEATCALL) && defined(ENABLE_NOMINAL_RAD_VALVE) // May not be available on all boards.
+  fastDigitalWrite(OUT_HEATCALL, NominalRadValve.isControlledValveReallyOpen() ? HIGH : LOW);
+#endif
+
+
+  // Sleep in low-power mode (waiting for interrupts) until seconds roll.
+  // NOTE: sleep at the top of the loop to minimise timing jitter/delay from Arduino background activity after loop() returns.
+  // DHD20130425: waking up from sleep and getting to start processing below this block may take >10ms.
+#if 0 && defined(DEBUG)
+  DEBUG_SERIAL_PRINTLN_FLASHSTRING("*E"); // End-of-cycle sleep.
+#endif
+//  // Ensure that serial I/O is off while sleeping, unless listening with radio.
+//  if(!needsToEavesdrop) { powerDownSerial(); } else { powerUpSerialIfDisabled<V0P2_UART_BAUD>(); }
+  // Ensure that serial I/O is off while sleeping.
+  OTV0P2BASE::powerDownSerial();
+  // Power down most stuff (except radio for hub RX).
+  minimisePowerWithoutSleep();
+  uint_fast8_t newTLSD;
+  while(TIME_LSD == (newTLSD = OTV0P2BASE::getSecondsLT()))
+    {
+    // Poll I/O and process message incrementally (in this otherwise idle time)
+    // before sleep and on wakeup in case some IO needs further processing now,
+    // eg work was accrued during the previous major slow/outer loop
+    // or the in a previous orbit of this loop sleep or nap was terminated by an I/O interrupt.
+    // May generate output to host on Serial.
+    // Come back and have another go if work was done, until the next tick at most.
+    if(handleQueuedMessages(&Serial, true, &RFM23B)) { continue; }
+
+//#if defined(USE_MODULE_RFM22RADIOSIMPLE) // Force radio to power-saving standby state if appropriate.
+//    // Force radio to known-low-power state from time to time (not every time to avoid unnecessary SPI work, LED flicker, etc.)
+//    if(batteryLow || second0) { RFM22ModeStandbyAndClearState(); } // FIXME: old world
+//#endif
+
+// If missing h/w interrupts for anything that needs rapid response
+// then AVOID the lowest-power long sleep.
+#if CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX && !defined(PIN_RFM_NIRQ)
+#define MUST_POLL_FREQUENTLY true
+    if(MUST_POLL_FREQUENTLY && needsToEavesdrop)
+#else
+#define MUST_POLL_FREQUENTLY false
+    if(false)
+#endif
+      {
+      // If there is not hardware interrupt wakeup on receipt of a frame,
+      // then this can only sleep for a short time between explicit poll()s,
+      // though in any case allow wake on interrupt to minimise loop timing jitter
+      // when the slow RTC 'end of sleep' tick arrives.
+      ::OTV0P2BASE::nap(WDTO_15MS, true);
+      }
+    else
+      {
+      // Normal long minimal-power sleep until wake-up interrupt.
+      // Rely on interrupt to force quick loop round to I/O poll().
+      ::OTV0P2BASE::sleepUntilInt();
+      }
+//    DEBUG_SERIAL_PRINTLN_FLASHSTRING("w"); // Wakeup.
+    }
+  TIME_LSD = newTLSD;
+#if 0 && defined(DEBUG)
+  DEBUG_SERIAL_PRINTLN_FLASHSTRING("*S"); // Start-of-cycle wake.
+#endif
+
+//#if defined(ENABLE_BOILER_HUB) && defined(USE_MODULE_FHT8VSIMPLE) // Deal with FHT8V eavesdropping if needed.
+//  // Check RSSI...
+//  if(needsToEavesdrop)
+//    {
+//    const uint8_t rssi = RFM23.getRSSI();
+//    static uint8_t lastRSSI;
+//    if((rssi > 0) && (lastRSSI != rssi))
+//      {
+//      lastRSSI = rssi;
+//      addEntropyToPool(rssi, 0); // Probably some real entropy but don't assume it.
+//#if 0 && defined(DEBUG)
+//      DEBUG_SERIAL_PRINT_FLASHSTRING("RSSI=");
+//      DEBUG_SERIAL_PRINT(rssi);
+//      DEBUG_SERIAL_PRINTLN();
+//#endif
+//      }
+//    }
+//#endif
+
+#if 0 && defined(DEBUG) // Show CPU cycles.
+  DEBUG_SERIAL_PRINT('C');
+  DEBUG_SERIAL_PRINT(cycleCountCPU());
+  DEBUG_SERIAL_PRINTLN();
+#endif
+
+
+  // START LOOP BODY
+  // ===============
+
+
+//  // Warn if too near overrun before.
+//  if(tooNearOverrun) { OTV0P2BASE::serialPrintlnAndFlush(F("?near overrun")); }
+
+
+  // Get current power supply voltage.
+#if 0 && defined(DEBUG)
+  DEBUG_SERIAL_PRINT_FLASHSTRING("Vcc: ");
+  DEBUG_SERIAL_PRINT(Supply_mV.read());
+  DEBUG_SERIAL_PRINTLN_FLASHSTRING("mV");
+#endif
+
+
+
+
+
+#if defined(USE_MODULE_FHT8VSIMPLE)
+  // Try for double TX for more robust conversation with valve unless:
+  //   * battery is low
+  //   * the valve is not required to be wide open (ie a reasonable temperature is currently being maintained).
+  //   * this is a hub and has to listen as much as possible
+  // to conserve battery and bandwidth.
+  #ifdef ENABLE_NOMINAL_RAD_VALVE
+  const bool doubleTXForFTH8V = !conserveBattery && !hubMode && (NominalRadValve.get() >= 50);
+  #else
+  const bool doubleTXForFTH8V = false;
+  #endif
+  // FHT8V is highest priority and runs first.
+  // ---------- HALF SECOND #0 -----------
+  bool useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_First(doubleTXForFTH8V); // Time for extra TX before UI.
+//  if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@0"); }
+#endif
+
+
+  // High-priority UI handing, every other/even second.
+  // Show status if the user changed something significant.
+  // Must take ~300ms or less so as not to run over into next half second if two TXs are done.
+  bool recompute = false; // Set true an extra recompute of target temperature should be done.
+#if !defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
+  if(0 == (TIME_LSD & 1))
+#endif
+    {
+#ifdef ENABLE_FULL_OT_UI
+    // Run the OpenTRV button/LED UI if required.
+    if(tickUI(TIME_LSD))
+      {
+      showStatus = true;
+      recompute = true;
+      }
+#endif
+  // Alternative UI tickers...
+#ifdef ALLOW_CC1_SUPPORT_RELAY_IO // REV9 CC1 relay...
+    // Run the CC1 relay UI.
+    if(tickUICO(TIME_LSD))
+      {
+      showStatus = true;
+      }
+#endif
+    }
+  // Handling the UI may have taken a little while, so process I/O a little.
+  handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O.
+
+
+
+#ifdef ENABLE_MODELLED_RAD_VALVE
+  if(recompute || veryRecentUIControlUse())
+    {
+    // Force immediate recompute of target temperature for (UI) responsiveness.
+    NominalRadValve.computeTargetTemperature();
+    }
+#endif
+
+
+#if defined(USE_MODULE_FHT8VSIMPLE)
+  if(useExtraFHT8VTXSlots)
+    {
+    // Time for extra TX before other actions, but don't bother if minimising power in frost mode.
+    // ---------- HALF SECOND #1 -----------
+    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V);
+//    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@1"); }
+    // Handling the FHT8V may have taken a little while, so process I/O a little.
+    handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O.
+    }
+#endif
+
+
+
+
+  // DO SCHEDULING
+
+  // Once-per-minute tasks: all must take << 0.3s.
+  // Run tasks spread throughout the minute to be as kind to batteries (etc) as possible.
+  // Only when runAll is true run less-critical tasks that be skipped sometimes when particularly conserving energy.
+  // TODO: coordinate temperature reading with time when radio and other heat-generating items are off for more accurate readings.
+  // TODO: ensure only take ambient light reading at times when all LEDs are off.
+  const bool runAll = (!conserveBattery) || minute0From4ForSensors;
+
+#if defined(DONT_RANDOMISE_MINUTE_CYCLE)
+  static uint8_t localTicks = XXX;
+#if defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
+  localTicks += 2;
+#else
+  localTicks += 1;
+#endif
+  if(localTicks >= 60) { localTicks = 0; }
+  switch(localTicks) // With V0P2BASE_TWO_S_TICK_RTC_SUPPORT only even seconds are available.
+#else
+  switch(TIME_LSD) // With V0P2BASE_TWO_S_TICK_RTC_SUPPORT only even seconds are available.
+#endif
+    {
+    case 0:
+      {
+      // Tasks that must be run every minute.
+      ++minuteCount;
+      checkUserSchedule(); // Force to user's programmed settings, if any, at the correct time.
+      // Ensure that the RTC has been persisted promptly when necessary.
+      OTV0P2BASE::persistRTC();
+      break;
+      }
+
+    // Churn/reseed PRNG(s) a little to improve unpredictability in use: should be lightweight.
+    case 2: { if(runAll) { OTV0P2BASE::seedRNG8(minuteCount ^ cycleCountCPU() ^ (uint8_t)Supply_mV.get(), _getSubCycleTime() ^ AmbLight.get(), (uint8_t)TemperatureC16.get()); } break; }
+    // Force read of supply/battery voltage; measure and recompute status (etc) less often when already thought to be low, eg when conserving.
+    case 4: { if(runAll) { Supply_mV.read(); } break; }
+
+#ifdef ALLOW_STATS_TX
+    // Regular transmission of stats if NOT driving a local valve (else stats can be piggybacked onto that).
+    case 10:
+      {
+      if(!enableTrailingStatsPayload()) { break; } // Not allowed to send stuff like this.
+#if defined(USE_MODULE_FHT8VSIMPLE)
+      // Avoid transmit conflict with FS20; just drop the slot.
+      // We should possibly choose between this and piggybacking stats to avoid busting duty-cycle rules.
+      if(localFHT8VTRVEnabled() && useExtraFHT8VTXSlots) { break; }
+#endif
+
+      // Generally only attempt stats TX in the minute after all sensors should have been polled (so that readings are fresh).
+      if(minute1From4AfterSensors ||
+        (!batteryLow && (0 == (0x24 & OTV0P2BASE::randRNG8())))) // Occasional additional TX when not conserving power.
+        {
+        pollIO(); // Deal with any pending I/O.
+        // Sleep randomly up to 128ms to spread transmissions and thus help avoid collisions.
+        OTV0P2BASE::sleepLowPowerLessThanMs(1 + (OTV0P2BASE::randRNG8() & 0x7f));
+//        nap(randRNG8NextBoolean() ? WDTO_60MS : WDTO_120MS); // FIXME: need a different random interval generator!
+        handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O.
+        // Send it!
+        // Try for double TX for extra robustness unless:
+        //   * this is a speculative 'extra' TX
+        //   * battery is low
+        //   * this node is a hub so needs to listen as much as possible
+        // This doesn't generally/always need to send binary/both formats
+        // if this is controlling a local FHT8V on which the binary stats can be piggybacked.
+        // Ie, if doesn't have a local TRV then it must send binary some of the time.
+        // Any recently-changed stats value is a hint that a strong transmission might be a good idea.
+        const bool doBinary = !localFHT8VTRVEnabled() && OTV0P2BASE::randRNG8NextBoolean();
+        bareStatsTX(!batteryLow && !hubMode && ss1.changedValue(), doBinary);
+        }
+      break;
+      }
+#endif
+
+// SENSOR READ AND STATS
+//
+// All external sensor reads should be in the second half of the minute (>32) if possible.
+// This is to have them as close to stats collection at the end of the minute as possible,
+// and to allow randmisation of the start-up cycle position in the first 32s to help avoid inter-unit collisions.
+// Also all sources of noise, self-heating, etc, may be turned off for the 'sensor read minute'
+// and thus will have diminished by this point.
+
+#ifdef ENABLE_VOICE_SENSOR
+    // Poll voice detection sensor at a fixed rate.
+    case 46: { Voice.read(); break; }
+#endif
+
+#ifdef TEMP_POT_AVAILABLE
+    // Sample the user-selected WARM temperature target at a fixed rate.
+    // This allows the unit to stay reasonably responsive to adjusting the temperature dial.
+    case 48: { TempPot.read(); break; }
+#endif
+
+    // Read all environmental inputs, late in the cycle.
+#ifdef HUMIDITY_SENSOR_SUPPORT
+    // Sample humidity.
+    case 50: { if(runAll) { RelHumidity.read(); } break; }
+#endif
+
+    // Poll ambient light level at a fixed rate.
+    // This allows the unit to respond consistently to (eg) switching lights on (eg TODO-388).
+    case 52: { AmbLight.read(); break; }
+
+    // At a hub, sample temperature regularly as late as possible in the minute just before recomputing valve position.
+    // Force a regular read to make stats such as rate-of-change simple and to minimise lag.
+    // TODO: optimise to reduce power consumption when not calling for heat.
+    // TODO: optimise to reduce self-heating jitter when in hub/listen/RX mode.
+    case 54: { TemperatureC16.read(); break; }
+//    // A regular (slow) read is forced if filtering is on to reduce jitter in the results.
+//    case 54: { if((hubMode || TemperatureC16.isFilteringOn()) ? minute0From4ForSensors : runAll) { TemperatureC16.read(); } break; }
+
+    // Compute targets and heat demand based on environmental inputs and occupancy.
+    // This should happen as soon after the latest readings as possible (temperature especially).
+    case 56:
+      {
+#ifdef OCCUPANCY_SUPPORT
+      // Update occupancy status (fresh for target recomputation) at a fixed rate.
+      Occupancy.read();
+#endif
+
+#ifdef ENABLE_NOMINAL_RAD_VALVE
+      // Recompute target, valve position and call for heat, etc.
+      // Should be called once per minute to work correctly.
+      NominalRadValve.read();
+#endif
+
+#if defined(USE_MODULE_FHT8VSIMPLE) && defined(LOCAL_TRV) // Only regen when needed.
+      // If there was a change in target valve position,
+      // or periodically in the minute after all sensors should have been read,
+      // precompute some or all of any outgoing frame/stats/etc ready for the next transmission.
+      if(NominalRadValve.isValveMoved() ||
+         (minute1From4AfterSensors && enableTrailingStatsPayload()))
+        {
+        if(localFHT8VTRVEnabled()) { FHT8VCreateValveSetCmdFrame(NominalRadValve); }
+        }
+#endif
+
+#if defined(ENABLE_BOILER_HUB)
+      // Track how long since remote call for heat last heard.
+      if(hubMode)
+        {
+        if(isBoilerOn())
+          {
+#if 1 && defined(DEBUG)
+          DEBUG_SERIAL_PRINT_FLASHSTRING("Boiler on, s: ");
+          DEBUG_SERIAL_PRINT(boilerCountdownTicks * OTV0P2BASE::MAIN_TICK_S);
+          DEBUG_SERIAL_PRINTLN();
+#endif
+          }
+        }
+#endif
+
+      // Show current status if appropriate.
+      if(runAll) { showStatus = true; }
+      break;
+      }
+
+    // Stats samples; should never be missed.
+    case 58:
+      {
+      // Take full stats sample as near the end of the hour as reasonably possible (without danger of overrun),
+      // and with other optional non-full samples evenly spaced throughout the hour (if not low on battery).
+      // A small even number of samples (or 1 sample) is probably most efficient; the system supports 2 max as of 20150329.
+      if(minute0From4ForSensors) // Use lowest-noise samples just taken in the special 0 minute out of each 4.
+        {
+        const uint_least8_t mm = OTV0P2BASE::getMinutesLT();
+        switch(mm)
+          {
+          case 26: case 27: case 28: case 29:
+            { if(!batteryLow) { sampleStats(false); } break; } // Skip sub-samples if short of energy.
+          case 56: case 57: case 58: case 59:
+            { sampleStats(true); break; } // Always take the full sample at the end of each hour.
+          }
+        }
+      break;
+      }
+    }
+
+#if defined(USE_MODULE_FHT8VSIMPLE) && defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
+  if(useExtraFHT8VTXSlots)
+    {
+    // ---------- HALF SECOND #2 -----------
+    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V);
+//    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@2"); }
+    // Handling the FHT8V may have taken a little while, so process I/O a little.
+    handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O.
+    }
+#endif
+
+  // Generate periodic status reports.
+  if(showStatus) { serialStatusReport(); }
+
+#if defined(USE_MODULE_FHT8VSIMPLE) && defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
+  if(useExtraFHT8VTXSlots)
+    {
+    // ---------- HALF SECOND #3 -----------
+    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V);
+//    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@3"); }
+    // Handling the FHT8V may have taken a little while, so process I/O a little.
+    handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O.
+    }
+#endif
+
+
+#ifdef HAS_DORM1_VALVE_DRIVE
+  // Handle local direct-drive valve, eg DORM1.
+#ifdef ENABLE_NOMINAL_RAD_VALVE
+  // Get current modelled valve position into abstract driver.
+  ValveDirect.set(NominalRadValve.get());
+#endif
+  // Provide regular poll to motor driver.
+  // May take significant time to run
+  // so don't call when timing is critical or not much time left this cycle.
+  // Only calling this after most other heavy-lifting work is likely done.
+  if(!showStatus && (getSubCycleTime() < GSCT_MAX/2))
+    { ValveDirect.read(); }
+#endif
+
+
+  // Command-Line Interface (CLI) polling.
+  // If a reasonable chunk of the minor cycle remains after all other work is done
+  // AND the CLI is / should be active OR a status line has just been output
+  // then poll/prompt the user for input
+  // using a timeout which should safely avoid overrun, ie missing the next basic tick,
+  // and which should also allow some energy-saving sleep.
+#if 1 && defined(SUPPORT_CLI)
+  const bool humanCLIUse = isCLIActive(); // Keeping CLI active for human interaction rather than for automated interaction.
+  if(showStatus || humanCLIUse)
+    {
+    const uint8_t sct = getSubCycleTime();
+    const uint8_t listenTime = max(GSCT_MAX/16, CLI_POLL_MIN_SCT);
+    if(sct < (GSCT_MAX - 2*listenTime))
+      // Don't listen beyond the last 16th of the cycle,
+      // or a minimal time if only prodding for interaction with automated front-end,
+      // as listening for UART RX uses lots of power.
+      { pollCLI(humanCLIUse ? (GSCT_MAX-listenTime) : (sct+CLI_POLL_MIN_SCT), 0 == TIME_LSD); }
+    }
+#endif
+
+
+
+#if 0 && defined(DEBUG)
+  const int tDone = getSubCycleTime();
+  if(tDone > 1) // Ignore for trivial 1-click time.
+    {
+    DEBUG_SERIAL_PRINT_FLASHSTRING("done in "); // Indicates what fraction of available loop time was used / 256.
+    DEBUG_SERIAL_PRINT(tDone);
+    DEBUG_SERIAL_PRINT_FLASHSTRING(" @ ");
+    DEBUG_SERIAL_TIMESTAMP();
+    DEBUG_SERIAL_PRINTLN();
+    }
+#endif
+
+  // Detect and handle (actual or near) overrun, if it happens, though it should not.
+  if(TIME_LSD != OTV0P2BASE::getSecondsLT())
+    {
+    // Increment the overrun counter (stored inverted, so 0xff initialised => 0 overruns).
+    const uint8_t orc = 1 + ~eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_OVERRUN_COUNTER);
+    OTV0P2BASE::eeprom_smart_update_byte((uint8_t *)V0P2BASE_EE_START_OVERRUN_COUNTER, ~orc);
+#if 1 && defined(DEBUG)
+    DEBUG_SERIAL_PRINTLN_FLASHSTRING("!loop overrun");
+//    DEBUG_SERIAL_PRINT(orc);
+//    DEBUG_SERIAL_PRINTLN();
+#endif
+#if defined(USE_MODULE_FHT8VSIMPLE)
+    FHT8VSyncAndTXReset(); // Assume that sync with valve may have been lost, so re-sync.
+#endif
+    TIME_LSD = OTV0P2BASE::getSecondsLT(); // Prepare to sleep until start of next full minor cycle.
+    }
+#if 0 && defined(DEBUG) // Expect to pick up near overrun at start of next loop.
+  else if(getSubCycleTime() >= nearOverrunThreshold)
+    {
+    DEBUG_SERIAL_PRINTLN_FLASHSTRING("?O"); // Near overrun.  Note 2ms/char to send...
+    }
+#endif
+  }
