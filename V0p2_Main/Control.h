@@ -88,14 +88,15 @@ void loopOpenTRV();
 // Maximum 'BAKE' minutes, ie time to crank heating up to BAKE setting (minutes, strictly positive, <255).
 #define BAKE_MAX_M 30
 
-// Initial minor setback degrees C (strictly positive).  Note that 1C heating setback may result in ~8% saving in UK.
+// Initial minor setback degrees C (strictly positive).  Note that 1C heating setback may result in ~8% saving in the UK.
 // This may be the maximum setback applied with a comfort bias for example.
 #define SETBACK_DEFAULT 1
-// Enhanced setback in full-on eco mode for extra energy savings.  Not more than FULL_SETBACK.
+// Enhanced setback, eg in eco mode, for extra energy savings.  Not more than SETBACK_FULL.
 #define SETBACK_ECO (1+SETBACK_DEFAULT)
-// Full setback degrees C (strictly positive and significantly, ie several degrees, greater than SETBACK, less than MIN_TARGET_C).
+// Full setback degrees C (strictly positive and significantly, ie several degrees, greater than SETBACK_DEFAULT, less than MIN_TARGET_C).
+// Deeper setbacks increase energy savings at the cost of longer times to return to target temperatures.
 // This must set back to no more than than MIN_TARGET_C to avoid problems with unsigned arithmetic.
-#define SETBACK_FULL 3
+#define SETBACK_FULL 4
 // Prolonged inactivity time deemed to indicate room(s) really unoccupied to trigger full setback (minutes, strictly positive).
 #define SETBACK_FULL_M 50
 
