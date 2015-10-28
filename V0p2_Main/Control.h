@@ -841,8 +841,10 @@ uint8_t getByHourStat(uint8_t hh, uint8_t statsSet);
 // Always returns false if all samples are the same.
 //   * inTop  test for membership of the top quartile if true, bottom quartile if false
 //   * statsSet  stats set number to use.
-//   * hour  hour of day to use or ~0 for current hour.
-bool inOutlierQuartile(uint8_t inTop, uint8_t statsSet, uint8_t hour = ~0);
+//   * hour  hour of day to use or inOutlierQuartile_CURRENT_HOUR for current hour or inOutlierQuartile_NEXT_HOUR for next hour
+static const uint8_t inOutlierQuartile_CURRENT_HOUR = ~0 - 1;
+static const uint8_t inOutlierQuartile_NEXT_HOUR = ~0;
+bool inOutlierQuartile(uint8_t inTop, uint8_t statsSet, uint8_t hour = inOutlierQuartile_CURRENT_HOUR);
 
 // 'Unset'/invalid values for byte (eg raw EEPROM byte) and int (eg after decompression).
 #define STATS_UNSET_BYTE 0xff
