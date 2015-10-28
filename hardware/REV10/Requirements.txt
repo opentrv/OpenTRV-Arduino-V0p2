@@ -1,0 +1,38 @@
+See https://docs.google.com/document/d/1RM6_tcC0Uajx6D2YfQV9GoQAOvQpk6TpT7khfn3ezBs/edit?usp=sharing
+
+Copy as at 2015/10/28 16:26 UTC:
+
+OpenTRV REV10 Requirements
+
+On Board Hardware
+Mains Power (modular switch mode)
+3.3V regulator
+32,768 Hz Crystal
+Micro USB for a power input
+Mains for an alternate power input
+I2CEXT connections - must not be covered by GSM module
+Light sensor - must not be covered by GSM module
+TMP112 with extended pad layout, may never be fitted - must not be covered by GSM module
+Pads for DS18B20 - must not be covered by GSM module
+RFM23B - must not be covered by GSM module
+Header pins for GSM module
+Through hole for voice detector
+Through hole for mobile phone detector
+Through hole solder pad for any extra pins
+
+Off Board Hardware
+GSM module (SIM900)
+Voice detector
+Mobile phone detector
+5 V, 20Wh+ battery
+
+Target enclosure(s)
+Must fit in box 3 and another that Mark will specify, see http://www.earth.org.uk/note-on-IoT-leaf-enclosure-sizing.html#conclusions
+
+Comments
+Open chat :-D
+This document is now public.
+yes in chat but off for dinner
+
+
+When spec is ok mark the small ball in turquoise is better visible 
