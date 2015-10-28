@@ -556,7 +556,7 @@ void ModelledRadValveInputState::setReferenceTemperatures(const int currentTempC
 // Compute target temperature (stateless).
 // Can be called as often as required though may be slow/expensive.
 // Will be called by computeCallForHeat().
-// One aim is to allow reasonable energy savings (10--30%)
+// One aim is to allow reasonable energy savings (10--30%+)
 // even if the device is left in WARM mode all the time,
 // using occupancy/light/etc to determine when temperature can be set back
 // without annoying users.
