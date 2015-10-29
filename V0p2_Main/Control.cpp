@@ -394,7 +394,7 @@ static uint8_t _getNextHour()
   return(h + 1);
   }
 
-// Returns true if specified hour is (conservatively) in the specifed outlier quartile for the specified stats set.
+// Returns true if specified hour is (conservatively) in the specified outlier quartile for the specified stats set.
 // Returns false if a full set of stats not available, eg including the specified hour.
 // Always returns false if all samples are the same.
 //   * inTop  test for membership of the top quartile if true, bottom quartile if false
@@ -463,7 +463,7 @@ bool shouldBeWarmedAtHour(const uint_least8_t hh)
 
 
 #ifdef ENABLE_MODELLED_RAD_VALVE
-// Internal model of controlled radidator valve position.
+// Internal model of controlled radiator valve position.
 ModelledRadValve NominalRadValve;
 // Cache initially unset.
 uint8_t ModelledRadValve::mVPRO_cache = 0;
@@ -664,7 +664,7 @@ DEBUG_SERIAL_PRINT(inputState.refTempC);
 DEBUG_SERIAL_PRINTLN();
 #endif
 
-  // Possibly-adjusted and.or smoothed temperature to use for targetting.
+  // Possibly-adjusted and.or smoothed temperature to use for targeting.
   const int adjustedTempC16 = retainedState.isFiltering ? (retainedState.getSmoothedRecent() + refTempOffsetC16) : inputState.refTempC16;
   const int8_t adjustedTempC = (adjustedTempC16 >> 4);
 
@@ -675,7 +675,7 @@ DEBUG_SERIAL_PRINTLN();
     // Limit valve open slew to help minimise overshoot and actuator noise.
     // This should also reduce nugatory setting changes when occupancy (etc) is fluctuating.
     // Thus it may take several minutes to turn the radiator fully on,
-    // though probably opening the first ~33% will allow near-maximum heat output in practice.
+    // though probably opening the first third or so will allow near-maximum heat output in practice.
     if(valvePCOpen < inputState.maxPCOpen)
       {
 #if defined(SUPPORT_BAKE)
@@ -702,8 +702,8 @@ DEBUG_SERIAL_PRINTLN();
 #if defined(GLACIAL_ON_WITH_WIDE_DEADBAND)
                // Don't work so hard to reach and hold target temp with wide deadband
                // (widened eg because room is dark, or this is a pre-warm in FROST mode, or temperature is gyrating)
-               // and not comfort mode nor massively below target temp.
-               (inputState.widenDeadband && inputState.hasEcoBias && (adjustedTempC >= (uint8_t)fnmax(inputState.targetTempC-(int)SETBACK_FULL, (int)MIN_TARGET_C))) ||
+               // and not comfort mode nor massively below (possibly already setback) target temp.
+               (inputState.widenDeadband && inputState.hasEcoBias && (adjustedTempC >= (uint8_t)fnmax(inputState.targetTempC-1, (int)MIN_TARGET_C))) ||
 #endif
                (retainedState.isFiltering && (retainedState.getRawDelta() > 0)))); // FIXME: maybe redundant w/ GLACIAL_ON_WITH_WIDE_DEADBAND and widenDeadband set when isFiltering is true 
       if(beGlacial) { return(valvePCOpen + 1); }
