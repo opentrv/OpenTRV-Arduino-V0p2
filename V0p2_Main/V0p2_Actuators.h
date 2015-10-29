@@ -27,7 +27,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 
 
 
-// Generic (unit-testable) motor diver login using end-stop detection and simple shaft-encoder.
+// Generic (unit-testable) motor driver login using end-stop detection and simple shaft-encoder.
 // Designed to be embedded in a motor controller instance.
 // This used the sub-cycle clock for timing.
 // This is sensitive to sub-cycle position, ie will try to avoid causing a main loop overrun.
@@ -56,9 +56,6 @@ class CurrentSenseValveMotorDirect : public OTRadValve::HardwareMotorDriverInter
           uint8_t approxPrecisionPC;
           // A reduced ticks open/closed in ratio to allow small conversions.
           uint8_t tfotcSmall, tfctoSmall;
-
-//          // Ticks per percent in the open-to-closed direction; computed during tracking.
-//          uint8_t ticksPerPercentOpenToClosed;
 
         public:
           CalibrationParameters() : ticksFromOpenToClosed(0), ticksFromClosedToOpen(0) { }
