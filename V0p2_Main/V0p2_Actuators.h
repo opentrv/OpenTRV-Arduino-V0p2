@@ -23,7 +23,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 #ifndef V0P2_ACTUATORS_H
 #define V0P2_ACTUATORS_H
 
-#include "AbstractRadValve.h"
+#include <OTRadValve.h>
 
 
 
@@ -31,7 +31,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 // Designed to be embedded in a motor controller instance.
 // This used the sub-cycle clock for timing.
 // This is sensitive to sub-cycle position, ie will try to avoid causing a main loop overrun.
-class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallbackHandler
+class CurrentSenseValveMotorDirect : public OTRadValve::HardwareMotorDriverInterfaceCallbackHandler
   {
   public:
     // Maximum time to move pin between fully retracted and extended and vv, seconds, strictly positive.
@@ -92,7 +92,7 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
   private:
     // Hardware interface instance, passed by reference.
     // Must have a lifetime exceeding that of this enclosing object.
-    HardwareMotorDriverInterface * const hw;
+    OTRadValve::HardwareMotorDriverInterface * const hw;
 
   public:
     // Basic/coarse state of driver.
@@ -199,7 +199,7 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
   public:
     // Create an instance, passing in a reference to the non-NULL hardware driver.
     // The hardware driver instance lifetime must be longer than this instance.
-    CurrentSenseValveMotorDirect(HardwareMotorDriverInterface * const hwDriver) :
+    CurrentSenseValveMotorDirect(OTRadValve::HardwareMotorDriverInterface * const hwDriver) :
         hw(hwDriver), currentPC(0), targetPC(0)
         { changeState(init); }
 
@@ -262,7 +262,7 @@ class CurrentSenseValveMotorDirect : public HardwareMotorDriverInterfaceCallback
 // Implementation for V1 (REV7/DORM1) motor.
 // Usually not instantiated except within ValveMotorDirectV1.
 // Creating multiple instances almost certainly a BAD IDEA.
-class ValveMotorDirectV1HardwareDriver : public HardwareMotorDriverInterface
+class ValveMotorDirectV1HardwareDriver : public OTRadValve::HardwareMotorDriverInterface
   {
   private:
     // Spin for up to the specified number of SCT ticks, monitoring current and position encoding.
@@ -279,11 +279,11 @@ class ValveMotorDirectV1HardwareDriver : public HardwareMotorDriverInterface
     // Aborts early if high current is detected at the start,
     // or after the minimum run period.
     // Returns true if aborted early from too little time to start, or by high current (assumed end-stop hit).
-    bool spinSCTTicks(uint8_t maxRunTicks, uint8_t minTicksBeforeAbort, motor_drive dir, HardwareMotorDriverInterfaceCallbackHandler &callback);
+    bool spinSCTTicks(uint8_t maxRunTicks, uint8_t minTicksBeforeAbort, motor_drive dir, OTRadValve::HardwareMotorDriverInterfaceCallbackHandler &callback);
 
   public:
     // Detect if end-stop is reached or motor current otherwise very high.
-    virtual bool isCurrentHigh(HardwareMotorDriverInterface::motor_drive mdir = motorDriveOpening) const;
+    virtual bool isCurrentHigh(OTRadValve::HardwareMotorDriverInterface::motor_drive mdir = motorDriveOpening) const;
 
     // Call to actually run/stop motor.
     // May take as much as (say) 200ms eg to change direction.
@@ -291,11 +291,11 @@ class ValveMotorDirectV1HardwareDriver : public HardwareMotorDriverInterface
     //   * maxRunTicks  maximum sub-cycle ticks to attempt to run/spin for); zero will run for shortest reasonable time
     //   * dir  direction to run motor (or off/stop)
     //   * callback  callback handler
-    virtual void motorRun(uint8_t maxRunTicks, motor_drive dir, HardwareMotorDriverInterfaceCallbackHandler &callback);
+    virtual void motorRun(uint8_t maxRunTicks, OTRadValve::HardwareMotorDriverInterface::motor_drive dir, OTRadValve::HardwareMotorDriverInterfaceCallbackHandler &callback);
   };
 
 // Actuator/driver for direct local (radiator) valve motor control.
-class ValveMotorDirectV1 : public AbstractRadValve
+class ValveMotorDirectV1 : public OTRadValve::AbstractRadValve
   {
   private:
     // Driver for the V1/DORM1 hardware.
@@ -322,7 +322,7 @@ class ValveMotorDirectV1 : public AbstractRadValve
 
     // Minimally wiggles the motor to give tactile feedback and/or show to be working.
     // May take a significant fraction of a second.
-    // Finishes with the motor turned off.
+    // Finishes with the motor turned off, and a bias to closing the valve.
     virtual void wiggle() { logic.wiggle(); }
   };
 // Singleton implementation/instance.

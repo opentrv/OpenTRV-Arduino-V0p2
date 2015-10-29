@@ -99,7 +99,7 @@ static const uint8_t sctAbsLimitDR = sctAbsLimit - minMotorDRTicks;
 // Aborts early if high current is detected at the start,
 // or after the minimum run period.
 // Returns true if aborted early from too little time to start, or by high current (assumed end-stop hit).
-bool ValveMotorDirectV1HardwareDriver::spinSCTTicks(const uint8_t maxRunTicks, const uint8_t minTicksBeforeAbort, const motor_drive dir, HardwareMotorDriverInterfaceCallbackHandler &callback)
+bool ValveMotorDirectV1HardwareDriver::spinSCTTicks(const uint8_t maxRunTicks, const uint8_t minTicksBeforeAbort, const motor_drive dir, OTRadValve::HardwareMotorDriverInterfaceCallbackHandler &callback)
   {
   // Sub-cycle time now.
   const uint8_t sctStart = getSubCycleTime();
@@ -166,7 +166,7 @@ bool ValveMotorDirectV1HardwareDriver::spinSCTTicks(const uint8_t maxRunTicks, c
 //   * callback  callback handler
 void ValveMotorDirectV1HardwareDriver::motorRun(const uint8_t maxRunTicks,
                                                 const motor_drive dir,
-                                                HardwareMotorDriverInterfaceCallbackHandler &callback)
+                                                OTRadValve::HardwareMotorDriverInterfaceCallbackHandler &callback)
   {
   // Remember previous state of motor.
   // This may help to correctly allow for (eg) position encoding inputs while a motor is slowing.
@@ -401,13 +401,13 @@ uint8_t CurrentSenseValveMotorDirect::CalibrationParameters::computePosition(
 
 // Minimally wiggle the motor to give tactile feedback and/or show to be working.
 // May take a significant fraction of a second.
-// Finishes with the motor turned off.
+// Finishes with the motor turned off, and a bias to closing the valve.
 void CurrentSenseValveMotorDirect::wiggle()
   {
-  hw->motorRun(0, HardwareMotorDriverInterface::motorOff, *this);
-  hw->motorRun(0, HardwareMotorDriverInterface::motorDriveOpening, *this);
-  hw->motorRun(0, HardwareMotorDriverInterface::motorDriveClosing, *this);
-  hw->motorRun(0, HardwareMotorDriverInterface::motorOff, *this);
+  hw->motorRun(0, OTRadValve::HardwareMotorDriverInterface::motorOff, *this);
+  hw->motorRun(0, OTRadValve::HardwareMotorDriverInterface::motorDriveOpening, *this);
+  hw->motorRun(0, OTRadValve::HardwareMotorDriverInterface::motorDriveClosing, *this);
+  hw->motorRun(0, OTRadValve::HardwareMotorDriverInterface::motorOff, *this);
   }
 
 // Run fast towards/to end stop as far as possible in this call.
@@ -422,10 +422,10 @@ bool CurrentSenseValveMotorDirect::runFastTowardsEndStop(const bool toOpen)
   endStopDetected = false;
   // Run motor as far as possible on this sub-cycle.
   hw->motorRun(~0, toOpen ?
-      HardwareMotorDriverInterface::motorDriveOpening
-    : HardwareMotorDriverInterface::motorDriveClosing, *this);
+      OTRadValve::HardwareMotorDriverInterface::motorDriveOpening
+    : OTRadValve::HardwareMotorDriverInterface::motorDriveClosing, *this);
   // Stop motor and ensure power off.
-  hw->motorRun(0, HardwareMotorDriverInterface::motorOff, *this);
+  hw->motorRun(0, OTRadValve::HardwareMotorDriverInterface::motorOff, *this);
   // Report if end-stop has apparently been hit. 
   return(endStopDetected);
   }
@@ -441,10 +441,10 @@ bool CurrentSenseValveMotorDirect::runTowardsEndStop(const bool toOpen)
   endStopDetected = false;
   // Run motor as far as possible on this sub-cycle.
   hw->motorRun(minMotorDRTicks, toOpen ?
-      HardwareMotorDriverInterface::motorDriveOpening
-    : HardwareMotorDriverInterface::motorDriveClosing, *this);
+      OTRadValve::HardwareMotorDriverInterface::motorDriveOpening
+    : OTRadValve::HardwareMotorDriverInterface::motorDriveClosing, *this);
   // Stop motor and ensure power off.
-  hw->motorRun(0, HardwareMotorDriverInterface::motorOff, *this);
+  hw->motorRun(0, OTRadValve::HardwareMotorDriverInterface::motorOff, *this);
   // Report if end-stop has apparently been hit. 
   return(endStopDetected);
   }
@@ -725,7 +725,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("-<");
     default:
       {
       changeState(valveError);
-      hw->motorRun(0, HardwareMotorDriverInterface::motorOff, *this);
+      hw->motorRun(0, OTRadValve::HardwareMotorDriverInterface::motorOff, *this);
       panic(); // Not expected to return.
       return;
       }

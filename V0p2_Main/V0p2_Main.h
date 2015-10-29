@@ -30,7 +30,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // GLOBAL flags that alter system build and behaviour.
 #define DEBUG // If defined, do extra checks and serial logging.  Will take more code space and power.
 //#define ALT_MAIN_LOOP // If defined, normal main loop and POST are REPLACED with alternates, for non-OpenTRV builds.
-//#define UNIT_TESTS // If defined, normal main loop is REPLACED with a unit test cycle.  Usually define DEBUG also for get serial logging.
+#define UNIT_TESTS // If defined, normal main loop is REPLACED with a unit test cycle.  Usually define DEBUG also for get serial logging.
 //#define EST_CPU_DUTYCYCLE // If defined, estimate CPU duty cycle and thus base power consumption.
 
 //#define COMPAT_UNO // If defined, allow code to run on stock Arduino UNO board.  NOT IMPLEMENTED
@@ -44,6 +44,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include <Arduino.h>
 #include <OTV0p2Base.h>
 #include <OTRadioLink.h>
+#include <OTRadValve.h>
 #include "V0p2_Generic_Config.h" // Config switches and module dependencies.
 #include "V0p2_Board_IO_Config.h" // I/O pin allocation: include ahead of I/O module headers.
 

@@ -114,16 +114,16 @@ static void testLibVersions()
 
 
 
-class DummyHardwareDriver : public HardwareMotorDriverInterface
+class DummyHardwareDriver : public OTRadValve::HardwareMotorDriverInterface
   {
   public:
     // Detect if end-stop is reached or motor current otherwise very high.
-    virtual bool isCurrentHigh(HardwareMotorDriverInterface::motor_drive mdir = motorDriveOpening) const { return(currentHigh); }
+    virtual bool isCurrentHigh(OTRadValve::HardwareMotorDriverInterface::motor_drive mdir = motorDriveOpening) const { return(currentHigh); }
 
   public:
     DummyHardwareDriver() : currentHigh(false) { }
 
-    virtual void motorRun(uint8_t maxRunTicks, motor_drive dir, HardwareMotorDriverInterfaceCallbackHandler &callback)
+    virtual void motorRun(uint8_t maxRunTicks, motor_drive dir, OTRadValve::HardwareMotorDriverInterfaceCallbackHandler &callback)
       {
       }
 

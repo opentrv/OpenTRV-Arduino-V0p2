@@ -112,7 +112,7 @@ uint8_t *FHT8VCreateValveSetCmdFrameHT_r(uint8_t *bptr, bool doHeader, fht8v_msg
 // HC1 and HC2 are fetched with the FHT8VGetHC1() and FHT8VGetHC2() calls, and address is always 0.
 // The generated command frame can be resent indefinitely.
 // If no valve is set up then this may simply terminate an empty buffer with 0xff.
-void FHT8VCreateValveSetCmdFrame(const AbstractRadValve &valve);
+void FHT8VCreateValveSetCmdFrame(const OTRadValve::AbstractRadValve &valve);
 
 // Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) in the shared TX buffer.
 //   * valvePC  the percentage open to set the valve [0,100]

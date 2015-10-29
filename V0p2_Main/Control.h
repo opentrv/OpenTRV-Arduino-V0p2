@@ -395,8 +395,8 @@ struct ModelledRadValveState
 
 #if defined(LOCAL_TRV)
 #define ENABLE_MODELLED_RAD_VALVE
-// Internal model of radidator valve position, embodying control logic.
-class ModelledRadValve : public AbstractRadValve
+// Internal model of radiator valve position, embodying control logic.
+class ModelledRadValve : public OTRadValve::AbstractRadValve
   {
   private:
     // All input state for deciding where to set the radiator valve in normal operation.

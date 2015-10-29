@@ -389,7 +389,7 @@ void FHT8VCreateValveSetCmdFrame(const uint8_t valvePC)
 // HC1 and HC2 are fetched with the FHT8VGetHC1() and FHT8VGetHC2() calls, and address is always 0.
 // The generated command frame can be resent indefinitely.
 // If no valve is set up then this may simply terminate an empty buffer with 0xff.
-void FHT8VCreateValveSetCmdFrame(const AbstractRadValve &valve)
+void FHT8VCreateValveSetCmdFrame(const OTRadValve::AbstractRadValve &valve)
   {
   if(!localFHT8VTRVEnabled())
     {
