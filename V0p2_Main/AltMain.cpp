@@ -335,6 +335,9 @@ void loopAlt()
   // Yank valve to random target every minute to try to upset it!
   if(0 == TIME_LSD) { ValveDirect.set(OTV0P2BASE::randRNG8() % 101); }
 
+  // Simulate human doing the right thing after fitting valve.
+  if(ValveDirect.isWaitingForValveToBeFitted()) { ValveDirect.signalValveFitted(); }
+
   // Provide regular poll to motor driver.
   // May take significant time to run
   // so don't call when timing is critical or not much left,

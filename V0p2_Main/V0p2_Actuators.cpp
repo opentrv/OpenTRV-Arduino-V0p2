@@ -490,12 +490,13 @@ void CurrentSenseValveMotorDirect::poll()
       {
 //DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valvePinWithdrawn");
 
-      // FIXME: wait for signal from user that valve has been fitted, or timeout...
-      // Timeout allows for automatic recovery from crash/restart after say 10 mins.
-      // virtual void signalValveFitted() { perState.valvePinWithdrawn.valveFitted = true; }
+      // Wait for signal from user that valve has been fitted...
+      // TODO: alternative timeout allows for automatic recovery from crash/restart after say 10 mins.
+      // From: void signalValveFitted() { perState.valvePinWithdrawn.valveFitted = true; }
 
       // Once fitted, move to calibration.
-      changeState(valveCalibrating);
+      if(perState.valvePinWithdrawn.valveFitted)
+        { changeState(valveCalibrating); }
       break;
       }
 

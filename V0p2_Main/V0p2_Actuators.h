@@ -241,8 +241,7 @@ class CurrentSenseValveMotorDirect : public OTRadValve::HardwareMotorDriverInter
     virtual void signalRunSCTTick(bool opening);
 
     // Call when given user signal that valve has been fitted (ie is fully on).
-    // Is ISR-/thread- safe.
-    virtual void signalValveFitted() { perState.valvePinWithdrawn.valveFitted = true; }
+    virtual void signalValveFitted() { if(isWaitingForValveToBeFitted()) { perState.valvePinWithdrawn.valveFitted = true; } }
 
     // Waiting for indication that the valvehead  has been fitted to the tail.
     virtual bool isWaitingForValveToBeFitted() const { return(state == (uint8_t)valvePinWithdrawn); }
@@ -312,6 +311,12 @@ class ValveMotorDirectV1 : public OTRadValve::AbstractRadValve
     // Set new target value (if in range).
     // Returns true if specified value accepted.
     virtual bool set(const uint8_t newValue);
+
+    // Call when given user signal that valve has been fitted (ie is fully on).
+    virtual void signalValveFitted() { logic.signalValveFitted(); }
+
+    // Waiting for indication that the valve head has been fitted to the tail.
+    virtual bool isWaitingForValveToBeFitted() const { return(logic.isWaitingForValveToBeFitted()); }
 
     // Returns true iff not in error state and not (re)calibrating/(re)initialising/(re)syncing.
     virtual bool isInNormalRunState() const { return(logic.isInNormalRunState()); }

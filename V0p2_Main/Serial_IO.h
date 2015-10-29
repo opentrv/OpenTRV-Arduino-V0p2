@@ -37,7 +37,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define LINE_START_CHAR_CLI '>' // CLI prompt.
 #define LINE_START_CHAR_ERROR '!' // Error log line.
 #define LINE_START_CHAR_WARNING '?' // Warning log line.
-#define LINE_START_CHAR_RSTATS '@' // Remote stats log line.
+#define LINE_START_CHAR_INFO '+' // Informational log line.
+#define LINE_START_CHAR_RSTATS '@' // Remote (binary) stats log line.
+#define LINE_START_CHAR_RJSTATS '{' // Remote (JSON) stats log line.
 #define LINE_START_CHAR_STATS '=' // Local stats log line.
 
 
