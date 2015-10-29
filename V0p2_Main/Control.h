@@ -50,6 +50,7 @@ void loopOpenTRV();
 // Other parts of the room may be somewhat colder than where the sensor is, so aim a little over 5C.
 // 14C avoids risk of raised blood pressure and is a generally safe and comfortable sleeping temperature.
 // Note: BS EN 215:2004 S5.3.5 says maximum setting must be <= 32C, minimum in range [5C,12C].
+// 15C+ may help mould/mold risk from condensation, see: http://www.nea.org.uk/Resources/NEA/Publications/2013/Resource%20-%20Dealing%20with%20damp%20and%20condensation%20%28lo%20res%29.pdf
 #define BIASECO_FROST (max(6,MIN_TARGET_C)) // Target FROST temperature for ECO bias; must be in range [MIN_TARGET_C,BIASCOM_FROST[.
 #define BIASCOM_FROST (max(14,MIN_TARGET_C)) // Target FROST temperature for Comfort bias; must be in range ]BIASECO_FROST,MAX_TARGET_C].
 #define FROST BIASECO_FROST
@@ -81,7 +82,6 @@ void loopOpenTRV();
 #define TEMP_SCALE_MIN (BIASECO_WARM-1) // Bottom of range for adjustable-base-temperature systems.
 #define TEMP_SCALE_MID ((BIASECO_WARM + BIASCOM_WARM + 1)/2) // Middle of range for adjustable-base-temperature systems; should be 'eco' baised.
 #define TEMP_SCALE_MAX (BIASCOM_WARM+1) // Top of range for adjustable-base-temperature systems.
-
 
 // Raise target by this many degrees in 'BAKE' mode (strictly positive).
 #define BAKE_UPLIFT 5
