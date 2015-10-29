@@ -134,7 +134,9 @@ class CurrentSenseValveMotorDirect : public OTRadValve::HardwareMotorDriverInter
 //        uint8_t runCount; // Completed round-trip calibration runs.
         uint16_t ticksFromOpenToClosed;
         uint16_t ticksFromClosedToOpen;
-        } calibrating;
+        } valveCalibrating;
+      // State used while waiting for the valve to be fitted.
+      struct { volatile bool valveFitted; } valvePinWithdrawn;
       } perState;
     inline void clearPerState() { if(sizeof(perState) > 0) { memset(&perState, 0, sizeof(perState)); } }
 
@@ -238,19 +240,19 @@ class CurrentSenseValveMotorDirect : public OTRadValve::HardwareMotorDriverInter
     // Is ISR-/thread- safe.
     virtual void signalRunSCTTick(bool opening);
 
+    // Call when given user signal that valve has been fitted (ie is fully on).
+    // Is ISR-/thread- safe.
+    virtual void signalValveFitted() { perState.valvePinWithdrawn.valveFitted = true; }
+
+    // Waiting for indication that the valvehead  has been fitted to the tail.
+    virtual bool isWaitingForValveToBeFitted() const { return(state == (uint8_t)valvePinWithdrawn); }
+
     // Returns true iff not in error state and not (re)calibrating/(re)initialising/(re)syncing.
-    // By default there is no recalibration step.
     virtual bool isInNormalRunState() const { return(state >= (uint8_t)valveNormal); }
 
     // Returns true if in an error state.
     // May be recoverable by forcing recalibration.
     virtual bool isInErrorState() const { return(state >= (uint8_t)valveError); }
-
-
-//    // Call when given user signal that valve has been fitted (ie is fully on).
-//    // Can be called while run() is in progress.
-//    // Is ISR-/thread- safe.
-//    void signalValveFitted();
   };
 
 

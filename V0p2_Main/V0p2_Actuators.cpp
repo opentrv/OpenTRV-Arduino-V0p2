@@ -490,7 +490,9 @@ void CurrentSenseValveMotorDirect::poll()
       {
 //DEBUG_SERIAL_PRINTLN_FLASHSTRING("  valvePinWithdrawn");
 
-      // TODO: wait for signal from user that valve has been fitted...
+      // FIXME: wait for signal from user that valve has been fitted, or timeout...
+      // Timeout allows for automatic recovery from crash/restart after say 10 mins.
+      // virtual void signalValveFitted() { perState.valvePinWithdrawn.valveFitted = true; }
 
       // Once fitted, move to calibration.
       changeState(valveCalibrating);
@@ -505,14 +507,14 @@ void CurrentSenseValveMotorDirect::poll()
 //      DEBUG_SERIAL_PRINT(perState.calibrating.calibState);
 //      DEBUG_SERIAL_PRINTLN();
       // Select activity based on micro-state.
-      switch(perState.calibrating.calibState)
+      switch(perState.valveCalibrating.calibState)
         {
         case 0:
           {
 #if 1 && defined(DEBUG)
 DEBUG_SERIAL_PRINTLN_FLASHSTRING("+calibrating");
 #endif            
-          ++perState.calibrating.calibState; // Move to next micro state.
+          ++perState.valveCalibrating.calibState; // Move to next micro state.
           break;
           }
         case 1:
@@ -523,7 +525,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("+calibrating");
             // Reset tick count.
             ticksFromOpen = 0;
             ticksReverse = 0;
-            ++perState.calibrating.calibState; // Move to next micro state.
+            ++perState.valveCalibrating.calibState; // Move to next micro state.
             }
           break;
           }
@@ -537,8 +539,8 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("+calibrating");
             if(runTowardsEndStop(false))
               {
               const uint16_t tfotc = ticksFromOpen;
-              perState.calibrating.ticksFromOpenToClosed = tfotc;
-              ++perState.calibrating.calibState; // Move to next micro state.
+              perState.valveCalibrating.ticksFromOpenToClosed = tfotc;
+              ++perState.valveCalibrating.calibState; // Move to next micro state.
               break;
               }
             } while(getSubCycleTime() <= sctAbsLimitDR);
@@ -556,13 +558,13 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("+calibrating");
               const uint16_t tfcto = ticksReverse;
               // Help avoid premature termination of this direction
               // by NOT terminating this run if much shorter than run in other direction.
-              if(tfcto >= (perState.calibrating.ticksFromOpenToClosed >> 1))
+              if(tfcto >= (perState.valveCalibrating.ticksFromOpenToClosed >> 1))
                 {
-                perState.calibrating.ticksFromClosedToOpen = tfcto;
+                perState.valveCalibrating.ticksFromClosedToOpen = tfcto;
                 // Reset tick count.
                 ticksFromOpen = 0;
                 ticksReverse = 0;
-                ++perState.calibrating.calibState; // Move to next micro state.
+                ++perState.valveCalibrating.calibState; // Move to next micro state.
                 }
               break; // In all cases when end-stop hit don't try to run further in this sub-cycle.
               }
@@ -572,7 +574,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("+calibrating");
         case 4:
           {
           // Set all measured calibration input parameters and current position.
-          cp.updateAndCompute(perState.calibrating.ticksFromOpenToClosed, perState.calibrating.ticksFromClosedToOpen);
+          cp.updateAndCompute(perState.valveCalibrating.ticksFromOpenToClosed, perState.valveCalibrating.ticksFromClosedToOpen);
 
 #if 1 && defined(DEBUG)
 DEBUG_SERIAL_PRINT_FLASHSTRING("    ticksFromOpenToClosed: ");
