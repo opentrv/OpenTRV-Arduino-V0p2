@@ -398,7 +398,7 @@ extern TemperaturePot TempPot;
  Functionality and code only enabled if ENABLE_VOICE_SENSOR is defined.
  */
 // Sensor for supply (eg battery) voltage in millivolts.
-class VoiceDetection : public SimpleTSUint8Sensor
+class VoiceDetection : public OTV0P2BASE::SimpleTSUint8Sensor
   {
   private:
     // Activity count.
@@ -428,7 +428,7 @@ class VoiceDetection : public SimpleTSUint8Sensor
     virtual bool handleInterruptSimple();
 
     // Returns true if voice has been detected in this or previous poll period.
-    bool isVoiceDelected() { return(isDetected); }
+    bool isVoiceDetected() { return(isDetected); }
   };
 // Singleton implementation/instance.
 extern VoiceDetection Voice;
