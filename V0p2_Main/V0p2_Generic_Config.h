@@ -45,7 +45,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as plain boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
 //#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
-#define CONFIG_DORM1 // REV7 / DORM1 Winter 2014/2015 all-in-one valve unit.
+//#define CONFIG_DORM1 // REV7 / DORM1 Winter 2014/2015 all-in-one valve unit.
 //#define CONFIG_DORM1_BOILER // REV8 / DORM1 Winter 2014/2015 boiler-control unit.
 
 
@@ -65,6 +65,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
 //#define CONFIG_REV9_STATS // REV9 as stats node, cut 2 of the board.
 //#define CONFIG_REV9_cut1 // REV9 as CC1 relay, cut1 of board.
+#define CONFIG_DE_TESTLAB // Deniz's test environment
 //#define CONFIG_BAREBONES // No peripherals / breadboard
 
 
@@ -656,8 +657,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define ENABLE_USE_OF_AVR_IDLE_MODE
 // IF DEFINED: Use OTNullRadioLink instead of a radio module
 // Undefine other radio //FIXME make this a part of the automatic stuff
-//#define USE_NULLRADIO
-#define USE_MODULE_SIM900
+#define USE_NULLRADIO
+//#define USE_MODULE_SIM900
 
 // things that break
 // IF DEFINED: basic FROST/WARM temperatures are settable.
@@ -675,7 +676,65 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 
 
+// -------------------------
+#ifdef CONFIG_DE_TESTLAB
+// use alternative loop
+#define ALT_MAIN_LOOP
+#define V0p2_REV 0
+// Defaults for V0.2; have to be undefined if not required.  ***
+// May require limiting clock speed and using some alternative peripherals/sensors.
+#define SUPPLY_VOLTAGE_LOW_2AA
+// Provide software RTC support by default.
+#define USE_RTC_INTERNAL_SIMPLE
+// IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
+#undef LOCAL_TRV
+// IF DEFINED: this unit *can* act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.  ***
+#undef ENABLE_BOILER_HUB
+// IF DEFINED: allow RX of stats frames.
+#undef ALLOW_STATS_RX
+// IF DEFINED: allow TX of stats frames.
+#undef ALLOW_STATS_TX
+// IF DEFINED: allow minimal binary format in addition to more generic one: ~400 bytes code cost.
+#undef ALLOW_MINIMAL_STATS_TXRX
+// IF DEFINED: allow JSON stats frames alongside binary ones.
+#undef ALLOW_JSON_OUTPUT
+// IF DEFINED: (default) forced always-on radio listen/RX, eg not requiring setup to explicitly enable. ***
+#undef ENABLE_DEFAULT_ALWAYS_RX
+// IF DEFINED: this unit supports CLI over the USB/serial connection, eg for run-time reconfig.
+#define SUPPORT_CLI
+// IF DEFINED: enable a full OpenTRV CLI.
+#define ENABLE_FULL_OT_CLI
+// IF DEFINED: enable a full OpenTRV UI with normal LEDs etc. ***
+//#define ENABLE_FULL_OT_UI
+// IF DEFINED: enable and extended CLI with a longer input buffer for example.
+#undef ENABLE_EXTENDED_CLI
+// IF DEFINED: minimise boot effort and energy eg for intermittently-powered energy-harvesting applications.  ***
+#undef MIN_ENERGY_BOOT
+// IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).   ***
+#undef SENSOR_SHT21_ENABLE
+// IF DEFINED: enable use AVR's 'idle' mode to stop the CPU but leave I/O (eg Serial) running to save power.
+// DHD20150920: CURRENTLY NOT RECOMMENDED AS STILL SEEMS TO CAUSE SOME BOARDS TO CRASH.
+#define ENABLE_USE_OF_AVR_IDLE_MODE
+// IF DEFINED: Use OTNullRadioLink instead of a radio module
+// Undefine other radio //FIXME make this a part of the automatic stuff
+//#define USE_NULLRADIO
+#define USE_MODULE_SIM900
+// Define voice module
+#define ENABLE_VOICE_SENSOR
 
+// things that break
+// IF DEFINED: basic FROST/WARM temperatures are settable.
+//#undef SETTABLE_TARGET_TEMPERATURES
+// IF DEFINED: use active-low LEARN button(s).  Needs SUPPORT_SINGLETON_SCHEDULE.  ***
+//#undef LEARN_BUTTON_AVAILABLE // OPTIONAL ON V0.09 PCB1  UI_Minimal.cpp:1180:32: error: 'handleLEARN' was not declared in this scope
+#define SUPPORT_BAKE  // UI_Minimal.cpp:266:28: error: 'inBakeMode' was not declared in this scope
+#define USE_MODULE_FHT8VSIMPLE //Control.cpp:1322:27: error: 'localFHT8VTRVEnabled' was not declared in this scope
+// If LDR is not to be used then specifically define OMIT_... as below.
+//#define OMIT_MODULE_LDROCCUPANCYDETECTION //  LDR 'occupancy' sensing irrelevant for DHW. Messaging.cpp:232:87: error: 'class AmbientLight' has no member named 'getRaw
+
+//#undef USE_MODULE_RFM22RADIOSIMPLE
+
+#endif
 
 
 
