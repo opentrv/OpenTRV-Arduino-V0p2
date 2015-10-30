@@ -671,7 +671,7 @@ class OccupancyTracker : public OTV0P2BASE::SimpleTSUint8Sensor
     // Compound operations must block interrupts.
     volatile uint8_t occupationCountdownM;
 
-    // Non-zero if occpuancy system recently notified of activity.
+    // Non-zero if occupancy system recently notified of activity.
     // Marked voilatile for thread-safe lock-free non-read-modify-write access to byte-wide value.
     // Compound operations must block interrupts.
     volatile uint8_t activityCountdownM;
