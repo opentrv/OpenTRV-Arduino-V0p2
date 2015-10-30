@@ -1548,6 +1548,8 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
 
 
 // 'Elapsed minutes' count of minute/major cycles; cheaper than accessing RTC and not tied to real time.
+// Starts at or near zero.
+// Wraps at its maximum (0xff) value.
 static uint8_t minuteCount;
 
 #if !defined(DONT_RANDOMISE_MINUTE_CYCLE)
@@ -1691,7 +1693,7 @@ void setupOpenTRV()
   // Offsets based on whatever noise is in the simple PRNG plus some from the unique ID.
   const uint8_t ID0 = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_ID);
   localTicks = (OTV0P2BASE::randRNG8() ^ ID0) & 0x1f; // Start within bottom half of minute (or close to).
-  if(0 != (ID0 & 0x20)) { minuteCount = OTV0P2BASE::randRNG8() | 2; } // Start at minute 2 or 3 out of 4 for some units.
+  if(0 != (ID0 & 0x20)) { minuteCount = (OTV0P2BASE::randRNG8() & 1) | 2; } // Start at minute 2 or 3 out of 4 for some units.
 #endif
 
 #if 0 && defined(DEBUG)
@@ -2490,6 +2492,16 @@ void loopOpenTRV()
   // Get current modelled valve position into abstract driver.
   ValveDirect.set(NominalRadValve.get());
 #endif
+  // If waiting for for verification that the valve has been fitted
+  // then accept any manual interaction with controls as that signal.
+  // ('Any' manual interaction may prove too sensitive.)
+  // Also have a timeout of somewhat over ~10m from startup
+  // for automatic recovery after any crash and restart.
+  if(ValveDirect.isWaitingForValveToBeFitted())
+      {
+      if(veryRecentUIControlUse() || (minuteCount > 15))
+          { ValveDirect.signalValveFitted(); }
+      }
   // Provide regular poll to motor driver.
   // May take significant time to run
   // so don't call when timing is critical or not much time left this cycle.
