@@ -1802,7 +1802,8 @@ void remoteCallForHeatRX(const uint16_t id, const uint8_t percentOpen)
   // Normal minimum single-valve percentage open that is not ignored.
   // Somewhat higher than typical per-valve minimum,
   // to help provide boiler with an opportunity to dump heat before switching off.
-  const uint8_t default_minimum = (DEFAULT_VALVE_PC_MODERATELY_OPEN+DEFAULT_MIN_VALVE_PC_REALLY_OPEN)/2;
+  // May be too high to respond to valves with restricted max-open / range.
+  const uint8_t default_minimum = OTRadValve::DEFAULT_VALVE_PC_SAFER_OPEN;
 #ifdef ENABLE_NOMINAL_RAD_VALVE
   const uint8_t minvro = fnmax(default_minimum, NominalRadValve.getMinValvePcReallyOpen());
 #else
@@ -1826,7 +1827,7 @@ void remoteCallForHeatRX(const uint16_t id, const uint8_t percentOpen)
   // Selecting "quick heat" at a valve should immediately pass this.
   // (Will not provide hysteresis for very high min really open value.)
   const uint8_t threshold = isBoilerOn() ?
-      minvro : fnmax(minvro, (uint8_t) DEFAULT_VALVE_PC_MODERATELY_OPEN);
+      minvro : fnmax(minvro, (uint8_t) OTRadValve::DEFAULT_VALVE_PC_MODERATELY_OPEN);
 
   if(percentOpen >= threshold)
     // && FHT8VHubAcceptedHouseCode(command.hc1, command.hc2))) // Accept if house code OK.
