@@ -47,13 +47,13 @@ enum stats_TX_level
 stats_TX_level getStatsTXLevel();
 
 
-// Generate 'secure' new random byte.
-// This should be essentially all entropy and unguessable.
-// Likely to be slow and may force some I/O.
-// Not thread-/ISR- safe.
-//  * whiten  if true whiten the output a little more, but little or no extra entropy is added;
-//      if false then it is easier to test if the underlying source provides new entropy reliably
-uint8_t getSecureRandomByte(bool whiten = true);
+//// Generate 'secure' new random byte.
+//// This should be essentially all entropy and unguessable.
+//// Likely to be slow and may force some I/O.
+//// Not thread-/ISR- safe.
+////  * whiten  if true whiten the output a little more, but little or no extra entropy is added;
+////      if false then it is easier to test if the underlying source provides new entropy reliably
+//uint8_t getSecureRandomByte(bool whiten = true);
 
 //// Add entropy to the pool, if any, along with an estimate of how many bits of real entropy are present.
 ////   * data   byte containing 'random' bits.

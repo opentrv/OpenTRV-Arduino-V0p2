@@ -1384,7 +1384,7 @@ bool pollIO(const bool force)
     static volatile uint8_t _pO_lastPoll;
 
     // Poll RX at most about every ~8ms.
-    const uint8_t sct = getSubCycleTime();
+    const uint8_t sct = OTV0P2BASE::getSubCycleTime();
     if(force || (sct != _pO_lastPoll))
       {
       _pO_lastPoll = sct;
@@ -1891,7 +1891,7 @@ void loopOpenTRV()
 
   // Try if very near to end of cycle and thus causing an overrun.
   // Conversely, if not true, should have time to savely log outputs, etc.
-  const uint8_t nearOverrunThreshold = GSCT_MAX - 8; // ~64ms/~32 serial TX chars of grace time...
+  const uint8_t nearOverrunThreshold = OTV0P2BASE::GSCT_MAX - 8; // ~64ms/~32 serial TX chars of grace time...
 //  bool tooNearOverrun = false; // Set flag that can be checked later.
 
   // Is this unit currently in central hub listener mode?
@@ -2313,7 +2313,7 @@ void loopOpenTRV()
       }
 
     // Churn/reseed PRNG(s) a little to improve unpredictability in use: should be lightweight.
-    case 2: { if(runAll) { OTV0P2BASE::seedRNG8(minuteCount ^ cycleCountCPU() ^ (uint8_t)Supply_mV.get(), _getSubCycleTime() ^ AmbLight.get(), (uint8_t)TemperatureC16.get()); } break; }
+    case 2: { if(runAll) { OTV0P2BASE::seedRNG8(minuteCount ^ cycleCountCPU() ^ (uint8_t)Supply_mV.get(), OTV0P2BASE::_getSubCycleTime() ^ AmbLight.get(), (uint8_t)TemperatureC16.get()); } break; }
     // Force read of supply/battery voltage; measure and recompute status (etc) less often when already thought to be low, eg when conserving.
     case 4: { if(runAll) { Supply_mV.read(); } break; }
 
@@ -2493,7 +2493,7 @@ void loopOpenTRV()
   // May take significant time to run
   // so don't call when timing is critical or not much time left this cycle.
   // Only calling this after most other heavy-lifting work is likely done.
-  if(!showStatus && (getSubCycleTime() < GSCT_MAX/2))
+  if(!showStatus && (OTV0P2BASE::getSubCycleTime() < OTV0P2BASE::GSCT_MAX/2))
     { ValveDirect.read(); }
 #endif
 
@@ -2508,13 +2508,13 @@ void loopOpenTRV()
   const bool humanCLIUse = isCLIActive(); // Keeping CLI active for human interaction rather than for automated interaction.
   if(showStatus || humanCLIUse)
     {
-    const uint8_t sct = getSubCycleTime();
-    const uint8_t listenTime = max(GSCT_MAX/16, CLI_POLL_MIN_SCT);
-    if(sct < (GSCT_MAX - 2*listenTime))
+    const uint8_t sct = OTV0P2BASE::getSubCycleTime();
+    const uint8_t listenTime = max(OTV0P2BASE::GSCT_MAX/16, CLI_POLL_MIN_SCT);
+    if(sct < (OTV0P2BASE::GSCT_MAX - 2*listenTime))
       // Don't listen beyond the last 16th of the cycle,
       // or a minimal time if only prodding for interaction with automated front-end,
       // as listening for UART RX uses lots of power.
-      { pollCLI(humanCLIUse ? (GSCT_MAX-listenTime) : (sct+CLI_POLL_MIN_SCT), 0 == TIME_LSD); }
+      { pollCLI(humanCLIUse ? (OTV0P2BASE::GSCT_MAX-listenTime) : (sct+CLI_POLL_MIN_SCT), 0 == TIME_LSD); }
     }
 #endif
 

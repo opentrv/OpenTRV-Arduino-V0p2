@@ -235,7 +235,7 @@ bool ensureIDCreated(const bool force)
           // Try to make decently-randomised 'unique-ish' ID with mixture of sources.
           // Is not confidential, and will be transmitted in the clear.
           // System will typically not have been running long when this is invoked.
-          const uint8_t newValue = 0x80 | (getSecureRandomByte() ^ envNoise);
+          const uint8_t newValue = 0x80 | (OTV0P2BASE::getSecureRandomByte() ^ envNoise);
           if(0xff == newValue) { continue; } // Reject unusable value.
           OTV0P2BASE::eeprom_smart_update_byte(loc, newValue);
           OTV0P2BASE::serialPrintAndFlush(newValue, HEX);

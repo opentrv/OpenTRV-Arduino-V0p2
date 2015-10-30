@@ -685,16 +685,16 @@ void serialStatusReport()
 
 #define SYNTAX_COL_WIDTH 10 // Width of 'syntax' column; strictly positive.
 // Estimated maximum overhead in sub-cycle ticks to print full line and all trailing CLI summary info.
-#define CLI_PRINT_OH_SCT ((uint8_t)(GSCT_MAX/4))
+#define CLI_PRINT_OH_SCT ((uint8_t)(OTV0P2BASE::GSCT_MAX/4))
 // Deadline in minor cycle by which to stop printing description.
-#define STOP_PRINTING_DESCRIPTION_AT ((uint8_t)(GSCT_MAX-CLI_PRINT_OH_SCT))
+#define STOP_PRINTING_DESCRIPTION_AT ((uint8_t)(OTV0P2BASE::GSCT_MAX-CLI_PRINT_OH_SCT))
 // Efficiently print a single line given the syntax element and the description, both non-null.
 // NOTE: will skip the description if getting close to the end of the time deadline, in order to avoid overrun.
 static void printCLILine(const uint8_t deadline, __FlashStringHelper const *syntax, __FlashStringHelper const *description)
   {
   Serial.print(syntax);
   OTV0P2BASE::flushSerialProductive(); // Ensure all pending output is flushed before sampling current position in minor cycle.
-  if(getSubCycleTime() >= deadline) { Serial.println(); return; }
+  if(OTV0P2BASE::getSubCycleTime() >= deadline) { Serial.println(); return; }
   for(int8_t padding = SYNTAX_COL_WIDTH - strlen_P((const char *)syntax); --padding >= 0; ) { Serial_print_space(); }
   Serial.println(description);
   }
@@ -704,7 +704,7 @@ static void printCLILine(const uint8_t deadline, const char syntax, __FlashStrin
   {
   Serial.print(syntax);
   OTV0P2BASE::flushSerialProductive(); // Ensure all pending output is flushed before sampling current position in minor cycle.
-  if(getSubCycleTime() >= deadline) { Serial.println(); return; }
+  if(OTV0P2BASE::getSubCycleTime() >= deadline) { Serial.println(); return; }
   for(int8_t padding = SYNTAX_COL_WIDTH - 1; --padding >= 0; ) { Serial_print_space(); }
   Serial.println(description);
   }
@@ -777,13 +777,13 @@ static void InvalidIgnored() { Serial.println(F("Invalid, ignored.")); }
 #else
 #define MAXIMUM_CLI_RESPONSE_CHARS MAXIMUM_CLI_OT_RESPONSE_CHARS
 #endif
-#define IDLE_SLEEP_SCT (15/SUBCYCLE_TICK_MS_RD) // Approx sub-cycle ticks in idle sleep (15ms), erring on side of being too large; strictly positive.
+#define IDLE_SLEEP_SCT (15/(OTV0P2BASE::SUBCYCLE_TICK_MS_RD)) // Approx sub-cycle ticks in idle sleep (15ms), erring on side of being too large; strictly positive.
 #define BUF_FILL_TIME_MS (((MAXIMUM_CLI_RESPONSE_CHARS*10) * 1000L + (BAUD-1)) / BAUD) // Time to read full/maximal input command buffer; ms, strictly positive.
-#define BUF_FILL_TIME_SCT (BUF_FILL_TIME_MS/SUBCYCLE_TICK_MS_RD) // Approx sub-cycle ticks to fill buf, erring on side of being too large; strictly positive.
+#define BUF_FILL_TIME_SCT (BUF_FILL_TIME_MS/(OTV0P2BASE::SUBCYCLE_TICK_MS_RD)) // Approx sub-cycle ticks to fill buf, erring on side of being too large; strictly positive.
 #define MIN_POLL_SCT max(IDLE_SLEEP_SCT, BUF_FILL_TIME_SCT)
-#if MIN_POLL_SCT > CLI_POLL_MIN_SCT
-#error "MIN_POLL_SCT > CLI_POLL_MIN_SCT" 
-#endif
+//#if MIN_POLL_SCT > CLI_POLL_MIN_SCT
+//#error "MIN_POLL_SCT > CLI_POLL_MIN_SCT" 
+//#endif
 #define MIN_RX_BUFFER 16 // Minimum Arduino Serial RX buffer size.
 // DHD20131213: CAN_IDLE_15MS/idle15AndPoll() true seemed to be causing intermittent crashes.
 // DHD20150827: CAN_IDLE_15MS/idle15AndPoll() true causing crashes on 7% of REV9 boards.
@@ -812,7 +812,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
 
   // Compute safe limit time given granularity of sleep and buffer fill.
   const uint8_t targetMaxSCT = (maxSCT <= MIN_POLL_SCT) ? ((uint8_t) 0) : ((uint8_t) (maxSCT - 1 - MIN_POLL_SCT));
-  if(getSubCycleTime() >= targetMaxSCT) { return; } // Too short to try.
+  if(OTV0P2BASE::getSubCycleTime() >= targetMaxSCT) { return; } // Too short to try.
 
   const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled<V0P2_UART_BAUD>();
 
@@ -870,7 +870,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
       continue;
       }
     // Quit WITHOUT PROCESSING THE POSSIBLY-INCOMPLETE INPUT if time limit is hit (or very close).
-    const uint8_t sct = getSubCycleTime();
+    const uint8_t sct = OTV0P2BASE::getSubCycleTime();
     if(sct >= targetMaxSCT)
       {
       n = 0;
@@ -1289,7 +1289,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
       case 'Z':
         {
         // Try to avoid causing an overrun if near the end of the minor cycle (even allowing for the warning message if unfinished!).
-        if(zapStats((uint16_t) fnmax(1, ((int)msRemainingThisBasicCycle()/2) - 20)))
+        if(zapStats((uint16_t) fnmax(1, ((int)OTV0P2BASE::msRemainingThisBasicCycle()/2) - 20)))
           { Serial.println(F("Zapped.")); }
         else
           { Serial.println(F("Not finished.")); }

@@ -130,38 +130,38 @@ static bool inline idle15AndPoll() { const bool wd = ::OTV0P2BASE::_idleCPU(WDTO
 void burnHundredsOfCyclesProductivelyAndPoll();
 
 
-#if defined(WAKEUP_32768HZ_XTAL) || 1 // FIXME: avoid getSubCycleTime() where slow clock NOT available.
-// Get fraction of the way through the basic cycle in range [0,255].
-// This can be used for precision timing during the cycle,
-// or to avoid overrunning a cycle with tasks of variable timing.
-// Only valid if running the slow (32768Hz) clock.
-#define getSubCycleTime() ((uint8_t)TCNT2)
-// Approximation which is allowed to be zero if true value not available.
-#define _getSubCycleTime() (getSubCycleTime())
-#else
-// Approximation which is allowed to be zero if true value not available.
-#define _getSubCycleTime() (0)
-#endif
-
-// Maximum value for getSubCycleTime(); full cycle length is this + 1.
-// So ~4ms per count for a 1s cycle time, ~8ms per count for a 2s cycle time.
-#define GSCT_MAX 255
-// Basic cycle length in milliseconds; strictly positive.
-#if defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
-#define BASIC_CYCLE_MS 2000
-#define SUB_CYCLE_TICKS_PER_S ((GSCT_MAX+1)/2) // Sub-cycle ticks per second.
-#else
-#define BASIC_CYCLE_MS 1000
-#define SUB_CYCLE_TICKS_PER_S (GSCT_MAX+1) // Sub-cycle ticks per second.
-#endif
-// Approx (rounded down) milliseconds per tick of getSubCycleTime(); strictly positive.
-#define SUBCYCLE_TICK_MS_RD (BASIC_CYCLE_MS / (GSCT_MAX+1))
-// Approx (rounded to nearest) milliseconds per tick of getSubCycleTime(); strictly positive and no less than SUBCYCLE_TICK_MS_R
-#define SUBCYCLE_TICK_MS_RN ((BASIC_CYCLE_MS + ((GSCT_MAX+1)/2)) / (GSCT_MAX+1))
-
-// Returns (rounded-down) approx milliseconds until end of current basic cycle; non-negative.
-// Upper limit is set by length of basic cycle, thus 1000 or 2000 typically.
-#define msRemainingThisBasicCycle() (SUBCYCLE_TICK_MS_RD * (GSCT_MAX-getSubCycleTime()))
+//#if defined(WAKEUP_32768HZ_XTAL) || 1 // FIXME: avoid getSubCycleTime() where slow clock NOT available.
+//// Get fraction of the way through the basic cycle in range [0,255].
+//// This can be used for precision timing during the cycle,
+//// or to avoid overrunning a cycle with tasks of variable timing.
+//// Only valid if running the slow (32768Hz) clock.
+//#define getSubCycleTime() ((uint8_t)TCNT2)
+//// Approximation which is allowed to be zero if true value not available.
+//#define _getSubCycleTime() (getSubCycleTime())
+//#else
+//// Approximation which is allowed to be zero if true value not available.
+//#define _getSubCycleTime() (0)
+//#endif
+//
+//// Maximum value for getSubCycleTime(); full cycle length is this + 1.
+//// So ~4ms per count for a 1s cycle time, ~8ms per count for a 2s cycle time.
+//#define GSCT_MAX 255
+//// Basic cycle length in milliseconds; strictly positive.
+//#if defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
+//#define BASIC_CYCLE_MS 2000
+//#define SUB_CYCLE_TICKS_PER_S ((GSCT_MAX+1)/2) // Sub-cycle ticks per second.
+//#else
+//#define BASIC_CYCLE_MS 1000
+//#define SUB_CYCLE_TICKS_PER_S (GSCT_MAX+1) // Sub-cycle ticks per second.
+//#endif
+//// Approx (rounded down) milliseconds per tick of getSubCycleTime(); strictly positive.
+//#define SUBCYCLE_TICK_MS_RD (BASIC_CYCLE_MS / (GSCT_MAX+1))
+//// Approx (rounded to nearest) milliseconds per tick of getSubCycleTime(); strictly positive and no less than SUBCYCLE_TICK_MS_R
+//#define SUBCYCLE_TICK_MS_RN ((BASIC_CYCLE_MS + ((GSCT_MAX+1)/2)) / (GSCT_MAX+1))
+//
+//// Returns (rounded-down) approx milliseconds until end of current basic cycle; non-negative.
+//// Upper limit is set by length of basic cycle, thus 1000 or 2000 typically.
+//#define msRemainingThisBasicCycle() (SUBCYCLE_TICK_MS_RD * (GSCT_MAX-getSubCycleTime()))
 
 // Sleep in reasonably low-power mode until specified target subcycle time.
 // Returns true if OK, false if specified time already passed or significantly missed (eg by more than one tick).
@@ -190,13 +190,13 @@ bool sleepUntilSubCycleTime(uint8_t sleepUntil);
 
 
 
-// If ADC was disabled, power it up, do Serial.begin(), and return true.
-// If already powered up then do nothing other than return false.
-// This does not power up the analogue comparator; this needs to be manually enabled if required.
-// If this returns true then a matching powerDownADC() may be advisable.
-bool powerUpADCIfDisabled(); 
-// Power ADC down.
-void powerDownADC();
+//// If ADC was disabled, power it up, do Serial.begin(), and return true.
+//// If already powered up then do nothing other than return false.
+//// This does not power up the analogue comparator; this needs to be manually enabled if required.
+//// If this returns true then a matching powerDownADC() may be advisable.
+//bool powerUpADCIfDisabled();
+//// Power ADC down.
+//void powerDownADC();
 
 
 // If TWI (I2C) was disabled, power it up, do Wire.begin(), and return true.
@@ -224,27 +224,27 @@ void power_intermittent_peripherals_enable(bool waitUntilStable = false);
 // Disable/remove power to intermittent peripherals.
 void power_intermittent_peripherals_disable();
 
-// Read ADC/analogue input with reduced noise if possible, in range [0,1023].
-//   * aiNumber is the analogue input number [0,7] for ATMega328P
-//   * mode  is the analogue reference, eg DEFAULT (Vcc).
-// May set sleep mode to SLEEP_MODE_ADC, and disable sleep on exit.
-// Nominally equivalent to analogReference(mode); return(analogRead(pinNumber));
-uint16_t analogueNoiseReducedRead(uint8_t aiNumber, uint8_t mode);
-
-// Read from the specified analogue input vs the band-gap reference; true means AI > Vref.
-//   * aiNumber is the analogue input number [0,7] for ATMega328P
-//   * napToSettle  if true then take a minimal sleep/nap to allow voltage to settle
-//       if input source relatively high impedance (>>10k)
-// Assumes that the band-gap reference is already running,
-// eg from being used for BOD; if not, it must be given time to start up.
-// For input settle time explanation please see for example:
-//   * http://electronics.stackexchange.com/questions/67171/input-impedance-of-arduino-uno-analog-pins
-bool analogueVsBandgapRead(uint8_t aiNumber, bool napToSettle);
-
-// Attempt to capture maybe one bit of noise/entropy with an ADC read, possibly more likely in the lsbits if at all.
-// If requested (and needed) powers up extra I/O during the reads.
-//   powerUpIO if true then power up I/O (and power down after if so)
-uint8_t noisyADCRead(bool powerUpIO = true);
+//// Read ADC/analogue input with reduced noise if possible, in range [0,1023].
+////   * aiNumber is the analogue input number [0,7] for ATMega328P
+////   * mode  is the analogue reference, eg DEFAULT (Vcc).
+//// May set sleep mode to SLEEP_MODE_ADC, and disable sleep on exit.
+//// Nominally equivalent to analogReference(mode); return(analogRead(pinNumber));
+//uint16_t analogueNoiseReducedRead(uint8_t aiNumber, uint8_t mode);
+//
+//// Read from the specified analogue input vs the band-gap reference; true means AI > Vref.
+////   * aiNumber is the analogue input number [0,7] for ATMega328P
+////   * napToSettle  if true then take a minimal sleep/nap to allow voltage to settle
+////       if input source relatively high impedance (>>10k)
+//// Assumes that the band-gap reference is already running,
+//// eg from being used for BOD; if not, it must be given time to start up.
+//// For input settle time explanation please see for example:
+////   * http://electronics.stackexchange.com/questions/67171/input-impedance-of-arduino-uno-analog-pins
+//bool analogueVsBandgapRead(uint8_t aiNumber, bool napToSettle);
+//
+//// Attempt to capture maybe one bit of noise/entropy with an ADC read, possibly more likely in the lsbits if at all.
+//// If requested (and needed) powers up extra I/O during the reads.
+////   powerUpIO if true then power up I/O (and power down after if so)
+//uint8_t noisyADCRead(bool powerUpIO = true);
 
 #endif
 

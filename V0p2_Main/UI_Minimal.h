@@ -118,7 +118,7 @@ bool isCLIActive();
 void pollCLI(uint8_t maxSCT, bool startOfMinute);
 
 // Minimum recommended poll time in sub-cycle ticks...
-#define CLI_POLL_MIN_SCT (200/SUBCYCLE_TICK_MS_RN)
+#define CLI_POLL_MIN_SCT (200/OTV0P2BASE::SUBCYCLE_TICK_MS_RN)
 
 
 

@@ -124,12 +124,12 @@ static const int LDR_THR_HIGH = 200U; // Was 35.
 uint8_t AmbientLight::read()
   {
   power_intermittent_peripherals_enable(false); // No need to wait for anything to stablise as direct of IO_POWER_UP.
-  const uint16_t al0 = analogueNoiseReducedRead(LDR_SENSOR_AIN, ALREFERENCE);
+  const uint16_t al0 = OTV0P2BASE::analogueNoiseReducedRead(LDR_SENSOR_AIN, ALREFERENCE);
 #if defined(ADAPTIVE_THRESHOLD)
   uint16_t al;
   if(al0 >= ADAPTIVE_THRESHOLD)
     {
-    const uint16_t al1 = analogueNoiseReducedRead(LDR_SENSOR_AIN, DEFAULT); // Vsupply reference.
+    const uint16_t al1 = OTV0P2BASE::analogueNoiseReducedRead(LDR_SENSOR_AIN, DEFAULT); // Vsupply reference.
     Supply_mV.read();
     const uint16_t vbg = Supply_mV.getRawInv(); // Vbandgap wrt Vsupply.
     // Compute value in extended range up to ~1024 * Vsupply/Vbandgap.
@@ -353,7 +353,7 @@ static void SHT21_init()
   while(Wire.available() < 1)
     {
     // Wait for data, but avoid rolling over the end of a minor cycle...
-    if(getSubCycleTime() >= GSCT_MAX-2)
+    if(OTV0P2BASE::getSubCycleTime() >= OTV0P2BASE::GSCT_MAX-2)
       {
       return; // Failed, and not initialised.
       }
@@ -404,7 +404,7 @@ static int Sensor_SHT21_readTemperatureC16()
   while(Wire.available() < 3)
     {
     // Wait for data, but avoid rolling over the end of a minor cycle...
-    if(getSubCycleTime() >= GSCT_MAX-2)
+    if(OTV0P2BASE::getSubCycleTime() >= OTV0P2BASE::GSCT_MAX-2)
       {
       return(0); // Failure value: may be able to to better.
       }
@@ -452,7 +452,7 @@ uint8_t HumiditySensorSHT21::read()
   while(Wire.available() < 3)
     {
     // Wait for data, but avoid rolling over the end of a minor cycle...
-    if(getSubCycleTime() >= GSCT_MAX)
+    if(OTV0P2BASE::getSubCycleTime() >= OTV0P2BASE::GSCT_MAX)
       {
 //      DEBUG_SERIAL_PRINTLN_FLASHSTRING("giving up");
       return(~0);
@@ -795,7 +795,7 @@ uint8_t TemperaturePot::read()
   {
   // No need to wait for voltage to stablise as pot top end directly driven by IO_POWER_UP.
   power_intermittent_peripherals_enable(false);
-  const uint16_t tpRaw = analogueNoiseReducedRead(TEMP_POT_AIN, DEFAULT); // Vcc reference.
+  const uint16_t tpRaw = OTV0P2BASE::analogueNoiseReducedRead(TEMP_POT_AIN, DEFAULT); // Vcc reference.
   power_intermittent_peripherals_disable();
 
 #if defined(TEMP_POT_REVERSE)

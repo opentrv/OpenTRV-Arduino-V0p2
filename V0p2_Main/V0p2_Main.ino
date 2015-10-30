@@ -257,7 +257,7 @@ static bool FilterRXISR(const volatile uint8_t *buf, volatile uint8_t &buflen)
 void optionalPOST()
   {
   // Capture early sub-cycle time to help ensure that the 32768Hz async clock is actually running.
-  const uint8_t earlySCT = getSubCycleTime();
+  const uint8_t earlySCT = OTV0P2BASE::getSubCycleTime();
 
 //  posPOST(1, F("about to test radio module"));
 
@@ -300,7 +300,7 @@ void optionalPOST()
 
 #if defined(WAKEUP_32768HZ_XTAL)
   // Check that the 32768Hz async clock is actually running having done significant CPU-intensive work.
-  const uint8_t laterSCT = getSubCycleTime();
+  const uint8_t laterSCT = OTV0P2BASE::getSubCycleTime();
   if(laterSCT == earlySCT)
     {
 #if defined(WAKEUP_32768HZ_XTAL)
@@ -311,14 +311,14 @@ void optionalPOST()
     // Time spent here should not be a whole multiple of basic cycle time to avoid a spuriously-stationary async clock reading!
     // Allow several seconds to start.
     // Attempt to capture some entropy while waiting, implicitly from oscillator start-up time if nothing else.
-    for(uint8_t i = 255; (--i > 0) && (earlySCT == getSubCycleTime()); )
+    for(uint8_t i = 255; (--i > 0) && (earlySCT == OTV0P2BASE::getSubCycleTime()); )
       {
-      OTV0P2BASE::addEntropyToPool(::OTV0P2BASE::clockJitterWDT() ^ noisyADCRead(), 1); // Conservatively hope for at least 1 bit from combined sources!
+      OTV0P2BASE::addEntropyToPool(OTV0P2BASE::clockJitterWDT() ^ OTV0P2BASE::noisyADCRead(), 1); // Conservatively hope for at least 1 bit from combined sources!
       OTV0P2BASE::nap(WDTO_15MS); // Ensure lower mount of ~3s until loop finishes.
       OTV0P2BASE::captureEntropy1(); // Have other fun, though likely largely ineffective at this stage.
       }
 #endif
-    const uint8_t latestSCT = getSubCycleTime();
+    const uint8_t latestSCT = OTV0P2BASE::getSubCycleTime();
     if(latestSCT == earlySCT)
       {
 #if 0 && defined(DEBUG)
