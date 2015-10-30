@@ -270,6 +270,7 @@ extern RoomTemperatureC16 TemperatureC16;
 
 
 // High and low bounds on relative humidity for comfort and (eg) mite/mould growth.
+// See http://www.cdc.gov/niosh/topics/indoorenv/temperature.html: "The EPA recommends maintaining indoor relative humidity between 30 and 60% to reduce mold growth [EPA 2012]."
 #define HUMIDTY_HIGH_RHPC 70
 #define HUMIDTY_LOW_RHPC 30
 // Epsilon bounds (absolute % +/- around thresholds) for accuracy and hysteresis.
