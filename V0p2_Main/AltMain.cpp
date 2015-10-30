@@ -338,8 +338,8 @@ void loopAlt()
     {
     switch(OTV0P2BASE::randRNG8() & 1)
       {
-      case 0: ValveDirect.set(DEFAULT_MIN_VALVE_PC_REALLY_OPEN-1); break; // Nominally shut.
-      case 1: ValveDirect.set(DEFAULT_VALVE_PC_MODERATELY_OPEN); break; // Nominally open.
+      case 0: ValveDirect.set(OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN-1); break; // Nominally shut.
+      case 1: ValveDirect.set(OTRadValve::DEFAULT_VALVE_PC_MODERATELY_OPEN); break; // Nominally open.
       // Random.
 //      default: ValveDirect.set(OTV0P2BASE::randRNG8() % 101); break;
       }

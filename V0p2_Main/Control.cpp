@@ -470,28 +470,28 @@ uint8_t ModelledRadValve::mVPRO_cache = 0;
 
 // Return minimum valve percentage open to be considered actually/significantly open; [1,100].
 // At the boiler hub this is also the threshold percentage-open on eavesdropped requests that will call for heat.
-// If no override is set then DEFAULT_MIN_VALVE_PC_REALLY_OPEN is used.
+// If no override is set then OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN is used.
 // NOTE: raising this value temporarily (and shutting down the boiler immediately if possible) is one way to implement dynamic demand.
 uint8_t ModelledRadValve::getMinValvePcReallyOpen()
   {
   if(0 != mVPRO_cache) { return(mVPRO_cache); } // Return cached value if possible.
   const uint8_t stored = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_MIN_VALVE_PC_REALLY_OPEN);
-  const uint8_t result = ((stored > 0) && (stored <= 100)) ? stored : DEFAULT_MIN_VALVE_PC_REALLY_OPEN;
+  const uint8_t result = ((stored > 0) && (stored <= 100)) ? stored : OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN;
   mVPRO_cache = result; // Cache it.
   return(result);
   }
 
 // Set and cache minimum valve percentage open to be considered really open.
 // Applies to local valve and, at hub, to calls for remote calls for heat.
-// Any out-of-range value (eg >100) clears the override and DEFAULT_MIN_VALVE_PC_REALLY_OPEN will be used.
+// Any out-of-range value (eg >100) clears the override and OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN will be used.
 void ModelledRadValve::setMinValvePcReallyOpen(const uint8_t percent)
   {
-  if((percent > 100) || (percent == 0) || (percent == DEFAULT_MIN_VALVE_PC_REALLY_OPEN))
+  if((percent > 100) || (percent == 0) || (percent == OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN))
     {
     // Bad / out-of-range / default value so erase stored value if not already so.
     OTV0P2BASE::eeprom_smart_erase_byte((uint8_t *)V0P2BASE_EE_START_MIN_VALVE_PC_REALLY_OPEN);
     // Cache logical default value.
-    mVPRO_cache = DEFAULT_MIN_VALVE_PC_REALLY_OPEN;
+    mVPRO_cache = OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN;
     return;
     }
   // Store specified value with as low wear as possible.
@@ -711,7 +711,7 @@ DEBUG_SERIAL_PRINTLN();
       // Ensure that the valve opens quickly from cold for acceptable response.
       // Less fast if already moderately open or in the degree below target.
       const uint8_t slewRate =
-          ((valvePCOpen >= DEFAULT_VALVE_PC_MODERATELY_OPEN) || (adjustedTempC == inputState.targetTempC-1)) ?
+          ((valvePCOpen >= OTRadValve::DEFAULT_VALVE_PC_MODERATELY_OPEN) || (adjustedTempC == inputState.targetTempC-1)) ?
               TRV_MAX_SLEW_PC_PER_MIN : TRV_SLEW_PC_PER_MIN_FAST;
       const uint8_t minOpenFromCold = fnmax(slewRate, inputState.minPCOpen);
       // Open to 'minimum' likely open state immediately if less open currently.
@@ -793,7 +793,7 @@ DEBUG_SERIAL_PRINTLN();
     // Also increase effective deadband if temperature resolution is lower than 1/16th, eg 8ths => 1+2*ulpStep minimum.
 // FIXME //    const uint8_t realMinUlp = 1 + (inputState.isLowPrecision ? 2*ulpStep : ulpStep); // Assume precision no coarser than 1/8C.
     const uint8_t realMinUlp = 1 + ulpStep;
-    const uint8_t minAbsSlew = fnmax(realMinUlp, (uint8_t)(inputState.widenDeadband ? max(min(DEFAULT_VALVE_PC_MODERATELY_OPEN/2,max(TRV_MAX_SLEW_PC_PER_MIN,2*TRV_MIN_SLEW_PC)), 2+TRV_MIN_SLEW_PC) : TRV_MIN_SLEW_PC));
+    const uint8_t minAbsSlew = fnmax(realMinUlp, (uint8_t)(inputState.widenDeadband ? max(min(OTRadValve::DEFAULT_VALVE_PC_MODERATELY_OPEN/2,max(TRV_MAX_SLEW_PC_PER_MIN,2*TRV_MIN_SLEW_PC)), 2+TRV_MIN_SLEW_PC) : TRV_MIN_SLEW_PC));
     if(tooOpen) // Currently open more than required.  Still below target at top of proportional range.
       {
 //DEBUG_SERIAL_PRINTLN_FLASHSTRING("slightly too open");
@@ -816,7 +816,7 @@ DEBUG_SERIAL_PRINTLN();
       // TODO-482: try to deal better with jittery temperature readings.
       const bool beGlacial = inputState.glacial ||
 #if defined(GLACIAL_ON_WITH_WIDE_DEADBAND)
-          ((inputState.widenDeadband || retainedState.isFiltering) && (valvePCOpen <= DEFAULT_VALVE_PC_MODERATELY_OPEN)) ||
+          ((inputState.widenDeadband || retainedState.isFiltering) && (valvePCOpen <= OTRadValve::DEFAULT_VALVE_PC_MODERATELY_OPEN)) ||
 #endif
           (lsbits < 8);
       if(beGlacial) { return(valvePCOpen - 1); }
@@ -859,7 +859,7 @@ DEBUG_SERIAL_PRINTLN();
 #if defined(GLACIAL_ON_WITH_WIDE_DEADBAND)
         inputState.widenDeadband ||
 #endif
-        (lsbits >= 8) || ((lsbits >= 4) && (valvePCOpen >= DEFAULT_VALVE_PC_MODERATELY_OPEN));
+        (lsbits >= 8) || ((lsbits >= 4) && (valvePCOpen >= OTRadValve::DEFAULT_VALVE_PC_MODERATELY_OPEN));
     if(beGlacial) { return(valvePCOpen + 1); }
 
     // Slew open faster with comfort bias.

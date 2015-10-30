@@ -44,7 +44,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // (It may however be possible to scavenge some heat if a particular valve opens below this and the circulation pump is already running, for example.)
 // DHD20130522: FHT8V + valve heads I have been using are not typically open until around 6%.
 // Use the global value for now.
-#define FHT8V_MIN_VALVE_PC_REALLY_OPEN DEFAULT_MIN_VALVE_PC_REALLY_OPEN
+#define FHT8V_MIN_VALVE_PC_REALLY_OPEN OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN
 
 // If true then allow double TX for normal valve setting, else only allow it for sync.
 // May want to enforce this where bandwidth is known to be scarce.

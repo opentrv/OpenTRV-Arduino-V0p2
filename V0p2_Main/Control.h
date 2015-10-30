@@ -271,7 +271,7 @@ struct ModelledRadValveInputState
   {
   ModelledRadValveInputState(const int realTempC16) :
     targetTempC(FROST), 
-    minPCOpen(DEFAULT_MIN_VALVE_PC_REALLY_OPEN), maxPCOpen(100),
+    minPCOpen(OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN), maxPCOpen(100),
     widenDeadband(false), glacial(false), hasEcoBias(false), inBakeMode(false)
     { setReferenceTemperatures(realTempC16); }
 
@@ -470,7 +470,7 @@ class ModelledRadValve : public OTRadValve::AbstractRadValve
     //
     // When driving a remote wireless valve such as the FHT8V,
     // this waits until at least the command has been sent.
-    // This also implies open to DEFAULT_MIN_VALVE_PC_REALLY_OPEN or equivalent.
+    // This also implies open to OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN or equivalent.
     // Must be exactly one definition/implementation supplied at link time.
     // If more than one valve is being controlled by this unit,
     // then this should return true if any of the valves are (significantly) open.
@@ -549,12 +549,12 @@ class ModelledRadValve : public OTRadValve::AbstractRadValve
     // Return minimum valve percentage open to be considered actually/significantly open; [1,100].
     // This is a value that has to mean all controlled valves are at least partially open if more than one valve.
     // At the boiler hub this is also the threshold percentage-open on eavesdropped requests that will call for heat.
-    // If no override is set then DEFAULT_MIN_VALVE_PC_REALLY_OPEN is used.
+    // If no override is set then OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN is used.
     static uint8_t getMinValvePcReallyOpen();
 
     // Set and cache minimum valve percentage open to be considered really open.
     // Applies to local valve and, at hub, to calls for remote calls for heat.
-    // Any out-of-range value (eg >100) clears the override and DEFAULT_MIN_VALVE_PC_REALLY_OPEN will be used.
+    // Any out-of-range value (eg >100) clears the override and OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN will be used.
     static void setMinValvePcReallyOpen(uint8_t percent);
   };
 #define ENABLE_NOMINAL_RAD_VALVE

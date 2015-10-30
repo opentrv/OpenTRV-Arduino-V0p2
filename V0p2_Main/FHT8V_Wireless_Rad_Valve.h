@@ -192,7 +192,7 @@ bool FHT8VPollSyncAndTX_Next(bool allowDoubleTX = false);
 
 // True iff the FHT8V valve(s) (if any) controlled by this unit are really open.
 // This waits until, for example, an ACK where appropriate, or at least the command has been sent.
-// This also implies open to DEFAULT_MIN_VALVE_PC_REALLY_OPEN or equivalent.
+// This also implies open to OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN or equivalent.
 // If more than one valve is being controlled by this unit,
 // then this should return true if all of the valves are (significantly) open.
 bool FHT8VisControlledValveOpen();

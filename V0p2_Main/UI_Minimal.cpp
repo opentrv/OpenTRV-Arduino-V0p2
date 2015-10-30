@@ -650,7 +650,7 @@ void serialStatusReport()
 #ifdef LOCAL_TRV
   // *M* section: min-valve-percentage open section, iff not at default value.
   const uint8_t minValvePcOpen = NominalRadValve.getMinValvePcReallyOpen();
-  if(DEFAULT_MIN_VALVE_PC_REALLY_OPEN != minValvePcOpen) { Serial.print(F(";M")); Serial.print(minValvePcOpen); }
+  if(OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN != minValvePcOpen) { Serial.print(F(";M")); Serial.print(minValvePcOpen); }
 #endif
 
 #if 1 && defined(ALLOW_JSON_OUTPUT)

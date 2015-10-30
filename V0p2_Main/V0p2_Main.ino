@@ -504,10 +504,10 @@ void setup()
 #endif
 #endif
                        (OTV0P2BASE::getMinutesSinceMidnightLT() << 5) ^
-                       (((uint16_t)getSubCycleTime()) << 6);
+                       (((uint16_t)OTV0P2BASE::getSubCycleTime()) << 6);
   //const long seed1 = ((((long) clockJitterRTC()) << 13) ^ (((long)clockJitterWDT()) << 21) ^ (((long)(srseed^eeseed)) << 16)) + s16;
   // Seed simple/fast/small built-in PRNG.  (Smaller and faster than srandom()/random().)
-  const uint8_t nar1 = noisyADCRead();
+  const uint8_t nar1 = OTV0P2BASE::noisyADCRead();
   OTV0P2BASE::seedRNG8(nar1 ^ (uint8_t) s16, oldResetCount - (uint8_t)((s16+eeseed) >> 8), ::OTV0P2BASE::clockJitterWDT() ^ (uint8_t)srseed);
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINT_FLASHSTRING("nar ");
@@ -521,7 +521,7 @@ void setup()
   OTV0P2BASE::addEntropyToPool((uint8_t)s16 ^ (uint8_t)(s16 >> 8), 0);
   for(uint8_t i = 0; i < V0P2BASE_EE_LEN_SEED; ++i)
     { OTV0P2BASE::addEntropyToPool(eeprom_read_byte((uint8_t *)(V0P2BASE_EE_START_SEED + i)), 0); }
-  OTV0P2BASE::addEntropyToPool(noisyADCRead(), 1); // Conservative first push of noise into pool.
+  OTV0P2BASE::addEntropyToPool(OTV0P2BASE::noisyADCRead(), 1); // Conservative first push of noise into pool.
   // Carry a few bits of entropy over a reset by picking one of the four designated EEPROM bytes at random;
   // if zero, erase to 0xff, else AND in part of the seed including some of the previous EEPROM hash (and write).
   // This amounts to about a quarter of an erase/write cycle per reset/restart per byte, or 400k restarts endurance!
