@@ -712,7 +712,10 @@ DEBUG_SERIAL_PRINTLN();
       // Less fast if already moderately open or in the degree below target.
       const uint8_t slewRate =
           ((valvePCOpen >= OTRadValve::DEFAULT_VALVE_PC_MODERATELY_OPEN) || (adjustedTempC == inputState.targetTempC-1)) ?
-              TRV_MAX_SLEW_PC_PER_MIN : TRV_SLEW_PC_PER_MIN_FAST;
+              TRV_MAX_SLEW_PC_PER_MIN :
+              // Open VFAST until almost all valves would be significantly open.
+              ((valvePCOpen >= OTRadValve::DEFAULT_VALVE_PC_SAFER_OPEN) ?
+                  TRV_SLEW_PC_PER_MIN_FAST : TRV_SLEW_PC_PER_MIN_VFAST);
       const uint8_t minOpenFromCold = fnmax(slewRate, inputState.minPCOpen);
       // Open to 'minimum' likely open state immediately if less open currently.
       if(valvePCOpen < minOpenFromCold) { return(minOpenFromCold); }
