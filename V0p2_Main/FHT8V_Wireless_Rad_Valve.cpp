@@ -749,7 +749,7 @@ bool FHT8VPollSyncAndTX_Next(const bool allowDoubleTX)
   if(2 == halfSecondCount)
       {
       // Sleep until 1s from start of cycle.
-      sleepUntilSubCycleTimeOptionalRX(SOTV0P2BASE::UB_CYCLE_TICKS_PER_S);
+      sleepUntilSubCycleTimeOptionalRX(OTV0P2BASE::SUB_CYCLE_TICKS_PER_S);
       // Transmit correct valve-setting command that should already be in the buffer...
       valveSettingTX(allowDoubleTX);
       return(false); // Don't need any slots after this.
