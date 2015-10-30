@@ -332,17 +332,30 @@ void loopAlt()
 
 
 #ifdef HAS_DORM1_VALVE_DRIVE
-  // Yank valve to random target every minute to try to upset it!
-  if(0 == TIME_LSD) { ValveDirect.set(OTV0P2BASE::randRNG8() % 101); }
+  // Move valve to new target every minute to try to upset it!
+  // Targets at key thresholds and random.
+  if(0 == TIME_LSD)
+    {
+    switch(OTV0P2BASE::randRNG8() & 1)
+      {
+      case 0: ValveDirect.set(DEFAULT_MIN_VALVE_PC_REALLY_OPEN-1); break; // Nominally shut.
+      case 1: ValveDirect.set(DEFAULT_VALVE_PC_MODERATELY_OPEN); break; // Nominally open.
+      // Random.
+//      default: ValveDirect.set(OTV0P2BASE::randRNG8() % 101); break;
+      }
+    }
 
-  // Simulate human doing the right thing after fitting valve.
+  // Simulate human doing the right thing after fitting valve when required.
   if(ValveDirect.isWaitingForValveToBeFitted()) { ValveDirect.signalValveFitted(); }
 
   // Provide regular poll to motor driver.
   // May take significant time to run
   // so don't call when timing is critical or not much left,
   // eg around critical TXes.
-  ValveDirect.read();
+  const uint8_t pc = ValveDirect.read();
+  DEBUG_SERIAL_PRINT_FLASHSTRING("Pos%: ");
+  DEBUG_SERIAL_PRINT(pc);
+  DEBUG_SERIAL_PRINTLN();
 #endif
 
 
