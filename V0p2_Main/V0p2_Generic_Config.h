@@ -108,6 +108,12 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define LEARN_BUTTON_AVAILABLE // OPTIONAL ON V0.09 PCB1
 // IF DEFINED: support for general timed and multi-input occupancy detection / use.
 #define OCCUPANCY_SUPPORT
+// IF DEFINED: detect occupancy based on ambient light, if available.
+#define OCCUPANCY_DETECT_FROM_AMBLIGHT
+// IF DEFINED: detect occupancy based on relative humidity, if available.
+#define OCCUPANCY_DETECT_FROM_RH
+// IF DEFINED: detect occupancy based on voice detection, if available.
+#define OCCUPANCY_DETECT_FROM_VOICE
 // IF DEFINED: this unit supports CLI over the USB/serial connection, eg for run-time reconfig.
 #define SUPPORT_CLI
 // IF DEFINED: enable a full OpenTRV CLI.
