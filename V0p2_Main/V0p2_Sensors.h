@@ -282,6 +282,9 @@ extern RoomTemperatureC16 TemperatureC16;
 #error bad RH constants!
 #endif
 
+// If RH% rises by at least this per hour, then it may indicate occupancy.
+#define HUMIDITY_OCCUPANCY_PC_MIN_RISE_PER_H 3
+
 // HUMIDITY_SENSOR_SUPPORT is defined if at least one humdity sensor has support compiled in.
 // Simple implementations can assume that the sensor will be present if defined;
 // more sophisticated implementations may wish to make run-time checks.

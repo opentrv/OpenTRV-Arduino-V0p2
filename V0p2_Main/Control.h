@@ -838,6 +838,11 @@ bool zapStats(uint16_t maxBytesToErase = 0);
 // A value of 0xff (255) means unset (or out of range); other values depend on which stats set is being used.
 uint8_t getByHourStat(uint8_t hh, uint8_t statsSet);
 
+// Get previous hour in current local time, wrapping round from 0 to 23.
+uint8_t getPrevHourLT();
+// Get next hour in current local time, wrapping round from 23 back to 0.
+uint8_t getNextHourLT();
+
 // Returns true if specified hour is (conservatively) in the specifed outlier quartile for specified stats set.
 // Returns false if a full set of stats not available, eg including the specified hour.
 // Always returns false if all samples are the same.
