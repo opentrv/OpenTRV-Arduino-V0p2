@@ -386,8 +386,15 @@ bool inTopQuartile(const uint8_t *sE, const uint8_t sample)
   return(false); // Not in upper quartile.
   }
 
+// Get previous hour in current local time, wrapping round from 0 to 23.
+uint8_t getPrevHourLT()
+  {
+  const uint8_t h = OTV0P2BASE::getHoursLT();
+  if(0 == h) { return(23); }
+  return(h - 1);
+  }
 // Get next hour in current local time, wrapping round from 23 back to 0.
-static uint8_t _getNextHour()
+uint8_t getNextHourLT()
   {
   const uint8_t h = OTV0P2BASE::getHoursLT();
   if(h >= 23) { return(0); }
@@ -404,7 +411,7 @@ bool inOutlierQuartile(const uint8_t inTop, const uint8_t statsSet, const uint8_
   {
   if(statsSet >= V0P2BASE_EE_STATS_SETS) { return(false); } // Bad stats set number, ie unsafe.
   const uint8_t hh = (inOutlierQuartile_CURRENT_HOUR == hour) ? OTV0P2BASE::getHoursLT() :
-    ((hour > 23) ? _getNextHour() : hour);
+    ((hour > 23) ? getNextHourLT() : hour);
   const uint8_t *ss = (uint8_t *)(V0P2BASE_EE_STATS_START_ADDR(statsSet));
   const uint8_t sample = eeprom_read_byte(ss + hh);
   if(STATS_UNSET_INT == sample) { return(false); }
@@ -2401,6 +2408,20 @@ void loopOpenTRV()
     case 56:
       {
 #ifdef OCCUPANCY_SUPPORT
+      // Update occupancy measures that partially use rolling stats.
+#if defined(OCCUPANCY_DETECT_FROM_RH) && defined(HUMIDITY_SENSOR_SUPPORT)
+      // If RH% is rising fast enough then take this a mild occupancy indicator.
+      // Suppress this in the dark to avoid nusiance behaviour,
+      // even if not a false positive (ie the room is occupied, by a sleeper),
+      // such as a valve opening and/or the boiler firing up at night.
+      if(!AmbLight.isRoomDark())
+        {
+        const uint8_t lastRH = getByHourStat(getPrevHourLT(), V0P2BASE_EE_STATS_SET_RHPC_BY_HOUR);
+        if((STATS_UNSET_BYTE != lastRH) &&
+           (RelHumidity.get() >= lastRH + HUMIDITY_OCCUPANCY_PC_MIN_RISE_PER_H))
+            { Occupancy.markAsPossiblyOccupied(); }
+        }
+#endif
       // Update occupancy status (fresh for target recomputation) at a fixed rate.
       Occupancy.read();
 #endif
