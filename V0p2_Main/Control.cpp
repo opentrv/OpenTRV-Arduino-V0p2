@@ -2415,7 +2415,8 @@ void loopOpenTRV()
       // even if not a false positive (ie the room is occupied, by a sleeper),
       // such as a valve opening and/or the boiler firing up at night.
       // Use a guard formulated to allow the RH%-based detection to work
-      // if ambient light sensing is disabled, eg allow if not known to be dark.
+      // if ambient light sensing is disabled,
+      // eg allow RH%-based sensing unless known to be dark.
       if(!AmbLight.isRoomDark())
         {
         const uint8_t lastRH = getByHourStat(getPrevHourLT(), V0P2BASE_EE_STATS_SET_RHPC_BY_HOUR);
