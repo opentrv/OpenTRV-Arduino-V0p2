@@ -1951,7 +1951,7 @@ void loopOpenTRV()
 //    // Fetch and clear current pending sample house code calling for heat.
     // Don't log call for hear if near overrun,
     // and leave any error queued for next time.
-    if(getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
+    if(OTV0P2BASE::getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
     else
       {
       if(heardIt)
@@ -1981,7 +1981,7 @@ void loopOpenTRV()
         // regardless of when second0 happens to be.
         // (The min(254, ...) is to ensure that the boiler can come on even if minOnMins == 255.)
         if(boilerNoCallM <= min(254, minOnMins)) { ignoreRCfH = true; }
-        if(getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
+        if(OTV0P2BASE::getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
         else if(ignoreRCfH) { OTV0P2BASE::serialPrintlnAndFlush(F("RCfH-")); } // Remote call for heat ignored.
         else { OTV0P2BASE::serialPrintlnAndFlush(F("RCfH1")); } // Remote call for heat on.
         }
@@ -2000,7 +2000,7 @@ void loopOpenTRV()
       if(0 == --boilerCountdownTicks)
         {
         // Boiler should now be switched off.
-        if(getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
+        if(OTV0P2BASE::getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
         else { OTV0P2BASE::serialPrintlnAndFlush(F("RCfH0")); } // Remote call for heat off
         }
       }
