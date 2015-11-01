@@ -2417,6 +2417,7 @@ void loopOpenTRV()
       // Use a guard formulated to allow the RH%-based detection to work
       // if ambient light sensing is disabled,
       // eg allow RH%-based sensing unless known to be dark.
+      // TODO: consider ignoring potential false positives from rising RH% while temperature is falling.
       if(!AmbLight.isRoomDark())
         {
         const uint8_t lastRH = getByHourStat(getPrevHourLT(), V0P2BASE_EE_STATS_SET_RHPC_BY_HOUR);
