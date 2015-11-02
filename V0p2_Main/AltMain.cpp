@@ -78,13 +78,29 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 // Can abort with panic() if need be.
 void POSTalt()
   {
+
+#ifdef USE_MODULE_SIM900
+  static const char SIM900_PIN[5] = "0000";
+  static const char SIM900_APN[] = "m2mkit.telefonica.com";
+  static const char SIM900_UDP_ADDR[] = "46.101.52.242";
+  static const char SIM900_UDP_PORT[5] = "9999";
+  static const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config { 
+                                                  SIM900_PIN,
+                                                  SIM900_APN,
+                                                  SIM900_UDP_ADDR,
+                                                  SIM900_UDP_PORT };
+  static const OTRadioLink::OTRadioChannelConfig RFMConfig(&SIM900Config, true, true, true);
+#elif defined(USE_MODULE_RFM22RADIOSIMPLE)
+  static const OTRadioLink::OTRadioChannelConfig RFMConfig(FHT8V_RFM22_Reg_Values, true, true, true);
+#endif // USE_MODULE_SIM900
+
 #if defined(USE_MODULE_RFM22RADIOSIMPLE) 
   // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
-  static const OTRadioLink::OTRadioChannelConfig RFMConfig(FHT8V_RFM22_Reg_Values, true, true, true);
   RFM23B.preinit(NULL);
   // Check that the radio is correctly connected; panic if not...
   if(!RFM23B.configure(1, &RFMConfig) || !RFM23B.begin()) { panic(F("PANIC!")); }
 #endif
+
 
   // Force initialisation into low-power state.
   const int heat = TemperatureC16.read();
@@ -310,31 +326,13 @@ void loopAlt()
 //#endif
 
 #if defined(ENABLE_VOICE_SENSOR)
-
-    // TEST OTSoftSerial
-
-    /*ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
-
-    //DDRD &= ~(1 << PD7);
-    //PORTD &= ~(1 << PD7);
-
-    //OTV0P2BASE::serialPrintAndFlush((uint8_t)(PIND), BIN);
-    DEBUG_SERIAL_PRINTLN();
-
-    softSer.print("AT\n");
-    DEBUG_SERIAL_PRINT((char)softSer.read());
-    DEBUG_SERIAL_PRINTLN();
-
-    } // ATOMIC RESTORESTATE*/
       // read voice sensor
       if (TIME_LSD == 46) {
-        //ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
-        //{
-    	  if (Voice.read()) RFM23B.queueToSend((uint8_t *)"Voice", 5);
-        //}
+        char v[9] = "Voice   "; // array of length 9
+        char *pv = v + 6;
+        itoa(Voice.count, pv, 10);
+    	  if (Voice.read()) RFM23B.queueToSend((uint8_t *)v, sizeof(v));
       }
-
-
 #endif // (ENABLE_VOICE_SENSOR)
 
 
