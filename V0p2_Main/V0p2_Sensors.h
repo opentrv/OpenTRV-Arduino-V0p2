@@ -400,7 +400,8 @@ extern TemperaturePot TempPot;
 // Sensor for supply (eg battery) voltage in millivolts.
 class VoiceDetection : public OTV0P2BASE::SimpleTSUint8Sensor
   {
-  private:
+  //private:
+  public:
     // Activity count.
     // Marked volatile for thread-safe (simple) lock-free access.
     volatile uint8_t count;

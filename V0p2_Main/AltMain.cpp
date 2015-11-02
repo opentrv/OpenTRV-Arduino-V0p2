@@ -40,6 +40,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 #include "Security.h"
 #include "Serial_IO.h"
 #include "UI_Minimal.h"
+#include "OTV0p2Base.h"
 
 
 
@@ -60,17 +61,17 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 #endif
 
 
-//// Mask for Port D input change interrupts.
-//#define MASK_PD_BASIC 0b00000001 // Just RX.
-//#if defined(ENABLE_VOICE_SENSOR)
-//#if VOICE_NIRQ > 7
-//#error voice interrupt on wrong port
-//#endif
-//#define VOICE_INT_MASK (1 << (VOICE_NIRQ&7))
-//#define MASK_PD (MASK_PD_BASIC | VOICE_INT_MASK)
-//#else
-//#define MASK_PD MASK_PD_BASIC // Just RX.
-//#endif
+// Mask for Port D input change interrupts.
+#define MASK_PD_BASIC 0b00000001 // Just RX.
+#if defined(ENABLE_VOICE_SENSOR)
+#if VOICE_NIRQ > 7
+#error voice interrupt on wrong port
+#endif
+#define VOICE_INT_MASK (1 << (VOICE_NIRQ&7))
+#define MASK_PD (MASK_PD_BASIC | VOICE_INT_MASK)
+#else
+#define MASK_PD MASK_PD_BASIC // Just RX.
+#endif
 
 
 // Called from startup() after some initial setup has been done.
@@ -82,7 +83,7 @@ void POSTalt()
   static const OTRadioLink::OTRadioChannelConfig RFMConfig(FHT8V_RFM22_Reg_Values, true, true, true);
   RFM23B.preinit(NULL);
   // Check that the radio is correctly connected; panic if not...
-  if(!RFM23B.configure(1, &RFMConfig) || !RFM23B.begin()) { panic(); }
+  if(!RFM23B.configure(1, &RFMConfig) || !RFM23B.begin()) { panic(F("PANIC!")); }
 #endif
 
   // Force initialisation into low-power state.
@@ -136,6 +137,11 @@ void POSTalt()
 
 
   RFM23B.listen(true);
+  pinMode(3, INPUT);	// FIXME Move to where they are set automatically
+  digitalWrite(3, LOW);
+
+  RFM23B.queueToSend((uint8_t *)"start", 6);
+
   }
 
 
@@ -165,7 +171,7 @@ ISR(PCINT0_vect)
   }
 #endif
 
-#if defined(MASK_PC) && (MASK_PC != 0) // If PB interrupts required.
+#if defined(MASK_PC) && (MASK_PC != 0) // If PC interrupts required.
 // Previous state of port C pins to help detect changes.
 static volatile uint8_t prevStatePC;
 // Interrupt service routine for PC I/O port transition changes.
@@ -185,13 +191,29 @@ static volatile uint8_t prevStatePD;
 // Interrupt service routine for PD I/O port transition changes (including RX).
 ISR(PCINT2_vect)
   {
-//  const uint8_t pins = PIND;
-//  const uint8_t changes = pins ^ prevStatePD;
-//  prevStatePD = pins;
-//
-// ....
+
+	  const uint8_t pins = PIND;
+	  const uint8_t changes = pins ^ prevStatePD;
+	  prevStatePD = pins;
+
+#if defined(ENABLE_VOICE_SENSOR)
+	  	//  // Voice detection is a falling edge.
+	  	//  // Handler routine not required/expected to 'clear' this interrupt.
+	  	//  // FIXME: ensure that Voice.handleInterruptSimple() is inlineable to minimise ISR prologue/epilogue time and space.
+	  	  // Voice detection is a RISING edge.
+	  	  if((changes & VOICE_INT_MASK) && (pins & VOICE_INT_MASK)) {
+	  	    Voice.handleInterruptSimple();
+	  	  }
+
+	  	  // If an interrupt arrived from no other masked source then wake the CLI.
+	  	  // The will ensure that the CLI is active, eg from RX activity,
+	  	  // eg it is possible to wake the CLI subsystem with an extra CR or LF.
+	  	  // It is OK to trigger this from other things such as button presses.
+	  	  // FIXME: ensure that resetCLIActiveTimer() is inlineable to minimise ISR prologue/epilogue time and space.
+	  	  if(!(changes & MASK_PD & ~1)) { resetCLIActiveTimer(); }
+#endif // ENABLE_VOICE_SENSOR
   }
-#endif
+#endif // defined(MASK_PD) && (MASK_PD != 0)
 
 #endif // ALT_MAIN
 
@@ -268,6 +290,15 @@ void loopAlt()
 //  // May just want to turn it on in POSTalt() and leave it on...
 //  const bool neededWaking = powerUpSerialIfDisabled();
 
+    DEBUG_SERIAL_PRINT("Time: ");	// FIXME delete
+    DEBUG_SERIAL_PRINTFMT(TIME_LSD, DEC);
+    DEBUG_SERIAL_PRINTLN();
+    DEBUG_SERIAL_PRINT("Count: ");  // FIXME delete
+#if defined(ENABLE_VOICE_SENSOR)
+    DEBUG_SERIAL_PRINTFMT(Voice.count, DEC);
+#endif // ENABLE_VOICE_SENSOR
+    DEBUG_SERIAL_PRINTLN();
+
 
 //#if defined(USE_MODULE_FHT8VSIMPLE)
 //  // Try for double TX for more robust conversation with valve?
@@ -278,12 +309,33 @@ void loopAlt()
 ////  if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@0"); }
 //#endif
 
+#if defined(ENABLE_VOICE_SENSOR)
+
+    // TEST OTSoftSerial
+
+    /*ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+
+    //DDRD &= ~(1 << PD7);
+    //PORTD &= ~(1 << PD7);
+
+    //OTV0P2BASE::serialPrintAndFlush((uint8_t)(PIND), BIN);
+    DEBUG_SERIAL_PRINTLN();
+
+    softSer.print("AT\n");
+    DEBUG_SERIAL_PRINT((char)softSer.read());
+    DEBUG_SERIAL_PRINTLN();
+
+    } // ATOMIC RESTORESTATE*/
+      // read voice sensor
+      if (TIME_LSD == 46) {
+        //ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+        //{
+    	  if (Voice.read()) RFM23B.queueToSend((uint8_t *)"Voice", 5);
+        //}
+      }
 
 
-
-
-
-
+#endif // (ENABLE_VOICE_SENSOR)
 
 
 
@@ -331,32 +383,32 @@ void loopAlt()
 //#endif
 
 
-#ifdef HAS_DORM1_VALVE_DRIVE
-  // Move valve to new target every minute to try to upset it!
-  // Targets at key thresholds and random.
-  if(0 == TIME_LSD)
-    {
-    switch(OTV0P2BASE::randRNG8() & 1)
-      {
-      case 0: ValveDirect.set(OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN-1); break; // Nominally shut.
-      case 1: ValveDirect.set(OTRadValve::DEFAULT_VALVE_PC_MODERATELY_OPEN); break; // Nominally open.
-      // Random.
-//      default: ValveDirect.set(OTV0P2BASE::randRNG8() % 101); break;
-      }
-    }
-
-  // Simulate human doing the right thing after fitting valve when required.
-  if(ValveDirect.isWaitingForValveToBeFitted()) { ValveDirect.signalValveFitted(); }
-
-  // Provide regular poll to motor driver.
-  // May take significant time to run
-  // so don't call when timing is critical or not much left,
-  // eg around critical TXes.
-  const uint8_t pc = ValveDirect.read();
-  DEBUG_SERIAL_PRINT_FLASHSTRING("Pos%: ");
-  DEBUG_SERIAL_PRINT(pc);
-  DEBUG_SERIAL_PRINTLN();
-#endif
+//#ifdef HAS_DORM1_VALVE_DRIVE
+//  // Move valve to new target every minute to try to upset it!
+//  // Targets at key thresholds and random.
+//  if(0 == TIME_LSD)
+//    {
+//    switch(OTV0P2BASE::randRNG8() & 1)
+//      {
+//      case 0: ValveDirect.set(OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN-1); break; // Nominally shut.
+//      case 1: ValveDirect.set(OTRadValve::DEFAULT_VALVE_PC_MODERATELY_OPEN); break; // Nominally open.
+//      // Random.
+////      default: ValveDirect.set(OTV0P2BASE::randRNG8() % 101); break;
+//      }
+//    }
+//
+//  // Simulate human doing the right thing after fitting valve when required.
+//  if(ValveDirect.isWaitingForValveToBeFitted()) { ValveDirect.signalValveFitted(); }
+//
+//  // Provide regular poll to motor driver.
+//  // May take significant time to run
+//  // so don't call when timing is critical or not much left,
+//  // eg around critical TXes.
+//  const uint8_t pc = ValveDirect.read();
+//  DEBUG_SERIAL_PRINT_FLASHSTRING("Pos%: ");
+//  DEBUG_SERIAL_PRINT(pc);
+//  DEBUG_SERIAL_PRINTLN();
+//#endif
 
 
 
