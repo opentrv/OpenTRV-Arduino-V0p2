@@ -80,11 +80,13 @@ void POSTalt()
   {
 
 #ifdef USE_MODULE_SIM900
-  static const char SIM900_PIN[5] = "0000";
-  static const char SIM900_APN[] = "m2mkit.telefonica.com";
-  static const char SIM900_UDP_ADDR[] = "46.101.52.242";
-  static const char SIM900_UDP_PORT[5] = "9999";
-  static const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config { 
+// EEPROM locations
+  static const void *SIM900_PIN      = (void *)0x0300; // TODO confirm this address
+  static const void *SIM900_APN      = (void *)0x0305;
+  static const void *SIM900_UDP_ADDR = (void *)0x031B;
+  static const void *SIM900_UDP_PORT = (void *)0x0329;
+  static const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config {
+                                                  true, 
                                                   SIM900_PIN,
                                                   SIM900_APN,
                                                   SIM900_UDP_ADDR,
