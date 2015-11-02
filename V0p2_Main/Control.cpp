@@ -386,8 +386,15 @@ bool inTopQuartile(const uint8_t *sE, const uint8_t sample)
   return(false); // Not in upper quartile.
   }
 
+// Get previous hour in current local time, wrapping round from 0 to 23.
+uint8_t getPrevHourLT()
+  {
+  const uint8_t h = OTV0P2BASE::getHoursLT();
+  if(0 == h) { return(23); }
+  return(h - 1);
+  }
 // Get next hour in current local time, wrapping round from 23 back to 0.
-static uint8_t _getNextHour()
+uint8_t getNextHourLT()
   {
   const uint8_t h = OTV0P2BASE::getHoursLT();
   if(h >= 23) { return(0); }
@@ -404,7 +411,7 @@ bool inOutlierQuartile(const uint8_t inTop, const uint8_t statsSet, const uint8_
   {
   if(statsSet >= V0P2BASE_EE_STATS_SETS) { return(false); } // Bad stats set number, ie unsafe.
   const uint8_t hh = (inOutlierQuartile_CURRENT_HOUR == hour) ? OTV0P2BASE::getHoursLT() :
-    ((hour > 23) ? _getNextHour() : hour);
+    ((hour > 23) ? getNextHourLT() : hour);
   const uint8_t *ss = (uint8_t *)(V0P2BASE_EE_STATS_START_ADDR(statsSet));
   const uint8_t sample = eeprom_read_byte(ss + hh);
   if(STATS_UNSET_INT == sample) { return(false); }
@@ -712,7 +719,10 @@ DEBUG_SERIAL_PRINTLN();
       // Less fast if already moderately open or in the degree below target.
       const uint8_t slewRate =
           ((valvePCOpen >= OTRadValve::DEFAULT_VALVE_PC_MODERATELY_OPEN) || (adjustedTempC == inputState.targetTempC-1)) ?
-              TRV_MAX_SLEW_PC_PER_MIN : TRV_SLEW_PC_PER_MIN_FAST;
+              TRV_MAX_SLEW_PC_PER_MIN :
+              // Open VFAST until almost all valves would be significantly open.
+              ((valvePCOpen >= OTRadValve::DEFAULT_VALVE_PC_SAFER_OPEN) ?
+                  TRV_SLEW_PC_PER_MIN_FAST : TRV_SLEW_PC_PER_MIN_VFAST);
       const uint8_t minOpenFromCold = fnmax(slewRate, inputState.minPCOpen);
       // Open to 'minimum' likely open state immediately if less open currently.
       if(valvePCOpen < minOpenFromCold) { return(minOpenFromCold); }
@@ -1548,6 +1558,8 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
 
 
 // 'Elapsed minutes' count of minute/major cycles; cheaper than accessing RTC and not tied to real time.
+// Starts at or near zero.
+// Wraps at its maximum (0xff) value.
 static uint8_t minuteCount;
 
 #if !defined(DONT_RANDOMISE_MINUTE_CYCLE)
@@ -1691,7 +1703,7 @@ void setupOpenTRV()
   // Offsets based on whatever noise is in the simple PRNG plus some from the unique ID.
   const uint8_t ID0 = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_ID);
   localTicks = (OTV0P2BASE::randRNG8() ^ ID0) & 0x1f; // Start within bottom half of minute (or close to).
-  if(0 != (ID0 & 0x20)) { minuteCount = OTV0P2BASE::randRNG8() | 2; } // Start at minute 2 or 3 out of 4 for some units.
+  if(0 != (ID0 & 0x20)) { minuteCount = (OTV0P2BASE::randRNG8() & 1) | 2; } // Start at minute 2 or 3 out of 4 for some units.
 #endif
 
 #if 0 && defined(DEBUG)
@@ -1939,7 +1951,7 @@ void loopOpenTRV()
 //    // Fetch and clear current pending sample house code calling for heat.
     // Don't log call for hear if near overrun,
     // and leave any error queued for next time.
-    if(getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
+    if(OTV0P2BASE::getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
     else
       {
       if(heardIt)
@@ -1969,7 +1981,7 @@ void loopOpenTRV()
         // regardless of when second0 happens to be.
         // (The min(254, ...) is to ensure that the boiler can come on even if minOnMins == 255.)
         if(boilerNoCallM <= min(254, minOnMins)) { ignoreRCfH = true; }
-        if(getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
+        if(OTV0P2BASE::getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
         else if(ignoreRCfH) { OTV0P2BASE::serialPrintlnAndFlush(F("RCfH-")); } // Remote call for heat ignored.
         else { OTV0P2BASE::serialPrintlnAndFlush(F("RCfH1")); } // Remote call for heat on.
         }
@@ -1988,7 +2000,7 @@ void loopOpenTRV()
       if(0 == --boilerCountdownTicks)
         {
         // Boiler should now be switched off.
-        if(getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
+        if(OTV0P2BASE::getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
         else { OTV0P2BASE::serialPrintlnAndFlush(F("RCfH0")); } // Remote call for heat off
         }
       }
@@ -2396,6 +2408,25 @@ void loopOpenTRV()
     case 56:
       {
 #ifdef OCCUPANCY_SUPPORT
+      // Update occupancy measures that partially use rolling stats.
+#if defined(OCCUPANCY_DETECT_FROM_RH) && defined(HUMIDITY_SENSOR_SUPPORT)
+      // If RH% is rising fast enough then take this a mild occupancy indicator.
+      // Suppress this in the dark to avoid nusiance behaviour,
+      // even if not a false positive (ie the room is occupied, by a sleeper),
+      // such as a valve opening and/or the boiler firing up at night.
+      // Use a guard formulated to allow the RH%-based detection to work
+      // if ambient light sensing is disabled,
+      // eg allow RH%-based sensing unless known to be dark.
+      // TODO: consider ignoring potential false positives from rising RH% while temperature is falling.
+      if(runAll && // Only if all sensors have been refreshed.
+         !AmbLight.isRoomDark()) // Only if known to be dark.
+        {
+        const uint8_t lastRH = getByHourStat(getPrevHourLT(), V0P2BASE_EE_STATS_SET_RHPC_BY_HOUR);
+        if((STATS_UNSET_BYTE != lastRH) &&
+           (RelHumidity.get() >= lastRH + HUMIDITY_OCCUPANCY_PC_MIN_RISE_PER_H))
+            { Occupancy.markAsPossiblyOccupied(); }
+        }
+#endif
       // Update occupancy status (fresh for target recomputation) at a fixed rate.
       Occupancy.read();
 #endif
@@ -2490,6 +2521,16 @@ void loopOpenTRV()
   // Get current modelled valve position into abstract driver.
   ValveDirect.set(NominalRadValve.get());
 #endif
+  // If waiting for for verification that the valve has been fitted
+  // then accept any manual interaction with controls as that signal.
+  // ('Any' manual interaction may prove too sensitive.)
+  // Also have a timeout of somewhat over ~10m from startup
+  // for automatic recovery after any crash and restart.
+  if(ValveDirect.isWaitingForValveToBeFitted())
+      {
+      if(veryRecentUIControlUse() || (minuteCount > 15))
+          { ValveDirect.signalValveFitted(); }
+      }
   // Provide regular poll to motor driver.
   // May take significant time to run
   // so don't call when timing is critical or not much time left this cycle.

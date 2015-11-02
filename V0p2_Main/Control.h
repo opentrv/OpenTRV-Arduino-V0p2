@@ -671,7 +671,7 @@ class OccupancyTracker : public OTV0P2BASE::SimpleTSUint8Sensor
     // Compound operations must block interrupts.
     volatile uint8_t occupationCountdownM;
 
-    // Non-zero if occpuancy system recently notified of activity.
+    // Non-zero if occupancy system recently notified of activity.
     // Marked voilatile for thread-safe lock-free non-read-modify-write access to byte-wide value.
     // Compound operations must block interrupts.
     volatile uint8_t activityCountdownM;
@@ -837,6 +837,11 @@ bool zapStats(uint16_t maxBytesToErase = 0);
 // Get raw stats value for hour HH [0,23] from stats set N from non-volatile (EEPROM) store.
 // A value of 0xff (255) means unset (or out of range); other values depend on which stats set is being used.
 uint8_t getByHourStat(uint8_t hh, uint8_t statsSet);
+
+// Get previous hour in current local time, wrapping round from 0 to 23.
+uint8_t getPrevHourLT();
+// Get next hour in current local time, wrapping round from 23 back to 0.
+uint8_t getNextHourLT();
 
 // Returns true if specified hour is (conservatively) in the specifed outlier quartile for specified stats set.
 // Returns false if a full set of stats not available, eg including the specified hour.
