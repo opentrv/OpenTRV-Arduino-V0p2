@@ -32,7 +32,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #ifdef USE_NULLRADIO
 OTRadioLink::OTNullRadioLink RFM23B;
 #elif defined(USE_MODULE_SIM900)
-OTSIM900Link::OTSIM900Link RFM23B((uint8_t)6, (uint8_t)9, (uint8_t)8);
+OTSIM900Link::OTSIM900Link RFM23B(A3, (uint8_t)6, (uint8_t)9, (uint8_t)8); // FIXME change pins around to (A3, 8, 5, A2)
 #elif defined(PIN_RFM_NIRQ)
 OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, PIN_RFM_NIRQ> RFM23B;
 #else
