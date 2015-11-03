@@ -882,11 +882,6 @@ uint8_t VoiceDetection::read()
     isDetected = ((value = count) >= VOICE_DETECTION_THRESHOLD);
     count = 0;
     }
-#if 1 && defined(DEBUG)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("Voice count: ");
-  DEBUG_SERIAL_PRINT(value);
-  DEBUG_SERIAL_PRINTLN();
-#endif
   return(value);
   }
 

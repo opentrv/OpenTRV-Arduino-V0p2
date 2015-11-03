@@ -404,8 +404,7 @@ extern TemperaturePot TempPot;
 // Sensor for supply (eg battery) voltage in millivolts.
 class VoiceDetection : public OTV0P2BASE::SimpleTSUint8Sensor
   {
-  //private: // FIXME debug
-  public:
+  private:
     // Activity count.
     // Marked volatile for thread-safe (simple) lock-free access.
     volatile uint8_t count;
@@ -431,6 +430,21 @@ class VoiceDetection : public OTV0P2BASE::SimpleTSUint8Sensor
     // else another interrupt handler in the chain may be called
     // to attempt to clear the interrupt.
     virtual bool handleInterruptSimple();
+
+    // Begin access to this sensor if applicable and not already begun.
+    //TODO init pins in here
+    virtual bool begin() { return(false); }
+
+    // Returns true if this sensor is currently available.
+    // True by default unless implementation overrides.
+    // For those sensors that need starting this will be false before begin().
+    // TODO make this function
+    virtual bool isAvailable() const { return(true); }
+
+    // End access to this sensor if applicable and not already ended.
+    // Returns true if it needed to be ended.
+    // TODO deinit pins here
+    virtual bool end() { return(false); }
 
     // Returns true if voice has been detected in this or previous poll period.
     bool isVoiceDetected() { return(isDetected); }
