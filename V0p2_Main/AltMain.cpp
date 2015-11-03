@@ -308,14 +308,7 @@ void loopAlt()
 //  // May just want to turn it on in POSTalt() and leave it on...
 //  const bool neededWaking = powerUpSerialIfDisabled();
 
-    DEBUG_SERIAL_PRINT("Time: ");	// FIXME delete
-    DEBUG_SERIAL_PRINTFMT(TIME_LSD, DEC);
-    DEBUG_SERIAL_PRINTLN();
-    DEBUG_SERIAL_PRINT("Count: ");  // FIXME delete
-#if defined(ENABLE_VOICE_SENSOR)
-    DEBUG_SERIAL_PRINTFMT(Voice.count, DEC);
-#endif // ENABLE_VOICE_SENSOR
-    DEBUG_SERIAL_PRINTLN();
+
 
 
 //#if defined(USE_MODULE_FHT8VSIMPLE)
@@ -327,32 +320,39 @@ void loopAlt()
 ////  if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@0"); }
 //#endif
 
-#if defined(ENABLE_VOICE_SENSOR)
-      // read voice sensor
-      if (TIME_LSD == 46) {
-        char v[9] = "Voice   "; // array of length 9
-        char *pv = v + 6;
-        itoa(Voice.count, pv, 10);
-    	//if (Voice.read()) RFM23B.queueToSend((uint8_t *)v, sizeof(v));
-      }
-#endif // (ENABLE_VOICE_SENSOR)
-
-
+	static char messageToSend[9];
+ if (TIME_LSD == 2) {
+  memset(messageToSend, 'x', sizeof(messageToSend));
+  messageToSend[0] = '{';
+  messageToSend[8] = '}';
+ }
 
 
 #if defined(SENSOR_DS18B20_ENABLE)
       // read temp
       if (TIME_LSD == 18) {
-    	  char t[] = "Temp       ";
-    	  char *pt = t + 5;
-        int temp = TemperatureC16.read();
-    	  itoa((temp >> 4), pt, 10);
-    	  OTV0P2BASE::serialPrintAndFlush(t);
-    	  OTV0P2BASE::serialPrintlnAndFlush();
+          char *pt = messageToSend+1;
+          *pt++ = 't';
+          int temp = TemperatureC16.read();
+    	    itoa((temp >> 4), pt, 10);
       }
 #endif // SENSOR_DS18B20_ENABLE
 
+#if defined(ENABLE_VOICE_SENSOR)
+      // read voice sensor
+      if (TIME_LSD == 46) {
+        char *pv = messageToSend+5;
+        *pv++ = 'v';
+        if(Voice.read()) *pv = '1';
+        else *pv = '0';
+      }
+#endif // (ENABLE_VOICE_SENSOR)
 
+
+
+      if (TIME_LSD == 58) {
+    	  RFM23B.sendRaw((const uint8_t *)messageToSend, sizeof(messageToSend));
+      }
 
 
 //#if defined(USE_MODULE_FHT8VSIMPLE)
