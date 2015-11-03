@@ -30,7 +30,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 
 #ifdef USE_NULLRADIO
-OTNullRadioLink::OTNullRadioLink RFM23B;  // FIXME why?
+OTRadioLink::OTNullRadioLink RFM23B;
 #elif defined(USE_MODULE_SIM900)
 OTSIM900Link::OTSIM900Link RFM23B((uint8_t)6, (uint8_t)9, (uint8_t)8);
 #elif defined(PIN_RFM_NIRQ)
