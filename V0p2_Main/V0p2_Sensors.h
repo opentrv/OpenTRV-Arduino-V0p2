@@ -404,7 +404,7 @@ extern TemperaturePot TempPot;
 // Sensor for supply (eg battery) voltage in millivolts.
 class VoiceDetection : public OTV0P2BASE::SimpleTSUint8Sensor
   {
-  //private:
+  //private: // FIXME debug
   public:
     // Activity count.
     // Marked volatile for thread-safe (simple) lock-free access.
@@ -434,6 +434,11 @@ class VoiceDetection : public OTV0P2BASE::SimpleTSUint8Sensor
 
     // Returns true if voice has been detected in this or previous poll period.
     bool isVoiceDetected() { return(isDetected); }
+
+    // Returns a suggested (JSON) tag/field/key name including units of get(); NULL means no recommended tag.
+    // The lifetime of the pointed-to text must be at least that of the Sensor instance.
+//    virtual const char *tag() const { return("v"); } // TODO do we want this here?
+
   };
 // Singleton implementation/instance.
 extern VoiceDetection Voice;

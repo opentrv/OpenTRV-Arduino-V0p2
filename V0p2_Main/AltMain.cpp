@@ -333,15 +333,24 @@ void loopAlt()
         char v[9] = "Voice   "; // array of length 9
         char *pv = v + 6;
         itoa(Voice.count, pv, 10);
-    	  if (Voice.read()) RFM23B.queueToSend((uint8_t *)v, sizeof(v));
+    	//if (Voice.read()) RFM23B.queueToSend((uint8_t *)v, sizeof(v));
       }
 #endif // (ENABLE_VOICE_SENSOR)
 
 
 
 
-
-
+#if defined(SENSOR_DS18B20_ENABLE)
+      // read temp
+      if (TIME_LSD == 18) {
+    	  char t[] = "Temp       ";
+    	  char *pt = t + 5;
+        int temp = TemperatureC16.read();
+    	  itoa((temp >> 4), pt, 10);
+    	  OTV0P2BASE::serialPrintAndFlush(t);
+    	  OTV0P2BASE::serialPrintlnAndFlush();
+      }
+#endif // SENSOR_DS18B20_ENABLE
 
 
 

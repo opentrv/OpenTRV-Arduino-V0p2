@@ -38,7 +38,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // Production configs.
 //#define CONFIG_Trial2013Winter_Round1 // REV1 default config.
 //#define CONFIG_Trial2013Winter_Round1_LVBHSH // REV1: local valve control, boiler hub, stats hub & TX.
-#define CONFIG_Trial2013Winter_Round1_NOHUB // REV1 as TX-only leaf node.
+//#define CONFIG_Trial2013Winter_Round1_NOHUB // REV1 as TX-only leaf node.
 //#define CONFIG_Trial2013Winter_Round1_BOILERHUB // REV1 as plain boiler node.
 //#define CONFIG_Trial2013Winter_Round2 // REV2 cut4 default config.
 //#define CONFIG_Trial2013Winter_Round2_LVBHSH // REV2 cut4: local valve control, boiler hub, stats hub & TX.
@@ -65,7 +65,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
 //#define CONFIG_REV9_STATS // REV9 as stats node, cut 2 of the board.
 //#define CONFIG_REV9_cut1 // REV9 as CC1 relay, cut1 of board.
-//#define CONFIG_DE_TESTLAB // Deniz's test environment.
+#define CONFIG_DE_TESTLAB // Deniz's test environment.
 //#define CONFIG_BAREBONES // No peripherals / on breadboard.
 
 
@@ -723,10 +723,14 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define ENABLE_USE_OF_AVR_IDLE_MODE
 // IF DEFINED: Use OTNullRadioLink instead of a radio module
 // Undefine other radio //FIXME make this a part of the automatic stuff
-//#define USE_NULLRADIO
-#define USE_MODULE_SIM900
+#define USE_NULLRADIO
+//#define USE_MODULE_SIM900
 // Define voice module
 #define ENABLE_VOICE_SENSOR
+// Enable use of OneWire devices.
+#define SUPPORT_ONEWIRE
+// Enable use of DS18B20 temp sensor.
+#define SENSOR_DS18B20_ENABLE
 
 // things that break
 // IF DEFINED: basic FROST/WARM temperatures are settable.
