@@ -320,11 +320,11 @@ void loopAlt()
 ////  if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@0"); }
 //#endif
 
-	static char messageToSend[9];
+	static char messageToSend[8];
  if (TIME_LSD == 2) {
   memset(messageToSend, 'x', sizeof(messageToSend));
   messageToSend[0] = '{';
-  messageToSend[8] = '}';
+  messageToSend[7] = '}';
  }
 
 
