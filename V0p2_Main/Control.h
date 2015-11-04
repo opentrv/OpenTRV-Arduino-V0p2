@@ -903,6 +903,14 @@ int expandTempC16(uint8_t cTemp);
 // and may depend on stats TX security level (if collecting some sensitive items is also expensive).
 void populateCoreStats(FullStatsMessageCore_t *content);
 
+// Do bare stats transmission.
+// Output should be filtered for items appropriate
+// to current channel security and sensitivity level.
+// This may be binary or JSON format.
+//   * allowDoubleTX  allow double TX to increase chance of successful reception
+//   * doBinary  send binary form, else JSON form if supported
+void bareStatsTX(const bool allowDoubleTX, const bool doBinary);
+
 #ifdef ENABLE_BOILER_HUB
 // Raw notification of received call for heat from remote (eg FHT8V) unit.
 // This form has a 16-bit ID (eg FHT8V housecode) and percent-open value [0,100].

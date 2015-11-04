@@ -1410,23 +1410,23 @@ bool pollIO(const bool force)
 #if defined(ALLOW_JSON_OUTPUT)
 // Managed JSON stats.
 static SimpleStatsRotation<9> ss1; // Configured for maximum different stats.
-#endif
+#endif // ALLOW_STATS_TX
 // Do bare stats transmission.
 // Output should be filtered for items appropriate
 // to current channel security and sensitivity level.
 // This may be binary or JSON format.
 //   * allowDoubleTX  allow double TX to increase chance of successful reception
 //   * doBinary  send binary form, else JSON form if supported
-static void bareStatsTX(const bool allowDoubleTX, const bool doBinary)
+void bareStatsTX(const bool allowDoubleTX, const bool doBinary) // FIXME delete static
   {
   const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled<V0P2_UART_BAUD>(); // FIXME
 
 #if (FullStatsMessageCore_MAX_BYTES_ON_WIRE > STATS_MSG_MAX_LEN)
 #error FullStatsMessageCore_MAX_BYTES_ON_WIRE too big
-#endif
+#endif // FullStatsMessageCore_MAX_BYTES_ON_WIRE > STATS_MSG_MAX_LEN
 #if (MSG_JSON_MAX_LENGTH+1 > STATS_MSG_MAX_LEN) // Allow 1 for trailing CRC.
 #error MSG_JSON_MAX_LENGTH too big
-#endif
+#endif // MSG_JSON_MAX_LENGTH+1 > STATS_MSG_MAX_LEN
 
   // Allow space in buffer for:
   //   * buffer offset/preamble
@@ -1436,7 +1436,7 @@ static void bareStatsTX(const bool allowDoubleTX, const bool doBinary)
 
 #if defined(ALLOW_JSON_OUTPUT)
   if(doBinary)
-#endif
+#endif // ALLOW_JSON_OUTPUT
     {
     // Send binary message first.
     // Gather core stats.
@@ -1462,7 +1462,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
   else // Send binary *or* JSON on each attempt so as not to overwhelm the receiver.
     {
     // Send JSON message.        
-    uint8_t *bptr = buf + STATS_MSG_START_OFFSET;
+    uint8_t *bptr = buf;// + STATS_MSG_START_OFFSET; FIXME commented for testing
     // Now append JSON text and closing 0xff...
     // Use letters that correspond to the values in ParsedRemoteStatsRecord and when displaying/parsing @ status records.
     int8_t wrote;
@@ -1506,7 +1506,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 
     // If not doing a doubleTX then consider sometimes suppressing the change-flag clearing for this send
     // to reduce the chance of important changes being missed by the receiver.
-    wrote = ss1.writeJSON(bptr, sizeof(buf) - (bptr-buf), getStatsTXLevel(), maximise); // , !allowDoubleTX && randRNG8NextBoolean());
+    wrote = ss1.writeJSON(bptr, sizeof(buf) - (bptr-buf), false /*getStatsTXLevel()*/, maximise); // , !allowDoubleTX && randRNG8NextBoolean());
     if(0 == wrote)
       {
 DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
@@ -1517,16 +1517,16 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
     handleQueuedMessages(&Serial, false, &RFM23B); // Serial must already be running!
     // Adjust JSON message for transmission.
     // (Set high-bit on final closing brace to make it unique, and compute (non-0xff) CRC.)
-    const uint8_t crc = adjustJSONMsgForTXAndComputeCRC((char *)bptr);
-    if(0xff == crc)
+    //const uint8_t crc = adjustJSONMsgForTXAndComputeCRC((char *)bptr); // FIXME commented for debug
+/*    if(0xff == crc)
       {
 #if 0 && defined(DEBUG)
       DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON msg bad!");
 #endif
       return;
-      }
+      }*/ // FIXME commented for testlab
     bptr += wrote;
-    *bptr++ = crc; // Add 7-bit CRC for on-the-wire check.
+   // *bptr++ = crc; // Add 7-bit CRC for on-the-wire check.
     *bptr = 0xff; // Terminate message for TX.
 #if 0 && defined(DEBUG)
     if(bptr - buf >= 64)

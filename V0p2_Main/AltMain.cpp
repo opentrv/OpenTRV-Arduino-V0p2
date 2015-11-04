@@ -327,6 +327,29 @@ void loopAlt()
   messageToSend[7] = '}';
  }
 
+#ifdef ALLOW_STATS_TX
+    // Regular transmission of stats if NOT driving a local valve (else stats can be piggybacked onto that).
+    if(TIME_LSD ==  10)
+      {
+        OTV0P2BASE::serialPrintAndFlush(F("check send"));
+      // Generally only attempt stats TX in the minute after all sensors should have been polled (so that readings are fresh).
+        OTV0P2BASE::serialPrintAndFlush(F("sending"));
+      OTV0P2BASE::serialPrintlnAndFlush();
+        // Send it!
+        // Try for double TX for extra robustness unless:
+        //   * this is a speculative 'extra' TX
+        //   * battery is low
+        //   * this node is a hub so needs to listen as much as possible
+        // This doesn't generally/always need to send binary/both formats
+        // if this is controlling a local FHT8V on which the binary stats can be piggybacked.
+        // Ie, if doesn't have a local TRV then it must send binary some of the time.
+        // Any recently-changed stats value is a hint that a strong transmission might be a good idea.
+        const bool doBinary = !localFHT8VTRVEnabled() && OTV0P2BASE::randRNG8NextBoolean();
+        bareStatsTX(false, false);
+      }
+#endif
+
+
 
 #if defined(SENSOR_DS18B20_ENABLE)
       // read temp
@@ -347,13 +370,6 @@ void loopAlt()
         else *pv = '0';
       }
 #endif // (ENABLE_VOICE_SENSOR)
-
-
-
-      if (TIME_LSD == 58) {
-    	  RFM23B.sendRaw((const uint8_t *)messageToSend, sizeof(messageToSend));
-      }
-
 
 //#if defined(USE_MODULE_FHT8VSIMPLE)
 //  if(useExtraFHT8VTXSlots)

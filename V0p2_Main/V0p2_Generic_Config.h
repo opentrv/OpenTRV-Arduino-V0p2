@@ -699,11 +699,11 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: allow RX of stats frames.
 #undef ALLOW_STATS_RX
 // IF DEFINED: allow TX of stats frames.
-#undef ALLOW_STATS_TX
+#define ALLOW_STATS_TX
 // IF DEFINED: allow minimal binary format in addition to more generic one: ~400 bytes code cost.
 #undef ALLOW_MINIMAL_STATS_TXRX
 // IF DEFINED: allow JSON stats frames alongside binary ones.
-#undef ALLOW_JSON_OUTPUT
+//#undef ALLOW_JSON_OUTPUT
 // IF DEFINED: (default) forced always-on radio listen/RX, eg not requiring setup to explicitly enable. ***
 #undef ENABLE_DEFAULT_ALWAYS_RX
 // IF DEFINED: this unit supports CLI over the USB/serial connection, eg for run-time reconfig.
@@ -723,8 +723,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define ENABLE_USE_OF_AVR_IDLE_MODE
 // IF DEFINED: Use OTNullRadioLink instead of a radio module
 // Undefine other radio //FIXME make this a part of the automatic stuff
-#define USE_NULLRADIO
-//#define USE_MODULE_SIM900
+//#define USE_NULLRADIO
+#define USE_MODULE_SIM900
 // Define voice module
 #define ENABLE_VOICE_SENSOR
 // Enable use of OneWire devices.
