@@ -1464,7 +1464,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
     {
     // Send JSON message.
 	// set pointer location based on whether start of message will have preamble TODO move to OTRFM23BLink queueToSend?
-    uint8_t *bptr = buf
+    uint8_t *bptr = buf;
     if (RFM23BFramed) bptr += STATS_MSG_START_OFFSET;
 
     // Now append JSON text and closing 0xff...
