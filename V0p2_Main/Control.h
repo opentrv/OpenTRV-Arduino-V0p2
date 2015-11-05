@@ -909,7 +909,8 @@ void populateCoreStats(FullStatsMessageCore_t *content);
 // This may be binary or JSON format.
 //   * allowDoubleTX  allow double TX to increase chance of successful reception
 //   * doBinary  send binary form, else JSON form if supported
-void bareStatsTX(const bool allowDoubleTX, const bool doBinary);
+//   * RFM23BFramed   Add preamble and CRC to frame. Defaults to true for compatibility
+void bareStatsTX(const bool allowDoubleTX, const bool doBinary, const bool RFM23BFramed = true);
 
 #ifdef ENABLE_BOILER_HUB
 // Raw notification of received call for heat from remote (eg FHT8V) unit.
