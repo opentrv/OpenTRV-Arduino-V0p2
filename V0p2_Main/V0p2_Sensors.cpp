@@ -231,6 +231,8 @@ uint8_t AmbientLight::read()
 static const uint8_t MAX_AMBLIGHT_VALUE_UINT8 = 254;
 // Minimum viable range (on [0,254] scale) to be usable.
 static const uint8_t ABS_MIN_AMBLIGHT_RANGE_UINT8 = 3;
+// Minimum hysteresis (on [0,254] scale) to be usable and avoid noise triggers.
+static const uint8_t ABS_MIN_AMBLIGHT_HYST_UINT8 = 2;
 
 // Recomputes thresholds and 'unusable' based on current state.
 void AmbientLight::recomputeThresholds()
