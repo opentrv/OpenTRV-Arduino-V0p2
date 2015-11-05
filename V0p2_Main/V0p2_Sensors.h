@@ -158,16 +158,24 @@ class AmbientLight : public OTV0P2BASE::SimpleTSUint8Sensor
     // Maximum eg from recent stats, to allow auto adjustment to dark; ~0/0xff means no max available.
     uint8_t recentMax;
 
+    // Lower and upper hysteresis thresholds (on [0,254] scale) for detecting dark/light.
+    uint8_t lowerThreshold, upperThreshold;
+
     // Set true if ambient light sensor may be unusable or unreliable.
     // This will be where (for example) there are historic values
     // but in a very narrow range which implies a broken sensor or shadowed location.
     bool unusable;
 
-    // Recomputes 'unusable' based on current state.
-    void recomputeUnusable();
+    // Ignore first false trigger at start-up.
+    bool ignoreFirst;
+
+    // Recomputes thresholds and 'unusable' based on current state.
+    void recomputeThresholds();
 
   public:
-    AmbientLight() : isRoomLitFlag(false), darkTicks(0), recentMin(~0), recentMax(~0), unusable(false) { }
+    AmbientLight()
+      : isRoomLitFlag(false), darkTicks(0), recentMin(~0), recentMax(~0), unusable(false), ignoreFirst(false)
+      { recomputeThresholds(); }
 
     // Force a read/poll of the ambient light level and return the value sensed [0,255] (dark to light).
     // Potentially expensive/slow.

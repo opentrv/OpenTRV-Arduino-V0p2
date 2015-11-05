@@ -165,21 +165,26 @@ uint8_t AmbientLight::read()
   // Capture entropy from changed LS bits.
   if((uint8_t)al != (uint8_t)rawValue) { ::OTV0P2BASE::addEntropyToPool((uint8_t)al ^ (uint8_t)rawValue, 0); } // Claim zero entropy as may be forced by Eve.
 
+  // Apply a little bit of noise reduction (hysteresis) to the normalised version.
+  const uint8_t newValue = (uint8_t)(al >> 2);
+
   // Adjust room-lit flag, with hysteresis.
-  if(al <= LDR_THR_LOW)
+  if(newValue <= lowerThreshold)
     {
     isRoomLitFlag = false;
     // If dark enough to isRoomLitFlag false then increment counter.
     // Do not do increment the count if the sensor seems to be unusable.
     if(!unusable && (darkTicks < 255)) { ++darkTicks; }
     }
-  else if(al > LDR_THR_HIGH)
+  else if(newValue > upperThreshold)
     {
     // Treat a sharp transition from dark to light as a possible/weak indication of occupancy, eg light flicked on.
     // Ignore trigger at start-up.
-    static bool ignoreFirst;
+//    bool ignoreFirst;
     if(!ignoreFirst) { ignoreFirst = true; }
-    else if((!isRoomLitFlag) && (rawValue < LDR_THR_LOW)) { Occupancy.markAsPossiblyOccupied(); }
+#ifdef OCCUPANCY_DETECT_FROM_AMBLIGHT
+    else if((!isRoomLitFlag) && ((rawValue>>2) < lowerThreshold)) { Occupancy.markAsPossiblyOccupied(); }
+#endif
     isRoomLitFlag = true;
     // If light enough to set isRoomLitFlag true then reset darkTicks counter.
     darkTicks = 0;
@@ -188,8 +193,6 @@ uint8_t AmbientLight::read()
   // Store new value, raw and normalised.
   // Unconditionbally store raw value.
   rawValue = al;
-  // Apply a little bit of noise reduction (hysteresis) to the normalised version.
-  const uint8_t newValue = (uint8_t)(al >> 2);
   if(newValue != value)
     {
     const uint16_t oldRawImplied = ((uint16_t)value) << 2;
@@ -198,12 +201,22 @@ uint8_t AmbientLight::read()
     }
 
 #if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("Ambient light: ");
+  DEBUG_SERIAL_PRINT_FLASHSTRING("Ambient light (/1023): ");
   DEBUG_SERIAL_PRINT(al);
   DEBUG_SERIAL_PRINTLN();
 #endif
 
-#if 0 && defined(DEBUG)
+#if 1 && defined(DEBUG)
+  DEBUG_SERIAL_PRINT_FLASHSTRING("Ambient light val/lt/ut: ");
+  DEBUG_SERIAL_PRINT(value);
+  DEBUG_SERIAL_PRINT(' ');
+  DEBUG_SERIAL_PRINT(lowerThreshold);
+  DEBUG_SERIAL_PRINT(' ');
+  DEBUG_SERIAL_PRINT(upperThreshold);
+  DEBUG_SERIAL_PRINTLN();
+#endif
+
+#if 1 && defined(DEBUG)
   DEBUG_SERIAL_PRINT_FLASHSTRING("isRoomLit: ");
   DEBUG_SERIAL_PRINT(isRoomLitFlag);
   DEBUG_SERIAL_PRINTLN();
@@ -213,12 +226,18 @@ uint8_t AmbientLight::read()
   }
 
 
+// Maximum value in the uint8_t range.
+static const uint8_t MAX_AMBLIGHT_VALUE_UINT8 = 254;
 // Minimum viable range (on [0,254] scale) to be usable.
-static const uint8_t ABS_MIN_LIGHT_RANGE = 4;
+static const uint8_t ABS_MIN_AMBLIGHT_RANGE_UINT8 = 4;
 
-// Recomputes 'unusable' based on current state.
-void AmbientLight::recomputeUnusable()
+// Recomputes thresholds and 'unusable' based on current state.
+void AmbientLight::recomputeThresholds()
   {
+  // Use the built-in default thresholds.
+  lowerThreshold = LDR_THR_LOW >> 2;
+  upperThreshold = LDR_THR_HIGH >> 2;
+
   // If either recent max or min is unset then assume device usable by default.
   if((0xff == recentMin) || (0xff == recentMax))
     {
@@ -226,9 +245,9 @@ void AmbientLight::recomputeUnusable()
     return;
     }
 
-  // If recent range between recent max and min too close then assume unusable.
-  if((recentMin > 254 - ABS_MIN_LIGHT_RANGE) ||
-     (recentMax - recentMin < ABS_MIN_LIGHT_RANGE))
+  // If the range between recent max and min too narrow then assume unusable.
+  if((recentMin > MAX_AMBLIGHT_VALUE_UINT8 - ABS_MIN_AMBLIGHT_RANGE_UINT8) ||
+     (recentMax - recentMin < ABS_MIN_AMBLIGHT_RANGE_UINT8))
     {
     unusable = true;
     return;
@@ -242,14 +261,14 @@ void AmbientLight::recomputeUnusable()
 void AmbientLight::setMin(uint8_t recentMinimumOrFF)
   {
   recentMin = recentMinimumOrFF;
-  recomputeUnusable();
+  recomputeThresholds();
   }
   
 // Set maximum eg from recent stats, to allow auto adjustment to dark; ~0/0xff means no max available.
 void AmbientLight::setMax(uint8_t recentMaximumOrFF)
   {
   recentMax = recentMaximumOrFF;
-  recomputeUnusable(); 
+  recomputeThresholds(); 
   }
 
 
