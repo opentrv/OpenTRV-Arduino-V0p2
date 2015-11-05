@@ -2535,7 +2535,8 @@ void loopOpenTRV()
   // May take significant time to run
   // so don't call when timing is critical or not much time left this cycle.
   // Only calling this after most other heavy-lifting work is likely done.
-  if(!showStatus && (OTV0P2BASE::getSubCycleTime() < OTV0P2BASE::GSCT_MAX/2))
+  // Note that FHT8V sync will take up at least the first 1s of a 2s subcycle.
+  if(!showStatus && (OTV0P2BASE::getSubCycleTime() < ((OTV0P2BASE::GSCT_MAX/4)*3)))
     { ValveDirect.read(); }
 #endif
 
