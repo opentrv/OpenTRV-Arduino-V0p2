@@ -167,14 +167,16 @@ class AmbientLight : public OTV0P2BASE::SimpleTSUint8Sensor
     bool unusable;
 
     // Ignore first false trigger at start-up.
-    bool ignoreFirst;
+    bool ignoredFirst;
 
     // Recomputes thresholds and 'unusable' based on current state.
     void recomputeThresholds();
 
   public:
     AmbientLight()
-      : isRoomLitFlag(false), darkTicks(0), recentMin(~0), recentMax(~0), unusable(false), ignoreFirst(false)
+      : isRoomLitFlag(false), darkTicks(0),
+        recentMin(~0), recentMax(~0),
+        unusable(false), ignoredFirst(false)
       { recomputeThresholds(); }
 
     // Force a read/poll of the ambient light level and return the value sensed [0,255] (dark to light).
@@ -214,9 +216,9 @@ class AmbientLight : public OTV0P2BASE::SimpleTSUint8Sensor
     uint8_t getDarkMinutes() const { return(darkTicks); }
 
     // Set minimum eg from recent stats, to allow auto adjustment to dark; ~0/0xff means no min available.
-    void setMin(uint8_t recentMinimumOrFF);
+    void setMin(uint8_t recentMinimumOrFF, uint8_t longerTermMinimumOrFF = 0xff);
     // Set maximum eg from recent stats, to allow auto adjustment to dark; ~0/0xff means no max available.
-    void setMax(uint8_t recentMaximumOrFF);
+    void setMax(uint8_t recentMaximumOrFF, uint8_t longerTermMaximumOrFF = 0xff);
     
 
 #ifdef UNIT_TESTS

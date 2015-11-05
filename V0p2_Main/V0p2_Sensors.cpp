@@ -181,7 +181,7 @@ uint8_t AmbientLight::read()
     // Treat a sharp transition from dark to light as a possible/weak indication of occupancy, eg light flicked on.
     // Ignore trigger at start-up.
 //    bool ignoreFirst;
-    if(!ignoreFirst) { ignoreFirst = true; }
+    if(!ignoredFirst) { ignoredFirst = true; }
 #ifdef OCCUPANCY_DETECT_FROM_AMBLIGHT
     else if((!isRoomLitFlag) && ((rawValue>>2) < lowerThreshold)) { Occupancy.markAsPossiblyOccupied(); }
 #endif
@@ -229,7 +229,7 @@ uint8_t AmbientLight::read()
 // Maximum value in the uint8_t range.
 static const uint8_t MAX_AMBLIGHT_VALUE_UINT8 = 254;
 // Minimum viable range (on [0,254] scale) to be usable.
-static const uint8_t ABS_MIN_AMBLIGHT_RANGE_UINT8 = 4;
+static const uint8_t ABS_MIN_AMBLIGHT_RANGE_UINT8 = 3;
 
 // Recomputes thresholds and 'unusable' based on current state.
 void AmbientLight::recomputeThresholds()
@@ -258,14 +258,14 @@ void AmbientLight::recomputeThresholds()
   }
 
 // Set minimum eg from recent stats, to allow auto adjustment to dark; ~0/0xff means no min available.
-void AmbientLight::setMin(uint8_t recentMinimumOrFF)
+void AmbientLight::setMin(uint8_t recentMinimumOrFF, uint8_t longerTermMinimumOrFF)
   {
   recentMin = recentMinimumOrFF;
   recomputeThresholds();
   }
   
 // Set maximum eg from recent stats, to allow auto adjustment to dark; ~0/0xff means no max available.
-void AmbientLight::setMax(uint8_t recentMaximumOrFF)
+void AmbientLight::setMax(uint8_t recentMaximumOrFF, uint8_t longerTermMaximumOrFF)
   {
   recentMax = recentMaximumOrFF;
   recomputeThresholds(); 
