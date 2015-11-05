@@ -14,6 +14,7 @@ specific language governing permissions and limitations
 under the Licence.
 
 Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
+                           Deniz Erbilgin 2015
 */
 
 /*
@@ -470,6 +471,11 @@ class VoiceDetection : public OTV0P2BASE::SimpleTSUint8Sensor
 
     // Returns true if voice has been detected in this or previous poll period.
     bool isVoiceDetected() { return(isDetected); }
+
+    // Returns a suggested (JSON) tag/field/key name including units of get(); NULL means no recommended tag.
+    // The lifetime of the pointed-to text must be at least that of the Sensor instance.
+//    virtual const char *tag() const { return("v"); } // TODO do we want this here?
+
   };
 // Singleton implementation/instance.
 extern VoiceDetection Voice;

@@ -411,6 +411,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #endif
 
 
+// -------------------------
 #ifdef CONFIG_DE_TESTLAB
 // use alternative loop
 #define ALT_MAIN_LOOP
@@ -427,11 +428,11 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: allow RX of stats frames.
 #undef ALLOW_STATS_RX
 // IF DEFINED: allow TX of stats frames.
-#undef ALLOW_STATS_TX
+#define ALLOW_STATS_TX
 // IF DEFINED: allow minimal binary format in addition to more generic one: ~400 bytes code cost.
 #undef ALLOW_MINIMAL_STATS_TXRX
 // IF DEFINED: allow JSON stats frames alongside binary ones.
-#undef ALLOW_JSON_OUTPUT
+//#undef ALLOW_JSON_OUTPUT
 // IF DEFINED: (default) forced always-on radio listen/RX, eg not requiring setup to explicitly enable. ***
 #undef ENABLE_DEFAULT_ALWAYS_RX
 // IF DEFINED: this unit supports CLI over the USB/serial connection, eg for run-time reconfig.
@@ -455,6 +456,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define USE_MODULE_SIM900
 // Define voice module
 #define ENABLE_VOICE_SENSOR
+// Enable use of OneWire devices.
+#define SUPPORT_ONEWIRE
+// Enable use of DS18B20 temp sensor.
+#define SENSOR_DS18B20_ENABLE
 
 // things that break
 // IF DEFINED: basic FROST/WARM temperatures are settable.
@@ -468,7 +473,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 //#undef USE_MODULE_RFM22RADIOSIMPLE
 
-#endif
+#endif // CONFIG_DE_TESTLAB
 
 
 // ------------------------- REV1
@@ -730,10 +735,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // Use common settings.
 #define COMMON_SETTINGS
 #endif
-
-
-
-// -------------------------
 
 
 

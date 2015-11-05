@@ -15,6 +15,7 @@ under the Licence.
 
 Author(s) / Copyright (s): Damon Hart-Davis 2014--2015,
                            John Harvey 2014 (DS18B20 code)
+                           Deniz Erbilgin 2015
 */
 
 /*
@@ -943,11 +944,6 @@ uint8_t VoiceDetection::read()
     isDetected = ((value = count) >= VOICE_DETECTION_THRESHOLD);
     count = 0;
     }
-#if 1 && defined(DEBUG)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("Voice count: ");
-  DEBUG_SERIAL_PRINT(value);
-  DEBUG_SERIAL_PRINTLN();
-#endif
   return(value);
   }
 

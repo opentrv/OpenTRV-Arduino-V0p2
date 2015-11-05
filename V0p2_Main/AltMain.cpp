@@ -80,11 +80,13 @@ void POSTalt()
   {
 
 #ifdef USE_MODULE_SIM900
-  static const char SIM900_PIN[5] = "0000";
-  static const char SIM900_APN[] = "m2mkit.telefonica.com";
-  static const char SIM900_UDP_ADDR[] = "46.101.52.242";
-  static const char SIM900_UDP_PORT[5] = "9999";
-  static const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config { 
+// EEPROM locations
+  static const void *SIM900_PIN      = (void *)0x0300; // TODO confirm this address
+  static const void *SIM900_APN      = (void *)0x0305;
+  static const void *SIM900_UDP_ADDR = (void *)0x031B;
+  static const void *SIM900_UDP_PORT = (void *)0x0329;
+  static const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config {
+                                                  true, 
                                                   SIM900_PIN,
                                                   SIM900_APN,
                                                   SIM900_UDP_ADDR,
@@ -98,7 +100,7 @@ void POSTalt()
   // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
   RFM23B.preinit(NULL);
   // Check that the radio is correctly connected; panic if not...
-  if(!RFM23B.configure(1, &RFMConfig) || !RFM23B.begin()) { panic(F("PANIC!")); }
+  if(!RFM23B.configure(1, &RFMConfig) || !RFM23B.begin()) { panic(); }
 #endif
 
 
@@ -153,11 +155,6 @@ void POSTalt()
 
 
   RFM23B.listen(true);
-  pinMode(3, INPUT);	// FIXME Move to where they are set automatically
-  digitalWrite(3, LOW);
-
-  RFM23B.queueToSend((uint8_t *)"start", 6);
-
   }
 
 
@@ -207,27 +204,12 @@ static volatile uint8_t prevStatePD;
 // Interrupt service routine for PD I/O port transition changes (including RX).
 ISR(PCINT2_vect)
   {
+	//  const uint8_t pins = PIND;
+	//  const uint8_t changes = pins ^ prevStatePD;
+	//  prevStatePD = pins;
+	//
+	// ...
 
-	  const uint8_t pins = PIND;
-	  const uint8_t changes = pins ^ prevStatePD;
-	  prevStatePD = pins;
-
-#if defined(ENABLE_VOICE_SENSOR)
-	  	//  // Voice detection is a falling edge.
-	  	//  // Handler routine not required/expected to 'clear' this interrupt.
-	  	//  // FIXME: ensure that Voice.handleInterruptSimple() is inlineable to minimise ISR prologue/epilogue time and space.
-	  	  // Voice detection is a RISING edge.
-	  	  if((changes & VOICE_INT_MASK) && (pins & VOICE_INT_MASK)) {
-	  	    Voice.handleInterruptSimple();
-	  	  }
-
-	  	  // If an interrupt arrived from no other masked source then wake the CLI.
-	  	  // The will ensure that the CLI is active, eg from RX activity,
-	  	  // eg it is possible to wake the CLI subsystem with an extra CR or LF.
-	  	  // It is OK to trigger this from other things such as button presses.
-	  	  // FIXME: ensure that resetCLIActiveTimer() is inlineable to minimise ISR prologue/epilogue time and space.
-	  	  if(!(changes & MASK_PD & ~1)) { resetCLIActiveTimer(); }
-#endif // ENABLE_VOICE_SENSOR
   }
 #endif // defined(MASK_PD) && (MASK_PD != 0)
 
@@ -306,14 +288,7 @@ void loopAlt()
 //  // May just want to turn it on in POSTalt() and leave it on...
 //  const bool neededWaking = powerUpSerialIfDisabled();
 
-    DEBUG_SERIAL_PRINT("Time: ");	// FIXME delete
-    DEBUG_SERIAL_PRINTFMT(TIME_LSD, DEC);
-    DEBUG_SERIAL_PRINTLN();
-    DEBUG_SERIAL_PRINT("Count: ");  // FIXME delete
-#if defined(ENABLE_VOICE_SENSOR)
-    DEBUG_SERIAL_PRINTFMT(Voice.count, DEC);
-#endif // ENABLE_VOICE_SENSOR
-    DEBUG_SERIAL_PRINTLN();
+
 
 
 //#if defined(USE_MODULE_FHT8VSIMPLE)
@@ -324,23 +299,6 @@ void loopAlt()
 //  bool useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_First(doubleTXForFTH8V); // Time for extra TX before UI.
 ////  if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@0"); }
 //#endif
-
-#if defined(ENABLE_VOICE_SENSOR)
-      // read voice sensor
-      if (TIME_LSD == 46) {
-        char v[9] = "Voice   "; // array of length 9
-        char *pv = v + 6;
-        itoa(Voice.count, pv, 10);
-    	  if (Voice.read()) RFM23B.queueToSend((uint8_t *)v, sizeof(v));
-      }
-#endif // (ENABLE_VOICE_SENSOR)
-
-
-
-
-
-
-
 
 
 
