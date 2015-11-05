@@ -170,7 +170,8 @@ uint8_t AmbientLight::read()
     {
     isRoomLitFlag = false;
     // If dark enough to isRoomLitFlag false then increment counter.
-    if(darkTicks < 255) { ++darkTicks; }
+    // Do not do increment the count if the sensor seems to be unusable.
+    if(!unusable && (darkTicks < 255)) { ++darkTicks; }
     }
   else if(al > LDR_THR_HIGH)
     {
@@ -180,7 +181,7 @@ uint8_t AmbientLight::read()
     if(!ignoreFirst) { ignoreFirst = true; }
     else if((!isRoomLitFlag) && (rawValue < LDR_THR_LOW)) { Occupancy.markAsPossiblyOccupied(); }
     isRoomLitFlag = true;
-    // If light enough to isRoomLitFlag true then reset counter.
+    // If light enough to set isRoomLitFlag true then reset darkTicks counter.
     darkTicks = 0;
     }
 
@@ -210,6 +211,47 @@ uint8_t AmbientLight::read()
 
   return(value);
   }
+
+
+// Minimum viable range (on [0,254] scale) to be usable.
+static const uint8_t ABS_MIN_LIGHT_RANGE = 4;
+
+// Recomputes 'unusable' based on current state.
+void AmbientLight::recomputeUnusable()
+  {
+  // If either recent max or min is unset then assume device usable by default.
+  if((0xff == recentMin) || (0xff == recentMax))
+    {
+    unusable = false;
+    return;
+    }
+
+  // If recent range between recent max and min too close then assume unusable.
+  if((recentMin > 254 - ABS_MIN_LIGHT_RANGE) ||
+     (recentMax - recentMin < ABS_MIN_LIGHT_RANGE))
+    {
+    unusable = true;
+    return;
+    }
+
+  // All seems OK.
+  unusable = false;
+  }
+
+// Set minimum eg from recent stats, to allow auto adjustment to dark; ~0/0xff means no min available.
+void AmbientLight::setMin(uint8_t recentMinimumOrFF)
+  {
+  recentMin = recentMinimumOrFF;
+  recomputeUnusable();
+  }
+  
+// Set maximum eg from recent stats, to allow auto adjustment to dark; ~0/0xff means no max available.
+void AmbientLight::setMax(uint8_t recentMaximumOrFF)
+  {
+  recentMax = recentMaximumOrFF;
+  recomputeUnusable(); 
+  }
+
 
 // Singleton implementation/instance.
 AmbientLight AmbLight;
