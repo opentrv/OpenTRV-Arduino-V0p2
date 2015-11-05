@@ -2329,7 +2329,7 @@ void loopOpenTRV()
     case 0:
       {
       // Tasks that must be run every minute.
-      ++minuteCount;
+      ++minuteCount; // Note simple roll-over to 0 at max value.
       checkUserSchedule(); // Force to user's programmed settings, if any, at the correct time.
       // Ensure that the RTC has been persisted promptly when necessary.
       OTV0P2BASE::persistRTC();
@@ -2411,8 +2411,6 @@ void loopOpenTRV()
     // TODO: optimise to reduce power consumption when not calling for heat.
     // TODO: optimise to reduce self-heating jitter when in hub/listen/RX mode.
     case 54: { TemperatureC16.read(); break; }
-//    // A regular (slow) read is forced if filtering is on to reduce jitter in the results.
-//    case 54: { if((hubMode || TemperatureC16.isFilteringOn()) ? minute0From4ForSensors : runAll) { TemperatureC16.read(); } break; }
 
     // Compute targets and heat demand based on environmental inputs and occupancy.
     // This should happen as soon after the latest readings as possible (temperature especially).
@@ -2493,7 +2491,12 @@ void loopOpenTRV()
           case 26: case 27: case 28: case 29:
             { if(!batteryLow) { sampleStats(false); } break; } // Skip sub-samples if short of energy.
           case 56: case 57: case 58: case 59:
-            { sampleStats(true); break; } // Always take the full sample at the end of each hour.
+            {
+            // Always take the full sample at the end of each hour.
+            sampleStats(true);
+            // TODO: feed back rolling stats to sensors to set noise floors, etc.
+            break;
+            }
           }
         }
       break;
@@ -2546,7 +2549,8 @@ void loopOpenTRV()
   // May take significant time to run
   // so don't call when timing is critical or not much time left this cycle.
   // Only calling this after most other heavy-lifting work is likely done.
-  if(!showStatus && (OTV0P2BASE::getSubCycleTime() < OTV0P2BASE::GSCT_MAX/2))
+  // Note that FHT8V sync will take up at least the first 1s of a 2s subcycle.
+  if(!showStatus && (OTV0P2BASE::getSubCycleTime() < ((OTV0P2BASE::GSCT_MAX/4)*3)))
     { ValveDirect.read(); }
 #endif
 
