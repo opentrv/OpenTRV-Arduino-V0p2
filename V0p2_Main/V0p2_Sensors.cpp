@@ -207,7 +207,7 @@ uint8_t AmbientLight::read()
   DEBUG_SERIAL_PRINTLN();
 #endif
 
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINT_FLASHSTRING("Ambient light val/lt/ut: ");
   DEBUG_SERIAL_PRINT(value);
   DEBUG_SERIAL_PRINT(' ');
@@ -217,7 +217,7 @@ uint8_t AmbientLight::read()
   DEBUG_SERIAL_PRINTLN();
 #endif
 
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINT_FLASHSTRING("isRoomLit: ");
   DEBUG_SERIAL_PRINT(isRoomLitFlag);
   DEBUG_SERIAL_PRINTLN();
@@ -296,11 +296,12 @@ void AmbientLight::setMax(uint8_t recentMaximumOrFF, uint8_t longerTermMaximumOr
     }
   _recomputeThresholds();
 
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINT_FLASHSTRING("Ambient recent min/max: ");
   DEBUG_SERIAL_PRINT(recentMin);
   DEBUG_SERIAL_PRINT(' ');
   DEBUG_SERIAL_PRINT(recentMax);
+  if(unusable) { DEBUG_SERIAL_PRINT_FLASHSTRING(" UNUSABLE"); }
   DEBUG_SERIAL_PRINTLN();
 #endif
   }
