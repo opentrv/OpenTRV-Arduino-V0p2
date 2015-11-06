@@ -237,24 +237,47 @@ static const uint8_t ABS_MIN_AMBLIGHT_HYST_UINT8 = 2;
 // Recomputes thresholds and 'unusable' based on current state.
 void AmbientLight::recomputeThresholds()
   {
-  // Use the built-in default thresholds.
-  lowerThreshold = LDR_THR_LOW >> 2;
-  upperThreshold = LDR_THR_HIGH >> 2;
+#if 1 && defined(DEBUG)
+  DEBUG_SERIAL_PRINT_FLASHSTRING("Ambient recent min/max: ");
+  DEBUG_SERIAL_PRINT(recentMin);
+  DEBUG_SERIAL_PRINT(' ');
+  DEBUG_SERIAL_PRINT(recentMax);
+  DEBUG_SERIAL_PRINTLN();
+#endif
 
   // If either recent max or min is unset then assume device usable by default.
+  // Use built-in thresholds.
   if((0xff == recentMin) || (0xff == recentMax))
     {
+    // Use the built-in default thresholds.
+    lowerThreshold = LDR_THR_LOW >> 2;
+    upperThreshold = LDR_THR_HIGH >> 2;
+    // Assume OK for now.
     unusable = false;
     return;
     }
 
   // If the range between recent max and min too narrow then assume unusable.
   if((recentMin > MAX_AMBLIGHT_VALUE_UINT8 - ABS_MIN_AMBLIGHT_RANGE_UINT8) ||
+     (recentMax <= recentMin) ||
      (recentMax - recentMin < ABS_MIN_AMBLIGHT_RANGE_UINT8))
     {
+    // Use the built-in default thresholds.
+    lowerThreshold = LDR_THR_LOW >> 2;
+    upperThreshold = LDR_THR_HIGH >> 2;
+    // Assume unusable.
     unusable = true;
     return;
     }
+
+  // Compute thresholds to fit within the observed sensed value range.
+  // TODO: more sophisticated notions of distribution of values within range.
+  // Provide a tiny bit of noise elbow-room above the observed minimum.
+  lowerThreshold = recentMin+1;
+  // Provide at least some hysteresis, as a fraction (~12.5%) of the available range.
+  // Take care to avoid overflow.
+  upperThreshold = (uint8_t) min(254, lowerThreshold + (uint16_t)max(
+    (recentMax - recentMin) >> 3, ABS_MIN_AMBLIGHT_HYST_UINT8));
 
   // All seems OK.
   unusable = false;
@@ -276,7 +299,7 @@ void AmbientLight::setMax(uint8_t recentMaximumOrFF, uint8_t longerTermMaximumOr
   else
     {
     // Both values available; weight towards the more recent one for quick adaptation.
-    recentMax = (uint8_t) (((3*(uint16_t)recentMaximumOrFF) + longerTermMaximumOrFF) >> 2);
+    recentMax = (uint8_t) (((3*(uint16_t)recentMaximumOrFF) + (uint16_t)longerTermMaximumOrFF) >> 2);
     }
   recomputeThresholds(); 
   }

@@ -251,6 +251,16 @@ extern AmbientLight AmbLight;
 
 
 
+#ifndef OMIT_MODULE_LDROCCUPANCYDETECTION
+// Update with rolling stats to adapt to sensors and local environment.       
+inline void updateAmbLightFromStats()
+  {
+  AmbLight.setMin(OTV0P2BASE::getMinByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR), OTV0P2BASE::getMinByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED));
+  AmbLight.setMax(OTV0P2BASE::getMaxByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR), OTV0P2BASE::getMaxByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED));
+  }
+
+#endif
+
 
 
 
