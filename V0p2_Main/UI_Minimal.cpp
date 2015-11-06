@@ -1104,9 +1104,9 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
           // Now print values.
           for(uint8_t hh = 0; hh < 24; ++hh)
             {
-            const uint8_t statRaw = getByHourStat(hh, setN);
+            const uint8_t statRaw = OTV0P2BASE::getByHourStat(hh, setN);
             // For unset stat show '-'...
-            if(STATS_UNSET_BYTE == statRaw) { Serial.print('-'); }
+            if(OTV0P2BASE::STATS_UNSET_BYTE == statRaw) { Serial.print('-'); }
             // ...else print more human-friendly version of stat.
             else switch(setN)
               {
@@ -1289,7 +1289,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
       case 'Z':
         {
         // Try to avoid causing an overrun if near the end of the minor cycle (even allowing for the warning message if unfinished!).
-        if(zapStats((uint16_t) fnmax(1, ((int)OTV0P2BASE::msRemainingThisBasicCycle()/2) - 20)))
+        if(OTV0P2BASE::zapStats((uint16_t) fnmax(1, ((int)OTV0P2BASE::msRemainingThisBasicCycle()/2) - 20)))
           { Serial.println(F("Zapped.")); }
         else
           { Serial.println(F("Not finished.")); }

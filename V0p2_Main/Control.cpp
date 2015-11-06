@@ -352,73 +352,6 @@ void OccupancyTracker::markAsPossiblyOccupied()
 #endif
 
 
-
-
-// Returns true iff there is a full set of stats (none unset) and this 3/4s of the values are higher than the supplied sample.
-// Always returns false if all samples are the same.
-//   * s is start of (24) sample set in EEPROM
-//   * sample to be tested for being in lower quartile
-bool inBottomQuartile(const uint8_t *sE, const uint8_t sample)
-  {
-  uint8_t valuesHigher = 0;
-  for(int8_t hh = 24; --hh >= 0; ++sE)
-    {
-    const uint8_t v = eeprom_read_byte(sE); 
-    if(STATS_UNSET_INT == v) { return(false); } // Abort if not a full set of stats (eg at least one full day's worth). 
-    if(v > sample) { if(++valuesHigher >= 18) { return(true); } } // Stop as soon as known to be in lower quartile.
-    }
-  return(false); // Not in lower quartile.
-  }
-
-// Returns true iff there is a full set of stats (none unset) and this 3/4s of the values are lower than the supplied sample.
-// Always returns false if all samples are the same.
-//   * s is start of (24) sample set in EEPROM
-//   * sample to be tested for being in lower quartile
-bool inTopQuartile(const uint8_t *sE, const uint8_t sample)
-  {
-  uint8_t valuesLower = 0;
-  for(int8_t hh = 24; --hh >= 0; ++sE)
-    {
-    const uint8_t v = eeprom_read_byte(sE); 
-    if(STATS_UNSET_INT == v) { return(false); } // Abort if not a full set of stats (eg at least one full day's worth). 
-    if(v < sample) { if(++valuesLower >= 18) { return(true); } } // Stop as soon as known to be in upper quartile.
-    }
-  return(false); // Not in upper quartile.
-  }
-
-// Get previous hour in current local time, wrapping round from 0 to 23.
-uint8_t getPrevHourLT()
-  {
-  const uint8_t h = OTV0P2BASE::getHoursLT();
-  if(0 == h) { return(23); }
-  return(h - 1);
-  }
-// Get next hour in current local time, wrapping round from 23 back to 0.
-uint8_t getNextHourLT()
-  {
-  const uint8_t h = OTV0P2BASE::getHoursLT();
-  if(h >= 23) { return(0); }
-  return(h + 1);
-  }
-
-// Returns true if specified hour is (conservatively) in the specified outlier quartile for the specified stats set.
-// Returns false if a full set of stats not available, eg including the specified hour.
-// Always returns false if all samples are the same.
-//   * inTop  test for membership of the top quartile if true, bottom quartile if false
-//   * statsSet  stats set number to use.
-//   * hour  hour of day to use or ~0 for current hour.
-bool inOutlierQuartile(const uint8_t inTop, const uint8_t statsSet, const uint8_t hour)
-  {
-  if(statsSet >= V0P2BASE_EE_STATS_SETS) { return(false); } // Bad stats set number, ie unsafe.
-  const uint8_t hh = (inOutlierQuartile_CURRENT_HOUR == hour) ? OTV0P2BASE::getHoursLT() :
-    ((hour > 23) ? getNextHourLT() : hour);
-  const uint8_t *ss = (uint8_t *)(V0P2BASE_EE_STATS_START_ADDR(statsSet));
-  const uint8_t sample = eeprom_read_byte(ss + hh);
-  if(STATS_UNSET_INT == sample) { return(false); }
-  if(inTop) { return(inTopQuartile(ss, sample)); }
-  return(inBottomQuartile(ss, sample));
-  }
-
 #ifdef ENABLE_ANTICIPATION
 // Returns true iff room likely to be occupied and need warming at the specified hour's sample point based on collected stats.
 // Used for predictively warming a room in smart mode and for choosing setback depths.
@@ -618,8 +551,8 @@ uint8_t ModelledRadValve::computeTargetTemp()
     const bool longVacant = longLongVacant || Occupancy.longVacant();
     const bool notLikelyOccupiedSoon = longLongVacant ||
         (Occupancy.isLikelyUnoccupied() &&
-         inOutlierQuartile(false, V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED) &&
-         inOutlierQuartile(false, V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, inOutlierQuartile_NEXT_HOUR));
+         OTV0P2BASE::inOutlierQuartile(false, V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED) &&
+         OTV0P2BASE::inOutlierQuartile(false, V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::inOutlierQuartile_NEXT_HOUR));
     if(longVacant ||
        ((notLikelyOccupiedSoon || (AmbLight.getDarkMinutes() > 10)) && !isAnyScheduleOnWARMNow() && !recentUIControlUse()))
       {
@@ -636,7 +569,7 @@ uint8_t ModelledRadValve::computeTargetTemp()
       const uint8_t setback = (isComfortTemperature(wt) ||
                                Occupancy.isLikelyOccupied() ||
                                (!longLongVacant && AmbLight.isRoomLit()) ||
-                               (!longLongVacant && inOutlierQuartile(true, V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED)) ||
+                               (!longLongVacant && OTV0P2BASE::inOutlierQuartile(true, V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED)) ||
                                (!longVacant && isAnyScheduleOnWARMSoon())) ?
               SETBACK_DEFAULT :
           ((hasEcoBias() && (longLongVacant || (notLikelyOccupiedSoon && isEcoTemperature(wt)))) ?
@@ -1260,28 +1193,6 @@ void sampleStats(const bool fullSample)
   // TODO: other stats measures...
   }
 
-// Get raw stats value for hour HH [0,23] from stats set N from non-volatile (EEPROM) store.
-// A value of 0xff (255) means unset (or out of range); other values depend on which stats set is being used.
-// The stats set is determined by the order in memory.
-uint8_t getByHourStat(uint8_t hh, uint8_t statsSet)
-  {
-  if(statsSet > (V0P2BASE_EE_END_STATS - V0P2BASE_EE_START_STATS) / V0P2BASE_EE_STATS_SET_SIZE) { return((uint8_t) 0xff); } // Invalid set.
-  if(hh > 23) { return((uint8_t) 0xff); } // Invalid hour.
-  return(eeprom_read_byte((uint8_t *)(V0P2BASE_EE_START_STATS + (statsSet * (int)V0P2BASE_EE_STATS_SET_SIZE) + (int)hh)));
-  }
-
-
-// Clear all collected statistics, eg when moving device to a new room or at a major time change.
-// Requires 1.8ms per byte for each byte that actually needs erasing.
-//   * maxBytesToErase limit the number of bytes erased to this; strictly positive, else 0 to allow 65536
-// Returns true if finished with all bytes erased.
-bool zapStats(uint16_t maxBytesToErase)
-  {
-  for(uint8_t *p = (uint8_t *)V0P2BASE_EE_START_STATS; p <= (uint8_t *)V0P2BASE_EE_END_STATS; ++p)
-    { if(OTV0P2BASE::eeprom_smart_erase_byte(p)) { if(--maxBytesToErase == 0) { return(false); } } } // Stop if out of time...
-  return(true); // All done.
-  }
-
 
 // Range-compress an signed int 16ths-Celsius temperature to a unsigned single-byte value < 0xff.
 // This preserves at least the first bit after the binary point for all values,
@@ -1315,7 +1226,7 @@ int expandTempC16(uint8_t cTemp)
     { return(((cTemp - COMPRESSION_C16_LOW_THR_AFTER) << 1) + COMPRESSION_C16_LOW_THRESHOLD); }
   if(cTemp <= COMPRESSION_C16_CEIL_VAL_AFTER)
     { return(((cTemp - COMPRESSION_C16_HIGH_THR_AFTER) << 3) + COMPRESSION_C16_HIGH_THRESHOLD); }
-  return(STATS_UNSET_INT); // Invalid/unset input.
+  return(OTV0P2BASE::STATS_UNSET_INT); // Invalid/unset input.
   }
 
 
@@ -2430,8 +2341,8 @@ void loopOpenTRV()
       if(runAll && // Only if all sensors have been refreshed.
          !AmbLight.isRoomDark()) // Only if known to be dark.
         {
-        const uint8_t lastRH = getByHourStat(getPrevHourLT(), V0P2BASE_EE_STATS_SET_RHPC_BY_HOUR);
-        if((STATS_UNSET_BYTE != lastRH) &&
+        const uint8_t lastRH = OTV0P2BASE::getByHourStat(OTV0P2BASE::getPrevHourLT(), V0P2BASE_EE_STATS_SET_RHPC_BY_HOUR);
+        if((OTV0P2BASE::STATS_UNSET_BYTE != lastRH) &&
            (RelHumidity.get() >= lastRH + HUMIDITY_OCCUPANCY_PC_MIN_RISE_PER_H))
             { Occupancy.markAsPossiblyOccupied(); }
         }
