@@ -171,14 +171,15 @@ class AmbientLight : public OTV0P2BASE::SimpleTSUint8Sensor
     bool ignoredFirst;
 
     // Recomputes thresholds and 'unusable' based on current state.
-    void recomputeThresholds();
+    // WARNING: called from (static) constructors so do not attempt (eg) use of Serial.
+    void _recomputeThresholds();
 
   public:
     AmbientLight()
       : isRoomLitFlag(false), darkTicks(0),
         recentMin(~0), recentMax(~0),
         unusable(false), ignoredFirst(false)
-      { recomputeThresholds(); }
+      { _recomputeThresholds(); }
 
     // Force a read/poll of the ambient light level and return the value sensed [0,255] (dark to light).
     // Potentially expensive/slow.

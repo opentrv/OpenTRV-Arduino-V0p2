@@ -235,16 +235,9 @@ static const uint8_t ABS_MIN_AMBLIGHT_RANGE_UINT8 = 3;
 static const uint8_t ABS_MIN_AMBLIGHT_HYST_UINT8 = 2;
 
 // Recomputes thresholds and 'unusable' based on current state.
-void AmbientLight::recomputeThresholds()
+// WARNING: called from (static) constructors so do not attempt (eg) use of Serial.
+void AmbientLight::_recomputeThresholds()
   {
-#if 1 && defined(DEBUG)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("Ambient recent min/max: ");
-  DEBUG_SERIAL_PRINT(recentMin);
-  DEBUG_SERIAL_PRINT(' ');
-  DEBUG_SERIAL_PRINT(recentMax);
-  DEBUG_SERIAL_PRINTLN();
-#endif
-
   // If either recent max or min is unset then assume device usable by default.
   // Use built-in thresholds.
   if((0xff == recentMin) || (0xff == recentMax))
@@ -288,7 +281,7 @@ void AmbientLight::setMin(uint8_t recentMinimumOrFF, uint8_t longerTermMinimumOr
   {
   // Simple approach: will ignore an 'unset'/0xff value if the other is good.
   recentMin = min(recentMinimumOrFF, longerTermMinimumOrFF);
-  recomputeThresholds();
+  _recomputeThresholds();
   }
 
 // Set maximum eg from recent stats, to allow auto adjustment to dark; ~0/0xff means no max available.
@@ -301,7 +294,15 @@ void AmbientLight::setMax(uint8_t recentMaximumOrFF, uint8_t longerTermMaximumOr
     // Both values available; weight towards the more recent one for quick adaptation.
     recentMax = (uint8_t) (((3*(uint16_t)recentMaximumOrFF) + (uint16_t)longerTermMaximumOrFF) >> 2);
     }
-  recomputeThresholds(); 
+  _recomputeThresholds();
+
+#if 1 && defined(DEBUG)
+  DEBUG_SERIAL_PRINT_FLASHSTRING("Ambient recent min/max: ");
+  DEBUG_SERIAL_PRINT(recentMin);
+  DEBUG_SERIAL_PRINT(' ');
+  DEBUG_SERIAL_PRINT(recentMax);
+  DEBUG_SERIAL_PRINTLN();
+#endif
   }
 
 
