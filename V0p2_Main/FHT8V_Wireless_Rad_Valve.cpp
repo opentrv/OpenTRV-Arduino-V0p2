@@ -44,7 +44,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // (It may however be possible to scavenge some heat if a particular valve opens below this and the circulation pump is already running, for example.)
 // DHD20130522: FHT8V + valve heads I have been using are not typically open until around 6%.
 // Use the global value for now.
-#define FHT8V_MIN_VALVE_PC_REALLY_OPEN DEFAULT_MIN_VALVE_PC_REALLY_OPEN
+#define FHT8V_MIN_VALVE_PC_REALLY_OPEN OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN
 
 // If true then allow double TX for normal valve setting, else only allow it for sync.
 // May want to enforce this where bandwidth is known to be scarce.
@@ -389,7 +389,7 @@ void FHT8VCreateValveSetCmdFrame(const uint8_t valvePC)
 // HC1 and HC2 are fetched with the FHT8VGetHC1() and FHT8VGetHC2() calls, and address is always 0.
 // The generated command frame can be resent indefinitely.
 // If no valve is set up then this may simply terminate an empty buffer with 0xff.
-void FHT8VCreateValveSetCmdFrame(const AbstractRadValve &valve)
+void FHT8VCreateValveSetCmdFrame(const OTRadValve::AbstractRadValve &valve)
   {
   if(!localFHT8VTRVEnabled())
     {
@@ -548,10 +548,10 @@ static void sleepUntilSubCycleTimeOptionalRX(const uint8_t sleepUntil)
     if(inHubMode())
       {
       // Only do nap+poll if lots of time left.
-      while(sleepUntil > fmax(getSubCycleTime() + (50/SUBCYCLE_TICK_MS_RD), GSCT_MAX))
+      while(sleepUntil > fmax(OTV0P2BASE::getSubCycleTime() + (50/OTV0P2BASE::SUBCYCLE_TICK_MS_RD), OTV0P2BASE::GSCT_MAX))
         { nap15AndPoll(); } // Assumed ~15ms sleep max.
       // Poll in remaining time without nap.
-      while(sleepUntil > getSubCycleTime())
+      while(sleepUntil > OTV0P2BASE::getSubCycleTime())
         { pollIO(); }
       }
 #if 0 && defined(DEBUG)
@@ -595,7 +595,7 @@ static bool doSync(const bool allowDoubleTX)
       command.extension = syncStateFHT8V;
       FHT8VCreate200usBitStreamBptr(FHT8VTXCommandArea, &command);
       if(halfSecondCount > 0)
-        { sleepUntilSubCycleTimeOptionalRX((SUB_CYCLE_TICKS_PER_S/2) * halfSecondCount); }
+        { sleepUntilSubCycleTimeOptionalRX((OTV0P2BASE::SUB_CYCLE_TICKS_PER_S/2) * halfSecondCount); }
       FHT8VTXFHTQueueAndSendCmd(FHT8VTXCommandArea, allowDoubleTX); // SEND SYNC
       // Note that FHT8VTXCommandArea now does not contain a valid valve-setting command...
 #if 0 && defined(DEBUG)
@@ -631,7 +631,7 @@ static bool doSync(const bool allowDoubleTX)
       command.extension = 0; // DHD20130324: could set to TRVPercentOpen, but anything other than zero seems to lock up FHT8V-3 units.
       FHT8V_isValveOpen = false; // Note that valve will be closed (0%) upon receipt.
       FHT8VCreate200usBitStreamBptr(FHT8VTXCommandArea, &command);
-      if(halfSecondCount > 0) { sleepUntilSubCycleTimeOptionalRX((SUB_CYCLE_TICKS_PER_S/2) * halfSecondCount); }
+      if(halfSecondCount > 0) { sleepUntilSubCycleTimeOptionalRX((OTV0P2BASE::SUB_CYCLE_TICKS_PER_S/2) * halfSecondCount); }
       FHT8VTXFHTQueueAndSendCmd(FHT8VTXCommandArea, allowDoubleTX); // SEND SYNC FINAL
       // Note that FHT8VTXCommandArea now does not contain a valid valve-setting command...
 #if 0 && defined(DEBUG)
@@ -749,7 +749,7 @@ bool FHT8VPollSyncAndTX_Next(const bool allowDoubleTX)
   if(2 == halfSecondCount)
       {
       // Sleep until 1s from start of cycle.
-      sleepUntilSubCycleTimeOptionalRX(SUB_CYCLE_TICKS_PER_S);
+      sleepUntilSubCycleTimeOptionalRX(OTV0P2BASE::SUB_CYCLE_TICKS_PER_S);
       // Transmit correct valve-setting command that should already be in the buffer...
       valveSettingTX(allowDoubleTX);
       return(false); // Don't need any slots after this.
@@ -765,7 +765,7 @@ bool FHT8VPollSyncAndTX_Next(const bool allowDoubleTX)
   // TX is due this slot so do it (and no more will be needed this minor cycle).
   if(0 == --halfSecondsToNextFHT8VTX)
     {
-    sleepUntilSubCycleTimeOptionalRX((SUB_CYCLE_TICKS_PER_S/2) * halfSecondCount); // Sleep.
+    sleepUntilSubCycleTimeOptionalRX((OTV0P2BASE::SUB_CYCLE_TICKS_PER_S/2) * halfSecondCount); // Sleep.
     valveSettingTX(allowDoubleTX); // Should be heard by valve.
 #if 0 && defined(DEBUG)
     DEBUG_SERIAL_TIMESTAMP();

@@ -15,6 +15,7 @@ under the Licence.
 
 Author(s) / Copyright (s): Damon Hart-Davis 2014--2015,
                            John Harvey 2014 (DS18B20 code)
+                           Deniz Erbilgin 2015
 */
 
 /*
@@ -124,12 +125,12 @@ static const int LDR_THR_HIGH = 200U; // Was 35.
 uint8_t AmbientLight::read()
   {
   power_intermittent_peripherals_enable(false); // No need to wait for anything to stablise as direct of IO_POWER_UP.
-  const uint16_t al0 = analogueNoiseReducedRead(LDR_SENSOR_AIN, ALREFERENCE);
+  const uint16_t al0 = OTV0P2BASE::analogueNoiseReducedRead(LDR_SENSOR_AIN, ALREFERENCE);
 #if defined(ADAPTIVE_THRESHOLD)
   uint16_t al;
   if(al0 >= ADAPTIVE_THRESHOLD)
     {
-    const uint16_t al1 = analogueNoiseReducedRead(LDR_SENSOR_AIN, DEFAULT); // Vsupply reference.
+    const uint16_t al1 = OTV0P2BASE::analogueNoiseReducedRead(LDR_SENSOR_AIN, DEFAULT); // Vsupply reference.
     Supply_mV.read();
     const uint16_t vbg = Supply_mV.getRawInv(); // Vbandgap wrt Vsupply.
     // Compute value in extended range up to ~1024 * Vsupply/Vbandgap.
@@ -165,30 +166,34 @@ uint8_t AmbientLight::read()
   // Capture entropy from changed LS bits.
   if((uint8_t)al != (uint8_t)rawValue) { ::OTV0P2BASE::addEntropyToPool((uint8_t)al ^ (uint8_t)rawValue, 0); } // Claim zero entropy as may be forced by Eve.
 
+  // Apply a little bit of noise reduction (hysteresis) to the normalised version.
+  const uint8_t newValue = (uint8_t)(al >> 2);
+
   // Adjust room-lit flag, with hysteresis.
-  if(al <= LDR_THR_LOW)
+  if(newValue <= lowerThreshold)
     {
     isRoomLitFlag = false;
     // If dark enough to isRoomLitFlag false then increment counter.
-    if(darkTicks < 255) { ++darkTicks; }
+    // Do not do increment the count if the sensor seems to be unusable.
+    if(!unusable && (darkTicks < 255)) { ++darkTicks; }
     }
-  else if(al > LDR_THR_HIGH)
+  else if(newValue > upperThreshold)
     {
     // Treat a sharp transition from dark to light as a possible/weak indication of occupancy, eg light flicked on.
     // Ignore trigger at start-up.
-    static bool ignoreFirst;
-    if(!ignoreFirst) { ignoreFirst = true; }
-    else if((!isRoomLitFlag) && (rawValue < LDR_THR_LOW)) { Occupancy.markAsPossiblyOccupied(); }
+//    bool ignoreFirst;
+    if(!ignoredFirst) { ignoredFirst = true; }
+#ifdef OCCUPANCY_DETECT_FROM_AMBLIGHT
+    else if((!isRoomLitFlag) && ((rawValue>>2) < lowerThreshold)) { Occupancy.markAsPossiblyOccupied(); }
+#endif
     isRoomLitFlag = true;
-    // If light enough to isRoomLitFlag true then reset counter.
+    // If light enough to set isRoomLitFlag true then reset darkTicks counter.
     darkTicks = 0;
     }
 
   // Store new value, raw and normalised.
   // Unconditionbally store raw value.
   rawValue = al;
-  // Apply a little bit of noise reduction (hysteresis) to the normalised version.
-  const uint8_t newValue = (uint8_t)(al >> 2);
   if(newValue != value)
     {
     const uint16_t oldRawImplied = ((uint16_t)value) << 2;
@@ -197,12 +202,22 @@ uint8_t AmbientLight::read()
     }
 
 #if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("Ambient light: ");
+  DEBUG_SERIAL_PRINT_FLASHSTRING("Ambient light (/1023): ");
   DEBUG_SERIAL_PRINT(al);
   DEBUG_SERIAL_PRINTLN();
 #endif
 
-#if 0 && defined(DEBUG)
+#if 1 && defined(DEBUG)
+  DEBUG_SERIAL_PRINT_FLASHSTRING("Ambient light val/lt/ut: ");
+  DEBUG_SERIAL_PRINT(value);
+  DEBUG_SERIAL_PRINT(' ');
+  DEBUG_SERIAL_PRINT(lowerThreshold);
+  DEBUG_SERIAL_PRINT(' ');
+  DEBUG_SERIAL_PRINT(upperThreshold);
+  DEBUG_SERIAL_PRINTLN();
+#endif
+
+#if 1 && defined(DEBUG)
   DEBUG_SERIAL_PRINT_FLASHSTRING("isRoomLit: ");
   DEBUG_SERIAL_PRINT(isRoomLitFlag);
   DEBUG_SERIAL_PRINTLN();
@@ -210,6 +225,62 @@ uint8_t AmbientLight::read()
 
   return(value);
   }
+
+
+// Maximum value in the uint8_t range.
+static const uint8_t MAX_AMBLIGHT_VALUE_UINT8 = 254;
+// Minimum viable range (on [0,254] scale) to be usable.
+static const uint8_t ABS_MIN_AMBLIGHT_RANGE_UINT8 = 3;
+// Minimum hysteresis (on [0,254] scale) to be usable and avoid noise triggers.
+static const uint8_t ABS_MIN_AMBLIGHT_HYST_UINT8 = 2;
+
+// Recomputes thresholds and 'unusable' based on current state.
+void AmbientLight::recomputeThresholds()
+  {
+  // Use the built-in default thresholds.
+  lowerThreshold = LDR_THR_LOW >> 2;
+  upperThreshold = LDR_THR_HIGH >> 2;
+
+  // If either recent max or min is unset then assume device usable by default.
+  if((0xff == recentMin) || (0xff == recentMax))
+    {
+    unusable = false;
+    return;
+    }
+
+  // If the range between recent max and min too narrow then assume unusable.
+  if((recentMin > MAX_AMBLIGHT_VALUE_UINT8 - ABS_MIN_AMBLIGHT_RANGE_UINT8) ||
+     (recentMax - recentMin < ABS_MIN_AMBLIGHT_RANGE_UINT8))
+    {
+    unusable = true;
+    return;
+    }
+
+  // All seems OK.
+  unusable = false;
+  }
+
+// Set minimum eg from recent stats, to allow auto adjustment to dark; ~0/0xff means no min available.
+void AmbientLight::setMin(uint8_t recentMinimumOrFF, uint8_t longerTermMinimumOrFF)
+  {
+  // Simple approach: will ignore an 'unset'/0xff value if the other is good.
+  recentMin = min(recentMinimumOrFF, longerTermMinimumOrFF);
+  recomputeThresholds();
+  }
+
+// Set maximum eg from recent stats, to allow auto adjustment to dark; ~0/0xff means no max available.
+void AmbientLight::setMax(uint8_t recentMaximumOrFF, uint8_t longerTermMaximumOrFF)
+  {
+  if(0xff == recentMaximumOrFF) { recentMin = longerTermMaximumOrFF; }
+  else if(0xff == longerTermMaximumOrFF) { recentMin = recentMaximumOrFF; }
+  else
+    {
+    // Both values available; weight towards the more recent one for quick adaptation.
+    recentMax = (uint8_t) (((3*(uint16_t)recentMaximumOrFF) + longerTermMaximumOrFF) >> 2);
+    }
+  recomputeThresholds(); 
+  }
+
 
 // Singleton implementation/instance.
 AmbientLight AmbLight;
@@ -353,7 +424,7 @@ static void SHT21_init()
   while(Wire.available() < 1)
     {
     // Wait for data, but avoid rolling over the end of a minor cycle...
-    if(getSubCycleTime() >= GSCT_MAX-2)
+    if(OTV0P2BASE::getSubCycleTime() >= OTV0P2BASE::GSCT_MAX-2)
       {
       return; // Failed, and not initialised.
       }
@@ -404,7 +475,7 @@ static int Sensor_SHT21_readTemperatureC16()
   while(Wire.available() < 3)
     {
     // Wait for data, but avoid rolling over the end of a minor cycle...
-    if(getSubCycleTime() >= GSCT_MAX-2)
+    if(OTV0P2BASE::getSubCycleTime() >= OTV0P2BASE::GSCT_MAX-2)
       {
       return(0); // Failure value: may be able to to better.
       }
@@ -452,7 +523,7 @@ uint8_t HumiditySensorSHT21::read()
   while(Wire.available() < 3)
     {
     // Wait for data, but avoid rolling over the end of a minor cycle...
-    if(getSubCycleTime() >= GSCT_MAX)
+    if(OTV0P2BASE::getSubCycleTime() >= OTV0P2BASE::GSCT_MAX)
       {
 //      DEBUG_SERIAL_PRINTLN_FLASHSTRING("giving up");
       return(~0);
@@ -795,7 +866,7 @@ uint8_t TemperaturePot::read()
   {
   // No need to wait for voltage to stablise as pot top end directly driven by IO_POWER_UP.
   power_intermittent_peripherals_enable(false);
-  const uint16_t tpRaw = analogueNoiseReducedRead(TEMP_POT_AIN, DEFAULT); // Vcc reference.
+  const uint16_t tpRaw = OTV0P2BASE::analogueNoiseReducedRead(TEMP_POT_AIN, DEFAULT); // Vcc reference.
   power_intermittent_peripherals_disable();
 
 #if defined(TEMP_POT_REVERSE)
@@ -882,11 +953,6 @@ uint8_t VoiceDetection::read()
     isDetected = ((value = count) >= VOICE_DETECTION_THRESHOLD);
     count = 0;
     }
-#if 1 && defined(DEBUG)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("Voice count: ");
-  DEBUG_SERIAL_PRINT(value);
-  DEBUG_SERIAL_PRINTLN();
-#endif
   return(value);
   }
 

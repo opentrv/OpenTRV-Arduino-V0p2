@@ -30,18 +30,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 
 #ifdef USE_NULLRADIO
-OTNullRadioLink::OTNullRadioLink RFM23B;  // FIXME why?
+OTRadioLink::OTNullRadioLink RFM23B;
 #elif defined(USE_MODULE_SIM900)
-static const char SIM900_PIN[5] = "0000";
-static const char SIM900_APN[] = "m2mkit.telefonica.com";
-static const char SIM900_UDP_ADDR[] = "46.101.52.242";
-static const char SIM900_UDP_PORT[5] = "9999";
-static const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config {  4800,
-                                                  SIM900_PIN,
-                                                  SIM900_APN,
-                                                  SIM900_UDP_ADDR,
-                                                  SIM900_UDP_PORT };
-OTSIM900Link::OTSIM900Link RFM23B(&SIM900Config, (uint8_t)6, (uint8_t)7, (uint8_t)8);
+OTSIM900Link::OTSIM900Link RFM23B(A3, (uint8_t)6, (uint8_t)9, (uint8_t)8); // FIXME change pins around to (A3, 8, 5, A2)
 #elif defined(PIN_RFM_NIRQ)
 OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, PIN_RFM_NIRQ> RFM23B;
 #else
@@ -63,21 +54,22 @@ OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, -1> RFM23B;
 // This will use whichever transmission medium/carrier/etc is available.
 //#define STATS_MSG_START_OFFSET (RFM22_PREAMBLE_BYTES + RFM22_SYNC_MIN_BYTES)
 //#define STATS_MSG_MAX_LEN (64 - STATS_MSG_START_OFFSET)
-void RFM22RawStatsTXFFTerminated(uint8_t * const buf, const bool doubleTX)
+void RFM22RawStatsTXFFTerminated(uint8_t * const buf, const bool doubleTX, bool RFM23BFramed)
   {
-  RFM22RXPreambleAdd(buf);
+  if(RFM23BFramed) RFM22RXPreambleAdd(buf);	// Only needed for RFM23B. This should be made more clear when refactoring
   const uint8_t buflen = OTRadioLink::frameLenFFTerminated(buf);
 #if 0 && defined(DEBUG)
     DEBUG_SERIAL_PRINT_FLASHSTRING("buflen=");
     DEBUG_SERIAL_PRINT(buflen);
     DEBUG_SERIAL_PRINTLN();
-#endif
-  if(!RFM23B.sendRaw(buf, buflen, 0, (doubleTX ? OTRadioLink::OTRadioLink::TXmax : OTRadioLink::OTRadioLink::TXnormal)))
+#endif // DEBUG
+  //if(!RFM23B.sendRaw(buf, buflen, 0, (doubleTX ? OTRadioLink::OTRadioLink::TXmax : OTRadioLink::OTRadioLink::TXnormal)))
+  if(!RFM23B.queueToSend(buf, buflen, 0, (doubleTX ? OTRadioLink::OTRadioLink::TXmax : OTRadioLink::OTRadioLink::TXnormal)))
     {
 #if 0 && defined(DEBUG)
     DEBUG_SERIAL_PRINTLN_FLASHSTRING("!TX failed");
 #endif
-    }
+    } // DEBUG
   //DEBUG_SERIAL_PRINTLN_FLASHSTRING("RS");
   }
 

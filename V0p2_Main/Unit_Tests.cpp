@@ -114,125 +114,6 @@ static void testLibVersions()
 
 
 
-class DummyHardwareDriver : public HardwareMotorDriverInterface
-  {
-  public:
-    // Detect if end-stop is reached or motor current otherwise very high.
-    virtual bool isCurrentHigh(HardwareMotorDriverInterface::motor_drive mdir = motorDriveOpening) const { return(currentHigh); }
-
-  public:
-    DummyHardwareDriver() : currentHigh(false) { }
-
-    virtual void motorRun(uint8_t maxRunTicks, motor_drive dir, HardwareMotorDriverInterfaceCallbackHandler &callback)
-      {
-      }
-
-    // isCurrentHigh() returns this value.
-    bool currentHigh;
-  };
-
-
-// Test calibration calculations in CurrentSenseValveMotorDirect.
-// Also check some of the use of those calculations.
-static void testCSVMDC()
-  {
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("CSVMDC");
-  CurrentSenseValveMotorDirect::CalibrationParameters cp;
-  volatile uint16_t ticksFromOpen, ticksReverse;
-  // Test the calculations with one plausible calibration data set.
-  AssertIsTrue(cp.updateAndCompute(1601U, 1105U)); // Must not fail...
-  AssertIsEqual(4, cp.getApproxPrecisionPC());
-  AssertIsEqual(25, cp.getTfotcSmall());
-  AssertIsEqual(17, cp.getTfctoSmall());
-  // Check that a calibration instance can be reused correctly.
-  const uint16_t tfo2 = 1803U;
-  const uint16_t tfc2 = 1373U;
-  AssertIsTrue(cp.updateAndCompute(tfo2, tfc2)); // Must not fail...
-  AssertIsEqual(3, cp.getApproxPrecisionPC());
-  AssertIsEqual(28, cp.getTfotcSmall());
-  AssertIsEqual(21, cp.getTfctoSmall());
-  // Check that computing position works...
-  // Simple case: fully closed, no accumulated reverse ticks.
-  ticksFromOpen = tfo2;
-  ticksReverse = 0;
-  AssertIsEqual(0, cp.computePosition(ticksFromOpen, ticksReverse));
-  AssertIsEqual(tfo2, ticksFromOpen);
-  AssertIsEqual(0, ticksReverse);
-  // Simple case: fully open, no accumulated reverse ticks.
-  ticksFromOpen = 0;
-  ticksReverse = 0;
-  AssertIsEqual(100, cp.computePosition(ticksFromOpen, ticksReverse));
-  AssertIsEqual(0, ticksFromOpen);
-  AssertIsEqual(0, ticksReverse);
-  // Try at half-way mark, no reverse ticks.
-  ticksFromOpen = tfo2 / 2;
-  ticksReverse = 0;
-  AssertIsEqual(50, cp.computePosition(ticksFromOpen, ticksReverse));
-  AssertIsEqual(tfo2/2, ticksFromOpen);
-  AssertIsEqual(0, ticksReverse);
-  // Try at half-way mark with just one reverse tick (nothing should change).
-  ticksFromOpen = tfo2 / 2;
-  ticksReverse = 1;
-  AssertIsEqual(50, cp.computePosition(ticksFromOpen, ticksReverse));
-  AssertIsEqual(tfo2/2, ticksFromOpen);
-  AssertIsEqual(1, ticksReverse);
-  // Try at half-way mark with a big-enough block of reverse ticks to be significant.
-  ticksFromOpen = tfo2 / 2;
-  ticksReverse = cp.getTfctoSmall();
-  AssertIsEqual(51, cp.computePosition(ticksFromOpen, ticksReverse));
-  AssertIsEqual(tfo2/2 - cp.getTfotcSmall(), ticksFromOpen);
-  AssertIsEqual(0, ticksReverse);
-// DHD20151025: one set of actual measurements during calibration.
-//    ticksFromOpenToClosed: 1529
-//    ticksFromClosedToOpen: 1295
-  }
-
-// Test that direct abstract motor drive logic is sane.
-static void testCurrentSenseValveMotorDirect()
-  {
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("CurrentSenseValveMotorDirect");
-  DummyHardwareDriver dhw;
-  CurrentSenseValveMotorDirect csvmd1(&dhw);
-  // POWER IP
-  // Whitebox test of internal state: should be init.
-  AssertIsEqual(CurrentSenseValveMotorDirect::init, csvmd1.getState());
-  // Verify NOT marked as in normal run state immediately upon initialisation.
-  AssertIsTrue(!csvmd1.isInNormalRunState());
-  // Verify NOT marked as in error state immediately upon initialisation.
-  AssertIsTrue(!csvmd1.isInErrorState());
-  // Target % open must start off in a sensible state; fully-closed is good.
-  AssertIsEqual(0, csvmd1.getTargetPC());
-
-  // FIRST POLL(S) AFTER POWER_UP; RETRACTING THE PIN.
-  csvmd1.poll();
-  // Whitebox test of internal state: should be valvePinWithdrawing.
-  AssertIsEqual(CurrentSenseValveMotorDirect::valvePinWithdrawing, csvmd1.getState());
-  // More polls shouldn't make any difference initially.
-  csvmd1.poll();
-  // Whitebox test of internal state: should be valvePinWithdrawing.
-  AssertIsEqual(CurrentSenseValveMotorDirect::valvePinWithdrawing, csvmd1.getState());
-  csvmd1.poll();
-  // Whitebox test of internal state: should be valvePinWithdrawing.
-  AssertIsEqual(CurrentSenseValveMotorDirect::valvePinWithdrawing, csvmd1.getState());
-//  // Simulate hitting end-stop (high current).
-//  dhw.currentHigh = true;
-//  AssertIsTrue(dhw.isCurrentHigh());
-//  csvmd1.poll();
-//  // Whitebox test of internal state: should be valvePinWithdrawn.
-//  AssertIsEqual(CurrentSenseValveMotorDirect::valvePinWithdrawn, csvmd1.getState());
-//  dhw.currentHigh = false;
-
-
-
-  // TODO
-
-  }
-
-
-
-
-
-
 #ifdef ENABLE_BOILER_HUB
 // Test simple on/off boiler-driver behaviour.
 static void testOnOffBoilerDriverLogic()
@@ -1383,123 +1264,6 @@ static void testFullStatsMessageCoreEncDec()
 
 
 
-
-
-
-// Test elements of RTC time persist/restore (without causing more EEPROM wear, if working correctly).
-static void testRTCPersist()
-  {
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("RTCPersist");
-  // Perform with interrupts shut out to avoid RTC ISR interferring.
-  // This will effectively stall the RTC.
-  bool minutesPersistOK;
-  ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
-    {
-    const uint_least16_t mb = OTV0P2BASE::getMinutesSinceMidnightLT();
-    OTV0P2BASE::persistRTC();
-    OTV0P2BASE::restoreRTC();
-    const uint_least16_t ma = OTV0P2BASE::getMinutesSinceMidnightLT();
-    // Check that persist/restore did not change live minutes value at least, within the 15-minute quantum used.
-    minutesPersistOK = (mb/15 == ma/15);
-    }
-    AssertIsTrue(minutesPersistOK);
-  }
-
-
-// Tests of entropy gathering routines.
-//
-// Maximum number of identical nominally random bits (or values with approx one bit of entropy) in a row tolerated.
-// Set large enough that even soak testing for many hours should not trigger a failure if behaviour is plausibly correct.
-#define MAX_IDENTICAL_BITS_SEQUENTIALLY 32
-void testEntropyGathering()
-  {
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("EntropyGathering");
-
-//  // Test WDT jitter: assumed about 1 bit of entropy per call/result.
-//  //DEBUG_SERIAL_PRINT_FLASHSTRING("jWDT... ");
-//  const uint8_t jWDT = clockJitterWDT();
-//  for(int i = MAX_IDENTICAL_BITS_SEQUENTIALLY; --i >= 0; )
-//    {
-//    if(jWDT != clockJitterWDT()) { break; } // Stop as soon as a different value is obtained.
-//    AssertIsTrueWithErr(0 != i, i); // Generated too many identical values in a row.
-//    }
-//  //DEBUG_SERIAL_PRINT_FLASHSTRING(" 1st=");
-//  //DEBUG_SERIAL_PRINTFMT(jWDT, BIN);
-//  //DEBUG_SERIAL_PRINTLN();
-//
-//#ifndef NO_clockJitterRTC
-//  // Test RTC jitter: assumed about 1 bit of entropy per call/result.
-//  //DEBUG_SERIAL_PRINT_FLASHSTRING("jRTC... ");
-//  for(const uint8_t t0 = getSubCycleTime(); t0 == getSubCycleTime(); ) { } // Wait for sub-cycle time to roll to toughen test.
-//  const uint8_t jRTC = clockJitterRTC();
-//  for(int i = MAX_IDENTICAL_BITS_SEQUENTIALLY; --i >= 0; )
-//    {
-//    if(jRTC != clockJitterRTC()) { break; } // Stop as soon as a different value is obtained.
-//    AssertIsTrue(0 != i); // Generated too many identical values in a row.
-//    }
-//  //DEBUG_SERIAL_PRINT_FLASHSTRING(" 1st=");
-//  //DEBUG_SERIAL_PRINTFMT(jRTC, BIN);
-//  //DEBUG_SERIAL_PRINTLN();
-//#endif
-//
-//#ifndef NO_clockJitterEntropyByte
-//  // Test full-byte jitter: assumed about 8 bits of entropy per call/result.
-//  //DEBUG_SERIAL_PRINT_FLASHSTRING("jByte... ");
-//  const uint8_t t0j = getSubCycleTime();
-//  while(t0j == getSubCycleTime()) { } // Wait for sub-cycle time to roll to toughen test.
-//  const uint8_t jByte = clockJitterEntropyByte();
-//
-//  for(int i = MAX_IDENTICAL_BITS_SEQUENTIALLY/8; --i >= 0; )
-//    {
-//    if(jByte != clockJitterEntropyByte()) { break; } // Stop as soon as a different value is obtained.
-//    AssertIsTrue(0 != i); // Generated too many identical values in a row.
-//    }
-//  //DEBUG_SERIAL_PRINT_FLASHSTRING(" 1st=");
-//  //DEBUG_SERIAL_PRINTFMT(jByte, BIN);
-//  //DEBUG_SERIAL_PRINT_FLASHSTRING(", ticks=");
-//  //DEBUG_SERIAL_PRINT((uint8_t)(t1j - t0j - 1));
-//  //DEBUG_SERIAL_PRINTLN();
-//#endif
-
-  // Test noisy ADC read: assumed at least one bit of noise per call/result.
-  const uint8_t nar1 = noisyADCRead(true);
-#if 0
-  DEBUG_SERIAL_PRINT_FLASHSTRING("nar1 ");
-  DEBUG_SERIAL_PRINTFMT(nar1, BIN);
-  DEBUG_SERIAL_PRINTLN();
-#endif
-  for(int i = MAX_IDENTICAL_BITS_SEQUENTIALLY; --i >= 0; )
-    {
-    const uint8_t nar = noisyADCRead(true);
-    if(nar1 != nar) { break; } // Stop as soon as a different value is obtained.
-#if 0
-    DEBUG_SERIAL_PRINT_FLASHSTRING("repeat nar ");
-    DEBUG_SERIAL_PRINTFMT(nar, BIN);
-    DEBUG_SERIAL_PRINTLN();
-#endif
-    AssertIsTrue(0 != i); // Generated too many identical values in a row.
-    }
-
-  for(int w = 0; w < 2; ++w)
-    {
-    const bool whiten = (w != 0);
-    // Test secure random byte generation with and without whitening
-    // to try to ensure that the underlying generation is sound.
-    const uint8_t srb1 = getSecureRandomByte(whiten);
-#if 0
-    DEBUG_SERIAL_PRINT_FLASHSTRING("srb1 ");
-    DEBUG_SERIAL_PRINTFMT(srb1, BIN);
-    if(whiten) { DEBUG_SERIAL_PRINT_FLASHSTRING(" whitened"); }
-    DEBUG_SERIAL_PRINTLN();
-#endif
-    for(int i = MAX_IDENTICAL_BITS_SEQUENTIALLY/8; --i >= 0; )
-      {
-      if(srb1 != getSecureRandomByte(whiten)) { break; } // Stop as soon as a different value is obtained.
-      AssertIsTrue(0 != i); // Generated too many identical values in a row.
-      }
-    }
-  }
-
 // Test sleepUntilSubCycleTime() routine.
 void testSleepUntilSubCycleTime()
   {
@@ -1670,8 +1434,6 @@ void loopUnitTest()
 
   // Run the tests, fastest / newest / most-fragile / most-interesting first...
   testLibVersions();
-  testCSVMDC();
-  testCurrentSenseValveMotorDirect();
   testComputeRequiredTRVPercentOpen();
   testFastDigitalIOCalcs();
   testTargetComputation();
@@ -1680,9 +1442,6 @@ void loopUnitTest()
   testJSONForTX();
   testFullStatsMessageCoreEncDec();
   testTempCompand();
-  testEntropyGathering();
-  testRTCPersist();
-  //testEEPROM();
   testQuartiles();
   testSmoothStatsValue();
   testSleepUntilSubCycleTime();

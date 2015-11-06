@@ -14,6 +14,7 @@ specific language governing permissions and limitations
 under the Licence.
 
 Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
+                           Deniz Erbilgin 2015
 */
 
 /*
@@ -144,17 +145,42 @@ class AmbientLight : public OTV0P2BASE::SimpleTSUint8Sensor
     // Raw ambient light value [0,1023] dark--light.
     uint16_t rawValue;
 
-    // True iff room is lit well enough for activity.
-    // Marked volatile for thread-safe (simple) lock-free access.
+    // True iff room appears lit well enough for activity.
+    // Marked volatile for ISR-/thread- safe (simple) lock-free access.
     volatile bool isRoomLitFlag;
 
-    // Number of minutes (read() calls) that teh room has been continuously dark for [0,255].
+    // Number of minutes (read() calls) that the room has been continuously dark for [0,255].
     // Does not roll over from maximum value.
     // Reset to zero in light.
     uint8_t darkTicks;
 
+    // Minimum eg from recent stats, to allow auto adjustment to dark; ~0/0xff means no min available.
+    uint8_t recentMin;
+    // Maximum eg from recent stats, to allow auto adjustment to dark; ~0/0xff means no max available.
+    uint8_t recentMax;
+
+    // Lower and upper hysteresis thresholds (on [0,254] scale) for detecting dark/light.
+    uint8_t lowerThreshold, upperThreshold;
+
+    // Set true if ambient light sensor may be unusable or unreliable.
+    // This will be where (for example) there are historic values
+    // but in a very narrow range which implies a broken sensor or shadowed location.
+    bool unusable;
+
+    // Ignore first false trigger at start-up.
+    bool ignoredFirst;
+
+    // Recomputes thresholds and 'unusable' based on current state.
+    void recomputeThresholds();
+
   public:
-    // Force a read/poll of the ambient light level and return the value sensed [0,1023] (dark to light).
+    AmbientLight()
+      : isRoomLitFlag(false), darkTicks(0),
+        recentMin(~0), recentMax(~0),
+        unusable(false), ignoredFirst(false)
+      { recomputeThresholds(); }
+
+    // Force a read/poll of the ambient light level and return the value sensed [0,255] (dark to light).
     // Potentially expensive/slow.
     // Not thread-safe nor usable within ISRs (Interrupt Service Routines).
     virtual uint8_t read();
@@ -167,7 +193,11 @@ class AmbientLight : public OTV0P2BASE::SimpleTSUint8Sensor
     virtual const char *tag() const { return("L"); }
 
     // Get raw ambient light value in range [0,1023].
-    uint16_t getRaw() { return(rawValue); }
+    // Undefined until first read().
+    uint16_t getRaw() const { return(rawValue); }
+
+    // Returns true if this sensor is apparently unusable.
+    virtual bool isUnavailable() const { return(unusable); }
 
     // Returns true if room is lit enough for someone to be active.
     // False if unknown.
@@ -175,14 +205,22 @@ class AmbientLight : public OTV0P2BASE::SimpleTSUint8Sensor
     bool isRoomLit() const { return(isRoomLitFlag); }
 
     // Returns true if room is light enough for someone to be active.
-    // False if unknown.
+    // False if unknown or sensor appears unusable,
+    // thus it is possible for both isRoomLit() and isRoomDark() to be false.
     // Thread-safe and usable within ISRs (Interrupt Service Routines).
-    bool isRoomDark() const { return(!isRoomLitFlag); }
+    bool isRoomDark() const { return(!isRoomLitFlag && !unusable); }
 
-    // Get number of minutes (read() calls) that teh room has been continuously dark for [0,255].
+    // Get number of minutes (read() calls) that the room has been continuously dark for [0,255].
     // Does not roll over from maximum value.
     // Reset to zero in light.
-    uint8_t getDarkMinutes() { return(darkTicks); }
+    // Does not increment if the sensor decides that it is unusable.
+    uint8_t getDarkMinutes() const { return(darkTicks); }
+
+    // Set minimum eg from recent stats, to allow auto adjustment to dark; ~0/0xff means no min available.
+    void setMin(uint8_t recentMinimumOrFF, uint8_t longerTermMinimumOrFF = 0xff);
+    // Set maximum eg from recent stats, to allow auto adjustment to dark; ~0/0xff means no max available.
+    void setMax(uint8_t recentMaximumOrFF, uint8_t longerTermMaximumOrFF = 0xff);
+    
 
 #ifdef UNIT_TESTS
     // Set new value(s) for unit test only.
@@ -270,6 +308,7 @@ extern RoomTemperatureC16 TemperatureC16;
 
 
 // High and low bounds on relative humidity for comfort and (eg) mite/mould growth.
+// See http://www.cdc.gov/niosh/topics/indoorenv/temperature.html: "The EPA recommends maintaining indoor relative humidity between 30 and 60% to reduce mold growth [EPA 2012]."
 #define HUMIDTY_HIGH_RHPC 70
 #define HUMIDTY_LOW_RHPC 30
 // Epsilon bounds (absolute % +/- around thresholds) for accuracy and hysteresis.
@@ -280,6 +319,9 @@ extern RoomTemperatureC16 TemperatureC16;
 #if ((HUMIDTY_LOW_RHPC - HUMIDITY_EPSILON_RHPC) <= 0)
 #error bad RH constants!
 #endif
+
+// If RH% rises by at least this per hour, then it may indicate occupancy.
+#define HUMIDITY_OCCUPANCY_PC_MIN_RISE_PER_H 3
 
 // HUMIDITY_SENSOR_SUPPORT is defined if at least one humdity sensor has support compiled in.
 // Simple implementations can assume that the sensor will be present if defined;
@@ -398,7 +440,7 @@ extern TemperaturePot TempPot;
  Functionality and code only enabled if ENABLE_VOICE_SENSOR is defined.
  */
 // Sensor for supply (eg battery) voltage in millivolts.
-class VoiceDetection : public SimpleTSUint8Sensor
+class VoiceDetection : public OTV0P2BASE::SimpleTSUint8Sensor
   {
   private:
     // Activity count.
@@ -428,7 +470,12 @@ class VoiceDetection : public SimpleTSUint8Sensor
     virtual bool handleInterruptSimple();
 
     // Returns true if voice has been detected in this or previous poll period.
-    bool isVoiceDelected() { return(isDetected); }
+    bool isVoiceDetected() { return(isDetected); }
+
+    // Returns a suggested (JSON) tag/field/key name including units of get(); NULL means no recommended tag.
+    // The lifetime of the pointed-to text must be at least that of the Sensor instance.
+//    virtual const char *tag() const { return("v"); } // TODO do we want this here?
+
   };
 // Singleton implementation/instance.
 extern VoiceDetection Voice;

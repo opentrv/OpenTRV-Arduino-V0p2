@@ -32,17 +32,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include <OTSIM900Link.h>
 
 #ifdef USE_NULLRADIO
-extern OTNullRadioLink::OTNullRadioLink RFM23B;  // FIXME why?
+extern OTRadioLink::OTNullRadioLink RFM23B;
 #elif defined(USE_MODULE_SIM900)
-/*static const char SIM900_PIN[5] = "0000";
-static const char SIM900_APN[] = "m2mkit.telefonica.com";
-static const char SIM900_UDP_ADDR[] = "46.101.52.242";
-static const char SIM900_UDP_PORT[5] = "9999";
-OTSIM900Link::OTSIM900LinkConfig_t SIM900Config {	4800,
-	                                                SIM900_PIN,
-	                                                SIM900_APN,
-                                                	SIM900_UDP_ADDR,
-	                                                SIM900_UDP_PORT };*/
 extern OTSIM900Link::OTSIM900Link RFM23B;
 #elif defined(PIN_RFM_NIRQ)
 extern OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, PIN_RFM_NIRQ> RFM23B;
@@ -71,7 +62,7 @@ extern OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, -1> RFM23B;
 //#define STATS_MSG_MAX_LEN (64 - STATS_MSG_START_OFFSET)
 #define STATS_MSG_START_OFFSET (RFM22_PREAMBLE_BYTES + RFM22_SYNC_MIN_BYTES)
 #define STATS_MSG_MAX_LEN (64 - STATS_MSG_START_OFFSET)
-void RFM22RawStatsTXFFTerminated(uint8_t *buf, bool doubleTX);
+void RFM22RawStatsTXFFTerminated(uint8_t *buf, bool doubleTX, bool RFM23BFramed = true);
 
 // Adds the STATS_MSG_START_OFFSET preamble to enable reception by a remote RFM22B/RFM23B.
 // Returns the first free byte after the preamble.

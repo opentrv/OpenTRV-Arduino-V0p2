@@ -48,13 +48,15 @@ void loopOpenTRV();
 // Setting frost temperatures at a level likely to protect (eg) fridge/freezers as well as water pipes.
 // Note that 5C or below carries a risk of hypothermia: http://ipc.brookes.ac.uk/publications/pdf/Identifying_the_health_gain_from_retirement_housing.pdf
 // Other parts of the room may be somewhat colder than where the sensor is, so aim a little over 5C.
+// 14C avoids risk of raised blood pressure and is a generally safe and comfortable sleeping temperature.
 // Note: BS EN 215:2004 S5.3.5 says maximum setting must be <= 32C, minimum in range [5C,12C].
+// 15C+ may help mould/mold risk from condensation, see: http://www.nea.org.uk/Resources/NEA/Publications/2013/Resource%20-%20Dealing%20with%20damp%20and%20condensation%20%28lo%20res%29.pdf
 #define BIASECO_FROST (max(6,MIN_TARGET_C)) // Target FROST temperature for ECO bias; must be in range [MIN_TARGET_C,BIASCOM_FROST[.
-#define BIASCOM_FROST (max(12,MIN_TARGET_C)) // Target FROST temperature for Comfort bias; must be in range ]BIASECO_FROST,MAX_TARGET_C].
+#define BIASCOM_FROST (max(14,MIN_TARGET_C)) // Target FROST temperature for Comfort bias; must be in range ]BIASECO_FROST,MAX_TARGET_C].
 #define FROST BIASECO_FROST
 // 18C is a safe room temperature even for the slightly infirm according to NHS England 2014:
-//     http://www.nhs.uk/Livewell/winterhealth/Pages/KeepWarmKeepWell.aspx
-// so should possibly be marked explicitly on the control.
+//    http://www.nhs.uk/Livewell/winterhealth/Pages/KeepWarmKeepWell.aspx
+// so could possibly be marked explicitly on the control.
 // 21C is recommended living temperature in retirement housing:
 //     http://ipc.brookes.ac.uk/publications/pdf/Identifying_the_health_gain_from_retirement_housing.pdf
 #define SAFE_ROOM_TEMPERATURE 18 // Safe for most purposes.
@@ -81,20 +83,22 @@ void loopOpenTRV();
 #define TEMP_SCALE_MID ((BIASECO_WARM + BIASCOM_WARM + 1)/2) // Middle of range for adjustable-base-temperature systems; should be 'eco' baised.
 #define TEMP_SCALE_MAX (BIASCOM_WARM+1) // Top of range for adjustable-base-temperature systems.
 
-
 // Raise target by this many degrees in 'BAKE' mode (strictly positive).
 #define BAKE_UPLIFT 5
 // Maximum 'BAKE' minutes, ie time to crank heating up to BAKE setting (minutes, strictly positive, <255).
 #define BAKE_MAX_M 30
 
-// Initial minor setback degrees C (strictly positive).  Note that 1C heating setback may result in ~8% saving in UK.
+// Initial minor setback degrees C (strictly positive).  Note that 1C heating setback may result in ~8% saving in the UK.
 // This may be the maximum setback applied with a comfort bias for example.
 #define SETBACK_DEFAULT 1
-// Enhanced setback in full-on eco mode for extra energy savings.  Not more than FULL_SETBACK.
+// Enhanced setback, eg in eco mode, for extra energy savings.  Not more than SETBACK_FULL.
 #define SETBACK_ECO (1+SETBACK_DEFAULT)
-// Full setback degrees C (strictly positive and significantly, ie several degrees, greater than SETBACK, less than MIN_TARGET_C).
+// Full setback degrees C (strictly positive and significantly, ie several degrees, greater than SETBACK_DEFAULT, less than MIN_TARGET_C).
+// Deeper setbacks increase energy savings at the cost of longer times to return to target temperatures.
+// See also (recommending 13F/7C setback to 55F/12C): https://www.mge.com/images/pdf/brochures/residential/setbackthermostat.pdf
+// See also (suggesting for an 8hr setback, 1F set-back = 1% energy savings): http://joneakes.com/jons-fixit-database/1270-How-far-back-should-a-set-back-thermostat-be-set
 // This must set back to no more than than MIN_TARGET_C to avoid problems with unsigned arithmetic.
-#define SETBACK_FULL 3
+#define SETBACK_FULL 4
 // Prolonged inactivity time deemed to indicate room(s) really unoccupied to trigger full setback (minutes, strictly positive).
 #define SETBACK_FULL_M 50
 
@@ -267,7 +271,7 @@ struct ModelledRadValveInputState
   {
   ModelledRadValveInputState(const int realTempC16) :
     targetTempC(FROST), 
-    minPCOpen(DEFAULT_MIN_VALVE_PC_REALLY_OPEN), maxPCOpen(100),
+    minPCOpen(OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN), maxPCOpen(100),
     widenDeadband(false), glacial(false), hasEcoBias(false), inBakeMode(false)
     { setReferenceTemperatures(realTempC16); }
 
@@ -391,8 +395,8 @@ struct ModelledRadValveState
 
 #if defined(LOCAL_TRV)
 #define ENABLE_MODELLED_RAD_VALVE
-// Internal model of radidator valve position, embodying control logic.
-class ModelledRadValve : public AbstractRadValve
+// Internal model of radiator valve position, embodying control logic.
+class ModelledRadValve : public OTRadValve::AbstractRadValve
   {
   private:
     // All input state for deciding where to set the radiator valve in normal operation.
@@ -466,7 +470,7 @@ class ModelledRadValve : public AbstractRadValve
     //
     // When driving a remote wireless valve such as the FHT8V,
     // this waits until at least the command has been sent.
-    // This also implies open to DEFAULT_MIN_VALVE_PC_REALLY_OPEN or equivalent.
+    // This also implies open to OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN or equivalent.
     // Must be exactly one definition/implementation supplied at link time.
     // If more than one valve is being controlled by this unit,
     // then this should return true if any of the valves are (significantly) open.
@@ -545,12 +549,12 @@ class ModelledRadValve : public AbstractRadValve
     // Return minimum valve percentage open to be considered actually/significantly open; [1,100].
     // This is a value that has to mean all controlled valves are at least partially open if more than one valve.
     // At the boiler hub this is also the threshold percentage-open on eavesdropped requests that will call for heat.
-    // If no override is set then DEFAULT_MIN_VALVE_PC_REALLY_OPEN is used.
+    // If no override is set then OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN is used.
     static uint8_t getMinValvePcReallyOpen();
 
     // Set and cache minimum valve percentage open to be considered really open.
     // Applies to local valve and, at hub, to calls for remote calls for heat.
-    // Any out-of-range value (eg >100) clears the override and DEFAULT_MIN_VALVE_PC_REALLY_OPEN will be used.
+    // Any out-of-range value (eg >100) clears the override and OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN will be used.
     static void setMinValvePcReallyOpen(uint8_t percent);
   };
 #define ENABLE_NOMINAL_RAD_VALVE
@@ -631,7 +635,7 @@ extern SimpleSlaveRadValve NominalRadValve;
 #define DEFAULT_MAX_RUN_ON_TIME_M 5
 
 // If defined then turn off valve very slowly after stopping call for heat (ie when shutting) which
-// may allow comfortable bolier pump overrun in older systems with no/poor bypass to avoid overheating.
+// may allow comfortable boiler pump overrun in older systems with no/poor bypass to avoid overheating.
 // In any case this should help reduce strain on circulation pumps, etc.
 // ALWAYS IMPLEMENT LINGER AS OF 20141228
 //#define VALVE_TURN_OFF_LINGER
@@ -663,12 +667,12 @@ class OccupancyTracker : public OTV0P2BASE::SimpleTSUint8Sensor
   {
   private:
     // Time until room regarded as unoccupied, in minutes; initially zero (ie treated as unoccupied at power-up).
-    // Marked voilatile for thread-safe lock-free non-read-modify-write access to byte-wide value.
+    // Marked volatile for thread-safe lock-free non-read-modify-write access to byte-wide value.
     // Compound operations must block interrupts.
     volatile uint8_t occupationCountdownM;
 
-    // Non-zero if occpuancy system recently notified of activity.
-    // Marked voilatile for thread-safe lock-free non-read-modify-write access to byte-wide value.
+    // Non-zero if occupancy system recently notified of activity.
+    // Marked volatile for thread-safe lock-free non-read-modify-write access to byte-wide value.
     // Compound operations must block interrupts.
     volatile uint8_t activityCountdownM;
 
@@ -824,27 +828,6 @@ extern OccupancyTracker Occupancy;
 // (EEPROM wear should not be an issue at this update rate in normal use.)
 void sampleStats(bool fullSample);
 
-// Clear all collected statistics, eg when moving device to a new room or at a major time change.
-// Requires 1.8ms per byte for each byte that actually needs erasing.
-//   * maxBytesToErase limit the number of bytes erased to this; strictly positive, else 0 to allow 65536
-// Returns true if finished with all bytes erased.
-bool zapStats(uint16_t maxBytesToErase = 0);
-
-// Get raw stats value for hour HH [0,23] from stats set N from non-volatile (EEPROM) store.
-// A value of 0xff (255) means unset (or out of range); other values depend on which stats set is being used.
-uint8_t getByHourStat(uint8_t hh, uint8_t statsSet);
-
-// Returns true if specified hour is (conservatively) in the specifed outlier quartile for specified stats set.
-// Returns false if a full set of stats not available, eg including the specified hour.
-// Always returns false if all samples are the same.
-//   * inTop  test for membership of the top quartile if true, bottom quartile if false
-//   * statsSet  stats set number to use.
-//   * hour  hour of day to use or ~0 for current hour.
-bool inOutlierQuartile(uint8_t inTop, uint8_t statsSet, uint8_t hour = ~0);
-
-// 'Unset'/invalid values for byte (eg raw EEPROM byte) and int (eg after decompression).
-#define STATS_UNSET_BYTE 0xff
-#define STATS_UNSET_INT 0x7fff
 
 #ifdef ENABLE_ANTICIPATION
 // Returns true iff room likely to be occupied and need warming at the specified hour's sample point based on collected stats.
@@ -853,7 +836,6 @@ bool inOutlierQuartile(uint8_t inTop, uint8_t statsSet, uint8_t hour = ~0);
 //   * hh hour to check for predictive warming [0,23]
 bool shouldBeWarmedAtHour(const uint_least8_t hh);
 #endif
-
 
 
 #ifdef UNIT_TESTS
@@ -891,6 +873,15 @@ int expandTempC16(uint8_t cTemp);
 // Exactly what gets filled in will depend on sensors on the node,
 // and may depend on stats TX security level (if collecting some sensitive items is also expensive).
 void populateCoreStats(FullStatsMessageCore_t *content);
+
+// Do bare stats transmission.
+// Output should be filtered for items appropriate
+// to current channel security and sensitivity level.
+// This may be binary or JSON format.
+//   * allowDoubleTX  allow double TX to increase chance of successful reception
+//   * doBinary  send binary form, else JSON form if supported
+//   * RFM23BFramed   Add preamble and CRC to frame. Defaults to true for compatibility
+void bareStatsTX(const bool allowDoubleTX, const bool doBinary, const bool RFM23BFramed = true);
 
 #ifdef ENABLE_BOILER_HUB
 // Raw notification of received call for heat from remote (eg FHT8V) unit.
