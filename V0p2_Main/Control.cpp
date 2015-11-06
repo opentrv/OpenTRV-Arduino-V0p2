@@ -1474,6 +1474,17 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
 
 
 
+// Initialise sensors with stats info where needed.
+static void updateSensorsFromStats()
+  {
+#ifndef OMIT_MODULE_LDROCCUPANCYDETECTION
+  updateAmbLightFromStats();
+#endif
+  }
+
+
+
+
 
 
 
@@ -1618,6 +1629,9 @@ void setupOpenTRV()
   // Signal some sort of life on waking up...
   ValveDirect.wiggle();
 #endif
+
+  // Initialise sensors with stats info where needed.
+  updateSensorsFromStats();
 
 #if !defined(DONT_RANDOMISE_MINUTE_CYCLE)
   // Start local counters in randomised positions to help avoid inter-unit collisions,
@@ -2405,7 +2419,8 @@ void loopOpenTRV()
             {
             // Always take the full sample at the end of each hour.
             sampleStats(true);
-            // TODO: feed back rolling stats to sensors to set noise floors, etc.
+            // Feed back rolling stats to sensors to set noise floors, adapt to sensors and local env...
+            updateSensorsFromStats();
             break;
             }
           }
