@@ -712,30 +712,6 @@ static void testModeControls()
   AssertIsTrue(!inBakeMode());
   }
 
-// Test basic behaviour of stats quartile routines.
-static void testQuartiles()
-  {
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("Quartiles");
-  // For whatever happens to be in EEPROM at the moment, test for sanity for all stats sets.
-  // This does not write to EEPROM, so will not wear it out.
-  // Make sure that nothing can be seen as top and bottom quartile at same time.
-  // Make sure that there cannot be too many items reported in each quartile
-  for(uint8_t i = 0; i < V0P2BASE_EE_STATS_SETS; ++i)
-    {
-    int bQ = 0, tQ = 0;
-    for(uint8_t j = 0; j < 24; ++j)
-      {
-      const bool inTopQ = inOutlierQuartile(true, i, j);
-      if(inTopQ) { ++tQ; }
-      const bool inBotQ = inOutlierQuartile(false, i, j);
-      if(inBotQ) { ++bQ; }
-      AssertIsTrue(!inTopQ || !inBotQ);
-      }
-    AssertIsTrue(bQ <= 6);
-    AssertIsTrue(tQ <= 6);
-    }
-  }
-
 // Test handling of JSON stats.
 static void testJSONStats()
   {
@@ -1270,28 +1246,29 @@ void testSleepUntilSubCycleTime()
 #ifdef WAKEUP_32768HZ_XTAL
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("SleepUntilSubCycleTime");
 
-  const uint8_t start = getSubCycleTime();
+  const uint8_t start = OTV0P2BASE::getSubCycleTime();
 
   // Check that this correctly notices/vetoes attempt to sleep until time already past.
   if(start > 0) { AssertIsTrue(!sleepUntilSubCycleTime(start-1)); }
 
   // Don't attempt rest of test if near the end of the current minor cycle...
-  if(start > (GSCT_MAX/2)) { return; }
+  if(start > (OTV0P2BASE::GSCT_MAX/2)) { return; }
 
   // Set a random target significantly before the end of the current minor cycle.
-#if 0x3f > GSCT_MAX/4
-#error
-#endif
+//#if 0x3f > GSCT_MAX/4
+//#error
+//#endif
+  AssertIsTrue(0x3f <= OTV0P2BASE::GSCT_MAX/4);
   const uint8_t sleepTicks = 2 + (OTV0P2BASE::randRNG8() & 0x3f);
   const uint8_t target = start + sleepTicks;
   AssertIsTrue(target > start);
-  AssertIsTrue(target < GSCT_MAX);
+  AssertIsTrue(target < OTV0P2BASE::GSCT_MAX);
 
   // Call should succeed.
   AssertIsTrue(sleepUntilSubCycleTime(target));
 
   // Call should return with some of specified target tick still to run...
-  const uint8_t end = getSubCycleTime();
+  const uint8_t end = OTV0P2BASE::getSubCycleTime();
   AssertIsTrueWithErr(target == end, end); // FIXME: DHD2014020: getting occasional failures.
 
 #if 0
@@ -1330,7 +1307,7 @@ static void testTempCompand()
   AssertIsTrueWithErr(COMPRESSION_C16_CEIL_VAL_AFTER == compressTempC16(102<<4), COMPRESSION_C16_CEIL_VAL_AFTER); // Verify ceiling.
   AssertIsTrue(COMPRESSION_C16_CEIL_VAL_AFTER < 0xff);
   // Ensure that 'unset' compressed value expands to 'unset' uncompressed value.
-  AssertIsTrue(STATS_UNSET_INT == expandTempC16(STATS_UNSET_BYTE));
+  AssertIsTrue(OTV0P2BASE::STATS_UNSET_INT == expandTempC16(OTV0P2BASE::STATS_UNSET_BYTE));
   }
 
 // Test some of the mask/port calculations.
@@ -1442,7 +1419,6 @@ void loopUnitTest()
   testJSONForTX();
   testFullStatsMessageCoreEncDec();
   testTempCompand();
-  testQuartiles();
   testSmoothStatsValue();
   testSleepUntilSubCycleTime();
   testFHTEncoding();
