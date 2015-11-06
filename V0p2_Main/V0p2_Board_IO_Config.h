@@ -152,7 +152,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 // REV7 motor connections.
 #if (V0p2_REV == 7)
-// MI: Motor Indicator (stalled current sensior) ADC6
+// MI: Motor Indicator (stalled current sensor) ADC6
 // MC: Motor Count from shaft encoder optical ADC7
 #define MOTOR_DRIVE_MI_AIN 6
 #define MOTOR_DRIVE_MC_AIN 7
