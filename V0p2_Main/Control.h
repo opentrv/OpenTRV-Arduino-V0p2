@@ -828,22 +828,22 @@ extern OccupancyTracker Occupancy;
 // (EEPROM wear should not be an issue at this update rate in normal use.)
 void sampleStats(bool fullSample);
 
-// Clear all collected statistics, eg when moving device to a new room or at a major time change.
-// Requires 1.8ms per byte for each byte that actually needs erasing.
-//   * maxBytesToErase limit the number of bytes erased to this; strictly positive, else 0 to allow 65536
-// Returns true if finished with all bytes erased.
-bool zapStats(uint16_t maxBytesToErase = 0);
+//// Clear all collected statistics, eg when moving device to a new room or at a major time change.
+//// Requires 1.8ms per byte for each byte that actually needs erasing.
+////   * maxBytesToErase limit the number of bytes erased to this; strictly positive, else 0 to allow 65536
+//// Returns true if finished with all bytes erased.
+//bool zapStats(uint16_t maxBytesToErase = 0);
+//
+//// Get raw stats value for hour HH [0,23] from stats set N from non-volatile (EEPROM) store.
+//// A value of 0xff (255) means unset (or out of range); other values depend on which stats set is being used.
+//uint8_t getByHourStat(uint8_t hh, uint8_t statsSet);
 
-// Get raw stats value for hour HH [0,23] from stats set N from non-volatile (EEPROM) store.
-// A value of 0xff (255) means unset (or out of range); other values depend on which stats set is being used.
-uint8_t getByHourStat(uint8_t hh, uint8_t statsSet);
+//// Get previous hour in current local time, wrapping round from 0 to 23.
+//uint8_t getPrevHourLT();
+//// Get next hour in current local time, wrapping round from 23 back to 0.
+//uint8_t getNextHourLT();
 
-// Get previous hour in current local time, wrapping round from 0 to 23.
-uint8_t getPrevHourLT();
-// Get next hour in current local time, wrapping round from 23 back to 0.
-uint8_t getNextHourLT();
-
-// Returns true if specified hour is (conservatively) in the specifed outlier quartile for specified stats set.
+// Returns true if specified hour is (conservatively) in the specified outlier quartile for specified stats set.
 // Returns false if a full set of stats not available, eg including the specified hour.
 // Always returns false if all samples are the same.
 //   * inTop  test for membership of the top quartile if true, bottom quartile if false
@@ -853,9 +853,9 @@ static const uint8_t inOutlierQuartile_CURRENT_HOUR = ~0 - 1;
 static const uint8_t inOutlierQuartile_NEXT_HOUR = ~0;
 bool inOutlierQuartile(uint8_t inTop, uint8_t statsSet, uint8_t hour = inOutlierQuartile_CURRENT_HOUR);
 
-// 'Unset'/invalid values for byte (eg raw EEPROM byte) and int (eg after decompression).
-#define STATS_UNSET_BYTE 0xff
-#define STATS_UNSET_INT 0x7fff
+//// 'Unset'/invalid values for byte (eg raw EEPROM byte) and int (eg after decompression).
+//#define STATS_UNSET_BYTE 0xff
+//#define STATS_UNSET_INT 0x7fff
 
 #ifdef ENABLE_ANTICIPATION
 // Returns true iff room likely to be occupied and need warming at the specified hour's sample point based on collected stats.
