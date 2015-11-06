@@ -1350,6 +1350,7 @@ void bareStatsTX(const bool allowDoubleTX, const bool doBinary, const bool RFM23
   if(doBinary)
 #endif // ALLOW_JSON_OUTPUT
     {
+#ifdef ALLOW_BINARY_STATS_TX
     // Send binary message first.
     // Gather core stats.
     FullStatsMessageCore_t content;
@@ -1368,6 +1369,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 //    recordCoreStats(true, &content);
     outputCoreStats(&Serial, true, &content);
     handleQueuedMessages(&Serial, false, &RFM23B); // Serial must already be running!
+#endif // ALLOW_BINARY_STATS_TX
     }
 
 #if defined(ALLOW_JSON_OUTPUT)
@@ -2295,7 +2297,11 @@ void loopOpenTRV()
         // if this is controlling a local FHT8V on which the binary stats can be piggybacked.
         // Ie, if doesn't have a local TRV then it must send binary some of the time.
         // Any recently-changed stats value is a hint that a strong transmission might be a good idea.
+#ifdef ALLOW_BINARY_STATS_TX
         const bool doBinary = !localFHT8VTRVEnabled() && OTV0P2BASE::randRNG8NextBoolean();
+#else
+        const bool doBinary = false;
+#endif
         bareStatsTX(!batteryLow && !hubMode && ss1.changedValue(), doBinary);
         }
       break;
