@@ -635,7 +635,7 @@ extern SimpleSlaveRadValve NominalRadValve;
 #define DEFAULT_MAX_RUN_ON_TIME_M 5
 
 // If defined then turn off valve very slowly after stopping call for heat (ie when shutting) which
-// may allow comfortable bolier pump overrun in older systems with no/poor bypass to avoid overheating.
+// may allow comfortable boiler pump overrun in older systems with no/poor bypass to avoid overheating.
 // In any case this should help reduce strain on circulation pumps, etc.
 // ALWAYS IMPLEMENT LINGER AS OF 20141228
 //#define VALVE_TURN_OFF_LINGER
@@ -667,12 +667,12 @@ class OccupancyTracker : public OTV0P2BASE::SimpleTSUint8Sensor
   {
   private:
     // Time until room regarded as unoccupied, in minutes; initially zero (ie treated as unoccupied at power-up).
-    // Marked voilatile for thread-safe lock-free non-read-modify-write access to byte-wide value.
+    // Marked volatile for thread-safe lock-free non-read-modify-write access to byte-wide value.
     // Compound operations must block interrupts.
     volatile uint8_t occupationCountdownM;
 
     // Non-zero if occupancy system recently notified of activity.
-    // Marked voilatile for thread-safe lock-free non-read-modify-write access to byte-wide value.
+    // Marked volatile for thread-safe lock-free non-read-modify-write access to byte-wide value.
     // Compound operations must block interrupts.
     volatile uint8_t activityCountdownM;
 
