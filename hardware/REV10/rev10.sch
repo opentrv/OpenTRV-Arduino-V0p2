@@ -7421,15 +7421,6 @@ Source: http://www.osram.convergy.de/ ... LO_LS_LY L89K.pdf</description>
 </package>
 <package name="ARDUINOR3">
 <description>The new Arduino R3 'classic' adds duplicate I2C pins and an IORef pin (and an unused pin</description>
-<wire x1="0" y1="0" x2="66.04" y2="0" width="0" layer="20"/>
-<wire x1="66.04" y1="0" x2="66.04" y2="2.54" width="0" layer="20"/>
-<wire x1="66.04" y1="2.54" x2="68.58" y2="5.08" width="0" layer="20"/>
-<wire x1="68.58" y1="5.08" x2="68.58" y2="37.846" width="0" layer="20"/>
-<wire x1="68.58" y1="37.846" x2="66.04" y2="40.386" width="0" layer="20"/>
-<wire x1="66.04" y1="40.386" x2="66.04" y2="51.816" width="0" layer="20"/>
-<wire x1="66.04" y1="51.816" x2="64.516" y2="53.34" width="0" layer="20"/>
-<wire x1="64.516" y1="53.34" x2="0" y2="53.34" width="0" layer="20"/>
-<wire x1="0" y1="53.34" x2="0" y2="0" width="0" layer="20"/>
 <circle x="15.24" y="50.8" radius="1.796" width="0.127" layer="51"/>
 <circle x="13.97" y="2.54" radius="1.796" width="0.127" layer="51"/>
 <circle x="66.04" y="35.56" radius="1.796" width="0.127" layer="51"/>
@@ -10461,42 +10452,41 @@ www.irf.com&lt;p&gt;
 </deviceset>
 </devicesets>
 </library>
-<library name="ALDP105">
+<library name="OJE-SS-103HM">
 <packages>
-<package name="ALDP105">
+<package name="OJE-SS-103HM">
 <description>&lt;b&gt;RELAY&lt;/b&gt;</description>
-<wire x1="0" y1="7.5" x2="0" y2="0" width="0.1524" layer="21"/>
-<wire x1="0" y1="7.5" x2="20.5" y2="7.5" width="0.1524" layer="21"/>
-<wire x1="20.5" y1="7.5" x2="20.5" y2="0" width="0.1524" layer="21"/>
-<wire x1="20.5" y1="0" x2="0" y2="0" width="0.1524" layer="21"/>
-<wire x1="5.715" y1="0.635" x2="3.175" y2="0.635" width="0.1524" layer="21"/>
-<wire x1="3.175" y1="0.635" x2="3.175" y2="2.54" width="0.1524" layer="21"/>
-<wire x1="3.175" y1="6.985" x2="5.715" y2="6.985" width="0.1524" layer="21"/>
-<wire x1="5.715" y1="6.985" x2="5.715" y2="5.08" width="0.1524" layer="21"/>
-<wire x1="19.685" y1="5.08" x2="19.685" y2="3.81" width="0.1524" layer="21"/>
-<wire x1="19.685" y1="3.81" x2="16.51" y2="3.81" width="0.1524" layer="21"/>
-<wire x1="12.385" y1="5.08" x2="12.385" y2="3.81" width="0.1524" layer="21"/>
-<wire x1="12.385" y1="3.81" x2="17.78" y2="1.905" width="0.1524" layer="21"/>
-<wire x1="16.51" y1="3.81" x2="17.78" y2="2.54" width="0.1524" layer="21"/>
-<wire x1="17.78" y1="2.54" x2="17.78" y2="5.08" width="0.1524" layer="21"/>
-<wire x1="17.78" y1="5.08" x2="16.51" y2="3.81" width="0.1524" layer="21"/>
-<wire x1="5.715" y1="5.08" x2="3.175" y2="2.54" width="0.1524" layer="21"/>
-<wire x1="5.715" y1="5.08" x2="5.715" y2="0.635" width="0.1524" layer="21"/>
-<wire x1="3.175" y1="2.54" x2="3.175" y2="2.86" width="0.1524" layer="21"/>
-<pad name="S1" x="1.05" y="1.15" drill="1.1" rot="R90"/>
-<pad name="S2" x="1.05" y="6.35" drill="1.1" rot="R90"/>
-<pad name="S" x="19.55" y="6.35" drill="1.1" rot="R90"/>
-<pad name="C" x="12.55" y="6.35" drill="1.1" rot="R90"/>
+<wire x1="0" y1="10.2" x2="0" y2="0" width="0.1524" layer="21"/>
+<wire x1="0" y1="10.2" x2="18.2" y2="10.2" width="0.1524" layer="21"/>
+<wire x1="18.2" y1="10.2" x2="18.2" y2="0" width="0.1524" layer="21"/>
+<wire x1="18.2" y1="0" x2="0" y2="0" width="0.1524" layer="21"/>
+<wire x1="5.715" y1="1.905" x2="3.175" y2="1.905" width="0.1524" layer="21"/>
+<wire x1="3.175" y1="1.905" x2="3.175" y2="3.81" width="0.1524" layer="21"/>
+<wire x1="3.175" y1="8.255" x2="5.715" y2="8.255" width="0.1524" layer="21"/>
+<wire x1="5.715" y1="8.255" x2="5.715" y2="6.35" width="0.1524" layer="21"/>
+<wire x1="15.24" y1="1.905" x2="12.065" y2="1.905" width="0.1524" layer="21"/>
+<wire x1="12.385" y1="8.89" x2="12.385" y2="7.62" width="0.1524" layer="21"/>
+<wire x1="12.385" y1="7.62" x2="10.16" y2="1.905" width="0.1524" layer="21"/>
+<wire x1="12.065" y1="1.905" x2="13.335" y2="0.635" width="0.1524" layer="21"/>
+<wire x1="13.335" y1="0.635" x2="13.335" y2="3.175" width="0.1524" layer="21"/>
+<wire x1="13.335" y1="3.175" x2="12.065" y2="1.905" width="0.1524" layer="21"/>
+<wire x1="5.715" y1="6.35" x2="3.175" y2="3.81" width="0.1524" layer="21"/>
+<wire x1="5.715" y1="6.35" x2="5.715" y2="1.905" width="0.1524" layer="21"/>
+<wire x1="3.175" y1="3.81" x2="3.175" y2="4.13" width="0.1524" layer="21"/>
+<pad name="S1" x="1.25" y="1.29" drill="1.3" rot="R90"/>
+<pad name="S2" x="1.25" y="8.91" drill="1.3" rot="R90"/>
+<pad name="S" x="16.49" y="1.29" drill="1.3" rot="R90"/>
+<pad name="C" x="13.95" y="8.91" drill="1.3" rot="R90"/>
 <text x="-1.27" y="-7.493" size="1.778" layer="25" ratio="10">&gt;NAME</text>
 <text x="7.62" y="-7.493" size="1.778" layer="27" ratio="10">&gt;VALUE</text>
-<wire x1="3.175" y1="2.86" x2="3.175" y2="4.765" width="0.1524" layer="21"/>
-<wire x1="3.175" y1="4.765" x2="3.175" y2="6.985" width="0.1524" layer="21"/>
-<wire x1="1.27" y1="4.765" x2="3.175" y2="4.765" width="0.1524" layer="21"/>
-<wire x1="1.27" y1="2.86" x2="3.175" y2="2.86" width="0.1524" layer="21"/>
+<wire x1="3.175" y1="4.13" x2="3.175" y2="6.035" width="0.1524" layer="21"/>
+<wire x1="3.175" y1="6.035" x2="3.175" y2="8.255" width="0.1524" layer="21"/>
+<wire x1="1.27" y1="6.035" x2="3.175" y2="6.035" width="0.1524" layer="21"/>
+<wire x1="1.27" y1="4.13" x2="3.175" y2="4.13" width="0.1524" layer="21"/>
 </package>
 </packages>
 <symbols>
-<symbol name="ALDP105">
+<symbol name="OJE-SS-103HM">
 <wire x1="-7.62" y1="7.62" x2="-7.62" y2="2.54" width="0.4064" layer="94"/>
 <wire x1="-7.62" y1="-7.62" x2="-12.7" y2="-7.62" width="0.4064" layer="94"/>
 <wire x1="-12.7" y1="-7.62" x2="-12.7" y2="-2.54" width="0.4064" layer="94"/>
@@ -10523,13 +10513,13 @@ www.irf.com&lt;p&gt;
 </symbol>
 </symbols>
 <devicesets>
-<deviceset name="ALDP105" prefix="REL" uservalue="yes">
+<deviceset name="OJE-SS-103HM" prefix="REL" uservalue="yes">
 <description>&lt;B&gt;RELAY&lt;/B&gt;</description>
 <gates>
-<gate name="G$1" symbol="ALDP105" x="0" y="0"/>
+<gate name="G$1" symbol="OJE-SS-103HM" x="0" y="0"/>
 </gates>
 <devices>
-<device name="" package="ALDP105">
+<device name="" package="OJE-SS-103HM">
 <connects>
 <connect gate="G$1" pin="C" pad="C"/>
 <connect gate="G$1" pin="S" pad="S"/>
@@ -10625,7 +10615,7 @@ www.irf.com&lt;p&gt;
 <part name="JP2" library="pinhead" deviceset="PINHD-2X3" device="/90"/>
 <part name="Q2" library="transistor-small-signal" deviceset="BSS84" device=""/>
 <part name="R15" library="resistor" deviceset="R-EU_" device="R0603" value="4.7K"/>
-<part name="REL1" library="ALDP105" deviceset="ALDP105" device=""/>
+<part name="REL1" library="OJE-SS-103HM" deviceset="OJE-SS-103HM" device=""/>
 <part name="X3" library="con-wago-500" deviceset="W237-102" device=""/>
 </parts>
 <sheets>
