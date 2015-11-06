@@ -159,8 +159,12 @@ class AmbientLight : public OTV0P2BASE::SimpleTSUint8Sensor
     // Maximum eg from recent stats, to allow auto adjustment to dark; ~0/0xff means no max available.
     uint8_t recentMax;
 
-    // Lower and upper hysteresis thresholds (on [0,254] scale) for detecting dark/light.
-    uint8_t lowerThreshold, upperThreshold;
+    // Upwards delta used for "lights switched on" occupancy hint; strictly positive.
+    uint8_t upDelta;
+
+    // Dark/light thresholds (on [0,254] scale) incorporating hysteresis.
+    // So lightThreshold is strictly greater than darkThreshold.
+    uint8_t darkThreshold, lightThreshold;
 
     // Set true if ambient light sensor may be unusable or unreliable.
     // This will be where (for example) there are historic values

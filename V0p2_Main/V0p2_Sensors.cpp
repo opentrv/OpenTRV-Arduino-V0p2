@@ -170,22 +170,15 @@ uint8_t AmbientLight::read()
   const uint8_t newValue = (uint8_t)(al >> 2);
 
   // Adjust room-lit flag, with hysteresis.
-  if(newValue <= lowerThreshold)
+  if(newValue <= darkThreshold)
     {
     isRoomLitFlag = false;
     // If dark enough to isRoomLitFlag false then increment counter.
     // Do not do increment the count if the sensor seems to be unusable.
     if(!unusable && (darkTicks < 255)) { ++darkTicks; }
     }
-  else if(newValue > upperThreshold)
+  else if(newValue > lightThreshold)
     {
-    // Treat a sharp transition from dark to light as a possible/weak indication of occupancy, eg light flicked on.
-    // Ignore trigger at start-up.
-//    bool ignoreFirst;
-    if(!ignoredFirst) { ignoredFirst = true; }
-#ifdef OCCUPANCY_DETECT_FROM_AMBLIGHT
-    else if((!isRoomLitFlag) && ((rawValue>>2) < lowerThreshold)) { Occupancy.markAsPossiblyOccupied(); }
-#endif
     isRoomLitFlag = true;
     // If light enough to set isRoomLitFlag true then reset darkTicks counter.
     darkTicks = 0;
@@ -198,26 +191,37 @@ uint8_t AmbientLight::read()
     {
     const uint16_t oldRawImplied = ((uint16_t)value) << 2;
     const uint16_t absDiff = (oldRawImplied > al) ? (oldRawImplied - al) : (al - oldRawImplied);
-    if(absDiff > 2) { value = newValue; }
+    if(absDiff > 2)
+      {
+      const bool isUp = newValue > value;
+      value = newValue;
+#ifdef OCCUPANCY_DETECT_FROM_AMBLIGHT
+    // Treat a sharp brightening as a possible/weak indication of occupancy, eg light flicked on.
+    // Ignore trigger at start-up.
+    if(!ignoredFirst) { ignoredFirst = true; }
+//    else if((!isRoomLitFlag) && ((rawValue>>2) < lowerThreshold)) { Occupancy.markAsPossiblyOccupied(); }
+    else if(isUp && ((absDiff >> 2) >= upDelta)) { Occupancy.markAsPossiblyOccupied(); }
+#endif
+      }
     }
 
-#if 0 && defined(DEBUG)
+#if 1 && defined(DEBUG)
   DEBUG_SERIAL_PRINT_FLASHSTRING("Ambient light (/1023): ");
   DEBUG_SERIAL_PRINT(al);
   DEBUG_SERIAL_PRINTLN();
 #endif
 
-#if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("Ambient light val/lt/ut: ");
+#if 1 && defined(DEBUG)
+  DEBUG_SERIAL_PRINT_FLASHSTRING("Ambient light val/dt/lt: ");
   DEBUG_SERIAL_PRINT(value);
   DEBUG_SERIAL_PRINT(' ');
-  DEBUG_SERIAL_PRINT(lowerThreshold);
+  DEBUG_SERIAL_PRINT(darkThreshold);
   DEBUG_SERIAL_PRINT(' ');
-  DEBUG_SERIAL_PRINT(upperThreshold);
+  DEBUG_SERIAL_PRINT(lightThreshold);
   DEBUG_SERIAL_PRINTLN();
 #endif
 
-#if 0 && defined(DEBUG)
+#if 1 && defined(DEBUG)
   DEBUG_SERIAL_PRINT_FLASHSTRING("isRoomLit: ");
   DEBUG_SERIAL_PRINT(isRoomLitFlag);
   DEBUG_SERIAL_PRINTLN();
@@ -243,8 +247,9 @@ void AmbientLight::_recomputeThresholds()
   if((0xff == recentMin) || (0xff == recentMax))
     {
     // Use the built-in default thresholds.
-    lowerThreshold = LDR_THR_LOW >> 2;
-    upperThreshold = LDR_THR_HIGH >> 2;
+    darkThreshold = LDR_THR_LOW >> 2;
+    lightThreshold = LDR_THR_HIGH >> 2;
+    upDelta = lightThreshold - darkThreshold;
     // Assume OK for now.
     unusable = false;
     return;
@@ -256,21 +261,22 @@ void AmbientLight::_recomputeThresholds()
      (recentMax - recentMin < ABS_MIN_AMBLIGHT_RANGE_UINT8))
     {
     // Use the built-in default thresholds.
-    lowerThreshold = LDR_THR_LOW >> 2;
-    upperThreshold = LDR_THR_HIGH >> 2;
+    darkThreshold = LDR_THR_LOW >> 2;
+    lightThreshold = LDR_THR_HIGH >> 2;
+    upDelta = lightThreshold - darkThreshold;
     // Assume unusable.
     unusable = true;
     return;
     }
 
   // Compute thresholds to fit within the observed sensed value range.
-  // TODO: more sophisticated notions of distribution of values within range.
-  // Provide a tiny bit of noise elbow-room above the observed minimum.
-  lowerThreshold = recentMin+1;
-  // Provide at least some hysteresis, as a fraction (~12.5%) of the available range.
-  // Take care to avoid overflow.
-  upperThreshold = (uint8_t) min(254, lowerThreshold + (uint16_t)max(
-    (recentMax - recentMin) >> 3, ABS_MIN_AMBLIGHT_HYST_UINT8));
+  // TODO: a more sophisticated notion of distribution of values within range may be needed.
+  // Take upwards delta indicative of lights on, and hysteresis, as ~12.5%.
+  upDelta = max((recentMax - recentMin) >> 3, ABS_MIN_AMBLIGHT_HYST_UINT8);
+  // Provide some noise elbow-room above the observed minimum.
+  // Set the hysteresis values to be the same as the upDelta.
+  darkThreshold = (uint8_t) min(254, recentMin + 1 + upDelta);
+  lightThreshold = (uint8_t) min(254, darkThreshold + upDelta);
 
   // All seems OK.
   unusable = false;
