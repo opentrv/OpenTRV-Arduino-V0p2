@@ -167,6 +167,7 @@ uint8_t AmbientLight::read()
   const uint8_t newValue = (uint8_t)(al >> 2);
 
   // Adjust room-lit flag, with hysteresis.
+  // Should be able to detect dark when darkThreshold is zero and newValue is zero.
   if(newValue <= darkThreshold)
     {
     isRoomLitFlag = false;
