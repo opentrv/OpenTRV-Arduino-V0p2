@@ -555,7 +555,7 @@ void ModelledRadValve::computeTargetTemperature()
   // With a wider deadband may also simply suppress any movement/noise on some/most minutes while close to target temperature.
   // For responsiveness, don't widen the deadband immediately after manual controls have been used (TODO-593).
   inputState.widenDeadband = (!veryRecentUIControlUse()) &&
-      retainedState.isFiltering || AmbLight.isRoomDark() || Occupancy.longVacant() || (!inWarmMode());
+      (retainedState.isFiltering || AmbLight.isRoomDark() || Occupancy.longVacant() || (!inWarmMode()));
   // Capture adjusted reference/room temperatures
   // and set callingForHeat flag also using same outline logic as computeRequiredTRVPercentOpen() will use.
   inputState.setReferenceTemperatures(TemperatureC16.get());
