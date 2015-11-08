@@ -925,7 +925,7 @@ uint8_t SimpleStatsRotationBase::writeJSON(uint8_t *const buf, const uint8_t buf
 #endif
 
 
-#if (defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX)) && defined(USE_MODULE_FHT8VSIMPLE) // Listen for calls for heat from remote valves...
+#if defined(ENABLE_RADIO_RX) && (defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX)) && defined(USE_MODULE_FHT8VSIMPLE) // Listen for calls for heat from remote valves...
 #define LISTEN_FOR_FTp2_FS20_native
 static void decodeAndHandleFTp2_FS20_native(Print *p, const bool secure, const uint8_t * const msg, const uint8_t msglen)
 {
@@ -1027,6 +1027,7 @@ p->print("FS20 msg HC "); p->print(command.hc1); p->print(' '); p->println(comma
 #endif
 
 
+#ifdef ENABLE_RADIO_RX
 // Decode and handle inbound raw message.
 // A message may contain trailing garbage at the end; the decoder/router should cope.
 // The buffer may be reused when this returns,
@@ -1223,7 +1224,9 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats IDx");
 #endif
     }
   }
+#endif // ENABLE_RADIO_RX
 
+#ifdef ENABLE_RADIO_RX
 // Incrementally process I/O and queued messages, including from the radio link.
 // This may mean printing them to Serial (which the passed Print object usually is),
 // or adjusting system parameters,
@@ -1259,4 +1262,5 @@ bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadi
   if(neededWaking) { OTV0P2BASE::flushSerialProductive(); OTV0P2BASE::powerDownSerial(); }
   return(workDone);
   }
+#endif // ENABLE_RADIO_RX
 

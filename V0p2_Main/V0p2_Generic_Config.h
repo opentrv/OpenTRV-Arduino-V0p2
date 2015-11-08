@@ -104,6 +104,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define ALLOW_JSON_OUTPUT
 // IF DEFINED: allow binary stats to be TXed.
 #define ALLOW_BINARY_STATS_TX
+// IF DEFINED: allow radio listen/RX.
+#define ENABLE_RADIO_RX
 // IF DEFINED: (default) forced always-on radio listen/RX, eg not requiring setup to explicitly enable.
 #undef ENABLE_DEFAULT_ALWAYS_RX
 // IF DEFINED: use active-low LEARN button(s).  Needs SUPPORT_SINGLETON_SCHEDULE.
@@ -128,6 +130,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #undef MIN_ENERGY_BOOT
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
 #undef SENSOR_SHT21_ENABLE
+// IF DEFINED: enable use of second UI LED if available.
+#define ENABLE_UI_LED_2_IF_AVAILABLE
 // IF DEFINED: enable use AVR's 'idle' mode to stop the CPU but leave I/O (eg Serial) running to save power.
 // DHD20150920: CURRENTLY NOT RECOMMENDED AS STILL SEEMS TO CAUSE SOME BOARDS TO CRASH.
 #if 1 || defined(OTV0P2BASE_IDLE_NOT_RECOMMENDED)
@@ -316,12 +320,16 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define ALLOW_STATS_TX
 // IF UNDEFINED: do not allow RX of stats frames.
 #undef ALLOW_STATS_RX
+// IF DEFINED: allow radio listen/RX.
+#undef ENABLE_RADIO_RX
 // IF DEFINED: allow JSON stats frames.
 #define ALLOW_JSON_OUTPUT
 // IF DEFINED: allow binary stats to be TXed.
 #undef ALLOW_BINARY_STATS_TX
 // IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
 #define LOCAL_TRV
+// IF DEFINED: enable use of second UI LED if available.
+#undef ENABLE_UI_LED_2_IF_AVAILABLE
 // Use common settings.
 #define COMMON_SETTINGS
 #endif
