@@ -80,7 +80,7 @@ bool tickUI(uint_fast8_t sec);
 // Thread-safe.
 void markUIControlUsed();
 
-// True if a manual UI control has been very recently (seconds to minutes ago) operated.
+// True if a manual UI control has been very recently (minutes ago) operated.
 // The user may still be interacting with the control and the UI etc should probably be extra responsive.
 // Thread-safe.
 bool veryRecentUIControlUse();
@@ -88,7 +88,7 @@ bool veryRecentUIControlUse();
 // True if a manual UI control has been recently (tens of minutes ago) operated.
 // If true then local manual settings should 'win' in any conflict with programmed or remote ones.
 // For example, remote requests to override settings may be ignored while this is true.
-// Thread-safe....
+// Thread-safe.
 bool recentUIControlUse();
 
 // Check/apply the user's schedule, at least once each minute, and act on any timed events.
