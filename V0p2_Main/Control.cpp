@@ -1388,7 +1388,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
   else // Send binary *or* JSON on each attempt so as not to overwhelm the receiver.
     {
     // Send JSON message.
-	// set pointer location based on whether start of message will have preamble TODO move to OTRFM23BLink queueToSend?
+    // set pointer location based on whether start of message will have preamble TODO move to OTRFM23BLink queueToSend?
     uint8_t *bptr = buf;
     if (RFM23BFramed) bptr += STATS_MSG_START_OFFSET;
 
@@ -1450,17 +1450,19 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
     // (Set high-bit on final closing brace to make it unique, and compute (non-0xff) CRC.)
     // This is only required for RFM23B
     if (RFM23BFramed) {
-		  const uint8_t crc = adjustJSONMsgForTXAndComputeCRC((char *)bptr);
-		  if(0xff == crc)
-		    {
-	#if 0 && defined(DEBUG)
-		    DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON msg bad!");
-	#endif
-		    return;
-		    }
+          const uint8_t crc = adjustJSONMsgForTXAndComputeCRC((char *)bptr);
+          if(0xff == crc)
+            {
+    #if 0 && defined(DEBUG)
+            DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON msg bad!");
+    #endif
+            return;
+            }
         bptr += wrote;
         *bptr++ = crc; // Add 7-bit CRC for on-the-wire check.
-    } else bptr += wrote;	// to avoid another conditional
+    } else {
+        bptr += wrote;    // to avoid another conditional
+    }
     *bptr = 0xff; // Terminate message for TX.
 
 
