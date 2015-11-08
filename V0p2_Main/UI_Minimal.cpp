@@ -143,7 +143,7 @@ bool tickUI(const uint_fast8_t sec)
   const bool reportedRecently = false;
 #endif
 // Drive second UI LED if available.
-#if defined(LED_UI2_ON)
+#if defined(LED_UI2_EXISTS)
   // Flash 2nd UI LED very briefly every 'tick' while activity has recently been reported.
   if(reportedRecently) { LED_UI2_ON(); veryTinyPause(); }
   LED_UI2_OFF(); // Generally force 2nd LED off.
