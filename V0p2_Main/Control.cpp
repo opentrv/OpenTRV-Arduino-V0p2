@@ -2276,7 +2276,7 @@ void loopOpenTRV()
       }
 
     // Churn/reseed PRNG(s) a little to improve unpredictability in use: should be lightweight.
-    case 2: { if(runAll) { OTV0P2BASE::seedRNG8(minuteCount ^ cycleCountCPU() ^ (uint8_t)Supply_mV.get(), OTV0P2BASE::_getSubCycleTime() ^ AmbLight.get(), (uint8_t)TemperatureC16.get()); } break; }
+    case 2: { if(runAll) { OTV0P2BASE::seedRNG8(minuteCount ^ OTV0P2BASE::getCPUCycleCount() ^ (uint8_t)Supply_mV.get(), OTV0P2BASE::_getSubCycleTime() ^ AmbLight.get(), (uint8_t)TemperatureC16.get()); } break; }
     // Force read of supply/battery voltage; measure and recompute status (etc) less often when already thought to be low, eg when conserving.
     case 4: { if(runAll) { Supply_mV.read(); } break; }
 

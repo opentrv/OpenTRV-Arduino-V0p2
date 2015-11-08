@@ -143,7 +143,7 @@ void minimisePowerWithoutSleep()
 // May capture some entropy in secure and non-secure PRNGs.
 void burnHundredsOfCyclesProductivelyAndPoll()
   {
-  if(pollIO()) { OTV0P2BASE::seedRNG8(cycleCountCPU(), 37 /* _watchdogFired */, OTV0P2BASE::_getSubCycleTime()); }
+  if(pollIO()) { OTV0P2BASE::seedRNG8(OTV0P2BASE::getCPUCycleCount(), 37 /* _watchdogFired */, OTV0P2BASE::_getSubCycleTime()); }
   else { OTV0P2BASE::captureEntropy1(); }
   }
 

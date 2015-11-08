@@ -172,19 +172,19 @@ void burnHundredsOfCyclesProductivelyAndPoll();
 bool sleepUntilSubCycleTime(uint8_t sleepUntil);
 
 
-// Return some approximate/fast measure of CPU cycles elapsed.  Will not count when (eg) CPU/TIMER0 not running.
-// Rather depends on Arduino/wiring setup for micros()/millis().
-#ifndef DONT_USE_TIMER0
-#if defined(TCNT0)
-#define cycleCountCPU() ((uint8_t)TCNT0)
-#elif defined(TCNT0L)
-#define cycleCountCPU() ((uint8_t)TCNT0L)
-#else
-#error TIMER0 not defined
-#endif
-#else
-#define cycleCountCPU() ((uint8_t)0) // Fixed result if TIMER0 is not used (for normal Arduino purposes).
-#endif
+//// Return some approximate/fast measure of CPU cycles elapsed.  Will not count when (eg) CPU/TIMER0 not running.
+//// Rather depends on Arduino/wiring setup for micros()/millis().
+//#ifndef DONT_USE_TIMER0
+//#if defined(TCNT0)
+//#define cycleCountCPU() ((uint8_t)TCNT0)
+//#elif defined(TCNT0L)
+//#define cycleCountCPU() ((uint8_t)TCNT0L)
+//#else
+//#error TIMER0 not defined
+//#endif
+//#else
+//#define cycleCountCPU() ((uint8_t)0) // Fixed result if TIMER0 is not used (for normal Arduino purposes).
+//#endif
 
 
 
