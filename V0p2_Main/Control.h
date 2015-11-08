@@ -138,8 +138,8 @@ void startBakeDebounced();
 // If true then the unit is in 'bake' mode, a subset of 'warm' mode which boosts the temperature target temporarily.
 // This is a 'debounced' value to reduce accidental triggering.
 bool inBakeMode();
-// Cancel 'bake' mode if active.
 // Should be only be called once 'debounced' if coming from a button press for example.
+// Cancel 'bake' mode if active; does not force to FROST mode.
 void cancelBakeDebounced();
 #else
 #define startBakeDebounced() {}
