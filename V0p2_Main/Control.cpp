@@ -627,6 +627,9 @@ DEBUG_SERIAL_PRINTLN();
       // Reduce valve hunting: defer re-opening if recently closed.
       if(retainedState.dontTurnup()) { return(valvePCOpen); }
 
+      // True if a long way below target (more than 1C below target).
+      const bool vBelowTarget = (adjustedTempC < inputState.targetTempC-1);   
+
       // Open glacially if explicitly requested or if temperature overshoot has happened or is a danger,
       // or if there's likely no one going to care about getting on target particularly quickly (or would prefer reduced noise).
       //
@@ -643,15 +646,24 @@ DEBUG_SERIAL_PRINTLN();
                // Don't work so hard to reach and hold target temp with wide deadband
                // (widened eg because room is dark, or this is a pre-warm in FROST mode, or temperature is gyrating)
                // and not comfort mode nor massively below (possibly already setback) target temp.
-               (inputState.widenDeadband && inputState.hasEcoBias && (adjustedTempC >= (uint8_t)fnmax(inputState.targetTempC-1, (int)MIN_TARGET_C))) ||
+               (inputState.widenDeadband && inputState.hasEcoBias && !vBelowTarget) ||
 #endif
                (retainedState.isFiltering && (retainedState.getRawDelta() > 0)))); // FIXME: maybe redundant w/ GLACIAL_ON_WITH_WIDE_DEADBAND and widenDeadband set when isFiltering is true 
       if(beGlacial) { return(valvePCOpen + 1); }
 
-      // Ensure that the valve opens quickly from cold for acceptable response.
-      // Less fast if already moderately open or in the degree below target.
+      // If well below target and without a wide deadband,
+      // go straight to 'moderately open' if less open currently (TODO-593),
+      // which should allow flow and turn the boiler on ASAP,
+      // a little like a mini-BAKE.
+      const uint8_t cappedModeratelyOpen = fnmin(inputState.maxPCOpen, OTRadValve::DEFAULT_VALVE_PC_MODERATELY_OPEN);
+      if(vBelowTarget && (valvePCOpen < cappedModeratelyOpen) &&
+          !inputState.widenDeadband)
+          { return(cappedModeratelyOpen); }
+
+      // Ensure that the valve opens quickly from cold for acceptable response (TODO-593).
+      // Less fast if already moderately open or with a wide deadband.
       const uint8_t slewRate =
-          ((valvePCOpen >= OTRadValve::DEFAULT_VALVE_PC_MODERATELY_OPEN) || (adjustedTempC == inputState.targetTempC-1)) ?
+          ((valvePCOpen >= OTRadValve::DEFAULT_VALVE_PC_MODERATELY_OPEN) || !inputState.widenDeadband) ?
               TRV_MAX_SLEW_PC_PER_MIN :
               // Open VFAST until almost all valves would be significantly open.
               ((valvePCOpen >= OTRadValve::DEFAULT_VALVE_PC_SAFER_OPEN) ?
@@ -830,12 +842,12 @@ void ModelledRadValve::computeTargetTemperature()
   inputState.glacial = glacial;
   inputState.inBakeMode = inBakeMode();
   inputState.hasEcoBias = hasEcoBias();
-  // Widen the allowed deadband significantly in a dark/quiet/vacant room (TODO-383)
+  // Widen the allowed deadband significantly in a dark/quiet/vacant room (TODO-383, TODO-593)
   // (or in FROST mode, or if temperature is jittery eg changing fast and filtering has been engaged)
   // to attempt to reduce the total number and size of adjustments and thus reduce noise/disturbance (and battery drain).
   // The wider deadband (less good temperature regulation) might be noticeable/annoying to sensitive occupants.
   // FIXME: With a wider deadband may also simply suppress any movement/noise on some/most minutes while close to target temperature.
-  inputState.widenDeadband = AmbLight.isRoomDark() || Occupancy.longVacant() || (!inWarmMode()) || retainedState.isFiltering;
+  inputState.widenDeadband = (AmbLight.isRoomDark() && !veryRecentUIControlUse()) || Occupancy.longVacant() || (!inWarmMode()) || retainedState.isFiltering;
   // Capture adjusted reference/room temperatures
   // and set callingForHeat flag also using same outline logic as computeRequiredTRVPercentOpen() will use.
   inputState.setReferenceTemperatures(TemperatureC16.get());
