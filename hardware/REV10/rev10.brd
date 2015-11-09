@@ -6,7 +6,7 @@
 <setting alwaysvectorfont="yes"/>
 <setting verticaltext="up"/>
 </settings>
-<grid distance="0.05" unitdist="inch" unit="mil" style="lines" multiple="1" display="yes" altdistance="0.025" altunitdist="inch" altunit="mil"/>
+<grid distance="0.05" unitdist="inch" unit="mm" style="lines" multiple="1" display="yes" altdistance="0.025" altunitdist="inch" altunit="mm"/>
 <layers>
 <layer number="1" name="Top" color="4" fill="1" visible="yes" active="yes"/>
 <layer number="16" name="Bottom" color="1" fill="1" visible="yes" active="yes"/>
@@ -124,9 +124,9 @@
 </layers>
 <board>
 <plain>
-<text x="106.68376875" y="20.558971875" size="1" layer="25" font="vector" rot="R90">20140910</text>
-<text x="116.425621875" y="30.460803125" size="1" layer="22" font="vector" rot="MR90">License: http://goo.gl/3d71UJ</text>
-<text x="103.43453125" y="19.416121875" size="1" layer="25" font="vector" rot="R90">OpenTRV.org.uk</text>
+<text x="8.651028125" y="55.24876875" size="1" layer="25" font="vector" rot="R180">20151110</text>
+<text x="50.819196875" y="22.445621875" size="1" layer="22" font="vector" rot="MR0">License: http://goo.gl/3d71UJ</text>
+<text x="47.893878125" y="1.83453125" size="1" layer="25" font="vector" rot="R180">OpenTRV.org.uk</text>
 <text x="26.67" y="25.4" size="1" layer="26" rot="MR90">Seal of solderpads with
  hotmelt glue or silicone
  glue</text>
