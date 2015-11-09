@@ -167,6 +167,7 @@ uint8_t AmbientLight::read()
   const uint8_t newValue = (uint8_t)(al >> 2);
 
   // Adjust room-lit flag, with hysteresis.
+  // Should be able to detect dark when darkThreshold is zero and newValue is zero.
   if(newValue <= darkThreshold)
     {
     isRoomLitFlag = false;
@@ -932,8 +933,10 @@ uint8_t TemperaturePot::read()
 #ifdef SUPPORT_BAKE // IF DEFINED: this unit supports BAKE mode.
       // Start BAKE mode when dial turned up to top.
       else if(rn > (255-RN_FRBO)) { startBakeDebounced(); }
+      // Cancel BAKE mode when dial/temperature turned down significantly.
+      else if(rn < oldValue) { cancelBakeDebounced(); }
 #endif
-      // Force WARM mode if pot/temperature turned up.
+      // Force WARM mode when dial/temperature turned up significantly.
       else if(rn > oldValue) { setWarmModeDebounced(true); }
 
       // Note user operation of pot.

@@ -556,6 +556,7 @@ static inline void clearFullStatsMessageCore(FullStatsMessageCore_t *const p) { 
 uint8_t *encodeFullStatsMessageCore(uint8_t *buf, uint8_t buflen, stats_TX_level secLevel, bool secureChannel,
     const FullStatsMessageCore_t *content);
 
+#if defined(ENABLE_RADIO_RX)
 // Decode core/common 'full' stats message.
 // If successful returns pointer to next byte of message, ie just after full stats message decoded.
 // Returns null if failed (eg because of corrupt/insufficient message data) and state of 'content' result is undefined.
@@ -563,6 +564,7 @@ uint8_t *encodeFullStatsMessageCore(uint8_t *buf, uint8_t buflen, stats_TX_level
 //   * content will contain data decoded from the message; must be non-null
 const uint8_t *decodeFullStatsMessageCore(const uint8_t *buf, uint8_t buflen, stats_TX_level secLevel, bool secureChannel,
     FullStatsMessageCore_t *content);
+#endif
 
 // Send (valid) core binary stats to specified print channel, followed by "\r\n".
 // This does NOT attempt to flush output nor wait after writing.
@@ -604,6 +606,7 @@ void outputJSONStats(Print *p, bool secure, const uint8_t *json, uint8_t bufsize
 int8_t checkJSONMsgRXCRC(const uint8_t * bptr, uint8_t bufLen);
 #endif
 
+#if defined(ENABLE_RADIO_RX)
 // Incrementally poll and process I/O and queued messages, including from the radio link.
 // Returns true if some work was done.
 // This may mean printing them to Serial (which the passed Print object usually is),
@@ -614,9 +617,9 @@ int8_t checkJSONMsgRXCRC(const uint8_t * bptr, uint8_t bufLen);
 // This will attempt to process messages in such a way
 // as to avoid internal overflows or other resource exhaustion.
 bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadioLink *rl);
-
+#else
+#define handleQueuedMessages(p, wakeSerialIfNeeded, rl)
 #endif
-
 
 
 
@@ -717,3 +720,6 @@ https://github.com/kokke/tiny-AES128-C (public domain)
 http://csrc.nist.gov/publications/nistpubs/800-38a/addendum-to-nist_sp800-38A.pdf
  
  */
+
+
+#endif

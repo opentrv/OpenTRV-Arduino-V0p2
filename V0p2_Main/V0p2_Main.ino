@@ -366,12 +366,12 @@ void setup()
 #endif
 
 #if !defined(MIN_ENERGY_BOOT)
-#ifdef LED_UI2_EXISTS
+#if defined(LED_UI2_EXISTS) && defined(ENABLE_UI_LED_2_IF_AVAILABLE)
   LED_UI2_ON();
 #endif
   OTV0P2BASE::serialPrintAndFlush(F("\r\nOpenTRV: ")); // Leading CRLF to clear leading junk, eg from bootloader.
     serialPrintlnBuildVersion();
-#ifdef LED_UI2_EXISTS
+#if defined(LED_UI2_EXISTS) && defined(ENABLE_UI_LED_2_IF_AVAILABLE)
   OTV0P2BASE::nap(WDTO_120MS); // Sleep to let UI2 LED be seen.
   LED_UI2_OFF();
 #endif
