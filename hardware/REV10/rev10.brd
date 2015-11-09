@@ -2317,7 +2317,7 @@ Source: http://www.osram.convergy.de/ ... Lb_q993.pdf</description>
 <element name="C10" library="resistor" package="C0603" value="100nF" x="51.0343875" y="30.36630625" smashed="yes" rot="MR180">
 <attribute name="NAME" x="52.317525" y="31.7511" size="1" layer="26" font="vector" rot="MR0"/>
 </element>
-<element name="U$1" library="ohw-logo" package="OSHW_10X200_NOTEXT" value="" x="90.874165625" y="35.07610625"/>
+<element name="U$1" library="ohw-logo" package="OSHW_10X200_NOTEXT" value="" x="50.234165625" y="10.94610625"/>
 <element name="C12" library="resistor" package="C0603" value="100nF" x="33.7306125" y="31.63630625" smashed="yes" rot="MR0">
 <attribute name="NAME" x="32.1196125" y="31.14830625" size="1" layer="26" font="vector" rot="MR0"/>
 </element>
