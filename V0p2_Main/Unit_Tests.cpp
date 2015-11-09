@@ -712,30 +712,6 @@ static void testModeControls()
   AssertIsTrue(!inBakeMode());
   }
 
-// Test basic behaviour of stats quartile routines.
-static void testQuartiles()
-  {
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("Quartiles");
-  // For whatever happens to be in EEPROM at the moment, test for sanity for all stats sets.
-  // This does not write to EEPROM, so will not wear it out.
-  // Make sure that nothing can be seen as top and bottom quartile at same time.
-  // Make sure that there cannot be too many items reported in each quartile
-  for(uint8_t i = 0; i < V0P2BASE_EE_STATS_SETS; ++i)
-    {
-    int bQ = 0, tQ = 0;
-    for(uint8_t j = 0; j < 24; ++j)
-      {
-      const bool inTopQ = inOutlierQuartile(true, i, j);
-      if(inTopQ) { ++tQ; }
-      const bool inBotQ = inOutlierQuartile(false, i, j);
-      if(inBotQ) { ++bQ; }
-      AssertIsTrue(!inTopQ || !inBotQ);
-      }
-    AssertIsTrue(bQ <= 6);
-    AssertIsTrue(tQ <= 6);
-    }
-  }
-
 // Test handling of JSON stats.
 static void testJSONStats()
   {
@@ -1264,151 +1240,35 @@ static void testFullStatsMessageCoreEncDec()
 
 
 
-
-
-
-// Test elements of RTC time persist/restore (without causing more EEPROM wear, if working correctly).
-static void testRTCPersist()
-  {
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("RTCPersist");
-  // Perform with interrupts shut out to avoid RTC ISR interferring.
-  // This will effectively stall the RTC.
-  bool minutesPersistOK;
-  ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
-    {
-    const uint_least16_t mb = OTV0P2BASE::getMinutesSinceMidnightLT();
-    OTV0P2BASE::persistRTC();
-    OTV0P2BASE::restoreRTC();
-    const uint_least16_t ma = OTV0P2BASE::getMinutesSinceMidnightLT();
-    // Check that persist/restore did not change live minutes value at least, within the 15-minute quantum used.
-    minutesPersistOK = (mb/15 == ma/15);
-    }
-    AssertIsTrue(minutesPersistOK);
-  }
-
-
-//// Tests of entropy gathering routines.
-////
-//// Maximum number of identical nominally random bits (or values with approx one bit of entropy) in a row tolerated.
-//// Set large enough that even soak testing for many hours should not trigger a failure if behaviour is plausibly correct.
-//#define MAX_IDENTICAL_BITS_SEQUENTIALLY 32
-//void testEntropyGathering()
-//  {
-//  DEBUG_SERIAL_PRINTLN_FLASHSTRING("EntropyGathering");
-//
-////  // Test WDT jitter: assumed about 1 bit of entropy per call/result.
-////  //DEBUG_SERIAL_PRINT_FLASHSTRING("jWDT... ");
-////  const uint8_t jWDT = clockJitterWDT();
-////  for(int i = MAX_IDENTICAL_BITS_SEQUENTIALLY; --i >= 0; )
-////    {
-////    if(jWDT != clockJitterWDT()) { break; } // Stop as soon as a different value is obtained.
-////    AssertIsTrueWithErr(0 != i, i); // Generated too many identical values in a row.
-////    }
-////  //DEBUG_SERIAL_PRINT_FLASHSTRING(" 1st=");
-////  //DEBUG_SERIAL_PRINTFMT(jWDT, BIN);
-////  //DEBUG_SERIAL_PRINTLN();
-////
-////#ifndef NO_clockJitterRTC
-////  // Test RTC jitter: assumed about 1 bit of entropy per call/result.
-////  //DEBUG_SERIAL_PRINT_FLASHSTRING("jRTC... ");
-////  for(const uint8_t t0 = getSubCycleTime(); t0 == getSubCycleTime(); ) { } // Wait for sub-cycle time to roll to toughen test.
-////  const uint8_t jRTC = clockJitterRTC();
-////  for(int i = MAX_IDENTICAL_BITS_SEQUENTIALLY; --i >= 0; )
-////    {
-////    if(jRTC != clockJitterRTC()) { break; } // Stop as soon as a different value is obtained.
-////    AssertIsTrue(0 != i); // Generated too many identical values in a row.
-////    }
-////  //DEBUG_SERIAL_PRINT_FLASHSTRING(" 1st=");
-////  //DEBUG_SERIAL_PRINTFMT(jRTC, BIN);
-////  //DEBUG_SERIAL_PRINTLN();
-////#endif
-////
-////#ifndef NO_clockJitterEntropyByte
-////  // Test full-byte jitter: assumed about 8 bits of entropy per call/result.
-////  //DEBUG_SERIAL_PRINT_FLASHSTRING("jByte... ");
-////  const uint8_t t0j = getSubCycleTime();
-////  while(t0j == getSubCycleTime()) { } // Wait for sub-cycle time to roll to toughen test.
-////  const uint8_t jByte = clockJitterEntropyByte();
-////
-////  for(int i = MAX_IDENTICAL_BITS_SEQUENTIALLY/8; --i >= 0; )
-////    {
-////    if(jByte != clockJitterEntropyByte()) { break; } // Stop as soon as a different value is obtained.
-////    AssertIsTrue(0 != i); // Generated too many identical values in a row.
-////    }
-////  //DEBUG_SERIAL_PRINT_FLASHSTRING(" 1st=");
-////  //DEBUG_SERIAL_PRINTFMT(jByte, BIN);
-////  //DEBUG_SERIAL_PRINT_FLASHSTRING(", ticks=");
-////  //DEBUG_SERIAL_PRINT((uint8_t)(t1j - t0j - 1));
-////  //DEBUG_SERIAL_PRINTLN();
-////#endif
-////
-////  // Test noisy ADC read: assumed at least one bit of noise per call/result.
-////  const uint8_t nar1 = noisyADCRead(true);
-////#if 0
-////  DEBUG_SERIAL_PRINT_FLASHSTRING("nar1 ");
-////  DEBUG_SERIAL_PRINTFMT(nar1, BIN);
-////  DEBUG_SERIAL_PRINTLN();
-////#endif
-////  for(int i = MAX_IDENTICAL_BITS_SEQUENTIALLY; --i >= 0; )
-////    {
-////    const uint8_t nar = noisyADCRead(true);
-////    if(nar1 != nar) { break; } // Stop as soon as a different value is obtained.
-////#if 0
-////    DEBUG_SERIAL_PRINT_FLASHSTRING("repeat nar ");
-////    DEBUG_SERIAL_PRINTFMT(nar, BIN);
-////    DEBUG_SERIAL_PRINTLN();
-////#endif
-////    AssertIsTrue(0 != i); // Generated too many identical values in a row.
-////    }
-////
-////  for(int w = 0; w < 2; ++w)
-////    {
-////    const bool whiten = (w != 0);
-////    // Test secure random byte generation with and without whitening
-////    // to try to ensure that the underlying generation is sound.
-////    const uint8_t srb1 = getSecureRandomByte(whiten);
-////#if 0
-////    DEBUG_SERIAL_PRINT_FLASHSTRING("srb1 ");
-////    DEBUG_SERIAL_PRINTFMT(srb1, BIN);
-////    if(whiten) { DEBUG_SERIAL_PRINT_FLASHSTRING(" whitened"); }
-////    DEBUG_SERIAL_PRINTLN();
-////#endif
-////    for(int i = MAX_IDENTICAL_BITS_SEQUENTIALLY/8; --i >= 0; )
-////      {
-////      if(srb1 != getSecureRandomByte(whiten)) { break; } // Stop as soon as a different value is obtained.
-////      AssertIsTrue(0 != i); // Generated too many identical values in a row.
-////      }
-////    }
-//  }
-
 // Test sleepUntilSubCycleTime() routine.
 void testSleepUntilSubCycleTime()
   {
 #ifdef WAKEUP_32768HZ_XTAL
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("SleepUntilSubCycleTime");
 
-  const uint8_t start = getSubCycleTime();
+  const uint8_t start = OTV0P2BASE::getSubCycleTime();
 
   // Check that this correctly notices/vetoes attempt to sleep until time already past.
   if(start > 0) { AssertIsTrue(!sleepUntilSubCycleTime(start-1)); }
 
   // Don't attempt rest of test if near the end of the current minor cycle...
-  if(start > (GSCT_MAX/2)) { return; }
+  if(start > (OTV0P2BASE::GSCT_MAX/2)) { return; }
 
   // Set a random target significantly before the end of the current minor cycle.
-#if 0x3f > GSCT_MAX/4
-#error
-#endif
+//#if 0x3f > GSCT_MAX/4
+//#error
+//#endif
+  AssertIsTrue(0x3f <= OTV0P2BASE::GSCT_MAX/4);
   const uint8_t sleepTicks = 2 + (OTV0P2BASE::randRNG8() & 0x3f);
   const uint8_t target = start + sleepTicks;
   AssertIsTrue(target > start);
-  AssertIsTrue(target < GSCT_MAX);
+  AssertIsTrue(target < OTV0P2BASE::GSCT_MAX);
 
   // Call should succeed.
   AssertIsTrue(sleepUntilSubCycleTime(target));
 
   // Call should return with some of specified target tick still to run...
-  const uint8_t end = getSubCycleTime();
+  const uint8_t end = OTV0P2BASE::getSubCycleTime();
   AssertIsTrueWithErr(target == end, end); // FIXME: DHD2014020: getting occasional failures.
 
 #if 0
@@ -1447,7 +1307,7 @@ static void testTempCompand()
   AssertIsTrueWithErr(COMPRESSION_C16_CEIL_VAL_AFTER == compressTempC16(102<<4), COMPRESSION_C16_CEIL_VAL_AFTER); // Verify ceiling.
   AssertIsTrue(COMPRESSION_C16_CEIL_VAL_AFTER < 0xff);
   // Ensure that 'unset' compressed value expands to 'unset' uncompressed value.
-  AssertIsTrue(STATS_UNSET_INT == expandTempC16(STATS_UNSET_BYTE));
+  AssertIsTrue(OTV0P2BASE::STATS_UNSET_INT == expandTempC16(OTV0P2BASE::STATS_UNSET_BYTE));
   }
 
 // Test some of the mask/port calculations.
@@ -1559,8 +1419,6 @@ void loopUnitTest()
   testJSONForTX();
   testFullStatsMessageCoreEncDec();
   testTempCompand();
-  testRTCPersist();
-  testQuartiles();
   testSmoothStatsValue();
   testSleepUntilSubCycleTime();
   testFHTEncoding();

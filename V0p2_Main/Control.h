@@ -138,8 +138,8 @@ void startBakeDebounced();
 // If true then the unit is in 'bake' mode, a subset of 'warm' mode which boosts the temperature target temporarily.
 // This is a 'debounced' value to reduce accidental triggering.
 bool inBakeMode();
-// Cancel 'bake' mode if active.
 // Should be only be called once 'debounced' if coming from a button press for example.
+// Cancel 'bake' mode if active; does not force to FROST mode.
 void cancelBakeDebounced();
 #else
 #define startBakeDebounced() {}
@@ -232,167 +232,6 @@ void setMinBoilerOnMinutes(uint8_t mins);
 #endif
 
 
-
-// Simple mean filter.
-// Find mean of group of ints where sum can be computed in an int without loss.
-// TODO: needs a unit test or three.
-template<size_t N> int smallIntMean(const int data[N])
-  {
-  // Extract mean.
-  // Assume values and sum will be nowhere near the limits.
-  int sum = 0;
-  for(int8_t i = N; --i >= 0; ) { sum += data[i]; }
-  // Compute rounded-up mean.
-  return((sum + (int)(N/2)) / (int)N); // Avoid accidental computation as unsigned...
-  }
-
-
-// Delay in minutes after increasing flow before re-closing is allowed.
-// This is to avoid excessive seeking/noise in the presence of strong draughts for example.
-// Too large a value may cause significant temperature overshoots and possible energy wastage.
-#define ANTISEEK_VALVE_RECLOSE_DELAY_M 5
-// Delay in minutes after restricting flow before re-opening is allowed.
-// This is to avoid excessive seeking/noise in the presence of strong draughts for example.
-// Too large a value may cause significant temperature undershoots and discomfort/annoyance.
-#define ANTISEEK_VALVE_REOPEN_DELAY_M (ANTISEEK_VALVE_RECLOSE_DELAY_M*2)
-
-// Typical heat turn-down response time; in minutes, strictly positive.
-#define TURN_DOWN_RESPONSE_TIME_M (ANTISEEK_VALVE_RECLOSE_DELAY_M + 3)
-
-// Assumed daily budget in cumulative (%) valve movement for battery-powered devices.
-#define DEFAULT_MAX_CUMULATIVE_PC_DAILY_VALVE_MOVEMENT 400
-
-
-// All input state for computing valve movement.
-// This is NOT altered in any way by computeRequiredTRVPercentOpen().
-// Exposed to allow easier unit testing.
-// All initial values set by the constructor are sane.
-struct ModelledRadValveInputState
-  {
-  ModelledRadValveInputState(const int realTempC16) :
-    targetTempC(FROST), 
-    minPCOpen(OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN), maxPCOpen(100),
-    widenDeadband(false), glacial(false), hasEcoBias(false), inBakeMode(false)
-    { setReferenceTemperatures(realTempC16); }
-
-  // Calculate reference temperature from real temperature.
-  void setReferenceTemperatures(const int currentTempC16);
-
-  // Current target room temperature in C in range [MIN_TARGET_C,MAX_TARGET_C].
-  uint8_t targetTempC;
-  // Min % valve at which is considered to be actually open (allow the room to heat) [1,100].
-  uint8_t minPCOpen;
-  // Max % valve is allowed to be open [1,100].
-  uint8_t maxPCOpen;
-
-  // If true then allow a wider deadband (more temperature drift) to save energy and valve noise.
-  // This is a strong hint that the system can work less strenuously to hit, and stay on, target.
-  bool widenDeadband;
-  // True if in glacial mode.
-  bool glacial;
-  // True if an eco bias is to be applied.
-  bool hasEcoBias;
-  // True if in BAKE mode.
-  bool inBakeMode;
-
-  // Reference (room) temperature in C/16; must be set before each valve position recalc.
-  // Proportional control is in the region where (refTempC16>>4) == targetTempC.
-  int refTempC16;
-  };
-
-// All retained state for computing valve movement, eg containing time-based state.
-// Exposed to allow easier unit testing.
-// All initial values set by the constructor are sane.
-struct ModelledRadValveState
-  {
-  ModelledRadValveState() :
-    initialised(false),
-    isFiltering(false),
-    valveMoved(false),
-    cumulativeMovementPC(0),
-    valveTurndownCountdownM(0), valveTurnupCountdownM(0)
-    { }
-
-  // Perform per-minute tasks such as counter and filter updates then recompute valve position.
-  // The input state must be complete including target and reference temperatures
-  // before calling this including the first time whereupon some further lazy initialisation is done.
-  //   * valvePCOpenRef  current valve position UPDATED BY THIS ROUTINE, in range [0,100]
-  void tick(volatile uint8_t &valvePCOpenRef, const ModelledRadValveInputState &inputState);
-
-  // True once all deferred initialisation done during the first tick().
-  // This takes care of setting state that depends on run-time data
-  // such as real temperatures to propagate into all the filters.
-  bool initialised;
-
-  // If true then filtering is being applied to temperatures since they are fast-changing.
-  bool isFiltering;
-
-  // True if the computed valve position was changed by tick().
-  bool valveMoved;
-
-  // Cumulative valve movement count, as unsigned cumulative percent with rollover [0,8191].
-  // This is a useful as a measure of battery consumption (slewing the valve)
-  // and noise generated (and thus disturbance to humans) and of appropriate control damping.
-  //
-  // Keep as an unsigned 12-bit field (uint16_t x : 12) to ensure that
-  // the value doesn't wrap round to -ve value
-  // and can safely be sent/received in JSON by hosts with 16-bit signed ints,
-  // and the maximum number of decimal digits used in its representation is limited to 4
-  // and used efficiently (~80% use of the top digit).
-  //
-  // Daily allowance (in terms of battery/energy use) is assumed to be about 400% (DHD20141230),
-  // so this should hold many times that value to avoid ambiguity from missed/infrequent readings,
-  // especially given full slew (+100%) in nominally as little as 1 minute.
-  uint16_t cumulativeMovementPC : 12;
-
-  // Set non-zero when valve flow is constricted, and then counts down to zero.
-  // Some or all attempts to open the valve are deferred while this is non-zero
-  // to reduce valve hunting if there is string turbulence from the radiator
-  // or maybe draughts from open windows/doors
-  // causing measured temperatures to veer up and down.
-  // This attempts to reduce excessive valve noise and energy use
-  // and help to avoid boiler short-cycling.
-  uint8_t valveTurndownCountdownM;
-  // Mark flow as having been reduced.
-  void valveTurndown() { valveTurndownCountdownM = ANTISEEK_VALVE_REOPEN_DELAY_M; }
-  // If true then avoid turning up the heat yet.
-  bool dontTurnup() { return(0 != valveTurndownCountdownM); }
-
-  // Set non-zero when valve flow is increased, and then counts down to zero.
-  // Some or all attempts to close the valve are deferred while this is non-zero
-  // to reduce valve hunting if there is string turbulence from the radiator
-  // or maybe draughts from open windows/doors
-  // causing measured temperatures to veer up and down.
-  // This attempts to reduce excessive valve noise and energy use
-  // and help to avoid boiler short-cycling.
-  uint8_t valveTurnupCountdownM;
-  // Mark flow as having been increased.
-  void valveTurnup() { valveTurnupCountdownM = ANTISEEK_VALVE_RECLOSE_DELAY_M; }
-  // If true then avoid turning down the heat yet.
-  bool dontTurndown() { return(0 != valveTurnupCountdownM); }
-
-  // Length of filter memory in ticks; strictly positive.
-  // Must be at least 4, and may be more efficient at a power of 2.
-  static const size_t filterLength = 16;
-
-  // Previous unadjusted temperatures, 0 being the newest, and following ones successively older.
-  // These values have any target bias removed.
-  // Half the filter size times the tick() interval gives an approximate time constant.
-  // Note that full response time of a typical mechanical wax-based TRV is ~20mins.
-  int prevRawTempC16[filterLength];
-
-  // Get smoothed raw/unadjusted temperature from the most recent samples.
-  int getSmoothedRecent();
-
-  // get last change in temperature, +ve means rising.
-  int getRawDelta() { return(prevRawTempC16[0] - prevRawTempC16[1]); }
-
-//  // Compute an estimate of rate/velocity of temperature change in C/16 per minute/tick.
-//  // A positive value indicates that temperature is rising.
-//  // Based on comparing the most recent smoothed value with an older smoothed value.
-//  int getVelocityC16PerTick();
-  };
-
 #if defined(LOCAL_TRV)
 #define ENABLE_MODELLED_RAD_VALVE
 // Internal model of radiator valve position, embodying control logic.
@@ -400,9 +239,9 @@ class ModelledRadValve : public OTRadValve::AbstractRadValve
   {
   private:
     // All input state for deciding where to set the radiator valve in normal operation.
-    struct ModelledRadValveInputState inputState;
+    struct OTRadValve::ModelledRadValveInputState inputState;
     // All retained state for deciding where to set the radiator valve in normal operation.
-    struct ModelledRadValveState retainedState;
+    struct OTRadValve::ModelledRadValveState retainedState;
 
     // True if this node is calling for heat.
     // Marked volatile for thread-safe lock-free access.
@@ -626,28 +465,28 @@ extern SimpleSlaveRadValve NominalRadValve;
 
 
 
-// Default maximum time to allow the boiler to run on to allow for lost call-for-heat transmissions etc.
-// Should be (much) greater than the gap between transmissions (eg ~2m for FHT8V/FS20).
-// Should be greater than the run-on time at the OpenTRV boiler unit and any further pump run-on time.
-// Valves may have to linger open at minimum of this plus maybe an extra minute or so for timing skew
-// for systems with poor/absent bypass to avoid overheating.
-// Having too high a linger time value may cause excessive temperature overshoot.
-#define DEFAULT_MAX_RUN_ON_TIME_M 5
+//// Default maximum time to allow the boiler to run on to allow for lost call-for-heat transmissions etc.
+//// Should be (much) greater than the gap between transmissions (eg ~2m for FHT8V/FS20).
+//// Should be greater than the run-on time at the OpenTRV boiler unit and any further pump run-on time.
+//// Valves may have to linger open at minimum of this plus maybe an extra minute or so for timing skew
+//// for systems with poor/absent bypass to avoid overheating.
+//// Having too high a linger time value may cause excessive temperature overshoot.
+//#define DEFAULT_MAX_RUN_ON_TIME_M 5
 
 // If defined then turn off valve very slowly after stopping call for heat (ie when shutting) which
-// may allow comfortable bolier pump overrun in older systems with no/poor bypass to avoid overheating.
+// may allow comfortable boiler pump overrun in older systems with no/poor bypass to avoid overheating.
 // In any case this should help reduce strain on circulation pumps, etc.
 // ALWAYS IMPLEMENT LINGER AS OF 20141228
 //#define VALVE_TURN_OFF_LINGER
 
 
-#ifdef ENABLE_ANTICIPATION
-// Returns true if system is in 'learn'/smart mode.
-// If in 'smart' mode then the unit can anticipate user demand
-// to pre-warm rooms, maintain customary temperatures, etc.
-// Currently true if any simple schedule is set.
-bool inSmartMode();
-#endif
+//#ifdef ENABLE_ANTICIPATION
+//// Returns true if system is in 'learn'/smart mode.
+//// If in 'smart' mode then the unit can anticipate user demand
+//// to pre-warm rooms, maintain customary temperatures, etc.
+//// Currently true if any simple schedule is set.
+//bool inSmartMode();
+//#endif
 
 
 
@@ -667,12 +506,12 @@ class OccupancyTracker : public OTV0P2BASE::SimpleTSUint8Sensor
   {
   private:
     // Time until room regarded as unoccupied, in minutes; initially zero (ie treated as unoccupied at power-up).
-    // Marked voilatile for thread-safe lock-free non-read-modify-write access to byte-wide value.
+    // Marked volatile for thread-safe lock-free non-read-modify-write access to byte-wide value.
     // Compound operations must block interrupts.
     volatile uint8_t occupationCountdownM;
 
     // Non-zero if occupancy system recently notified of activity.
-    // Marked voilatile for thread-safe lock-free non-read-modify-write access to byte-wide value.
+    // Marked volatile for thread-safe lock-free non-read-modify-write access to byte-wide value.
     // Compound operations must block interrupts.
     volatile uint8_t activityCountdownM;
 
@@ -828,34 +667,6 @@ extern OccupancyTracker Occupancy;
 // (EEPROM wear should not be an issue at this update rate in normal use.)
 void sampleStats(bool fullSample);
 
-// Clear all collected statistics, eg when moving device to a new room or at a major time change.
-// Requires 1.8ms per byte for each byte that actually needs erasing.
-//   * maxBytesToErase limit the number of bytes erased to this; strictly positive, else 0 to allow 65536
-// Returns true if finished with all bytes erased.
-bool zapStats(uint16_t maxBytesToErase = 0);
-
-// Get raw stats value for hour HH [0,23] from stats set N from non-volatile (EEPROM) store.
-// A value of 0xff (255) means unset (or out of range); other values depend on which stats set is being used.
-uint8_t getByHourStat(uint8_t hh, uint8_t statsSet);
-
-// Get previous hour in current local time, wrapping round from 0 to 23.
-uint8_t getPrevHourLT();
-// Get next hour in current local time, wrapping round from 23 back to 0.
-uint8_t getNextHourLT();
-
-// Returns true if specified hour is (conservatively) in the specifed outlier quartile for specified stats set.
-// Returns false if a full set of stats not available, eg including the specified hour.
-// Always returns false if all samples are the same.
-//   * inTop  test for membership of the top quartile if true, bottom quartile if false
-//   * statsSet  stats set number to use.
-//   * hour  hour of day to use or inOutlierQuartile_CURRENT_HOUR for current hour or inOutlierQuartile_NEXT_HOUR for next hour
-static const uint8_t inOutlierQuartile_CURRENT_HOUR = ~0 - 1;
-static const uint8_t inOutlierQuartile_NEXT_HOUR = ~0;
-bool inOutlierQuartile(uint8_t inTop, uint8_t statsSet, uint8_t hour = inOutlierQuartile_CURRENT_HOUR);
-
-// 'Unset'/invalid values for byte (eg raw EEPROM byte) and int (eg after decompression).
-#define STATS_UNSET_BYTE 0xff
-#define STATS_UNSET_INT 0x7fff
 
 #ifdef ENABLE_ANTICIPATION
 // Returns true iff room likely to be occupied and need warming at the specified hour's sample point based on collected stats.
@@ -864,7 +675,6 @@ bool inOutlierQuartile(uint8_t inTop, uint8_t statsSet, uint8_t hour = inOutlier
 //   * hh hour to check for predictive warming [0,23]
 bool shouldBeWarmedAtHour(const uint_least8_t hh);
 #endif
-
 
 
 #ifdef UNIT_TESTS
@@ -902,6 +712,15 @@ int expandTempC16(uint8_t cTemp);
 // Exactly what gets filled in will depend on sensors on the node,
 // and may depend on stats TX security level (if collecting some sensitive items is also expensive).
 void populateCoreStats(FullStatsMessageCore_t *content);
+
+// Do bare stats transmission.
+// Output should be filtered for items appropriate
+// to current channel security and sensitivity level.
+// This may be binary or JSON format.
+//   * allowDoubleTX  allow double TX to increase chance of successful reception
+//   * doBinary  send binary form, else JSON form if supported
+//   * RFM23BFramed   Add preamble and CRC to frame. Defaults to true for compatibility
+void bareStatsTX(const bool allowDoubleTX, const bool doBinary, const bool RFM23BFramed = true);
 
 #ifdef ENABLE_BOILER_HUB
 // Raw notification of received call for heat from remote (eg FHT8V) unit.

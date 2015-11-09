@@ -15,6 +15,7 @@ under the Licence.
 
 Author(s) / Copyright (s): Damon Hart-Davis 2014--2015,
                            John Harvey 2014 (DS18B20 code)
+                           Deniz Erbilgin 2015
 */
 
 /*
@@ -25,9 +26,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015,
 #include <util/atomic.h>
 
 #include <Wire.h> // Arduino I2C library.
-//#ifdef REQUIRES_ONEWIRE22_LIB
-//#include <OneWire.h>
-//#endif
 #include <OTV0p2Base.h>
 
 #include "V0p2_Main.h"
@@ -165,40 +163,59 @@ uint8_t AmbientLight::read()
   // Capture entropy from changed LS bits.
   if((uint8_t)al != (uint8_t)rawValue) { ::OTV0P2BASE::addEntropyToPool((uint8_t)al ^ (uint8_t)rawValue, 0); } // Claim zero entropy as may be forced by Eve.
 
+  // Apply a little bit of noise reduction (hysteresis) to the normalised version.
+  const uint8_t newValue = (uint8_t)(al >> 2);
+
   // Adjust room-lit flag, with hysteresis.
-  if(al <= LDR_THR_LOW)
+  // Should be able to detect dark when darkThreshold is zero and newValue is zero.
+  if(newValue <= darkThreshold)
     {
     isRoomLitFlag = false;
     // If dark enough to isRoomLitFlag false then increment counter.
-    if(darkTicks < 255) { ++darkTicks; }
+    // Do not do increment the count if the sensor seems to be unusable.
+    if(!unusable && (darkTicks < 255)) { ++darkTicks; }
     }
-  else if(al > LDR_THR_HIGH)
+  else if(newValue > lightThreshold)
     {
-    // Treat a sharp transition from dark to light as a possible/weak indication of occupancy, eg light flicked on.
-    // Ignore trigger at start-up.
-    static bool ignoreFirst;
-    if(!ignoreFirst) { ignoreFirst = true; }
-    else if((!isRoomLitFlag) && (rawValue < LDR_THR_LOW)) { Occupancy.markAsPossiblyOccupied(); }
     isRoomLitFlag = true;
-    // If light enough to isRoomLitFlag true then reset counter.
+    // If light enough to set isRoomLitFlag true then reset darkTicks counter.
     darkTicks = 0;
     }
 
   // Store new value, raw and normalised.
   // Unconditionbally store raw value.
   rawValue = al;
-  // Apply a little bit of noise reduction (hysteresis) to the normalised version.
-  const uint8_t newValue = (uint8_t)(al >> 2);
   if(newValue != value)
     {
     const uint16_t oldRawImplied = ((uint16_t)value) << 2;
     const uint16_t absDiff = (oldRawImplied > al) ? (oldRawImplied - al) : (al - oldRawImplied);
-    if(absDiff > 2) { value = newValue; }
+    if(absDiff > 2)
+      {
+      const bool isUp = newValue > value;
+      value = newValue;
+#ifdef OCCUPANCY_DETECT_FROM_AMBLIGHT
+    // Treat a sharp brightening as a possible/weak indication of occupancy, eg light flicked on.
+    // Ignore trigger at start-up.
+    if(!ignoredFirst) { ignoredFirst = true; }
+//    else if((!isRoomLitFlag) && ((rawValue>>2) < lowerThreshold)) { Occupancy.markAsPossiblyOccupied(); }
+    else if(isUp && ((absDiff >> 2) >= upDelta)) { Occupancy.markAsPossiblyOccupied(); }
+#endif
+      }
     }
 
 #if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("Ambient light: ");
+  DEBUG_SERIAL_PRINT_FLASHSTRING("Ambient light (/1023): ");
   DEBUG_SERIAL_PRINT(al);
+  DEBUG_SERIAL_PRINTLN();
+#endif
+
+#if 0 && defined(DEBUG)
+  DEBUG_SERIAL_PRINT_FLASHSTRING("Ambient light val/dt/lt: ");
+  DEBUG_SERIAL_PRINT(value);
+  DEBUG_SERIAL_PRINT(' ');
+  DEBUG_SERIAL_PRINT(darkThreshold);
+  DEBUG_SERIAL_PRINT(' ');
+  DEBUG_SERIAL_PRINT(lightThreshold);
   DEBUG_SERIAL_PRINTLN();
 #endif
 
@@ -210,6 +227,89 @@ uint8_t AmbientLight::read()
 
   return(value);
   }
+
+
+// Maximum value in the uint8_t range.
+static const uint8_t MAX_AMBLIGHT_VALUE_UINT8 = 254;
+// Minimum viable range (on [0,254] scale) to be usable.
+static const uint8_t ABS_MIN_AMBLIGHT_RANGE_UINT8 = 3;
+// Minimum hysteresis (on [0,254] scale) to be usable and avoid noise triggers.
+static const uint8_t ABS_MIN_AMBLIGHT_HYST_UINT8 = 2;
+
+// Recomputes thresholds and 'unusable' based on current state.
+// WARNING: called from (static) constructors so do not attempt (eg) use of Serial.
+void AmbientLight::_recomputeThresholds()
+  {
+  // If either recent max or min is unset then assume device usable by default.
+  // Use built-in thresholds.
+  if((0xff == recentMin) || (0xff == recentMax))
+    {
+    // Use the built-in default thresholds.
+    darkThreshold = LDR_THR_LOW >> 2;
+    lightThreshold = LDR_THR_HIGH >> 2;
+    upDelta = lightThreshold - darkThreshold;
+    // Assume OK for now.
+    unusable = false;
+    return;
+    }
+
+  // If the range between recent max and min too narrow then assume unusable.
+  if((recentMin > MAX_AMBLIGHT_VALUE_UINT8 - ABS_MIN_AMBLIGHT_RANGE_UINT8) ||
+     (recentMax <= recentMin) ||
+     (recentMax - recentMin < ABS_MIN_AMBLIGHT_RANGE_UINT8))
+    {
+    // Use the built-in default thresholds.
+    darkThreshold = LDR_THR_LOW >> 2;
+    lightThreshold = LDR_THR_HIGH >> 2;
+    upDelta = lightThreshold - darkThreshold;
+    // Assume unusable.
+    unusable = true;
+    return;
+    }
+
+  // Compute thresholds to fit within the observed sensed value range.
+  // TODO: a more sophisticated notion of distribution of values within range may be needed.
+  // Take upwards delta indicative of lights on, and hysteresis, as ~12.5%.
+  upDelta = max((recentMax - recentMin) >> 3, ABS_MIN_AMBLIGHT_HYST_UINT8);
+  // Provide some noise elbow-room above the observed minimum.
+  // Set the hysteresis values to be the same as the upDelta.
+  darkThreshold = (uint8_t) min(254, recentMin + 1 + upDelta);
+  lightThreshold = (uint8_t) min(254, darkThreshold + upDelta);
+
+  // All seems OK.
+  unusable = false;
+  }
+
+// Set minimum eg from recent stats, to allow auto adjustment to dark; ~0/0xff means no min available.
+void AmbientLight::setMin(uint8_t recentMinimumOrFF, uint8_t longerTermMinimumOrFF)
+  {
+  // Simple approach: will ignore an 'unset'/0xff value if the other is good.
+  recentMin = min(recentMinimumOrFF, longerTermMinimumOrFF);
+  _recomputeThresholds();
+  }
+
+// Set maximum eg from recent stats, to allow auto adjustment to dark; ~0/0xff means no max available.
+void AmbientLight::setMax(uint8_t recentMaximumOrFF, uint8_t longerTermMaximumOrFF)
+  {
+  if(0xff == recentMaximumOrFF) { recentMin = longerTermMaximumOrFF; }
+  else if(0xff == longerTermMaximumOrFF) { recentMin = recentMaximumOrFF; }
+  else
+    {
+    // Both values available; weight towards the more recent one for quick adaptation.
+    recentMax = (uint8_t) (((3*(uint16_t)recentMaximumOrFF) + (uint16_t)longerTermMaximumOrFF) >> 2);
+    }
+  _recomputeThresholds();
+
+#if 0 && defined(DEBUG)
+  DEBUG_SERIAL_PRINT_FLASHSTRING("Ambient recent min/max: ");
+  DEBUG_SERIAL_PRINT(recentMin);
+  DEBUG_SERIAL_PRINT(' ');
+  DEBUG_SERIAL_PRINT(recentMax);
+  if(unusable) { DEBUG_SERIAL_PRINT_FLASHSTRING(" UNUSABLE"); }
+  DEBUG_SERIAL_PRINTLN();
+#endif
+  }
+
 
 // Singleton implementation/instance.
 AmbientLight AmbLight;
@@ -833,8 +933,10 @@ uint8_t TemperaturePot::read()
 #ifdef SUPPORT_BAKE // IF DEFINED: this unit supports BAKE mode.
       // Start BAKE mode when dial turned up to top.
       else if(rn > (255-RN_FRBO)) { startBakeDebounced(); }
+      // Cancel BAKE mode when dial/temperature turned down significantly.
+      else if(rn < oldValue) { cancelBakeDebounced(); }
 #endif
-      // Force WARM mode if pot/temperature turned up.
+      // Force WARM mode when dial/temperature turned up significantly.
       else if(rn > oldValue) { setWarmModeDebounced(true); }
 
       // Note user operation of pot.
@@ -882,11 +984,6 @@ uint8_t VoiceDetection::read()
     isDetected = ((value = count) >= VOICE_DETECTION_THRESHOLD);
     count = 0;
     }
-#if 1 && defined(DEBUG)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("Voice count: ");
-  DEBUG_SERIAL_PRINT(value);
-  DEBUG_SERIAL_PRINTLN();
-#endif
   return(value);
   }
 
