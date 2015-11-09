@@ -3230,11 +3230,10 @@ Source: http://www.osram.convergy.de/ ... Lb_q993.pdf</description>
 <contactref element="IC2" pad="1"/>
 <contactref element="JP2" pad="2"/>
 <wire x1="35.56" y1="38.5064" x2="39.0144" y2="38.5064" width="0.2032" layer="16"/>
-<wire x1="34.798" y1="38.5064" x2="35.56" y2="38.5064" width="0.2032" layer="1"/>
 <wire x1="0.6096" y1="15.748" x2="11.43" y2="15.748" width="0.2032" layer="1"/>
 <wire x1="11.43" y1="15.748" x2="27.94" y2="31.75" width="0.2032" layer="1"/>
 <wire x1="27.94" y1="31.75" x2="27.94" y2="38.5064" width="0.2032" layer="1"/>
-<wire x1="27.94" y1="38.5064" x2="34.798" y2="38.5064" width="0.2032" layer="1"/>
+<wire x1="27.94" y1="38.5064" x2="35.56" y2="38.5064" width="0.2032" layer="1"/>
 <wire x1="0.6096" y1="8.89" x2="0.6096" y2="15.748" width="0.2032" layer="1"/>
 <wire x1="10.7696" y1="1.9304" x2="0.6096" y2="8.89" width="0.2032" layer="1"/>
 <wire x1="11.3792" y1="1.9304" x2="10.7696" y2="1.9304" width="0.2032" layer="1"/>
