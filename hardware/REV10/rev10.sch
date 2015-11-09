@@ -10780,7 +10780,7 @@ Source: www.kingbright.com</description>
 <part name="R14" library="resistor" deviceset="R-EU_" device="R0603" value="10K"/>
 <part name="GND10" library="SparkFun-Aesthetics" deviceset="GND" device=""/>
 <part name="JP2" library="pinhead" deviceset="PINHD-2X3" device="/90"/>
-<part name="Q2" library="transistor-small-signal" deviceset="BSS84" device=""/>
+<part name="PFET" library="transistor-small-signal" deviceset="BSS84" device=""/>
 <part name="R15" library="resistor" deviceset="R-EU_" device="R0603" value="4.7K"/>
 <part name="REL1" library="OJE-SS-103HM" deviceset="OJE-SS-103HM" device=""/>
 <part name="X3" library="con-wago-500" deviceset="W237-102" device=""/>
@@ -10851,7 +10851,7 @@ Source: www.kingbright.com</description>
 <text x="144.78" y="86.36" size="1.778" layer="94" rot="R90">On BOM</text>
 <text x="152.4" y="71.12" size="1.778" layer="94" rot="R90">On BOM</text>
 <text x="162.56" y="71.12" size="1.778" layer="94" rot="R90">On BOM</text>
-<text x="195.58" y="86.36" size="1.778" layer="94" rot="R90">On BOM</text>
+<text x="190.5" y="114.3" size="1.778" layer="94" rot="R90">On BOM</text>
 <text x="307.34" y="177.8" size="1.778" layer="94" rot="R90">On BOM</text>
 <text x="45.72" y="175.26" size="1.778" layer="94" rot="R180">On BOM</text>
 <text x="137.16" y="210.82" size="1.778" layer="94" rot="R90">On BOM</text>
@@ -10860,6 +10860,18 @@ Source: www.kingbright.com</description>
 <wire x1="325.12" y1="83.82" x2="388.62" y2="83.82" width="0.3048" layer="94"/>
 <wire x1="281.94" y1="157.48" x2="281.94" y2="124.46" width="0.3048" layer="94"/>
 <wire x1="281.94" y1="124.46" x2="325.12" y2="124.46" width="0.3048" layer="94"/>
+<text x="180.34" y="96.52" size="1.778" layer="94" rot="R90">On BOM</text>
+<text x="203.2" y="78.74" size="1.778" layer="94" rot="R180">On BOM</text>
+<text x="297.18" y="139.7" size="1.778" layer="94">On BOM</text>
+<text x="355.6" y="142.24" size="1.778" layer="94">On BOM</text>
+<text x="347.98" y="129.54" size="1.778" layer="94" rot="R90">On BOM</text>
+<text x="360.68" y="124.46" size="1.778" layer="94" rot="R90">On BOM</text>
+<text x="358.14" y="96.52" size="1.778" layer="94" rot="R90">On BOM</text>
+<text x="345.44" y="129.54" size="1.778" layer="94" rot="R180">On BOM</text>
+<text x="353.06" y="119.38" size="1.778" layer="94" rot="R180">On BOM</text>
+<text x="15.24" y="193.04" size="1.778" layer="94" rot="R270">On BOM</text>
+<text x="332.74" y="96.52" size="1.778" layer="94" rot="R270">On BOM</text>
+<text x="279.4" y="109.22" size="1.778" layer="94" rot="R270">On BOM</text>
 </plain>
 <instances>
 <instance part="C8" gate="G$1" x="274.32" y="233.68"/>
@@ -10948,7 +10960,9 @@ Source: www.kingbright.com</description>
 <instance part="R14" gate="G$1" x="342.9" y="124.46"/>
 <instance part="GND10" gate="1" x="335.28" y="124.46" rot="R270"/>
 <instance part="JP2" gate="A" x="276.86" y="106.68"/>
-<instance part="Q2" gate="G$1" x="314.96" y="142.24"/>
+<instance part="PFET" gate="G$1" x="314.96" y="142.24" smashed="yes">
+<attribute name="NAME" x="317.5" y="142.24" size="1.778" layer="95"/>
+</instance>
 <instance part="R15" gate="G$1" x="302.26" y="144.78" smashed="yes" rot="R180">
 <attribute name="NAME" x="300.99" y="148.3614" size="1.778" layer="95" rot="R180"/>
 <attribute name="VALUE" x="306.07" y="148.082" size="1.778" layer="96" rot="R180"/>
@@ -11322,7 +11336,7 @@ Source: www.kingbright.com</description>
 <segment>
 <wire x1="314.96" y1="147.32" x2="314.96" y2="152.4" width="0.1524" layer="91"/>
 <label x="309.88" y="152.4" size="1.778" layer="95"/>
-<pinref part="Q2" gate="G$1" pin="S"/>
+<pinref part="PFET" gate="G$1" pin="S"/>
 </segment>
 </net>
 <net name="SDA" class="0">
@@ -11666,6 +11680,7 @@ Source: www.kingbright.com</description>
 <wire x1="182.88" y1="43.18" x2="317.5" y2="43.18" width="0.1524" layer="91"/>
 <wire x1="317.5" y1="43.18" x2="317.5" y2="114.3" width="0.1524" layer="91"/>
 <wire x1="317.5" y1="114.3" x2="226.06" y2="114.3" width="0.1524" layer="91"/>
+<pinref part="R17" gate="G$1" pin="2"/>
 </segment>
 </net>
 <net name="VOICE" class="0">
@@ -11715,13 +11730,13 @@ Source: www.kingbright.com</description>
 <net name="N$17" class="0">
 <segment>
 <pinref part="R15" gate="G$1" pin="1"/>
-<pinref part="Q2" gate="G$1" pin="G"/>
+<pinref part="PFET" gate="G$1" pin="G"/>
 <wire x1="307.34" y1="144.78" x2="309.88" y2="144.78" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="5VGSM" class="0">
 <segment>
-<pinref part="Q2" gate="G$1" pin="D"/>
+<pinref part="PFET" gate="G$1" pin="D"/>
 <wire x1="314.96" y1="137.16" x2="314.96" y2="129.54" width="0.1524" layer="91"/>
 <label x="304.8" y="129.54" size="1.778" layer="95"/>
 </segment>
