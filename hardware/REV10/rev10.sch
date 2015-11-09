@@ -10754,7 +10754,6 @@ Source: www.kingbright.com</description>
 <part name="C5" library="resistor" deviceset="C-EU" device="C0603" value="100nF"/>
 <part name="I2C_EXT" library="pinhead" deviceset="PINHD-2X7" device="/90"/>
 <part name="IC2" library="Arduino-AVR" deviceset="ATMEGA168" device="-AU"/>
-<part name="R5" library="resistor" deviceset="R-EU_" device="R0603" value="330R"/>
 <part name="USBPOWER" library="micro-usb-fci-10103592" deviceset="MICRO-USB-FCI-10103592" device=""/>
 <part name="GND14" library="SparkFun-Aesthetics" deviceset="GND" device=""/>
 <part name="GND19" library="SparkFun-Aesthetics" deviceset="GND" device=""/>
@@ -10785,6 +10784,9 @@ Source: www.kingbright.com</description>
 <part name="R15" library="resistor" deviceset="R-EU_" device="R0603" value="4.7K"/>
 <part name="REL1" library="OJE-SS-103HM" deviceset="OJE-SS-103HM" device=""/>
 <part name="X3" library="con-wago-500" deviceset="W237-102" device=""/>
+<part name="R16" library="resistor" deviceset="R-EU_" device="R0603" value="330R"/>
+<part name="R5" library="resistor" deviceset="R-EU_" device="R0603" value="4.7K"/>
+<part name="R17" library="resistor" deviceset="R-EU_" device="R0603" value="4.7K"/>
 </parts>
 <sheets>
 <sheet>
@@ -10906,7 +10908,6 @@ Source: www.kingbright.com</description>
 <instance part="C5" gate="G$1" x="121.92" y="200.66" rot="R180"/>
 <instance part="I2C_EXT" gate="A" x="124.46" y="213.36" rot="R90"/>
 <instance part="IC2" gate="1" x="195.58" y="91.44"/>
-<instance part="R5" gate="G$1" x="200.66" y="73.66" rot="R180"/>
 <instance part="USBPOWER" gate="G$1" x="12.7" y="243.84" rot="R270"/>
 <instance part="GND14" gate="1" x="15.24" y="214.63"/>
 <instance part="GND19" gate="1" x="7.62" y="214.63"/>
@@ -10955,6 +10956,9 @@ Source: www.kingbright.com</description>
 <instance part="REL1" gate="G$1" x="358.14" y="93.98" rot="R270"/>
 <instance part="X3" gate="-1" x="342.9" y="96.52"/>
 <instance part="X3" gate="-2" x="342.9" y="91.44"/>
+<instance part="R16" gate="G$1" x="185.42" y="119.38" rot="R270"/>
+<instance part="R5" gate="G$1" x="200.66" y="73.66" rot="R180"/>
+<instance part="R17" gate="G$1" x="182.88" y="101.6" rot="R270"/>
 </instances>
 <busses>
 </busses>
@@ -11540,19 +11544,18 @@ Source: www.kingbright.com</description>
 <wire x1="226.06" y1="83.82" x2="276.86" y2="83.82" width="0.1524" layer="91"/>
 <wire x1="276.86" y1="83.82" x2="276.86" y2="48.26" width="0.1524" layer="91"/>
 <wire x1="276.86" y1="48.26" x2="185.42" y2="48.26" width="0.1524" layer="91"/>
-<wire x1="185.42" y1="48.26" x2="185.42" y2="157.48" width="0.1524" layer="91"/>
-<wire x1="185.42" y1="157.48" x2="167.64" y2="157.48" width="0.1524" layer="91"/>
+<wire x1="185.42" y1="48.26" x2="185.42" y2="114.3" width="0.1524" layer="91"/>
 <pinref part="IC2" gate="1" pin="DIGITAL_5(PWM)"/>
-<pinref part="U2" gate="G$1" pin="D8"/>
+<pinref part="R16" gate="G$1" pin="2"/>
 </segment>
 </net>
 <net name="N$19" class="0">
 <segment>
 <wire x1="190.5" y1="73.66" x2="190.5" y2="162.56" width="0.1524" layer="91"/>
 <wire x1="190.5" y1="162.56" x2="167.64" y2="162.56" width="0.1524" layer="91"/>
-<pinref part="R5" gate="G$1" pin="2"/>
 <wire x1="195.58" y1="73.66" x2="190.5" y2="73.66" width="0.1524" layer="91"/>
 <pinref part="U2" gate="G$1" pin="D7"/>
+<pinref part="R5" gate="G$1" pin="2"/>
 </segment>
 </net>
 <net name="N$25" class="0">
@@ -11597,9 +11600,9 @@ Source: www.kingbright.com</description>
 </net>
 <net name="N$3" class="0">
 <segment>
-<pinref part="R5" gate="G$1" pin="1"/>
 <pinref part="IC2" gate="1" pin="DIGITAL_8"/>
 <wire x1="205.74" y1="73.66" x2="226.06" y2="73.66" width="0.1524" layer="91"/>
+<pinref part="R5" gate="G$1" pin="1"/>
 </segment>
 </net>
 <net name="5V1" class="1">
@@ -11659,12 +11662,10 @@ Source: www.kingbright.com</description>
 <net name="N$11" class="0">
 <segment>
 <pinref part="IC2" gate="1" pin="ANALOG_2"/>
-<wire x1="167.64" y1="154.94" x2="182.88" y2="154.94" width="0.1524" layer="91"/>
-<wire x1="182.88" y1="154.94" x2="182.88" y2="43.18" width="0.1524" layer="91"/>
+<wire x1="182.88" y1="96.52" x2="182.88" y2="43.18" width="0.1524" layer="91"/>
 <wire x1="182.88" y1="43.18" x2="317.5" y2="43.18" width="0.1524" layer="91"/>
 <wire x1="317.5" y1="43.18" x2="317.5" y2="114.3" width="0.1524" layer="91"/>
 <wire x1="317.5" y1="114.3" x2="226.06" y2="114.3" width="0.1524" layer="91"/>
-<pinref part="U2" gate="G$1" pin="D9"/>
 </segment>
 </net>
 <net name="VOICE" class="0">
@@ -11740,6 +11741,22 @@ Source: www.kingbright.com</description>
 <segment>
 <pinref part="REL1" gate="G$1" pin="S"/>
 <pinref part="X3" gate="-1" pin="KL"/>
+</segment>
+</net>
+<net name="N$30" class="0">
+<segment>
+<pinref part="U2" gate="G$1" pin="D9"/>
+<wire x1="167.64" y1="154.94" x2="182.88" y2="154.94" width="0.1524" layer="91"/>
+<wire x1="182.88" y1="154.94" x2="182.88" y2="106.68" width="0.1524" layer="91"/>
+<pinref part="R17" gate="G$1" pin="1"/>
+</segment>
+</net>
+<net name="N$32" class="0">
+<segment>
+<pinref part="U2" gate="G$1" pin="D8"/>
+<wire x1="185.42" y1="157.48" x2="167.64" y2="157.48" width="0.1524" layer="91"/>
+<pinref part="R16" gate="G$1" pin="1"/>
+<wire x1="185.42" y1="124.46" x2="185.42" y2="157.48" width="0.1524" layer="91"/>
 </segment>
 </net>
 </nets>

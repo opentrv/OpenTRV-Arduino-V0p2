@@ -2347,9 +2347,6 @@ Source: http://www.osram.convergy.de/ ... Lb_q993.pdf</description>
 <element name="IC2" library="Arduino-AVR" package="TQFP32-08" value="ATMEGA168-AU" x="41.91" y="34.29" smashed="yes" rot="MR270">
 <attribute name="NAME" x="42.545" y="35.1536" size="1" layer="26" rot="MR270"/>
 </element>
-<element name="R5" library="resistor" package="R0603" value="330R" x="53.34" y="48.26" smashed="yes" rot="MR90">
-<attribute name="NAME" x="54.229" y="47.371" size="1" layer="26" rot="MR90"/>
-</element>
 <element name="USBPOWER" library="micro-usb-fci-10103592" package="MICRO-USB-FCI-10103592" value="MICRO-USB-FCI-10103592" x="31.11" y="3.7" rot="MR0"/>
 <element name="R6" library="resistor" package="R0603" value="100K" x="33.02" y="9.525" smashed="yes" rot="MR0">
 <attribute name="NAME" x="31.369" y="9.144" size="1" layer="26" rot="MR0"/>
@@ -2408,6 +2405,9 @@ Source: http://www.osram.convergy.de/ ... Lb_q993.pdf</description>
 <attribute name="MF" value="" x="6.35" y="36.83" size="1.778" layer="27" rot="R90" display="off"/>
 <attribute name="VALUE" x="13.97" y="31.79" size="1.27" layer="27" ratio="10" rot="R90"/>
 </element>
+<element name="R16" library="resistor" package="R0603" value="330R" x="2.54" y="-3.81"/>
+<element name="R5" library="resistor" package="R0603" value="4.7K" x="2.54" y="-10.16"/>
+<element name="R17" library="resistor" package="R0603" value="4.7K" x="2.54" y="-16.51"/>
 </elements>
 <signals>
 <signal name="VCC" class="1">
@@ -3215,16 +3215,16 @@ Source: http://www.osram.convergy.de/ ... Lb_q993.pdf</description>
 </signal>
 <signal name="N$20">
 <contactref element="IC2" pad="9"/>
-<contactref element="U2" pad="D8"/>
 <wire x1="46.228" y1="38.1" x2="46.228" y2="37.1856" width="0.2032" layer="16"/>
 <wire x1="49.276" y1="41.148" x2="46.228" y2="38.1" width="0.2032" layer="16"/>
-<wire x1="49.276" y1="53.34" x2="49.276" y2="41.148" width="0.2032" layer="16"/>
 <wire x1="46.228" y1="37.1856" x2="46.2026" y2="37.09" width="0.2032" layer="16"/>
+<contactref element="R16" pad="2"/>
+<wire x1="3.39" y1="-3.81" x2="46.2026" y2="37.09" width="0" layer="19" extent="1-16"/>
 </signal>
 <signal name="N$19">
-<contactref element="R5" pad="2"/>
 <contactref element="U2" pad="D7"/>
-<wire x1="53.34" y1="53.34" x2="53.34" y2="49.11" width="0.2032" layer="16"/>
+<contactref element="R5" pad="2"/>
+<wire x1="3.39" y1="-10.16" x2="53.34" y2="53.34" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="VOICE">
 <contactref element="IC2" pad="1"/>
@@ -3309,12 +3309,12 @@ Source: http://www.osram.convergy.de/ ... Lb_q993.pdf</description>
 <via x="36.3728" y="37.2872" extent="1-16" drill="0.5"/>
 </signal>
 <signal name="N$3">
-<contactref element="R5" pad="1"/>
 <contactref element="IC2" pad="12"/>
-<wire x1="53.34" y1="41.2496" x2="53.34" y2="47.41" width="0.2032" layer="16"/>
 <wire x1="46.8376" y1="34.7472" x2="53.34" y2="41.2496" width="0.2032" layer="16"/>
 <wire x1="46.228" y1="34.7472" x2="46.8376" y2="34.7472" width="0.2032" layer="16"/>
 <wire x1="46.228" y1="34.7472" x2="46.2026" y2="34.69" width="0.2032" layer="16"/>
+<contactref element="R5" pad="1"/>
+<wire x1="1.69" y1="-10.16" x2="46.2026" y2="34.69" width="0" layer="19" extent="1-16"/>
 </signal>
 <signal name="5V1" class="1">
 <contactref element="USBPOWER" pad="1"/>
@@ -3387,7 +3387,6 @@ Source: http://www.osram.convergy.de/ ... Lb_q993.pdf</description>
 </signal>
 <signal name="N$11">
 <contactref element="IC2" pad="25"/>
-<contactref element="U2" pad="D9"/>
 <wire x1="36.2712" y1="31.496" x2="37.592" y2="31.496" width="0.2032" layer="16"/>
 <wire x1="34.8488" y1="32.9184" x2="36.2712" y2="31.496" width="0.2032" layer="16"/>
 <wire x1="34.8488" y1="34.7472" x2="34.8488" y2="32.9184" width="0.2032" layer="16"/>
@@ -3398,7 +3397,6 @@ Source: http://www.osram.convergy.de/ ... Lb_q993.pdf</description>
 <wire x1="32.8168" y1="53.7464" x2="32.8168" y2="52.9336" width="0.2032" layer="1"/>
 <wire x1="33.6296" y1="54.5592" x2="32.8168" y2="53.7464" width="0.2032" layer="1"/>
 <wire x1="45.5168" y1="54.5592" x2="33.6296" y2="54.5592" width="0.2032" layer="1"/>
-<wire x1="46.736" y1="53.34" x2="45.5168" y2="54.5592" width="0.2032" layer="1"/>
 <wire x1="37.592" y1="31.496" x2="37.6174" y2="31.49" width="0.2032" layer="16"/>
 <via x="34.8488" y="34.7472" extent="1-16" drill="0.5"/>
 </signal>
@@ -3482,6 +3480,16 @@ Source: http://www.osram.convergy.de/ ... Lb_q993.pdf</description>
 <wire x1="7.62" y1="34.33" x2="7.62" y2="27.94" width="1.27" layer="16"/>
 <wire x1="7.62" y1="27.94" x2="9.525" y2="27.94" width="1.27" layer="16"/>
 <wire x1="9.525" y1="27.94" x2="9.525" y2="27.92" width="1.27" layer="16"/>
+</signal>
+<signal name="N$30">
+<contactref element="U2" pad="D9"/>
+<contactref element="R17" pad="1"/>
+<wire x1="1.69" y1="-16.51" x2="46.736" y2="53.34" width="0" layer="19" extent="1-1"/>
+</signal>
+<signal name="N$32">
+<contactref element="U2" pad="D8"/>
+<contactref element="R16" pad="1"/>
+<wire x1="1.69" y1="-3.81" x2="49.276" y2="53.34" width="0" layer="19" extent="1-1"/>
 </signal>
 </signals>
 <errors>
