@@ -13,3 +13,5 @@ This list does not necessarily reflect the ORDER in which tasks should be tackle
 20151110: needs ground plane in all non-mains areas.
 
 20151110: please generate and check in Gerbers in sub-dir as we have done with eg REV2.
+
+20151110: run rules in DRU+CAM/PMSer
