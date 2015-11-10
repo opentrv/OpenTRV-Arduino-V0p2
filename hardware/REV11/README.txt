@@ -1,5 +1,5 @@
-REV 11 is RFM23B and phototransistor and SHT21, no UI ie buttons or LEDs.
-Light-weight sensor, eg for baseline measurement in homes.
+REV 11 is RFM23B and phototransistor and SHT21, with no UI eg neither buttons nor LEDs.
+Light-weight passive sensor, eg for baseline measurement in homes.
 
 
 Note ITEADstudio .dru and .cam files downloaded from their site AND NOT COVERED BY OUR APACHE LICENCE
