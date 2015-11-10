@@ -8488,7 +8488,7 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <part name="ANT" library="wirepad" deviceset="SMD2" device=""/>
 <part name="P+5" library="SparkFun-Aesthetics" deviceset="VCC" device=""/>
 <part name="GND7" library="SparkFun-Aesthetics" deviceset="GND" device=""/>
-<part name="R1********" library="resistor" deviceset="R-EU_" device="R0603" value="220K"/>
+<part name="R1" library="resistor" deviceset="R-EU_" device="R0603" value="100K"/>
 <part name="R9" library="resistor" deviceset="R-EU_" device="R0603" value="4.7K"/>
 <part name="P+1" library="SparkFun-Aesthetics" deviceset="VCC" device=""/>
 <part name="JP1" library="pinhead" deviceset="PINHD-1X12" device=""/>
@@ -8588,7 +8588,7 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <instance part="ANT" gate="1" x="370.84" y="254" rot="R180"/>
 <instance part="P+5" gate="G$1" x="25.4" y="243.84"/>
 <instance part="GND7" gate="1" x="180.34" y="187.96"/>
-<instance part="R1********" gate="G$1" x="187.96" y="190.5" rot="R180"/>
+<instance part="R1" gate="G$1" x="187.96" y="190.5" rot="R180"/>
 <instance part="R9" gate="G$1" x="236.22" y="175.26" smashed="yes">
 <attribute name="NAME" x="237.49" y="176.7586" size="1.778" layer="95"/>
 <attribute name="VALUE" x="232.41" y="177.038" size="1.778" layer="96"/>
@@ -8772,7 +8772,7 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <segment>
 <pinref part="GND7" gate="1" pin="GND"/>
 <wire x1="180.34" y1="190.5" x2="182.88" y2="190.5" width="0.1524" layer="91"/>
-<pinref part="R1********" gate="G$1" pin="2"/>
+<pinref part="R1" gate="G$1" pin="2"/>
 </segment>
 <segment>
 <pinref part="JP1" gate="G$1" pin="12"/>
@@ -9157,7 +9157,7 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 </net>
 <net name="LDR" class="0">
 <segment>
-<pinref part="R1********" gate="G$1" pin="1"/>
+<pinref part="R1" gate="G$1" pin="1"/>
 <wire x1="198.12" y1="190.5" x2="198.12" y2="186.944" width="0.1524" layer="91"/>
 <wire x1="193.04" y1="190.5" x2="198.12" y2="190.5" width="0.1524" layer="91"/>
 <label x="198.12" y="190.5" size="1.778" layer="95"/>
