@@ -1,7 +1,8 @@
 TODO list created by DHD.
 
 Please put a * but these as you think that they are complete.
-DHD will provide signoff be removing them.
+DHD will provide signoff by removing them.
+
 
 
 
