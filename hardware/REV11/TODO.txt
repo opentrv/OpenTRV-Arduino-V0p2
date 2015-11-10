@@ -15,11 +15,9 @@ DONE 20151110: please confirm xtal layout as per REV2/REV4 to avoid start-up pro
 
 DONE 20151110: please check CHECKLIST.txt have been met.
 
-DONE 20151110: create README.txt with link to public readable (not public writable) BOM.
+20151110: update ****README.txt**** with link to public readable (not public writable) BOM.
 
-Add batteryholder & R1 to BOM
-
-20151110: create README.txt with description of board.
+20151110: Add batteryholder & R1 to BOM
 
 20151110: run rules in DRU+CAM/PMServicesStd.dru
 
