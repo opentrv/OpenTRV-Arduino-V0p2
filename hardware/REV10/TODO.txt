@@ -1,7 +1,9 @@
 TODO list created by DHD.
 
 Please put a * but these as you think that they are complete.
-DHD will provide signoff by removing them.
+DHD will provide sign-off by removing them.
+
+This list does not necessarily reflect the ORDER in which tasks should be tackled.
 
 
 
@@ -12,3 +14,5 @@ DHD will provide signoff by removing them.
 20151110: needs ground plane in all non-mains areas.
 
 20151110: please generate and check in Gerbers in sub-dir as we have done with eg REV2.
+
+20151110: please add extra DQ pad as per DHD note in requirements,
