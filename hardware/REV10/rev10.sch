@@ -10787,6 +10787,7 @@ Source: www.kingbright.com</description>
 <part name="R16" library="resistor" deviceset="R-EU_" device="R0603" value="330R"/>
 <part name="R5" library="resistor" deviceset="R-EU_" device="R0603" value="4.7K"/>
 <part name="R17" library="resistor" deviceset="R-EU_" device="R0603" value="4.7K"/>
+<part name="DQ/D2" library="wirepad" deviceset="2,15/1,0" device=""/>
 </parts>
 <sheets>
 <sheet>
@@ -10973,6 +10974,7 @@ Source: www.kingbright.com</description>
 <instance part="R16" gate="G$1" x="185.42" y="119.38" rot="R270"/>
 <instance part="R5" gate="G$1" x="200.66" y="73.66" rot="R180"/>
 <instance part="R17" gate="G$1" x="182.88" y="101.6" rot="R270"/>
+<instance part="DQ/D2" gate="1" x="134.62" y="223.52" rot="R180"/>
 </instances>
 <busses>
 </busses>
@@ -11588,9 +11590,12 @@ Source: www.kingbright.com</description>
 </net>
 <net name="D2" class="0">
 <segment>
-<wire x1="132.08" y1="231.14" x2="132.08" y2="218.44" width="0.1524" layer="91"/>
+<wire x1="132.08" y1="231.14" x2="132.08" y2="223.52" width="0.1524" layer="91"/>
 <label x="134.62" y="231.14" size="1.778" layer="95"/>
 <pinref part="I2C_EXT" gate="A" pin="14"/>
+<pinref part="DQ/D2" gate="1" pin="P"/>
+<wire x1="132.08" y1="223.52" x2="132.08" y2="218.44" width="0.1524" layer="91"/>
+<junction x="132.08" y="223.52"/>
 </segment>
 <segment>
 <pinref part="R9" gate="G$1" pin="1"/>
