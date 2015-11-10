@@ -15,13 +15,13 @@ DONE 20151110: needs ground plane in all non-mains areas.
 
 DONE 20151110: please add extra DQ pad as per DHD note in requirements.
 
-20151110: Add to README.txt link to public readable (not public writable) BOM.
-
-20151110: please save and check in final copy of BOM as BOM.xlsx or BOM.csv.
+20151110: PUT IN ***** README.txt *****!!! link to public readable (not public writable) BOM.
 
 20151110: please confirm xtal layout as per REV2/REV4 to avoid start-up problems as in REV7/REV8.
 
-20151110: run rules in DRU+CAM/PMServicesStd.dru
+20151110: re-run rules in DRU+CAM/PMServicesStd.dru when aeverything checked off by DE/DHD/MH
+
+20151110: please save and check in final copy of BOM as BOM.xlsx or BOM.csv.
 
 20151110: please generate and check in Gerbers in sub-dir as we have done with eg REV2.
 
