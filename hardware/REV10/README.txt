@@ -1,4 +1,4 @@
-REV 10 is RFM23B and phototransistor and TMP112 and GSM card and option mains + relay.
+REV 10 is RFM23B and phototransistor and TMP112 and GSM card and optional mains power and optional relay.
 Dual purpose for temp sensor deployment (eg IoT Launchpad) and as a general dumb sensor radio relay over GSM.
 
 See requirements doc: https://docs.google.com/document/d/1RM6_tcC0Uajx6D2YfQV9GoQAOvQpk6TpT7khfn3ezBs/edit?usp=sharing
