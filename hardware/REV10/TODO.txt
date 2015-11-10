@@ -17,7 +17,7 @@ DONE 20151110: please add extra DQ pad as per DHD note in requirements.
 
 DONE 20151110: please confirm supply and signal tracks at least as thick as REV2 + REV4 (to avoid REV1/REV9 crashes).
 
-20151110: update ****README.txt**** with link to public readable (not public writable) BOM.
+DONE 20151110: update ****README.txt**** with link to public readable (not public writable) BOM.
 
 DONE 20151110: run rules in DRU+CAM/PMServicesStd.dru
 
