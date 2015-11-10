@@ -2359,7 +2359,7 @@ Source: http://www.osram.convergy.de/ ... Lb_q993.pdf</description>
 <element name="IC2" library="Arduino-AVR" package="TQFP32-08" value="ATMEGA168-AU" x="41.91" y="34.29" smashed="yes" rot="MR270">
 <attribute name="NAME" x="42.545" y="35.1536" size="1" layer="26" rot="MR270"/>
 </element>
-<element name="USBPOWER" library="micro-usb-fci-10103592" package="MICRO-USB-FCI-10103592" value="MICRO-USB-FCI-10103592" x="31.11" y="3.7" rot="MR0"/>
+<element name="USBPOWER" library="micro-usb-fci-10103592" package="MICRO-USB-FCI-10103592" value="MICRO-USB-FCI-10103592" x="31.41" y="3.7" rot="MR0"/>
 <element name="R6" library="resistor" package="R0603" value="100K" x="33.02" y="9.525" smashed="yes" rot="MR0">
 <attribute name="NAME" x="31.369" y="9.144" size="1" layer="26" rot="MR0"/>
 </element>
@@ -2547,10 +2547,10 @@ Source: http://www.osram.convergy.de/ ... Lb_q993.pdf</description>
 <wire x1="27.94" y1="13.525" x2="20.15" y2="18.73" width="0" layer="19" extent="16-16"/>
 <wire x1="30.48" y1="11.875" x2="29.98" y2="13.525" width="0" layer="19" extent="16-16"/>
 <wire x1="32.17" y1="9.525" x2="30.48" y2="10.16" width="0" layer="19" extent="16-16"/>
-<wire x1="31.47" y1="6.34" x2="32.17" y2="9.525" width="0" layer="19" extent="16-16"/>
-<wire x1="29.87" y1="6.21" x2="31.47" y2="6.34" width="0" layer="19" extent="16-16"/>
-<wire x1="25.67" y1="6.34" x2="29.87" y2="6.21" width="0" layer="19" extent="16-16"/>
-<wire x1="13.97" y1="6.985" x2="25.67" y2="6.34" width="0" layer="19" extent="16-16"/>
+<wire x1="31.77" y1="6.34" x2="32.17" y2="9.525" width="0" layer="19" extent="16-16"/>
+<wire x1="30.17" y1="6.21" x2="31.77" y2="6.34" width="0" layer="19" extent="16-16"/>
+<wire x1="25.97" y1="6.34" x2="30.17" y2="6.21" width="0" layer="19" extent="16-16"/>
+<wire x1="13.97" y1="6.985" x2="25.97" y2="6.34" width="0" layer="19" extent="16-16"/>
 <wire x1="34.036" y1="53.34" x2="40.71" y2="38.5826" width="0" layer="19" extent="16-16"/>
 <wire x1="48.26" y1="5.08" x2="32.17" y2="9.525" width="0" layer="19" extent="16-16"/>
 <wire x1="50.8" y1="5.08" x2="48.26" y2="5.08" width="0" layer="19" extent="1-1"/>
@@ -2872,8 +2872,87 @@ Source: http://www.osram.convergy.de/ ... Lb_q993.pdf</description>
 <contactref element="R16" pad="1"/>
 <wire x1="52.07" y1="47.84" x2="49.276" y2="53.34" width="0" layer="19" extent="16-16"/>
 </signal>
+<signal name="N$21">
+<via x="40.64" y="46.99" extent="1-16" drill="0.5"/>
+</signal>
+<signal name="N$33">
+<via x="40.64" y="48.26" extent="1-16" drill="0.5"/>
+</signal>
+<signal name="N$34">
+<via x="41.91" y="49.53" extent="1-16" drill="0.5"/>
+</signal>
+<signal name="N$35">
+<via x="40.64" y="49.53" extent="1-16" drill="0.5"/>
+</signal>
+<signal name="N$36">
+<via x="43.18" y="49.53" extent="1-16" drill="0.5"/>
+</signal>
+<signal name="N$37">
+<via x="44.45" y="49.53" extent="1-16" drill="0.5"/>
+</signal>
+<signal name="N$38">
+<via x="45.72" y="49.53" extent="1-16" drill="0.5"/>
+</signal>
+<signal name="N$39">
+<via x="46.99" y="49.53" extent="1-16" drill="0.5"/>
+</signal>
+<signal name="N$40">
+<via x="46.99" y="48.26" extent="1-16" drill="0.5"/>
+</signal>
+<signal name="N$41">
+<via x="46.99" y="46.99" extent="1-16" drill="0.5"/>
+</signal>
+<signal name="N$42">
+<via x="46.99" y="45.72" extent="1-16" drill="0.5"/>
+</signal>
+<signal name="N$43">
+<via x="46.99" y="44.45" extent="1-16" drill="0.5"/>
+</signal>
+<signal name="N$44">
+<via x="46.99" y="43.18" extent="1-16" drill="0.5"/>
+</signal>
+<signal name="N$45">
+<via x="46.99" y="41.91" extent="1-16" drill="0.5"/>
+</signal>
+<signal name="N$46">
+<via x="46.99" y="40.64" extent="1-16" drill="0.5"/>
+</signal>
+<signal name="N$47">
+<via x="46.99" y="39.37" extent="1-16" drill="0.5"/>
+</signal>
+<signal name="N$48">
+<via x="45.72" y="39.37" extent="1-16" drill="0.5"/>
+</signal>
+<signal name="N$49">
+<via x="40.64" y="45.72" extent="1-16" drill="0.5"/>
+</signal>
+<signal name="N$50">
+<via x="40.64" y="44.45" extent="1-16" drill="0.5"/>
+</signal>
+<signal name="N$51">
+<via x="40.64" y="43.18" extent="1-16" drill="0.5"/>
+</signal>
+<signal name="N$52">
+<via x="40.64" y="41.91" extent="1-16" drill="0.5"/>
+</signal>
+<signal name="N$53">
+<via x="40.64" y="40.64" extent="1-16" drill="0.5"/>
+</signal>
+<signal name="N$54">
+<via x="41.91" y="40.64" extent="1-16" drill="0.5"/>
+</signal>
 </signals>
 <errors>
+<approved hash="3,16,403e61fe611c40dc"/>
+<approved hash="3,16,c8c4eb04ea07c9c7"/>
+<approved hash="3,16,ccee4f2e4f11ccd1"/>
+<approved hash="3,16,8d262ce62c468d86"/>
+<approved hash="18,29,60e41c671c6660e5"/>
+<approved hash="18,29,2e62a561a5602e63"/>
+<approved hash="18,29,b76072e372e2b761"/>
+<approved hash="18,30,7f6bbbe8bbeb7f68"/>
+<approved hash="18,30,4de8c4ebc4ed4dee"/>
+<approved hash="18,30,d6ef116c116cd6ef"/>
 <approved hash="18,30,aa0fb19e6c6f4c0c"/>
 <approved hash="18,30,849e16ecbdfc147c"/>
 <approved hash="18,30,e6e0ec65361af8e0"/>
@@ -2881,12 +2960,22 @@ Source: http://www.osram.convergy.de/ ... Lb_q993.pdf</description>
 <approved hash="18,30,0a10fe89f6e7a88c"/>
 <approved hash="18,30,549e3ee500ea2163"/>
 <approved hash="18,30,8210618bcd65650c"/>
+<approved hash="19,16,f0d190e790e1f0d7"/>
+<approved hash="19,16,44f5e403e40644f0"/>
+<approved hash="19,16,9a3a364c364e9a38"/>
+<approved hash="19,16,f24d8e5b8e45f253"/>
+<approved hash="19,16,448be499e4844496"/>
 <approved hash="19,16,b0963c41014fa598"/>
 <approved hash="19,16,574bb75abc635c42"/>
 <approved hash="19,16,6aacc8243473a69f"/>
 <approved hash="19,16,646d161d123d4801"/>
 <approved hash="19,16,a87c304e094a8962"/>
 <approved hash="19,16,9e5b71b352b7bd59"/>
+<approved hash="19,16,552dfac3fac0552e"/>
+<approved hash="19,16,baca56e456e2bacc"/>
+<approved hash="5,16,444d8a04e79073aa"/>
+<approved hash="19,16,2b760088473d089b"/>
+<approved hash="5,16,bff8dd87cd67bb5f"/>
 <approved hash="19,16,5cc8eeb6d6a964d7"/>
 <approved hash="19,16,712f83e3a3e3512f"/>
 <approved hash="19,16,122192efaaec2a22"/>
@@ -2895,20 +2984,38 @@ Source: http://www.osram.convergy.de/ ... Lb_q993.pdf</description>
 <approved hash="19,16,bcb230113f0ab38d"/>
 <approved hash="19,16,63fb1f5ff32bd537"/>
 <approved hash="19,16,a1552d15a0990d05"/>
+<approved hash="5,16,5b5231e031e4c5bc"/>
 <approved hash="19,16,4b18ee75fa05af48"/>
 <approved hash="19,16,3489c75552c5225a"/>
+<approved hash="5,16,6b62202b083e4373"/>
 <approved hash="19,16,d19c802c61158e62"/>
 <approved hash="19,16,b7418abaa4baab05"/>
+<approved hash="19,16,4ce783952395ece7"/>
 <approved hash="19,16,74de7e6c5520ed52"/>
+<approved hash="19,16,b9ea91ec7c352f40"/>
 <approved hash="19,16,74a2f074e97355a3"/>
 <approved hash="19,16,4dbaf856449a2083"/>
+<approved hash="19,16,d8e244bdb6832ae2"/>
 <approved hash="19,16,00ac71ea8eeb0fa2"/>
 <approved hash="19,16,6592226c2a6a71ac"/>
+<approved hash="19,16,988bd806ce077e89"/>
 <approved hash="19,16,e6d3fd3bd67205cf"/>
+<approved hash="5,16,a6862e47ce544e90"/>
+<approved hash="5,16,430e40c3db28f425"/>
 <approved hash="19,16,df9551274927c795"/>
 <approved hash="19,16,af3037ef3fefa730"/>
 <approved hash="19,16,03a19dd7b5b87582"/>
 <approved hash="19,16,0276b844eb2362ad"/>
+<approved hash="19,16,c58465b265bcc58a"/>
+<approved hash="19,16,19aeb9d8b9db19ad"/>
+<approved hash="19,16,6f150b030b056f13"/>
+<approved hash="19,16,c70063366330c706"/>
+<approved hash="19,16,1a40b672b6711a43"/>
+<approved hash="19,16,33f39fc19fcf33fd"/>
+<approved hash="19,16,e7a143ab43a8e7a2"/>
+<approved hash="19,16,8a6af670f6768a6c"/>
+<approved hash="19,16,32779e459e433271"/>
+<approved hash="19,16,e73343054306e730"/>
 <approved hash="19,16,e248e17bfa729931"/>
 <approved hash="19,16,13c295fb98e316ba"/>
 <approved hash="19,16,27e44c5584610f37"/>
