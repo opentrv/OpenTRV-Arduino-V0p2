@@ -22,7 +22,3 @@ DONE 20151110: please confirm supply and signal tracks at least as thick as REV2
 DONE 20151110: run rules in DRU+CAM/PMServicesStd.dru
 
 20151110: please confirm xtal layout as per REV2/REV4 to avoid start-up problems as in REV7/REV8.
-
-
-
-

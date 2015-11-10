@@ -24,4 +24,3 @@ DONE 20151110: please check CHECKLIST.txt have been met.
 20151110: needs routing
 
 20151110: please generate and check in Gerbers in sub-dir as we have done with eg REV2.
-
