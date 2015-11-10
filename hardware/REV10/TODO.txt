@@ -25,3 +25,5 @@ This list does not necessarily reflect the ORDER in which tasks should be tackle
 20151110: please confirm supply and signal tracks at least as thick as REV2 + REV4 (to avoid REV1/REV9 crashes).
 
 20151110: please confirm xtal layout as per REV2/REV4 to avoid start-up problems as in REV7/REV8.
+
+20151110: please check CHECKLIST.txt have been met.
