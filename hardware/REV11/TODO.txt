@@ -7,5 +7,19 @@ This list does not necessarily reflect the ORDER in which tasks should be tackle
 
 
 
+DONE 20151110: needs ground plane in all non-mains areas.
 
+DONE 20151110: please confirm supply and signal tracks at least as thick as REV2 + REV4 (to avoid REV1/REV9 crashes).
+
+DONE 20151110: please confirm xtal layout as per REV2/REV4 to avoid start-up problems as in REV7/REV8.
+
+DONE 20151110: please check CHECKLIST.txt have been met.
+
+20151110: Add batteryholder & R1 to BOM
+
+20151110: run rules in DRU+CAM/PMServicesStd.dru
+
+20151110: needs routing
+
+20151110: please save and check in final copy of BOM as BOM.xlsx or BOM.csv.
 
