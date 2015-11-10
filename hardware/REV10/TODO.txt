@@ -21,3 +21,7 @@ This list does not necessarily reflect the ORDER in which tasks should be tackle
 
 20151110: create README.txt with description of board.
 20151110: create README.txt with link to public readable (not public writable) BOM.
+
+20151110: please confirm supply and signal tracks at least as thick as REV2 + REV4 (to avoid REV1/REV9 crashes).
+
+20151110: please confirm xtal layout as per REV2/REV4 to avoid start-up problems as in REV7/REV8.
