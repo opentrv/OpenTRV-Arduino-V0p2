@@ -1,0 +1,13 @@
+TODO list created by DHD.
+
+Please put a * but these as you think that they are complete.
+DHD will provide signoff be removing them.
+
+
+
+
+20151110: put resistors in all connections between AVR and GSM card, as specfied by Deniz.
+
+20151110: needs ground plane in all non-mains areas.
+
+20151110: please generate and check in Gerbers in sub-dir as we have done with eg REV2.
