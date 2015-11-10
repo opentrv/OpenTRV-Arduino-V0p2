@@ -25,4 +25,10 @@ DONE 20151110: create README.txt with link to public readable (not public writab
 
 20151110: run rules in DRU+CAM/PMServicesStd.dru
 
+<<<<<<< HEAD
 20151110: please generate and check in Gerbers in sub-dir as we have done with eg REV2.
+=======
+20151110: please confirm xtal layout as per REV2/REV4 to avoid start-up problems as in REV7/REV8.
+
+20151110: please check CHECKLIST.txt have been met.
+>>>>>>> refs/remotes/DamonHD/master
