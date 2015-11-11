@@ -39,12 +39,12 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include "Serial_IO.h"
 #include "UI_Minimal.h"
 
-// Minimum valve percentage open to be considered actually open; [1,100].
-// Setting this above 0 delays calling for heat from a central boiler until water is likely able to flow.
-// (It may however be possible to scavenge some heat if a particular valve opens below this and the circulation pump is already running, for example.)
-// DHD20130522: FHT8V + valve heads that I have been using are not typically open until around 6%.
-// Use the global value for now.
-#define FHT8V_MIN_VALVE_PC_REALLY_OPEN OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN
+//// Minimum valve percentage open to be considered actually open; [1,100].
+//// Setting this above 0 delays calling for heat from a central boiler until water is likely able to flow.
+//// (It may however be possible to scavenge some heat if a particular valve opens below this and the circulation pump is already running, for example.)
+//// DHD20130522: FHT8V + valve heads that I have been using are not typically open until around 6%.
+//// Use the global value for now.
+//#define FHT8V_MIN_VALVE_PC_REALLY_OPEN OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN
 
 // If true then allow double TX for normal valve setting, else only allow it for sync.
 // May want to enforce this where bandwidth is known to be scarce.
