@@ -1790,7 +1790,7 @@ void loopOpenTRV()
   #endif
   // FHT8V is highest priority and runs first.
   // ---------- HALF SECOND #0 -----------
-  bool useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_First(doubleTXForFTH8V); // Time for extra TX before UI.
+  bool useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8V.FHT8VPollSyncAndTX_First(doubleTXForFTH8V); // Time for extra TX before UI.
 //  if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@0"); }
 #endif
 
@@ -1840,7 +1840,7 @@ void loopOpenTRV()
     {
     // Time for extra TX before other actions, but don't bother if minimising power in frost mode.
     // ---------- HALF SECOND #1 -----------
-    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V);
+    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8V.FHT8VPollSyncAndTX_Next(doubleTXForFTH8V);
 //    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@1"); }
     // Handling the FHT8V may have taken a little while, so process I/O a little.
     handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O.
@@ -2003,7 +2003,7 @@ void loopOpenTRV()
       if(NominalRadValve.isValveMoved() ||
          (minute1From4AfterSensors && enableTrailingStatsPayload()))
         {
-        if(localFHT8VTRVEnabled()) { FHT8VCreateValveSetCmdFrame(NominalRadValve); }
+        if(localFHT8VTRVEnabled()) { FHT8V.FHT8VCreateValveSetCmdFrame(NominalRadValve.get()); }
         }
 #endif
 
@@ -2058,7 +2058,7 @@ void loopOpenTRV()
   if(useExtraFHT8VTXSlots)
     {
     // ---------- HALF SECOND #2 -----------
-    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V);
+    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8V.FHT8VPollSyncAndTX_Next(doubleTXForFTH8V);
 //    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@2"); }
     // Handling the FHT8V may have taken a little while, so process I/O a little.
     handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O.
@@ -2072,7 +2072,7 @@ void loopOpenTRV()
   if(useExtraFHT8VTXSlots)
     {
     // ---------- HALF SECOND #3 -----------
-    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V);
+    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8V.FHT8VPollSyncAndTX_Next(doubleTXForFTH8V);
 //    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@3"); }
     // Handling the FHT8V may have taken a little while, so process I/O a little.
     handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O.
