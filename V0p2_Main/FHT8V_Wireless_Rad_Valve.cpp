@@ -42,7 +42,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // Minimum valve percentage open to be considered actually open; [1,100].
 // Setting this above 0 delays calling for heat from a central boiler until water is likely able to flow.
 // (It may however be possible to scavenge some heat if a particular valve opens below this and the circulation pump is already running, for example.)
-// DHD20130522: FHT8V + valve heads I have been using are not typically open until around 6%.
+// DHD20130522: FHT8V + valve heads that I have been using are not typically open until around 6%.
 // Use the global value for now.
 #define FHT8V_MIN_VALVE_PC_REALLY_OPEN OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN
 
@@ -51,11 +51,11 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 static const bool ALLOW_NON_SYNC_DOUBLE_TX = false;
 
 
-#if defined(USE_MODULE_RFM22RADIOSIMPLE)
+//#if defined(USE_MODULE_RFM22RADIOSIMPLE)
 // Provide RFM22/RFM23 register settings for use with FHT8V in Flash memory.
 // Consists of a sequence of (reg#,value) pairs terminated with a 0xff register number.  The reg#s are <128, ie top bit clear.
 // Magic numbers c/o Mike Stirling!
-const uint8_t FHT8V_RFM22_Reg_Values[][2] PROGMEM =
+const uint8_t FHT8VRadValveBase::FHT8V_RFM22_Reg_Values[][2] PROGMEM =
   {
   // Putting TX power setting first to help with dynamic adjustment.
 // From AN440: The output power is configurable from +13 dBm to -8 dBm (Si4430/31), and from +20 dBM to -1 dBM (Si4432) in ~3 dB steps. txpow[2:0]=000 corresponds to min output power, while txpow[2:0]=111 corresponds to max output power.
@@ -111,7 +111,7 @@ const uint8_t FHT8V_RFM22_Reg_Values[][2] PROGMEM =
 
     { 0xff, 0xff } // End of settings.
   };
-#endif // defined(USE_MODULE_RFM22RADIOSIMPLE)
+//#endif // defined(USE_MODULE_RFM22RADIOSIMPLE)
 
 #if 0 // DHD20130226 dump
      00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F

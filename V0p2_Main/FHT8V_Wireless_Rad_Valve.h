@@ -92,6 +92,12 @@ class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
     // Get estimated minimum percentage open for significant flow for this device; strictly positive in range [1,99].
     // Defaults to typical value from observation.
     virtual uint8_t getMinPercentOpen() const { return(TYPICAL_MIN_PERCENT_OPEN); }
+
+    // A set of RFM22/RFM23 register settings for use with FHT8V, stored in (read-only) program/Flash memory.
+    // Consists of a sequence of (reg#,value) pairs terminated with a $ff register.  The reg#s are <128, ie top bit clear.
+    // Magic numbers c/o Mike Stirling!
+    // Should not be linked into code image unless explicitly referred to.
+    static const uint8_t FHT8V_RFM22_Reg_Values[][2] PROGMEM;
   };
 
 template <uint8_t preambleBytes = RFM22_PREAMBLE_BYTES>
@@ -115,23 +121,22 @@ class FHT8VRadValve : public FHT8VRadValveBase
   };
 
 
+
+
 #ifdef USE_MODULE_FHT8VSIMPLE
 
-
-
-
-#ifdef USE_MODULE_RFM22RADIOSIMPLE
-// Provide RFM22/RFM23 register settings for use with FHT8V, stored in (read-only) program/Flash memory.
-// Consists of a sequence of (reg#,value) pairs terminated with a $ff register.  The reg#s are <128, ie top bit clear.
-// Magic numbers c/o Mike Stirling!
-extern const uint8_t FHT8V_RFM22_Reg_Values[][2] PROGMEM;
-// IF DEFINED: use RFM22 RX sync to indicate something for the hubs to listen to, including but not only a call for heat.
-// (Older receivers relied on just this RFM22/23 sync which is no longer enough.
-// Very simple devices such as PICAXE did not actually decode the complete frame,
-// and this is ultimately insufficient with (for example) neighbouring houses both using such simple boiler-controllers,
-// as any TRV opening in either house would turn on both boilers...)
-//#define RFM22_SYNC_BCFH
-#endif
+//#ifdef USE_MODULE_RFM22RADIOSIMPLE
+//// Provide RFM22/RFM23 register settings for use with FHT8V, stored in (read-only) program/Flash memory.
+//// Consists of a sequence of (reg#,value) pairs terminated with a $ff register.  The reg#s are <128, ie top bit clear.
+//// Magic numbers c/o Mike Stirling!
+//extern const uint8_t FHT8V_RFM22_Reg_Values[][2] PROGMEM;
+//// IF DEFINED: use RFM22 RX sync to indicate something for the hubs to listen to, including but not only a call for heat.
+//// (Older receivers relied on just this RFM22/23 sync which is no longer enough.
+//// Very simple devices such as PICAXE did not actually decode the complete frame,
+//// and this is ultimately insufficient with (for example) neighbouring houses both using such simple boiler-controllers,
+//// as any TRV opening in either house would turn on both boilers...)
+////#define RFM22_SYNC_BCFH
+//#endif
 
 
 // Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) at bptr.
