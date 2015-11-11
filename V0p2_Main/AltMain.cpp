@@ -78,6 +78,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 // Can abort with panic() if need be.
 void POSTalt()
   {
+	IOSetup();
 
 #ifdef USE_MODULE_SIM900
 // EEPROM locations
