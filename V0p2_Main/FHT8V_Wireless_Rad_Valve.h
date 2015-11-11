@@ -33,22 +33,16 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 #include <OTRadioLink.h>
 
+#include "RFM22_Radio.h"
 #include "Messaging.h"
 
 
 // FHT8V radio-controlled radiator valve, using FS20 protocol.
+// preambleBytes specifies the space to leave for preabmble bytes for remote receiver sync.
 // DHD2151111: Work-In-Progress!
-class FHT8VRadValve : public OTRadValve::AbstractRadValve
+class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
   {
   public:
-//    // Construct an instance attached to a (RFM23B, or RFM22B) radio module.
-//    // The RFM23B instance life must at least match that of this instance.
-//    FHT8VRadValve(OTRadioLink::OTRFM23BLinkBase *) { }
-
-    // Construct an instance attached to a generic radio module.
-    // The RFM23B instance life must at least match that of this instance.
-    FHT8VRadValve(OTRadioLink::OTRadioLink *) { }
-
     // Type for information content of FHT8V message.
     // Omits the address field unless it is actually used.
     typedef struct
@@ -81,7 +75,7 @@ class FHT8VRadValve : public OTRadValve::AbstractRadValve
     // Note that a buffer space of at least 46 bytes is needed to accommodate the longest-possible encoded message plus terminator.
     // This FHT8V messages is encoded with the FS20 protocol.
     // Returns pointer to the terminating 0xff on exit.
-    static uint8_t *FHT8VCreate200usBitStreamBptr(uint8_t *bptr, const FHT8VRadValve::fht8v_msg_t *command);
+    static uint8_t *FHT8VCreate200usBitStreamBptr(uint8_t *bptr, const fht8v_msg_t *command);
 
     // Approximate maximum transmission (TX) time for bare FHT8V command frame in ms; strictly positive.
     // This ignores any prefix needed for particular radios such as the RFM23B.
@@ -100,6 +94,25 @@ class FHT8VRadValve : public OTRadValve::AbstractRadValve
     virtual uint8_t getMinPercentOpen() const { return(TYPICAL_MIN_PERCENT_OPEN); }
   };
 
+template <uint8_t preambleBytes = RFM22_PREAMBLE_BYTES>
+class FHT8VRadValve : public FHT8VRadValveBase
+  {
+  public:
+//    // Construct an instance attached to a (RFM23B, or RFM22B) radio module.
+//    // The RFM23B instance life must at least match that of this instance.
+//    FHT8VRadValve(OTRadioLink::OTRFM23BLinkBase *) { }
+    // Construct an instance attached to a generic radio module.
+    // The RFM23B instance life must at least match that of this instance.
+    FHT8VRadValve(OTRadioLink::OTRadioLink *) { }
+
+    static const uint8_t FHT8V_MAX_EXTRA_PREAMBLE_BYTES = preambleBytes; // RFM22_PREAMBLE_BYTES
+    static const uint8_t FHT8V_MAX_EXTRA_TRAILER_BYTES = (1+max(MESSAGING_TRAILING_MINIMAL_STATS_PAYLOAD_BYTES,FullStatsMessageCore_MAX_BYTES_ON_WIRE));
+    static const uint8_t FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE = (FHT8V_MAX_EXTRA_PREAMBLE_BYTES + (FHT8VRadValve::MIN_FHT8V_200US_BIT_STREAM_BUF_SIZE) + FHT8V_MAX_EXTRA_TRAILER_BYTES); // Buffer space needed.
+
+    // Approximate maximum transmission (TX) time for FHT8V command frame in ms; strictly positive.
+    // ~80ms upwards.
+    static const uint8_t FHT8V_APPROX_MAX_TX_MS = ((((FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE-1)*8) + 4) / 5);
+  };
 
 
 #ifdef USE_MODULE_FHT8VSIMPLE
@@ -117,7 +130,7 @@ extern const uint8_t FHT8V_RFM22_Reg_Values[][2] PROGMEM;
 // Very simple devices such as PICAXE did not actually decode the complete frame,
 // and this is ultimately insufficient with (for example) neighbouring houses both using such simple boiler-controllers,
 // as any TRV opening in either house would turn on both boilers...)
-#define RFM22_SYNC_BCFH
+//#define RFM22_SYNC_BCFH
 #endif
 
 
@@ -127,16 +140,12 @@ extern const uint8_t FHT8V_RFM22_Reg_Values[][2] PROGMEM;
 // The generated command frame can be resent indefinitely.
 // The command buffer used must be (at least) FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE bytes plus extra preamble and trailers.
 // Returns pointer to the terminating 0xff on exit.
-uint8_t *FHT8VCreateValveSetCmdFrame_r(uint8_t *bptr, FHT8VRadValve::fht8v_msg_t *command, const uint8_t TRVPercentOpen);
+uint8_t *FHT8VCreateValveSetCmdFrame_r(uint8_t *bptr, FHT8VRadValveBase::fht8v_msg_t *command, const uint8_t TRVPercentOpen);
 
-#ifdef RFM22_SYNC_BCFH
-#define FHT8V_MAX_EXTRA_PREAMBLE_BYTES RFM22_PREAMBLE_BYTES
-#else
-#define FHT8V_MAX_EXTRA_PREAMBLE_BYTES 0
-#endif
-#define FHT8V_MAX_EXTRA_TRAILER_BYTES (1+max(MESSAGING_TRAILING_MINIMAL_STATS_PAYLOAD_BYTES,FullStatsMessageCore_MAX_BYTES_ON_WIRE))
-#define FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE (FHT8V_MAX_EXTRA_PREAMBLE_BYTES + (FHT8VRadValve::MIN_FHT8V_200US_BIT_STREAM_BUF_SIZE) + FHT8V_MAX_EXTRA_TRAILER_BYTES) // Buffer space needed.
-
+//#define FHT8V_MAX_EXTRA_PREAMBLE_BYTES RFM22_PREAMBLE_BYTES
+//#define FHT8V_MAX_EXTRA_TRAILER_BYTES (1+max(MESSAGING_TRAILING_MINIMAL_STATS_PAYLOAD_BYTES,FullStatsMessageCore_MAX_BYTES_ON_WIRE))
+//#define FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE (FHT8V_MAX_EXTRA_PREAMBLE_BYTES + (FHT8VRadValve::MIN_FHT8V_200US_BIT_STREAM_BUF_SIZE) + FHT8V_MAX_EXTRA_TRAILER_BYTES) // Buffer space needed.
+//
 //// Approximate maximum transmission (TX) time for FHT8V command frame in ms; strictly positive.
 //// ~80ms upwards.
 //#define FHT8V_APPROX_MAX_TX_MS ((((FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE-1)*8) + 4) / 5)
@@ -149,7 +158,7 @@ uint8_t *FHT8VCreateValveSetCmdFrame_r(uint8_t *bptr, FHT8VRadValve::fht8v_msg_t
 // The generated command frame can be resent indefinitely.
 // The output buffer used must be (at least) FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE bytes.
 // Returns pointer to the terminating 0xff on exit.
-uint8_t *FHT8VCreateValveSetCmdFrameHT_r(uint8_t *bptr, bool doHeader, FHT8VRadValve::fht8v_msg_t *command, uint8_t TRVPercentOpen, const FullStatsMessageCore_t *trailer);
+uint8_t *FHT8VCreateValveSetCmdFrameHT_r(uint8_t *bptr, bool doHeader, FHT8VRadValveBase::fht8v_msg_t *command, uint8_t TRVPercentOpen, const FullStatsMessageCore_t *trailer);
 
 // Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) in the shared TX buffer.
 // The getTRVPercentOpen() result is used to generate the frame.
@@ -169,7 +178,7 @@ void FHT8VCreateValveSetCmdFrame(const uint8_t valvePC);
 // Will return non-null if OK, else NULL if anything obviously invalid is detected such as failing parity or checksum.
 // Finds and discards leading encoded 1 and trailing 0.
 // Returns NULL on failure, else pointer to next full byte after last decoded.
-uint8_t const *FHT8VDecodeBitStream(uint8_t const *bitStream, uint8_t const *lastByte, FHT8VRadValve::fht8v_msg_t *command);
+uint8_t const *FHT8VDecodeBitStream(uint8_t const *bitStream, uint8_t const *lastByte, FHT8VRadValveBase::fht8v_msg_t *command);
 
 
 // Clear both housecode parts (and thus disable local valve).
