@@ -198,19 +198,6 @@ bool FHT8VPollSyncAndTX_Next(bool allowDoubleTX = false);
 bool FHT8VisControlledValveOpen();
 
 
-#if defined(FHT8V_ALLOW_EXTRA_TXES)
-// Does an extra (single) TX if safe to help ensure that the hub hears, eg in case of poor comms.
-// Safe means when in sync with the valve,
-// and well away from the normal transmission windows to avoid confusing the valve.
-// Returns true iff a TX was done.
-// This may also be omitted if the TX would not be heard by the hub anyway.
-// Note: (single) transmission time is up to about 80ms.
-// In future this may be transmitted so as never to be decoded by the valve,
-// and seen by the hub as an extra TX with its offset from the real TX also sent.
-bool FHT8VDoSafeExtraTXToHub();
-#endif
-
-
 //#ifdef ENABLE_BOILER_HUB
 //// Maximum number of housecodes that can be remembered and filtered for in hub selective-response mode.
 //// Strictly positive if compiled in.

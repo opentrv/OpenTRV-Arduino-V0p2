@@ -785,32 +785,6 @@ bool FHT8VPollSyncAndTX_Next(const bool allowDoubleTX)
 #endif
   }
 
-//#if defined(FHT8V_ALLOW_EXTRA_TXES)
-//// Does an extra (single) TX if safe to help ensure that the hub hears, eg in case of poor comms.
-//// Safe means when in sync with the valve,
-//// and well away from the normal transmission windows to avoid confusing the valve.
-//// Returns true iff a TX was done.
-//// This may also be omitted if the TX would not be heard by the hub anyway.
-//// Note: (single) transmission time is up to about 80ms.
-//// In future this may be transmitted so as never to be decoded by the valve,
-//// and seen by the hub as an extra TX with its offset from the real TX also sent.
-//// FIXME: have this use alternative stats message form to avoid confusing FHT8V valve or hub.
-//bool FHT8VDoSafeExtraTXToHub()
-//  {
-//  // Do nothing until in sync.
-//  if(!syncedWithFHT8V) { return(false); }
-//  // Do nothing if too close to (within maybe 10s of) the start or finish of a ~2m TX cycle
-//  // (which might cause FHT8V to latch onto the wrong, extra, TX, for example).
-//  if((halfSecondsToNextFHT8VTX < 20) || (halfSecondsToNextFHT8VTX > 210)) { return(false); }
-//  // Do nothing if we would not send something that the hub would hear anyway.
-//  if(NominalRadValve.get() < getMinValvePcReallyOpen()) { return(false); }
-//  // Do (single) TX.
-//  FHT8VTXFHTQueueAndSendCmd(FHT8VTXCommandArea, false);
-//  // Done it.
-//  return(true);
-//  }
-//#endif
-
 
 // Hub-mode receive buffer for RX from FHT8V.
 // Extend if need be to allow receipt of JSON message.
