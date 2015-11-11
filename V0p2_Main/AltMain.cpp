@@ -101,7 +101,7 @@ void POSTalt()
   // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
   RFM23B.preinit(NULL);
   // Check that the radio is correctly connected; panic if not...
-  if(!RFM23B.configure(1, &RFMConfig) || !RFM23B.begin()) { panic(F("PANIC!")); }
+  if(!RFM23B.configure(1, &RFMConfig) || !RFM23B.begin()) { panic(); }
 #endif
 
 
@@ -156,11 +156,6 @@ void POSTalt()
 
 
   RFM23B.listen(true);
-  pinMode(3, INPUT);	// FIXME Move to where they are set automatically
-  digitalWrite(3, LOW);
-
-  RFM23B.queueToSend((uint8_t *)"start", 6);
-
   }
 
 
@@ -210,27 +205,12 @@ static volatile uint8_t prevStatePD;
 // Interrupt service routine for PD I/O port transition changes (including RX).
 ISR(PCINT2_vect)
   {
+	//  const uint8_t pins = PIND;
+	//  const uint8_t changes = pins ^ prevStatePD;
+	//  prevStatePD = pins;
+	//
+	// ...
 
-	  const uint8_t pins = PIND;
-	  const uint8_t changes = pins ^ prevStatePD;
-	  prevStatePD = pins;
-
-#if defined(ENABLE_VOICE_SENSOR)
-	  	//  // Voice detection is a falling edge.
-	  	//  // Handler routine not required/expected to 'clear' this interrupt.
-	  	//  // FIXME: ensure that Voice.handleInterruptSimple() is inlineable to minimise ISR prologue/epilogue time and space.
-	  	  // Voice detection is a RISING edge.
-	  	  if((changes & VOICE_INT_MASK) && (pins & VOICE_INT_MASK)) {
-	  	    Voice.handleInterruptSimple();
-	  	  }
-
-	  	  // If an interrupt arrived from no other masked source then wake the CLI.
-	  	  // The will ensure that the CLI is active, eg from RX activity,
-	  	  // eg it is possible to wake the CLI subsystem with an extra CR or LF.
-	  	  // It is OK to trigger this from other things such as button presses.
-	  	  // FIXME: ensure that resetCLIActiveTimer() is inlineable to minimise ISR prologue/epilogue time and space.
-	  	  if(!(changes & MASK_PD & ~1)) { resetCLIActiveTimer(); }
-#endif // ENABLE_VOICE_SENSOR
   }
 #endif // defined(MASK_PD) && (MASK_PD != 0)
 
@@ -321,6 +301,7 @@ void loopAlt()
 ////  if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@0"); }
 //#endif
 
+<<<<<<< HEAD
 #ifdef ALLOW_STATS_TX
     // Regular transmission of stats if NOT driving a local valve (else stats can be piggybacked onto that).
     if(TIME_LSD ==  10)
@@ -356,6 +337,9 @@ void loopAlt()
         Voice.read();
       }
 #endif // (ENABLE_VOICE_SENSOR)
+=======
+
+>>>>>>> branch 'master' of https://github.com/Denzo77/OpenTRV
 
 //#if defined(USE_MODULE_FHT8VSIMPLE)
 //  if(useExtraFHT8VTXSlots)

@@ -635,7 +635,7 @@ extern SimpleSlaveRadValve NominalRadValve;
 #define DEFAULT_MAX_RUN_ON_TIME_M 5
 
 // If defined then turn off valve very slowly after stopping call for heat (ie when shutting) which
-// may allow comfortable bolier pump overrun in older systems with no/poor bypass to avoid overheating.
+// may allow comfortable boiler pump overrun in older systems with no/poor bypass to avoid overheating.
 // In any case this should help reduce strain on circulation pumps, etc.
 // ALWAYS IMPLEMENT LINGER AS OF 20141228
 //#define VALVE_TURN_OFF_LINGER
@@ -667,12 +667,12 @@ class OccupancyTracker : public OTV0P2BASE::SimpleTSUint8Sensor
   {
   private:
     // Time until room regarded as unoccupied, in minutes; initially zero (ie treated as unoccupied at power-up).
-    // Marked voilatile for thread-safe lock-free non-read-modify-write access to byte-wide value.
+    // Marked volatile for thread-safe lock-free non-read-modify-write access to byte-wide value.
     // Compound operations must block interrupts.
     volatile uint8_t occupationCountdownM;
 
     // Non-zero if occupancy system recently notified of activity.
-    // Marked voilatile for thread-safe lock-free non-read-modify-write access to byte-wide value.
+    // Marked volatile for thread-safe lock-free non-read-modify-write access to byte-wide value.
     // Compound operations must block interrupts.
     volatile uint8_t activityCountdownM;
 
@@ -828,34 +828,6 @@ extern OccupancyTracker Occupancy;
 // (EEPROM wear should not be an issue at this update rate in normal use.)
 void sampleStats(bool fullSample);
 
-// Clear all collected statistics, eg when moving device to a new room or at a major time change.
-// Requires 1.8ms per byte for each byte that actually needs erasing.
-//   * maxBytesToErase limit the number of bytes erased to this; strictly positive, else 0 to allow 65536
-// Returns true if finished with all bytes erased.
-bool zapStats(uint16_t maxBytesToErase = 0);
-
-// Get raw stats value for hour HH [0,23] from stats set N from non-volatile (EEPROM) store.
-// A value of 0xff (255) means unset (or out of range); other values depend on which stats set is being used.
-uint8_t getByHourStat(uint8_t hh, uint8_t statsSet);
-
-// Get previous hour in current local time, wrapping round from 0 to 23.
-uint8_t getPrevHourLT();
-// Get next hour in current local time, wrapping round from 23 back to 0.
-uint8_t getNextHourLT();
-
-// Returns true if specified hour is (conservatively) in the specifed outlier quartile for specified stats set.
-// Returns false if a full set of stats not available, eg including the specified hour.
-// Always returns false if all samples are the same.
-//   * inTop  test for membership of the top quartile if true, bottom quartile if false
-//   * statsSet  stats set number to use.
-//   * hour  hour of day to use or inOutlierQuartile_CURRENT_HOUR for current hour or inOutlierQuartile_NEXT_HOUR for next hour
-static const uint8_t inOutlierQuartile_CURRENT_HOUR = ~0 - 1;
-static const uint8_t inOutlierQuartile_NEXT_HOUR = ~0;
-bool inOutlierQuartile(uint8_t inTop, uint8_t statsSet, uint8_t hour = inOutlierQuartile_CURRENT_HOUR);
-
-// 'Unset'/invalid values for byte (eg raw EEPROM byte) and int (eg after decompression).
-#define STATS_UNSET_BYTE 0xff
-#define STATS_UNSET_INT 0x7fff
 
 #ifdef ENABLE_ANTICIPATION
 // Returns true iff room likely to be occupied and need warming at the specified hour's sample point based on collected stats.
@@ -864,7 +836,6 @@ bool inOutlierQuartile(uint8_t inTop, uint8_t statsSet, uint8_t hour = inOutlier
 //   * hh hour to check for predictive warming [0,23]
 bool shouldBeWarmedAtHour(const uint_least8_t hh);
 #endif
-
 
 
 #ifdef UNIT_TESTS
@@ -909,7 +880,8 @@ void populateCoreStats(FullStatsMessageCore_t *content);
 // This may be binary or JSON format.
 //   * allowDoubleTX  allow double TX to increase chance of successful reception
 //   * doBinary  send binary form, else JSON form if supported
-void bareStatsTX(const bool allowDoubleTX, const bool doBinary);
+//   * RFM23BFramed   Add preamble and CRC to frame. Defaults to true for compatibility
+void bareStatsTX(const bool allowDoubleTX, const bool doBinary, const bool RFM23BFramed = true);
 
 #ifdef ENABLE_BOILER_HUB
 // Raw notification of received call for heat from remote (eg FHT8V) unit.

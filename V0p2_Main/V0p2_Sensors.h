@@ -145,17 +145,42 @@ class AmbientLight : public OTV0P2BASE::SimpleTSUint8Sensor
     // Raw ambient light value [0,1023] dark--light.
     uint16_t rawValue;
 
-    // True iff room is lit well enough for activity.
-    // Marked volatile for thread-safe (simple) lock-free access.
+    // True iff room appears lit well enough for activity.
+    // Marked volatile for ISR-/thread- safe (simple) lock-free access.
     volatile bool isRoomLitFlag;
 
-    // Number of minutes (read() calls) that teh room has been continuously dark for [0,255].
+    // Number of minutes (read() calls) that the room has been continuously dark for [0,255].
     // Does not roll over from maximum value.
     // Reset to zero in light.
     uint8_t darkTicks;
 
+    // Minimum eg from recent stats, to allow auto adjustment to dark; ~0/0xff means no min available.
+    uint8_t recentMin;
+    // Maximum eg from recent stats, to allow auto adjustment to dark; ~0/0xff means no max available.
+    uint8_t recentMax;
+
+    // Lower and upper hysteresis thresholds (on [0,254] scale) for detecting dark/light.
+    uint8_t lowerThreshold, upperThreshold;
+
+    // Set true if ambient light sensor may be unusable or unreliable.
+    // This will be where (for example) there are historic values
+    // but in a very narrow range which implies a broken sensor or shadowed location.
+    bool unusable;
+
+    // Ignore first false trigger at start-up.
+    bool ignoredFirst;
+
+    // Recomputes thresholds and 'unusable' based on current state.
+    void recomputeThresholds();
+
   public:
-    // Force a read/poll of the ambient light level and return the value sensed [0,1023] (dark to light).
+    AmbientLight()
+      : isRoomLitFlag(false), darkTicks(0),
+        recentMin(~0), recentMax(~0),
+        unusable(false), ignoredFirst(false)
+      { recomputeThresholds(); }
+
+    // Force a read/poll of the ambient light level and return the value sensed [0,255] (dark to light).
     // Potentially expensive/slow.
     // Not thread-safe nor usable within ISRs (Interrupt Service Routines).
     virtual uint8_t read();
@@ -168,7 +193,11 @@ class AmbientLight : public OTV0P2BASE::SimpleTSUint8Sensor
     virtual const char *tag() const { return("L"); }
 
     // Get raw ambient light value in range [0,1023].
-    uint16_t getRaw() { return(rawValue); }
+    // Undefined until first read().
+    uint16_t getRaw() const { return(rawValue); }
+
+    // Returns true if this sensor is apparently unusable.
+    virtual bool isUnavailable() const { return(unusable); }
 
     // Returns true if room is lit enough for someone to be active.
     // False if unknown.
@@ -176,14 +205,22 @@ class AmbientLight : public OTV0P2BASE::SimpleTSUint8Sensor
     bool isRoomLit() const { return(isRoomLitFlag); }
 
     // Returns true if room is light enough for someone to be active.
-    // False if unknown.
+    // False if unknown or sensor appears unusable,
+    // thus it is possible for both isRoomLit() and isRoomDark() to be false.
     // Thread-safe and usable within ISRs (Interrupt Service Routines).
-    bool isRoomDark() const { return(!isRoomLitFlag); }
+    bool isRoomDark() const { return(!isRoomLitFlag && !unusable); }
 
-    // Get number of minutes (read() calls) that teh room has been continuously dark for [0,255].
+    // Get number of minutes (read() calls) that the room has been continuously dark for [0,255].
     // Does not roll over from maximum value.
     // Reset to zero in light.
-    uint8_t getDarkMinutes() { return(darkTicks); }
+    // Does not increment if the sensor decides that it is unusable.
+    uint8_t getDarkMinutes() const { return(darkTicks); }
+
+    // Set minimum eg from recent stats, to allow auto adjustment to dark; ~0/0xff means no min available.
+    void setMin(uint8_t recentMinimumOrFF, uint8_t longerTermMinimumOrFF = 0xff);
+    // Set maximum eg from recent stats, to allow auto adjustment to dark; ~0/0xff means no max available.
+    void setMax(uint8_t recentMaximumOrFF, uint8_t longerTermMaximumOrFF = 0xff);
+    
 
 #ifdef UNIT_TESTS
     // Set new value(s) for unit test only.
