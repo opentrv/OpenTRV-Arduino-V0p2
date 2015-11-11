@@ -380,7 +380,6 @@ void FHT8VCreateValveSetCmdFrame(const uint8_t valvePC)
 #ifdef FHT8V_ADR_USED
   command.address = 0;
 #endif
-
   FHT8VRadValveBase::FHT8VCreateValveSetCmdFrame_r(FHT8VTXCommandArea, &command, valvePC);
   }
 
