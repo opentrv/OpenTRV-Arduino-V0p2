@@ -58,7 +58,28 @@ class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
     uint8_t * const buf;
     const uint8_t size;
     // Construct an instance, providing TX buffer details.
-    FHT8VRadValveBase(uint8_t *_buf, uint8_t _size) : buf(_buf), size(_size) { }
+    FHT8VRadValveBase(uint8_t *_buf, uint8_t _size)
+      : buf(_buf), size(_size),
+        halfSecondCount(0)
+    { FHT8VSyncAndTXReset(); }
+
+    // Sync status and down counter for FHT8V, initially zero; value not important once in sync.
+    // If syncedWithFHT8V = 0 then resyncing, AND
+    //     if syncStateFHT8V is zero then cycle is starting
+    //     if syncStateFHT8V in range [241,3] (inclusive) then sending sync command 12 messages.
+    uint8_t syncStateFHT8V;
+    
+    // Count-down in half-second units until next transmission to FHT8V valve.
+    uint8_t halfSecondsToNextFHT8VTX;
+
+    // Half second count within current minor cycle for FHT8VPollSyncAndTX_XXX().
+    uint8_t halfSecondCount;
+
+    // True once/while this node is synced with and controlling the target FHT8V valve; initially false.
+    bool syncedWithFHT8V;
+
+    // True if FHT8V valve is believed to be open under instruction from this system; false if not in sync.
+    bool FHT8V_isValveOpen;
 
     // Send current (assumed valve-setting) command and adjust FHT8V_isValveOpen as appropriate.
     // Only appropriate when the command is going to be heard by the FHT8V valve itself, not just the hub.
@@ -69,12 +90,17 @@ class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
     // Iff this returns true then a(nother) call FHT8VPollSyncAndTX_Next() at or before each 0.5s from the cycle start should be made.
     bool doSync(const bool allowDoubleTX);
 
-    uint8_t halfSecondCount;
     #if defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
     static const uint8_t MAX_HSC = 3; // Max allowed value of halfSecondCount.
     #else
     static const uint8_t MAX_HSC = 1; // Max allowed value of halfSecondCount.
     #endif
+
+    // Call just after TX of valve-setting command which is assumed to reflect current TRVPercentOpen state.
+    // This helps avoiding calling for heat from a central boiler until the valve is really open,
+    // eg to avoid excess load on (or energy wasting by) the circulation pump.
+    // FIXME: compare against own threshold and have NominalRadValve look at least open of all vs minPercentOpen.
+    void setFHT8V_isValveOpen();
 
   public:
     // Type for information content of FHT8V message.
@@ -89,6 +115,12 @@ class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
       uint8_t command;
       uint8_t extension;
       } fht8v_msg_t;
+
+    // Decode raw bitstream into non-null command structure passed in; returns true if successful.
+    // Will return non-null if OK, else NULL if anything obviously invalid is detected such as failing parity or checksum.
+    // Finds and discards leading encoded 1 and trailing 0.
+    // Returns NULL on failure, else pointer to next full byte after last decoded.
+    static uint8_t const *FHT8VDecodeBitStream(uint8_t const *bitStream, uint8_t const *lastByte, fht8v_msg_t *command);
 
     // Minimum and maximum FHT8V TX cycle times in half seconds: [115.0,118.5].
     // Fits in an 8-bit unsigned value.
@@ -128,7 +160,7 @@ class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
     // The generated command frame can be resent indefinitely.
     // The command buffer used must be (at least) FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE bytes plus extra preamble and trailers.
     // Returns pointer to the terminating 0xff on exit.
-    static uint8_t *FHT8VCreateValveSetCmdFrame_r(uint8_t *bptr, FHT8VRadValveBase::fht8v_msg_t *command, const uint8_t TRVPercentOpen);
+    static uint8_t *FHT8VCreateValveSetCmdFrame_r(uint8_t *bptr, fht8v_msg_t *command, const uint8_t TRVPercentOpen);
     
     // Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) at bptr with optional headers and trailers.
     //   * TRVPercentOpen value is used to generate the frame
@@ -150,6 +182,41 @@ class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
     // Get estimated minimum percentage open for significant flow for this device; strictly positive in range [1,99].
     // Defaults to typical value from observation.
     virtual uint8_t getMinPercentOpen() const { return(TYPICAL_MIN_PERCENT_OPEN); }
+
+    // Call to reset comms with FHT8V valve and force resync.
+    // Resets values to power-on state so need not be called in program preamble if variables not tinkered with.
+    // Requires globals defined that this maintains:
+    //   syncedWithFHT8V (bit, true once synced)
+    //   FHT8V_isValveOpen (bit, true if this node has last sent command to open valve)
+    //   syncStateFHT8V (byte, internal)
+    //   halfSecondsToNextFHT8VTX (byte).
+    // FIXME: fit into standard RadValve API.
+    void FHT8VSyncAndTXReset()
+      {
+      syncedWithFHT8V = false;
+      syncStateFHT8V = 0;
+      halfSecondsToNextFHT8VTX = 0;
+      FHT8V_isValveOpen = false;
+      }
+
+    //#ifndef IGNORE_FHT_SYNC
+    // True once/while this node is synced with and controlling the target FHT8V valve; initially false.
+    // FIXME: fit into standard RadValve API.
+    bool isSyncedWithFHT8V() { return(syncedWithFHT8V); }
+    //#else
+    //bool isSyncedWithFHT8V() { return(true); } // Lie and claim always synced.
+    //#endif
+    
+    // True if FHT8V valve is believed to be open under instruction from this system; false if not in sync.
+    // FIXME: fit into standard RadValve API.
+    bool getFHT8V_isValveOpen() { return(syncedWithFHT8V && FHT8V_isValveOpen); }
+
+    // GLOBAL NOTION OF CONTROLLED FHT8V VALVE STATE PROVIDED HERE
+    // True iff the FHT8V valve(s) (if any) controlled by this unit are really open.
+    // This waits until at least the command to open the FHT8Vhas been sent.
+    // FIXME: fit into standard RadValve API.
+    bool FHT8VisControlledValveOpen() { return(getFHT8V_isValveOpen()); }
+
 
     // A set of RFM22/RFM23 register settings for use with FHT8V, stored in (read-only) program/Flash memory.
     // Consists of a sequence of (reg#,value) pairs terminated with a $ff register.  The reg#s are <128, ie top bit clear.
@@ -288,15 +355,15 @@ extern FHT8VRadValve<> FHT8V;
 //// The generated command frame can be resent indefinitely.
 //// If no valve is set up then this may simply terminate an empty buffer with 0xff.
 //void FHT8VCreateValveSetCmdFrame(const uint8_t valvePC);
+//
+//// Decode raw bitstream into non-null command structure passed in; returns true if successful.
+//// Will return non-null if OK, else NULL if anything obviously invalid is detected such as failing parity or checksum.
+//// Finds and discards leading encoded 1 and trailing 0.
+//// Returns NULL on failure, else pointer to next full byte after last decoded.
+//uint8_t const *FHT8VDecodeBitStream(uint8_t const *bitStream, uint8_t const *lastByte, FHT8VRadValveBase::fht8v_msg_t *command);
 
-// Decode raw bitstream into non-null command structure passed in; returns true if successful.
-// Will return non-null if OK, else NULL if anything obviously invalid is detected such as failing parity or checksum.
-// Finds and discards leading encoded 1 and trailing 0.
-// Returns NULL on failure, else pointer to next full byte after last decoded.
-uint8_t const *FHT8VDecodeBitStream(uint8_t const *bitStream, uint8_t const *lastByte, FHT8VRadValveBase::fht8v_msg_t *command);
-
-// True once/while this node is synced with and controlling the target FHT8V valve; initially false.
-bool isSyncedWithFHT8V();
+//// True once/while this node is synced with and controlling the target FHT8V valve; initially false.
+//bool isSyncedWithFHT8V();
 
 
 // This unit may control a local TRV.
@@ -310,12 +377,12 @@ bool localFHT8VTRVEnabled();
 #endif
 
 
-// True if FHT8V valve is believed to be open under instruction from this system; undefined if not in sync.
-bool getFHT8V_isValveOpen();
-
-// Call to reset comms with FHT8V valve and force resync.
-// Resets values to power-on state so need not be called in program preamble if variables not tinkered with.
-void FHT8VSyncAndTXReset();
+//// True if FHT8V valve is believed to be open under instruction from this system; undefined if not in sync.
+//bool getFHT8V_isValveOpen();
+//
+//// Call to reset comms with FHT8V valve and force resync.
+//// Resets values to power-on state so need not be called in program preamble if variables not tinkered with.
+//void FHT8VSyncAndTXReset();
 
 //// Call at start of minor cycle to manage initial sync and subsequent comms with FHT8V valve.
 //// Conveys this system's TRVPercentOpen value to the FHT8V value periodically,
@@ -348,12 +415,12 @@ void FHT8VSyncAndTXReset();
 //bool FHT8VPollSyncAndTX_Next(bool allowDoubleTX = false);
 
 
-// True iff the FHT8V valve(s) (if any) controlled by this unit are really open.
-// This waits until, for example, an ACK where appropriate, or at least the command has been sent.
-// This also implies open to OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN or equivalent.
-// If more than one valve is being controlled by this unit,
-// then this should return true if all of the valves are (significantly) open.
-bool FHT8VisControlledValveOpen();
+//// True iff the FHT8V valve(s) (if any) controlled by this unit are really open.
+//// This waits until, for example, an ACK where appropriate, or at least the command has been sent.
+//// This also implies open to OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN or equivalent.
+//// If more than one valve is being controlled by this unit,
+//// then this should return true if all of the valves are (significantly) open.
+//bool FHT8VisControlledValveOpen();
 
 
 //#ifdef ENABLE_BOILER_HUB
