@@ -249,5 +249,30 @@ bool FHT8VDoSafeExtraTXToHub();
 
 
 #endif
+
+
+
+
+
+
+// FHT8V radio-controlled radiator valve, using FS20 protocol.
+class FHT8VRadValve : public OTRadValve::AbstractRadValve
+  {
+  public:
+    // Typical FHT8V 'open' percentage, though partly depends on valve tails, etc.
+    // This is set to err on the side of slightly open to allow
+    // the 'linger' feature to work to help boilers dump heat with pump over-run
+    // when the the boiler is turned off.
+    // Actual values observed by DHD range from 6% to 25%.
+    static const uint8_t TYPICAL_MIN_PERCENT_OPEN = 10;
+
+    // Get estimated minimum percentage open for significant flow for this device; strictly positive in range [1,99].
+    // Defaults to typical value from observation.
+    virtual uint8_t getMinPercentOpen() const { return(TYPICAL_MIN_PERCENT_OPEN); }
+  };
+
+
+
+
 #endif
 
