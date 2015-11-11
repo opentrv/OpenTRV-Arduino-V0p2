@@ -197,7 +197,7 @@ static uint8_t *_FHT8VCreate200usAppendByteEP(uint8_t *bptr, const uint8_t b)
 // The maximum and minimum possible encoded message sizes are 35 (all zero bytes) and 45 (all 0xff bytes) bytes long.
 // Note that a buffer space of at least 46 bytes is needed to accommodate the longest-possible encoded message and terminator.
 // Returns pointer to the terminating 0xff on exit.
-uint8_t *FHT8VCreate200usBitStreamBptr(uint8_t *bptr, const fht8v_msg_t *command)
+uint8_t *FHT8VRadValve::FHT8VCreate200usBitStreamBptr(uint8_t *bptr, const FHT8VRadValve::fht8v_msg_t *command)
   {
   // Generate FHT8V preamble.
   // First 12 x 0 bits of preamble, pre-encoded as 6 x 0xcc bytes.
@@ -248,7 +248,7 @@ uint8_t *FHT8VCreate200usBitStreamBptr(uint8_t *bptr, const fht8v_msg_t *command
 // The generated command frame can be resent indefinitely.
 // The output buffer used must be (at least) FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE bytes.
 // Returns pointer to the terminating 0xff on exit.
-uint8_t *FHT8VCreateValveSetCmdFrameHT_r(uint8_t *const bptrInitial, const bool doHeader, fht8v_msg_t *const command, const uint8_t TRVPercentOpen, const FullStatsMessageCore_t *trailer)
+uint8_t *FHT8VCreateValveSetCmdFrameHT_r(uint8_t *const bptrInitial, const bool doHeader, FHT8VRadValve::fht8v_msg_t *const command, const uint8_t TRVPercentOpen, const FullStatsMessageCore_t *trailer)
   {
   uint8_t *bptr = bptrInitial;
 
@@ -263,7 +263,7 @@ uint8_t *FHT8VCreateValveSetCmdFrameHT_r(uint8_t *const bptrInitial, const bool 
     bptr += RFM22_PREAMBLE_BYTES;
     }
 
-  bptr = FHT8VCreate200usBitStreamBptr(bptr, command);
+  bptr = FHT8VRadValve::FHT8VCreate200usBitStreamBptr(bptr, command);
 
 #if defined(ALLOW_STATS_TX)
   if(NULL != trailer)
@@ -307,7 +307,7 @@ uint8_t *FHT8VCreateValveSetCmdFrameHT_r(uint8_t *const bptrInitial, const bool 
 //
 // NOTE: with SUPPORT_TEMP_TX defined will also insert trailing stats payload where appropriate.
 // Also reports local stats as if remote.
-uint8_t *FHT8VCreateValveSetCmdFrame_r(uint8_t *const bptr, fht8v_msg_t *command, const uint8_t TRVPercentOpen)
+uint8_t *FHT8VCreateValveSetCmdFrame_r(uint8_t *const bptr, FHT8VRadValve::fht8v_msg_t *command, const uint8_t TRVPercentOpen)
   {
   const bool etmsp = enableTrailingStatsPayload();
 
@@ -374,7 +374,7 @@ static uint8_t FHT8VTXCommandArea[FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE];
 // If no valve is set up then this may simply terminate an empty buffer with 0xff.
 void FHT8VCreateValveSetCmdFrame(const uint8_t valvePC)
   {
-  fht8v_msg_t command;
+  FHT8VRadValve::fht8v_msg_t command;
   command.hc1 = FHT8VGetHC1();
   command.hc2 = FHT8VGetHC2();
 #ifdef FHT8V_ADR_USED
@@ -522,16 +522,15 @@ static uint8_t halfSecondCount;
 #define MAX_HSC 1 // Max allowed value of halfSecondCount.
 #endif
 
-
-// Compute interval (in half seconds) between TXes for FHT8V given house code 2.
-// (In seconds, the formula is t = 115 + 0.5 * (HC2 & 7) seconds, in range [115.0,118.5].)
-static uint8_t FHT8VTXGapHalfSeconds(const uint8_t hc2) { return((hc2 & 7) + 230); }
+//// Compute interval (in half seconds) between TXes for FHT8V given house code 2.
+//// (In seconds, the formula is t = 115 + 0.5 * (HC2 & 7) seconds, in range [115.0,118.5].)
+//static uint8_t FHT8VTXGapHalfSeconds(const uint8_t hc2) { return((hc2 & 7) + 230); }
 
 // Compute interval (in half seconds) between TXes for FHT8V given house code 2
 // given current halfSecondCountInMinorCycle assuming all remaining tick calls to _Next
 // will be foregone in this minor cycle,
 static uint8_t FHT8VTXGapHalfSeconds(const uint8_t hc2, const uint8_t halfSecondCountInMinorCycle)
-  { return(FHT8VTXGapHalfSeconds(hc2) - (MAX_HSC - halfSecondCountInMinorCycle)); }
+  { return(FHT8VRadValve::FHT8VTXGapHalfSeconds(hc2) - (MAX_HSC - halfSecondCountInMinorCycle)); }
 
 // Sleep in reasonably low-power mode until specified target subcycle time, optionally listening (RX) for calls-for-heat.
 // Returns true if OK, false if specified time already passed or significantly missed (eg by more than one tick).
@@ -588,12 +587,12 @@ static bool doSync(const bool allowDoubleTX)
     // Generate and send sync (command 12) message immediately for odd-numbered ticks, ie once per second.
     if(syncStateFHT8V & 1)
       {
-      fht8v_msg_t command;
+      FHT8VRadValve::fht8v_msg_t command;
       command.hc1 = FHT8VGetHC1();
       command.hc2 = FHT8VGetHC2();
       command.command = 0x2c; // Command 12, extension byte present.
       command.extension = syncStateFHT8V;
-      FHT8VCreate200usBitStreamBptr(FHT8VTXCommandArea, &command);
+      FHT8VRadValve::FHT8VCreate200usBitStreamBptr(FHT8VTXCommandArea, &command);
       if(halfSecondCount > 0)
         { sleepUntilSubCycleTimeOptionalRX((OTV0P2BASE::SUB_CYCLE_TICKS_PER_S/2) * halfSecondCount); }
       FHT8VTXFHTQueueAndSendCmd(FHT8VTXCommandArea, allowDoubleTX); // SEND SYNC
@@ -624,13 +623,13 @@ static bool doSync(const bool allowDoubleTX)
     if(--halfSecondsToNextFHT8VTX == 0)
       {
       // Send sync final command.
-      fht8v_msg_t command;
+      FHT8VRadValve::fht8v_msg_t command;
       command.hc1 = FHT8VGetHC1();
       command.hc2 = FHT8VGetHC2();
       command.command = 0x20; // Command 0, extension byte present.
       command.extension = 0; // DHD20130324: could set to TRVPercentOpen, but anything other than zero seems to lock up FHT8V-3 units.
       FHT8V_isValveOpen = false; // Note that valve will be closed (0%) upon receipt.
-      FHT8VCreate200usBitStreamBptr(FHT8VTXCommandArea, &command);
+      FHT8VRadValve::FHT8VCreate200usBitStreamBptr(FHT8VTXCommandArea, &command);
       if(halfSecondCount > 0) { sleepUntilSubCycleTimeOptionalRX((OTV0P2BASE::SUB_CYCLE_TICKS_PER_S/2) * halfSecondCount); }
       FHT8VTXFHTQueueAndSendCmd(FHT8VTXCommandArea, allowDoubleTX); // SEND SYNC FINAL
       // Note that FHT8VTXCommandArea now does not contain a valid valve-setting command...
@@ -792,11 +791,9 @@ bool FHT8VPollSyncAndTX_Next(const bool allowDoubleTX)
 #define FHT8V_JSON_FRAME_BUF_SIZE (FHT8V_MAX_EXTRA_PREAMBLE_BYTES + MSG_JSON_MAX_LENGTH + 1 + 1) // Allow for trailing CRC and terminator which can be overwritten with null.
 #define FHT8V_MAX_FRAME_SIZE (max(FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE, FHT8V_JSON_FRAME_BUF_SIZE))
 
-#if FHT8V_MAX_FRAME_SIZE > 65 // Max radio frame buffer plus terminating 0xff...
-#error frame too big for RFM22/RFM23
-#endif
-
-//static uint8_t FHT8VRXHubArea[FHT8V_MAX_FRAME_SIZE]; // Allow for trailing 0xff terminator.
+//#if FHT8V_MAX_FRAME_SIZE > 65 // Max radio frame buffer plus terminating 0xff...
+//#error frame too big for RFM22/RFM23
+//#endif
 
 // True while eavesdropping for OpenTRV calls for heat.
 static volatile bool eavesdropping;
@@ -814,49 +811,6 @@ static volatile uint8_t lastRXerrno;
 // Atomically returns and clears last (FHT8V) RX error code, or 0 if none.
 // Set with such codes as FHT8VRXErr_GENERIC; never set to zero.
 static void setLastRXErr(const uint8_t err) { ATOMIC_BLOCK (ATOMIC_RESTORESTATE) { lastRXerrno = err; } }
-
-//
-//static void _SetupRFM22ToEavesdropOnFHT8V()
-//  {
-//  RFM22ModeStandbyAndClearState();
-//  RFM22SetUpRX(MIN_FHT8V_200US_BIT_STREAM_BUF_SIZE, true, true); // Set to RX longest-possible valid FS20 encoded frame.
-//#if !defined(V0p2_REV)
-//#error Board revision not defined.
-//#endif
-//#if V0p2_REV > 0
-//// TODO: hook into interrupts?
-//#endif
-//  }
-
-//// Set up radio to listen for remote TRV nodes calling for heat iff not already eavesdropping, else does nothing.
-//// Only done if in central hub mode.
-//// May set up interrupts/handlers.
-//// Does NOT clear flags indicating receipt of call for heat for example.
-//bool SetupToEavesdropOnFHT8V(const bool force)
-//  {
-//  // DEBUG_SERIAL_PRINTLN_FLASHSTRING("rxs");
-//  if(!force && eavesdropping) { return(false); } // Already eavesdropping.
-//  const bool wasEavesdropping = eavesdropping;
-//  eavesdropping = true;
-//  _SetupRFM22ToEavesdropOnFHT8V();
-//#if 0 && defined(DEBUG)
-//  DEBUG_SERIAL_PRINTLN_FLASHSTRING("RX start");
-//#endif
-//  return(!wasEavesdropping);
-//  }
-
-//// Stop listening out for remote TRVs calling for heat iff currently eavesdropping, else does nothing.
-//// Puts radio in standby mode.
-//// DOES NOT clear flags which indicate that a call for heat has been heard.
-//void StopEavesdropOnFHT8V(bool force)
-//  {
-//  if(!force && !eavesdropping) { return; }
-//  eavesdropping = false;
-//  RFM22ModeStandbyAndClearState();
-//#if 0 && defined(DEBUG)
-//  DEBUG_SERIAL_PRINTLN_FLASHSTRING("RX stop");
-//#endif
-//  }
 
 
 // Current decode state.
@@ -983,7 +937,7 @@ static uint8_t readOneByteWithParity(decode_state_t *const state)
 // Will return non-null if OK, else NULL if anything obviously invalid is detected such as failing parity or checksum.
 // Finds and discards leading encoded 1 and trailing 0.
 // Returns NULL on failure, else pointer to next full byte after last decoded.
-uint8_t const *FHT8VDecodeBitStream(uint8_t const *bitStream, uint8_t const *lastByte, fht8v_msg_t *command)
+uint8_t const *FHT8VDecodeBitStream(uint8_t const *bitStream, uint8_t const *lastByte, FHT8VRadValve::fht8v_msg_t *command)
   {
   decode_state_t state;
   state.bitStream = bitStream;
