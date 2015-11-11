@@ -115,10 +115,9 @@ class FHT8VRadValve : public FHT8VRadValveBase
   };
 
 
+
+
 #ifdef USE_MODULE_FHT8VSIMPLE
-
-
-
 
 #ifdef USE_MODULE_RFM22RADIOSIMPLE
 // Provide RFM22/RFM23 register settings for use with FHT8V, stored in (read-only) program/Flash memory.
