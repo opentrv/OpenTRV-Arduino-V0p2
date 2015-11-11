@@ -54,7 +54,7 @@ class FHT8VRadValve : public OTRadValve::AbstractRadValve
     static const uint8_t MIN_FHT8V_TX_CYCLE_HS = (115*2);
     static const uint8_t MAX_FHT8V_TX_CYCLE_HS = (118*2+1);
 
-    // Compute interval (in half seconds) between TXes for FHT8V given house code 2.
+    // Compute interval (in half seconds) between TXes for FHT8V given house code 2 (HC2).
     // (In seconds, the formula is t = 115 + 0.5 * (HC2 & 7) seconds, in range [115.0,118.5].)
     static inline uint8_t FHT8VTXGapHalfSeconds(const uint8_t hc2) { return((hc2 & 7) + 230); }
 
@@ -69,6 +69,11 @@ class FHT8VRadValve : public OTRadValve::AbstractRadValve
     // This FHT8V messages is encoded with the FS20 protocol.
     // Returns pointer to the terminating 0xff on exit.
     static uint8_t *FHT8VCreate200usBitStreamBptr(uint8_t *bptr, const FHT8VRadValve::fht8v_msg_t *command);
+
+    // Approximate maximum transmission (TX) time for bare FHT8V command frame in ms; strictly positive.
+    // This ignores any prefix needed for particular radios such as the RFM23B.
+    // ~80ms upwards.
+    static const uint8_t FHT8V_APPROX_MAX_RAW_TX_MS = ((((MIN_FHT8V_200US_BIT_STREAM_BUF_SIZE-1)*8) + 4) / 5);
 
     // Typical FHT8V 'open' percentage, though partly depends on valve tails, etc.
     // This is set to err on the side of slightly open to allow
