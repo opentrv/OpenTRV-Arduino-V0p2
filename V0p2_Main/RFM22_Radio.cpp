@@ -54,22 +54,22 @@ OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, -1> RFM23B;
 // This will use whichever transmission medium/carrier/etc is available.
 //#define STATS_MSG_START_OFFSET (RFM22_PREAMBLE_BYTES + RFM22_SYNC_MIN_BYTES)
 //#define STATS_MSG_MAX_LEN (64 - STATS_MSG_START_OFFSET)
-void RFM22RawStatsTXFFTerminated(uint8_t * const buf, const bool doubleTX)
+void RFM22RawStatsTXFFTerminated(uint8_t * const buf, const bool doubleTX, bool RFM23BFramed)
   {
-  //RFM22RXPreambleAdd(buf); // FIXME commented for testing
+  if(RFM23BFramed) RFM22RXPreambleAdd(buf);	// Only needed for RFM23B. This should be made more clear when refactoring
   const uint8_t buflen = OTRadioLink::frameLenFFTerminated(buf);
 #if 0 && defined(DEBUG)
     DEBUG_SERIAL_PRINT_FLASHSTRING("buflen=");
     DEBUG_SERIAL_PRINT(buflen);
     DEBUG_SERIAL_PRINTLN();
-#endif
-  //if(!RFM23B.sendRaw(buf, buflen, 0, (doubleTX ? OTRadioLink::OTRadioLink::TXmax : OTRadioLink::OTRadioLink::TXnormal))) // FIXME commented for testing
+#endif // DEBUG
+  //if(!RFM23B.sendRaw(buf, buflen, 0, (doubleTX ? OTRadioLink::OTRadioLink::TXmax : OTRadioLink::OTRadioLink::TXnormal)))
   if(!RFM23B.queueToSend(buf, buflen, 0, (doubleTX ? OTRadioLink::OTRadioLink::TXmax : OTRadioLink::OTRadioLink::TXnormal)))
     {
 #if 0 && defined(DEBUG)
     DEBUG_SERIAL_PRINTLN_FLASHSTRING("!TX failed");
 #endif
-    }
+    } // DEBUG
   //DEBUG_SERIAL_PRINTLN_FLASHSTRING("RS");
   }
 

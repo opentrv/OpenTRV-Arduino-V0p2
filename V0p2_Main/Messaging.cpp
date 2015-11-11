@@ -155,7 +155,7 @@ uint16_t getInboundStatsQueueOverrun()
 // Send (valid) core binary stats to specified print channel, followed by "\r\n".
 // This does NOT attempt to flush output nor wait after writing.
 // Will only write stats with a source ID.
-void outputCoreStats(Print *p, bool /*secure*/, const FullStatsMessageCore_t *stats)
+void outputCoreStats(Print *p, bool secure, const FullStatsMessageCore_t *stats)
   {
   if(stats->containsID)
     {
@@ -365,7 +365,7 @@ uint8_t *encodeFullStatsMessageCore(uint8_t * const buf, const uint8_t buflen, c
 // Returns null if failed (eg because of corrupt/insufficient message data) and state of 'content' result is undefined.
 // This will avoid copying into the result data (possibly tainted) that has arrived at an inappropriate security level.
 //   * content will contain data decoded from the message; must be non-null
-const uint8_t *decodeFullStatsMessageCore(const uint8_t * const buf, const uint8_t buflen, const stats_TX_level /*secLevel*/, const bool /*secureChannel*/,
+const uint8_t *decodeFullStatsMessageCore(const uint8_t * const buf, const uint8_t buflen, const stats_TX_level secLevel, const bool secureChannel,
     FullStatsMessageCore_t * const content)
   {
 //DEBUG_SERIAL_PRINTLN_FLASHSTRING("dFSMC");
@@ -515,7 +515,7 @@ uint8_t adjustJSONMsgForTXAndComputeCRC(char * const bptr)
 
 // Send (valid) JSON to specified print channel, terminated with "}\0" or '}'|0x80, followed by "\r\n".
 // This does NOT attempt to flush output nor wait after writing.
-void outputJSONStats(Print *p, bool /*secure*/, const uint8_t * const json, const uint8_t bufsize)
+void outputJSONStats(Print *p, bool secure, const uint8_t * const json, const uint8_t bufsize)
   {
 #if 0 && defined(DEBUG)
   if(NULL == json) { panic(); }
