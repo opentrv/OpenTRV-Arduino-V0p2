@@ -419,7 +419,7 @@ bool ModelledRadValve::isControlledValveReallyOpen() const
   {
   if(isRecalibrating()) { return(false); }
 #ifdef USE_MODULE_FHT8VSIMPLE
-  if(!FHT8VisControlledValveOpen()) { return(false); }
+  if(!FHT8V.FHT8VisControlledValveOpen()) { return(false); }
 #endif
   return(value >= getMinPercentOpen());
   }
@@ -430,7 +430,7 @@ bool ModelledRadValve::isControlledValveReallyOpen() const
 bool ModelledRadValve::isRecalibrating() const
   {
 #ifdef USE_MODULE_FHT8VSIMPLE
-  if(!isSyncedWithFHT8V()) { return(true); }
+  if(!FHT8V.isSyncedWithFHT8V()) { return(true); }
 #endif
   return(false);
   }
@@ -440,7 +440,7 @@ bool ModelledRadValve::isRecalibrating() const
 void ModelledRadValve::recalibrate()
   {
 #ifdef USE_MODULE_FHT8VSIMPLE
-  FHT8VSyncAndTXReset(); // Should this be decalcinate instead/also/first?
+  FHT8V.FHT8VSyncAndTXReset(); // Should this be decalcinate instead/also/first?
 #endif
   }
 
@@ -2152,7 +2152,7 @@ void loopOpenTRV()
 //    DEBUG_SERIAL_PRINTLN();
 #endif
 #if defined(USE_MODULE_FHT8VSIMPLE)
-    FHT8VSyncAndTXReset(); // Assume that sync with valve may have been lost, so re-sync.
+    FHT8V.FHT8VSyncAndTXReset(); // Assume that sync with valve may have been lost, so re-sync.
 #endif
     TIME_LSD = OTV0P2BASE::getSecondsLT(); // Prepare to sleep until start of next full minor cycle.
     }

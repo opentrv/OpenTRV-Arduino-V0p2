@@ -305,7 +305,7 @@ uint8_t *FHT8VRadValveBase::FHT8VCreateValveSetCmdFrameHT_r(uint8_t *const bptrI
 //
 // NOTE: with SUPPORT_TEMP_TX defined will also insert trailing stats payload where appropriate.
 // Also reports local stats as if remote.
-uint8_t *FHT8VRadValveBase::FHT8VCreateValveSetCmdFrame_r(uint8_t *const bptr, FHT8VRadValveBase::fht8v_msg_t *command, const uint8_t TRVPercentOpen)
+uint8_t * FHT8VRadValveBase::FHT8VCreateValveSetCmdFrame_r(uint8_t *const bptr, FHT8VRadValveBase::fht8v_msg_t *command, const uint8_t TRVPercentOpen)
   {
   const bool etmsp = enableTrailingStatsPayload();
 
@@ -398,63 +398,63 @@ bool localFHT8VTRVEnabled() { return(((FHT8VGetHC1() <= 99) && (FHT8VGetHC2() <=
 //  FHT8VCreateValveSetCmdFrame(valve.get());
 ////  FHT8VCreateValveSetCmdFrame(NominalRadValve.get());
 //  }
+//
+//// True once/while this node is synced with and controlling the target FHT8V valve; initially false.
+//static bool syncedWithFHT8V;
+//#ifndef IGNORE_FHT_SYNC
+//bool isSyncedWithFHT8V() { return(syncedWithFHT8V); }
+//#else
+//bool isSyncedWithFHT8V() { return(true); } // Lie and claim always synced.
+//#endif
+//
+//
+//// True if FHT8V valve is believed to be open under instruction from this system; false if not in sync.
+//static bool FHT8V_isValveOpen;
+//bool getFHT8V_isValveOpen() { return(syncedWithFHT8V && FHT8V_isValveOpen); }
+//
+//
+//// GLOBAL NOTION OF CONTROLLED FHT8V VALVE STATE PROVIDED HERE
+//// True iff the FHT8V valve(s) (if any) controlled by this unit are really open.
+//// This waits until at least the command to open the FHT8Vhas been sent.
+//bool FHT8VisControlledValveOpen() { return(getFHT8V_isValveOpen()); }
 
-// True once/while this node is synced with and controlling the target FHT8V valve; initially false.
-static bool syncedWithFHT8V;
-#ifndef IGNORE_FHT_SYNC
-bool isSyncedWithFHT8V() { return(syncedWithFHT8V); }
-#else
-bool isSyncedWithFHT8V() { return(true); } // Lie and claim always synced.
-#endif
+//
+//// Call just after TX of valve-setting command which is assumed to reflect current TRVPercentOpen state.
+//// This helps avoiding calling for heat from a central boiler until the valve is really open,
+//// eg to avoid excess load on (or energy wasting by) the circulation pump.
+//#ifdef ENABLE_NOMINAL_RAD_VALVE
+//static void setFHT8V_isValveOpen()
+//#ifdef LOCAL_TRV // More nuanced test...
+//  { FHT8V_isValveOpen = (NominalRadValve.get() >= NominalRadValve.getMinValvePcReallyOpen()); }
+//#else
+//  { FHT8V_isValveOpen = (NominalRadValve.get() >= NominalRadValve.getMinPercentOpen()); }
+//#endif
+//#endif
 
-
-// True if FHT8V valve is believed to be open under instruction from this system; false if not in sync.
-static bool FHT8V_isValveOpen;
-bool getFHT8V_isValveOpen() { return(syncedWithFHT8V && FHT8V_isValveOpen); }
-
-
-// GLOBAL NOTION OF CONTROLLED FHT8V VALVE STATE PROVIDED HERE
-// True iff the FHT8V valve(s) (if any) controlled by this unit are really open.
-// This waits until at least the command to open the FHT8Vhas been sent.
-bool FHT8VisControlledValveOpen() { return(getFHT8V_isValveOpen()); }
-
-
-// Call just after TX of valve-setting command which is assumed to reflect current TRVPercentOpen state.
-// This helps avoiding calling for heat from a central boiler until the valve is really open,
-// eg to avoid excess load on (or energy wasting by) the circulation pump.
-#ifdef ENABLE_NOMINAL_RAD_VALVE
-static void setFHT8V_isValveOpen()
-#ifdef LOCAL_TRV // More nuanced test...
-  { FHT8V_isValveOpen = (NominalRadValve.get() >= NominalRadValve.getMinValvePcReallyOpen()); }
-#else
-  { FHT8V_isValveOpen = (NominalRadValve.get() >= NominalRadValve.getMinPercentOpen()); }
-#endif
-#endif
-
-
-// Sync status and down counter for FHT8V, initially zero; value not important once in sync.
-// If syncedWithFHT8V = 0 then resyncing, AND
-//     if syncStateFHT8V is zero then cycle is starting
-//     if syncStateFHT8V in range [241,3] (inclusive) then sending sync command 12 messages.
-static uint8_t syncStateFHT8V;
-
-// Count-down in half-second units until next transmission to FHT8V valve.
-static uint8_t halfSecondsToNextFHT8VTX;
-
-// Call to reset comms with FHT8V valve and force resync.
-// Resets values to power-on state so need not be called in program preamble if variables not tinkered with.
-// Requires globals defined that this maintains:
-//   syncedWithFHT8V (bit, true once synced)
-//   FHT8V_isValveOpen (bit, true if this node has last sent command to open valve)
-//   syncStateFHT8V (byte, internal)
-//   halfSecondsToNextFHT8VTX (byte).
-void FHT8VSyncAndTXReset()
-  {
-  syncedWithFHT8V = false;
-  syncStateFHT8V = 0;
-  halfSecondsToNextFHT8VTX = 0;
-  FHT8V_isValveOpen = false;
-  }
+//
+//// Sync status and down counter for FHT8V, initially zero; value not important once in sync.
+//// If syncedWithFHT8V = 0 then resyncing, AND
+////     if syncStateFHT8V is zero then cycle is starting
+////     if syncStateFHT8V in range [241,3] (inclusive) then sending sync command 12 messages.
+//static uint8_t syncStateFHT8V;
+//
+//// Count-down in half-second units until next transmission to FHT8V valve.
+//static uint8_t halfSecondsToNextFHT8VTX;
+//
+//// Call to reset comms with FHT8V valve and force resync.
+//// Resets values to power-on state so need not be called in program preamble if variables not tinkered with.
+//// Requires globals defined that this maintains:
+////   syncedWithFHT8V (bit, true once synced)
+////   FHT8V_isValveOpen (bit, true if this node has last sent command to open valve)
+////   syncStateFHT8V (byte, internal)
+////   halfSecondsToNextFHT8VTX (byte).
+//void FHT8VBase::FHT8VSyncAndTXReset()
+//  {
+//  syncedWithFHT8V = false;
+//  syncStateFHT8V = 0;
+//  halfSecondsToNextFHT8VTX = 0;
+//  FHT8V_isValveOpen = false;
+//  }
 
 // Sends to FHT8V in FIFO mode command bitstream from buffer starting at bptr up until terminating 0xff,
 // then reverts to low-power standby mode if not in hub mode, RX for OpenTRV FHT8V if in hub mode.
@@ -498,6 +498,19 @@ static void FHT8VTXFHTQueueAndSendCmd(uint8_t *bptr, const bool doubleTX)
   //DEBUG_SERIAL_PRINTLN_FLASHSTRING("SC");
   }
 
+// Call just after TX of valve-setting command which is assumed to reflect current TRVPercentOpen state.
+// This helps avoiding calling for heat from a central boiler until the valve is really open,
+// eg to avoid excess load on (or energy wasting by) the circulation pump.
+// FIXME: compare against own threshold and have NominalRadValve look at least open of all vs minPercentOpen.
+//#ifdef ENABLE_NOMINAL_RAD_VALVE
+void FHT8VRadValveBase::setFHT8V_isValveOpen()
+#ifdef LOCAL_TRV // More nuanced test...
+  { FHT8V_isValveOpen = (NominalRadValve.get() >= NominalRadValve.getMinValvePcReallyOpen()); }
+#else
+  { FHT8V_isValveOpen = (NominalRadValve.get() >= NominalRadValve.getMinPercentOpen()); }
+#endif
+//#endif
+
 // Send current (assumed valve-setting) command and adjust FHT8V_isValveOpen as appropriate.
 // Only appropriate when the command is going to be heard by the FHT8V valve itself, not just the hub.
 void FHT8VRadValveBase::valveSettingTX(const bool allowDoubleTX)
@@ -528,7 +541,7 @@ void FHT8VRadValveBase::valveSettingTX(const bool allowDoubleTX)
 //// will be foregone in this minor cycle,
 //static uint8_t FHT8VTXGapHalfSeconds(const uint8_t hc2, const uint8_t halfSecondCountInMinorCycle)
 //  { return(FHT8VRadValveBase::FHT8VTXGapHalfSeconds(hc2) - (MAX_HSC - halfSecondCountInMinorCycle)); }
-//
+
 // Sleep in reasonably low-power mode until specified target subcycle time, optionally listening (RX) for calls-for-heat.
 // Returns true if OK, false if specified time already passed or significantly missed (eg by more than one tick).
 // May use a combination of techniques to hit the required time.
@@ -934,7 +947,7 @@ static uint8_t readOneByteWithParity(decode_state_t *const state)
 // Will return non-null if OK, else NULL if anything obviously invalid is detected such as failing parity or checksum.
 // Finds and discards leading encoded 1 and trailing 0.
 // Returns NULL on failure, else pointer to next full byte after last decoded.
-uint8_t const *FHT8VDecodeBitStream(uint8_t const *bitStream, uint8_t const *lastByte, FHT8VRadValveBase::fht8v_msg_t *command)
+uint8_t const * FHT8VRadValveBase::FHT8VDecodeBitStream(uint8_t const *bitStream, uint8_t const *lastByte, FHT8VRadValveBase::fht8v_msg_t *command)
   {
   decode_state_t state;
   state.bitStream = bitStream;
