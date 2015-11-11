@@ -39,12 +39,12 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include "Serial_IO.h"
 #include "UI_Minimal.h"
 
-// Minimum valve percentage open to be considered actually open; [1,100].
-// Setting this above 0 delays calling for heat from a central boiler until water is likely able to flow.
-// (It may however be possible to scavenge some heat if a particular valve opens below this and the circulation pump is already running, for example.)
-// DHD20130522: FHT8V + valve heads that I have been using are not typically open until around 6%.
-// Use the global value for now.
-#define FHT8V_MIN_VALVE_PC_REALLY_OPEN OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN
+//// Minimum valve percentage open to be considered actually open; [1,100].
+//// Setting this above 0 delays calling for heat from a central boiler until water is likely able to flow.
+//// (It may however be possible to scavenge some heat if a particular valve opens below this and the circulation pump is already running, for example.)
+//// DHD20130522: FHT8V + valve heads that I have been using are not typically open until around 6%.
+//// Use the global value for now.
+//#define FHT8V_MIN_VALVE_PC_REALLY_OPEN OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN
 
 // If true then allow double TX for normal valve setting, else only allow it for sync.
 // May want to enforce this where bandwidth is known to be scarce.
@@ -248,7 +248,7 @@ uint8_t *FHT8VRadValveBase::FHT8VCreate200usBitStreamBptr(uint8_t *bptr, const F
 // The generated command frame can be resent indefinitely.
 // The output buffer used must be (at least) FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE bytes.
 // Returns pointer to the terminating 0xff on exit.
-uint8_t *FHT8VCreateValveSetCmdFrameHT_r(uint8_t *const bptrInitial, const bool doHeader, FHT8VRadValveBase::fht8v_msg_t *const command, const uint8_t TRVPercentOpen, const FullStatsMessageCore_t *trailer)
+uint8_t *FHT8VRadValveBase::FHT8VCreateValveSetCmdFrameHT_r(uint8_t *const bptrInitial, const bool doHeader, FHT8VRadValveBase::fht8v_msg_t *const command, const uint8_t TRVPercentOpen, const FullStatsMessageCore_t *trailer)
   {
   uint8_t *bptr = bptrInitial;
 
@@ -307,7 +307,7 @@ uint8_t *FHT8VCreateValveSetCmdFrameHT_r(uint8_t *const bptrInitial, const bool 
 //
 // NOTE: with SUPPORT_TEMP_TX defined will also insert trailing stats payload where appropriate.
 // Also reports local stats as if remote.
-uint8_t *FHT8VCreateValveSetCmdFrame_r(uint8_t *const bptr, FHT8VRadValveBase::fht8v_msg_t *command, const uint8_t TRVPercentOpen)
+uint8_t *FHT8VRadValveBase::FHT8VCreateValveSetCmdFrame_r(uint8_t *const bptr, FHT8VRadValveBase::fht8v_msg_t *command, const uint8_t TRVPercentOpen)
   {
   const bool etmsp = enableTrailingStatsPayload();
 
@@ -381,7 +381,7 @@ void FHT8VCreateValveSetCmdFrame(const uint8_t valvePC)
   command.address = 0;
 #endif
 
-  FHT8VCreateValveSetCmdFrame_r(FHT8VTXCommandArea, &command, valvePC);
+  FHT8VRadValveBase::FHT8VCreateValveSetCmdFrame_r(FHT8VTXCommandArea, &command, valvePC);
   }
 
 // Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) in the shared TX buffer.

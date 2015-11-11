@@ -82,6 +82,24 @@ class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
     // ~80ms upwards.
     static const uint8_t FHT8V_APPROX_MAX_RAW_TX_MS = ((((MIN_FHT8V_200US_BIT_STREAM_BUF_SIZE-1)*8) + 4) / 5);
 
+    // Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) at bptr.
+    // The TRVPercentOpen value is used to generate the frame.
+    // On entry hc1, hc2 (and addresss if used) must be set correctly; this sets command and extension.
+    // The generated command frame can be resent indefinitely.
+    // The command buffer used must be (at least) FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE bytes plus extra preamble and trailers.
+    // Returns pointer to the terminating 0xff on exit.
+    static uint8_t *FHT8VCreateValveSetCmdFrame_r(uint8_t *bptr, FHT8VRadValveBase::fht8v_msg_t *command, const uint8_t TRVPercentOpen);
+    
+    // Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) at bptr with optional headers and trailers.
+    //   * TRVPercentOpen value is used to generate the frame
+    //   * doHeader  if true then an extra RFM22/23-friendly 0xaaaaaaaa sync header is preprended
+    //   * trailer  if not null then a stats trailer is appended, built from that info plus a CRC
+    //   * command  on entry hc1, hc2 (and addresss if used) must be set correctly, this sets the command and extension; never NULL
+    // The generated command frame can be resent indefinitely.
+    // The output buffer used must be (at least) FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE bytes.
+    // Returns pointer to the terminating 0xff on exit.
+    static uint8_t *FHT8VCreateValveSetCmdFrameHT_r(uint8_t *bptr, bool doHeader, FHT8VRadValveBase::fht8v_msg_t *command, uint8_t TRVPercentOpen, const FullStatsMessageCore_t *trailer);
+
     // Typical FHT8V 'open' percentage, though partly depends on valve tails, etc.
     // This is set to err on the side of slightly open to allow
     // the 'linger' feature to work to help boilers dump heat with pump over-run
@@ -138,32 +156,24 @@ class FHT8VRadValve : public FHT8VRadValveBase
 ////#define RFM22_SYNC_BCFH
 //#endif
 
-
-// Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) at bptr.
-// The TRVPercentOpen value is used to generate the frame.
-// On entry hc1, hc2 (and addresss if used) must be set correctly; this sets command and extension.
-// The generated command frame can be resent indefinitely.
-// The command buffer used must be (at least) FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE bytes plus extra preamble and trailers.
-// Returns pointer to the terminating 0xff on exit.
-uint8_t *FHT8VCreateValveSetCmdFrame_r(uint8_t *bptr, FHT8VRadValveBase::fht8v_msg_t *command, const uint8_t TRVPercentOpen);
-
-//#define FHT8V_MAX_EXTRA_PREAMBLE_BYTES RFM22_PREAMBLE_BYTES
-//#define FHT8V_MAX_EXTRA_TRAILER_BYTES (1+max(MESSAGING_TRAILING_MINIMAL_STATS_PAYLOAD_BYTES,FullStatsMessageCore_MAX_BYTES_ON_WIRE))
-//#define FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE (FHT8V_MAX_EXTRA_PREAMBLE_BYTES + (FHT8VRadValve::MIN_FHT8V_200US_BIT_STREAM_BUF_SIZE) + FHT8V_MAX_EXTRA_TRAILER_BYTES) // Buffer space needed.
 //
-//// Approximate maximum transmission (TX) time for FHT8V command frame in ms; strictly positive.
-//// ~80ms upwards.
-//#define FHT8V_APPROX_MAX_TX_MS ((((FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE-1)*8) + 4) / 5)
-
-// Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) at bptr with optional headers and trailers.
-//   * TRVPercentOpen value is used to generate the frame
-//   * doHeader  if true then an extra RFM22/23-friendly 0xaaaaaaaa sync header is preprended
-//   * trailer  if not null then a stats trailer is appended, built from that info plus a CRC
-//   * command  on entry hc1, hc2 (and addresss if used) must be set correctly, this sets the command and extension; never NULL
-// The generated command frame can be resent indefinitely.
-// The output buffer used must be (at least) FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE bytes.
-// Returns pointer to the terminating 0xff on exit.
-uint8_t *FHT8VCreateValveSetCmdFrameHT_r(uint8_t *bptr, bool doHeader, FHT8VRadValveBase::fht8v_msg_t *command, uint8_t TRVPercentOpen, const FullStatsMessageCore_t *trailer);
+//// Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) at bptr.
+//// The TRVPercentOpen value is used to generate the frame.
+//// On entry hc1, hc2 (and addresss if used) must be set correctly; this sets command and extension.
+//// The generated command frame can be resent indefinitely.
+//// The command buffer used must be (at least) FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE bytes plus extra preamble and trailers.
+//// Returns pointer to the terminating 0xff on exit.
+//uint8_t *FHT8VCreateValveSetCmdFrame_r(uint8_t *bptr, FHT8VRadValveBase::fht8v_msg_t *command, const uint8_t TRVPercentOpen);
+//
+//// Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) at bptr with optional headers and trailers.
+////   * TRVPercentOpen value is used to generate the frame
+////   * doHeader  if true then an extra RFM22/23-friendly 0xaaaaaaaa sync header is preprended
+////   * trailer  if not null then a stats trailer is appended, built from that info plus a CRC
+////   * command  on entry hc1, hc2 (and addresss if used) must be set correctly, this sets the command and extension; never NULL
+//// The generated command frame can be resent indefinitely.
+//// The output buffer used must be (at least) FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE bytes.
+//// Returns pointer to the terminating 0xff on exit.
+//uint8_t *FHT8VCreateValveSetCmdFrameHT_r(uint8_t *bptr, bool doHeader, FHT8VRadValveBase::fht8v_msg_t *command, uint8_t TRVPercentOpen, const FullStatsMessageCore_t *trailer);
 
 // Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) in the shared TX buffer.
 // The getTRVPercentOpen() result is used to generate the frame.
