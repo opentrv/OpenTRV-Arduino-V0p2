@@ -20,6 +20,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 /*
  FTH8V wireless radiator valve support.
 
+ This implementation expects to work with an RFM23B (or RFM22B) radio as of 2015/11/11;
+ this may be generalised.
+
  For details of protocol including sync between this and FHT8V see https://sourceforge.net/p/opentrv/wiki/FHT%20Protocol/
  */
 
@@ -27,6 +30,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define FHT8V_WIRELESS_RAD_VALVE_H
 
 #include "V0p2_Main.h"
+
+#include <OTRadioLink.h>
 
 #include "Messaging.h"
 
@@ -36,6 +41,14 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 class FHT8VRadValve : public OTRadValve::AbstractRadValve
   {
   public:
+//    // Construct an instance attached to a (RFM23B, or RFM22B) radio module.
+//    // The RFM23B instance life must at least match that of this instance.
+//    FHT8VRadValve(OTRadioLink::OTRFM23BLinkBase *) { }
+
+    // Construct an instance attached to a generic radio module.
+    // The RFM23B instance life must at least match that of this instance.
+    FHT8VRadValve(OTRadioLink::OTRadioLink *) { }
+
     // Type for information content of FHT8V message.
     // Omits the address field unless it is actually used.
     typedef struct
@@ -54,7 +67,7 @@ class FHT8VRadValve : public OTRadValve::AbstractRadValve
     static const uint8_t MIN_FHT8V_TX_CYCLE_HS = (115*2);
     static const uint8_t MAX_FHT8V_TX_CYCLE_HS = (118*2+1);
 
-    // Compute interval (in half seconds) between TXes for FHT8V given house code 2.
+    // Compute interval (in half seconds) between TXes for FHT8V given house code 2 (HC2).
     // (In seconds, the formula is t = 115 + 0.5 * (HC2 & 7) seconds, in range [115.0,118.5].)
     static inline uint8_t FHT8VTXGapHalfSeconds(const uint8_t hc2) { return((hc2 & 7) + 230); }
 
@@ -69,6 +82,11 @@ class FHT8VRadValve : public OTRadValve::AbstractRadValve
     // This FHT8V messages is encoded with the FS20 protocol.
     // Returns pointer to the terminating 0xff on exit.
     static uint8_t *FHT8VCreate200usBitStreamBptr(uint8_t *bptr, const FHT8VRadValve::fht8v_msg_t *command);
+
+    // Approximate maximum transmission (TX) time for bare FHT8V command frame in ms; strictly positive.
+    // This ignores any prefix needed for particular radios such as the RFM23B.
+    // ~80ms upwards.
+    static const uint8_t FHT8V_APPROX_MAX_RAW_TX_MS = ((((MIN_FHT8V_200US_BIT_STREAM_BUF_SIZE-1)*8) + 4) / 5);
 
     // Typical FHT8V 'open' percentage, though partly depends on valve tails, etc.
     // This is set to err on the side of slightly open to allow
@@ -119,10 +137,9 @@ uint8_t *FHT8VCreateValveSetCmdFrame_r(uint8_t *bptr, FHT8VRadValve::fht8v_msg_t
 #define FHT8V_MAX_EXTRA_TRAILER_BYTES (1+max(MESSAGING_TRAILING_MINIMAL_STATS_PAYLOAD_BYTES,FullStatsMessageCore_MAX_BYTES_ON_WIRE))
 #define FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE (FHT8V_MAX_EXTRA_PREAMBLE_BYTES + (FHT8VRadValve::MIN_FHT8V_200US_BIT_STREAM_BUF_SIZE) + FHT8V_MAX_EXTRA_TRAILER_BYTES) // Buffer space needed.
 
-
-// Approximate maximum transmission (TX) time for FHT8V command frame in ms; strictly positive.
-// ~80ms upwards.
-#define FHT8V_APPROX_MAX_TX_MS ((((FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE-1)*8) + 4) / 5)
+//// Approximate maximum transmission (TX) time for FHT8V command frame in ms; strictly positive.
+//// ~80ms upwards.
+//#define FHT8V_APPROX_MAX_TX_MS ((((FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE-1)*8) + 4) / 5)
 
 // Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) at bptr with optional headers and trailers.
 //   * TRVPercentOpen value is used to generate the frame
