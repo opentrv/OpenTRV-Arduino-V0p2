@@ -44,7 +44,6 @@ class FHT8VRadValve : public OTRadValve::AbstractRadValve
 //    // Construct an instance attached to a (RFM23B, or RFM22B) radio module.
 //    // The RFM23B instance life must at least match that of this instance.
 //    FHT8VRadValve(OTRadioLink::OTRFM23BLinkBase *) { }
-
     // Construct an instance attached to a generic radio module.
     // The RFM23B instance life must at least match that of this instance.
     FHT8VRadValve(OTRadioLink::OTRadioLink *) { }
