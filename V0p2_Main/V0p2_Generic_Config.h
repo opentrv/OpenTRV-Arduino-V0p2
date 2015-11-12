@@ -55,7 +55,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_Trial2013Winter_Round1_STATSHUB // REV1 as stats hub.
 //#define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
 //#define CONFIG_DHD_TESTLAB_REV4 // REV4 cut2.
-#define CONFIG_DHD_TESTLAB_REV4_NOHUB // REV4 cut2, no hub.
+//#define CONFIG_DHD_TESTLAB_REV4_NOHUB // REV4 cut2, no hub.
 //#define CONFIG_BH_DHW // Bo's hot water.
 //#define CONFIG_BH_TESTLAB // Bo's test environment.
 //#define CONFIG_DORM1_SANS32K // REV7 / DORM1 without working 32768Hz clock.
@@ -65,7 +65,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
 //#define CONFIG_REV9_STATS // REV9 as stats node, cut 2 of the board.
 //#define CONFIG_REV9_cut1 // REV9 as CC1 relay, cut1 of board.
-//#define CONFIG_DE_TESTLAB // Deniz's test environment.
+#define CONFIG_DE_TESTLAB // Deniz's test environment.
 //#define CONFIG_BAREBONES // No peripherals / on breadboard.
 
 
