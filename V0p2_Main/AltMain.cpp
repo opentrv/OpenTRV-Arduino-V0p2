@@ -324,45 +324,38 @@ void loopAlt()
     // Regular transmission of stats if NOT driving a local valve (else stats can be piggybacked onto that).
     if(TIME_LSD ==  10)
       {
-        OTV0P2BASE::serialPrintAndFlush(F("check send"));
-      // Generally only attempt stats TX in the minute after all sensors should have been polled (so that readings are fresh).
-        OTV0P2BASE::serialPrintAndFlush(F("sending"));
-      OTV0P2BASE::serialPrintlnAndFlush();
-        // Send it!
-        // Try for double TX for extra robustness unless:
-        //   * this is a speculative 'extra' TX
-        //   * battery is low
-        //   * this node is a hub so needs to listen as much as possible
-        // This doesn't generally/always need to send binary/both formats
-        // if this is controlling a local FHT8V on which the binary stats can be piggybacked.
-        // Ie, if doesn't have a local TRV then it must send binary some of the time.
-        // Any recently-changed stats value is a hint that a strong transmission might be a good idea.
-        bareStatsTX(false, false, false);
+        if((OTV0P2BASE::getMinutesLT() & 0x3) == 0) {
+          // Send it!
+          // Try for double TX for extra robustness unless:
+          //   * this is a speculative 'extra' TX
+          //   * battery is low
+          //   * this node is a hub so needs to listen as much as possible
+          // This doesn't generally/always need to send binary/both formats
+          // if this is controlling a local FHT8V on which the binary stats can be piggybacked.
+          // Ie, if doesn't have a local TRV then it must send binary some of the time.
+          // Any recently-changed stats value is a hint that a strong transmission might be a good idea.
+          const bool doBinary = !localFHT8VTRVEnabled() && OTV0P2BASE::randRNG8NextBoolean();
+          bareStatsTX(false, false);
+        }
       }
 #endif
 
-/*
+
 
 #if defined(SENSOR_DS18B20_ENABLE)
       // read temp
       if (TIME_LSD == 18) {
-          char *pt = messageToSend+1;
-          *pt++ = 't';
-          int temp = TemperatureC16.read();
-    	    itoa((temp >> 4), pt, 10);
+          TemperatureC16.read();
       }
 #endif // SENSOR_DS18B20_ENABLE
 
 #if defined(ENABLE_VOICE_SENSOR)
       // read voice sensor
       if (TIME_LSD == 46) {
-        char *pv = messageToSend+5;
-        *pv++ = 'v';
-        if(Voice.read()) *pv = '1';
-        else *pv = '0';
+      	Voice.read()
       }
 #endif // (ENABLE_VOICE_SENSOR)
-*/
+
 //#if defined(USE_MODULE_FHT8VSIMPLE)
 //  if(useExtraFHT8VTXSlots)
 //    {
