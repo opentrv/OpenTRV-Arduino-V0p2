@@ -154,11 +154,11 @@ void POSTalt()
     }
 
 
-  RFM23B.listen(true);
-  pinMode(3, INPUT);	// FIXME Move to where they are set automatically
-  digitalWrite(3, LOW);
+//  pinMode(3, INPUT);	// FIXME Move to where they are set automatically
+//  digitalWrite(3, LOW);
 
   RFM23B.queueToSend((uint8_t *)"start", 6);
+  bareStatsTX(false, false, false);
 
   }
 
@@ -335,7 +335,7 @@ void loopAlt()
           // Ie, if doesn't have a local TRV then it must send binary some of the time.
           // Any recently-changed stats value is a hint that a strong transmission might be a good idea.
           const bool doBinary = !localFHT8VTRVEnabled() && OTV0P2BASE::randRNG8NextBoolean();
-          bareStatsTX(false, false);
+          bareStatsTX(false, false, false);
         }
       }
 #endif

@@ -107,7 +107,12 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #endif
 
 // UI main 'mode' button (active/pulled low by button, pref using weak internal pull-up), digital in.
+// NOT AVAILABLE FOR REV10 (used for GSM module TX pin).
+#if (V0p2_REV != 10)
 #define BUTTON_MODE_L 5 // ATMega328P-PU PDIP pin 11, PD5, PCINT21, no analogue input.
+#else if (V0p2_REV == 10)	// FIXME might be better to define pins by peripheral
+#define SIM900_TX_PIN 5
+#endif
 
 #ifdef LEARN_BUTTON_AVAILABLE
 // OPTIONAL UI 'learn' button  (active/pulled low by button, pref using weak internal pull-up), digital in.
