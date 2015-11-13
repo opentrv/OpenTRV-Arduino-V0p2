@@ -32,7 +32,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #ifdef USE_NULLRADIO
 OTRadioLink::OTNullRadioLink RFM23B;
 #elif defined(USE_MODULE_SIM900)
-OTSIM900Link::OTSIM900Link RFM23B(A3, (uint8_t)A2, (uint8_t)8, (uint8_t)5);
+OTSIM900Link::OTSIM900Link RFM23B(A3, A2, (uint8_t)8, (uint8_t)5);
 #elif defined(PIN_RFM_NIRQ)
 OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, PIN_RFM_NIRQ> RFM23B;
 #else

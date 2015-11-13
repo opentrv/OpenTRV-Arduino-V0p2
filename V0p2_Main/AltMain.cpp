@@ -78,8 +78,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 // Can abort with panic() if need be.
 void POSTalt()
   {
-
-#ifdef USE_MODULE_SIM900
+#ifdef USE_OTNULLRADIO
+// FIXME
+#elif defined USE_MODULE_SIM900
 // EEPROM locations
   static const void *SIM900_PIN      = (void *)0x0300; // TODO confirm this address
   static const void *SIM900_APN      = (void *)0x0305;
@@ -352,7 +353,7 @@ void loopAlt()
 #if defined(ENABLE_VOICE_SENSOR)
       // read voice sensor
       if (TIME_LSD == 46) {
-      	Voice.read()
+      	Voice.read();
       }
 #endif // (ENABLE_VOICE_SENSOR)
 
