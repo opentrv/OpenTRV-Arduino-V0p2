@@ -639,7 +639,7 @@ void serialStatusReport()
     Serial.print(hc1);
     Serial_print_space();
     Serial.print(FHT8VGetHC2());
-    if(!isSyncedWithFHT8V())
+    if(!FHT8V.isSyncedWithFHT8V())
       {
       Serial_print_space();
       Serial.print('s'); // Indicate syncing with trailing lower-case 's' in field...
@@ -957,14 +957,14 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
               {
               FHT8VSetHC1(hc1);
               FHT8VSetHC2(hc2);
-              FHT8VSyncAndTXReset(); // Force re-sync with FHT8V valve.
+              FHT8V.FHT8VSyncAndTXReset(); // Force re-sync with FHT8V valve.
               }
             }
           }
         else if(n < 2) // Just 'H', possibly with trailing whitespace.
           {
           FHT8VClearHC();
-          FHT8VSyncAndTXReset(); // Force into unsynchronized state.
+          FHT8V.FHT8VSyncAndTXReset(); // Force into unsynchronized state.
           }
         break;
         }

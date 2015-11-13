@@ -934,9 +934,9 @@ static void decodeAndHandleFTp2_FS20_native(Print *p, const bool secure, const u
 #endif
 
   // Decode the FS20/FHT8V command into the buffer/struct.
-  fht8v_msg_t command;
+  FHT8VRadValveBase::fht8v_msg_t command;
   uint8_t const *lastByte = msg+msglen-1;
-  uint8_t const *trailer = FHT8VDecodeBitStream(msg, lastByte, &command);
+  uint8_t const *trailer = FHT8VRadValveBase::FHT8VDecodeBitStream(msg, lastByte, &command);
 
 #if defined(ENABLE_BOILER_HUB)
   // Potentially accept as call for heat only if command is 0x26 (38).

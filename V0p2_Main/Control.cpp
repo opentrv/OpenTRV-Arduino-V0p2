@@ -419,7 +419,7 @@ bool ModelledRadValve::isControlledValveReallyOpen() const
   {
   if(isRecalibrating()) { return(false); }
 #ifdef USE_MODULE_FHT8VSIMPLE
-  if(!FHT8VisControlledValveOpen()) { return(false); }
+  if(!FHT8V.FHT8VisControlledValveOpen()) { return(false); }
 #endif
   return(value >= getMinPercentOpen());
   }
@@ -430,7 +430,7 @@ bool ModelledRadValve::isControlledValveReallyOpen() const
 bool ModelledRadValve::isRecalibrating() const
   {
 #ifdef USE_MODULE_FHT8VSIMPLE
-  if(!isSyncedWithFHT8V()) { return(true); }
+  if(!FHT8V.isSyncedWithFHT8V()) { return(true); }
 #endif
   return(false);
   }
@@ -440,7 +440,7 @@ bool ModelledRadValve::isRecalibrating() const
 void ModelledRadValve::recalibrate()
   {
 #ifdef USE_MODULE_FHT8VSIMPLE
-  FHT8VSyncAndTXReset(); // Should this be decalcinate instead/also/first?
+  FHT8V.FHT8VSyncAndTXReset(); // Should this be decalcinate instead/also/first?
 #endif
   }
 
@@ -1790,7 +1790,7 @@ void loopOpenTRV()
   #endif
   // FHT8V is highest priority and runs first.
   // ---------- HALF SECOND #0 -----------
-  bool useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_First(doubleTXForFTH8V); // Time for extra TX before UI.
+  bool useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8V.FHT8VPollSyncAndTX_First(doubleTXForFTH8V); // Time for extra TX before UI.
 //  if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@0"); }
 #endif
 
@@ -1840,7 +1840,7 @@ void loopOpenTRV()
     {
     // Time for extra TX before other actions, but don't bother if minimising power in frost mode.
     // ---------- HALF SECOND #1 -----------
-    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V);
+    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8V.FHT8VPollSyncAndTX_Next(doubleTXForFTH8V);
 //    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@1"); }
     // Handling the FHT8V may have taken a little while, so process I/O a little.
     handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O.
@@ -2003,7 +2003,7 @@ void loopOpenTRV()
       if(NominalRadValve.isValveMoved() ||
          (minute1From4AfterSensors && enableTrailingStatsPayload()))
         {
-        if(localFHT8VTRVEnabled()) { FHT8VCreateValveSetCmdFrame(NominalRadValve); }
+        if(localFHT8VTRVEnabled()) { FHT8V.FHT8VCreateValveSetCmdFrame(NominalRadValve.get()); }
         }
 #endif
 
@@ -2058,7 +2058,7 @@ void loopOpenTRV()
   if(useExtraFHT8VTXSlots)
     {
     // ---------- HALF SECOND #2 -----------
-    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V);
+    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8V.FHT8VPollSyncAndTX_Next(doubleTXForFTH8V);
 //    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@2"); }
     // Handling the FHT8V may have taken a little while, so process I/O a little.
     handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O.
@@ -2072,7 +2072,7 @@ void loopOpenTRV()
   if(useExtraFHT8VTXSlots)
     {
     // ---------- HALF SECOND #3 -----------
-    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V);
+    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8V.FHT8VPollSyncAndTX_Next(doubleTXForFTH8V);
 //    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@3"); }
     // Handling the FHT8V may have taken a little while, so process I/O a little.
     handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O.
@@ -2152,7 +2152,7 @@ void loopOpenTRV()
 //    DEBUG_SERIAL_PRINTLN();
 #endif
 #if defined(USE_MODULE_FHT8VSIMPLE)
-    FHT8VSyncAndTXReset(); // Assume that sync with valve may have been lost, so re-sync.
+    FHT8V.FHT8VSyncAndTXReset(); // Assume that sync with valve may have been lost, so re-sync.
 #endif
     TIME_LSD = OTV0P2BASE::getSecondsLT(); // Prepare to sleep until start of next full minor cycle.
     }

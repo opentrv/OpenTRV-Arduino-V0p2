@@ -574,7 +574,7 @@ void setup()
   // Unconditionally ensure that a valid FHT8V TRV command frame has been computed and stored
   // in case this unit is actually controlling a local valve.
 #if defined(ENABLE_NOMINAL_RAD_VALVE)
-  FHT8VCreateValveSetCmdFrame(NominalRadValve);
+  FHT8V.FHT8VCreateValveSetCmdFrame(NominalRadValve.get());
 #else
   FHT8VCreateValveSetCmdFrame(0);
 #endif
