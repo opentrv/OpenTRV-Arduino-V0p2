@@ -1579,7 +1579,7 @@ void loopOpenTRV()
     //    Longish period without any RX listening may allow hub unit to cool and get better sample of local temperature if marginal.
     // Aim to listen in one stretch for greater than full FHT8V TX cycle of ~2m to avoid missing a call for heat.
     // MUST listen for all of final 2 mins of boiler-on to avoid missing TX (without forcing boiler over-run).
-    else if((boilerCountdownTicks <= ((MAX_FHT8V_TX_CYCLE_HS+1)/(2 * OTV0P2BASE::MAIN_TICK_S))) && // Don't miss a final TX that would keep the boiler on...
+    else if((boilerCountdownTicks <= ((FHT8VRadValveBase::MAX_FHT8V_TX_CYCLE_HS+1)/(2 * OTV0P2BASE::MAIN_TICK_S))) && // Don't miss a final TX that would keep the boiler on...
        (boilerCountdownTicks != 0)) // But don't force unit to listen/RX all the time if no recent call for heat.
       { needsToEavesdrop = true; }
     else if((!heardIt) &&
