@@ -576,7 +576,7 @@ void setup()
 #if defined(ENABLE_NOMINAL_RAD_VALVE)
   FHT8V.FHT8VCreateValveSetCmdFrame(NominalRadValve.get());
 #else
-  FHT8VCreateValveSetCmdFrame(0);
+  FHT8V.FHT8VCreateValveSetCmdFrame(0);
 #endif
 #endif
 #endif
