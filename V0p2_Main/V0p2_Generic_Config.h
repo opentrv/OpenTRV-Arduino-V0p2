@@ -66,7 +66,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_REV9_STATS // REV9 as stats node, cut 2 of the board.
 //#define CONFIG_REV9_cut1 // REV9 as CC1 relay, cut1 of board.
 //#define CONFIG_DE_TESTLAB // Deniz's test environment.
-#define CONFIG_TRIAL_BUSSHELTER // REV2 based trial for TFL bus shelters
+#define CONFIG_REV10_BUSSHELTER // REV2 based trial for TFL bus shelters
 //#define CONFIG_BAREBONES // No peripherals / on breadboard.
 
 
@@ -113,8 +113,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define OCCUPANCY_DETECT_FROM_AMBLIGHT
 // IF DEFINED: detect occupancy based on relative humidity, if available.
 #define OCCUPANCY_DETECT_FROM_RH
-// IF DEFINED: detect occupancy based on voice detection, if available.
-#define OCCUPANCY_DETECT_FROM_VOICE
+// IF DEFINED: detect occupancy based on voice detection, if available. This undefines learn button 2
+//#define OCCUPANCY_DETECT_FROM_VOICE
 // IF DEFINED: this unit supports CLI over the USB/serial connection, eg for run-time reconfig.
 #define SUPPORT_CLI
 // IF DEFINED: enable a full OpenTRV CLI.
@@ -738,10 +738,11 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #endif
 
 // -------------------------
-#ifdef CONFIG_TRIAL_BUSSHELTER
+#ifdef CONFIG_REV10_BUSSHELTER
 // use alternative loop
 #define ALT_MAIN_LOOP
-#define V0p2_REV 2
+#define V0p2_REV 10
+#define COMMON_SETTINGS
 // Defaults for V0.2; have to be undefined if not required.  ***
 // May require limiting clock speed and using some alternative peripherals/sensors.
 //#define SUPPLY_VOLTAGE_LOW_2AA
@@ -782,6 +783,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define USE_MODULE_SIM900
 // Define voice module
 #define ENABLE_VOICE_SENSOR
+#define OCCUPANCY_DETECT_FROM_VOICE
 // Enable use of OneWire devices.
 #define SUPPORT_ONEWIRE
 // Enable use of DS18B20 temp sensor.
@@ -795,7 +797,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define SUPPORT_BAKE  // UI_Minimal.cpp:266:28: error: 'inBakeMode' was not declared in this scope
 //#define USE_MODULE_FHT8VSIMPLE //Control.cpp:1322:27: error: 'localFHT8VTRVEnabled' was not declared in this scope
 
-#endif // CONFIG_TRIAL_BUSSHELTER
+#endif // CONFIG_REV10_BUSSHELTER
 
 
 
