@@ -1035,8 +1035,8 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 
     // If not doing a doubleTX then consider sometimes suppressing the change-flag clearing for this send
     // to reduce the chance of important changes being missed by the receiver.
-    wrote = ss1.writeJSON(bptr, sizeof(buf) - (bptr-buf), getStatsTXLevel(), maximise); //!allowDoubleTX && randRNG8NextBoolean());
-//    wrote = ss1.writeJSON(bptr, sizeof(buf) - (bptr-buf), false , maximise); // false means lowest level of security FOR DEBUG
+//    wrote = ss1.writeJSON(bptr, sizeof(buf) - (bptr-buf), getStatsTXLevel(), maximise); //!allowDoubleTX && randRNG8NextBoolean());
+    wrote = ss1.writeJSON(bptr, sizeof(buf) - (bptr-buf), false , maximise); // false means lowest level of security FOR DEBUG
 
     if(0 == wrote)
       {
