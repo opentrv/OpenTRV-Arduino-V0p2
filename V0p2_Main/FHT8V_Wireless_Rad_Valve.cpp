@@ -506,8 +506,10 @@ static void FHT8VTXFHTQueueAndSendCmd(uint8_t *bptr, const bool doubleTX)
 void FHT8VRadValveBase::setFHT8V_isValveOpen()
 #ifdef LOCAL_TRV // More nuanced test...
   { FHT8V_isValveOpen = (NominalRadValve.get() >= NominalRadValve.getMinValvePcReallyOpen()); }
-#else
+#elif defined(ENABLE_NOMINAL_RAD_VALVE)
   { FHT8V_isValveOpen = (NominalRadValve.get() >= NominalRadValve.getMinPercentOpen()); }
+#else
+  { FHT8V_isValveOpen = false; }
 #endif
 //#endif
 
