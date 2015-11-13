@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE eagle SYSTEM "eagle.dtd">
-<eagle version="7.3.0">
+<eagle version="7.4.0">
 <drawing>
 <settings>
 <setting alwaysvectorfont="no"/>
@@ -8487,16 +8487,15 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <part name="U$4" library="SHT21" deviceset="SHT21" device=""/>
 <part name="ANT" library="wirepad" deviceset="SMD2" device=""/>
 <part name="P+5" library="SparkFun-Aesthetics" deviceset="VCC" device=""/>
-<part name="+" library="wirepad" deviceset="2,15/1,0" device=""/>
-<part name="-" library="wirepad" deviceset="2,15/1,0" device=""/>
 <part name="GND7" library="SparkFun-Aesthetics" deviceset="GND" device=""/>
-<part name="R1" library="resistor" deviceset="R-EU_" device="R0603" value="220K"/>
-<part name="R3" library="resistor" deviceset="R-EU_" device="0309/V"/>
+<part name="R1" library="resistor" deviceset="R-EU_" device="R0603" value="100K"/>
 <part name="R9" library="resistor" deviceset="R-EU_" device="R0603" value="4.7K"/>
 <part name="P+1" library="SparkFun-Aesthetics" deviceset="VCC" device=""/>
 <part name="JP1" library="pinhead" deviceset="PINHD-1X12" device=""/>
 <part name="PHT1" library="opto-trans-siemens" deviceset="BPX65" device=""/>
 <part name="GND2" library="SparkFun-Aesthetics" deviceset="GND" device=""/>
+<part name="-" library="wirepad" deviceset="2,15/1,0" device=""/>
+<part name="+" library="wirepad" deviceset="2,15/1,0" device=""/>
 </parts>
 <sheets>
 <sheet>
@@ -8588,11 +8587,8 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <instance part="U$4" gate="G$1" x="50.8" y="182.88"/>
 <instance part="ANT" gate="1" x="370.84" y="254" rot="R180"/>
 <instance part="P+5" gate="G$1" x="25.4" y="243.84"/>
-<instance part="+" gate="1" x="12.7" y="238.76"/>
-<instance part="-" gate="1" x="12.7" y="233.68"/>
 <instance part="GND7" gate="1" x="180.34" y="187.96"/>
 <instance part="R1" gate="G$1" x="187.96" y="190.5" rot="R180"/>
-<instance part="R3" gate="G$1" x="187.96" y="195.58"/>
 <instance part="R9" gate="G$1" x="236.22" y="175.26" smashed="yes">
 <attribute name="NAME" x="237.49" y="176.7586" size="1.778" layer="95"/>
 <attribute name="VALUE" x="232.41" y="177.038" size="1.778" layer="96"/>
@@ -8603,6 +8599,8 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <attribute name="NAME" x="194.564" y="186.182" size="1.778" layer="95" rot="R270"/>
 </instance>
 <instance part="GND2" gate="1" x="294.64" y="86.36"/>
+<instance part="-" gate="1" x="7.62" y="231.14"/>
+<instance part="+" gate="1" x="7.62" y="238.76"/>
 </instances>
 <busses>
 </busses>
@@ -8678,7 +8676,7 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 </segment>
 <segment>
 <wire x1="25.4" y1="243.84" x2="25.4" y2="238.76" width="0.1524" layer="91"/>
-<wire x1="25.4" y1="238.76" x2="15.24" y2="238.76" width="0.1524" layer="91"/>
+<wire x1="25.4" y1="238.76" x2="10.16" y2="238.76" width="0.1524" layer="91"/>
 <pinref part="P+5" gate="G$1" pin="VCC"/>
 <pinref part="+" gate="1" pin="P"/>
 </segment>
@@ -8758,7 +8756,7 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 </segment>
 <segment>
 <pinref part="GND1" gate="1" pin="GND"/>
-<wire x1="15.24" y1="231.14" x2="15.24" y2="233.68" width="0.1524" layer="91"/>
+<wire x1="10.16" y1="231.14" x2="15.24" y2="231.14" width="0.1524" layer="91"/>
 <pinref part="-" gate="1" pin="P"/>
 </segment>
 <segment>
@@ -8775,10 +8773,6 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <pinref part="GND7" gate="1" pin="GND"/>
 <wire x1="180.34" y1="190.5" x2="182.88" y2="190.5" width="0.1524" layer="91"/>
 <pinref part="R1" gate="G$1" pin="2"/>
-<pinref part="R3" gate="G$1" pin="1"/>
-<wire x1="182.88" y1="195.58" x2="180.34" y2="195.58" width="0.1524" layer="91"/>
-<wire x1="180.34" y1="195.58" x2="180.34" y2="190.5" width="0.1524" layer="91"/>
-<junction x="180.34" y="190.5"/>
 </segment>
 <segment>
 <pinref part="JP1" gate="G$1" pin="12"/>
@@ -9163,14 +9157,10 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 </net>
 <net name="LDR" class="0">
 <segment>
-<wire x1="198.12" y1="195.58" x2="198.12" y2="190.5" width="0.1524" layer="91"/>
 <pinref part="R1" gate="G$1" pin="1"/>
 <wire x1="198.12" y1="190.5" x2="198.12" y2="186.944" width="0.1524" layer="91"/>
 <wire x1="193.04" y1="190.5" x2="198.12" y2="190.5" width="0.1524" layer="91"/>
-<junction x="198.12" y="190.5"/>
-<pinref part="R3" gate="G$1" pin="2"/>
-<wire x1="198.12" y1="195.58" x2="193.04" y2="195.58" width="0.1524" layer="91"/>
-<label x="198.12" y="195.58" size="1.778" layer="95"/>
+<label x="198.12" y="190.5" size="1.778" layer="95"/>
 <pinref part="PHT1" gate="1" pin="C"/>
 </segment>
 <segment>

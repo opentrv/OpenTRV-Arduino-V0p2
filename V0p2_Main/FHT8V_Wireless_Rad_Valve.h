@@ -20,6 +20,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 /*
  FTH8V wireless radiator valve support.
 
+ This implementation expects to work with an RFM23B (or RFM22B) radio as of 2015/11/11;
+ this may be generalised.
+
  For details of protocol including sync between this and FHT8V see https://sourceforge.net/p/opentrv/wiki/FHT%20Protocol/
  */
 
@@ -28,104 +31,11 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 #include "V0p2_Main.h"
 
-#ifdef USE_MODULE_FHT8VSIMPLE
+#include <OTRadioLink.h>
 
+#include "RFM22_Radio.h"
 #include "Messaging.h"
 
-// Minimum and maximum FHT8V TX cycle times in half seconds: [115.0,118.5].
-// Fits in an 8-bit unsigned value.
-#define MIN_FHT8V_TX_CYCLE_HS (115*2)
-#define MAX_FHT8V_TX_CYCLE_HS (118*2+1)
-
-// Type for information content of FHT8V message.
-// Omits the address field unless it is actually used.
-typedef struct
-  {
-  uint8_t hc1;
-  uint8_t hc2;
-#ifdef FHT8V_ADR_USED
-  uint8_t address;
-#endif
-  uint8_t command;
-  uint8_t extension;
-  } fht8v_msg_t;
-
-
-// Create stream of bytes to be transmitted to FHT80V at 200us per bit, msbit of each byte first.
-// Byte stream is terminated by 0xff byte which is not a possible valid encoded byte.
-// On entry the populated FHT8V command struct is passed by pointer.
-// On exit, the memory block starting at buffer contains the low-byte, msbit-first bit, 0xff terminated TX sequence.
-// The maximum and minimum possible encoded message sizes are 35 (all zero bytes) and 45 (all 0xff bytes) bytes long.
-// Note that a buffer space of at least 46 bytes is needed to accommodate the longest-possible encoded message plus terminator.
-// Returns pointer to the terminating 0xff on exit.
-uint8_t *FHT8VCreate200usBitStreamBptr(uint8_t *bptr, const fht8v_msg_t *command);
-#define MIN_FHT8V_200US_BIT_STREAM_BUF_SIZE 46 // For longest-possible encoded command plus terminating 0xff.
-
-
-#ifdef USE_MODULE_RFM22RADIOSIMPLE
-// Provide RFM22/RFM23 register settings for use with FHT8V, stored in (read-only) program/Flash memory.
-// Consists of a sequence of (reg#,value) pairs terminated with a $ff register.  The reg#s are <128, ie top bit clear.
-// Magic numbers c/o Mike Stirling!
-extern const uint8_t FHT8V_RFM22_Reg_Values[][2] PROGMEM;
-// IF DEFINED: use RFM22 RX sync to indicate something for the hubs to listen to, including but not only a call for heat.
-// (Older receivers relied on just this RFM22/23 sync which is no longer enough.
-// Very simple devices such as PICAXE did not actually decode the complete frame,
-// and this is ultimately insufficient with (for example) neighbouring houses both using such simple boiler-controllers,
-// as any TRV opening in either house would turn on both boilers...)
-#define RFM22_SYNC_BCFH
-#endif
-
-
-// Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) at bptr.
-// The TRVPercentOpen value is used to generate the frame.
-// On entry hc1, hc2 (and addresss if used) must be set correctly; this sets command and extension.
-// The generated command frame can be resent indefinitely.
-// The command buffer used must be (at least) FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE bytes plus extra preamble and trailers.
-// Returns pointer to the terminating 0xff on exit.
-uint8_t *FHT8VCreateValveSetCmdFrame_r(uint8_t *bptr, fht8v_msg_t *command, const uint8_t TRVPercentOpen);
-
-#ifdef RFM22_SYNC_BCFH
-#define FHT8V_MAX_EXTRA_PREAMBLE_BYTES RFM22_PREAMBLE_BYTES
-#else
-#define FHT8V_MAX_EXTRA_PREAMBLE_BYTES 0
-#endif
-#define FHT8V_MAX_EXTRA_TRAILER_BYTES (1+max(MESSAGING_TRAILING_MINIMAL_STATS_PAYLOAD_BYTES,FullStatsMessageCore_MAX_BYTES_ON_WIRE))
-#define FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE (FHT8V_MAX_EXTRA_PREAMBLE_BYTES + MIN_FHT8V_200US_BIT_STREAM_BUF_SIZE + FHT8V_MAX_EXTRA_TRAILER_BYTES) // Buffer space needed.
-
-
-// Approximate maximum transmission (TX) time for FHT8V command frame in ms; strictly positive.
-// ~80ms upwards.
-#define FHT8V_APPROX_MAX_TX_MS ((((FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE-1)*8) + 4) / 5)
-
-// Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) at bptr with optional headers and trailers.
-//   * TRVPercentOpen value is used to generate the frame
-//   * doHeader  if true then an extra RFM22/23-friendly 0xaaaaaaaa sync header is preprended
-//   * trailer  if not null then a stats trailer is appended, built from that info plus a CRC
-//   * command  on entry hc1, hc2 (and addresss if used) must be set correctly, this sets the command and extension; never NULL
-// The generated command frame can be resent indefinitely.
-// The output buffer used must be (at least) FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE bytes.
-// Returns pointer to the terminating 0xff on exit.
-uint8_t *FHT8VCreateValveSetCmdFrameHT_r(uint8_t *bptr, bool doHeader, fht8v_msg_t *command, uint8_t TRVPercentOpen, const FullStatsMessageCore_t *trailer);
-
-// Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) in the shared TX buffer.
-// The getTRVPercentOpen() result is used to generate the frame.
-// HC1 and HC2 are fetched with the FHT8VGetHC1() and FHT8VGetHC2() calls, and address is always 0.
-// The generated command frame can be resent indefinitely.
-// If no valve is set up then this may simply terminate an empty buffer with 0xff.
-void FHT8VCreateValveSetCmdFrame(const OTRadValve::AbstractRadValve &valve);
-
-// Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) in the shared TX buffer.
-//   * valvePC  the percentage open to set the valve [0,100]
-// HC1 and HC2 are fetched with the FHT8VGetHC1() and FHT8VGetHC2() calls, and address is always 0.
-// The generated command frame can be resent indefinitely.
-// If no valve is set up then this may simply terminate an empty buffer with 0xff.
-void FHT8VCreateValveSetCmdFrame(const uint8_t valvePC);
-
-// Decode raw bitstream into non-null command structure passed in; returns true if successful.
-// Will return non-null if OK, else NULL if anything obviously invalid is detected such as failing parity or checksum.
-// Finds and discards leading encoded 1 and trailing 0.
-// Returns NULL on failure, else pointer to next full byte after last decoded.
-uint8_t const *FHT8VDecodeBitStream(uint8_t const *bitStream, uint8_t const *lastByte, fht8v_msg_t *command);
 
 
 // Clear both housecode parts (and thus disable local valve).
@@ -137,8 +47,323 @@ void FHT8VSetHC2(uint8_t hc);
 uint8_t FHT8VGetHC1();
 uint8_t FHT8VGetHC2();
 
-// True once/while this node is synced with and controlling the target FHT8V valve; initially false.
-bool isSyncedWithFHT8V();
+
+// FHT8V radio-controlled radiator valve, using FS20 protocol.
+// preambleBytes specifies the space to leave for preabmble bytes for remote receiver sync.
+// DHD2151111: Work-In-Progress!
+class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
+  {
+  protected:
+    // TX buffer (non-null) and size (non-zero).
+    uint8_t * const buf;
+    const uint8_t size;
+    // Construct an instance, providing TX buffer details.
+    FHT8VRadValveBase(uint8_t *_buf, uint8_t _size)
+      : buf(_buf), size(_size),
+        halfSecondCount(0)
+    { FHT8VSyncAndTXReset(); }
+
+    // Sync status and down counter for FHT8V, initially zero; value not important once in sync.
+    // If syncedWithFHT8V = 0 then resyncing, AND
+    //     if syncStateFHT8V is zero then cycle is starting
+    //     if syncStateFHT8V in range [241,3] (inclusive) then sending sync command 12 messages.
+    uint8_t syncStateFHT8V;
+    
+    // Count-down in half-second units until next transmission to FHT8V valve.
+    uint8_t halfSecondsToNextFHT8VTX;
+
+    // Half second count within current minor cycle for FHT8VPollSyncAndTX_XXX().
+    uint8_t halfSecondCount;
+
+    // True once/while this node is synced with and controlling the target FHT8V valve; initially false.
+    bool syncedWithFHT8V;
+
+    // True if FHT8V valve is believed to be open under instruction from this system; false if not in sync.
+    bool FHT8V_isValveOpen;
+
+    // Send current (assumed valve-setting) command and adjust FHT8V_isValveOpen as appropriate.
+    // Only appropriate when the command is going to be heard by the FHT8V valve itself, not just the hub.
+    void valveSettingTX(bool allowDoubleTX);
+
+    // Run the algorithm to get in sync with the receiver.
+    // Uses halfSecondCount.
+    // Iff this returns true then a(nother) call FHT8VPollSyncAndTX_Next() at or before each 0.5s from the cycle start should be made.
+    bool doSync(const bool allowDoubleTX);
+
+    #if defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
+    static const uint8_t MAX_HSC = 3; // Max allowed value of halfSecondCount.
+    #else
+    static const uint8_t MAX_HSC = 1; // Max allowed value of halfSecondCount.
+    #endif
+
+    // Call just after TX of valve-setting command which is assumed to reflect current TRVPercentOpen state.
+    // This helps avoiding calling for heat from a central boiler until the valve is really open,
+    // eg to avoid excess load on (or energy wasting by) the circulation pump.
+    // FIXME: compare against own threshold and have NominalRadValve look at least open of all vs minPercentOpen.
+    void setFHT8V_isValveOpen();
+
+  public:
+    // Type for information content of FHT8V message.
+    // Omits the address field unless it is actually used.
+    typedef struct
+      {
+      uint8_t hc1;
+      uint8_t hc2;
+#ifdef FHT8V_ADR_USED
+      uint8_t address;
+#endif
+      uint8_t command;
+      uint8_t extension;
+      } fht8v_msg_t;
+
+    // Decode raw bitstream into non-null command structure passed in; returns true if successful.
+    // Will return non-null if OK, else NULL if anything obviously invalid is detected such as failing parity or checksum.
+    // Finds and discards leading encoded 1 and trailing 0.
+    // Returns NULL on failure, else pointer to next full byte after last decoded.
+    static uint8_t const *FHT8VDecodeBitStream(uint8_t const *bitStream, uint8_t const *lastByte, fht8v_msg_t *command);
+
+    // Minimum and maximum FHT8V TX cycle times in half seconds: [115.0,118.5].
+    // Fits in an 8-bit unsigned value.
+    static const uint8_t MIN_FHT8V_TX_CYCLE_HS = (115*2);
+    static const uint8_t MAX_FHT8V_TX_CYCLE_HS = (118*2+1);
+
+    // Compute interval (in half seconds) between TXes for FHT8V given house code 2 (HC2).
+    // (In seconds, the formula is t = 115 + 0.5 * (HC2 & 7) seconds, in range [115.0,118.5].)
+    inline uint8_t FHT8VTXGapHalfSeconds(const uint8_t hc2) { return((hc2 & 7) + 230); }
+
+    // Compute interval (in half seconds) between TXes for FHT8V given house code 2
+    // given current halfSecondCountInMinorCycle assuming all remaining tick calls to _Next
+    // will be foregone in this minor cycle,
+    inline uint8_t FHT8VTXGapHalfSeconds(const uint8_t hc2, const uint8_t halfSecondCountInMinorCycle)
+      { return(FHT8VTXGapHalfSeconds(hc2) - (MAX_HSC - halfSecondCountInMinorCycle)); }
+
+    // For longest-possible encoded FHT8V/FS20 command in bytes plus terminating 0xff.
+    static const uint8_t MIN_FHT8V_200US_BIT_STREAM_BUF_SIZE = 46;
+    // Create stream of bytes to be transmitted to FHT80V at 200us per bit, msbit of each byte first.
+    // Byte stream is terminated by 0xff byte which is not a possible valid encoded byte.
+    // On entry the populated FHT8V command struct is passed by pointer.
+    // On exit, the memory block starting at buffer contains the low-byte, msbit-first bit, 0xff terminated TX sequence.
+    // The maximum and minimum possible encoded message sizes are 35 (all zero bytes) and 45 (all 0xff bytes) bytes long.
+    // Note that a buffer space of at least 46 bytes is needed to accommodate the longest-possible encoded message plus terminator.
+    // This FHT8V messages is encoded with the FS20 protocol.
+    // Returns pointer to the terminating 0xff on exit.
+    static uint8_t *FHT8VCreate200usBitStreamBptr(uint8_t *bptr, const fht8v_msg_t *command);
+
+    // Approximate maximum transmission (TX) time for bare FHT8V command frame in ms; strictly positive.
+    // This ignores any prefix needed for particular radios such as the RFM23B.
+    // ~80ms upwards.
+    static const uint8_t FHT8V_APPROX_MAX_RAW_TX_MS = ((((MIN_FHT8V_200US_BIT_STREAM_BUF_SIZE-1)*8) + 4) / 5);
+
+    // Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) at bptr.
+    // The TRVPercentOpen value is used to generate the frame.
+    // On entry hc1, hc2 (and addresss if used) must be set correctly; this sets command and extension.
+    // The generated command frame can be resent indefinitely.
+    // The command buffer used must be (at least) FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE bytes plus extra preamble and trailers.
+    // Returns pointer to the terminating 0xff on exit.
+    static uint8_t *FHT8VCreateValveSetCmdFrame_r(uint8_t *bptr, fht8v_msg_t *command, const uint8_t TRVPercentOpen);
+    
+    // Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) at bptr with optional headers and trailers.
+    //   * TRVPercentOpen value is used to generate the frame
+    //   * doHeader  if true then an extra RFM22/23-friendly 0xaaaaaaaa sync header is preprended
+    //   * trailer  if not null then a stats trailer is appended, built from that info plus a CRC
+    //   * command  on entry hc1, hc2 (and addresss if used) must be set correctly, this sets the command and extension; never NULL
+    // The generated command frame can be resent indefinitely.
+    // The output buffer used must be (at least) FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE bytes.
+    // Returns pointer to the terminating 0xff on exit.
+    static uint8_t *FHT8VCreateValveSetCmdFrameHT_r(uint8_t *bptr, bool doHeader, FHT8VRadValveBase::fht8v_msg_t *command, uint8_t TRVPercentOpen, const FullStatsMessageCore_t *trailer);
+
+    // Typical FHT8V 'open' percentage, though partly depends on valve tails, etc.
+    // This is set to err on the side of slightly open to allow
+    // the 'linger' feature to work to help boilers dump heat with pump over-run
+    // when the the boiler is turned off.
+    // Actual values observed by DHD range from 6% to 25%.
+    static const uint8_t TYPICAL_MIN_PERCENT_OPEN = 10;
+
+    // Get estimated minimum percentage open for significant flow for this device; strictly positive in range [1,99].
+    // Defaults to typical value from observation.
+    virtual uint8_t getMinPercentOpen() const { return(TYPICAL_MIN_PERCENT_OPEN); }
+
+    // Call to reset comms with FHT8V valve and force resync.
+    // Resets values to power-on state so need not be called in program preamble if variables not tinkered with.
+    // Requires globals defined that this maintains:
+    //   syncedWithFHT8V (bit, true once synced)
+    //   FHT8V_isValveOpen (bit, true if this node has last sent command to open valve)
+    //   syncStateFHT8V (byte, internal)
+    //   halfSecondsToNextFHT8VTX (byte).
+    // FIXME: fit into standard RadValve API.
+    void FHT8VSyncAndTXReset()
+      {
+      syncedWithFHT8V = false;
+      syncStateFHT8V = 0;
+      halfSecondsToNextFHT8VTX = 0;
+      FHT8V_isValveOpen = false;
+      }
+
+    //#ifndef IGNORE_FHT_SYNC
+    // True once/while this node is synced with and controlling the target FHT8V valve; initially false.
+    // FIXME: fit into standard RadValve API.
+    bool isSyncedWithFHT8V() { return(syncedWithFHT8V); }
+    //#else
+    //bool isSyncedWithFHT8V() { return(true); } // Lie and claim always synced.
+    //#endif
+    
+    // True if FHT8V valve is believed to be open under instruction from this system; false if not in sync.
+    // FIXME: fit into standard RadValve API.
+    bool getFHT8V_isValveOpen() { return(syncedWithFHT8V && FHT8V_isValveOpen); }
+
+    // GLOBAL NOTION OF CONTROLLED FHT8V VALVE STATE PROVIDED HERE
+    // True iff the FHT8V valve(s) (if any) controlled by this unit are really open.
+    // This waits until at least the command to open the FHT8Vhas been sent.
+    // FIXME: fit into standard RadValve API.
+    bool FHT8VisControlledValveOpen() { return(getFHT8V_isValveOpen()); }
+
+
+    // A set of RFM22/RFM23 register settings for use with FHT8V, stored in (read-only) program/Flash memory.
+    // Consists of a sequence of (reg#,value) pairs terminated with a $ff register.  The reg#s are <128, ie top bit clear.
+    // Magic numbers c/o Mike Stirling!
+    // Should not be linked into code image unless explicitly referred to.
+    static const uint8_t FHT8V_RFM22_Reg_Values[][2] PROGMEM;
+
+    // Does nothing for now; different timing/driver routines are used.
+    virtual uint8_t read() { return(value); }
+
+    // Call at start of minor cycle to manage initial sync and subsequent comms with FHT8V valve.
+    // Conveys this system's TRVPercentOpen value to the FHT8V value periodically,
+    // setting FHT8V_isValveOpen true when the valve will be open/opening provided it received the latest TX from this system.
+    //
+    //   * allowDoubleTX  if true then a double TX is allowed for better resilience, but at cost of extra time and energy
+    //
+    // Uses its static/internal transmission buffer, and always leaves it in valid date.
+    //
+    // Iff this returns true then call FHT8VPollSyncAndTX_Next() at or before each 0.5s from the cycle start
+    // to allow for possible transmissions.
+    //
+    // See https://sourceforge.net/p/opentrv/wiki/FHT%20Protocol/ for the underlying protocol.
+    //
+    // ALSO MANAGES RX FROM OTHER NODES WHEN ENABLED IN HUB MODE.
+    bool FHT8VPollSyncAndTX_First(bool allowDoubleTX = false);
+
+    // If FHT8VPollSyncAndTX_First() returned true then call this each 0.5s from the start of the cycle, as nearly as possible.
+    // This allows for possible transmission slots on each half second.
+    //
+    //   * allowDoubleTX  if true then a double TX is allowed for better resilience, but at cost of extra time and energy
+    //
+    // This will sleep (at reasonably low power) as necessary to the start of its TX slot,
+    // else will return immediately if no TX needed in this slot.
+    //
+    // Iff this returns false then no further TX slots will be needed
+    // (and thus this routine need not be called again) on this minor cycle
+    //
+    // ALSO MANAGES RX FROM OTHER NODES WHEN ENABLED IN HUB MODE.
+    bool FHT8VPollSyncAndTX_Next(bool allowDoubleTX = false);
+  };
+
+template <uint8_t preambleBytes = RFM22_PREAMBLE_BYTES>
+class FHT8VRadValve : public FHT8VRadValveBase
+  {
+  public:
+    static const uint8_t FHT8V_MAX_EXTRA_PREAMBLE_BYTES = preambleBytes; // RFM22_PREAMBLE_BYTES
+    static const uint8_t FHT8V_MAX_EXTRA_TRAILER_BYTES = (1+max(MESSAGING_TRAILING_MINIMAL_STATS_PAYLOAD_BYTES,FullStatsMessageCore_MAX_BYTES_ON_WIRE));
+    static const uint8_t FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE = (FHT8V_MAX_EXTRA_PREAMBLE_BYTES + (FHT8VRadValve::MIN_FHT8V_200US_BIT_STREAM_BUF_SIZE) + FHT8V_MAX_EXTRA_TRAILER_BYTES); // Buffer space needed.
+
+    // Approximate maximum transmission (TX) time for FHT8V command frame in ms; strictly positive.
+    // ~80ms upwards.
+    static const uint8_t FHT8V_APPROX_MAX_TX_MS = ((((FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE-1)*8) + 4) / 5);
+
+  private:
+    // Shared command buffer for TX to FHT8V.
+    uint8_t FHT8VTXCommandArea[FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE];
+
+  public:
+  //    // Construct an instance attached to a (RFM23B, or RFM22B) radio module.
+//    // The RFM23B instance life must at least match that of this instance.
+//    FHT8VRadValve(OTRadioLink::OTRFM23BLinkBase *) { }
+//    // Construct an instance attached to a generic radio module.
+//    // The RFM23B instance life must at least match that of this instance.
+//    FHT8VRadValve(OTRadioLink::OTRadioLink *) : FHT8VRadValveBase(FHT8VTXCommandArea, FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE) { }
+    // Construct an instance.
+    FHT8VRadValve() : FHT8VRadValveBase(FHT8VTXCommandArea, FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE) { }
+
+    // Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) in the shared TX buffer.
+    //   * valvePC  the percentage open to set the valve [0,100]
+    // HC1 and HC2 are fetched with the FHT8VGetHC1() and FHT8VGetHC2() calls, and address is always 0.
+    // The generated command frame can be resent indefinitely.
+    // If no valve is set up then this may simply terminate an empty buffer with 0xff.
+    void FHT8VCreateValveSetCmdFrame(const uint8_t valvePC)
+      {
+      FHT8VRadValveBase::fht8v_msg_t command;
+      command.hc1 = FHT8VGetHC1();
+      command.hc2 = FHT8VGetHC2();
+#ifdef FHT8V_ADR_USED
+      command.address = 0;
+#endif
+      FHT8VRadValveBase::FHT8VCreateValveSetCmdFrame_r(FHT8VTXCommandArea, &command, valvePC);
+      }
+
+  };
+
+#ifdef USE_MODULE_FHT8VSIMPLE
+extern FHT8VRadValve<> FHT8V;
+#endif
+
+
+
+#ifdef USE_MODULE_FHT8VSIMPLE
+
+//#ifdef USE_MODULE_RFM22RADIOSIMPLE
+//// Provide RFM22/RFM23 register settings for use with FHT8V, stored in (read-only) program/Flash memory.
+//// Consists of a sequence of (reg#,value) pairs terminated with a $ff register.  The reg#s are <128, ie top bit clear.
+//// Magic numbers c/o Mike Stirling!
+//extern const uint8_t FHT8V_RFM22_Reg_Values[][2] PROGMEM;
+//// IF DEFINED: use RFM22 RX sync to indicate something for the hubs to listen to, including but not only a call for heat.
+//// (Older receivers relied on just this RFM22/23 sync which is no longer enough.
+//// Very simple devices such as PICAXE did not actually decode the complete frame,
+//// and this is ultimately insufficient with (for example) neighbouring houses both using such simple boiler-controllers,
+//// as any TRV opening in either house would turn on both boilers...)
+////#define RFM22_SYNC_BCFH
+//#endif
+
+//
+//// Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) at bptr.
+//// The TRVPercentOpen value is used to generate the frame.
+//// On entry hc1, hc2 (and addresss if used) must be set correctly; this sets command and extension.
+//// The generated command frame can be resent indefinitely.
+//// The command buffer used must be (at least) FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE bytes plus extra preamble and trailers.
+//// Returns pointer to the terminating 0xff on exit.
+//uint8_t *FHT8VCreateValveSetCmdFrame_r(uint8_t *bptr, FHT8VRadValveBase::fht8v_msg_t *command, const uint8_t TRVPercentOpen);
+//
+//// Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) at bptr with optional headers and trailers.
+////   * TRVPercentOpen value is used to generate the frame
+////   * doHeader  if true then an extra RFM22/23-friendly 0xaaaaaaaa sync header is preprended
+////   * trailer  if not null then a stats trailer is appended, built from that info plus a CRC
+////   * command  on entry hc1, hc2 (and addresss if used) must be set correctly, this sets the command and extension; never NULL
+//// The generated command frame can be resent indefinitely.
+//// The output buffer used must be (at least) FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE bytes.
+//// Returns pointer to the terminating 0xff on exit.
+//uint8_t *FHT8VCreateValveSetCmdFrameHT_r(uint8_t *bptr, bool doHeader, FHT8VRadValveBase::fht8v_msg_t *command, uint8_t TRVPercentOpen, const FullStatsMessageCore_t *trailer);
+
+//// Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) in the shared TX buffer.
+//// The getTRVPercentOpen() result is used to generate the frame.
+//// HC1 and HC2 are fetched with the FHT8VGetHC1() and FHT8VGetHC2() calls, and address is always 0.
+//// The generated command frame can be resent indefinitely.
+//// If no valve is set up then this may simply terminate an empty buffer with 0xff.
+//void FHT8VCreateValveSetCmdFrame(const OTRadValve::AbstractRadValve &valve);
+//
+//// Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) in the shared TX buffer.
+////   * valvePC  the percentage open to set the valve [0,100]
+//// HC1 and HC2 are fetched with the FHT8VGetHC1() and FHT8VGetHC2() calls, and address is always 0.
+//// The generated command frame can be resent indefinitely.
+//// If no valve is set up then this may simply terminate an empty buffer with 0xff.
+//void FHT8VCreateValveSetCmdFrame(const uint8_t valvePC);
+//
+//// Decode raw bitstream into non-null command structure passed in; returns true if successful.
+//// Will return non-null if OK, else NULL if anything obviously invalid is detected such as failing parity or checksum.
+//// Finds and discards leading encoded 1 and trailing 0.
+//// Returns NULL on failure, else pointer to next full byte after last decoded.
+//uint8_t const *FHT8VDecodeBitStream(uint8_t const *bitStream, uint8_t const *lastByte, FHT8VRadValveBase::fht8v_msg_t *command);
+
+//// True once/while this node is synced with and controlling the target FHT8V valve; initially false.
+//bool isSyncedWithFHT8V();
 
 
 // This unit may control a local TRV.
@@ -152,63 +377,50 @@ bool localFHT8VTRVEnabled();
 #endif
 
 
-// True if FHT8V valve is believed to be open under instruction from this system; undefined if not in sync.
-bool getFHT8V_isValveOpen();
+//// True if FHT8V valve is believed to be open under instruction from this system; undefined if not in sync.
+//bool getFHT8V_isValveOpen();
+//
+//// Call to reset comms with FHT8V valve and force resync.
+//// Resets values to power-on state so need not be called in program preamble if variables not tinkered with.
+//void FHT8VSyncAndTXReset();
 
-// Call to reset comms with FHT8V valve and force resync.
-// Resets values to power-on state so need not be called in program preamble if variables not tinkered with.
-void FHT8VSyncAndTXReset();
-
-// Call at start of minor cycle to manage initial sync and subsequent comms with FHT8V valve.
-// Conveys this system's TRVPercentOpen value to the FHT8V value periodically,
-// setting FHT8V_isValveOpen true when the valve will be open/opening provided it received the latest TX from this system.
+//// Call at start of minor cycle to manage initial sync and subsequent comms with FHT8V valve.
+//// Conveys this system's TRVPercentOpen value to the FHT8V value periodically,
+//// setting FHT8V_isValveOpen true when the valve will be open/opening provided it received the latest TX from this system.
+////
+////   * allowDoubleTX  if true then a double TX is allowed for better resilience, but at cost of extra time and energy
+////
+//// Uses its static/internal transmission buffer, and always leaves it in valid date.
+////
+//// Iff this returns true then call FHT8VPollSyncAndTX_Next() at or before each 0.5s from the cycle start
+//// to allow for possible transmissions.
+////
+//// See https://sourceforge.net/p/opentrv/wiki/FHT%20Protocol/ for the underlying protocol.
+////
+//// ALSO MANAGES RX FROM OTHER NODES WHEN ENABLED IN HUB MODE.
+//bool FHT8VPollSyncAndTX_First(bool allowDoubleTX = false);
 //
-//   * allowDoubleTX  if true then a double TX is allowed for better resilience, but at cost of extra time and energy
-//
-// Uses its static/internal transmission buffer, and always leaves it in valid date.
-//
-// Iff this returns true then call FHT8VPollSyncAndTX_Next() at or before each 0.5s from the cycle start
-// to allow for possible transmissions.
-//
-// See https://sourceforge.net/p/opentrv/wiki/FHT%20Protocol/ for the underlying protocol.
-//
-// ALSO MANAGES RX FROM OTHER NODES WHEN ENABLED IN HUB MODE.
-bool FHT8VPollSyncAndTX_First(bool allowDoubleTX = false);
-
-// If FHT8VPollSyncAndTX_First() returned true then call this each 0.5s from the start of the cycle, as nearly as possible.
-// This allows for possible transmission slots on each half second.
-//
-//   * allowDoubleTX  if true then a double TX is allowed for better resilience, but at cost of extra time and energy
-//
-// This will sleep (at reasonably low power) as necessary to the start of its TX slot,
-// else will return immediately if no TX needed in this slot.
-//
-// Iff this returns false then no further TX slots will be needed
-// (and thus this routine need not be called again) on this minor cycle
-//
-// ALSO MANAGES RX FROM OTHER NODES WHEN ENABLED IN HUB MODE.
-bool FHT8VPollSyncAndTX_Next(bool allowDoubleTX = false);
-
-
-// True iff the FHT8V valve(s) (if any) controlled by this unit are really open.
-// This waits until, for example, an ACK where appropriate, or at least the command has been sent.
-// This also implies open to OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN or equivalent.
-// If more than one valve is being controlled by this unit,
-// then this should return true if all of the valves are (significantly) open.
-bool FHT8VisControlledValveOpen();
+//// If FHT8VPollSyncAndTX_First() returned true then call this each 0.5s from the start of the cycle, as nearly as possible.
+//// This allows for possible transmission slots on each half second.
+////
+////   * allowDoubleTX  if true then a double TX is allowed for better resilience, but at cost of extra time and energy
+////
+//// This will sleep (at reasonably low power) as necessary to the start of its TX slot,
+//// else will return immediately if no TX needed in this slot.
+////
+//// Iff this returns false then no further TX slots will be needed
+//// (and thus this routine need not be called again) on this minor cycle
+////
+//// ALSO MANAGES RX FROM OTHER NODES WHEN ENABLED IN HUB MODE.
+//bool FHT8VPollSyncAndTX_Next(bool allowDoubleTX = false);
 
 
-#if defined(FHT8V_ALLOW_EXTRA_TXES)
-// Does an extra (single) TX if safe to help ensure that the hub hears, eg in case of poor comms.
-// Safe means when in sync with the valve,
-// and well away from the normal transmission windows to avoid confusing the valve.
-// Returns true iff a TX was done.
-// This may also be omitted if the TX would not be heard by the hub anyway.
-// Note: (single) transmission time is up to about 80ms.
-// In future this may be transmitted so as never to be decoded by the valve,
-// and seen by the hub as an extra TX with its offset from the real TX also sent.
-bool FHT8VDoSafeExtraTXToHub();
-#endif
+//// True iff the FHT8V valve(s) (if any) controlled by this unit are really open.
+//// This waits until, for example, an ACK where appropriate, or at least the command has been sent.
+//// This also implies open to OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN or equivalent.
+//// If more than one valve is being controlled by this unit,
+//// then this should return true if all of the valves are (significantly) open.
+//bool FHT8VisControlledValveOpen();
 
 
 //#ifdef ENABLE_BOILER_HUB
@@ -249,5 +461,6 @@ bool FHT8VDoSafeExtraTXToHub();
 
 
 #endif
+
 #endif
 
