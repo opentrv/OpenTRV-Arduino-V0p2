@@ -967,7 +967,7 @@ void bareStatsTX(const bool allowDoubleTX, const bool doBinary, const bool RFM23
     // Gather core stats.
     FullStatsMessageCore_t content;
     populateCoreStats(&content);
-    const uint8_t *msg1 = encodeFullStatsMessageCore(buf + STATS_MSG_START_OFFSET, sizeof(buf) - STATS_MSG_START_OFFSET, getStatsTXLevel(), false, &content);
+    const uint8_t *msg1 = encodeFullStatsMessageCore(buf + STATS_MSG_START_OFFSET, sizeof(buf) - STATS_MSG_START_OFFSET, OTV0P2BASE::getStatsTXLevel(), false, &content);
     if(NULL == msg1)
       {
 #if 0 // FIXME should this be testing something?

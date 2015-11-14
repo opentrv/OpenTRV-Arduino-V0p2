@@ -358,11 +358,6 @@ int8_t checkJSONMsgRXCRC(const uint8_t * const bptr, const uint8_t bufLen);
 
 
 
-
-
-// Returns true iff valid ID byte: must have the top bit set and not be 0xff.
-static inline bool validIDByte(const uint8_t v) { return((0 != (0x80 & v)) && (0xff != v)); }
-
 // Coerce any ID bytes to valid values if unset (0xff) or if forced,
 // by filling with valid values (0x80--0xfe) from decent entropy.
 // Will moan about invalid values and return false but not attempt to reset,
@@ -370,6 +365,12 @@ static inline bool validIDByte(const uint8_t v) { return((0 != (0x80 & v)) && (0
 // Returns true if all values good.
 bool ensureIDCreated(const bool force = false);
 
+
+
+
+
+// Returns true iff valid ID byte: must have the top bit set and not be 0xff.
+static inline bool validIDByte(const uint8_t v) { return((0 != (0x80 & v)) && (0xff != v)); }
 
 // Minimal stats trailer
 // =====================
@@ -424,16 +425,6 @@ bool verifyHeaderAndCRCForTrailingMinimalStatsPayload(uint8_t const *buf);
 // Extract payload from valid (3-byte) header+payload+CRC into payload struct; only 2 bytes are actually read.
 // Input data must already have been validated.
 void extractTrailingMinimalStatsPayload(const uint8_t *buf, trailingMinimalStatsPayload_t *payload);
-
-
-// Returns true if an unencrypted trailing static payload and similar (eg bare stats transmission) is permitted.
-// True if the TX_ENABLE value is no higher than stTXmostUnsec.
-// Some filtering may be required even if this is true.
-#if defined(ALLOW_STATS_TX)
-bool enableTrailingStatsPayload();
-#else
-#define enableTrailingStatsPayload() (false)
-#endif
 
 
 
@@ -553,7 +544,7 @@ static inline void clearFullStatsMessageCore(FullStatsMessageCore_t *const p) { 
 // If successful, returns pointer to terminating 0xff at end of message.
 // Returns null if failed (eg because of bad inputs or insufficient buffer space).
 // This will omit from transmission data not appropriate given the channel security and the stats_TX_level.
-uint8_t *encodeFullStatsMessageCore(uint8_t *buf, uint8_t buflen, stats_TX_level secLevel, bool secureChannel,
+uint8_t *encodeFullStatsMessageCore(uint8_t *buf, uint8_t buflen, OTV0P2BASE::stats_TX_level secLevel, bool secureChannel,
     const FullStatsMessageCore_t *content);
 
 #if defined(ENABLE_RADIO_RX)
@@ -562,7 +553,7 @@ uint8_t *encodeFullStatsMessageCore(uint8_t *buf, uint8_t buflen, stats_TX_level
 // Returns null if failed (eg because of corrupt/insufficient message data) and state of 'content' result is undefined.
 // This will avoid copying into the result data (possibly tainted) that has arrived at an inappropriate security level.
 //   * content will contain data decoded from the message; must be non-null
-const uint8_t *decodeFullStatsMessageCore(const uint8_t *buf, uint8_t buflen, stats_TX_level secLevel, bool secureChannel,
+const uint8_t *decodeFullStatsMessageCore(const uint8_t *buf, uint8_t buflen, OTV0P2BASE::stats_TX_level secLevel, bool secureChannel,
     FullStatsMessageCore_t *content);
 #endif
 
@@ -605,6 +596,20 @@ void outputJSONStats(Print *p, bool secure, const uint8_t *json, uint8_t bufsize
 #define checkJSONMsgRXCRC_ERR -1
 int8_t checkJSONMsgRXCRC(const uint8_t * bptr, uint8_t bufLen);
 #endif
+
+
+
+
+// Returns true if an unencrypted trailing static payload and similar (eg bare stats transmission) is permitted.
+// True if the TX_ENABLE value is no higher than stTXmostUnsec.
+// Some filtering may be required even if this is true.
+#if defined(ALLOW_STATS_TX)
+bool enableTrailingStatsPayload();
+#else
+#define enableTrailingStatsPayload() (false)
+#endif
+
+
 
 #if defined(ENABLE_RADIO_RX)
 // Incrementally poll and process I/O and queued messages, including from the radio link.

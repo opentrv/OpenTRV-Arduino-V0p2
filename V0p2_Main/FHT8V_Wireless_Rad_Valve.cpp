@@ -41,7 +41,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 
 #ifdef USE_MODULE_FHT8VSIMPLE
-FHT8VRadValve<> FHT8V;
+//OTRadValve::FHT8VRadValve<RFM22_PREAMBLE_BYTES, _FHT8V_MAX_EXTRA_TRAILER_BYTES> FHT8V;
+FHT8VRadValve<RFM22_PREAMBLE_BYTES> FHT8V;
 #endif
 
 
@@ -317,18 +318,18 @@ uint8_t *FHT8VRadValveBase::FHT8VCreate200usBitStreamBptr(uint8_t *bptr, const F
 //   * TRVPercentOpen value is used to generate the frame
 //   * doHeader  if true then an extra RFM22/23-friendly 0xaaaaaaaa sync header is preprended
 //   * trailer  if not null then a stats trailer is appended, built from that info plus a CRC
-//   * command  on entry hc1, hc2 (and addresss if used) must be set correctly, this sets the command and extension; never NULL
+//   * command  on entry hc1, hc2 (and address if used) must be set correctly, this sets the command and extension; never NULL
 // The generated command frame can be resent indefinitely.
 // The output buffer used must be (at least) FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE bytes.
 // Returns pointer to the terminating 0xff on exit.
-uint8_t *FHT8VRadValveBase::FHT8VCreateValveSetCmdFrameHT_r(uint8_t *const bptrInitial, const bool doHeader, FHT8VRadValveBase::fht8v_msg_t *const command, const uint8_t TRVPercentOpen, const FullStatsMessageCore_t *trailer)
+uint8_t *FHT8VRadValveBase::FHT8VCreateValveSetCmdFrameHT_r(uint8_t *const bptrInitial, const uint8_t bufSize, const bool doHeader, FHT8VRadValveBase::fht8v_msg_t *const command, const uint8_t TRVPercentOpen, const FullStatsMessageCore_t *trailer)
   {
   uint8_t *bptr = bptrInitial;
 
   command->command = 0x26;
   command->extension = (TRVPercentOpen * 255) / 100;
 
-  // Add RFM22/32-friendly pre-preamble if requested, eg when calling for heat from the boiler (TRV actually open).
+  // Add RFM22/23-friendly pre-preamble if requested, eg when calling for heat from the boiler (TRV actually open).
   // NOTE: this requires more buffer space.
   if(doHeader)
     {
@@ -354,7 +355,7 @@ uint8_t *FHT8VRadValveBase::FHT8VCreateValveSetCmdFrameHT_r(uint8_t *const bptrI
 #endif
       {
       // Assume enough space in buffer for largest possible stats message.
-      uint8_t * const tail = encodeFullStatsMessageCore(bptr, FHT8VRadValve<>::FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE - (bptr - bptrInitial), getStatsTXLevel(), false, trailer);
+      uint8_t * const tail = encodeFullStatsMessageCore(bptr, bufSize - (bptr - bptrInitial), OTV0P2BASE::getStatsTXLevel(), false, trailer);
       if(NULL != tail) { bptr = tail; } // Encoding should not actually fail, but this copes gracefully if so!
       }
     }
@@ -380,7 +381,7 @@ uint8_t *FHT8VRadValveBase::FHT8VCreateValveSetCmdFrameHT_r(uint8_t *const bptrI
 //
 // NOTE: with SUPPORT_TEMP_TX defined will also insert trailing stats payload where appropriate.
 // Also reports local stats as if remote.
-uint8_t * FHT8VRadValveBase::FHT8VCreateValveSetCmdFrame_r(uint8_t *const bptr, FHT8VRadValveBase::fht8v_msg_t *command, const uint8_t TRVPercentOpen)
+uint8_t * FHT8VRadValveBase::FHT8VCreateValveSetCmdFrame_r(uint8_t *const bptr, const uint8_t bufSize, FHT8VRadValveBase::fht8v_msg_t *command, const uint8_t TRVPercentOpen)
   {
   const bool etmsp = enableTrailingStatsPayload();
 
@@ -412,7 +413,7 @@ uint8_t * FHT8VRadValveBase::FHT8VCreateValveSetCmdFrame_r(uint8_t *const bptr, 
     trailer.containsID = false;
     }
 
-  return(FHT8VCreateValveSetCmdFrameHT_r(bptr, doHeader, command, TRVPercentOpen, (doTrailer ? &trailer : NULL)));
+  return(FHT8VCreateValveSetCmdFrameHT_r(bptr, bufSize, doHeader, command, TRVPercentOpen, (doTrailer ? &trailer : NULL)));
   }
 
 
