@@ -39,8 +39,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 
 #ifdef USE_MODULE_FHT8VSIMPLE
-//OTRadValve::FHT8VRadValve<RFM22_PREAMBLE_BYTES, _FHT8V_MAX_EXTRA_TRAILER_BYTES> FHT8V;
-FHT8VRadValve<RFM22_PREAMBLE_BYTES> FHT8V;
+FHT8VRadValve<_FHT8V_MAX_EXTRA_TRAILER_BYTES, FHT8VRadValveBase::RFM23_PREAMBLE_BYTES, FHT8VRadValveBase::RFM23_PREAMBLE_BYTE> FHT8V;
 #endif
 
 
@@ -127,34 +126,34 @@ static const bool ALLOW_NON_SYNC_DOUBLE_TX = false;
 // Provide RFM22/RFM23 register settings for use with FHT8V in Flash memory.
 // Consists of a sequence of (reg#,value) pairs terminated with a 0xff register number.  The reg#s are <128, ie top bit clear.
 // Magic numbers c/o Mike Stirling!
-const uint8_t FHT8VRadValveBase::FHT8V_RFM22_Reg_Values[][2] PROGMEM =
+const uint8_t FHT8VRadValveBase::FHT8V_RFM23_Reg_Values[][2] PROGMEM =
   {
   // Putting TX power setting first to help with dynamic adjustment.
 // From AN440: The output power is configurable from +13 dBm to -8 dBm (Si4430/31), and from +20 dBM to -1 dBM (Si4432) in ~3 dB steps. txpow[2:0]=000 corresponds to min output power, while txpow[2:0]=111 corresponds to max output power.
 // The maximum legal ERP (not TX output power) on 868.35 MHz is 25 mW with a 1% duty cycle (see IR2030/1/16).
 //EEPROM ($6d,%00001111) ; RFM22REG_TX_POWER: Maximum TX power: 100mW for RFM22; not legal in UK/EU on RFM22 for this band.
 //EEPROM ($6d,%00001000) ; RFM22REG_TX_POWER: Minimum TX power (-1dBm).
-#ifndef RFM22_IS_ACTUALLY_RFM23
-    #ifndef RFM22_GOOD_RF_ENV
-    {0x6d,0xd}, // RFM22REG_TX_POWER: RFM22 +14dBm ~25mW ERP with 1/4-wave antenna.
-    #else // Tone down for good RF backplane, etc.
-    {0x6d,0x9},
-    #endif
-#else
-    #ifndef RFM22_GOOD_RF_ENV
-    {0x6d,0xf}, // RFM22REG_TX_POWER: RFM23 max power (+13dBm) for ERP ~25mW with 1/4-wave antenna.
-    #else // Tone down for good RF backplane, etc.
-    {0x6d,0xb},
-    #endif
-#endif
+//#ifndef RFM22_IS_ACTUALLY_RFM23
+//    #ifndef RFM22_GOOD_RF_ENV
+//    {0x6d,0xd}, // RFM22REG_TX_POWER: RFM22 +14dBm ~25mW ERP with 1/4-wave antenna.
+//    #else // Tone down for good RF backplane, etc.
+//    {0x6d,0x9},
+//    #endif
+//#else
+//    #ifndef RFM22_GOOD_RF_ENV
+//    {0x6d,0xf}, // RFM22REG_TX_POWER: RFM23 max power (+13dBm) for ERP ~25mW with 1/4-wave antenna.
+//    #else // Tone down for good RF backplane, etc.
+    {0x6d,0xb}, // RF23B, good RF conditions.
+//    #endif
+//#endif
 
     {6,0}, // Disable default chiprdy and por interrupts.
     {8,0}, // RFM22REG_OP_CTRL2: ANTDIVxxx, RXMPK, AUTOTX, ENLDM
 
-#ifndef RFM22_IS_ACTUALLY_RFM23
-// For RFM22 with RXANT tied to GPIO0, and TXANT tied to GPIO1...
-    {0xb,0x15}, {0xc,0x12}, // Can be omitted FOR RFM23.
-#endif
+//#ifndef RFM22_IS_ACTUALLY_RFM23
+//// For RFM22 with RXANT tied to GPIO0, and TXANT tied to GPIO1...
+//    {0xb,0x15}, {0xc,0x12}, // Can be omitted FOR RFM23.
+//#endif
 
 // 0x30 = 0x00 - turn off packet handling
 // 0x33 = 0x06 - set 4 byte sync
@@ -170,7 +169,7 @@ const uint8_t FHT8VRadValveBase::FHT8V_RFM22_Reg_Values[][2] PROGMEM =
     {0x73,0}, {0x74,0}, // Frequency offset
 // Channel 0 frequency = 868 MHz, 10 kHz channel steps, high band.
     {0x75,0x73}, {0x76,100}, {0x77,0}, // BAND_SELECT,FB(hz), CARRIER_FREQ0&CARRIER_FREQ1,FC(hz) where hz=868MHz
-    {0x79,35}, // 868.35 MHz - FHT
+    {0x79,35}, // 868.35 MHz - FHT8V/FS20.
     {0x7a,1}, // One 10kHz channel step.
 
 // RX-only
@@ -896,8 +895,6 @@ uint8_t const * FHT8VRadValveBase::FHT8VDecodeBitStream(uint8_t const *bitStream
 // Also reports local stats as if remote.
 uint8_t *FHT8VCreateValveSetCmdFrame_r(uint8_t *const bptrInitial, const uint8_t bufSize, FHT8VRadValveBase::fht8v_msg_t *command, const uint8_t TRVPercentOpen, const bool doPreambleAndTrailer)
   {
-//  const bool etmsp = enableTrailingStatsPayload();
-
   // Add RFM22-friendly pre-preamble only if calling for heat from the boiler (TRV actually open)
   // OR if adding a trailer that the hub should see.
   // Only do this for smart local valves; assume slave valves need not signal back to the boiler this way.

@@ -250,10 +250,18 @@ class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
 
 
     // A set of RFM22/RFM23 register settings for use with FHT8V, stored in (read-only) program/Flash memory.
-    // Consists of a sequence of (reg#,value) pairs terminated with a $ff register.  The reg#s are <128, ie top bit clear.
+    // Consists of a sequence of (reg#,value) pairs terminated with a 0xff register.
+    // The (valid) reg#s are <128, ie top bit clear.
     // Magic numbers c/o Mike Stirling!
     // Should not be linked into code image unless explicitly referred to.
-    static const uint8_t FHT8V_RFM22_Reg_Values[][2] PROGMEM;
+    static const uint8_t FHT8V_RFM23_Reg_Values[][2] PROGMEM;
+
+    // Values designed to work with FHT8V_RFM23_Reg_Values register settings.
+    static const uint8_t RFM23_PREAMBLE_BYTE = 0xaa; // Preamble byte for RFM23 reception.
+    static const uint8_t RFM23_PREAMBLE_MIN_BYTES = 4; // Minimum number of preamble bytes for reception.
+    static const uint8_t RFM23_PREAMBLE_BYTES = 5; // Recommended number of preamble bytes for reliable reception.
+    static const uint8_t RFM23_SYNC_BYTE = 0xcc; // Sync-word trailing byte (with FHT8V primarily).
+    static const uint8_t RFM23_SYNC_MIN_BYTES = 3; // Minimum number of sync bytes.
 
     // Does nothing for now; different timing/driver routines are used.
     virtual uint8_t read() { return(value); }
@@ -302,12 +310,12 @@ uint8_t *FHT8VCreateValveSetCmdFrame_r(uint8_t *bptr, uint8_t bufSize, FHT8VRadV
 
 
 
-template <uint8_t preambleBytes /* = RFM22_PREAMBLE_BYTES */>
+template <uint8_t maxTrailerBytes, uint8_t preambleBytes = FHT8VRadValveBase::RFM23_PREAMBLE_BYTES, uint8_t preambleByte = FHT8VRadValveBase::RFM23_PREAMBLE_BYTE>
 class FHT8VRadValve : public FHT8VRadValveBase
   {
   public:
     static const uint8_t FHT8V_MAX_EXTRA_PREAMBLE_BYTES = preambleBytes; // RFM22_PREAMBLE_BYTES
-    static const uint8_t FHT8V_MAX_EXTRA_TRAILER_BYTES = (1+max(MESSAGING_TRAILING_MINIMAL_STATS_PAYLOAD_BYTES,FullStatsMessageCore_MAX_BYTES_ON_WIRE));
+    static const uint8_t FHT8V_MAX_EXTRA_TRAILER_BYTES = maxTrailerBytes; // (1+max(MESSAGING_TRAILING_MINIMAL_STATS_PAYLOAD_BYTES,FullStatsMessageCore_MAX_BYTES_ON_WIRE));
     static const uint8_t FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE = (FHT8V_MAX_EXTRA_PREAMBLE_BYTES + (FHT8VRadValve::MIN_FHT8V_200US_BIT_STREAM_BUF_SIZE) + FHT8V_MAX_EXTRA_TRAILER_BYTES); // Buffer space needed.
 
     // Approximate maximum transmission (TX) time for FHT8V command frame in ms; strictly positive.
@@ -347,12 +355,11 @@ class FHT8VRadValve : public FHT8VRadValveBase
 
 
 
-
 #ifdef USE_MODULE_FHT8VSIMPLE
 // Singleton FHT8V valve instance (to control remote FHT8V valve by radio).
 static const uint8_t _FHT8V_MAX_EXTRA_TRAILER_BYTES = (1+max(MESSAGING_TRAILING_MINIMAL_STATS_PAYLOAD_BYTES,FullStatsMessageCore_MAX_BYTES_ON_WIRE));
 //extern OTRadValve::FHT8VRadValve<RFM22_PREAMBLE_BYTES, _FHT8V_MAX_EXTRA_TRAILER_BYTES> FHT8V;
-extern FHT8VRadValve<RFM22_PREAMBLE_BYTES> FHT8V;
+extern FHT8VRadValve<_FHT8V_MAX_EXTRA_TRAILER_BYTES, FHT8VRadValveBase::RFM23_PREAMBLE_BYTES, FHT8VRadValveBase::RFM23_PREAMBLE_BYTE> FHT8V;
 
 // This unit may control a local TRV.
 #if defined(LOCAL_TRV) || defined(SLAVE_TRV)
