@@ -92,6 +92,16 @@ class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
     static const uint8_t MAX_HSC = 1; // Max allowed value of halfSecondCount.
     #endif
 
+    // Sends to FHT8V in FIFO mode command bitstream from buffer starting at bptr up until terminating 0xff,
+    // then reverts to low-power standby mode if not in hub mode, RX for OpenTRV FHT8V if in hub mode.
+    // The trailing 0xff is not sent.
+    //
+    // Returns immediately without transmitting if the command buffer starts with 0xff (ie is empty).
+    // (If doubleTX is true, sends the bitstream twice, with a short (~8ms) pause between transmissions, to help ensure reliable delivery.)
+    //
+    // Note: single transmission time is up to about 80ms (without extra trailers), double up to about 170ms.
+    void FHT8VTXFHTQueueAndSendCmd(uint8_t *bptr, const bool doubleTX);
+
     // Call just after TX of valve-setting command which is assumed to reflect current TRVPercentOpen state.
     // This helps avoiding calling for heat from a central boiler until the valve is really open,
     // eg to avoid excess load on (or energy wasting by) the circulation pump.

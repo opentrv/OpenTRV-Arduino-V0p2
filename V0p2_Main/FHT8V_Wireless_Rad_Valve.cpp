@@ -32,7 +32,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #ifdef USE_MODULE_FHT8VSIMPLE
 
 #include "Control.h"
-#include "RFM22_Radio.h"
+//#include "RFM22_Radio.h"
 #include "Messaging.h"
 #include "Power_Management.h"
 #include "Security.h"
@@ -424,7 +424,7 @@ uint8_t * FHT8VRadValveBase::FHT8VCreateValveSetCmdFrame_r(uint8_t *const bptr, 
 // (If doubleTX is true, sends the bitstream twice, with a short (~8ms) pause between transmissions, to help ensure reliable delivery.)
 //
 // Note: single transmission time is up to about 80ms (without extra trailers), double up to about 170ms.
-static void FHT8VTXFHTQueueAndSendCmd(uint8_t *bptr, const bool doubleTX)
+void FHT8VRadValveBase::FHT8VTXFHTQueueAndSendCmd(uint8_t *bptr, const bool doubleTX)
   {
   if(((uint8_t)0xff) == *bptr) { return; }
 #if 0 && defined(DEBUG)
@@ -432,7 +432,7 @@ static void FHT8VTXFHTQueueAndSendCmd(uint8_t *bptr, const bool doubleTX)
 #endif
 
   const uint8_t buflen = OTRadioLink::frameLenFFTerminated(bptr);
-  RFM23B.sendRaw(bptr, buflen, 0, doubleTX ? OTRadioLink::OTRadioLink::TXmax : OTRadioLink::OTRadioLink::TXnormal);
+  radio->sendRaw(bptr, buflen, 0, doubleTX ? OTRadioLink::OTRadioLink::TXmax : OTRadioLink::OTRadioLink::TXnormal);
 
   //DEBUG_SERIAL_PRINTLN_FLASHSTRING("SC");
   }
@@ -537,7 +537,7 @@ bool FHT8VRadValveBase::doSync(const bool allowDoubleTX)
 #endif
       }
 
-    handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O built up while waiting.
+    handleQueuedMessages(&Serial, true, radio); // Deal with any pending I/O built up while waiting.
 
     // After penultimate sync TX set up time to sending of final sync command.
     if(1 == --syncStateFHT8V)
@@ -700,7 +700,7 @@ bool FHT8VRadValveBase::FHT8VPollSyncAndTX_Next(const bool allowDoubleTX)
     // DEBUG_SERIAL_PRINTLN_FLASHSTRING(" FHT8V TX");
 #endif
     OTV0P2BASE::serialPrintlnAndFlush(F("FHT8V TX"));
-    handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O built up while waiting.
+    handleQueuedMessages(&Serial, true, radio); // Deal with any pending I/O built up while waiting.
 
     // Set up correct delay to next TX.
     halfSecondsToNextFHT8VTX = FHT8VRadValveBase::FHT8VTXGapHalfSeconds(FHT8VGetHC2(), halfSecondCount);
