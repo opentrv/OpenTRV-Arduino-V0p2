@@ -362,99 +362,6 @@ uint8_t FHT8VGetHC2() { return(eeprom_read_byte((uint8_t*)V0P2BASE_EE_START_FHT8
 bool localFHT8VTRVEnabled() { return(((FHT8VGetHC1() <= 99) && (FHT8VGetHC2() <= 99))); }
 #endif
 
-//// Shared command buffer for TX to FHT8V.
-//static uint8_t FHT8VTXCommandArea[FHT8VRadValve<>::FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE];
-
-//// Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) in the shared TX buffer.
-////   * valvePC  the percentage open to set the valve [0,100]
-//// HC1 and HC2 are fetched with the FHT8VGetHC1() and FHT8VGetHC2() calls, and address is always 0.
-//// The generated command frame can be resent indefinitely.
-//// If no valve is set up then this may simply terminate an empty buffer with 0xff.
-//void FHT8VCreateValveSetCmdFrame(const uint8_t valvePC)
-//  {
-//  FHT8VRadValveBase::fht8v_msg_t command;
-//  command.hc1 = FHT8VGetHC1();
-//  command.hc2 = FHT8VGetHC2();
-//#ifdef FHT8V_ADR_USED
-//  command.address = 0;
-//#endif
-//  FHT8VRadValveBase::FHT8VCreateValveSetCmdFrame_r(FHT8VTXCommandArea, &command, valvePC);
-//  }
-
-//// Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) in the shared TX buffer.
-//// The getTRVPercentOpen() result is used to generate the frame.
-//// HC1 and HC2 are fetched with the FHT8VGetHC1() and FHT8VGetHC2() calls, and address is always 0.
-//// The generated command frame can be resent indefinitely.
-//// If no valve is set up then this may simply terminate an empty buffer with 0xff.
-//void FHT8VCreateValveSetCmdFrame(const OTRadValve::AbstractRadValve &valve)
-//  {
-//  if(!localFHT8VTRVEnabled())
-//    {
-//    // Ensure that buffer is terminated, though empty.
-//    FHT8VTXCommandArea[0] = 0xff;
-//    return;
-//    }
-//
-//  FHT8VCreateValveSetCmdFrame(valve.get());
-////  FHT8VCreateValveSetCmdFrame(NominalRadValve.get());
-//  }
-//
-//// True once/while this node is synced with and controlling the target FHT8V valve; initially false.
-//static bool syncedWithFHT8V;
-//#ifndef IGNORE_FHT_SYNC
-//bool isSyncedWithFHT8V() { return(syncedWithFHT8V); }
-//#else
-//bool isSyncedWithFHT8V() { return(true); } // Lie and claim always synced.
-//#endif
-//
-//
-//// True if FHT8V valve is believed to be open under instruction from this system; false if not in sync.
-//static bool FHT8V_isValveOpen;
-//bool getFHT8V_isValveOpen() { return(syncedWithFHT8V && FHT8V_isValveOpen); }
-//
-//
-//// GLOBAL NOTION OF CONTROLLED FHT8V VALVE STATE PROVIDED HERE
-//// True iff the FHT8V valve(s) (if any) controlled by this unit are really open.
-//// This waits until at least the command to open the FHT8Vhas been sent.
-//bool FHT8VisControlledValveOpen() { return(getFHT8V_isValveOpen()); }
-
-//
-//// Call just after TX of valve-setting command which is assumed to reflect current TRVPercentOpen state.
-//// This helps avoiding calling for heat from a central boiler until the valve is really open,
-//// eg to avoid excess load on (or energy wasting by) the circulation pump.
-//#ifdef ENABLE_NOMINAL_RAD_VALVE
-//static void setFHT8V_isValveOpen()
-//#ifdef LOCAL_TRV // More nuanced test...
-//  { FHT8V_isValveOpen = (NominalRadValve.get() >= NominalRadValve.getMinValvePcReallyOpen()); }
-//#else
-//  { FHT8V_isValveOpen = (NominalRadValve.get() >= NominalRadValve.getMinPercentOpen()); }
-//#endif
-//#endif
-
-//
-//// Sync status and down counter for FHT8V, initially zero; value not important once in sync.
-//// If syncedWithFHT8V = 0 then resyncing, AND
-////     if syncStateFHT8V is zero then cycle is starting
-////     if syncStateFHT8V in range [241,3] (inclusive) then sending sync command 12 messages.
-//static uint8_t syncStateFHT8V;
-//
-//// Count-down in half-second units until next transmission to FHT8V valve.
-//static uint8_t halfSecondsToNextFHT8VTX;
-//
-//// Call to reset comms with FHT8V valve and force resync.
-//// Resets values to power-on state so need not be called in program preamble if variables not tinkered with.
-//// Requires globals defined that this maintains:
-////   syncedWithFHT8V (bit, true once synced)
-////   FHT8V_isValveOpen (bit, true if this node has last sent command to open valve)
-////   syncStateFHT8V (byte, internal)
-////   halfSecondsToNextFHT8VTX (byte).
-//void FHT8VBase::FHT8VSyncAndTXReset()
-//  {
-//  syncedWithFHT8V = false;
-//  syncStateFHT8V = 0;
-//  halfSecondsToNextFHT8VTX = 0;
-//  FHT8V_isValveOpen = false;
-//  }
 
 // Sends to FHT8V in FIFO mode command bitstream from buffer starting at bptr up until terminating 0xff,
 // then reverts to low-power standby mode if not in hub mode, RX for OpenTRV FHT8V if in hub mode.
@@ -471,30 +378,9 @@ static void FHT8VTXFHTQueueAndSendCmd(uint8_t *bptr, const bool doubleTX)
   if(0 == *bptr) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("FHT8V frame not initialised"); panic(); }
 #endif
 
-#if defined(ENABLE_BOILER_HUB)
-  const bool hubMode = inHubMode();
-//  // Do a final poll for any call for heat that just arrived before doing TX.
-//  if(hubMode) { FHT8VCallForHeatPoll(); }
-//  StopEavesdropOnFHT8V(); // Unconditional cleardown of eavesdrop.
-#endif
-
-//  RFM22QueueCmdToFF(bptr);
-//  RFM22TXFIFO(); // Send it!  Approx 1.6ms/byte and < 80ms max.
-//  if(doubleTX)
-//    {
-//    // Should nominally pause about 8--9ms or similar before retransmission...
-//    sleepLowPowerMs(8);
-//    RFM22TXFIFO(); // Re-send it!
-//    }
   const uint8_t buflen = OTRadioLink::frameLenFFTerminated(bptr);
   RFM23B.sendRaw(bptr, buflen, 0, doubleTX ? OTRadioLink::OTRadioLink::TXmax : OTRadioLink::OTRadioLink::TXnormal);
 
-//#if defined(ENABLE_BOILER_HUB)
-//  if(hubMode)
-//    { SetupToEavesdropOnFHT8V(); } // Revert to hub listening...
-//  else
-//#endif
-//    { RFM22ModeStandbyAndClearState(); } // Go to standby to conserve energy.
   //DEBUG_SERIAL_PRINTLN_FLASHSTRING("SC");
   }
 
@@ -502,7 +388,6 @@ static void FHT8VTXFHTQueueAndSendCmd(uint8_t *bptr, const bool doubleTX)
 // This helps avoiding calling for heat from a central boiler until the valve is really open,
 // eg to avoid excess load on (or energy wasting by) the circulation pump.
 // FIXME: compare against own threshold and have NominalRadValve look at least open of all vs minPercentOpen.
-//#ifdef ENABLE_NOMINAL_RAD_VALVE
 void FHT8VRadValveBase::setFHT8V_isValveOpen()
 #ifdef LOCAL_TRV // More nuanced test...
   { FHT8V_isValveOpen = (NominalRadValve.get() >= NominalRadValve.getMinValvePcReallyOpen()); }
@@ -511,7 +396,6 @@ void FHT8VRadValveBase::setFHT8V_isValveOpen()
 #else
   { FHT8V_isValveOpen = false; }
 #endif
-//#endif
 
 // Send current (assumed valve-setting) command and adjust FHT8V_isValveOpen as appropriate.
 // Only appropriate when the command is going to be heard by the FHT8V valve itself, not just the hub.
@@ -526,23 +410,6 @@ void FHT8VRadValveBase::valveSettingTX(const bool allowDoubleTX)
 #endif
   }
 
-// Half second count within current minor cycle for FHT8VPollSyncAndTX_XXX().
-//static uint8_t halfSecondCount;
-//#if defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
-//#define MAX_HSC 3 // Max allowed value of halfSecondCount.
-//#else
-//#define MAX_HSC 1 // Max allowed value of halfSecondCount.
-//#endif
-//
-////// Compute interval (in half seconds) between TXes for FHT8V given house code 2.
-////// (In seconds, the formula is t = 115 + 0.5 * (HC2 & 7) seconds, in range [115.0,118.5].)
-////static uint8_t FHT8VTXGapHalfSeconds(const uint8_t hc2) { return((hc2 & 7) + 230); }
-//
-//// Compute interval (in half seconds) between TXes for FHT8V given house code 2
-//// given current halfSecondCountInMinorCycle assuming all remaining tick calls to _Next
-//// will be foregone in this minor cycle,
-//static uint8_t FHT8VTXGapHalfSeconds(const uint8_t hc2, const uint8_t halfSecondCountInMinorCycle)
-//  { return(FHT8VRadValveBase::FHT8VTXGapHalfSeconds(hc2) - (MAX_HSC - halfSecondCountInMinorCycle)); }
 
 // Sleep in reasonably low-power mode until specified target subcycle time, optionally listening (RX) for calls-for-heat.
 // Returns true if OK, false if specified time already passed or significantly missed (eg by more than one tick).
@@ -685,8 +552,6 @@ bool FHT8VRadValveBase::doSync(const bool allowDoubleTX)
 //
 // Uses its static/internal transmission buffer, and always leaves it in valid date.
 //
-// ALSO MANAGES RX FROM OTHER NODES WHEN ENABLED IN HUB MODE.
-//
 // Iff this returns true then call FHT8VPollSyncAndTX_Next() at or before each 0.5s from the cycle start
 // to allow for possible transmissions.
 //
@@ -745,8 +610,6 @@ bool FHT8VRadValveBase::FHT8VPollSyncAndTX_First(const bool allowDoubleTX)
 // This will sleep (at reasonably low power) as necessary to the start of its TX slot,
 // else will return immediately if no TX needed in this slot.
 //
-// ALSO MANAGES RX FROM OTHER NODES WHEN ENABLED IN HUB MODE.
-//
 // Iff this returns false then no further TX slots will be needed
 // (and thus this routine need not be called again) on this minor cycle
 bool FHT8VRadValveBase::FHT8VPollSyncAndTX_Next(const bool allowDoubleTX)
@@ -797,32 +660,12 @@ bool FHT8VRadValveBase::FHT8VPollSyncAndTX_Next(const bool allowDoubleTX)
   }
 
 
-// Hub-mode receive buffer for RX from FHT8V.
-// Extend if need be to allow receipt of JSON message.
-
 #define FHT8V_JSON_FRAME_BUF_SIZE (FHT8V_MAX_EXTRA_PREAMBLE_BYTES + MSG_JSON_MAX_LENGTH + 1 + 1) // Allow for trailing CRC and terminator which can be overwritten with null.
 #define FHT8V_MAX_FRAME_SIZE (max(FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE, FHT8V_JSON_FRAME_BUF_SIZE))
 
 //#if FHT8V_MAX_FRAME_SIZE > 65 // Max radio frame buffer plus terminating 0xff...
 //#error frame too big for RFM22/RFM23
 //#endif
-
-// True while eavesdropping for OpenTRV calls for heat.
-static volatile bool eavesdropping;
-
-// Set to a house code on receipt of a valid/appropriate valve-open FS20 frame; ~0 if none.
-// Stored as hc1:hc2, ie house code 1 is most significant byte.
-// Must be written/read under a lock if any chance of access from ISR.
-static volatile uint16_t lastCallForHeatHC = ~0;
-
-// Set to a non-zero value when an error is encountered.
-// Can be read and cleared atomically.
-// Useful to assess the noise enviromentment.
-static volatile uint8_t lastRXerrno;
-
-// Atomically returns and clears last (FHT8V) RX error code, or 0 if none.
-// Set with such codes as FHT8VRXErr_GENERIC; never set to zero.
-static void setLastRXErr(const uint8_t err) { ATOMIC_BLOCK (ATOMIC_RESTORESTATE) { lastRXerrno = err; } }
 
 
 // Current decode state.

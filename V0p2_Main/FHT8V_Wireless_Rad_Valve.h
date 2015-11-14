@@ -110,14 +110,18 @@ class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
     uint8_t hc1, hc2;
 
   public:
-    // Clear both housecode parts (and thus disable local valve).
+    // Clear both housecode parts (and thus disable use of FHT8V valve).
     void clearHC() { hc1 = ~0, hc2 = ~0; }
     // Set (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control.
-    void setHC1(uint8_t hc);
-    void setHC2(uint8_t hc);
+    // Both parts must be <= 99 for the house code to be valid and the valve used.
+    void setHC1(uint8_t hc) { hc1 = hc; }
+    void setHC2(uint8_t hc) { hc2 = hc; }
     // Get (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control (will be 0xff until set).
+    // Both parts must be <= 99 for the house code to be valid and the valve used.
     uint8_t getHC1() { return(hc1); }
     uint8_t getHC2() { return(hc2); }
+    // Check if housecode is valid for controlling an FHT8V.
+    bool isValidHC() { return(((hc1 <= 99) && (hc2 <= 99))); }
 
     // Type for information content of FHT8V message.
     // Omits the address field unless it is actually used.
@@ -326,62 +330,6 @@ extern FHT8VRadValve<> FHT8V;
 
 #ifdef USE_MODULE_FHT8VSIMPLE
 
-//#ifdef USE_MODULE_RFM22RADIOSIMPLE
-//// Provide RFM22/RFM23 register settings for use with FHT8V, stored in (read-only) program/Flash memory.
-//// Consists of a sequence of (reg#,value) pairs terminated with a $ff register.  The reg#s are <128, ie top bit clear.
-//// Magic numbers c/o Mike Stirling!
-//extern const uint8_t FHT8V_RFM22_Reg_Values[][2] PROGMEM;
-//// IF DEFINED: use RFM22 RX sync to indicate something for the hubs to listen to, including but not only a call for heat.
-//// (Older receivers relied on just this RFM22/23 sync which is no longer enough.
-//// Very simple devices such as PICAXE did not actually decode the complete frame,
-//// and this is ultimately insufficient with (for example) neighbouring houses both using such simple boiler-controllers,
-//// as any TRV opening in either house would turn on both boilers...)
-////#define RFM22_SYNC_BCFH
-//#endif
-
-//
-//// Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) at bptr.
-//// The TRVPercentOpen value is used to generate the frame.
-//// On entry hc1, hc2 (and addresss if used) must be set correctly; this sets command and extension.
-//// The generated command frame can be resent indefinitely.
-//// The command buffer used must be (at least) FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE bytes plus extra preamble and trailers.
-//// Returns pointer to the terminating 0xff on exit.
-//uint8_t *FHT8VCreateValveSetCmdFrame_r(uint8_t *bptr, FHT8VRadValveBase::fht8v_msg_t *command, const uint8_t TRVPercentOpen);
-//
-//// Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) at bptr with optional headers and trailers.
-////   * TRVPercentOpen value is used to generate the frame
-////   * doHeader  if true then an extra RFM22/23-friendly 0xaaaaaaaa sync header is preprended
-////   * trailer  if not null then a stats trailer is appended, built from that info plus a CRC
-////   * command  on entry hc1, hc2 (and addresss if used) must be set correctly, this sets the command and extension; never NULL
-//// The generated command frame can be resent indefinitely.
-//// The output buffer used must be (at least) FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE bytes.
-//// Returns pointer to the terminating 0xff on exit.
-//uint8_t *FHT8VCreateValveSetCmdFrameHT_r(uint8_t *bptr, bool doHeader, FHT8VRadValveBase::fht8v_msg_t *command, uint8_t TRVPercentOpen, const FullStatsMessageCore_t *trailer);
-
-//// Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) in the shared TX buffer.
-//// The getTRVPercentOpen() result is used to generate the frame.
-//// HC1 and HC2 are fetched with the FHT8VGetHC1() and FHT8VGetHC2() calls, and address is always 0.
-//// The generated command frame can be resent indefinitely.
-//// If no valve is set up then this may simply terminate an empty buffer with 0xff.
-//void FHT8VCreateValveSetCmdFrame(const OTRadValve::AbstractRadValve &valve);
-//
-//// Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) in the shared TX buffer.
-////   * valvePC  the percentage open to set the valve [0,100]
-//// HC1 and HC2 are fetched with the FHT8VGetHC1() and FHT8VGetHC2() calls, and address is always 0.
-//// The generated command frame can be resent indefinitely.
-//// If no valve is set up then this may simply terminate an empty buffer with 0xff.
-//void FHT8VCreateValveSetCmdFrame(const uint8_t valvePC);
-//
-//// Decode raw bitstream into non-null command structure passed in; returns true if successful.
-//// Will return non-null if OK, else NULL if anything obviously invalid is detected such as failing parity or checksum.
-//// Finds and discards leading encoded 1 and trailing 0.
-//// Returns NULL on failure, else pointer to next full byte after last decoded.
-//uint8_t const *FHT8VDecodeBitStream(uint8_t const *bitStream, uint8_t const *lastByte, FHT8VRadValveBase::fht8v_msg_t *command);
-
-//// True once/while this node is synced with and controlling the target FHT8V valve; initially false.
-//bool isSyncedWithFHT8V();
-
-
 // This unit may control a local TRV.
 #if defined(LOCAL_TRV) || defined(SLAVE_TRV)
 // Returns TRV if valve/radiator is to be controlled by this unit.
@@ -391,89 +339,6 @@ bool localFHT8VTRVEnabled();
 #else
 #define localFHT8VTRVEnabled() (false) // Local FHT8V TRV disabled.
 #endif
-
-
-//// True if FHT8V valve is believed to be open under instruction from this system; undefined if not in sync.
-//bool getFHT8V_isValveOpen();
-//
-//// Call to reset comms with FHT8V valve and force resync.
-//// Resets values to power-on state so need not be called in program preamble if variables not tinkered with.
-//void FHT8VSyncAndTXReset();
-
-//// Call at start of minor cycle to manage initial sync and subsequent comms with FHT8V valve.
-//// Conveys this system's TRVPercentOpen value to the FHT8V value periodically,
-//// setting FHT8V_isValveOpen true when the valve will be open/opening provided it received the latest TX from this system.
-////
-////   * allowDoubleTX  if true then a double TX is allowed for better resilience, but at cost of extra time and energy
-////
-//// Uses its static/internal transmission buffer, and always leaves it in valid date.
-////
-//// Iff this returns true then call FHT8VPollSyncAndTX_Next() at or before each 0.5s from the cycle start
-//// to allow for possible transmissions.
-////
-//// See https://sourceforge.net/p/opentrv/wiki/FHT%20Protocol/ for the underlying protocol.
-////
-//// ALSO MANAGES RX FROM OTHER NODES WHEN ENABLED IN HUB MODE.
-//bool FHT8VPollSyncAndTX_First(bool allowDoubleTX = false);
-//
-//// If FHT8VPollSyncAndTX_First() returned true then call this each 0.5s from the start of the cycle, as nearly as possible.
-//// This allows for possible transmission slots on each half second.
-////
-////   * allowDoubleTX  if true then a double TX is allowed for better resilience, but at cost of extra time and energy
-////
-//// This will sleep (at reasonably low power) as necessary to the start of its TX slot,
-//// else will return immediately if no TX needed in this slot.
-////
-//// Iff this returns false then no further TX slots will be needed
-//// (and thus this routine need not be called again) on this minor cycle
-////
-//// ALSO MANAGES RX FROM OTHER NODES WHEN ENABLED IN HUB MODE.
-//bool FHT8VPollSyncAndTX_Next(bool allowDoubleTX = false);
-
-
-//// True iff the FHT8V valve(s) (if any) controlled by this unit are really open.
-//// This waits until, for example, an ACK where appropriate, or at least the command has been sent.
-//// This also implies open to OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN or equivalent.
-//// If more than one valve is being controlled by this unit,
-//// then this should return true if all of the valves are (significantly) open.
-//bool FHT8VisControlledValveOpen();
-
-
-//#ifdef ENABLE_BOILER_HUB
-//// Maximum number of housecodes that can be remembered and filtered for in hub selective-response mode.
-//// Strictly positive if compiled in.
-//// Limited in size partly by memory and partly to limit filtering time at RX.
-////#define FHT8V_MAX_HUB_REMEMBERED_HOUSECODES 0
-//#define FHT8V_MAX_HUB_REMEMBERED_HOUSECODES EE_HUB_HC_FILTER_COUNT
-//
-//// Count of house codes selectively listened for at hub.
-//// If zero then calls for heat are not filtered by house code.
-//uint8_t FHT8VHubListenCount();
-//
-//// Get remembered house code N where N < FHT8V_MAX_HUB_REMEMBERED_HOUSECODES.
-//// Returns hc1:hc2 packed into a 16-bit value, with hc1 in most-significant byte.
-//// Returns 0xffff if requested house code index not in use.
-//uint16_t FHT8CHubListenHouseCodeAtIndex(uint8_t index);
-//
-//// Remember and respond to calls for heat from hc1:hc2 when a hub.
-//// Returns true if successfully remembered (or already present), else false if cannot be remembered.
-//bool FHT8VHubListenForHouseCode(uint8_t hc1, uint8_t hc2);
-//
-//// Forget and no longer respond to calls for heat from hc1:hc2 when a hub.
-//void FHT8VHubUnlistenForHouseCode(uint8_t hc1, uint8_t hc2);
-//
-//// Returns true if given house code is a remembered one to accept calls for heat from, or if no filtering is being done.
-//// Fast, and safe to call from an interrupt routine.
-//bool FHT8VHubAcceptedHouseCode(uint8_t hc1, uint8_t hc2);
-//
-//#else
-//#define FHT8V_MAX_HUB_REMEMBERED_HOUSECODES 0
-//#define FHT8VHubListenCount() (0)
-//#define FHT8CHubListenHouseCodeAtIndex(index) ((uint16_t)~0)
-//#define FHT8VHubListenForHouseCode(hc1, hc2) (false)
-//#define FHT8VHubUnlistenForHouseCode(hc1, hc2) {}
-//#define FHT8VHubAcceptedHouseCode(hc1, hc2) (true)
-//#endif
 
 
 #endif
