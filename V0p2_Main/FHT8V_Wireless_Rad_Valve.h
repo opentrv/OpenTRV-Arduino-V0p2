@@ -330,7 +330,6 @@ class FHT8VRadValve : public FHT8VRadValveBase
 #endif
       FHT8VRadValveBase::FHT8VCreateValveSetCmdFrame_r(FHT8VTXCommandArea, sizeof(FHT8VTXCommandArea), &command, valvePC);
       }
-
   };
 
 

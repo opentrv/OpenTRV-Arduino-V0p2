@@ -24,20 +24,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 #define SECURITY_H
 
 
-#include "V0p2_Main.h"
 
-//// Get the current basic stats transmission level (for data outbound from this node).
-//// May not exactly match enumerated levels; use inequalities.
-//// Not thread-/ISR- safe.
-//OTV0P2BASE::stats_TX_level getStatsTXLevel();
-//
-//
-//#if 0 // Pairing API outline.
-//struct pairInfo { bool successfullyPaired; };
-//bool startPairing(bool primary, &pairInfo);
-//bool continuePairing(bool primary, &pairInfo); // Incremental work.
-//void clearPairing(bool primary, &pairInfo);
-//#endif
 
 #endif
 

@@ -20,15 +20,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
  Security support for OpenTRV.
  */
 
-#include <util/crc16.h>
-
 #include "Security.h"
 
-#include "Power_Management.h"
-
-
-//// Get the current basic ßstats transmission level (for data outbound from this node).
-//// May not exactly match enumerated levels; use inequalities.
-//// Not thread-/ISR- safe.
-//OTV0P2BASE::stats_TX_level getStatsTXLevel() { return((OTV0P2BASE::stats_TX_level)eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_STATS_TX_ENABLE)); }
 
