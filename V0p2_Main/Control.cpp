@@ -1232,11 +1232,18 @@ void setupOpenTRV()
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("ints set up");
 #endif
 
+  // Wire components directly together, eg for occupancy sensing.
+  wireComponentsTogether();
+
+  // Initialise sensors with stats info where needed.
+  updateSensorsFromStats();
+
 #ifdef ALLOW_STATS_TX
   // Do early 'wake-up' stats transmission if possible
-  // when everything else is set up and ready.
+  // when everything else is set up and ready
+  // including all set-up and inter-wiring of sensors/actuators.
   // Attempt to maximise chance of reception with a double TX.
-  // Assume not in hub mode yet.
+  // Assume not in hub mode (yet).
   // Send all possible formats, binary first (assumed complete in one message).
   bareStatsTX(true, true);
   // Send JSON stats repeatedly (typically once or twice)
@@ -1262,12 +1269,6 @@ void setupOpenTRV()
   // Signal some sort of life on waking up...
   ValveDirect.wiggle();
 #endif
-
-  // Wire components directly together, eg for occupancy sensing.
-  wireComponentsTogether();
-
-  // Initialise sensors with stats info where needed.
-  updateSensorsFromStats();
 
 #if !defined(DONT_RANDOMISE_MINUTE_CYCLE)
   // Start local counters in randomised positions to help avoid inter-unit collisions,
