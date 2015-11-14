@@ -285,7 +285,7 @@ uint8_t *FHT8VRadValveBase::FHT8VCreate200usBitStreamBptr(uint8_t *bptr, const F
   // Generate body.
   bptr = _FHT8VCreate200usAppendByteEP(bptr, command->hc1);
   bptr = _FHT8VCreate200usAppendByteEP(bptr, command->hc2);
-#ifdef FHT8V_ADR_USED
+#ifdef OTV0P2BASE_FHT8V_ADR_USED
   bptr = _FHT8VCreate200usAppendByteEP(bptr, command->address);
 #else
   bptr = _FHT8VCreate200usAppendByteEP(bptr, 0); // Default/broadcast.  TODO: could possibly be further optimised to send 0 value more efficiently.
@@ -293,7 +293,7 @@ uint8_t *FHT8VRadValveBase::FHT8VCreate200usBitStreamBptr(uint8_t *bptr, const F
   bptr = _FHT8VCreate200usAppendByteEP(bptr, command->command);
   bptr = _FHT8VCreate200usAppendByteEP(bptr, command->extension);
   // Generate checksum.
-#ifdef FHT8V_ADR_USED
+#ifdef OTV0P2BASE_FHT8V_ADR_USED
   const uint8_t checksum = 0xc + command->hc1 + command->hc2 + command->address + command->command + command->extension;
 #else
   const uint8_t checksum = 0xc + command->hc1 + command->hc2 + command->command + command->extension;
@@ -339,13 +339,14 @@ void FHT8VRadValveBase::FHT8VTXFHTQueueAndSendCmd(uint8_t *bptr, const bool doub
 // eg to avoid excess load on (or energy wasting by) the circulation pump.
 // FIXME: compare against own threshold and have NominalRadValve look at least open of all vs minPercentOpen.
 void FHT8VRadValveBase::setFHT8V_isValveOpen()
-#ifdef LOCAL_TRV // More nuanced test...
-  { FHT8V_isValveOpen = (NominalRadValve.get() >= NominalRadValve.getMinValvePcReallyOpen()); }
-#elif defined(ENABLE_NOMINAL_RAD_VALVE)
-  { FHT8V_isValveOpen = (NominalRadValve.get() >= NominalRadValve.getMinPercentOpen()); }
-#else
-  { FHT8V_isValveOpen = false; }
-#endif
+  { FHT8V_isValveOpen = (value >= getMinPercentOpen()); }
+//#ifdef LOCAL_TRV // More nuanced test...
+//  { FHT8V_isValveOpen = (NominalRadValve.get() >= NominalRadValve.getMinValvePcReallyOpen()); }
+//#elif defined(ENABLE_NOMINAL_RAD_VALVE)
+//  { FHT8V_isValveOpen = (NominalRadValve.get() >= NominalRadValve.getMinPercentOpen()); }
+//#else
+//  { FHT8V_isValveOpen = false; }
+//#endif
 
 // Send current (assumed valve-setting) command and adjust FHT8V_isValveOpen as appropriate.
 // Only appropriate when the command is going to be heard by the FHT8V valve itself, not just the hub.
@@ -354,10 +355,8 @@ void FHT8VRadValveBase::valveSettingTX(const bool allowDoubleTX)
   // Transmit correct valve-setting command that should already be in the buffer...
   // May not allow double TX for non-sync transmissions to conserve bandwidth.
   FHT8VTXFHTQueueAndSendCmd(buf, ALLOW_NON_SYNC_DOUBLE_TX && allowDoubleTX);
-#ifdef ENABLE_NOMINAL_RAD_VALVE
   // Indicate state that valve should now actually be in (or physically moving to)...
   setFHT8V_isValveOpen();
-#endif
   }
 
 
@@ -417,8 +416,8 @@ bool FHT8VRadValveBase::doSync(const bool allowDoubleTX)
     if(syncStateFHT8V & 1)
       {
       FHT8VRadValveBase::fht8v_msg_t command;
-      command.hc1 = FHT8VGetHC1();
-      command.hc2 = FHT8VGetHC2();
+      command.hc1 = getHC1();
+      command.hc2 = getHC2();
       command.command = 0x2c; // Command 12, extension byte present.
       command.extension = syncStateFHT8V;
       FHT8VRadValveBase::FHT8VCreate200usBitStreamBptr(buf, &command);
@@ -453,8 +452,8 @@ bool FHT8VRadValveBase::doSync(const bool allowDoubleTX)
       {
       // Send sync final command.
       FHT8VRadValveBase::fht8v_msg_t command;
-      command.hc1 = FHT8VGetHC1();
-      command.hc2 = FHT8VGetHC2();
+      command.hc1 = getHC1();
+      command.hc2 = getHC2();
       command.command = 0x20; // Command 0, extension byte present.
       command.extension = 0; // DHD20130324: could set to TRVPercentOpen, but anything other than zero seems to lock up FHT8V-3 units.
       FHT8V_isValveOpen = false; // Note that valve will be closed (0%) upon receipt.
@@ -610,8 +609,8 @@ bool FHT8VRadValveBase::FHT8VPollSyncAndTX_Next(const bool allowDoubleTX)
   }
 
 
-#define FHT8V_JSON_FRAME_BUF_SIZE (FHT8V_MAX_EXTRA_PREAMBLE_BYTES + MSG_JSON_MAX_LENGTH + 1 + 1) // Allow for trailing CRC and terminator which can be overwritten with null.
-#define FHT8V_MAX_FRAME_SIZE (max(FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE, FHT8V_JSON_FRAME_BUF_SIZE))
+//#define FHT8V_JSON_FRAME_BUF_SIZE (FHT8V_MAX_EXTRA_PREAMBLE_BYTES + MSG_JSON_MAX_LENGTH + 1 + 1) // Allow for trailing CRC and terminator which can be overwritten with null.
+//#define FHT8V_MAX_FRAME_SIZE (max(FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE, FHT8V_JSON_FRAME_BUF_SIZE))
 
 //#if FHT8V_MAX_FRAME_SIZE > 65 // Max radio frame buffer plus terminating 0xff...
 //#error frame too big for RFM22/RFM23
@@ -768,7 +767,7 @@ uint8_t const * FHT8VRadValveBase::FHT8VDecodeBitStream(uint8_t const *bitStream
 
   command->hc1 = readOneByteWithParity(&state);
   command->hc2 = readOneByteWithParity(&state);
-#ifdef FHT8V_ADR_USED
+#ifdef OTV0P2BASE_FHT8V_ADR_USED
   command->address = readOneByteWithParity(&state);
 #else
   const uint8_t address = readOneByteWithParity(&state);
@@ -785,7 +784,7 @@ uint8_t const * FHT8VRadValveBase::FHT8VDecodeBitStream(uint8_t const *bitStream
     }
 
    // Generate and check checksum.
-#ifdef FHT8V_ADR_USED
+#ifdef OTV0P2BASE_FHT8V_ADR_USED
   const uint8_t checksum = 0xc + command->hc1 + command->hc2 + command->address + command->command + command->extension;
 #else
   const uint8_t checksum = 0xc + command->hc1 + command->hc2 + address + command->command + command->extension;
@@ -821,6 +820,13 @@ uint8_t const * FHT8VRadValveBase::FHT8VDecodeBitStream(uint8_t const *bitStream
   // in next byte beyond end of FHT8V frame.
   return(state.bitStream + 1);
   }
+
+
+
+
+
+
+
 
 
 // Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) at bptr.

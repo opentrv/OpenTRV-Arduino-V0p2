@@ -136,7 +136,7 @@ class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
       {
       uint8_t hc1;
       uint8_t hc2;
-#ifdef FHT8V_ADR_USED
+#ifdef OTV0P2BASE_FHT8V_ADR_USED
       uint8_t address;
 #endif
       uint8_t command;
@@ -325,7 +325,7 @@ class FHT8VRadValve : public FHT8VRadValveBase
       FHT8VRadValveBase::fht8v_msg_t command;
       command.hc1 = getHC1();
       command.hc2 = getHC2();
-#ifdef FHT8V_ADR_USED
+#ifdef OTV0P2BASE_FHT8V_ADR_USED
       command.address = 0;
 #endif
       FHT8VCreateValveSetCmdFrame_r(FHT8VTXCommandArea, sizeof(FHT8VTXCommandArea), &command, valvePC, enableTrailingStatsPayload());
