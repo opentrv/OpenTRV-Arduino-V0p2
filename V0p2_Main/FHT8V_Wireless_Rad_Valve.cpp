@@ -896,8 +896,6 @@ uint8_t const * FHT8VRadValveBase::FHT8VDecodeBitStream(uint8_t const *bitStream
 // Also reports local stats as if remote.
 uint8_t *FHT8VCreateValveSetCmdFrame_r(uint8_t *const bptrInitial, const uint8_t bufSize, FHT8VRadValveBase::fht8v_msg_t *command, const uint8_t TRVPercentOpen, const bool doPreambleAndTrailer)
   {
-//  const bool etmsp = enableTrailingStatsPayload();
-
   // Add RFM22-friendly pre-preamble only if calling for heat from the boiler (TRV actually open)
   // OR if adding a trailer that the hub should see.
   // Only do this for smart local valves; assume slave valves need not signal back to the boiler this way.

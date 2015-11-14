@@ -347,7 +347,6 @@ class FHT8VRadValve : public FHT8VRadValveBase
 
 
 
-
 #ifdef USE_MODULE_FHT8VSIMPLE
 // Singleton FHT8V valve instance (to control remote FHT8V valve by radio).
 static const uint8_t _FHT8V_MAX_EXTRA_TRAILER_BYTES = (1+max(MESSAGING_TRAILING_MINIMAL_STATS_PAYLOAD_BYTES,FullStatsMessageCore_MAX_BYTES_ON_WIRE));
