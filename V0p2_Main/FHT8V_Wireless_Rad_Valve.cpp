@@ -312,107 +312,6 @@ uint8_t *FHT8VRadValveBase::FHT8VCreate200usBitStreamBptr(uint8_t *bptr, const F
   }
 
 
-// Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) at bptr with optional headers and trailers.
-//   * TRVPercentOpen value is used to generate the frame
-//   * doHeader  if true then an extra RFM22/23-friendly 0xaaaaaaaa sync header is preprended
-//   * trailer  if not null then a stats trailer is appended, built from that info plus a CRC
-//   * command  on entry hc1, hc2 (and address if used) must be set correctly, this sets the command and extension; never NULL
-// The generated command frame can be resent indefinitely.
-// The output buffer used must be (at least) FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE bytes.
-// Returns pointer to the terminating 0xff on exit.
-uint8_t *FHT8VRadValveBase::FHT8VCreateValveSetCmdFrameHT_r(uint8_t *const bptrInitial, const uint8_t bufSize, const bool doHeader, FHT8VRadValveBase::fht8v_msg_t *const command, const uint8_t TRVPercentOpen, const FullStatsMessageCore_t *trailer)
-  {
-  uint8_t *bptr = bptrInitial;
-
-  command->command = 0x26;
-  command->extension = (TRVPercentOpen * 255) / 100;
-
-  // Add RFM22/23-friendly pre-preamble if requested, eg when calling for heat from the boiler (TRV actually open).
-  // NOTE: this requires more buffer space.
-  if(doHeader)
-    {
-    memset(bptr, RFM22_PREAMBLE_BYTE, RFM22_PREAMBLE_BYTES);
-    bptr += RFM22_PREAMBLE_BYTES;
-    }
-
-  bptr = FHT8VRadValveBase::FHT8VCreate200usBitStreamBptr(bptr, command);
-
-#if defined(ALLOW_STATS_TX)
-  if(NULL != trailer)
-    {
-#if defined(ALLOW_MINIMAL_STATS_TXRX)
-    // As bandwidth optimisation just write minimal trailer if only temp&power available.
-    if(trailer->containsTempAndPower &&
-       !trailer->containsID && !trailer->containsAmbL)
-      {
-      writeTrailingMinimalStatsPayload(bptr, &(trailer->tempAndPower));
-      bptr += 3;
-      *bptr = (uint8_t)0xff; // Terminate TX bytes.
-      }
-    else
-#endif
-      {
-      // Assume enough space in buffer for largest possible stats message.
-      uint8_t * const tail = encodeFullStatsMessageCore(bptr, bufSize - (bptr - bptrInitial), OTV0P2BASE::getStatsTXLevel(), false, trailer);
-      if(NULL != tail) { bptr = tail; } // Encoding should not actually fail, but this copes gracefully if so!
-      }
-    }
-#endif
-
-#if 0 && defined(DEBUG)
-  // Check that the buffer end was not overrun.
-  if(bptr - bptrInitial >= FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE) { panic(F("TX gen too large")); }
-#endif
-
-  return(bptr);
-  }
-
-
-// Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) at bptr.
-// The TRVPercentOpen value is used to generate the frame.
-// On entry hc1, hc2 (and addresss if used) must be set correctly; this sets command and extension.
-// The generated command frame can be resent indefinitely.
-// The output buffer used must be (at least) FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE bytes.
-// Returns pointer to the terminating 0xff on exit.
-//
-// Implicitly decides whether to add optional header and trailer components.
-//
-// NOTE: with SUPPORT_TEMP_TX defined will also insert trailing stats payload where appropriate.
-// Also reports local stats as if remote.
-uint8_t * FHT8VRadValveBase::FHT8VCreateValveSetCmdFrame_r(uint8_t *const bptr, const uint8_t bufSize, FHT8VRadValveBase::fht8v_msg_t *command, const uint8_t TRVPercentOpen)
-  {
-  const bool etmsp = enableTrailingStatsPayload();
-
-  // Add RFM22-friendly pre-preamble only if calling for heat from the boiler (TRV actually open)
-  // OR if adding a trailer that the hub should see.
-  // Only do this for smart local valves; assume slave valves need not signal back to the boiler this way.
-  // NOTE: this requires more buffer space.
-  const bool doHeader = etmsp
-//#if defined(RFM22_SYNC_BCFH) && defined(LOCAL_VALVE)
-//  // NOTE: the percentage-open threshold to call for heat from the boiler is set to allow the valve to open significantly, etc.
-//      || (TRVPercentOpen >= NominalRadValve.getMinValvePcReallyOpen())
-//#endif
-      ;
-
-  const bool doTrailer = etmsp;
-//  trailingMinimalStatsPayload_t trailer;
-//  if(doTrailer)
-//    {
-//    trailer.powerLow = isBatteryLow();
-//    trailer.tempC16 = getTemperatureC16(); // Use last value read.
-//    }
-  FullStatsMessageCore_t trailer;
-  if(doTrailer)
-    {
-    populateCoreStats(&trailer);
-    // Record/log stats as if remote, but secure, and with ID.
-//    outputCoreStats(&Serial, true, &trailer); // FIXME
-    // Ensure that no ID is encoded in the message sent on the air since it would be a repeat from the FHT8V frame.
-    trailer.containsID = false;
-    }
-
-  return(FHT8VCreateValveSetCmdFrameHT_r(bptr, bufSize, doHeader, command, TRVPercentOpen, (doTrailer ? &trailer : NULL)));
-  }
 
 
 // Sends to FHT8V in FIFO mode command bitstream from buffer starting at bptr up until terminating 0xff,
@@ -923,6 +822,144 @@ uint8_t const * FHT8VRadValveBase::FHT8VDecodeBitStream(uint8_t const *bitStream
   // in next byte beyond end of FHT8V frame.
   return(state.bitStream + 1);
   }
+
+
+
+
+
+
+//// Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) at bptr with optional headers and trailers.
+////   * TRVPercentOpen value is used to generate the frame
+////   * doHeader  if true then an extra RFM22/23-friendly 0xaaaaaaaa sync header is preprended
+////   * trailer  if not null then a stats trailer is appended, built from that info plus a CRC
+////   * command  on entry hc1, hc2 (and address if used) must be set correctly, this sets the command and extension; never NULL
+//// The generated command frame can be resent indefinitely.
+//// The output buffer used must be (at least) FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE bytes.
+//// Returns pointer to the terminating 0xff on exit.
+//uint8_t *FHT8VCreateValveSetCmdFrameHT_r(uint8_t *const bptrInitial, const uint8_t bufSize, const bool doHeader, FHT8VRadValveBase::fht8v_msg_t *const command, const uint8_t TRVPercentOpen, const FullStatsMessageCore_t *trailer)
+//  {
+//  uint8_t *bptr = bptrInitial;
+//
+//  command->command = 0x26;
+//  command->extension = (TRVPercentOpen * 255) / 100;
+//
+//  // Add RFM22/23-friendly pre-preamble if requested, eg when calling for heat from the boiler (TRV actually open).
+//  // NOTE: this requires more buffer space.
+//  if(doHeader)
+//    {
+//    memset(bptr, RFM22_PREAMBLE_BYTE, RFM22_PREAMBLE_BYTES);
+//    bptr += RFM22_PREAMBLE_BYTES;
+//    }
+//
+//  bptr = FHT8VRadValveBase::FHT8VCreate200usBitStreamBptr(bptr, command);
+//
+//#if defined(ALLOW_STATS_TX)
+//  if(NULL != trailer)
+//    {
+//#if defined(ALLOW_MINIMAL_STATS_TXRX)
+//    // As bandwidth optimisation just write minimal trailer if only temp&power available.
+//    if(trailer->containsTempAndPower &&
+//       !trailer->containsID && !trailer->containsAmbL)
+//      {
+//      writeTrailingMinimalStatsPayload(bptr, &(trailer->tempAndPower));
+//      bptr += 3;
+//      *bptr = (uint8_t)0xff; // Terminate TX bytes.
+//      }
+//    else
+//#endif
+//      {
+//      // Assume enough space in buffer for largest possible stats message.
+//      uint8_t * const tail = encodeFullStatsMessageCore(bptr, bufSize - (bptr - bptrInitial), OTV0P2BASE::getStatsTXLevel(), false, trailer);
+//      if(NULL != tail) { bptr = tail; } // Encoding should not actually fail, but this copes gracefully if so!
+//      }
+//    }
+//#endif
+//
+//#if 0 && defined(DEBUG)
+//  // Check that the buffer end was not overrun.
+//  if(bptr - bptrInitial >= bufSize) { panic(F("TX gen too large")); }
+//#endif
+//
+//  return(bptr);
+//  }
+
+// Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) at bptr.
+// The TRVPercentOpen value is used to generate the frame.
+// On entry hc1, hc2 (and address if used) must be set correctly; this routine sets command and extension.
+// The generated command frame can be resent indefinitely.
+// The output buffer used must be (at least) FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE bytes.
+// Returns pointer to the terminating 0xff on exit.
+//
+// Implicitly decides whether to add optional header and trailer components.
+//
+// NOTE: with SUPPORT_TEMP_TX defined will also insert trailing stats payload where appropriate.
+// Also reports local stats as if remote.
+uint8_t *FHT8VCreateValveSetCmdFrame_r(uint8_t *const bptrInitial, const uint8_t bufSize, FHT8VRadValveBase::fht8v_msg_t *command, const uint8_t TRVPercentOpen, const bool doPreambleAndTrailer)
+  {
+//  const bool etmsp = enableTrailingStatsPayload();
+
+  // Add RFM22-friendly pre-preamble only if calling for heat from the boiler (TRV actually open)
+  // OR if adding a trailer that the hub should see.
+  // Only do this for smart local valves; assume slave valves need not signal back to the boiler this way.
+  // (RFM22/23-friendly 0xaaaaaaaa sync header.)
+  // NOTE: this requires more buffer space.
+  const bool doHeader = doPreambleAndTrailer;
+
+  const bool doTrailer = doPreambleAndTrailer;
+  FullStatsMessageCore_t trailer;
+  if(doTrailer)
+    {
+    populateCoreStats(&trailer);
+    // Ensure that no ID is encoded in the message sent on the air since it would be a repeat from the FHT8V frame.
+    trailer.containsID = false;
+    }
+
+//  return(FHT8VCreateValveSetCmdFrameHT_r(bptr, bufSize, doHeader, command, TRVPercentOpen, (doTrailer ? &trailer : NULL)));
+  uint8_t *bptr = bptrInitial;
+
+  command->command = 0x26;
+  command->extension = (TRVPercentOpen * 255) / 100;
+
+  // Add RFM22/23-friendly pre-preamble if requested, eg when calling for heat from the boiler (TRV actually open).
+  // NOTE: this requires more buffer space.
+  if(doHeader)
+    {
+    memset(bptr, RFM22_PREAMBLE_BYTE, RFM22_PREAMBLE_BYTES);
+    bptr += RFM22_PREAMBLE_BYTES;
+    }
+
+  bptr = FHT8VRadValveBase::FHT8VCreate200usBitStreamBptr(bptr, command);
+
+#if defined(ALLOW_STATS_TX)
+  if(doTrailer)
+    {
+#if defined(ALLOW_MINIMAL_STATS_TXRX)
+    // As bandwidth optimisation just write minimal trailer if only temp&power available.
+    if(trailer.containsTempAndPower &&
+       !trailer.containsID && !trailer.containsAmbL)
+      {
+      writeTrailingMinimalStatsPayload(bptr, &(trailer.tempAndPower));
+      bptr += 3;
+      *bptr = (uint8_t)0xff; // Terminate TX bytes.
+      }
+    else
+#endif
+      {
+      // Assume enough space in buffer for largest possible stats message.
+      uint8_t * const tail = encodeFullStatsMessageCore(bptr, bufSize - (bptr - bptrInitial), OTV0P2BASE::getStatsTXLevel(), false, &trailer);
+      if(NULL != tail) { bptr = tail; } // Encoding should not actually fail, but this copes gracefully if so!
+      }
+    }
+#endif
+
+#if 0 && defined(DEBUG)
+  // Check that the buffer end was not overrun.
+  if(bptr - bptrInitial >= bufSize) { panic(F("TX gen too large")); }
+#endif
+
+  return(bptr);
+  }
+
 
 
 
