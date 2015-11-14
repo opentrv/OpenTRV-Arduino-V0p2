@@ -1096,6 +1096,8 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
 static void wireComponentsTogether()
   {
 #ifdef USE_MODULE_FHT8VSIMPLE
+  // Set up radio.
+  FHT8V.setRadio(&RFM23B);
   // Load EEPROM house codes into primary FHT8V instance at start.
   FHT8VLoadHCFromEEPROM();
 #endif // USE_MODULE_FHT8VSIMPLE

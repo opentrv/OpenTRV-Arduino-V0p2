@@ -43,17 +43,21 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
   {
   protected:
+    // Radio link usually expected to be RFM23B; non-NULL when available.
+    OTRadioLink::OTRadioLink *radio;
+
     // TX buffer (non-null) and size (non-zero).
     uint8_t * const buf;
     const uint8_t size;
     // Construct an instance, providing TX buffer details.
     FHT8VRadValveBase(uint8_t *_buf, uint8_t _size)
-      : buf(_buf), size(_size),
+      : radio(NULL),
+        buf(_buf), size(_size),
         halfSecondCount(0)
-    {
-    clearHC(); // Cleared housecodes will prevent any attempt to sync with FTH8V.
-    FHT8VSyncAndTXReset(); // Clear state ready to attempt sync with FHT8V.
-    }
+      {
+      clearHC(); // Cleared housecodes will prevent any attempt to sync with FTH8V.
+      FHT8VSyncAndTXReset(); // Clear state ready to attempt sync with FHT8V.
+      }
 
     // Sync status and down counter for FHT8V, initially zero; value not important once in sync.
     // If syncedWithFHT8V = 0 then resyncing, AND
@@ -109,10 +113,13 @@ class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
     void setHC2(uint8_t hc) { hc2 = hc; }
     // Get (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control (will be 0xff until set).
     // Both parts must be <= 99 for the house code to be valid and the valve used.
-    uint8_t getHC1() { return(hc1); }
-    uint8_t getHC2() { return(hc2); }
+    uint8_t getHC1() const { return(hc1); }
+    uint8_t getHC2() const { return(hc2); }
     // Check if housecode is valid for controlling an FHT8V.
-    bool isValidHC() { return(isValidFHTV8HouseCode(hc1) && isValidFHTV8HouseCode(hc2)); }
+    bool isValidHC() const { return(isValidFHTV8HouseCode(hc1) && isValidFHTV8HouseCode(hc2)); }
+
+    // Set radio to use (if non-NULL) or clear access to radio (if NULL).
+    void setRadio(OTRadioLink::OTRadioLink *r) { radio = r; }
 
     // Type for information content of FHT8V message.
     // Omits the address field unless it is actually used.
@@ -189,6 +196,10 @@ class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
     // when the the boiler is turned off.
     // Actual values observed by DHD range from 6% to 25%.
     static const uint8_t TYPICAL_MIN_PERCENT_OPEN = 10;
+
+    // Returns true if radio or house codes not set.
+    // Remains false while syncing as that is only temporary unavailability.
+    virtual bool isUnavailable() const { return((NULL == radio) || !isValidHC()); }
 
     // Get estimated minimum percentage open for significant flow for this device; strictly positive in range [1,99].
     // Defaults to typical value from observation.
@@ -323,7 +334,7 @@ extern FHT8VRadValve<> FHT8V;
 // Returns TRV if valve/radiator is to be controlled by this unit.
 // Usually the case, but may not be for (a) a hub or (b) a not-yet-configured unit.
 // Returns false if house code parts are set to invalid or uninitialised values (>99).
-inline bool localFHT8VTRVEnabled() { return(FHT8V.isValidHC()); }
+inline bool localFHT8VTRVEnabled() { return(!FHT8V.isUnavailable()); }
 #else
 #define localFHT8VTRVEnabled() (false) // Local FHT8V TRV disabled.
 #endif
