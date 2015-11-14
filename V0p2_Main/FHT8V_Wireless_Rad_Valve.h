@@ -180,24 +180,6 @@ class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
     // This ignores any prefix needed for particular radios such as the RFM23B.
     // ~80ms upwards.
     static const uint8_t FHT8V_APPROX_MAX_RAW_TX_MS = ((((MIN_FHT8V_200US_BIT_STREAM_BUF_SIZE-1)*8) + 4) / 5);
-//
-//    // Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) at bptr.
-//    // The TRVPercentOpen value is used to generate the frame.
-//    // On entry hc1, hc2 (and addresss if used) must be set correctly; this sets command and extension.
-//    // The generated command frame can be resent indefinitely.
-//    // The command buffer used must be (at least) FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE bytes plus extra preamble and trailers.
-//    // Returns pointer to the terminating 0xff on exit.
-//    static uint8_t *FHT8VCreateValveSetCmdFrame_r(uint8_t *bptr, uint8_t bufSize, fht8v_msg_t *command, const uint8_t TRVPercentOpen);
-//
-//    // Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) at bptr with optional headers and trailers.
-//    //   * TRVPercentOpen value is used to generate the frame
-//    //   * doHeader  if true then an extra RFM22/23-friendly 0xaaaaaaaa sync header is preprended
-//    //   * trailer  if not null then a stats trailer is appended, built from that info plus a CRC
-//    //   * command  on entry hc1, hc2 (and addresss if used) must be set correctly, this sets the command and extension; never NULL
-//    // The generated command frame can be resent indefinitely.
-//    // The output buffer used must be (at least) FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE bytes.
-//    // Returns pointer to the terminating 0xff on exit.
-//    static uint8_t *FHT8VCreateValveSetCmdFrameHT_r(uint8_t *bptr, uint8_t bufSize, bool doHeader, FHT8VRadValveBase::fht8v_msg_t *command, uint8_t TRVPercentOpen, const FullStatsMessageCore_t *trailer);
 
     // Typical FHT8V 'open' percentage, though partly depends on valve tails, etc.
     // This is set to err on the side of slightly open to allow
@@ -327,9 +309,6 @@ class FHT8VRadValve : public FHT8VRadValveBase
     uint8_t FHT8VTXCommandArea[FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE];
 
   public:
-  //    // Construct an instance attached to a (RFM23B, or RFM22B) radio module.
-//    // The RFM23B instance life must at least match that of this instance.
-//    FHT8VRadValve(OTRadioLink::OTRFM23BLinkBase *) { }
 //    // Construct an instance attached to a generic radio module.
 //    // The RFM23B instance life must at least match that of this instance.
 //    FHT8VRadValve(OTRadioLink::OTRadioLink *) : FHT8VRadValveBase(FHT8VTXCommandArea, FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE) { }
