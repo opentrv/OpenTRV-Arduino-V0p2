@@ -61,7 +61,10 @@ class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
     FHT8VRadValveBase(uint8_t *_buf, uint8_t _size)
       : buf(_buf), size(_size),
         halfSecondCount(0)
-    { FHT8VSyncAndTXReset(); }
+    {
+    clearHC(); // Cleared housecodes will prevent any attempt to sync with FTH8V.
+    FHT8VSyncAndTXReset(); // Clear state ready to attempt sync with FHT8V.
+    }
 
     // Sync status and down counter for FHT8V, initially zero; value not important once in sync.
     // If syncedWithFHT8V = 0 then resyncing, AND
@@ -102,7 +105,20 @@ class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
     // FIXME: compare against own threshold and have NominalRadValve look at least open of all vs minPercentOpen.
     void setFHT8V_isValveOpen();
 
+    // House codes part 1 and 2 (must each be <= 99 to be valid).
+    // Starts as '0xff' as unset EEPROM values would be to indicate 'unset'.
+    uint8_t hc1, hc2;
+
   public:
+    // Clear both housecode parts (and thus disable local valve).
+    void clearHC() { hc1 = ~0, hc2 = ~0; }
+    // Set (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control.
+    void setHC1(uint8_t hc);
+    void setHC2(uint8_t hc);
+    // Get (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control (will be 0xff until set).
+    uint8_t getHC1() { return(hc1); }
+    uint8_t getHC2() { return(hc2); }
+
     // Type for information content of FHT8V message.
     // Omits the address field unless it is actually used.
     typedef struct
