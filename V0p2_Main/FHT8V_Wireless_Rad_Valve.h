@@ -39,7 +39,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 // FHT8V radio-controlled radiator valve, using FS20 protocol.
 // preambleBytes specifies the space to leave for preabmble bytes for remote receiver sync.
-// DHD2151111: Work-In-Progress!
 class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
   {
   protected:
@@ -64,7 +63,7 @@ class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
     //     if syncStateFHT8V is zero then cycle is starting
     //     if syncStateFHT8V in range [241,3] (inclusive) then sending sync command 12 messages.
     uint8_t syncStateFHT8V;
-    
+
     // Count-down in half-second units until next transmission to FHT8V valve.
     uint8_t halfSecondsToNextFHT8VTX;
 
@@ -189,7 +188,7 @@ class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
     // The command buffer used must be (at least) FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE bytes plus extra preamble and trailers.
     // Returns pointer to the terminating 0xff on exit.
     static uint8_t *FHT8VCreateValveSetCmdFrame_r(uint8_t *bptr, fht8v_msg_t *command, const uint8_t TRVPercentOpen);
-    
+
     // Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) at bptr with optional headers and trailers.
     //   * TRVPercentOpen value is used to generate the frame
     //   * doHeader  if true then an extra RFM22/23-friendly 0xaaaaaaaa sync header is preprended
@@ -238,7 +237,7 @@ class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
     //#else
     //bool isSyncedWithFHT8V() { return(true); } // Lie and claim always synced.
     //#endif
-    
+
     // True if FHT8V valve is believed to be open under instruction from this system; false if not in sync.
     // FIXME: fit into standard RadValve API.
     bool getFHT8V_isValveOpen() { return(syncedWithFHT8V && FHT8V_isValveOpen); }
@@ -337,7 +336,9 @@ class FHT8VRadValve : public FHT8VRadValveBase
 
 #ifdef USE_MODULE_FHT8VSIMPLE
 // Singleton FHT8V valve instance (to control remote FHT8V valve by radio).
-extern FHT8VRadValve<> FHT8V;
+static const uint8_t _FHT8V_MAX_EXTRA_TRAILER_BYTES = (1+max(MESSAGING_TRAILING_MINIMAL_STATS_PAYLOAD_BYTES,FullStatsMessageCore_MAX_BYTES_ON_WIRE));
+//extern OTRadValve::FHT8VRadValve<RFM22_PREAMBLE_BYTES, _FHT8V_MAX_EXTRA_TRAILER_BYTES> FHT8V;
+extern FHT8VRadValve<RFM22_PREAMBLE_BYTES> FHT8V;
 
 // This unit may control a local TRV.
 #if defined(LOCAL_TRV) || defined(SLAVE_TRV)

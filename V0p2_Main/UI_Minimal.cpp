@@ -565,8 +565,8 @@ void serialStatusReport()
 
 #ifdef ENABLE_FULL_OT_CLI
   // *X* section: Xmit security level shown only if some non-essential TX potentially allowed.
-  const stats_TX_level xmitLevel = getStatsTXLevel();
-  if(xmitLevel < stTXnever) { Serial.print(F(";X")); Serial.print(xmitLevel); }
+  const OTV0P2BASE::stats_TX_level xmitLevel = getStatsTXLevel();
+  if(xmitLevel < OTV0P2BASE::stTXnever) { Serial.print(F(";X")); Serial.print(xmitLevel); }
 #endif
 
 #ifdef ENABLE_FULL_OT_CLI

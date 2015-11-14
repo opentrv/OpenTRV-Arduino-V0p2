@@ -41,7 +41,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 
 #ifdef USE_MODULE_FHT8VSIMPLE
-FHT8VRadValve<> FHT8V;
+//OTRadValve::FHT8VRadValve<RFM22_PREAMBLE_BYTES, _FHT8V_MAX_EXTRA_TRAILER_BYTES> FHT8V;
+FHT8VRadValve<RFM22_PREAMBLE_BYTES> FHT8V;
 #endif
 
 
@@ -317,7 +318,7 @@ uint8_t *FHT8VRadValveBase::FHT8VCreate200usBitStreamBptr(uint8_t *bptr, const F
 //   * TRVPercentOpen value is used to generate the frame
 //   * doHeader  if true then an extra RFM22/23-friendly 0xaaaaaaaa sync header is preprended
 //   * trailer  if not null then a stats trailer is appended, built from that info plus a CRC
-//   * command  on entry hc1, hc2 (and addresss if used) must be set correctly, this sets the command and extension; never NULL
+//   * command  on entry hc1, hc2 (and address if used) must be set correctly, this sets the command and extension; never NULL
 // The generated command frame can be resent indefinitely.
 // The output buffer used must be (at least) FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE bytes.
 // Returns pointer to the terminating 0xff on exit.
@@ -328,7 +329,7 @@ uint8_t *FHT8VRadValveBase::FHT8VCreateValveSetCmdFrameHT_r(uint8_t *const bptrI
   command->command = 0x26;
   command->extension = (TRVPercentOpen * 255) / 100;
 
-  // Add RFM22/32-friendly pre-preamble if requested, eg when calling for heat from the boiler (TRV actually open).
+  // Add RFM22/23-friendly pre-preamble if requested, eg when calling for heat from the boiler (TRV actually open).
   // NOTE: this requires more buffer space.
   if(doHeader)
     {
