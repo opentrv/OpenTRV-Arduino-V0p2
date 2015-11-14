@@ -537,7 +537,7 @@ bool FHT8VRadValveBase::doSync(const bool allowDoubleTX)
 #endif
       }
 
-    handleQueuedMessages(&Serial, true, radio); // Deal with any pending I/O built up while waiting.
+//    handleQueuedMessages(&Serial, true, radio); // Deal with any pending I/O built up while waiting.
 
     // After penultimate sync TX set up time to sending of final sync command.
     if(1 == --syncStateFHT8V)
@@ -700,7 +700,7 @@ bool FHT8VRadValveBase::FHT8VPollSyncAndTX_Next(const bool allowDoubleTX)
     // DEBUG_SERIAL_PRINTLN_FLASHSTRING(" FHT8V TX");
 #endif
     OTV0P2BASE::serialPrintlnAndFlush(F("FHT8V TX"));
-    handleQueuedMessages(&Serial, true, radio); // Deal with any pending I/O built up while waiting.
+//    handleQueuedMessages(&Serial, true, radio); // Deal with any pending I/O built up while waiting.
 
     // Set up correct delay to next TX.
     halfSecondsToNextFHT8VTX = FHT8VRadValveBase::FHT8VTXGapHalfSeconds(FHT8VGetHC2(), halfSecondCount);
