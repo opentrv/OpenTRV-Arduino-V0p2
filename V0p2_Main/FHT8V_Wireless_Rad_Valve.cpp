@@ -44,6 +44,37 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 FHT8VRadValve<> FHT8V;
 #endif
 
+
+
+// Clear both housecode parts (and thus disable local valve).
+void FHT8VClearHC()
+  {
+#ifdef USE_MODULE_FHT8VSIMPLE
+   FHT8V.clearHC();
+#endif
+  OTV0P2BASE::eeprom_smart_erase_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC1);
+  OTV0P2BASE::eeprom_smart_erase_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC2);
+  }
+
+// Set (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control.
+void FHT8VSetHC1(uint8_t hc) { OTV0P2BASE::eeprom_smart_update_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC1, hc); }
+void FHT8VSetHC2(uint8_t hc) { OTV0P2BASE::eeprom_smart_update_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC2, hc); }
+
+// Get (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control (will be 0xff until set).
+uint8_t FHT8VGetHC1() { return(eeprom_read_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC1)); }
+uint8_t FHT8VGetHC2() { return(eeprom_read_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC2)); }
+
+#ifndef localFHT8VTRVEnabled
+// Returns TRV if valve/radiator is to be controlled by this unit.
+// Usually the case, but may not be for (a) a hub or (b) a not-yet-configured unit.
+// Returns false if house code parts are set to invalid or uninitialised values (>99).
+bool localFHT8VTRVEnabled() { return(((FHT8VGetHC1() <= 99) && (FHT8VGetHC2() <= 99))); }
+#endif
+
+
+
+
+
 // If true then allow double TX for normal valve setting, else only allow it for sync.
 // May want to enforce this where bandwidth is known to be scarce.
 static const bool ALLOW_NON_SYNC_DOUBLE_TX = false;
@@ -339,28 +370,6 @@ uint8_t * FHT8VRadValveBase::FHT8VCreateValveSetCmdFrame_r(uint8_t *const bptr, 
 
   return(FHT8VCreateValveSetCmdFrameHT_r(bptr, doHeader, command, TRVPercentOpen, (doTrailer ? &trailer : NULL)));
   }
-
-// Clear both housecode parts (and thus disable local valve).
-void FHT8VClearHC()
-  {
-  OTV0P2BASE::eeprom_smart_erase_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC1);
-  OTV0P2BASE::eeprom_smart_erase_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC2);
-  }
-
-// Set (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control.
-void FHT8VSetHC1(uint8_t hc) { OTV0P2BASE::eeprom_smart_update_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC1, hc); }
-void FHT8VSetHC2(uint8_t hc) { OTV0P2BASE::eeprom_smart_update_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC2, hc); }
-
-// Get (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control (will be 0xff until set).
-uint8_t FHT8VGetHC1() { return(eeprom_read_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC1)); }
-uint8_t FHT8VGetHC2() { return(eeprom_read_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC2)); }
-
-#ifndef localFHT8VTRVEnabled
-// Returns TRV if valve/radiator is to be controlled by this unit.
-// Usually the case, but may not be for (a) a hub or (b) a not-yet-configured unit.
-// Returns false if house code parts are set to invalid or uninitialised values (>99).
-bool localFHT8VTRVEnabled() { return(((FHT8VGetHC1() <= 99) && (FHT8VGetHC2() <= 99))); }
-#endif
 
 
 // Sends to FHT8V in FIFO mode command bitstream from buffer starting at bptr up until terminating 0xff,
