@@ -37,7 +37,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 #include "FHT8V_Wireless_Rad_Valve.h"
 #include "Power_Management.h"
 #include "RFM22_Radio.h"
-#include "Security.h"
 #include "Serial_IO.h"
 #include "UI_Minimal.h"
 #include "OTV0p2Base.h"

@@ -32,7 +32,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 #include "Control.h"
 #include "Power_Management.h"
 #include "RFM22_Radio.h"
-#include "Security.h"
 #include "Serial_IO.h"
 #include "UI_Minimal.h"
 
