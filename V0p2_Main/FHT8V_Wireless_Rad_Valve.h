@@ -37,17 +37,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include "Messaging.h"
 
 
-
-// Clear both housecode parts (and thus disable local valve).
-void FHT8VClearHC();
-// Set (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control.
-void FHT8VSetHC1(uint8_t hc);
-void FHT8VSetHC2(uint8_t hc);
-// Get (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control (will be 0xff until set).
-uint8_t FHT8VGetHC1();
-uint8_t FHT8VGetHC2();
-
-
 // FHT8V radio-controlled radiator valve, using FS20 protocol.
 // preambleBytes specifies the space to leave for preabmble bytes for remote receiver sync.
 // DHD2151111: Work-In-Progress!
@@ -110,6 +99,8 @@ class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
     uint8_t hc1, hc2;
 
   public:
+    static inline bool isValidFHTV8HouseCode(const uint8_t hc) { return(hc <= 99); }
+
     // Clear both housecode parts (and thus disable use of FHT8V valve).
     void clearHC() { hc1 = ~0, hc2 = ~0; }
     // Set (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control.
@@ -121,7 +112,7 @@ class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
     uint8_t getHC1() { return(hc1); }
     uint8_t getHC2() { return(hc2); }
     // Check if housecode is valid for controlling an FHT8V.
-    bool isValidHC() { return(((hc1 <= 99) && (hc2 <= 99))); }
+    bool isValidHC() { return(isValidFHTV8HouseCode(hc1) && isValidFHTV8HouseCode(hc2)); }
 
     // Type for information content of FHT8V message.
     // Omits the address field unless it is actually used.
@@ -312,8 +303,8 @@ class FHT8VRadValve : public FHT8VRadValveBase
     void FHT8VCreateValveSetCmdFrame(const uint8_t valvePC)
       {
       FHT8VRadValveBase::fht8v_msg_t command;
-      command.hc1 = FHT8VGetHC1();
-      command.hc2 = FHT8VGetHC2();
+      command.hc1 = getHC1();
+      command.hc2 = getHC2();
 #ifdef FHT8V_ADR_USED
       command.address = 0;
 #endif
@@ -322,26 +313,35 @@ class FHT8VRadValve : public FHT8VRadValveBase
 
   };
 
+
 #ifdef USE_MODULE_FHT8VSIMPLE
+// Singleton FHT8V valve instance (to control remote FHT8V valve by radio).
 extern FHT8VRadValve<> FHT8V;
-#endif
-
-
-
-#ifdef USE_MODULE_FHT8VSIMPLE
 
 // This unit may control a local TRV.
 #if defined(LOCAL_TRV) || defined(SLAVE_TRV)
 // Returns TRV if valve/radiator is to be controlled by this unit.
 // Usually the case, but may not be for (a) a hub or (b) a not-yet-configured unit.
 // Returns false if house code parts are set to invalid or uninitialised values (>99).
-bool localFHT8VTRVEnabled();
+inline bool localFHT8VTRVEnabled() { return(FHT8V.isValidHC()); }
 #else
 #define localFHT8VTRVEnabled() (false) // Local FHT8V TRV disabled.
 #endif
 
+// Clear both housecode parts (and thus disable local valve).
+void FHT8VClearHC();
+// Set (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control.
+// Will cache in FHT8V instance for speed.
+void FHT8VSetHC1(uint8_t hc);
+void FHT8VSetHC2(uint8_t hc);
+// Get (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control (will be 0xff until set).
+// Used FHT8V instance as a transparent cache of the values for speed.
+uint8_t FHT8VGetHC1();
+uint8_t FHT8VGetHC2();
+// Load EEPROM house codes into primary FHT8V instance at start-up or once cleared in FHT8V instance.
+void FHT8VLoadHCFromEEPROM();
+#endif // USE_MODULE_FHT8VSIMPLE
 
-#endif
 
 #endif
 

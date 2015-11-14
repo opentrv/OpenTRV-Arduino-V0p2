@@ -1095,6 +1095,10 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
 // Wire components directly together, eg for occupancy sensing.
 static void wireComponentsTogether()
   {
+#ifdef USE_MODULE_FHT8VSIMPLE
+  // Load EEPROM house codes into primary FHT8V instance at start.
+  FHT8VLoadHCFromEEPROM();
+#endif // USE_MODULE_FHT8VSIMPLE
   // TODO
   }
 
