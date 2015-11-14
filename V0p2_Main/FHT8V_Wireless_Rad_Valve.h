@@ -113,11 +113,15 @@ class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
     // Clear both housecode parts (and thus disable local valve).
     void clearHC() { hc1 = ~0, hc2 = ~0; }
     // Set (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control.
-    void setHC1(uint8_t hc);
-    void setHC2(uint8_t hc);
+    // Both parts must be <= 99 for the house code to be valid and the valve used.
+    void setHC1(uint8_t hc) { hc1 = hc; }
+    void setHC2(uint8_t hc) { hc2 = hc; }
     // Get (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control (will be 0xff until set).
+    // Both parts must be <= 99 for the house code to be valid and the valve used.
     uint8_t getHC1() { return(hc1); }
     uint8_t getHC2() { return(hc2); }
+    // Check if housecode is valid for controlling an FHT8V.
+    bool isValidHC() { return(((hc1 <= 99) && (hc2 <= 99))); }
 
     // Type for information content of FHT8V message.
     // Omits the address field unless it is actually used.
