@@ -1092,6 +1092,15 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
 
 
 
+// Wire components directly together, eg for occupancy sensing.
+static void wireComponentsTogether()
+  {
+  // TODO
+  }
+
+
+
+
 // Initialise sensors with stats info where needed.
 static void updateSensorsFromStats()
   {
@@ -1247,6 +1256,9 @@ void setupOpenTRV()
   // Signal some sort of life on waking up...
   ValveDirect.wiggle();
 #endif
+
+  // Wire components directly together, eg for occupancy sensing.
+  wireComponentsTogether();
 
   // Initialise sensors with stats info where needed.
   updateSensorsFromStats();
