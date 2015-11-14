@@ -38,7 +38,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 
 // FHT8V radio-controlled radiator valve, using FS20 protocol.
-// preambleBytes specifies the space to leave for preabmble bytes for remote receiver sync.
 class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
   {
   protected:
@@ -291,7 +290,9 @@ uint8_t *FHT8VCreateValveSetCmdFrame_r(uint8_t *bptr, uint8_t bufSize, FHT8VRadV
 
 
 
-
+// maxTrailerBytes specifies the maximum number of bytes of trailer that can be added.
+// preambleBytes specifies the space to leave for preamble bytes for remote receiver sync (defaults to RFM23-suitable value).
+// preambleByte specifies the (default) preamble byte value to use (defaults to RFM23-suitable value).
 template <uint8_t maxTrailerBytes, uint8_t preambleBytes = FHT8VRadValveBase::RFM23_PREAMBLE_BYTES, uint8_t preambleByte = FHT8VRadValveBase::RFM23_PREAMBLE_BYTE>
 class FHT8VRadValve : public FHT8VRadValveBase
   {
