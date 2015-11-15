@@ -857,11 +857,16 @@ uint8_t *FHT8VCreateValveSetCmdFrame_r(uint8_t *const bptrInitial, const uint8_t
     trailer.containsID = false;
     }
 
-//  return(FHT8VCreateValveSetCmdFrameHT_r(bptr, bufSize, doHeader, command, TRVPercentOpen, (doTrailer ? &trailer : NULL)));
   uint8_t *bptr = bptrInitial;
 
   command->command = 0x26;
-  command->extension = (TRVPercentOpen * 255) / 100;
+//  command->extension = (TRVPercentOpen * 255) / 100; // needlessly expensive division.
+  // Optimised for speed and to avoid pulling in a division subroutine.
+  // Guaranteed to be 255 when TRVPercentOpen is 100 (max), and 0 when TRVPercentOpen is 0,
+  // and a decent approximation of (TRVPercentOpen * 255) / 100 in between.
+  // The approximation is (TRVPercentOpen * 250) / 100, ie *2.5, as *(2+0.5)
+  command->extension = (TRVPercentOpen >= 100) ? 255 :
+    ((TRVPercentOpen<<1) + ((1+TRVPercentOpen)>>1));
 
   // Add RFM22/23-friendly pre-preamble if requested, eg when calling for heat from the boiler (TRV actually open).
   // NOTE: this requires more buffer space.
