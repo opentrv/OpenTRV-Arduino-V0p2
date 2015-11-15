@@ -878,6 +878,13 @@ uint8_t *FHT8VCreateValveSetCmdFrame_r(uint8_t *const bptrInitial, const uint8_t
 
   bptr = FHT8VRadValveBase::FHT8VCreate200usBitStreamBptr(bptr, command);
 
+
+
+
+//
+// FIXME: break out this as a function whose pointer is passed in to decouple FHT8V from stats trailer defn and code.
+//
+
 #if defined(ALLOW_STATS_TX)
   if(doTrailer)
     {
@@ -899,6 +906,12 @@ uint8_t *FHT8VCreateValveSetCmdFrame_r(uint8_t *const bptrInitial, const uint8_t
       }
     }
 #endif
+
+
+
+
+
+
 
 #if 0 && defined(DEBUG)
   // Check that the buffer end was not overrun.
