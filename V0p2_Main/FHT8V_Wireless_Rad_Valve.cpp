@@ -904,7 +904,6 @@ uint8_t *FHT8VRadValveBase::FHT8VCreateValveSetCmdFrame_r(uint8_t *const bptrIni
     ((TRVPercentOpen<<1) + ((1+TRVPercentOpen)>>1));
 
   // Add RFM22/23-friendly pre-preamble if requested, eg when calling for heat from the boiler (TRV actually open).
-  // NOTE: this requires more buffer space.
   if(doHeader)
     {
     memset(bptr, RFM22_PREAMBLE_BYTE, RFM22_PREAMBLE_BYTES);
