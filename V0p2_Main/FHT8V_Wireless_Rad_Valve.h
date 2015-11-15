@@ -263,12 +263,6 @@ class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
     // Returns try if in sync AND current position AND last command sent to valve indicate open.
     virtual bool isControlledValveReallyOpen() const { return(syncedWithFHT8V && FHT8V_isValveOpen && (value >= getMinPercentOpen())); }
 
-//    // GLOBAL NOTION OF CONTROLLED FHT8V VALVE STATE PROVIDED HERE
-//    // True iff the FHT8V valve(s) (if any) controlled by this unit are really open.
-//    // This waits until at least the command to open the FHT8Vhas been sent.
-//    // FIXME: fit into standard RadValve API.
-//    bool FHT8VisControlledValveOpen() { return(getFHT8V_isValveOpen()); }
-
     // A set of RFM22/RFM23 register settings for use with FHT8V, stored in (read-only) program/Flash memory.
     // Consists of a sequence of (reg#,value) pairs terminated with a 0xff register.
     // The (valid) reg#s are <128, ie top bit clear.
