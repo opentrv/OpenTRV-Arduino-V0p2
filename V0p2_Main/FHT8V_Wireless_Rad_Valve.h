@@ -77,8 +77,9 @@ class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
         trailerFn(trailerFnPtr),
         halfSecondCount(0)
       {
-      clearHC(); // Cleared housecodes will prevent any attempt to sync with FTH8V.
-      FHT8VSyncAndTXReset(); // Clear state ready to attempt sync with FHT8V.
+      // Cleared housecodes will prevent any immediate attempt to sync with FTH8V.
+      // This also sets state to force resync afterwards.
+      clearHC(); 
       }
 
     // Sync status and down counter for FHT8V, initially zero; value not important once in sync.
@@ -155,11 +156,12 @@ class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
     static inline bool isValidFHTV8HouseCode(const uint8_t hc) { return(hc <= 99); }
 
     // Clear both housecode parts (and thus disable use of FHT8V valve).
-    void clearHC() { hc1 = ~0, hc2 = ~0; }
+    void clearHC() { hc1 = ~0, hc2 = ~0; resyncWithValve(); }
     // Set (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control.
     // Both parts must be <= 99 for the house code to be valid and the valve used.
-    void setHC1(uint8_t hc) { hc1 = hc; }
-    void setHC2(uint8_t hc) { hc2 = hc; }
+    // Forces resync with remote valve if house code changed.
+    void setHC1(uint8_t hc) { if(hc != hc1) { hc1 = hc; resyncWithValve(); } }
+    void setHC2(uint8_t hc) { if(hc != hc2) { hc2 = hc; resyncWithValve(); } }
     // Get (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control (will be 0xff until set).
     // Both parts must be <= 99 for the house code to be valid and the valve used.
     uint8_t getHC1() const { return(hc1); }
@@ -223,15 +225,14 @@ class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
     // Defaults to typical value from observation.
     virtual uint8_t getMinPercentOpen() const { return(TYPICAL_MIN_PERCENT_OPEN); }
 
-    // Call to reset comms with FHT8V valve and force resync.
+    // Call to reset comms with FHT8V valve and force (re)sync.
     // Resets values to power-on state so need not be called in program preamble if variables not tinkered with.
     // Requires globals defined that this maintains:
     //   syncedWithFHT8V (bit, true once synced)
     //   FHT8V_isValveOpen (bit, true if this node has last sent command to open valve)
     //   syncStateFHT8V (byte, internal)
     //   halfSecondsToNextFHT8VTX (byte).
-    // FIXME: fit into standard RadValve API.
-    void FHT8VSyncAndTXReset()
+    void resyncWithValve()
       {
       syncedWithFHT8V = false;
       syncStateFHT8V = 0;
@@ -239,24 +240,34 @@ class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
       FHT8V_isValveOpen = false;
       }
 
-    //#ifndef IGNORE_FHT_SYNC
-    // True once/while this node is synced with and controlling the target FHT8V valve; initially false.
-    // FIXME: fit into standard RadValve API.
-    bool isSyncedWithFHT8V() { return(syncedWithFHT8V); }
-    //#else
-    //bool isSyncedWithFHT8V() { return(true); } // Lie and claim always synced.
-    //#endif
+//    //#ifndef IGNORE_FHT_SYNC
+//    // True once/while this node is synced with and controlling the target FHT8V valve; initially false.
+//    // FIXME: fit into standard RadValve API.
+//    bool isSyncedWithFHT8V() { return(syncedWithFHT8V); }
+//    //#else
+//    //bool isSyncedWithFHT8V() { return(true); } // Lie and claim always synced.
+//    //#endif
 
-    // True if FHT8V valve is believed to be open under instruction from this system; false if not in sync.
-    // FIXME: fit into standard RadValve API.
-    bool getFHT8V_isValveOpen() { return(syncedWithFHT8V && FHT8V_isValveOpen); }
+//    // True if FHT8V valve is believed to be open under instruction from this system; false if not in sync.
+//    // FIXME: fit into standard RadValve API.
+//    bool getFHT8V_isValveOpen() { return(syncedWithFHT8V && FHT8V_isValveOpen); }
 
-    // GLOBAL NOTION OF CONTROLLED FHT8V VALVE STATE PROVIDED HERE
-    // True iff the FHT8V valve(s) (if any) controlled by this unit are really open.
-    // This waits until at least the command to open the FHT8Vhas been sent.
-    // FIXME: fit into standard RadValve API.
-    bool FHT8VisControlledValveOpen() { return(getFHT8V_isValveOpen()); }
+    // Returns true iff not in error state and not (re)calibrating/(re)initialising/(re)syncing.
+    // By default there is no recalibration step.
+    virtual bool isInNormalRunState() const { return(syncedWithFHT8V); }
 
+    // True if the controlled physical valve is thought to be at least partially open right now.
+    // If multiple valves are controlled then is this true only if all are at least partially open.
+    // Used to help avoid running boiler pump against closed valves.
+    // Must not be true while (re)calibrating.
+    // Returns try if in sync AND current position AND last command sent to valve indicate open.
+    virtual bool isControlledValveReallyOpen() const { return(syncedWithFHT8V && FHT8V_isValveOpen && (value >= getMinPercentOpen())); }
+
+//    // GLOBAL NOTION OF CONTROLLED FHT8V VALVE STATE PROVIDED HERE
+//    // True iff the FHT8V valve(s) (if any) controlled by this unit are really open.
+//    // This waits until at least the command to open the FHT8Vhas been sent.
+//    // FIXME: fit into standard RadValve API.
+//    bool FHT8VisControlledValveOpen() { return(getFHT8V_isValveOpen()); }
 
     // A set of RFM22/RFM23 register settings for use with FHT8V, stored in (read-only) program/Flash memory.
     // Consists of a sequence of (reg#,value) pairs terminated with a 0xff register.
@@ -327,9 +338,6 @@ class FHT8VRadValve : public FHT8VRadValveBase
     uint8_t FHT8VTXCommandArea[FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE];
 
   public:
-//    // Construct an instance attached to a generic radio module.
-//    // The RFM23B instance life must at least match that of this instance.
-//    FHT8VRadValve(OTRadioLink::OTRadioLink *) : FHT8VRadValveBase(FHT8VTXCommandArea, FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE) { }
     // Construct an instance.
     // Optional function to add a trailer, eg a stats trailer, to each TX buffer.
     FHT8VRadValve(appendToTXBufferFF_t *trailerFnPtr)

@@ -639,7 +639,7 @@ void serialStatusReport()
     Serial.print(hc1);
     Serial_print_space();
     Serial.print(FHT8VGetHC2());
-    if(!FHT8V.isSyncedWithFHT8V())
+    if(!FHT8V.isInNormalRunState())
       {
       Serial_print_space();
       Serial.print('s'); // Indicate syncing with trailing lower-case 's' in field...
@@ -955,16 +955,15 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
             if((hc1 < 0) || (hc1 > 99) || (hc2 < 0) || (hc2 > 99)) { InvalidIgnored(); }
             else
               {
+              // Set house codes and force resync if changed.
               FHT8VSetHC1(hc1);
               FHT8VSetHC2(hc2);
-              FHT8V.FHT8VSyncAndTXReset(); // Force re-sync with FHT8V valve.
               }
             }
           }
         else if(n < 2) // Just 'H', possibly with trailing whitespace.
           {
-          FHT8VClearHC();
-          FHT8V.FHT8VSyncAndTXReset(); // Force into unsynchronized state.
+          FHT8VClearHC(); // Clear codes and force into unsynchronized state.
           }
         break;
         }
