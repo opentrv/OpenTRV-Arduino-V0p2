@@ -879,17 +879,18 @@ uint8_t const * FHT8VRadValveBase::FHT8VDecodeBitStream(uint8_t const *bitStream
 // Implicitly decides whether to add optional header and trailer components.
 //
 // NOTE: with ALLOW_STATS_TX defined will also insert trailing stats payload where appropriate.
-uint8_t *FHT8VRadValveBase::FHT8VCreateValveSetCmdFrame_r(uint8_t *const bptrInitial, const uint8_t bufSize, FHT8VRadValveBase::fht8v_msg_t *command, const uint8_t TRVPercentOpen, const bool doPreambleAndTrailer)
+uint8_t *FHT8VRadValveBase::FHT8VCreateValveSetCmdFrame_r(uint8_t *const bptrInitial, const uint8_t bufSize, FHT8VRadValveBase::fht8v_msg_t *command, const uint8_t TRVPercentOpen, const bool forceExtraPreamble)
   {
-  // Add RFM22-friendly pre-preamble only if calling for heat from the boiler (TRV actually open)
+  // Compute if a trailer is allowed (by security level) and possible to encode.
+  appendToTXBufferFF_t const *tfp = *trailerFn;
+  const bool doTrailer = (NULL != tfp) && (OTV0P2BASE::getStatsTXLevel() <= OTV0P2BASE::stTXmostUnsec);
+
+  // Usually add RFM23-friendly pre-preamble (0xaaaaaaaa sync header) only
+  // if calling for heat from the boiler (TRV actually open)
   // OR if adding a trailer that the hub should see.
   // Only do this for smart local valves; assume slave valves need not signal back to the boiler this way.
-  // (RFM22/23-friendly 0xaaaaaaaa sync header.)
   // NOTE: this requires more buffer space.
-  const bool doHeader = doPreambleAndTrailer;
-
-  appendToTXBufferFF_t const *tfp = *trailerFn;
-  const bool doTrailer = doPreambleAndTrailer && (NULL != tfp);
+  const bool doHeader = forceExtraPreamble || doTrailer;
 
   uint8_t *bptr = bptrInitial;
 

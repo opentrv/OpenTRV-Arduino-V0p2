@@ -140,7 +140,7 @@ class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
     // The generated command frame can be resent indefinitely.
     // The command buffer used must be (at least) FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE bytes plus extra preamble and trailers.
     // Returns pointer to the terminating 0xff on exit.
-    uint8_t *FHT8VCreateValveSetCmdFrame_r(uint8_t *bptr, uint8_t bufSize, fht8v_msg_t *command, const uint8_t TRVPercentOpen, const bool doPreambleAndTrailer);
+    uint8_t *FHT8VCreateValveSetCmdFrame_r(uint8_t *bptr, uint8_t bufSize, fht8v_msg_t *command, const uint8_t TRVPercentOpen, bool forceExtraPreamble = false);
 
     // Call just after TX of valve-setting command which is assumed to reflect current TRVPercentOpen state.
     // This helps avoiding calling for heat from a central boiler until the valve is really open,
@@ -263,12 +263,6 @@ class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
     // Returns try if in sync AND current position AND last command sent to valve indicate open.
     virtual bool isControlledValveReallyOpen() const { return(syncedWithFHT8V && FHT8V_isValveOpen && (value >= getMinPercentOpen())); }
 
-//    // GLOBAL NOTION OF CONTROLLED FHT8V VALVE STATE PROVIDED HERE
-//    // True iff the FHT8V valve(s) (if any) controlled by this unit are really open.
-//    // This waits until at least the command to open the FHT8Vhas been sent.
-//    // FIXME: fit into standard RadValve API.
-//    bool FHT8VisControlledValveOpen() { return(getFHT8V_isValveOpen()); }
-
     // A set of RFM22/RFM23 register settings for use with FHT8V, stored in (read-only) program/Flash memory.
     // Consists of a sequence of (reg#,value) pairs terminated with a 0xff register.
     // The (valid) reg#s are <128, ie top bit clear.
@@ -357,8 +351,7 @@ class FHT8VRadValve : public FHT8VRadValveBase
 #ifdef OTV0P2BASE_FHT8V_ADR_USED
       command.address = 0;
 #endif
-      FHT8VCreateValveSetCmdFrame_r(FHT8VTXCommandArea, sizeof(FHT8VTXCommandArea), &command, valvePC,
-          forceExtraPreamble || ((NULL != trailerFn) && enableTrailingStatsPayload()));
+      FHT8VCreateValveSetCmdFrame_r(FHT8VTXCommandArea, sizeof(FHT8VTXCommandArea), &command, valvePC, forceExtraPreamble);
       }
   };
 
