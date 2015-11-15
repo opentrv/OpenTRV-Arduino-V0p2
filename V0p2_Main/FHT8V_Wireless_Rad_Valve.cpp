@@ -38,8 +38,42 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include "UI_Minimal.h"
 
 
+
 #ifdef USE_MODULE_FHT8VSIMPLE
-FHT8VRadValve<_FHT8V_MAX_EXTRA_TRAILER_BYTES, FHT8VRadValveBase::RFM23_PREAMBLE_BYTES, FHT8VRadValveBase::RFM23_PREAMBLE_BYTE> FHT8V;
+// Function to append stats trailer (and 0xff) to FHT8V/FS20 TX buffer.
+// Assume enough space in buffer for largest possible stats message.
+#if defined(ALLOW_STATS_TX)
+uint8_t *appendStatsToTXBufferWithFF(uint8_t *bptr, const uint8_t bufSize)
+  {
+  FullStatsMessageCore_t trailer;
+  populateCoreStats(&trailer);
+  // Ensure that no ID is encoded in the message sent on the air since it would be a repeat from the FHT8V frame.
+  trailer.containsID = false;
+
+#if defined(ALLOW_MINIMAL_STATS_TXRX)
+  // As bandwidth optimisation just write minimal trailer if only temp&power available.
+  if(trailer.containsTempAndPower &&
+     !trailer.containsID && !trailer.containsAmbL)
+    {
+    writeTrailingMinimalStatsPayload(bptr, &(trailer.tempAndPower));
+    bptr += 3;
+    *bptr = (uint8_t)0xff; // Terminate TX bytes.
+    }
+  else
+#endif
+    {
+    // Assume enough space in buffer for largest possible stats message.
+    bptr = encodeFullStatsMessageCore(bptr, bufSize, OTV0P2BASE::getStatsTXLevel(), false, &trailer);
+    }
+  return(bptr);
+  }
+#else
+#define appendStatsToTXBufferWithFF NULL // Do not append stats.
+#endif
+#endif
+
+#ifdef USE_MODULE_FHT8VSIMPLE
+FHT8VRadValve<_FHT8V_MAX_EXTRA_TRAILER_BYTES, FHT8VRadValveBase::RFM23_PREAMBLE_BYTES, FHT8VRadValveBase::RFM23_PREAMBLE_BYTE> FHT8V(appendStatsToTXBufferWithFF);
 #endif
 
 
@@ -483,9 +517,9 @@ bool FHT8VRadValveBase::doSync(const bool allowDoubleTX)
 
       // On ATmega there is plenty of CPU heft to fill command buffer immediately with valve-setting command.
 #ifdef ENABLE_NOMINAL_RAD_VALVE
-      FHT8V.FHT8VCreateValveSetCmdFrame(NominalRadValve.get(), false);
+      FHT8V.FHT8VCreateValveSetCmdFrame(NominalRadValve.get());
 #else
-      FHT8V.FHT8VCreateValveSetCmdFrame(0, false);
+      FHT8V.FHT8VCreateValveSetCmdFrame(0);
 #endif
 
       // Set up correct delay to next TX; no more this minor cycle...
@@ -855,13 +889,6 @@ uint8_t *FHT8VCreateValveSetCmdFrame_r(uint8_t *const bptrInitial, const uint8_t
   const bool doHeader = doPreambleAndTrailer;
 
   const bool doTrailer = doPreambleAndTrailer;
-  FullStatsMessageCore_t trailer;
-  if(doTrailer)
-    {
-    populateCoreStats(&trailer);
-    // Ensure that no ID is encoded in the message sent on the air since it would be a repeat from the FHT8V frame.
-    trailer.containsID = false;
-    }
 
   uint8_t *bptr = bptrInitial;
 
@@ -894,6 +921,14 @@ uint8_t *FHT8VCreateValveSetCmdFrame_r(uint8_t *const bptrInitial, const uint8_t
 #if defined(ALLOW_STATS_TX)
   if(doTrailer)
     {
+    FullStatsMessageCore_t trailer;
+    if(doTrailer)
+      {
+      populateCoreStats(&trailer);
+      // Ensure that no ID is encoded in the message sent on the air since it would be a repeat from the FHT8V frame.
+      trailer.containsID = false;
+      }
+
 #if defined(ALLOW_MINIMAL_STATS_TXRX)
     // As bandwidth optimisation just write minimal trailer if only temp&power available.
     if(trailer.containsTempAndPower &&

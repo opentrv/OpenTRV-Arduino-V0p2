@@ -40,6 +40,11 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // FHT8V radio-controlled radiator valve, using FS20 protocol.
 class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
   {
+  public:
+    // Type of function to extend the TX buffer, returns pointer to 0xff just beyond last content byte appended.
+    // In case of failure this returns NULL.
+    typedef uint8_t *appendToTXBufferFF_t(uint8_t *buf, uint8_t bufSize);
+
   protected:
     // Radio link usually expected to be RFM23B; non-NULL when available.
     OTRadioLink::OTRadioLink *radio;
@@ -47,10 +52,16 @@ class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
     // TX buffer (non-null) and size (non-zero).
     uint8_t * const buf;
     const uint8_t bufSize;
+
+    // Function to append (stats) trailer(s) to TX buffer (and add trailing 0xff if anything added); NULL if not needed.
+    // Pointer set at construction.
+    appendToTXBufferFF_t const *trailerFn;
+
     // Construct an instance, providing TX buffer details.
-    FHT8VRadValveBase(uint8_t *_buf, uint8_t _bufSize)
+    FHT8VRadValveBase(uint8_t *_buf, uint8_t _bufSize, appendToTXBufferFF_t *trailerFnPtr)
       : radio(NULL),
         buf(_buf), bufSize(_bufSize),
+        trailerFn(trailerFnPtr),
         halfSecondCount(0)
       {
       clearHC(); // Cleared housecodes will prevent any attempt to sync with FTH8V.
@@ -323,7 +334,10 @@ class FHT8VRadValve : public FHT8VRadValveBase
 //    // The RFM23B instance life must at least match that of this instance.
 //    FHT8VRadValve(OTRadioLink::OTRadioLink *) : FHT8VRadValveBase(FHT8VTXCommandArea, FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE) { }
     // Construct an instance.
-    FHT8VRadValve() : FHT8VRadValveBase(FHT8VTXCommandArea, FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE) { }
+    // Optional function to add a trailer, eg a stats trailer, to each TX buffer.
+    FHT8VRadValve(appendToTXBufferFF_t *trailerFnPtr)
+      : FHT8VRadValveBase(FHT8VTXCommandArea, FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE, trailerFnPtr)
+      { }
 
     // Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) in the shared TX buffer.
     //   * valvePC  the percentage open to set the valve [0,100]

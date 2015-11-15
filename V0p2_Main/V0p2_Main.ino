@@ -572,11 +572,10 @@ void setup()
 #endif
   // Unconditionally ensure that a valid FHT8V TRV command frame has been computed and stored
   // in case this unit is actually controlling a local valve.
-  // This first TX buffer setup only needs to be heard by FHT8V valves, and doesn't need trailing stats.
 #if defined(ENABLE_NOMINAL_RAD_VALVE)
-  FHT8V.FHT8VCreateValveSetCmdFrame(NominalRadValve.get(), false);
+  FHT8V.FHT8VCreateValveSetCmdFrame(NominalRadValve.get());
 #else
-  FHT8V.FHT8VCreateValveSetCmdFrame(0, false);
+  FHT8V.FHT8VCreateValveSetCmdFrame(0);
 #endif
 #endif
 #endif
