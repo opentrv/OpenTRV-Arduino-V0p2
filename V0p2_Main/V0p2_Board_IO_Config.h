@@ -292,13 +292,6 @@ static inline void IOSetup()
   }
 
 
-
-//// V0p2 sensor and actuator headers.
-//#include "V0p2_Sensors.h"
-//#include "V0p2_Actuators.h"
-
-
-
 #endif
 
 

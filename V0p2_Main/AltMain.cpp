@@ -22,6 +22,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
   Also for rapid prototyping without dead-weight of OpenTRV intricate timing, etc!
  */
 
+
 #include "V0p2_Main.h"
 
 #include "V0p2_Generic_Config.h"
@@ -32,14 +33,14 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 #ifdef ALLOW_CC1_SUPPORT
 #include <OTProtocolCC.h>
 #endif
+#include <OTV0p2Base.h>
 
 #include "Control.h"
-#include "FHT8V_Wireless_Rad_Valve.h"
 #include "Power_Management.h"
 #include "RFM22_Radio.h"
 #include "Serial_IO.h"
 #include "UI_Minimal.h"
-#include "OTV0p2Base.h"
+
 
 
 
