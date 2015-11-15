@@ -39,7 +39,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 
 #ifdef USE_MODULE_FHT8VSIMPLE
-FHT8VRadValve<_FHT8V_MAX_EXTRA_TRAILER_BYTES, FHT8VRadValveBase::RFM23_PREAMBLE_BYTES, FHT8VRadValveBase::RFM23_PREAMBLE_BYTE> FHT8V;
+FHT8VRadValve<_FHT8V_MAX_EXTRA_TRAILER_BYTES, FHT8VRadValveBase::RFM23_PREAMBLE_BYTES, FHT8VRadValveBase::RFM23_PREAMBLE_BYTE> FHT8V(NULL);
 #endif
 
 
@@ -483,9 +483,9 @@ bool FHT8VRadValveBase::doSync(const bool allowDoubleTX)
 
       // On ATmega there is plenty of CPU heft to fill command buffer immediately with valve-setting command.
 #ifdef ENABLE_NOMINAL_RAD_VALVE
-      FHT8V.FHT8VCreateValveSetCmdFrame(NominalRadValve.get(), false);
+      FHT8V.FHT8VCreateValveSetCmdFrame(NominalRadValve.get());
 #else
-      FHT8V.FHT8VCreateValveSetCmdFrame(0, false);
+      FHT8V.FHT8VCreateValveSetCmdFrame(0);
 #endif
 
       // Set up correct delay to next TX; no more this minor cycle...

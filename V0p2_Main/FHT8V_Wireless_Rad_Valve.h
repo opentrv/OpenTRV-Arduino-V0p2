@@ -314,16 +314,27 @@ class FHT8VRadValve : public FHT8VRadValveBase
     // ~80ms upwards.
     static const uint8_t FHT8V_APPROX_MAX_TX_MS = ((((FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE-1)*8) + 4) / 5);
 
+    // Type of function to extend the TX buffer, returns pointer to 0xff just beyond last content byte appended.
+    // In case of failure this returns NULL.
+    typedef uint8_t appendToTXBufferFF_t(uint8_t *buf, uint8_t bufSize);
+
   private:
     // Shared command buffer for TX to FHT8V.
     uint8_t FHT8VTXCommandArea[FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE];
+
+    // Function to append to TX buffer (and add trailing 0xff if anything added); NULL if not needed.
+    appendToTXBufferFF_t *trailerFn;
 
   public:
 //    // Construct an instance attached to a generic radio module.
 //    // The RFM23B instance life must at least match that of this instance.
 //    FHT8VRadValve(OTRadioLink::OTRadioLink *) : FHT8VRadValveBase(FHT8VTXCommandArea, FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE) { }
     // Construct an instance.
-    FHT8VRadValve() : FHT8VRadValveBase(FHT8VTXCommandArea, FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE) { }
+    // Optional function to add a trailer, eg a stats trailer, to each TX buffer.
+    FHT8VRadValve(appendToTXBufferFF_t *trailerFnPtr)
+      : FHT8VRadValveBase(FHT8VTXCommandArea, FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE),
+        trailerFn(trailerFnPtr)
+      { }
 
     // Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) in the shared TX buffer.
     //   * valvePC  the percentage open to set the valve [0,100]
