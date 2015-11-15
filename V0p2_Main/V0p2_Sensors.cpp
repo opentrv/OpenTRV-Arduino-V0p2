@@ -194,11 +194,23 @@ uint8_t AmbientLight::read()
       const bool isUp = newValue > value;
       value = newValue;
 #ifdef OCCUPANCY_DETECT_FROM_AMBLIGHT
-    // Treat a sharp brightening as a possible/weak indication of occupancy, eg light flicked on.
-    // Ignore trigger at start-up.
-    if(!ignoredFirst) { ignoredFirst = true; }
+      // Treat a sharp brightening as a possible/weak indication of occupancy, eg light flicked on.
+      // Ignore trigger at start-up.
+      if(!ignoredFirst) { ignoredFirst = true; }
 //    else if((!isRoomLitFlag) && ((rawValue>>2) < lowerThreshold)) { Occupancy.markAsPossiblyOccupied(); }
-    else if(isUp && ((absDiff >> 2) >= upDelta)) { Occupancy.markAsPossiblyOccupied(); }
+      else if(isUp && ((absDiff >> 2) >= upDelta))
+        {
+        Occupancy.markAsPossiblyOccupied();
+#if 0 && defined(DEBUG)
+  DEBUG_SERIAL_PRINT_FLASHSTRING("Ambient light absDiff/dt/lt: ");
+  DEBUG_SERIAL_PRINT(absDiff);
+  DEBUG_SERIAL_PRINT(' ');
+  DEBUG_SERIAL_PRINT(darkThreshold);
+  DEBUG_SERIAL_PRINT(' ');
+  DEBUG_SERIAL_PRINT(lightThreshold);
+  DEBUG_SERIAL_PRINTLN();
+#endif
+        }
 #endif
       }
     }

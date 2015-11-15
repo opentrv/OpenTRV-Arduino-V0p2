@@ -245,8 +245,8 @@ bool tickUI(const uint_fast8_t sec)
     // Keep reporting UI status if the user has just touched the unit in some way.
     // (Or if occupancy/activity was just detected, to give the use some feedback for indirectly interacting.)
     const bool justTouched = statusChange || veryRecentUIControlUse()
-#ifdef OCCUPANCY_SUPPORT
-        || Occupancy.reportedRecently()
+#if 0 && defined(OCCUPANCY_SUPPORT)
+        || Occupancy.reportedRecently() // TODO-587: waking the UI to indicate occupancy detected can be annoying.
 #endif
         ;
 
