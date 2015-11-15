@@ -333,7 +333,7 @@ class FHT8VRadValve : public FHT8VRadValveBase
     //         to make it possible for an OpenTRV hub to receive the frame,
     //         typically when calling for heat or when there is a stats trailer;
     //         note that a preamble will be forced if a trailer is being added
-    //         and FHT8Vs can hear without the preamble    // HC1 and HC2 are fetched with the FHT8VGetHC1() and FHT8VGetHC2() calls, and address is always 0.
+    //         and FHT8Vs can hear without the preamble.
     // The generated command frame can be resent indefinitely.
     // If no valve is set up then this may simply terminate an empty buffer with 0xff.
     void FHT8VCreateValveSetCmdFrame(const uint8_t valvePC, const bool forceExtraPreamble = false)
@@ -388,7 +388,7 @@ class FHT8VRadValve : public FHT8VRadValveBase
 
 #if 0 && defined(DEBUG)
 // Check that the buffer end was not overrun.
-if(bptr - bptrInitial >= bufSize) { panic(F("TX gen too large")); }
+if(bptr - bptrInitial >= bufSize) { panic(F("FHT8V frame too big")); }
 #endif
       }
   };
