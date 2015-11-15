@@ -70,7 +70,7 @@ uint8_t *appendStatsToTXBufferWithFF(uint8_t *bptr, const uint8_t bufSize)
 #else
 #define appendStatsToTXBufferWithFF NULL // Do not append stats.
 #endif
-#endif
+#endif // USE_MODULE_FHT8VSIMPLE
 
 #ifdef USE_MODULE_FHT8VSIMPLE
 FHT8VRadValve<_FHT8V_MAX_EXTRA_TRAILER_BYTES, FHT8VRadValveBase::RFM23_PREAMBLE_BYTES, FHT8VRadValveBase::RFM23_PREAMBLE_BYTE> FHT8V(appendStatsToTXBufferWithFF);
