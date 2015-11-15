@@ -327,9 +327,6 @@ class FHT8VRadValve : public FHT8VRadValveBase
     uint8_t FHT8VTXCommandArea[FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE];
 
   public:
-//    // Construct an instance attached to a generic radio module.
-//    // The RFM23B instance life must at least match that of this instance.
-//    FHT8VRadValve(OTRadioLink::OTRadioLink *) : FHT8VRadValveBase(FHT8VTXCommandArea, FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE) { }
     // Construct an instance.
     // Optional function to add a trailer, eg a stats trailer, to each TX buffer.
     FHT8VRadValve(appendToTXBufferFF_t *trailerFnPtr)
