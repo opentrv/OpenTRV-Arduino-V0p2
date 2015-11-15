@@ -2021,7 +2021,7 @@ void loopOpenTRV()
       if(NominalRadValve.isValveMoved() ||
          (minute1From4AfterSensors && enableTrailingStatsPayload()))
         {
-        if(localFHT8VTRVEnabled()) { FHT8V.FHT8VCreateValveSetCmdFrame(NominalRadValve.get()); }
+        if(localFHT8VTRVEnabled()) { FHT8V.FHT8VCreateValveSetCmdFrame(NominalRadValve.get(), NominalRadValve.isCallingForHeat()); }
         }
 #endif
 

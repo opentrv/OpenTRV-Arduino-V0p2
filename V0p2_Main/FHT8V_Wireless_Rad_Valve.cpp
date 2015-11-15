@@ -477,9 +477,9 @@ bool FHT8VRadValveBase::doSync(const bool allowDoubleTX)
 
       // On ATmega there is plenty of CPU heft to fill command buffer immediately with valve-setting command.
 #ifdef ENABLE_NOMINAL_RAD_VALVE
-      FHT8V.FHT8VCreateValveSetCmdFrame(NominalRadValve.get());
+      FHT8V.FHT8VCreateValveSetCmdFrame(NominalRadValve.get(), false);
 #else
-      FHT8V.FHT8VCreateValveSetCmdFrame(0);
+      FHT8V.FHT8VCreateValveSetCmdFrame(0, false);
 #endif
 
       // Set up correct delay to next TX; no more this minor cycle...
