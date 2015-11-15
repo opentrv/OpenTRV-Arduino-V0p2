@@ -134,14 +134,6 @@ class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
     // Note: single transmission time is up to about 80ms (without extra trailers), double up to about 170ms.
     void FHT8VTXFHTQueueAndSendCmd(uint8_t *bptr, const bool doubleTX);
 
-    // Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) at bptr.
-    // The TRVPercentOpen value is used to generate the frame.
-    // On entry hc1, hc2 (and address if used) must be set correctly; this sets command and extension.
-    // The generated command frame can be resent indefinitely.
-    // The command buffer used must be (at least) FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE bytes plus extra preamble and trailers.
-    // Returns pointer to the terminating 0xff on exit.
-    uint8_t *FHT8VCreateValveSetCmdFrame_r(uint8_t *bptr, uint8_t bufSize, fht8v_msg_t *command, const uint8_t TRVPercentOpen, bool forceExtraPreamble = false);
-
     // Call just after TX of valve-setting command which is assumed to reflect current TRVPercentOpen state.
     // This helps avoiding calling for heat from a central boiler until the valve is really open,
     // eg to avoid excess load on (or energy wasting by) the circulation pump.
@@ -153,6 +145,7 @@ class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
     uint8_t hc1, hc2;
 
   public:
+    // Returns true if the supplied house code part is valid for an FHT8V valve.
     static inline bool isValidFHTV8HouseCode(const uint8_t hc) { return(hc <= 99); }
 
     // Clear both housecode parts (and thus disable use of FHT8V valve).
@@ -248,10 +241,6 @@ class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
 //    //bool isSyncedWithFHT8V() { return(true); } // Lie and claim always synced.
 //    //#endif
 
-//    // True if FHT8V valve is believed to be open under instruction from this system; false if not in sync.
-//    // FIXME: fit into standard RadValve API.
-//    bool getFHT8V_isValveOpen() { return(syncedWithFHT8V && FHT8V_isValveOpen); }
-
     // Returns true iff not in error state and not (re)calibrating/(re)initialising/(re)syncing.
     // By default there is no recalibration step.
     virtual bool isInNormalRunState() const { return(syncedWithFHT8V); }
@@ -340,7 +329,11 @@ class FHT8VRadValve : public FHT8VRadValveBase
 
     // Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) in the shared TX buffer.
     //   * valvePC  the percentage open to set the valve [0,100]
-    // HC1 and HC2 are fetched with the FHT8VGetHC1() and FHT8VGetHC2() calls, and address is always 0.
+    //   * forceExtraPreamble  if true then force insertion of an extra preamble
+    //         to make it possible for an OpenTRV hub to receive the frame,
+    //         typically when calling for heat or when there is a stats trailer;
+    //         note that a preamble will be forced if a trailer is being added
+    //         and FHT8Vs can hear without the preamble    // HC1 and HC2 are fetched with the FHT8VGetHC1() and FHT8VGetHC2() calls, and address is always 0.
     // The generated command frame can be resent indefinitely.
     // If no valve is set up then this may simply terminate an empty buffer with 0xff.
     void FHT8VCreateValveSetCmdFrame(const uint8_t valvePC, const bool forceExtraPreamble = false)
@@ -351,7 +344,52 @@ class FHT8VRadValve : public FHT8VRadValveBase
 #ifdef OTV0P2BASE_FHT8V_ADR_USED
       command.address = 0;
 #endif
-      FHT8VCreateValveSetCmdFrame_r(FHT8VTXCommandArea, sizeof(FHT8VTXCommandArea), &command, valvePC, forceExtraPreamble);
+      command.command = 0x26;
+      //  command.extension = (valvePC * 255) / 100; // needlessly expensive division.
+      // Optimised for speed and to avoid pulling in a division subroutine.
+      // Guaranteed to be 255 when valvePC is 100 (max), and 0 when TRVPercentOpen is 0,
+      // and a decent approximation of (valvePC * 255) / 100 in between.
+      // The approximation is (valvePC * 250) / 100, ie *2.5, as *(2+0.5).
+      command.extension = (valvePC >= 100) ? 255 :
+        ((valvePC<<1) + ((1+valvePC)>>1));
+
+      // Work out if a trailer is allowed (by security level) and is possible to encode.
+      appendToTXBufferFF_t const *tfp = *trailerFn;
+      const bool doTrailer = (NULL != tfp) && (OTV0P2BASE::getStatsTXLevel() <= OTV0P2BASE::stTXmostUnsec);
+
+      // Usually add RFM23-friendly preamble (0xaaaaaaaa sync header) only
+      // IF calling for heat from the boiler (TRV actually open)
+      // OR if adding a (stats) trailer that the hub should see.
+      const bool doHeader = forceExtraPreamble || doTrailer;
+
+      uint8_t * const bptrInitial = FHT8VTXCommandArea;
+      const uint8_t bufSize = sizeof(FHT8VTXCommandArea);
+      uint8_t *bptr = bptrInitial;
+
+      // Start with RFM23-friendly preamble if requested.
+      if(doHeader)
+        {
+        memset(bptr, preambleByte, preambleBytes);
+        bptr += preambleBytes;
+        }
+
+      // Encode and append FHT8V FS20 command.
+      // ASSUMES sufficient space.
+      bptr = FHT8VRadValveBase::FHT8VCreate200usBitStreamBptr(bptr, &command);
+
+      // Append trailer if allowed/possible.
+      if(doTrailer)
+        {
+        uint8_t * const tail = tfp(bptr, bufSize - (bptr - bptrInitial));
+        // If appending stats failed, write in a terminating 0xff explicitly.
+        if(NULL == tail) { *bptr = 0xff; }
+        //if(NULL != tail) { bptr = tail; } // Encoding should not actually fail, but this copes gracefully if so!
+        }
+
+#if 0 && defined(DEBUG)
+// Check that the buffer end was not overrun.
+if(bptr - bptrInitial >= bufSize) { panic(F("TX gen too large")); }
+#endif
       }
   };
 
