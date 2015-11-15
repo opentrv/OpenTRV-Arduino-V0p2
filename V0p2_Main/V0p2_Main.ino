@@ -558,11 +558,6 @@ void setup()
 
 
 #if !defined(ALT_MAIN_LOOP) && !defined(UNIT_TESTS)
-#if defined(USE_MODULE_FHT8VSIMPLE)
-  // Unconditionally ensure that a valid FHT8V TRV command frame has been computed and stored
-  // in case this unit is actually controlling a local valve.
-  FHT8V.set(0);
-#endif
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("Computing initial target/demand...");
 #endif
