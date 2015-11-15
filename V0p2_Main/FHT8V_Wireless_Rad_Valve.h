@@ -45,6 +45,19 @@ class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
     // In case of failure this returns NULL.
     typedef uint8_t *appendToTXBufferFF_t(uint8_t *buf, uint8_t bufSize);
 
+    // Type for information content of FHT8V message.
+    // Omits the address field unless it is actually used.
+    typedef struct
+      {
+      uint8_t hc1;
+      uint8_t hc2;
+#ifdef OTV0P2BASE_FHT8V_ADR_USED
+      uint8_t address;
+#endif
+      uint8_t command;
+      uint8_t extension;
+      } fht8v_msg_t;
+
   protected:
     // Radio link usually expected to be RFM23B; non-NULL when available.
     OTRadioLink::OTRadioLink *radio;
@@ -120,6 +133,14 @@ class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
     // Note: single transmission time is up to about 80ms (without extra trailers), double up to about 170ms.
     void FHT8VTXFHTQueueAndSendCmd(uint8_t *bptr, const bool doubleTX);
 
+    // Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) at bptr.
+    // The TRVPercentOpen value is used to generate the frame.
+    // On entry hc1, hc2 (and address if used) must be set correctly; this sets command and extension.
+    // The generated command frame can be resent indefinitely.
+    // The command buffer used must be (at least) FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE bytes plus extra preamble and trailers.
+    // Returns pointer to the terminating 0xff on exit.
+    uint8_t *FHT8VCreateValveSetCmdFrame_r(uint8_t *bptr, uint8_t bufSize, fht8v_msg_t *command, const uint8_t TRVPercentOpen, const bool doPreambleAndTrailer);
+
     // Call just after TX of valve-setting command which is assumed to reflect current TRVPercentOpen state.
     // This helps avoiding calling for heat from a central boiler until the valve is really open,
     // eg to avoid excess load on (or energy wasting by) the circulation pump.
@@ -148,19 +169,6 @@ class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
 
     // Set radio to use (if non-NULL) or clear access to radio (if NULL).
     void setRadio(OTRadioLink::OTRadioLink *r) { radio = r; }
-
-    // Type for information content of FHT8V message.
-    // Omits the address field unless it is actually used.
-    typedef struct
-      {
-      uint8_t hc1;
-      uint8_t hc2;
-#ifdef OTV0P2BASE_FHT8V_ADR_USED
-      uint8_t address;
-#endif
-      uint8_t command;
-      uint8_t extension;
-      } fht8v_msg_t;
 
     // Decode raw bitstream into non-null command structure passed in; returns true if successful.
     // Will return non-null if OK, else NULL if anything obviously invalid is detected such as failing parity or checksum.
@@ -299,17 +307,6 @@ class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
   };
 
 
-
-// Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) at bptr.
-// The TRVPercentOpen value is used to generate the frame.
-// On entry hc1, hc2 (and address if used) must be set correctly; this sets command and extension.
-// The generated command frame can be resent indefinitely.
-// The command buffer used must be (at least) FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE bytes plus extra preamble and trailers.
-// Returns pointer to the terminating 0xff on exit.
-uint8_t *FHT8VCreateValveSetCmdFrame_r(uint8_t *bptr, uint8_t bufSize, FHT8VRadValveBase::fht8v_msg_t *command, const uint8_t TRVPercentOpen, const bool doPreambleAndTrailer);
-
-
-
 // maxTrailerBytes specifies the maximum number of bytes of trailer that can be added.
 // preambleBytes specifies the space to leave for preamble bytes for remote receiver sync (defaults to RFM23-suitable value).
 // preambleByte specifies the (default) preamble byte value to use (defaults to RFM23-suitable value).
@@ -352,7 +349,8 @@ class FHT8VRadValve : public FHT8VRadValveBase
 #ifdef OTV0P2BASE_FHT8V_ADR_USED
       command.address = 0;
 #endif
-      FHT8VCreateValveSetCmdFrame_r(FHT8VTXCommandArea, sizeof(FHT8VTXCommandArea), &command, valvePC, forceExtraPreamble || enableTrailingStatsPayload());
+      FHT8VCreateValveSetCmdFrame_r(FHT8VTXCommandArea, sizeof(FHT8VTXCommandArea), &command, valvePC,
+          forceExtraPreamble || ((NULL != trailerFn) && enableTrailingStatsPayload()));
       }
   };
 
