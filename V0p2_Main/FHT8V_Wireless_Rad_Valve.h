@@ -90,6 +90,15 @@ class FHT8VRadValveBase : public OTRadValve::AbstractRadValve
     static const uint8_t MAX_HSC = 1; // Max allowed value of halfSecondCount.
     #endif
 
+    // Sleep in reasonably low-power mode until specified target subcycle time, optionally listening (RX) for calls-for-heat.
+    // Returns true if OK, false if specified time already passed or significantly missed (eg by more than one tick).
+    // May use a combination of techniques to hit the required time.
+    // Requesting a sleep until at or near the end of the cycle risks overrun and may be unwise.
+    // Using this to sleep less then 2 ticks may prove unreliable as the RTC rolls on underneath...
+    // This is NOT intended to be used to sleep over the end of a minor cycle.
+    // FIXME: be passed a function (such as pollIIO) to call while waiting.
+    void sleepUntilSubCycleTimeOptionalRX(uint8_t sleepUntil);
+
     // Sends to FHT8V in FIFO mode command bitstream from buffer starting at bptr up until terminating 0xff,
     // then reverts to low-power standby mode if not in hub mode, RX for OpenTRV FHT8V if in hub mode.
     // The trailing 0xff is not sent.

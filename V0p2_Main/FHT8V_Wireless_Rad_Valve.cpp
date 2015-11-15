@@ -320,16 +320,17 @@ uint8_t *FHT8VRadValveBase::FHT8VCreate200usBitStreamBptr(uint8_t *bptr, const F
 // Returns immediately without transmitting if the command buffer starts with 0xff (ie is empty).
 // (If doubleTX is true, sends the bitstream twice, with a short (~8ms) pause between transmissions, to help ensure reliable delivery.)
 //
+// Returns immediately without tryitn got transmit if the radio is NULL.
+//
 // Note: single transmission time is up to about 80ms (without extra trailers), double up to about 170ms.
 void FHT8VRadValveBase::FHT8VTXFHTQueueAndSendCmd(uint8_t *bptr, const bool doubleTX)
   {
   if(((uint8_t)0xff) == *bptr) { return; }
-#if 0 && defined(DEBUG)
-  if(0 == *bptr) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("FHT8V frame not initialised"); panic(); }
-#endif
+  OTRadioLink::OTRadioLink * const r = radio;
+  if(NULL == r) { return; }
 
   const uint8_t buflen = OTRadioLink::frameLenFFTerminated(bptr);
-  radio->sendRaw(bptr, buflen, 0, doubleTX ? OTRadioLink::OTRadioLink::TXmax : OTRadioLink::OTRadioLink::TXnormal);
+  r->sendRaw(bptr, buflen, 0, doubleTX ? OTRadioLink::OTRadioLink::TXmax : OTRadioLink::OTRadioLink::TXnormal);
 
   //DEBUG_SERIAL_PRINTLN_FLASHSTRING("SC");
   }
@@ -366,20 +367,25 @@ void FHT8VRadValveBase::valveSettingTX(const bool allowDoubleTX)
 // Requesting a sleep until at or near the end of the cycle risks overrun and may be unwise.
 // Using this to sleep less then 2 ticks may prove unreliable as the RTC rolls on underneath...
 // This is NOT intended to be used to sleep over the end of a minor cycle.
-static void sleepUntilSubCycleTimeOptionalRX(const uint8_t sleepUntil)
+// FIXME: be passed a function (such as pollIIO) to call while waiting.
+void FHT8VRadValveBase::sleepUntilSubCycleTimeOptionalRX(const uint8_t sleepUntil)
     {
 #if 0 && defined(DEBUG)
     DEBUG_SERIAL_PRINT_FLASHSTRING("TXwait");
 #endif
+    OTRadioLink::OTRadioLink * const r = radio;
     // Poll I/O regularly if listening out for radio comms.
-    if(inHubMode())
+    if((NULL != r) && (-1 != r->getListenChannel()))
+    //if(inHubMode())
       {
       // Only do nap+poll if lots of time left.
       while(sleepUntil > fmax(OTV0P2BASE::getSubCycleTime() + (50/OTV0P2BASE::SUBCYCLE_TICK_MS_RD), OTV0P2BASE::GSCT_MAX))
-        { nap15AndPoll(); } // Assumed ~15ms sleep max.
+//        { nap15AndPoll(); } // Assumed ~15ms sleep max.
+        { OTV0P2BASE::nap(WDTO_15MS, true); r->poll(); } // FIXME: only polls this radio
       // Poll in remaining time without nap.
       while(sleepUntil > OTV0P2BASE::getSubCycleTime())
-        { pollIO(); }
+//        { pollIO(); }
+        { r->poll(); } // FIXME: only polls this radio
       }
 #if 0 && defined(DEBUG)
     DEBUG_SERIAL_PRINT_FLASHSTRING("*");
