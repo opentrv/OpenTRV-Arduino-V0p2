@@ -51,9 +51,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include <OTRadValve.h>
 
 #include "V0p2_Sensors.h"
-
+#include "V0p2_Actuators.h"
 #include "Control.h"
-#include "FHT8V_Wireless_Rad_Valve.h"
 #include "Power_Management.h"
 #include "RFM22_Radio.h"
 #include "Serial_IO.h"

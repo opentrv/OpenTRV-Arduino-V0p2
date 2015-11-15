@@ -35,9 +35,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 #include "Serial_IO.h"
 #include "UI_Minimal.h"
 
-#ifdef USE_MODULE_FHT8VSIMPLE
-#include "FHT8V_Wireless_Rad_Valve.h"
-#endif
+#include "V0p2_Sensors.h"
+#include "V0p2_Actuators.h"
+
 
 //// Update 'C2' 8-bit CRC with next byte.
 //// Usually initialised with 0xff.

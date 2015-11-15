@@ -473,20 +473,6 @@ extern SimpleSlaveRadValve NominalRadValve;
 //// Having too high a linger time value may cause excessive temperature overshoot.
 //#define DEFAULT_MAX_RUN_ON_TIME_M 5
 
-// If defined then turn off valve very slowly after stopping call for heat (ie when shutting) which
-// may allow comfortable boiler pump overrun in older systems with no/poor bypass to avoid overheating.
-// In any case this should help reduce strain on circulation pumps, etc.
-// ALWAYS IMPLEMENT LINGER AS OF 20141228
-//#define VALVE_TURN_OFF_LINGER
-
-
-//#ifdef ENABLE_ANTICIPATION
-//// Returns true if system is in 'learn'/smart mode.
-//// If in 'smart' mode then the unit can anticipate user demand
-//// to pre-warm rooms, maintain customary temperatures, etc.
-//// Currently true if any simple schedule is set.
-//bool inSmartMode();
-//#endif
 
 
 
