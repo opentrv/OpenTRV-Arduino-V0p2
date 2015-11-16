@@ -34,13 +34,14 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 #include <OTProtocolCC.h>
 #endif
 #include <OTV0p2Base.h>
+#include <OTRadioLink.h>
 
 #include "Control.h"
 #include "Power_Management.h"
 #include "RFM22_Radio.h"
 #include "Serial_IO.h"
 #include "UI_Minimal.h"
-
+#include "V0p2_Sensors.h"
 
 
 
@@ -335,7 +336,7 @@ void loopAlt()
           // if this is controlling a local FHT8V on which the binary stats can be piggybacked.
           // Ie, if doesn't have a local TRV then it must send binary some of the time.
           // Any recently-changed stats value is a hint that a strong transmission might be a good idea.
-          const bool doBinary = !localFHT8VTRVEnabled() && OTV0P2BASE::randRNG8NextBoolean();
+          const bool doBinary = false; // !localFHT8VTRVEnabled() && OTV0P2BASE::randRNG8NextBoolean();
           bareStatsTX(false, false, false);
         }
       }
