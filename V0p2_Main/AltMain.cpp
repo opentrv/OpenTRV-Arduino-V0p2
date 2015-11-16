@@ -22,6 +22,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
   Also for rapid prototyping without dead-weight of OpenTRV intricate timing, etc!
  */
 
+
 #include "V0p2_Main.h"
 
 #include "V0p2_Generic_Config.h"
@@ -32,15 +33,15 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 #ifdef ALLOW_CC1_SUPPORT
 #include <OTProtocolCC.h>
 #endif
+#include <OTV0p2Base.h>
+#include <OTRadioLink.h>
 
 #include "Control.h"
-#include "FHT8V_Wireless_Rad_Valve.h"
 #include "Power_Management.h"
 #include "RFM22_Radio.h"
-#include "Security.h"
 #include "Serial_IO.h"
 #include "UI_Minimal.h"
-#include "OTV0p2Base.h"
+#include "V0p2_Sensors.h"
 
 
 
@@ -78,8 +79,25 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 // Can abort with panic() if need be.
 void POSTalt()
   {
+#ifdef USE_OTNULLRADIO
+// FIXME
+#elif defined USE_MODULE_SIM900
+//The config for the GSM depends on if you want it stored in flash or EEPROM.
+//
+//The SIM900LinkConfig object is located at the start of POSTalt() in AltMain.cpp and takes a set of void pointers to a \0 terminated string, either stored in flash or EEPROM.
+//
+//For EEPROM:
+//- Set the first field of SIM900LinkConfig to true.
+//- The configs are stored as \0 terminated strings starting at 0x300.
+//- You can program the eeprom using ./OTRadioLink/dev/utils/sim900eepromWrite.ino
+//
+//For Flash:
+//- Set the first field of SIM900LinkConfig to false.
+//- Make a set of \0 terminated strings with the PROGMEM attribute holding the config details.
+//- set the void pointers to point to the strings (or just cast the strings and pass them to SIM900LinkConfig directly)
+//
+//Looking back at the code, it could do with more comments and a better way of defining the EEPROM addresses..
 
-#ifdef USE_MODULE_SIM900
 // EEPROM locations
   static const void *SIM900_PIN      = (void *)0x0300; // TODO confirm this address
   static const void *SIM900_APN      = (void *)0x0305;
@@ -100,7 +118,7 @@ void POSTalt()
   // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
   RFM23B.preinit(NULL);
   // Check that the radio is correctly connected; panic if not...
-  if(!RFM23B.configure(1, &RFMConfig) || !RFM23B.begin()) { panic(); }
+  if(!RFM23B.configure(1, &RFMConfig) || !RFM23B.begin()) { panic(F("PANIC!")); }
 #endif
 
 
@@ -154,7 +172,12 @@ void POSTalt()
     }
 
 
-  RFM23B.listen(true);
+//  pinMode(3, INPUT);	// FIXME Move to where they are set automatically
+//  digitalWrite(3, LOW);
+
+  RFM23B.queueToSend((uint8_t *)"start", 6);
+  bareStatsTX(false, false, false);
+
   }
 
 
@@ -204,12 +227,27 @@ static volatile uint8_t prevStatePD;
 // Interrupt service routine for PD I/O port transition changes (including RX).
 ISR(PCINT2_vect)
   {
-	//  const uint8_t pins = PIND;
-	//  const uint8_t changes = pins ^ prevStatePD;
-	//  prevStatePD = pins;
-	//
-	// ...
 
+	  const uint8_t pins = PIND;
+	  const uint8_t changes = pins ^ prevStatePD;
+	  prevStatePD = pins;
+
+#if defined(ENABLE_VOICE_SENSOR)
+	  	//  // Voice detection is a falling edge.
+	  	//  // Handler routine not required/expected to 'clear' this interrupt.
+	  	//  // FIXME: ensure that Voice.handleInterruptSimple() is inlineable to minimise ISR prologue/epilogue time and space.
+	  	  // Voice detection is a RISING edge.
+	  	  if((changes & VOICE_INT_MASK) && (pins & VOICE_INT_MASK)) {
+	  	    Voice.handleInterruptSimple();
+	  	  }
+
+	  	  // If an interrupt arrived from no other masked source then wake the CLI.
+	  	  // The will ensure that the CLI is active, eg from RX activity,
+	  	  // eg it is possible to wake the CLI subsystem with an extra CR or LF.
+	  	  // It is OK to trigger this from other things such as button presses.
+	  	  // FIXME: ensure that resetCLIActiveTimer() is inlineable to minimise ISR prologue/epilogue time and space.
+	  	  if(!(changes & MASK_PD & ~1)) { resetCLIActiveTimer(); }
+#endif // ENABLE_VOICE_SENSOR
   }
 #endif // defined(MASK_PD) && (MASK_PD != 0)
 
@@ -300,7 +338,41 @@ void loopAlt()
 ////  if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@0"); }
 //#endif
 
+#ifdef ALLOW_STATS_TX
+    // Regular transmission of stats if NOT driving a local valve (else stats can be piggybacked onto that).
+    if(TIME_LSD ==  10)
+      {
+        if((OTV0P2BASE::getMinutesLT() & 0x3) == 0) {
+          // Send it!
+          // Try for double TX for extra robustness unless:
+          //   * this is a speculative 'extra' TX
+          //   * battery is low
+          //   * this node is a hub so needs to listen as much as possible
+          // This doesn't generally/always need to send binary/both formats
+          // if this is controlling a local FHT8V on which the binary stats can be piggybacked.
+          // Ie, if doesn't have a local TRV then it must send binary some of the time.
+          // Any recently-changed stats value is a hint that a strong transmission might be a good idea.
+          const bool doBinary = false; // !localFHT8VTRVEnabled() && OTV0P2BASE::randRNG8NextBoolean();
+          bareStatsTX(false, false, false);
+        }
+      }
+#endif
 
+
+
+#if defined(SENSOR_DS18B20_ENABLE)
+      // read temp
+      if (TIME_LSD == 18) {
+          TemperatureC16.read();
+      }
+#endif // SENSOR_DS18B20_ENABLE
+
+#if defined(ENABLE_VOICE_SENSOR)
+      // read voice sensor
+      if (TIME_LSD == 46) {
+      	Voice.read();
+      }
+#endif // (ENABLE_VOICE_SENSOR)
 
 //#if defined(USE_MODULE_FHT8VSIMPLE)
 //  if(useExtraFHT8VTXSlots)

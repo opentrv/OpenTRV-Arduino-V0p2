@@ -38,7 +38,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #if !defined(V0p2_REV)
 #error Board revision not defined.
 #endif
-#if (V0p2_REV < 0) || (V0p2_REV > 9)
+#if (V0p2_REV < 0) || (V0p2_REV > 11)
 #error Board revision not defined correctly (out of range).
 #endif
 
@@ -107,18 +107,23 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #endif
 
 // UI main 'mode' button (active/pulled low by button, pref using weak internal pull-up), digital in.
+// NOT AVAILABLE FOR REV10 (used for GSM module TX pin).
+//#if (V0p2_REV != 10) // FIXME rest of V0p2_Main assumes there is always a mode button
 #define BUTTON_MODE_L 5 // ATMega328P-PU PDIP pin 11, PD5, PCINT21, no analogue input.
+#if (V0p2_REV == 10)	// FIXME might be better to define pins by peripheral
+#define SIM900_TX_PIN 5
+#endif
 
 #ifdef LEARN_BUTTON_AVAILABLE
 // OPTIONAL UI 'learn' button  (active/pulled low by button, pref using weak internal pull-up), digital in.
 #define BUTTON_LEARN_L 8 // ATMega328P-PU PDIP pin 14, PB0, PCINT0, no analogue input.
-#if V0p2_REV >= 2 // From REV2 onwards.
+#ifndef ENABLE_VOICE_SENSOR // From REV2 onwards.
 // OPTIONAL SECOND UI 'learn' button  (active/pulled low by button, pref using weak internal pull-up), digital in.
 #define BUTTON_LEARN2_L 3 // ATMega328P-PU PDIP pin 5, PD3, PCINT19, no analogue input.
-#else
+#else // OCCUPANCY_DETECT_FROM_VOICE
 // Voice detect on falling edge.
 #define VOICE_NIRQ 3 // ATMega328P-PU PDIP pin 5, PD3, PCINT19, no analogue input.
-#endif
+#endif // OCCUPANCY_DETECT_FROM_VOICE
 #endif
 
 
@@ -203,30 +208,30 @@ static inline void IOSetup()
       // Switch main UI LED on for the rest of initialisation in non-ALT code...
 #ifdef LED_HEATCALL
       case LED_HEATCALL: { pinMode(LED_HEATCALL, OUTPUT); digitalWrite(LED_HEATCALL, HIGH); break; }
-#endif
+#endif // LED_HEATCALL
 #ifdef LED_HEATCALL_L
       case LED_HEATCALL_L: { pinMode(LED_HEATCALL_L, OUTPUT); digitalWrite(LED_HEATCALL_L, LOW); break; }
-#endif
-#else
+#endif // LED_HEATCALL_l
+#else // !defined(ALT_MAIN_LOOP)
 #ifdef LED_HEATCALL_L
       // Leave main UI LED off in ALT-mode eg in case on minimal power from energy harvesting.
       case LED_HEATCALL_L: { pinMode(LED_HEATCALL_L, OUTPUT); digitalWrite(LED_HEATCALL_L, HIGH); break; }
-#endif
-#endif
+#endif // LED_HEATCALL_L
+#endif // !defined(ALT_MAIN_LOOP)
 
       // Switch secondary UI LED off during initialisation.
 #ifdef LED_UI2_L
       case LED_UI2_L: { pinMode(LED_UI2_L, OUTPUT); digitalWrite(LED_UI2_L, HIGH); break; }
-#endif
+#endif // LED_UI2_L
 
 #ifdef PIN_RFM_NIRQ 
       // Set as input to avoid contention current.
       case PIN_RFM_NIRQ: { pinMode(PIN_RFM_NIRQ, INPUT); break; }
-#endif
+#endif // PIN_RFN_NIRQ
 #ifdef PIN_RFM_NIRQ_DUMMY
       // Set as input to avoid contention current or float.
       case PIN_RFM_NIRQ_DUMMY: { pinMode(PIN_RFM_NIRQ_DUMMY, INPUT_PULLUP); break; }
-#endif
+#endif // PIN_RFM_NIRQ_DUMMY
 
       // Make button pins (and others) inputs with internal weak pull-ups
       // (saving an external resistor in each case if aggressively reducing BOM costs).
@@ -285,13 +290,6 @@ static inline void IOSetup()
 //#endif
 //    ;
   }
-
-
-
-// V0p2 sensor and actuator headers.
-#include "V0p2_Sensors.h"
-#include "V0p2_Actuators.h"
-
 
 
 #endif

@@ -882,7 +882,7 @@ static void testFHTEncoding()
   // Encode an example message for a real house code and command (close valve).
   command.hc1 = 13;
   command.hc2 = 73;
-#ifdef FHT8V_ADR_USED
+#ifdef OTV0P2BASE_FHT8V_ADR_USED
   address = 0;
 #endif
   command.command = 0x26;
@@ -905,7 +905,7 @@ static void testFHTEncoding()
   // Encode shortest-possible (all-zero-bits) FHT8V command as 200us-bit-stream...
   command.hc1 = 0;
   command.hc2 = 0;
-#ifdef FHT8V_ADR_USED
+#ifdef OTV0P2BASE_FHT8V_ADR_USED
   address = 0;
 #endif
   command.command = 0;
@@ -926,7 +926,7 @@ static void testFHTEncoding()
   // Encode longest-possible (as many 1-bits as possible) FHT8V command as 200us-bit-stream...
   command.hc1 = 0xff;
   command.hc2 = 0xff;
-#ifdef FHT8V_ADR_USED
+#ifdef OTV0P2BASE_FHT8V_ADR_USED
   address = 0xff;
 #endif
   command.command = 0xff;
@@ -940,7 +940,7 @@ static void testFHTEncoding()
   AssertIsTrue(FHT8VDecodeBitStream(buf, buf + MIN_FHT8V_200US_BIT_STREAM_BUF_SIZE - 1, &commandDecoded));
   AssertIsTrueWithErr(0xff == commandDecoded.hc1, commandDecoded.hc1);
   AssertIsTrueWithErr(0xff == commandDecoded.hc2, commandDecoded.hc2);
-#ifdef FHT8V_ADR_USED
+#ifdef OTV0P2BASE_FHT8V_ADR_USED
   AssertIsTrueWithErr(0xff == commandDecoded.address, commandDecoded.address);
 #endif
   AssertIsTrueWithErr(0xff == commandDecoded.command, commandDecoded.command);
@@ -971,7 +971,7 @@ static void testFHTEncodingHeadAndTail()
   // Encode a basic message to set a valve to 0%, without headers or trailers.
   command.hc1 = 13;
   command.hc2 = 73;
-#ifdef FHT8V_ADR_USED
+#ifdef OTV0P2BASE_FHT8V_ADR_USED
   address = 0;
 #endif
   memset(buf, 0xff, sizeof(buf));
@@ -994,7 +994,7 @@ static void testFHTEncodingHeadAndTail()
  // Encode a basic message to set a valve to 0%, with header but without trailer.
   command.hc1 = 13;
   command.hc2 = 73;
-#ifdef FHT8V_ADR_USED
+#ifdef OTV0P2BASE_FHT8V_ADR_USED
   address = 0;
 #endif
   memset(buf, 0xff, sizeof(buf));
@@ -1018,7 +1018,7 @@ static void testFHTEncodingHeadAndTail()
   // Encode a basic message to set a valve to 0%, with header and trailer.
   command.hc1 = 13;
   command.hc2 = 73;
-#ifdef FHT8V_ADR_USED
+#ifdef OTV0P2BASE_FHT8V_ADR_USED
   address = 0;
 #endif
   FullStatsMessageCore_t fullStats;
@@ -1084,7 +1084,7 @@ static void testFHTEncodingHeadAndTail()
   // This one was apparently impossible to TX or RX...
   command.hc1 = 65;
   command.hc2 = 74;
-#ifdef FHT8V_ADR_USED
+#ifdef OTV0P2BASE_FHT8V_ADR_USED
   address = 0;
 #endif
   memset(buf, 0xff, sizeof(buf));

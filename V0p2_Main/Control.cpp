@@ -26,10 +26,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 #include "Control.h"
 
-#include "FHT8V_Wireless_Rad_Valve.h"
+#include "V0p2_Sensors.h"
+#include "V0p2_Actuators.h"
 #include "Power_Management.h"
 #include "RFM22_Radio.h"
-#include "Security.h"
 #include "Serial_IO.h"
 #include "Schedule.h"
 #include "UI_Minimal.h"
@@ -419,7 +419,7 @@ bool ModelledRadValve::isControlledValveReallyOpen() const
   {
   if(isRecalibrating()) { return(false); }
 #ifdef USE_MODULE_FHT8VSIMPLE
-  if(!FHT8VisControlledValveOpen()) { return(false); }
+  if(!FHT8V.isControlledValveReallyOpen()) { return(false); }
 #endif
   return(value >= getMinPercentOpen());
   }
@@ -430,7 +430,7 @@ bool ModelledRadValve::isControlledValveReallyOpen() const
 bool ModelledRadValve::isRecalibrating() const
   {
 #ifdef USE_MODULE_FHT8VSIMPLE
-  if(!isSyncedWithFHT8V()) { return(true); }
+  if(!FHT8V.isInNormalRunState()) { return(true); }
 #endif
   return(false);
   }
@@ -440,7 +440,7 @@ bool ModelledRadValve::isRecalibrating() const
 void ModelledRadValve::recalibrate()
   {
 #ifdef USE_MODULE_FHT8VSIMPLE
-  FHT8VSyncAndTXReset(); // Should this be decalcinate instead/also/first?
+  FHT8V.resyncWithValve(); // Should this be decalcinate instead/also/first?
 #endif
   }
 
@@ -967,7 +967,7 @@ void bareStatsTX(const bool allowDoubleTX, const bool doBinary, const bool RFM23
     // Gather core stats.
     FullStatsMessageCore_t content;
     populateCoreStats(&content);
-    const uint8_t *msg1 = encodeFullStatsMessageCore(buf + STATS_MSG_START_OFFSET, sizeof(buf) - STATS_MSG_START_OFFSET, getStatsTXLevel(), false, &content);
+    const uint8_t *msg1 = encodeFullStatsMessageCore(buf + STATS_MSG_START_OFFSET, sizeof(buf) - STATS_MSG_START_OFFSET, OTV0P2BASE::getStatsTXLevel(), false, &content);
     if(NULL == msg1)
       {
 #if 0 // FIXME should this be testing something?
@@ -1035,8 +1035,8 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 
     // If not doing a doubleTX then consider sometimes suppressing the change-flag clearing for this send
     // to reduce the chance of important changes being missed by the receiver.
-    wrote = ss1.writeJSON(bptr, sizeof(buf) - (bptr-buf), getStatsTXLevel(), maximise); //!allowDoubleTX && randRNG8NextBoolean());
-//    wrote = ss1.writeJSON(bptr, sizeof(buf) - (bptr-buf), false , maximise); // false means lowest level of security FOR DEBUG
+//    wrote = ss1.writeJSON(bptr, sizeof(buf) - (bptr-buf), getStatsTXLevel(), maximise); //!allowDoubleTX && randRNG8NextBoolean());
+    wrote = ss1.writeJSON(bptr, sizeof(buf) - (bptr-buf), false , maximise); // false means lowest level of security FOR DEBUG
 
     if(0 == wrote)
       {
@@ -1088,6 +1088,21 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
 #endif // defined(ALLOW_STATS_TX)
 
 
+
+
+
+
+// Wire components directly together, eg for occupancy sensing.
+static void wireComponentsTogether()
+  {
+#ifdef USE_MODULE_FHT8VSIMPLE
+  // Set up radio.
+  FHT8V.setRadio(&RFM23B);
+  // Load EEPROM house codes into primary FHT8V instance at start.
+  FHT8VLoadHCFromEEPROM();
+#endif // USE_MODULE_FHT8VSIMPLE
+  // TODO
+  }
 
 
 
@@ -1217,11 +1232,18 @@ void setupOpenTRV()
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("ints set up");
 #endif
 
+  // Wire components directly together, eg for occupancy sensing.
+  wireComponentsTogether();
+
+  // Initialise sensors with stats info where needed.
+  updateSensorsFromStats();
+
 #ifdef ALLOW_STATS_TX
   // Do early 'wake-up' stats transmission if possible
-  // when everything else is set up and ready.
+  // when everything else is set up and ready
+  // including all set-up and inter-wiring of sensors/actuators.
   // Attempt to maximise chance of reception with a double TX.
-  // Assume not in hub mode yet.
+  // Assume not in hub mode (yet).
   // Send all possible formats, binary first (assumed complete in one message).
   bareStatsTX(true, true);
   // Send JSON stats repeatedly (typically once or twice)
@@ -1247,9 +1269,6 @@ void setupOpenTRV()
   // Signal some sort of life on waking up...
   ValveDirect.wiggle();
 #endif
-
-  // Initialise sensors with stats info where needed.
-  updateSensorsFromStats();
 
 #if !defined(DONT_RANDOMISE_MINUTE_CYCLE)
   // Start local counters in randomised positions to help avoid inter-unit collisions,
@@ -1579,7 +1598,7 @@ void loopOpenTRV()
     //    Longish period without any RX listening may allow hub unit to cool and get better sample of local temperature if marginal.
     // Aim to listen in one stretch for greater than full FHT8V TX cycle of ~2m to avoid missing a call for heat.
     // MUST listen for all of final 2 mins of boiler-on to avoid missing TX (without forcing boiler over-run).
-    else if((boilerCountdownTicks <= ((MAX_FHT8V_TX_CYCLE_HS+1)/(2 * OTV0P2BASE::MAIN_TICK_S))) && // Don't miss a final TX that would keep the boiler on...
+    else if((boilerCountdownTicks <= ((FHT8VRadValveBase::MAX_FHT8V_TX_CYCLE_HS+1)/(2 * OTV0P2BASE::MAIN_TICK_S))) && // Don't miss a final TX that would keep the boiler on...
        (boilerCountdownTicks != 0)) // But don't force unit to listen/RX all the time if no recent call for heat.
       { needsToEavesdrop = true; }
     else if((!heardIt) &&
@@ -1790,7 +1809,7 @@ void loopOpenTRV()
   #endif
   // FHT8V is highest priority and runs first.
   // ---------- HALF SECOND #0 -----------
-  bool useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_First(doubleTXForFTH8V); // Time for extra TX before UI.
+  bool useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8V.FHT8VPollSyncAndTX_First(doubleTXForFTH8V); // Time for extra TX before UI.
 //  if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@0"); }
 #endif
 
@@ -1840,7 +1859,7 @@ void loopOpenTRV()
     {
     // Time for extra TX before other actions, but don't bother if minimising power in frost mode.
     // ---------- HALF SECOND #1 -----------
-    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V);
+    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8V.FHT8VPollSyncAndTX_Next(doubleTXForFTH8V);
 //    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@1"); }
     // Handling the FHT8V may have taken a little while, so process I/O a little.
     handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O.
@@ -2003,7 +2022,7 @@ void loopOpenTRV()
       if(NominalRadValve.isValveMoved() ||
          (minute1From4AfterSensors && enableTrailingStatsPayload()))
         {
-        if(localFHT8VTRVEnabled()) { FHT8VCreateValveSetCmdFrame(NominalRadValve); }
+        if(localFHT8VTRVEnabled()) { FHT8V.set(NominalRadValve.get() /*, NominalRadValve.isCallingForHeat() */); }
         }
 #endif
 
@@ -2058,7 +2077,7 @@ void loopOpenTRV()
   if(useExtraFHT8VTXSlots)
     {
     // ---------- HALF SECOND #2 -----------
-    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V);
+    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8V.FHT8VPollSyncAndTX_Next(doubleTXForFTH8V);
 //    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@2"); }
     // Handling the FHT8V may have taken a little while, so process I/O a little.
     handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O.
@@ -2072,7 +2091,7 @@ void loopOpenTRV()
   if(useExtraFHT8VTXSlots)
     {
     // ---------- HALF SECOND #3 -----------
-    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V);
+    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8V.FHT8VPollSyncAndTX_Next(doubleTXForFTH8V);
 //    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@3"); }
     // Handling the FHT8V may have taken a little while, so process I/O a little.
     handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O.
@@ -2152,7 +2171,7 @@ void loopOpenTRV()
 //    DEBUG_SERIAL_PRINTLN();
 #endif
 #if defined(USE_MODULE_FHT8VSIMPLE)
-    FHT8VSyncAndTXReset(); // Assume that sync with valve may have been lost, so re-sync.
+    FHT8V.resyncWithValve(); // Assume that sync with valve may have been lost, so re-sync.
 #endif
     TIME_LSD = OTV0P2BASE::getSecondsLT(); // Prepare to sleep until start of next full minor cycle.
     }

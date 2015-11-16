@@ -190,7 +190,7 @@ class AmbientLight : public OTV0P2BASE::SimpleTSUint8Sensor
     // Not thread-safe nor usable within ISRs (Interrupt Service Routines).
     virtual uint8_t read();
 
-    // Preferred poll interval (in seconds); should bve called at constant rate, usually 1/60s.
+    // Preferred poll interval (in seconds); should be called at constant rate, usually 1/60s.
     virtual uint8_t preferredPollInterval_s() const { return(60); }
 
     // Returns a suggested (JSON) tag/field/key name including units of get(); NULL means no recommended tag.

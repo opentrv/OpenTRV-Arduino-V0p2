@@ -51,12 +51,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include <OTRadValve.h>
 
 #include "V0p2_Sensors.h"
-
+#include "V0p2_Actuators.h"
 #include "Control.h"
-#include "FHT8V_Wireless_Rad_Valve.h"
 #include "Power_Management.h"
 #include "RFM22_Radio.h"
-#include "Security.h"
 #include "Serial_IO.h"
 #include "UI_Minimal.h"
 
@@ -184,7 +182,7 @@ void serialPrintlnBuildVersion()
   OTV0P2BASE::serialPrintlnAndFlush();
   }
 
-static const OTRadioLink::OTRadioChannelConfig RFMConfig(FHT8V_RFM22_Reg_Values, true, true, true);
+static const OTRadioLink::OTRadioChannelConfig RFMConfig(OTRadValve::FHT8VRadValveBase::FHT8V_RFM23_Reg_Values, true, true, true);
 
 #if defined(ALLOW_CC1_SUPPORT_RELAY)
 // For a CC1 relay, ignore everything except FTp2_CC1PollAndCmd messages.
@@ -566,18 +564,6 @@ void setup()
 #if defined(ENABLE_NOMINAL_RAD_VALVE)
   // Update targets, output to TRV and boiler, etc, to be sensible before main loop starts.
   NominalRadValve.read();
-#endif
-#if defined(USE_MODULE_FHT8VSIMPLE)
-#if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("Creating initial FHT8V frame...");
-#endif
-  // Unconditionally ensure that a valid FHT8V TRV command frame has been computed and stored
-  // in case this unit is actually controlling a local valve.
-#if defined(ENABLE_NOMINAL_RAD_VALVE)
-  FHT8VCreateValveSetCmdFrame(NominalRadValve);
-#else
-  FHT8VCreateValveSetCmdFrame(0);
-#endif
 #endif
 #endif
 
