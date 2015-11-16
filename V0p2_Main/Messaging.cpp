@@ -933,9 +933,9 @@ static void decodeAndHandleFTp2_FS20_native(Print *p, const bool secure, const u
 #endif
 
   // Decode the FS20/FHT8V command into the buffer/struct.
-  FHT8VRadValveBase::fht8v_msg_t command;
+  OTRadValve::FHT8VRadValveBase::fht8v_msg_t command;
   uint8_t const *lastByte = msg+msglen-1;
-  uint8_t const *trailer = FHT8VRadValveBase::FHT8VDecodeBitStream(msg, lastByte, &command);
+  uint8_t const *trailer = OTRadValve::FHT8VRadValveBase::FHT8VDecodeBitStream(msg, lastByte, &command);
 
 #if defined(ENABLE_BOILER_HUB)
   // Potentially accept as call for heat only if command is 0x26 (38).
@@ -973,7 +973,7 @@ p->print("FS20 msg HC "); p->print(command.hc1); p->print(' '); p->println(comma
     if(MESSAGING_FULL_STATS_FLAGS_HEADER_MSBS == (trailer[0] & MESSAGING_FULL_STATS_FLAGS_HEADER_MASK))
       {
       FullStatsMessageCore_t content;
-      const uint8_t *tail = decodeFullStatsMessageCore(trailer, lastByte-trailer+1, stTXalwaysAll, false, &content);
+      const uint8_t *tail = decodeFullStatsMessageCore(trailer, lastByte-trailer+1, OTV0P2BASE::stTXalwaysAll, false, &content);
       if(NULL != tail)
         {
         // Received trailing stats frame!
@@ -1180,7 +1180,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats IDx");
       // May be binary stats frame, so attempt to decode...
       FullStatsMessageCore_t content;
       // (TODO: should reject non-secure messages when expecting secure ones...)
-      const uint8_t *tail = decodeFullStatsMessageCore(msg, msglen, stTXalwaysAll, false, &content);
+      const uint8_t *tail = decodeFullStatsMessageCore(msg, msglen, OTV0P2BASE::stTXalwaysAll, false, &content);
       if(NULL != tail)
          {
          if(content.containsID)

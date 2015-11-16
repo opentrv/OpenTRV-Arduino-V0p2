@@ -168,6 +168,7 @@ uint8_t AmbientLight::read()
 
   // Adjust room-lit flag, with hysteresis.
   // Should be able to detect dark when darkThreshold is zero and newValue is zero.
+  bool becameLight = false; // Set true on going from dark to light in one step.
   if(newValue <= darkThreshold)
     {
     isRoomLitFlag = false;
@@ -177,6 +178,7 @@ uint8_t AmbientLight::read()
     }
   else if(newValue > lightThreshold)
     {
+    if(!isRoomLitFlag) { becameLight = true; }
     isRoomLitFlag = true;
     // If light enough to set isRoomLitFlag true then reset darkTicks counter.
     darkTicks = 0;
@@ -198,7 +200,7 @@ uint8_t AmbientLight::read()
       // Ignore trigger at start-up.
       if(!ignoredFirst) { ignoredFirst = true; }
 //    else if((!isRoomLitFlag) && ((rawValue>>2) < lowerThreshold)) { Occupancy.markAsPossiblyOccupied(); }
-      else if(isUp && ((absDiff >> 2) >= upDelta))
+      else if(becameLight || (isUp && ((absDiff >> 2) >= upDelta)))
         {
         Occupancy.markAsPossiblyOccupied();
 #if 0 && defined(DEBUG)
@@ -281,12 +283,12 @@ void AmbientLight::_recomputeThresholds()
 
   // Compute thresholds to fit within the observed sensed value range.
   // TODO: a more sophisticated notion of distribution of values within range may be needed.
-  // Take upwards delta indicative of lights on, and hysteresis, as ~12.5%.
-  upDelta = max((recentMax - recentMin) >> 3, ABS_MIN_AMBLIGHT_HYST_UINT8);
+  // Take upwards delta indicative of lights on, and hysteresis, as ~25%.
+  upDelta = max((recentMax - recentMin) >> 2, ABS_MIN_AMBLIGHT_HYST_UINT8);
   // Provide some noise elbow-room above the observed minimum.
   // Set the hysteresis values to be the same as the upDelta.
-  darkThreshold = (uint8_t) min(254, recentMin + 1 + upDelta);
-  lightThreshold = (uint8_t) min(254, darkThreshold + upDelta);
+  darkThreshold = (uint8_t) min(254, recentMin+1 + (upDelta>>1));
+  lightThreshold = (uint8_t) min(recentMax-1, darkThreshold + upDelta);
 
   // All seems OK.
   unusable = false;
