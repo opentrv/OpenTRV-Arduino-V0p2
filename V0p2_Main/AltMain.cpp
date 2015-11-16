@@ -82,6 +82,22 @@ void POSTalt()
 #ifdef USE_OTNULLRADIO
 // FIXME
 #elif defined USE_MODULE_SIM900
+//The config for the GSM depends on if you want it stored in flash or EEPROM.
+//
+//The SIM900LinkConfig object is located at the start of POSTalt() in AltMain.cpp and takes a set of void pointers to a \0 terminated string, either stored in flash or EEPROM.
+//
+//For EEPROM:
+//- Set the first field of SIM900LinkConfig to true.
+//- The configs are stored as \0 terminated strings starting at 0x300.
+//- You can program the eeprom using ./OTRadioLink/dev/utils/sim900eepromWrite.ino
+//
+//For Flash:
+//- Set the first field of SIM900LinkConfig to false.
+//- Make a set of \0 terminated strings with the PROGMEM attribute holding the config details.
+//- set the void pointers to point to the strings (or just cast the strings and pass them to SIM900LinkConfig directly)
+//
+//Looking back at the code, it could do with more comments and a better way of defining the EEPROM addresses..
+
 // EEPROM locations
   static const void *SIM900_PIN      = (void *)0x0300; // TODO confirm this address
   static const void *SIM900_APN      = (void *)0x0305;
