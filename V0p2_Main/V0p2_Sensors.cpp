@@ -168,7 +168,6 @@ uint8_t AmbientLight::read()
 
   // Adjust room-lit flag, with hysteresis.
   // Should be able to detect dark when darkThreshold is zero and newValue is zero.
-  bool becameLight = false; // Set true on going from dark to light in one step.
   if(newValue <= darkThreshold)
     {
     isRoomLitFlag = false;
@@ -178,7 +177,6 @@ uint8_t AmbientLight::read()
     }
   else if(newValue > lightThreshold)
     {
-    if(!isRoomLitFlag) { becameLight = true; }
     isRoomLitFlag = true;
     // If light enough to set isRoomLitFlag true then reset darkTicks counter.
     darkTicks = 0;
@@ -199,8 +197,7 @@ uint8_t AmbientLight::read()
       // Treat a sharp brightening as a possible/weak indication of occupancy, eg light flicked on.
       // Ignore trigger at start-up.
       if(!ignoredFirst) { ignoredFirst = true; }
-//    else if((!isRoomLitFlag) && ((rawValue>>2) < lowerThreshold)) { Occupancy.markAsPossiblyOccupied(); }
-      else if(becameLight || (isUp && ((absDiff >> 2) >= upDelta)))
+      else if(isUp && ((absDiff >> 2) >= upDelta))
         {
         Occupancy.markAsPossiblyOccupied();
 #if 0 && defined(DEBUG)
