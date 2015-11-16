@@ -10915,7 +10915,7 @@ Source: www.kingbright.com</description>
 <instance part="GND1" gate="1" x="63.5" y="177.8"/>
 <instance part="X1" gate="-1" x="20.32" y="190.5"/>
 <instance part="X1" gate="-2" x="20.32" y="185.42"/>
-<instance part="GND2" gate="1" x="241.3" y="160.02"/>
+<instance part="GND2" gate="1" x="248.92" y="160.02"/>
 <instance part="R1" gate="G$1" x="129.54" y="200.66" rot="R90"/>
 <instance part="R3" gate="G$1" x="129.54" y="226.06" rot="R270"/>
 <instance part="C5" gate="G$1" x="121.92" y="200.66" rot="R180"/>
@@ -10974,7 +10974,7 @@ Source: www.kingbright.com</description>
 <instance part="R16" gate="G$1" x="185.42" y="119.38" rot="R270"/>
 <instance part="R5" gate="G$1" x="200.66" y="73.66" rot="R180"/>
 <instance part="R17" gate="G$1" x="182.88" y="101.6" rot="R270"/>
-<instance part="DQ/D2" gate="1" x="134.62" y="223.52" rot="R180"/>
+<instance part="DQ/D2" gate="1" x="144.78" y="223.52" rot="R180"/>
 </instances>
 <busses>
 </busses>
@@ -11157,7 +11157,7 @@ Source: www.kingbright.com</description>
 <segment>
 <pinref part="U2" gate="G$1" pin="GND1"/>
 <pinref part="GND2" gate="1" pin="GND"/>
-<wire x1="241.3" y1="162.56" x2="228.6" y2="162.56" width="0.1524" layer="91"/>
+<wire x1="248.92" y1="162.56" x2="228.6" y2="162.56" width="0.1524" layer="91"/>
 <pinref part="U2" gate="G$1" pin="GND2"/>
 <wire x1="228.6" y1="162.56" x2="228.6" y2="160.02" width="0.1524" layer="91"/>
 <junction x="228.6" y="162.56"/>
@@ -11316,6 +11316,11 @@ Source: www.kingbright.com</description>
 <pinref part="U1" gate="G$1" pin="IN"/>
 <pinref part="U1" gate="G$1" pin="/SHDN"/>
 <label x="45.72" y="228.6" size="1.778" layer="95" rot="R180"/>
+<wire x1="17.78" y1="251.46" x2="30.48" y2="251.46" width="0.1524" layer="91"/>
+<wire x1="30.48" y1="251.46" x2="30.48" y2="241.3" width="0.1524" layer="91"/>
+<wire x1="30.48" y1="241.3" x2="38.1" y2="241.3" width="0.1524" layer="91"/>
+<pinref part="USBPOWER" gate="G$1" pin="VCC"/>
+<junction x="38.1" y="241.3"/>
 </segment>
 <segment>
 <wire x1="53.34" y1="190.5" x2="63.5" y2="190.5" width="0.1524" layer="91"/>
@@ -11590,12 +11595,13 @@ Source: www.kingbright.com</description>
 </net>
 <net name="D2" class="0">
 <segment>
-<wire x1="132.08" y1="231.14" x2="132.08" y2="223.52" width="0.1524" layer="91"/>
-<label x="134.62" y="231.14" size="1.778" layer="95"/>
+<wire x1="142.24" y1="233.68" x2="142.24" y2="223.52" width="0.1524" layer="91"/>
+<label x="142.24" y="231.14" size="1.778" layer="95"/>
 <pinref part="I2C_EXT" gate="A" pin="14"/>
 <pinref part="DQ/D2" gate="1" pin="P"/>
+<wire x1="142.24" y1="223.52" x2="132.08" y2="223.52" width="0.1524" layer="91"/>
 <wire x1="132.08" y1="223.52" x2="132.08" y2="218.44" width="0.1524" layer="91"/>
-<junction x="132.08" y="223.52"/>
+<junction x="142.24" y="223.52"/>
 </segment>
 <segment>
 <pinref part="R9" gate="G$1" pin="1"/>
@@ -11622,14 +11628,6 @@ Source: www.kingbright.com</description>
 <pinref part="IC2" gate="1" pin="DIGITAL_8"/>
 <wire x1="205.74" y1="73.66" x2="226.06" y2="73.66" width="0.1524" layer="91"/>
 <pinref part="R5" gate="G$1" pin="1"/>
-</segment>
-</net>
-<net name="5V1" class="1">
-<segment>
-<wire x1="17.78" y1="251.46" x2="33.02" y2="251.46" width="0.1524" layer="91"/>
-<wire x1="33.02" y1="251.46" x2="33.02" y2="241.3" width="0.1524" layer="91"/>
-<wire x1="33.02" y1="241.3" x2="38.1" y2="241.3" width="0.1524" layer="91"/>
-<pinref part="USBPOWER" gate="G$1" pin="VCC"/>
 </segment>
 </net>
 <net name="LDR" class="0">
@@ -11783,7 +11781,27 @@ Source: www.kingbright.com</description>
 </sheet>
 </sheets>
 <errors>
+<approved hash="104,1,78.74,241.3,U1,+3.3V,VCC,,,"/>
+<approved hash="204,1,228.6,165.1,U2,VIN,,,,"/>
+<approved hash="104,1,228.6,162.56,U2,GND1,GND,,,"/>
+<approved hash="104,1,228.6,160.02,U2,GND2,GND,,,"/>
+<approved hash="104,1,228.6,157.48,U2,5V,5VGSM,,,"/>
+<approved hash="104,1,228.6,154.94,U2,3V,VCC,,,"/>
+<approved hash="104,1,165.1,63.5,IC2,GND1,GND,,,"/>
+<approved hash="104,1,165.1,91.44,IC2,VCC1,VCC,,,"/>
+<approved hash="104,1,165.1,68.58,IC2,GND/ANALOG,GND,,,"/>
+<approved hash="104,1,165.1,60.96,IC2,GND2,GND,,,"/>
+<approved hash="104,1,165.1,88.9,IC2,VCC2,VCC,,,"/>
 <approved hash="113,1,194.206,131.976,FRAME1,,,,,"/>
+<approved hash="113,1,203.522,236.474,LED,,,,,"/>
+<approved hash="113,1,22.1297,190.5,X1,,,,,"/>
+<approved hash="113,1,123.059,214.588,I2C_EXT,,,,,"/>
+<approved hash="113,1,358.462,128.27,LED1,,,,,"/>
+<approved hash="113,1,350.52,121.076,T1,,,,,"/>
+<approved hash="113,1,278.088,108.081,JP2,,,,,"/>
+<approved hash="113,1,358.14,99.623,REL1,,,,,"/>
+<approved hash="113,1,344.71,96.52,X3,,,,,"/>
+<approved hash="113,1,132.257,222.347,DQ/D2,,,,,"/>
 </errors>
 </schematic>
 </drawing>
