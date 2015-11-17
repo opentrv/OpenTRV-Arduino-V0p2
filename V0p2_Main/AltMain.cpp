@@ -107,7 +107,10 @@ void POSTalt()
 //- Make a set of \0 terminated strings with the PROGMEM attribute holding the config details.
 //- set the void pointers to point to the strings (or just cast the strings and pass them to SIM900LinkConfig directly)
 //
-//Looking back at the code, it could do with more comments and a better way of defining the EEPROM addresses..
+//  const char myPin[] PROGMEM = "0000";
+//  const char myAPN[] PROGMEM = "m2mkit.telefonica.com"; // FIXME check this
+//  const char myUDPAddr[] PROGMEM = "46.101.52.242";
+//  const char myUDPPort[] PROGMEM = "9999";
 
   // Flash locations
 	const char myPin[] PROGMEM = "0000";
@@ -466,24 +469,7 @@ void loopAlt()
 //  DEBUG_SERIAL_PRINTLN();
 
 
-//  // Command-Line Interface (CLI) polling.
-//  // If a reasonable chunk of the minor cycle remains after all other work is done
-//  // AND the CLI is / should be active OR a status line has just been output
-//  // then poll/prompt the user for input
-//  // using a timeout which should safely avoid overrun, ie missing the next basic tick,
-//  // and which should also allow some energy-saving sleep.
-//#if 1 // && defined(SUPPORT_CLI)
-//  if(true)
-//    {
-//    const uint8_t sct = getSubCycleTime();
-//    const uint8_t listenTime = max(GSCT_MAX/16, CLI_POLL_MIN_SCT);
-//    if(sct < (GSCT_MAX - 2*listenTime))
-//      // Don't listen beyond the last 16th of the cycle,
-//      // or a minimal time if only prodding for interaction with automated front-end,
-//      // as listening for UART RX uses lots of power.
-//      { pollCLI(OTV0P2BASE::randRNG8NextBoolean() ? (GSCT_MAX-listenTime) : (sct+CLI_POLL_MIN_SCT), 0 == TIME_LSD); }
-//    }
-//#endif
+
 
 
 
