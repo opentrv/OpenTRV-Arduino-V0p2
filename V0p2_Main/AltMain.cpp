@@ -107,7 +107,10 @@ void POSTalt()
 //- Make a set of \0 terminated strings with the PROGMEM attribute holding the config details.
 //- set the void pointers to point to the strings (or just cast the strings and pass them to SIM900LinkConfig directly)
 //
-//Looking back at the code, it could do with more comments and a better way of defining the EEPROM addresses..
+//  const char myPin[] PROGMEM = "0000";
+//  const char myAPN[] PROGMEM = "m2mkit.telefonica.com"; // FIXME check this
+//  const char myUDPAddr[] PROGMEM = "46.101.52.242";
+//  const char myUDPPort[] PROGMEM = "9999";
 
   // Flash locations
 	const char myPin[] PROGMEM = "0000";
