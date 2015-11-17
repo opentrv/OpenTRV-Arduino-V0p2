@@ -43,6 +43,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 #include "UI_Minimal.h"
 #include "V0p2_Sensors.h"
 
+#include <avr/pgmspace.h> // for radio config
 
 
 
@@ -108,17 +109,22 @@ void POSTalt()
 //
 //Looking back at the code, it could do with more comments and a better way of defining the EEPROM addresses..
 
-// EEPROM locations
-  static const void *SIM900_PIN      = (void *)0x0300; // TODO confirm this address
-  static const void *SIM900_APN      = (void *)0x0305;
-  static const void *SIM900_UDP_ADDR = (void *)0x031B;
-  static const void *SIM900_UDP_PORT = (void *)0x0329;
-  static const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config {
-                                                  true, 
-                                                  SIM900_PIN,
-                                                  SIM900_APN,
-                                                  SIM900_UDP_ADDR,
-                                                  SIM900_UDP_PORT };
+  // Flash locations
+	const char myPin[] PROGMEM = "0000";
+	const char myAPN[] PROGMEM = "m2mkit.telefonica.com"; // FIXME check this
+	const char myUDPAddr[] PROGMEM = "46.101.52.242";
+	const char myUDPPort[] PROGMEM = "9999";
+
+    static const void *SIM900_PIN      = (void *)myPin; // TODO confirm this address
+    static const void *SIM900_APN      = (void *)myAPN;
+    static const void *SIM900_UDP_ADDR = (void *)myUDPAddr;
+    static const void *SIM900_UDP_PORT = (void *)myUDPPort;
+    static const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config {
+                                                    false,
+                                                    SIM900_PIN,
+                                                    SIM900_APN,
+                                                    SIM900_UDP_ADDR,
+                                                    SIM900_UDP_PORT };
   static const OTRadioLink::OTRadioChannelConfig RFMConfig(&SIM900Config, true, true, true);
 #elif defined(USE_MODULE_RFM22RADIOSIMPLE)
   static const OTRadioLink::OTRadioChannelConfig RFMConfig(FHT8V_RFM22_Reg_Values, true, true, true);
