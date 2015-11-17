@@ -43,6 +43,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 #include "UI_Minimal.h"
 #include "V0p2_Sensors.h"
 
+#include <avr/pgmspace.h> // for radio config
 
 
 
@@ -109,10 +110,10 @@ void POSTalt()
 //Looking back at the code, it could do with more comments and a better way of defining the EEPROM addresses..
 
   // Flash locations
-	static const char myPin[5] PROGRMEM = "0000";
-	static const char myAPN[] PROGMEM = "m2mkit.telefonica.com"; // FIXME check this
-	static const char myUDPAddr[] PROGMEM = "46.101.52.242";
-	static const char myUDPPort[5] PROGMEM = "9999";
+	const char myPin[] PROGMEM = "0000";
+	const char myAPN[] PROGMEM = "m2mkit.telefonica.com"; // FIXME check this
+	const char myUDPAddr[] PROGMEM = "46.101.52.242";
+	const char myUDPPort[] PROGMEM = "9999";
 
     static const void *SIM900_PIN      = (void *)myPin; // TODO confirm this address
     static const void *SIM900_APN      = (void *)myAPN;

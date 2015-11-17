@@ -36,6 +36,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 #include <util/crc16.h>
 #include <avr/eeprom.h>
+#include <avr/pgmspace.h> // for radio config
 
 #include "V0p2_Main.h"
 
