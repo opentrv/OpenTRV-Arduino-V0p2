@@ -38,7 +38,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // Production configs.
 //#define CONFIG_Trial2013Winter_Round1 // REV1 default config.
 //#define CONFIG_Trial2013Winter_Round1_LVBHSH // REV1: local valve control, boiler hub, stats hub & TX.
-#define CONFIG_Trial2013Winter_Round1_NOHUB // REV1 as TX-only leaf node.
+//#define CONFIG_Trial2013Winter_Round1_NOHUB // REV1 as TX-only leaf node.
 //#define CONFIG_Trial2013Winter_Round1_BOILERHUB // REV1 as plain boiler node.
 //#define CONFIG_Trial2013Winter_Round2 // REV2 cut4 default config.
 //#define CONFIG_Trial2013Winter_Round2_LVBHSH // REV2 cut4: local valve control, boiler hub, stats hub & TX.
@@ -47,7 +47,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as plain boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
 //#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
-//#define CONFIG_DORM1 // REV7 / DORM1 Winter 2014/2015 all-in-one valve unit.
+#define CONFIG_DORM1 // REV7 / DORM1 Winter 2014/2015 all-in-one valve unit.
 //#define CONFIG_DORM1_BOILER // REV8 / DORM1 Winter 2014/2015 boiler-control unit.
 
 
@@ -120,9 +120,11 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: detect occupancy based on relative humidity, if available.
 #define OCCUPANCY_DETECT_FROM_RH
 // IF DEFINED: detect occupancy based on voice detection, if available. This undefines learn button 2
-//#define OCCUPANCY_DETECT_FROM_VOICE
+#undef OCCUPANCY_DETECT_FROM_VOICE
 // IF DEFINED: this unit supports CLI over the USB/serial connection, eg for run-time reconfig.
 #define SUPPORT_CLI
+// IF DEFINED: there is run-time help available for the CLI.
+#define ENABLE_CLI_HELP
 // IF DEFINED: enable a full OpenTRV CLI.
 #define ENABLE_FULL_OT_CLI
 // IF DEFINED: enable a full OpenTRV UI with normal LEDs etc.
@@ -331,6 +333,16 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #undef ALLOW_BINARY_STATS_TX
 // IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
 #define LOCAL_TRV
+// IF DEFINED: this unit supports CLI over the USB/serial connection, eg for run-time reconfig.
+#define SUPPORT_CLI
+// IF DEFINED: there is run-time help available for the CLI.
+#undef ENABLE_CLI_HELP
+// IF DEFINED: enable a full OpenTRV CLI.
+#define ENABLE_FULL_OT_CLI
+// IF DEFINED: enable a full OpenTRV UI with normal LEDs etc.
+#define ENABLE_FULL_OT_UI
+// IF DEFINED: enable and extended CLI with a longer input buffer for example.
+#undef ENABLE_EXTENDED_CLI
 // IF DEFINED: enable use of second UI LED if available.
 #undef ENABLE_UI_LED_2_IF_AVAILABLE
 // Use common settings.
