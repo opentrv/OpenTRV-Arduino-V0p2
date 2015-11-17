@@ -46,6 +46,13 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 #include <avr/pgmspace.h> // for radio config
 
 
+  // FOR FLASH.
+  static const char myPin[] PROGMEM = "0000";
+  static const char myAPN[] PROGMEM = "m2mkit.telefonica.com";
+  static const char myUDPAddr[] PROGMEM = "46.101.52.242";
+  static const char myUDPPort[] PROGMEM = "9999";
+
+
 
 // Link in support for alternate Power On Self-Test and main loop if required.
 #if defined(ALT_MAIN_LOOP)
@@ -91,7 +98,7 @@ void POSTalt()
 //- Set the first field of SIM900LinkConfig to true.
 //- The configs are stored as \0 terminated strings starting at 0x300.
 //- You can program the eeprom using ./OTRadioLink/dev/utils/sim900eepromWrite.ino
-//
+
 //  static const void *SIM900_PIN      = (void *)0x0300; // TODO confirm this address
 //  static const void *SIM900_APN      = (void *)0x0305;
 //  static const void *SIM900_UDP_ADDR = (void *)0x031B;
@@ -109,17 +116,16 @@ void POSTalt()
 //
 //  const char myPin[] PROGMEM = "0000";
 //  const char myAPN[] PROGMEM = "m2mkit.telefonica.com"; // FIXME check this
-//  const char myUDPAddr[] PROGMEM = "79.135.97.67"; // "46.101.52.242";
+//  const char myUDPAddr[] PROGMEM = "46.101.52.242";
 //  const char myUDPPort[] PROGMEM = "9999";
+//  static const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config {
+//                                                  false,
+//                                                  SIM900_PIN,
+//                                                  SIM900_APN,
+//                                                  SIM900_UDP_ADDR,
+//                                                  SIM900_UDP_PORT };
 
-
-  // Flash locations
-        const char myPin[] PROGMEM = "0000";
-        const char myAPN[] PROGMEM = "m2mkit.telefonica.com"; // FIXME check this
-        const char myUDPAddr[] PROGMEM = "79.135.97.67"; // "46.101.52.242";
-        const char myUDPPort[] PROGMEM = "9999";
-
-    static const void *SIM900_PIN      = (void *)myPin; // TODO confirm this address
+    static const void *SIM900_PIN      = (void *)myPin;
     static const void *SIM900_APN      = (void *)myAPN;
     static const void *SIM900_UDP_ADDR = (void *)myUDPAddr;
     static const void *SIM900_UDP_PORT = (void *)myUDPPort;
