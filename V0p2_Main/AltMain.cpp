@@ -34,13 +34,14 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 #include <OTProtocolCC.h>
 #endif
 #include <OTV0p2Base.h>
+#include <OTRadioLink.h>
 
 #include "Control.h"
 #include "Power_Management.h"
 #include "RFM22_Radio.h"
 #include "Serial_IO.h"
 #include "UI_Minimal.h"
-
+#include "V0p2_Sensors.h"
 
 
 
@@ -81,17 +82,32 @@ void POSTalt()
 #ifdef USE_OTNULLRADIO
 // FIXME
 #elif defined USE_MODULE_SIM900
-//// EEPROM locations
+//The config for the GSM depends on if you want it stored in flash or EEPROM.
+//
+//The SIM900LinkConfig object is located at the start of POSTalt() in AltMain.cpp and takes a set of void pointers to a \0 terminated string, either stored in flash or EEPROM.
+//
+//For EEPROM:
+//- Set the first field of SIM900LinkConfig to true.
+//- The configs are stored as \0 terminated strings starting at 0x300.
+//- You can program the eeprom using ./OTRadioLink/dev/utils/sim900eepromWrite.ino
+//
 //  static const void *SIM900_PIN      = (void *)0x0300; // TODO confirm this address
 //  static const void *SIM900_APN      = (void *)0x0305;
 //  static const void *SIM900_UDP_ADDR = (void *)0x031B;
 //  static const void *SIM900_UDP_PORT = (void *)0x0329;
 //  static const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config {
-//                                                  true,
+//                                                  true, 
 //                                                  SIM900_PIN,
 //                                                  SIM900_APN,
 //                                                  SIM900_UDP_ADDR,
 //                                                  SIM900_UDP_PORT };
+//For Flash:
+//- Set the first field of SIM900LinkConfig to false.
+//- Make a set of \0 terminated strings with the PROGMEM attribute holding the config details.
+//- set the void pointers to point to the strings (or just cast the strings and pass them to SIM900LinkConfig directly)
+//
+//Looking back at the code, it could do with more comments and a better way of defining the EEPROM addresses..
+
   // Flash locations
 	static const char myPin[5] PROGRMEM = "0000";
 	static const char myAPN[] PROGMEM = "m2mkit.telefonica.com"; // FIXME check this
@@ -351,7 +367,7 @@ void loopAlt()
           // if this is controlling a local FHT8V on which the binary stats can be piggybacked.
           // Ie, if doesn't have a local TRV then it must send binary some of the time.
           // Any recently-changed stats value is a hint that a strong transmission might be a good idea.
-          const bool doBinary = !localFHT8VTRVEnabled() && OTV0P2BASE::randRNG8NextBoolean();
+          const bool doBinary = false; // !localFHT8VTRVEnabled() && OTV0P2BASE::randRNG8NextBoolean();
           bareStatsTX(false, false, false);
         }
       }

@@ -67,7 +67,7 @@ void panic()
   {
 #ifdef USE_MODULE_RFM22RADIOSIMPLE
   // Reset radio and go into low-power mode.
-   RFM23B.panicShutdown();
+  RFM23B.panicShutdown();
 #endif
   // Power down almost everything else...
   minimisePowerWithoutSleep();
