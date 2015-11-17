@@ -68,7 +68,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_REV9_STATS // REV9 as stats node, cut 2 of the board.
 //#define CONFIG_REV9_cut1 // REV9 as CC1 relay, cut1 of board.
 //#define CONFIG_DE_TESTLAB // Deniz's test environment.
-//#define CONFIG_REV10_BUSSHELTER // REV2 based trial for TFL bus shelters
+#define CONFIG_REV10_BUSSHELTER // REV2 based trial for TFL bus shelters
 //#define CONFIG_BAREBONES // No peripherals / on breadboard.
 
 
