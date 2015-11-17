@@ -684,6 +684,7 @@ void serialStatusReport()
   if(neededWaking) { OTV0P2BASE::powerDownSerial(); }
   }
 
+#ifdef ENABLE_CLI_HELP
 #define SYNTAX_COL_WIDTH 10 // Width of 'syntax' column; strictly positive.
 // Estimated maximum overhead in sub-cycle ticks to print full line and all trailing CLI summary info.
 #define CLI_PRINT_OH_SCT ((uint8_t)(OTV0P2BASE::GSCT_MAX/4))
@@ -709,11 +710,15 @@ static void printCLILine(const uint8_t deadline, const char syntax, __FlashStrin
   for(int8_t padding = SYNTAX_COL_WIDTH - 1; --padding >= 0; ) { Serial_print_space(); }
   Serial.println(description);
   }
+#endif // ENABLE_CLI_HELP
 
 // Dump some brief CLI usage instructions to serial TX, which must be up and running.
 // If this gets too big there is a risk of overrunning and missing the next tick...
 static void dumpCLIUsage(const uint8_t stopBy)
   {
+#ifndef ENABLE_CLI_HELP
+  Serial.println(F("No CLI help")); // Minimal placeholder.
+#else
   const uint8_t deadline = fnmin((uint8_t)(stopBy - fnmin(stopBy,CLI_PRINT_OH_SCT)), STOP_PRINTING_DESCRIPTION_AT);
   Serial.println();
   //Serial.println(F("CLI usage:"));
@@ -762,8 +767,10 @@ static void dumpCLIUsage(const uint8_t stopBy)
   printCLILine(deadline, 'X', F("Xmit security level; 0 always, 255 never"));
   printCLILine(deadline, 'Z', F("Zap stats"));
 #endif // ENABLE_FULL_OT_CLI
+#endif // ENABLE_CLI_HELP
   Serial.println();
   }
+
 
 // Prints warning to serial (that must be up and running) that invalid (CLI) input has been ignored.
 // Probably should not be inlined, to avoid creating duplicate strings in Flash.
