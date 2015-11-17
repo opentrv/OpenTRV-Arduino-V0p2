@@ -362,7 +362,8 @@ void loopAlt()
     // Regular transmission of stats if NOT driving a local valve (else stats can be piggybacked onto that).
     if(TIME_LSD ==  10)
       {
-        if((OTV0P2BASE::getMinutesLT() & 0x3) == 0) {
+//      if((OTV0P2BASE::getMinutesLT() & 0x3) == 0) // Send once every 4 minutes.
+          {
           // Send it!
           // Try for double TX for extra robustness unless:
           //   * this is a speculative 'extra' TX
@@ -374,7 +375,7 @@ void loopAlt()
           // Any recently-changed stats value is a hint that a strong transmission might be a good idea.
           const bool doBinary = false; // !localFHT8VTRVEnabled() && OTV0P2BASE::randRNG8NextBoolean();
           bareStatsTX(false, false, false);
-        }
+          }
       }
 #endif
 
