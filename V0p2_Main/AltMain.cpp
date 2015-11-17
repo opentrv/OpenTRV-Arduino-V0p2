@@ -81,17 +81,33 @@ void POSTalt()
 #ifdef USE_OTNULLRADIO
 // FIXME
 #elif defined USE_MODULE_SIM900
-// EEPROM locations
-  static const void *SIM900_PIN      = (void *)0x0300; // TODO confirm this address
-  static const void *SIM900_APN      = (void *)0x0305;
-  static const void *SIM900_UDP_ADDR = (void *)0x031B;
-  static const void *SIM900_UDP_PORT = (void *)0x0329;
-  static const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config {
-                                                  true, 
-                                                  SIM900_PIN,
-                                                  SIM900_APN,
-                                                  SIM900_UDP_ADDR,
-                                                  SIM900_UDP_PORT };
+//// EEPROM locations
+//  static const void *SIM900_PIN      = (void *)0x0300; // TODO confirm this address
+//  static const void *SIM900_APN      = (void *)0x0305;
+//  static const void *SIM900_UDP_ADDR = (void *)0x031B;
+//  static const void *SIM900_UDP_PORT = (void *)0x0329;
+//  static const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config {
+//                                                  true,
+//                                                  SIM900_PIN,
+//                                                  SIM900_APN,
+//                                                  SIM900_UDP_ADDR,
+//                                                  SIM900_UDP_PORT };
+  // Flash locations
+	static const char myPin[5] PROGRMEM = "0000";
+	static const char myAPN[] PROGMEM = "m2mkit.telefonica.com"; // FIXME check this
+	static const char myUDPAddr[] PROGMEM = "46.101.52.242";
+	static const char myUDPPort[5] PROGMEM = "9999";
+
+    static const void *SIM900_PIN      = (void *)myPin; // TODO confirm this address
+    static const void *SIM900_APN      = (void *)myAPN;
+    static const void *SIM900_UDP_ADDR = (void *)myUDPAddr;
+    static const void *SIM900_UDP_PORT = (void *)myUDPPort;
+    static const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config {
+                                                    false,
+                                                    SIM900_PIN,
+                                                    SIM900_APN,
+                                                    SIM900_UDP_ADDR,
+                                                    SIM900_UDP_PORT };
   static const OTRadioLink::OTRadioChannelConfig RFMConfig(&SIM900Config, true, true, true);
 #elif defined(USE_MODULE_RFM22RADIOSIMPLE)
   static const OTRadioLink::OTRadioChannelConfig RFMConfig(FHT8V_RFM22_Reg_Values, true, true, true);
