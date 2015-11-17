@@ -91,6 +91,16 @@ void POSTalt()
 //- The configs are stored as \0 terminated strings starting at 0x300.
 //- You can program the eeprom using ./OTRadioLink/dev/utils/sim900eepromWrite.ino
 //
+//  static const void *SIM900_PIN      = (void *)0x0300; // TODO confirm this address
+//  static const void *SIM900_APN      = (void *)0x0305;
+//  static const void *SIM900_UDP_ADDR = (void *)0x031B;
+//  static const void *SIM900_UDP_PORT = (void *)0x0329;
+//  static const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config {
+//                                                  true, 
+//                                                  SIM900_PIN,
+//                                                  SIM900_APN,
+//                                                  SIM900_UDP_ADDR,
+//                                                  SIM900_UDP_PORT };
 //For Flash:
 //- Set the first field of SIM900LinkConfig to false.
 //- Make a set of \0 terminated strings with the PROGMEM attribute holding the config details.
