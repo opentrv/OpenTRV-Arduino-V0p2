@@ -23,6 +23,6 @@ DONE 20151110: run rules in DRU+CAM/PMServicesStd.dru
 
 DONE 20151110: please confirm xtal layout as per REV2/REV4 to avoid start-up problems as in REV7/REV8.
 
-20151110: please generate and check in Gerbers in sub-dir as we have done with eg REV2.
+*20151110: please generate and check in Gerbers in sub-dir as we have done with eg REV2.
 
-20151110: please save and check in final copy of BOM as BOM.xlsx or BOM.csv.
+*20151110: please save and check in final copy of BOM as BOM.xlsx or BOM.csv.
