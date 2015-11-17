@@ -109,7 +109,7 @@ void POSTalt()
 //
 //  const char myPin[] PROGMEM = "0000";
 //  const char myAPN[] PROGMEM = "m2mkit.telefonica.com"; // FIXME check this
-//  const char myUDPAddr[] PROGMEM = "46.101.52.242";
+//  const char myUDPAddr[] PROGMEM = "79.135.97.66"; // "46.101.52.242";
 //  const char myUDPPort[] PROGMEM = "9999";
 
   // Flash locations
