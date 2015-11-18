@@ -27,8 +27,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 #include "V0p2_Main.h"
 #include "V0p2_Board_IO_Config.h" // I/O pin allocation: include ahead of I/O module headers.
+#include "V0p2_Sensors.h"
+#include "V0p2_Actuators.h"
 #include "Control.h"
-#include "FHT8V_Wireless_Rad_Valve.h"
 #include "Messaging.h"
 #include "Power_Management.h"
 #include "RFM22_Radio.h"
@@ -78,7 +79,7 @@ void markUIControlUsed()
   Occupancy.markAsOccupied(); // Thread-safe.
   }
 
-// True if a manual UI control has been very recently (seconds to minutes ago) operated.
+// True if a manual UI control has been very recently (minutes ago) operated.
 // The user may still be interacting with the control and the UI etc should probably be extra responsive.
 // Thread-safe.
 bool veryRecentUIControlUse() { return(uiTimeoutM >= (UI_DEFAULT_RECENT_USE_TIMEOUT_M - UI_DEFAULT_VERY_RECENT_USE_TIMEOUT_M)); }
@@ -143,7 +144,7 @@ bool tickUI(const uint_fast8_t sec)
   const bool reportedRecently = false;
 #endif
 // Drive second UI LED if available.
-#if defined(LED_UI2_ON)
+#if defined(LED_UI2_EXISTS) && defined(ENABLE_UI_LED_2_IF_AVAILABLE)
   // Flash 2nd UI LED very briefly every 'tick' while activity has recently been reported.
   if(reportedRecently) { LED_UI2_ON(); veryTinyPause(); }
   LED_UI2_OFF(); // Generally force 2nd LED off.
@@ -244,8 +245,8 @@ bool tickUI(const uint_fast8_t sec)
     // Keep reporting UI status if the user has just touched the unit in some way.
     // (Or if occupancy/activity was just detected, to give the use some feedback for indirectly interacting.)
     const bool justTouched = statusChange || veryRecentUIControlUse()
-#ifdef OCCUPANCY_SUPPORT
-        || Occupancy.reportedRecently()
+#if 0 && defined(OCCUPANCY_SUPPORT)
+        || Occupancy.reportedRecently() // TODO-587: waking the UI to indicate occupancy detected can be annoying.
 #endif
         ;
 
@@ -565,8 +566,8 @@ void serialStatusReport()
 
 #ifdef ENABLE_FULL_OT_CLI
   // *X* section: Xmit security level shown only if some non-essential TX potentially allowed.
-  const stats_TX_level xmitLevel = getStatsTXLevel();
-  if(xmitLevel < stTXnever) { Serial.print(F(";X")); Serial.print(xmitLevel); }
+  const OTV0P2BASE::stats_TX_level xmitLevel = OTV0P2BASE::getStatsTXLevel();
+  if(xmitLevel < OTV0P2BASE::stTXnever) { Serial.print(F(";X")); Serial.print(xmitLevel); }
 #endif
 
 #ifdef ENABLE_FULL_OT_CLI
@@ -639,7 +640,7 @@ void serialStatusReport()
     Serial.print(hc1);
     Serial_print_space();
     Serial.print(FHT8VGetHC2());
-    if(!isSyncedWithFHT8V())
+    if(!FHT8V.isInNormalRunState())
       {
       Serial_print_space();
       Serial.print('s'); // Indicate syncing with trailing lower-case 's' in field...
@@ -683,6 +684,7 @@ void serialStatusReport()
   if(neededWaking) { OTV0P2BASE::powerDownSerial(); }
   }
 
+#ifdef ENABLE_CLI_HELP
 #define SYNTAX_COL_WIDTH 10 // Width of 'syntax' column; strictly positive.
 // Estimated maximum overhead in sub-cycle ticks to print full line and all trailing CLI summary info.
 #define CLI_PRINT_OH_SCT ((uint8_t)(OTV0P2BASE::GSCT_MAX/4))
@@ -708,11 +710,15 @@ static void printCLILine(const uint8_t deadline, const char syntax, __FlashStrin
   for(int8_t padding = SYNTAX_COL_WIDTH - 1; --padding >= 0; ) { Serial_print_space(); }
   Serial.println(description);
   }
+#endif // ENABLE_CLI_HELP
 
 // Dump some brief CLI usage instructions to serial TX, which must be up and running.
 // If this gets too big there is a risk of overrunning and missing the next tick...
 static void dumpCLIUsage(const uint8_t stopBy)
   {
+#ifndef ENABLE_CLI_HELP
+  Serial.println(F("No CLI help")); // Minimal placeholder.
+#else
   const uint8_t deadline = fnmin((uint8_t)(stopBy - fnmin(stopBy,CLI_PRINT_OH_SCT)), STOP_PRINTING_DESCRIPTION_AT);
   Serial.println();
   //Serial.println(F("CLI usage:"));
@@ -761,8 +767,10 @@ static void dumpCLIUsage(const uint8_t stopBy)
   printCLILine(deadline, 'X', F("Xmit security level; 0 always, 255 never"));
   printCLILine(deadline, 'Z', F("Zap stats"));
 #endif // ENABLE_FULL_OT_CLI
+#endif // ENABLE_CLI_HELP
   Serial.println();
   }
+
 
 // Prints warning to serial (that must be up and running) that invalid (CLI) input has been ignored.
 // Probably should not be inlined, to avoid creating duplicate strings in Flash.
@@ -955,16 +963,15 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
             if((hc1 < 0) || (hc1 > 99) || (hc2 < 0) || (hc2 > 99)) { InvalidIgnored(); }
             else
               {
+              // Set house codes and force resync if changed.
               FHT8VSetHC1(hc1);
               FHT8VSetHC2(hc2);
-              FHT8VSyncAndTXReset(); // Force re-sync with FHT8V valve.
               }
             }
           }
         else if(n < 2) // Just 'H', possibly with trailing whitespace.
           {
-          FHT8VClearHC();
-          FHT8VSyncAndTXReset(); // Force into unsynchronized state.
+          FHT8VClearHC(); // Clear codes and force into unsynchronized state.
           }
         break;
         }

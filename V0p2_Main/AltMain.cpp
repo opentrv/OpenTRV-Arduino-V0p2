@@ -22,6 +22,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
   Also for rapid prototyping without dead-weight of OpenTRV intricate timing, etc!
  */
 
+
 #include "V0p2_Main.h"
 
 #include "V0p2_Generic_Config.h"
@@ -32,16 +33,23 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 #ifdef ALLOW_CC1_SUPPORT
 #include <OTProtocolCC.h>
 #endif
+#include <OTV0p2Base.h>
+#include <OTRadioLink.h>
 
 #include "Control.h"
-#include "FHT8V_Wireless_Rad_Valve.h"
 #include "Power_Management.h"
 #include "RFM22_Radio.h"
-#include "Security.h"
 #include "Serial_IO.h"
 #include "UI_Minimal.h"
-#include "OTV0p2Base.h"
+#include "V0p2_Sensors.h"
 
+#include <avr/pgmspace.h> // for radio config
+
+
+  static const char myPin[] PROGMEM = "0000";
+  static const char myAPN[] PROGMEM = "m2mkit.telefonica.com"; // FIXME check this
+  static const char myUDPAddr[] PROGMEM = "46.101.52.242";
+  static const char myUDPPort[] PROGMEM = "9999";
 
 
 
@@ -78,20 +86,49 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 // Can abort with panic() if need be.
 void POSTalt()
   {
-	//IOSetup();
+#ifdef USE_OTNULLRADIO
+// FIXME
+#elif defined USE_MODULE_SIM900
+//The config for the GSM depends on if you want it stored in flash or EEPROM.
+//
+//The SIM900LinkConfig object is located at the start of POSTalt() in AltMain.cpp and takes a set of void pointers to a \0 terminated string, either stored in flash or EEPROM.
+//
+//For EEPROM:
+//- Set the first field of SIM900LinkConfig to true.
+//- The configs are stored as \0 terminated strings starting at 0x300.
+//- You can program the eeprom using ./OTRadioLink/dev/utils/sim900eepromWrite.ino
 
-#ifdef USE_MODULE_SIM900
-// EEPROM locations
-  static const void *SIM900_PIN      = (void *)0x0300; // TODO confirm this address
-  static const void *SIM900_APN      = (void *)0x0305;
-  static const void *SIM900_UDP_ADDR = (void *)0x031B;
-  static const void *SIM900_UDP_PORT = (void *)0x0329;
-  static const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config {
-                                                  true, 
-                                                  SIM900_PIN,
-                                                  SIM900_APN,
-                                                  SIM900_UDP_ADDR,
-                                                  SIM900_UDP_PORT };
+//  static const void *SIM900_PIN      = (void *)0x0300; // TODO confirm this address
+//  static const void *SIM900_APN      = (void *)0x0305;
+//  static const void *SIM900_UDP_ADDR = (void *)0x031B;
+//  static const void *SIM900_UDP_PORT = (void *)0x0329;
+//  static const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config {
+//                                                  true, 
+//                                                  SIM900_PIN,
+//                                                  SIM900_APN,
+//                                                  SIM900_UDP_ADDR,
+//                                                  SIM900_UDP_PORT };
+//For Flash:
+//- Set the first field of SIM900LinkConfig to false.
+//- Make a set of \0 terminated strings with the PROGMEM attribute holding the config details.
+//- set the void pointers to point to the strings (or just cast the strings and pass them to SIM900LinkConfig directly)
+//
+//  const char myPin[] PROGMEM = "0000";
+//  const char myAPN[] PROGMEM = "m2mkit.telefonica.com"; // FIXME check this
+//  const char myUDPAddr[] PROGMEM = "46.101.52.242";
+//  const char myUDPPort[] PROGMEM = "9999";
+//
+//
+    static const void *SIM900_PIN      = (void *)myPin;
+    static const void *SIM900_APN      = (void *)myAPN;
+    static const void *SIM900_UDP_ADDR = (void *)myUDPAddr;
+    static const void *SIM900_UDP_PORT = (void *)myUDPPort;
+    static const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config {
+                                                    false,
+                                                    SIM900_PIN,
+                                                    SIM900_APN,
+                                                    SIM900_UDP_ADDR,
+                                                    SIM900_UDP_PORT };
   static const OTRadioLink::OTRadioChannelConfig RFMConfig(&SIM900Config, true, true, true);
 #elif defined(USE_MODULE_RFM22RADIOSIMPLE)
   static const OTRadioLink::OTRadioChannelConfig RFMConfig(FHT8V_RFM22_Reg_Values, true, true, true);
@@ -101,7 +138,7 @@ void POSTalt()
   // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
   RFM23B.preinit(NULL);
   // Check that the radio is correctly connected; panic if not...
-  if(!RFM23B.configure(1, &RFMConfig) || !RFM23B.begin()) { panic(); }
+  if(!RFM23B.configure(1, &RFMConfig) || !RFM23B.begin()) { panic(F("PANIC!")); }
 #endif
 
 
@@ -155,7 +192,12 @@ void POSTalt()
     }
 
 
-  RFM23B.listen(true);
+//  pinMode(3, INPUT);	// FIXME Move to where they are set automatically
+//  digitalWrite(3, LOW);
+
+  RFM23B.queueToSend((uint8_t *)"start", 6);
+  bareStatsTX(false, false, false);
+
   }
 
 
@@ -205,12 +247,27 @@ static volatile uint8_t prevStatePD;
 // Interrupt service routine for PD I/O port transition changes (including RX).
 ISR(PCINT2_vect)
   {
-	//  const uint8_t pins = PIND;
-	//  const uint8_t changes = pins ^ prevStatePD;
-	//  prevStatePD = pins;
-	//
-	// ...
 
+	  const uint8_t pins = PIND;
+	  const uint8_t changes = pins ^ prevStatePD;
+	  prevStatePD = pins;
+
+#if defined(ENABLE_VOICE_SENSOR)
+	  	//  // Voice detection is a falling edge.
+	  	//  // Handler routine not required/expected to 'clear' this interrupt.
+	  	//  // FIXME: ensure that Voice.handleInterruptSimple() is inlineable to minimise ISR prologue/epilogue time and space.
+	  	  // Voice detection is a RISING edge.
+	  	  if((changes & VOICE_INT_MASK) && (pins & VOICE_INT_MASK)) {
+	  	    Voice.handleInterruptSimple();
+	  	  }
+
+	  	  // If an interrupt arrived from no other masked source then wake the CLI.
+	  	  // The will ensure that the CLI is active, eg from RX activity,
+	  	  // eg it is possible to wake the CLI subsystem with an extra CR or LF.
+	  	  // It is OK to trigger this from other things such as button presses.
+	  	  // FIXME: ensure that resetCLIActiveTimer() is inlineable to minimise ISR prologue/epilogue time and space.
+	  	  if(!(changes & MASK_PD & ~1)) { resetCLIActiveTimer(); }
+#endif // ENABLE_VOICE_SENSOR
   }
 #endif // defined(MASK_PD) && (MASK_PD != 0)
 
@@ -301,7 +358,6 @@ void loopAlt()
 ////  if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@0"); }
 //#endif
 
-<<<<<<< HEAD
 #ifdef ALLOW_STATS_TX
     // Regular transmission of stats if NOT driving a local valve (else stats can be piggybacked onto that).
     if(TIME_LSD ==  10)
@@ -316,8 +372,8 @@ void loopAlt()
           // if this is controlling a local FHT8V on which the binary stats can be piggybacked.
           // Ie, if doesn't have a local TRV then it must send binary some of the time.
           // Any recently-changed stats value is a hint that a strong transmission might be a good idea.
-          const bool doBinary = !localFHT8VTRVEnabled() && OTV0P2BASE::randRNG8NextBoolean();
-          bareStatsTX(false, false);
+          const bool doBinary = false; // !localFHT8VTRVEnabled() && OTV0P2BASE::randRNG8NextBoolean();
+          bareStatsTX(false, false, false);
         }
       }
 #endif
@@ -334,12 +390,9 @@ void loopAlt()
 #if defined(ENABLE_VOICE_SENSOR)
       // read voice sensor
       if (TIME_LSD == 46) {
-        Voice.read();
+      	Voice.read();
       }
 #endif // (ENABLE_VOICE_SENSOR)
-=======
-
->>>>>>> branch 'master' of https://github.com/Denzo77/OpenTRV
 
 //#if defined(USE_MODULE_FHT8VSIMPLE)
 //  if(useExtraFHT8VTXSlots)
@@ -417,24 +470,7 @@ void loopAlt()
 //  DEBUG_SERIAL_PRINTLN();
 
 
-//  // Command-Line Interface (CLI) polling.
-//  // If a reasonable chunk of the minor cycle remains after all other work is done
-//  // AND the CLI is / should be active OR a status line has just been output
-//  // then poll/prompt the user for input
-//  // using a timeout which should safely avoid overrun, ie missing the next basic tick,
-//  // and which should also allow some energy-saving sleep.
-//#if 1 // && defined(SUPPORT_CLI)
-//  if(true)
-//    {
-//    const uint8_t sct = getSubCycleTime();
-//    const uint8_t listenTime = max(GSCT_MAX/16, CLI_POLL_MIN_SCT);
-//    if(sct < (GSCT_MAX - 2*listenTime))
-//      // Don't listen beyond the last 16th of the cycle,
-//      // or a minimal time if only prodding for interaction with automated front-end,
-//      // as listening for UART RX uses lots of power.
-//      { pollCLI(OTV0P2BASE::randRNG8NextBoolean() ? (GSCT_MAX-listenTime) : (sct+CLI_POLL_MIN_SCT), 0 == TIME_LSD); }
-//    }
-//#endif
+
 
 
 

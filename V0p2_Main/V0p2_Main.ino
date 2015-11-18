@@ -36,6 +36,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 #include <util/crc16.h>
 #include <avr/eeprom.h>
+#include <avr/pgmspace.h> // for radio config
 
 #include "V0p2_Main.h"
 
@@ -51,12 +52,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include <OTRadValve.h>
 
 #include "V0p2_Sensors.h"
-
+#include "V0p2_Actuators.h"
 #include "Control.h"
-#include "FHT8V_Wireless_Rad_Valve.h"
 #include "Power_Management.h"
 #include "RFM22_Radio.h"
-#include "Security.h"
 #include "Serial_IO.h"
 #include "UI_Minimal.h"
 
@@ -69,7 +68,7 @@ void panic()
   {
 #ifdef USE_MODULE_RFM22RADIOSIMPLE
   // Reset radio and go into low-power mode.
-   RFM23B.panicShutdown();
+  RFM23B.panicShutdown();
 #endif
   // Power down almost everything else...
   minimisePowerWithoutSleep();
@@ -184,7 +183,7 @@ void serialPrintlnBuildVersion()
   OTV0P2BASE::serialPrintlnAndFlush();
   }
 
-static const OTRadioLink::OTRadioChannelConfig RFMConfig(FHT8V_RFM22_Reg_Values, true, true, true);
+static const OTRadioLink::OTRadioChannelConfig RFMConfig(OTRadValve::FHT8VRadValveBase::FHT8V_RFM23_Reg_Values, true, true, true);
 
 #if defined(ALLOW_CC1_SUPPORT_RELAY)
 // For a CC1 relay, ignore everything except FTp2_CC1PollAndCmd messages.
@@ -366,12 +365,12 @@ void setup()
 #endif
 
 #if !defined(MIN_ENERGY_BOOT)
-#ifdef LED_UI2_EXISTS
+#if defined(LED_UI2_EXISTS) && defined(ENABLE_UI_LED_2_IF_AVAILABLE)
   LED_UI2_ON();
 #endif
   OTV0P2BASE::serialPrintAndFlush(F("\r\nOpenTRV: ")); // Leading CRLF to clear leading junk, eg from bootloader.
     serialPrintlnBuildVersion();
-#ifdef LED_UI2_EXISTS
+#if defined(LED_UI2_EXISTS) && defined(ENABLE_UI_LED_2_IF_AVAILABLE)
   OTV0P2BASE::nap(WDTO_120MS); // Sleep to let UI2 LED be seen.
   LED_UI2_OFF();
 #endif
@@ -566,18 +565,6 @@ void setup()
 #if defined(ENABLE_NOMINAL_RAD_VALVE)
   // Update targets, output to TRV and boiler, etc, to be sensible before main loop starts.
   NominalRadValve.read();
-#endif
-#if defined(USE_MODULE_FHT8VSIMPLE)
-#if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("Creating initial FHT8V frame...");
-#endif
-  // Unconditionally ensure that a valid FHT8V TRV command frame has been computed and stored
-  // in case this unit is actually controlling a local valve.
-#if defined(ENABLE_NOMINAL_RAD_VALVE)
-  FHT8VCreateValveSetCmdFrame(NominalRadValve);
-#else
-  FHT8VCreateValveSetCmdFrame(0);
-#endif
 #endif
 #endif
 

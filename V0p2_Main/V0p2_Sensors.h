@@ -159,8 +159,12 @@ class AmbientLight : public OTV0P2BASE::SimpleTSUint8Sensor
     // Maximum eg from recent stats, to allow auto adjustment to dark; ~0/0xff means no max available.
     uint8_t recentMax;
 
-    // Lower and upper hysteresis thresholds (on [0,254] scale) for detecting dark/light.
-    uint8_t lowerThreshold, upperThreshold;
+    // Upwards delta used for "lights switched on" occupancy hint; strictly positive.
+    uint8_t upDelta;
+
+    // Dark/light thresholds (on [0,254] scale) incorporating hysteresis.
+    // So lightThreshold is strictly greater than darkThreshold.
+    uint8_t darkThreshold, lightThreshold;
 
     // Set true if ambient light sensor may be unusable or unreliable.
     // This will be where (for example) there are historic values
@@ -171,21 +175,22 @@ class AmbientLight : public OTV0P2BASE::SimpleTSUint8Sensor
     bool ignoredFirst;
 
     // Recomputes thresholds and 'unusable' based on current state.
-    void recomputeThresholds();
+    // WARNING: called from (static) constructors so do not attempt (eg) use of Serial.
+    void _recomputeThresholds();
 
   public:
     AmbientLight()
       : isRoomLitFlag(false), darkTicks(0),
         recentMin(~0), recentMax(~0),
         unusable(false), ignoredFirst(false)
-      { recomputeThresholds(); }
+      { _recomputeThresholds(); }
 
     // Force a read/poll of the ambient light level and return the value sensed [0,255] (dark to light).
     // Potentially expensive/slow.
     // Not thread-safe nor usable within ISRs (Interrupt Service Routines).
     virtual uint8_t read();
 
-    // Preferred poll interval (in seconds); should bve called at constant rate, usually 1/60s.
+    // Preferred poll interval (in seconds); should be called at constant rate, usually 1/60s.
     virtual uint8_t preferredPollInterval_s() const { return(60); }
 
     // Returns a suggested (JSON) tag/field/key name including units of get(); NULL means no recommended tag.
@@ -250,6 +255,16 @@ class AmbientLight
 extern AmbientLight AmbLight;
 
 
+
+#ifndef OMIT_MODULE_LDROCCUPANCYDETECTION
+// Update with rolling stats to adapt to sensors and local environment.       
+inline void updateAmbLightFromStats()
+  {
+  AmbLight.setMin(OTV0P2BASE::getMinByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR), OTV0P2BASE::getMinByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED));
+  AmbLight.setMax(OTV0P2BASE::getMaxByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR), OTV0P2BASE::getMaxByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED));
+  }
+
+#endif
 
 
 
