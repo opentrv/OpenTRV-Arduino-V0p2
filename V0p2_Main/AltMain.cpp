@@ -149,7 +149,7 @@ void POSTalt()
   DEBUG_SERIAL_PRINT(heat);
   DEBUG_SERIAL_PRINTLN();
 #endif
-//  const int light = AmbLight.read();
+  const int light = AmbLight.read();
 //#if 0 && defined(DEBUG)
 //  DEBUG_SERIAL_PRINT_FLASHSTRING("light: ");
 //  DEBUG_SERIAL_PRINT(light);
@@ -362,7 +362,7 @@ void loopAlt()
     // Regular transmission of stats if NOT driving a local valve (else stats can be piggybacked onto that).
     if(TIME_LSD ==  10)
       {
-        if((OTV0P2BASE::getMinutesLT() & 0x3) == 0) {
+//        if((OTV0P2BASE::getMinutesLT() & 0x3) == 0) {
           // Send it!
           // Try for double TX for extra robustness unless:
           //   * this is a speculative 'extra' TX
@@ -374,23 +374,30 @@ void loopAlt()
           // Any recently-changed stats value is a hint that a strong transmission might be a good idea.
           const bool doBinary = false; // !localFHT8VTRVEnabled() && OTV0P2BASE::randRNG8NextBoolean();
           bareStatsTX(false, false, false);
-        }
+//        }
       }
 #endif
 
 
+    if (TIME_LSD == 30) {	// FIXME
+    	AmbLight.read();
+    }
+
 
 #if defined(SENSOR_DS18B20_ENABLE)
       // read temp
-      if (TIME_LSD == 18) {
+      if (TIME_LSD == 40) {
           TemperatureC16.read();
       }
 #endif // SENSOR_DS18B20_ENABLE
 
 #if defined(ENABLE_VOICE_SENSOR)
       // read voice sensor
-      if (TIME_LSD == 46) {
-      	Voice.read();
+      if (TIME_LSD == 50) {
+      	  uint8_t isVoice = Voice.read();
+          OTV0P2BASE::serialPrintAndFlush(F("V: "));
+          OTV0P2BASE::serialPrintAndFlush(isVoice);
+          OTV0P2BASE::serialPrintlnAndFlush();
       }
 #endif // (ENABLE_VOICE_SENSOR)
 

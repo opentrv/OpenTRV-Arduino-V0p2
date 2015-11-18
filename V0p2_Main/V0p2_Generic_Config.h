@@ -810,6 +810,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // Define voice module
 #define ENABLE_VOICE_SENSOR
 #define OCCUPANCY_DETECT_FROM_VOICE
+#define ENABLE_VOICE_STATS
 // Enable use of OneWire devices.
 #define SUPPORT_ONEWIRE
 // Enable use of DS18B20 temp sensor.

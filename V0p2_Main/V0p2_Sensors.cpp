@@ -984,7 +984,7 @@ TemperaturePot TempPot;
 // If count meets or exceeds this threshold in one poll period then
 // the room is deemed to be occupied.
 // Strictly positive.
-#define VOICE_DETECTION_THRESHOLD 2
+#define VOICE_DETECTION_THRESHOLD 1
 
 // Force a read/poll of the voice level and return the value sensed.
 // Thread-safe and ISR-safe.
