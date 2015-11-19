@@ -1,0 +1,48 @@
+{
+   "packages":[
+      {
+         "name":"opentrv",
+         "maintainer":"OpenTRV",
+         "websiteURL":"http://opentrv.org.uk/",
+         "email":"opentrv@opentrv.org.uk",
+         "help":{
+            "online":"http://lists.opentrv.org.uk/pipermail/opentrv-dev/"
+         },
+         "platforms":[
+            {
+               "name": "OpenTRV V0p2",
+               "architecture": "avr",
+               "version": "0.0.3",
+               "category": "Arduino",
+               "url": "http://localhost/opentrv/OpenTRV_0.0.3.zip",
+               "archiveFileName": "OpenTRV_0.0.3.zip",
+               "checksum": "SHA-256:0c9d86da723a4b6876aab97ed039efd0d4044fced6aa3f44426e816a4102be91",
+               "size": "1527",
+               "help":{
+                  "online":"http://lists.opentrv.org.uk/pipermail/opentrv-dev/"
+               },
+               "boards": [
+                  {
+                     "name": "OpenTRV V0p2"
+                  }
+               ],
+              "toolsDependencies": [
+                {
+                  "packager": "arduino",
+                  "name": "avr-gcc",
+                  "version": "4.8.1-arduino5"
+                },
+                {
+                  "packager": "arduino",
+                  "name": "avrdude",
+                  "version": "6.0.1-arduino5"
+                }
+              ]
+            }
+         ],
+
+         "tools":[
+         ]
+      }
+   ]
+}
