@@ -932,7 +932,7 @@ bool pollIO(const bool force)
 #ifdef ALLOW_STATS_TX
 #if defined(ALLOW_JSON_OUTPUT)
 // Managed JSON stats.
-static SimpleStatsRotation<9> ss1; // Configured for maximum different stats.
+static SimpleStatsRotation<10> ss1; // Configured for maximum different stats.	// FIXME increased for voice
 #endif // ALLOW_STATS_TX
 // Do bare stats transmission.
 // Output should be filtered for items appropriate
@@ -1022,6 +1022,9 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
     ss1.put("b", (int) isBoilerOn());
 #endif
     ss1.put(AmbLight); // Always send ambient light level (assuming sensor is present).
+#ifdef ENABLE_VOICE_STATS
+    ss1.put(Voice);	// FIXME voice stats
+#endif
 #if !defined(LOCAL_TRV) // Deploying as sensor unit, not TRV controller, so show all sensors and no TRV stuff.
 //    // Only show raw ambient light levels for non-TRV pure-sensor units.
 //    ss1.put(AmbLight);
