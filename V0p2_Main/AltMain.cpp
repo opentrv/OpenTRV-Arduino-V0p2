@@ -254,26 +254,26 @@ static volatile uint8_t prevStatePD;
 ISR(PCINT2_vect)
   {
 
-          const uint8_t pins = PIND;
-          const uint8_t changes = pins ^ prevStatePD;
-          prevStatePD = pins;
+  const uint8_t pins = PIND;
+  const uint8_t changes = pins ^ prevStatePD;
+  prevStatePD = pins;
 
 #if defined(ENABLE_VOICE_SENSOR)
-                  //  // Voice detection is a falling edge.
-                  //  // Handler routine not required/expected to 'clear' this interrupt.
-                  //  // FIXME: ensure that Voice.handleInterruptSimple() is inlineable to minimise ISR prologue/epilogue time and space.
-                    // Voice detection is a RISING edge.
-                    if((changes & VOICE_INT_MASK) && (pins & VOICE_INT_MASK)) {
-                      Voice.handleInterruptSimple();
-                    }
-
-                    // If an interrupt arrived from no other masked source then wake the CLI.
-                    // The will ensure that the CLI is active, eg from RX activity,
-                    // eg it is possible to wake the CLI subsystem with an extra CR or LF.
-                    // It is OK to trigger this from other things such as button presses.
-                    // FIXME: ensure that resetCLIActiveTimer() is inlineable to minimise ISR prologue/epilogue time and space.
-                    if(!(changes & MASK_PD & ~1)) { resetCLIActiveTimer(); }
+  //  // Voice detection is a falling edge.
+  //  // Handler routine not required/expected to 'clear' this interrupt.
+  //  // FIXME: ensure that Voice.handleInterruptSimple() is inlineable to minimise ISR prologue/epilogue time and space.
+    // Voice detection is a RISING edge.
+    if((changes & VOICE_INT_MASK) && (pins & VOICE_INT_MASK)) {
+      Voice.handleInterruptSimple();
+    }
 #endif // ENABLE_VOICE_SENSOR
+
+//    // If an interrupt arrived from no other masked source then wake the CLI.
+//    // The will ensure that the CLI is active, eg from RX activity,
+//    // eg it is possible to wake the CLI subsystem with an extra CR or LF.
+//    // It is OK to trigger this from other things such as button presses.
+//    // FIXME: ensure that resetCLIActiveTimer() is inlineable to minimise ISR prologue/epilogue time and space.
+//    if(!(changes & MASK_PD & ~1)) { resetCLIActiveTimer(); }
   }
 #endif // defined(MASK_PD) && (MASK_PD != 0)
 
