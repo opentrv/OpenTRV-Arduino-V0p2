@@ -68,7 +68,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_REV9_STATS // REV9 as stats node, cut 2 of the board.
 //#define CONFIG_REV9_cut1 // REV9 as CC1 relay, cut1 of board.
 //#define CONFIG_DE_TESTLAB // Deniz's test environment.
-#define CONFIG_REV10_BUSSHELTER // REV2 based trial for TFL bus shelters
+#define CONFIG_REV10_BUSSHELTER // REV10-based stripboard precursor for bus shelters
 //#define CONFIG_BAREBONES // No peripherals / on breadboard.
 
 
@@ -728,43 +728,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 // REV8 + GSM Arduino shield + I2CEXT, see TODO-551
 
-// ------------------------- REV11
-
-// REV4 (ie SHT21 sensor and phototransistor) + PCB antenna + PCB battery back (probably AAA), see TODO-566
-
-// -------------------------
-
-
-#ifdef CONFIG_BH_DHW // DHW on REV1 board.
-// Revision of V0.2 board.
-#define V0p2_REV 1
-// Enable use of OneWire devices.
-#define SUPPORT_ONEWIRE
-// Enable use of DS18B20 temp sensor.
-#define SENSOR_DS18B20_ENABLE
-// Select DHW temperatures by default.
-#define DHW_TEMPERATURES
-// Must minimise water flow.
-#define TRV_SLEW_GLACIAL
-// Set max percentage open: BH reports 30% to be (near) optimal 2015/03; BH requested 20% at 2015/10/15.
-#define TRV_MAX_PC_OPEN 20
-// IF UNDEFINED: this unit cannot act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
-#undef ENABLE_BOILER_HUB
-// IF UNDEFINED: don't allow RX of stats frames (since there is no easy way to plug in a serial connection to relay them!)
-#undef ALLOW_STATS_RX
-// IF DEFINED: allow TX of stats frames.
-#define ALLOW_STATS_TX
-// TODO-264: Find out why IDLE seems to crash some REV1 boards.
-#undef ENABLE_USE_OF_AVR_IDLE_MODE
-// Override schedule on time to simple fixed value of 2h per BH request 2015/10/15.
-#define LEARNED_ON_PERIOD_M 120 // Must be <= 255.
-#define LEARNED_ON_PERIOD_COMFORT_M LEARNED_ON_PERIOD_M
-// Use common settings.
-#define COMMON_SETTINGS
-#endif
-
-// -------------------------
-#ifdef CONFIG_REV10_BUSSHELTER
+#ifdef CONFIG_REV10_BUSSHELTER // REV10-based stripboard precursor for bus shelters
 // use alternative loop
 #define ALT_MAIN_LOOP
 #define V0p2_REV 10
@@ -824,6 +788,44 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define USE_MODULE_FHT8VSIMPLE //Control.cpp:1322:27: error: 'localFHT8VTRVEnabled' was not declared in this scope
 
 #endif // CONFIG_REV10_BUSSHELTER
+
+
+// ------------------------- REV11
+
+// REV4 (ie SHT21 sensor and phototransistor) + PCB antenna + PCB battery back (probably AAA), see TODO-566
+
+// -------------------------
+
+
+#ifdef CONFIG_BH_DHW // DHW on REV1 board.
+// Revision of V0.2 board.
+#define V0p2_REV 1
+// Enable use of OneWire devices.
+#define SUPPORT_ONEWIRE
+// Enable use of DS18B20 temp sensor.
+#define SENSOR_DS18B20_ENABLE
+// Select DHW temperatures by default.
+#define DHW_TEMPERATURES
+// Must minimise water flow.
+#define TRV_SLEW_GLACIAL
+// Set max percentage open: BH reports 30% to be (near) optimal 2015/03; BH requested 20% at 2015/10/15.
+#define TRV_MAX_PC_OPEN 20
+// IF UNDEFINED: this unit cannot act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
+#undef ENABLE_BOILER_HUB
+// IF UNDEFINED: don't allow RX of stats frames (since there is no easy way to plug in a serial connection to relay them!)
+#undef ALLOW_STATS_RX
+// IF DEFINED: allow TX of stats frames.
+#define ALLOW_STATS_TX
+// TODO-264: Find out why IDLE seems to crash some REV1 boards.
+#undef ENABLE_USE_OF_AVR_IDLE_MODE
+// Override schedule on time to simple fixed value of 2h per BH request 2015/10/15.
+#define LEARNED_ON_PERIOD_M 120 // Must be <= 255.
+#define LEARNED_ON_PERIOD_COMFORT_M LEARNED_ON_PERIOD_M
+// Use common settings.
+#define COMMON_SETTINGS
+#endif
+
+// -------------------------
 
 
 
