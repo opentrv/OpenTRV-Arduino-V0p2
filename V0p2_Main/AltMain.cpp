@@ -46,8 +46,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 #include <avr/pgmspace.h> // for radio config
 
 
+  // FOR FLASH.
   static const char myPin[] PROGMEM = "0000";
-  static const char myAPN[] PROGMEM = "m2mkit.telefonica.com"; // FIXME check this
+  static const char myAPN[] PROGMEM = "m2mkit.telefonica.com";
   static const char myUDPAddr[] PROGMEM = "46.101.52.242";
   static const char myUDPPort[] PROGMEM = "9999";
 
@@ -117,8 +118,13 @@ void POSTalt()
 //  const char myAPN[] PROGMEM = "m2mkit.telefonica.com"; // FIXME check this
 //  const char myUDPAddr[] PROGMEM = "46.101.52.242";
 //  const char myUDPPort[] PROGMEM = "9999";
-//
-//
+//  static const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config {
+//                                                  false,
+//                                                  SIM900_PIN,
+//                                                  SIM900_APN,
+//                                                  SIM900_UDP_ADDR,
+//                                                  SIM900_UDP_PORT };
+
     static const void *SIM900_PIN      = (void *)myPin;
     static const void *SIM900_APN      = (void *)myAPN;
     static const void *SIM900_UDP_ADDR = (void *)myUDPAddr;
@@ -149,7 +155,7 @@ void POSTalt()
   DEBUG_SERIAL_PRINT(heat);
   DEBUG_SERIAL_PRINTLN();
 #endif
-//  const int light = AmbLight.read();
+  const int light = AmbLight.read();
 //#if 0 && defined(DEBUG)
 //  DEBUG_SERIAL_PRINT_FLASHSTRING("light: ");
 //  DEBUG_SERIAL_PRINT(light);
@@ -192,7 +198,7 @@ void POSTalt()
     }
 
 
-//  pinMode(3, INPUT);	// FIXME Move to where they are set automatically
+//  pinMode(3, INPUT);        // FIXME Move to where they are set automatically
 //  digitalWrite(3, LOW);
 
   RFM23B.queueToSend((uint8_t *)"start", 6);
@@ -248,26 +254,26 @@ static volatile uint8_t prevStatePD;
 ISR(PCINT2_vect)
   {
 
-	  const uint8_t pins = PIND;
-	  const uint8_t changes = pins ^ prevStatePD;
-	  prevStatePD = pins;
+  const uint8_t pins = PIND;
+  const uint8_t changes = pins ^ prevStatePD;
+  prevStatePD = pins;
 
 #if defined(ENABLE_VOICE_SENSOR)
-	  	//  // Voice detection is a falling edge.
-	  	//  // Handler routine not required/expected to 'clear' this interrupt.
-	  	//  // FIXME: ensure that Voice.handleInterruptSimple() is inlineable to minimise ISR prologue/epilogue time and space.
-	  	  // Voice detection is a RISING edge.
-	  	  if((changes & VOICE_INT_MASK) && (pins & VOICE_INT_MASK)) {
-	  	    Voice.handleInterruptSimple();
-	  	  }
-
-	  	  // If an interrupt arrived from no other masked source then wake the CLI.
-	  	  // The will ensure that the CLI is active, eg from RX activity,
-	  	  // eg it is possible to wake the CLI subsystem with an extra CR or LF.
-	  	  // It is OK to trigger this from other things such as button presses.
-	  	  // FIXME: ensure that resetCLIActiveTimer() is inlineable to minimise ISR prologue/epilogue time and space.
-	  	  if(!(changes & MASK_PD & ~1)) { resetCLIActiveTimer(); }
+  //  // Voice detection is a falling edge.
+  //  // Handler routine not required/expected to 'clear' this interrupt.
+  //  // FIXME: ensure that Voice.handleInterruptSimple() is inlineable to minimise ISR prologue/epilogue time and space.
+    // Voice detection is a RISING edge.
+    if((changes & VOICE_INT_MASK) && (pins & VOICE_INT_MASK)) {
+      Voice.handleInterruptSimple();
+    }
 #endif // ENABLE_VOICE_SENSOR
+
+//    // If an interrupt arrived from no other masked source then wake the CLI.
+//    // The will ensure that the CLI is active, eg from RX activity,
+//    // eg it is possible to wake the CLI subsystem with an extra CR or LF.
+//    // It is OK to trigger this from other things such as button presses.
+//    // FIXME: ensure that resetCLIActiveTimer() is inlineable to minimise ISR prologue/epilogue time and space.
+//    if(!(changes & MASK_PD & ~1)) { resetCLIActiveTimer(); }
   }
 #endif // defined(MASK_PD) && (MASK_PD != 0)
 
@@ -360,9 +366,10 @@ void loopAlt()
 
 #ifdef ALLOW_STATS_TX
     // Regular transmission of stats if NOT driving a local valve (else stats can be piggybacked onto that).
-    if(TIME_LSD ==  10)
+    if(TIME_LSD == 10)
       {
-        if((OTV0P2BASE::getMinutesLT() & 0x3) == 0) {
+//      if((OTV0P2BASE::getMinutesLT() & 0x3) == 0) // Send once every 4 minutes.
+          {
           // Send it!
           // Try for double TX for extra robustness unless:
           //   * this is a speculative 'extra' TX
@@ -374,23 +381,29 @@ void loopAlt()
           // Any recently-changed stats value is a hint that a strong transmission might be a good idea.
           const bool doBinary = false; // !localFHT8VTRVEnabled() && OTV0P2BASE::randRNG8NextBoolean();
           bareStatsTX(false, false, false);
-        }
+          }
       }
 #endif
 
 
+    if (TIME_LSD == 30) {	// FIXME
+        AmbLight.read();
+    }
 
 #if defined(SENSOR_DS18B20_ENABLE)
       // read temp
-      if (TIME_LSD == 18) {
+      if (TIME_LSD == 40) {
           TemperatureC16.read();
       }
 #endif // SENSOR_DS18B20_ENABLE
 
 #if defined(ENABLE_VOICE_SENSOR)
       // read voice sensor
-      if (TIME_LSD == 46) {
-      	Voice.read();
+      if (TIME_LSD == 50) {
+          uint8_t isVoice = Voice.read();
+          OTV0P2BASE::serialPrintAndFlush(F("V: "));
+          OTV0P2BASE::serialPrintAndFlush(isVoice);
+          OTV0P2BASE::serialPrintlnAndFlush();
       }
 #endif // (ENABLE_VOICE_SENSOR)
 

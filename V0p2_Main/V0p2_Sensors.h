@@ -489,7 +489,7 @@ class VoiceDetection : public OTV0P2BASE::SimpleTSUint8Sensor
 
     // Returns a suggested (JSON) tag/field/key name including units of get(); NULL means no recommended tag.
     // The lifetime of the pointed-to text must be at least that of the Sensor instance.
-//    virtual const char *tag() const { return("v"); } // TODO do we want this here?
+    virtual const char *tag() const { return("av"); } // TODO do we want this here?
 
   };
 // Singleton implementation/instance.

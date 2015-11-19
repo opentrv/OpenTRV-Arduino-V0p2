@@ -984,6 +984,7 @@ TemperaturePot TempPot;
 // If count meets or exceeds this threshold in one poll period then
 // the room is deemed to be occupied.
 // Strictly positive.
+// DHD20151119: even now it seems a threshold of >= 2 is needed to avoid false positives.
 #define VOICE_DETECTION_THRESHOLD 2
 
 // Force a read/poll of the voice level and return the value sensed.
@@ -1012,7 +1013,7 @@ bool VoiceDetection::handleInterruptSimple()
       {
       // Act as soon as voice is detected.
       isDetected = true;
-      // Don't regard this as a very srong indication,
+      // Don't regard this as a very strong indication,
       // as it could be a TV or radio on in the room.
       Occupancy.markAsPossiblyOccupied();
       }
