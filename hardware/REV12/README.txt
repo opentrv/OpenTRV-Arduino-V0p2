@@ -1,4 +1,4 @@
-REV 12 is RFM23B+REV69CW_RFM95W and phototransistor and SHT21 + other new sensors, with no UI eg neither buttons nor LEDs.
+REV 12 is REV69CW+RFM95W and phototransistor and SHT21 + other new sensors, with no UI eg neither buttons nor LEDs.
 Light-weight passive sensor, eg for baseline and general monitoring/measurement in homes.
 Test bed for new radios/
 Senses/reports: ambient light, temperature, relative humidity (plus battery voltage and restarts).
