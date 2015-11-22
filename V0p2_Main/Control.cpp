@@ -1400,7 +1400,7 @@ void remoteCallForHeatRX(const uint16_t id, const uint8_t percentOpen)
 
 // TODO-553: after 30--45m continuous on time raise threshold to same as if off.
 // Aim is to allow a (combi) boiler to have reached maximum efficiency
-// and made a signficant difference to room temperature
+// and made a significant difference to room temperature
 // but now turn off for a while if demand is a little lower
 // to allow it to run a little harder/better when turned on again.
 // Most combis have power far higher than needed to run rads at full blast
@@ -1413,9 +1413,10 @@ void remoteCallForHeatRX(const uint16_t id, const uint8_t percentOpen)
   // Try to force a higher single-valve-%age threshold to start boiler if off,
   // at a level where at least a single valve is moderately open.
   // Selecting "quick heat" at a valve should immediately pass this.
-  // (Will not provide hysteresis for very high min really open value.)
+  // (Will not provide hysteresis for very high minimum really-open value.)
+  // Be slightly tolerant on 'moderately open' threshold to allow quick start from a range of devices.
   const uint8_t threshold = isBoilerOn() ?
-      minvro : fnmax(minvro, (uint8_t) OTRadValve::DEFAULT_VALVE_PC_MODERATELY_OPEN);
+      minvro : fnmax(minvro, (uint8_t) OTRadValve::DEFAULT_VALVE_PC_MODERATELY_OPEN-1);
 
   if(percentOpen >= threshold)
     // && FHT8VHubAcceptedHouseCode(command.hc1, command.hc2))) // Accept if house code OK.
