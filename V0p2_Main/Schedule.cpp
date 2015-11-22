@@ -76,8 +76,8 @@ static uint8_t onTime()
 #endif
 
 // Pre-warm time before learned/scheduled WARM period.
-// DHD20151122: even half an hour won't cover it if very cold and heating system not good.
-const uint8_t PREWARM_MINS = max(30,((SIMPLE_SCHEDULE_GRANULARITY_MINS/2) + (LEARNED_ON_PERIOD_M>>2)));
+// DHD20151122: even half an hour may not be enough if very cold and heating system not good.
+const uint8_t PREWARM_MINS = max(30, ((SIMPLE_SCHEDULE_GRANULARITY_MINS/2) + (LEARNED_ON_PERIOD_M>>2)));
 // Setback period before WARM period to help ensure that the WARM target can be reached on time.
 // Important for slow-to-heat rooms that have become very cold.
 // Similar to PREWARM_MINS so that we can safely use this without causing distress, eg waking people up.
