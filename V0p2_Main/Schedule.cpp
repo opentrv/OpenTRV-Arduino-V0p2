@@ -81,7 +81,7 @@ const uint8_t PREWARM_MINS = max(30, ((SIMPLE_SCHEDULE_GRANULARITY_MINS/2) + (LE
 // Setback period before WARM period to help ensure that the WARM target can be reached on time.
 // Important for slow-to-heat rooms that have become very cold.
 // Similar to PREWARM_MINS so that we can safely use this without causing distress, eg waking people up.
-#define PREPREWARM_MINS (PREWARM_MINS)
+const uint8_t PREPREWARM_MINS = PREWARM_MINS;
 
 // Get the simple/primary schedule on time, as minutes after midnight [0,1439]; invalid (eg ~0) if none set.
 // Will usually include a pre-warm time before the actual time set.
