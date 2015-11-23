@@ -993,8 +993,10 @@ uint8_t VoiceDetection::read()
   {
   ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
     {
-    isDetected = ((value = count) >= VOICE_DETECTION_THRESHOLD);
-    count = 0;
+	  isDetected = ((value = count) >= VOICE_DETECTION_THRESHOLD);
+	  // clear count and detection flag
+	  isTriggered = false;
+      count = 0;
     }
   return(value);
   }
@@ -1018,6 +1020,10 @@ bool VoiceDetection::handleInterruptSimple()
       Occupancy.markAsPossiblyOccupied();
       }
     }
+
+    // Flag that interrupt has occurred
+    endOfLocking = OTV0P2BASE::getMinutesLT() + lockingPeriod;
+    isTriggered = true;
     // No further work to be done to 'clear' interrupt.
     return(true);
   }
