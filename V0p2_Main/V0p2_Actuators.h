@@ -63,6 +63,7 @@ void FHT8VSetHC2(uint8_t hc);
 // Used FHT8V instance as a transparent cache of the values for speed.
 uint8_t FHT8VGetHC1();
 uint8_t FHT8VGetHC2();
+inline uint16_t FHT8VGetHC() { return(FHT8VGetHC2() | (((uint16_t) FHT8VGetHC1()) << 8)); }
 // Load EEPROM house codes into primary FHT8V instance at start-up or once cleared in FHT8V instance.
 void FHT8VLoadHCFromEEPROM();
 #endif // USE_MODULE_FHT8VSIMPLE

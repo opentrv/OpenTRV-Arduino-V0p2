@@ -1416,7 +1416,7 @@ void remoteCallForHeatRX(const uint16_t id, const uint8_t percentOpen)
   // (Will not provide hysteresis for very high minimum really-open value.)
   // Be slightly tolerant on 'moderately open' threshold to allow quick start from a range of devices.
   const uint8_t threshold = isBoilerOn() ?
-      minvro : fnmax(minvro, (uint8_t) OTRadValve::DEFAULT_VALVE_PC_MODERATELY_OPEN-1);
+      minvro : fnmax(minvro, (uint8_t) (OTRadValve::DEFAULT_VALVE_PC_MODERATELY_OPEN-1));
 
   if(percentOpen >= threshold)
     // && FHT8VHubAcceptedHouseCode(command.hc1, command.hc2))) // Accept if house code OK.
@@ -1685,17 +1685,21 @@ void loopOpenTRV()
 #endif
 
 
-  // Set BOILER_OUT as appropriate for local and/or remote calls for heat.
-  // FIXME: local valve-driven boiler on does not obey normal on/off run-time rules.
+  // Set BOILER_OUT as appropriate for calls for heat.
+  // Local calls for heat come via the same route (TODO-607).
 #if defined(ENABLE_BOILER_HUB)
-  fastDigitalWrite(OUT_HEATCALL, ((isBoilerOn()
-    #ifdef ENABLE_NOMINAL_RAD_VALVE
-      || NominalRadValve.isControlledValveReallyOpen()
-    #endif
-      ) ? HIGH : LOW));
-#elif defined(OUT_HEATCALL) && defined(ENABLE_NOMINAL_RAD_VALVE) // May not be available on all boards.
-  fastDigitalWrite(OUT_HEATCALL, NominalRadValve.isControlledValveReallyOpen() ? HIGH : LOW);
+  fastDigitalWrite(OUT_HEATCALL, (isBoilerOn() ? HIGH : LOW));
 #endif
+//  // FIXME: local valve-driven boiler on does not obey normal on/off run-time rules.
+//#if defined(ENABLE_BOILER_HUB)
+//  fastDigitalWrite(OUT_HEATCALL, ((isBoilerOn()
+//    #ifdef ENABLE_NOMINAL_RAD_VALVE
+//      || NominalRadValve.isControlledValveReallyOpen()
+//    #endif
+//      ) ? HIGH : LOW));
+//#elif defined(OUT_HEATCALL) && defined(ENABLE_NOMINAL_RAD_VALVE) // May not be available on all boards.
+//  fastDigitalWrite(OUT_HEATCALL, NominalRadValve.isControlledValveReallyOpen() ? HIGH : LOW);
+//#endif
 
 
   // Sleep in low-power mode (waiting for interrupts) until seconds roll.
@@ -2030,6 +2034,12 @@ void loopOpenTRV()
         {
         if(localFHT8VTRVEnabled()) { FHT8V.set(NominalRadValve.get() /*, NominalRadValve.isCallingForHeat() */); }
         }
+
+      // Feed in the local valve position when calling for heat just as if over the air.
+      // (Does not arrive with the correct timing or 2-minute gaps so boiler may turn off with wrong timing.)
+      if(FHT8V.isControlledValveReallyOpen()) { remoteCallForHeatRX(FHT8VGetHC(), FHT8V.get()); }
+#elif defined(ENABLE_NOMINAL_RAD_VALVE) && defined(LOCAL_TRV) // Other local valve types, simulate a remote call for heat with a fake ID.
+      if(NominalRadValve.isControlledValveReallyOpen()) { remoteCallForHeatRX(~0, NominalRadValve.get()); }
 #endif
 
 #if defined(ENABLE_BOILER_HUB)
