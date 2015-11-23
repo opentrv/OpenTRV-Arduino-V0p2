@@ -2036,7 +2036,7 @@ void loopOpenTRV()
         }
 
       // Feed in the local valve position when calling for heat just as if over the air.
-      // (Does not arrive with the correct timing or 2-minute gaps so boiler may turn off with wrong timing.)
+      // (Does not arrive with the normal FHT8V timing of 2-minute gaps so boiler may turn off out of sync.)
       if(FHT8V.isControlledValveReallyOpen()) { remoteCallForHeatRX(FHT8VGetHC(), FHT8V.get()); }
 #elif defined(ENABLE_NOMINAL_RAD_VALVE) && defined(LOCAL_TRV) // Other local valve types, simulate a remote call for heat with a fake ID.
       if(NominalRadValve.isControlledValveReallyOpen()) { remoteCallForHeatRX(~0, NominalRadValve.get()); }
