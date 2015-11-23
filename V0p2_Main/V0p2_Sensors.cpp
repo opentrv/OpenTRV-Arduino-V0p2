@@ -985,7 +985,7 @@ TemperaturePot TempPot;
 // the room is deemed to be occupied.
 // Strictly positive.
 // DHD20151119: even now it seems a threshold of >= 2 is needed to avoid false positives.
-#define VOICE_DETECTION_THRESHOLD 2
+#define VOICE_DETECTION_THRESHOLD 4
 
 // Force a read/poll of the voice level and return the value sensed.
 // Thread-safe and ISR-safe.
