@@ -399,11 +399,8 @@ void loopAlt()
 
 #if defined(ENABLE_VOICE_SENSOR)
       // read voice sensor
-      if (TIME_LSD == 50) {
-          uint8_t isVoice = Voice.read();
-          OTV0P2BASE::serialPrintAndFlush(F("V: "));
-          OTV0P2BASE::serialPrintAndFlush(isVoice);
-          OTV0P2BASE::serialPrintlnAndFlush();
+      if (Voice.isVoiceReady()) {
+    	  Voice.read();
       }
 #endif // (ENABLE_VOICE_SENSOR)
 
