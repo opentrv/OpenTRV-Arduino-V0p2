@@ -43,9 +43,6 @@ void _TEST_set_schedule_override(const _TEST_schedule_override override)
 
 
 
-//#define EE_START_SIMPLE_SCHEDULE_ON 16 // 2-byte 'minutes after midnight' on time, if any.
-//#define EE_START_SIMPLE_SCHEDULE_OFF 18 // 2-byte 'minutes after midnight' off time, if any.
-
 // All EEPROM activity is made atomic by locking out interrupts where necessary.
 
 // Maximum mins-after-midnight compacted value in one byte.
@@ -79,11 +76,12 @@ static uint8_t onTime()
 #endif
 
 // Pre-warm time before learned/scheduled WARM period.
-const uint8_t PREWARM_MINS = ((SIMPLE_SCHEDULE_GRANULARITY_MINS/2) + (LEARNED_ON_PERIOD_M>>2));
+// DHD20151122: even half an hour may not be enough if very cold and heating system not good.
+const uint8_t PREWARM_MINS = max(30, ((SIMPLE_SCHEDULE_GRANULARITY_MINS/2) + (LEARNED_ON_PERIOD_M>>2)));
 // Setback period before WARM period to help ensure that the WARM target can be reached on time.
 // Important for slow-to-heat rooms that have become very cold.
 // Similar to PREWARM_MINS so that we can safely use this without causing distress, eg waking people up.
-#define PREPREWARM_MINS (PREWARM_MINS)
+const uint8_t PREPREWARM_MINS = PREWARM_MINS;
 
 // Get the simple/primary schedule on time, as minutes after midnight [0,1439]; invalid (eg ~0) if none set.
 // Will usually include a pre-warm time before the actual time set.
@@ -96,7 +94,7 @@ uint_least16_t getSimpleScheduleOn(const uint8_t which)
   ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
     { startMM = eeprom_read_byte((uint8_t*)(V0P2BASE_EE_START_SIMPLE_SCHEDULE0_ON + which)); }
   if(startMM > MAX_COMPRESSED_MINS_AFTER_MIDNIGHT) { return(~0); } // No schedule set.
-  // Compute start time from stored shedule value.
+  // Compute start time from stored schedule value.
   uint_least16_t startTime = SIMPLE_SCHEDULE_GRANULARITY_MINS * startMM;
 // If LEARN_BUTTON_AVAILABLE then in the absence of anything better SUPPORT_SINGLETON_SCHEDULE should be supported.
 #ifdef LEARN_BUTTON_AVAILABLE
@@ -108,7 +106,7 @@ uint_least16_t getSimpleScheduleOn(const uint8_t which)
   }
 
 // Get the simple/primary schedule off time, as minutes after midnight [0,1439]; invalid (eg ~0) if none set.
-// This is based on specifed start time and some element of the current eco/comfort bias.
+// This is based on specified start time and some element of the current eco/comfort bias.
 //   * which  schedule number, counting from 0
 uint_least16_t getSimpleScheduleOff(const uint8_t which)
   {
