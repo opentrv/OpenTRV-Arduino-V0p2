@@ -995,7 +995,7 @@ uint8_t VoiceDetection::read()
     {
 	  isDetected = ((value = count) >= VOICE_DETECTION_THRESHOLD);
 	  // clear count and detection flag
-	  isTriggered = false;
+//	  isTriggered = false;
       count = 0;
     }
   return(value);
@@ -1021,9 +1021,9 @@ bool VoiceDetection::handleInterruptSimple()
       }
     }
 
-    // Flag that interrupt has occurred
-    endOfLocking = OTV0P2BASE::getMinutesLT() + lockingPeriod;
-    isTriggered = true;
+//    // Flag that interrupt has occurred
+//    endOfLocking = OTV0P2BASE::getMinutesSinceMidnightLT() + lockingPeriod;
+//    isTriggered = true;
     // No further work to be done to 'clear' interrupt.
     return(true);
   }

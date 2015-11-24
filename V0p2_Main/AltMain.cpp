@@ -137,7 +137,7 @@ void POSTalt()
                                                     SIM900_UDP_PORT };
   static const OTRadioLink::OTRadioChannelConfig RFMConfig(&SIM900Config, true, true, true);
 #elif defined(USE_MODULE_RFM22RADIOSIMPLE)
-  static const OTRadioLink::OTRadioChannelConfig RFMConfig(FHT8V_RFM22_Reg_Values, true, true, true);
+  static const OTRadioLink::OTRadioChannelConfig RFMConfig(NULL, true, true, true);
 #endif // USE_MODULE_SIM900
 
 #if defined(USE_MODULE_RFM22RADIOSIMPLE) 
@@ -399,7 +399,10 @@ void loopAlt()
 
 #if defined(ENABLE_VOICE_SENSOR)
       // read voice sensor
-      if (Voice.isVoiceReady()) {
+//      if (Voice.isVoiceReady()) {
+//    	  Voice.read();
+//      }
+      if (TIME_LSD == 50) {
     	  Voice.read();
       }
 #endif // (ENABLE_VOICE_SENSOR)
