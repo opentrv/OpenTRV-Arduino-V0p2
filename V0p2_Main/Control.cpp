@@ -2042,6 +2042,7 @@ void loopOpenTRV()
 #endif // defined(ENABLE_BOILER_HUB)
 #elif defined(ENABLE_NOMINAL_RAD_VALVE) && defined(LOCAL_TRV) // Other local valve types, simulate a remote call for heat with a fake ID.
 #if defined(ENABLE_BOILER_HUB)
+      // Feed in the local valve position when calling for heat just as if over the air.
       if(NominalRadValve.isControlledValveReallyOpen()) { remoteCallForHeatRX(~0, NominalRadValve.get()); }
 #endif // defined(ENABLE_BOILER_HUB)
 #endif
