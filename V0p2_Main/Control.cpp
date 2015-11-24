@@ -307,7 +307,7 @@ uint8_t OccupancyTracker::read()
 // Doesn't force the room to appear recently occupied.
 // If the hardware allows this may immediately turn on the main GUI LED until normal GUI reverts it,
 // at least periodically.
-// Probably do not call on manual control operation to avoid interfering with UI operation.
+// Preferably do not call for manual control operation to avoid interfering with UI operation.
 // Thread-safe.
 void OccupancyTracker::markAsPossiblyOccupied()
   {
