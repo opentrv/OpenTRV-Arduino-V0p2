@@ -6,7 +6,7 @@
 <setting alwaysvectorfont="no"/>
 <setting verticaltext="up"/>
 </settings>
-<grid distance="0.05" unitdist="inch" unit="mm" style="lines" multiple="1" display="yes" altdistance="0.025" altunitdist="inch" altunit="mm"/>
+<grid distance="0.05" unitdist="inch" unit="mm" style="lines" multiple="1" display="yes" altdistance="0.025" altunitdist="inch" altunit="inch"/>
 <layers>
 <layer number="1" name="Top" color="4" fill="1" visible="yes" active="yes"/>
 <layer number="16" name="Bottom" color="1" fill="1" visible="yes" active="yes"/>
@@ -58,14 +58,14 @@
 <library>
 <packages>
 <package name="VTX-214-010-205">
-<wire x1="-22.75" y1="-15" x2="22.75" y2="-15" width="0.127" layer="21"/>
-<wire x1="22.75" y1="-15" x2="22.75" y2="15" width="0.127" layer="21"/>
-<wire x1="22.75" y1="15" x2="-22.75" y2="15" width="0.127" layer="21"/>
-<wire x1="-22.75" y1="15" x2="-22.75" y2="-15" width="0.127" layer="21"/>
-<pad name="L" x="-19.5" y="-6" drill="0.8" shape="square" rot="R90"/>
-<pad name="N" x="-19.5" y="6" drill="0.8" shape="square" rot="R90"/>
-<pad name="+" x="19.5" y="-6" drill="0.8" shape="square" rot="R90"/>
-<pad name="-" x="19.5" y="-1" drill="0.8" shape="square" rot="R90"/>
+<wire x1="0.11" y1="-3.24" x2="56" y2="-3.24" width="0.127" layer="21"/>
+<wire x1="56" y1="-3.24" x2="56" y2="33.24" width="0.127" layer="21"/>
+<wire x1="56" y1="33.24" x2="0.11" y2="33.24" width="0.127" layer="21"/>
+<wire x1="0.11" y1="33.24" x2="0.11" y2="-3.24" width="0.127" layer="21"/>
+<pad name="L" x="3.36" y="9.24" drill="1.5" shape="square" rot="R90"/>
+<pad name="N" x="3.36" y="21.24" drill="1.5" shape="square" rot="R90"/>
+<pad name="+" x="52.75" y="9.24" drill="1.5" shape="square" rot="R90"/>
+<pad name="-" x="52.75" y="14.24" drill="1.5" shape="square" rot="R90"/>
 </package>
 </packages>
 <symbols>
