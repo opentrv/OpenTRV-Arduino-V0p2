@@ -364,9 +364,13 @@ void loopAlt()
 ////  if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@0"); }
 //#endif
 
+
+
+  switch(TIME_LSD)
+    {
 #ifdef ALLOW_STATS_TX
     // Regular transmission of stats if NOT driving a local valve (else stats can be piggybacked onto that).
-    if(TIME_LSD == 10)
+    case 10:
       {
 //      if((OTV0P2BASE::getMinutesLT() & 0x3) == 0) // Send once every 4 minutes.
           {
@@ -382,30 +386,32 @@ void loopAlt()
           const bool doBinary = false; // !localFHT8VTRVEnabled() && OTV0P2BASE::randRNG8NextBoolean();
           bareStatsTX(false, false, false);
           }
+      break;
       }
 #endif
 
-
-    if (TIME_LSD == 30) {	// FIXME
-        AmbLight.read();
-    }
+    // Poll ambient light level at a fixed rate.
+    // This allows the unit to respond consistently to (eg) switching lights on (eg TODO-388).
+    case 20: { AmbLight.read(); break; }
 
 #if defined(SENSOR_DS18B20_ENABLE)
-      // read temp
-      if (TIME_LSD == 40) {
-          TemperatureC16.read();
-      }
+    case 30: { TemperatureC16.read(); break; }
 #endif // SENSOR_DS18B20_ENABLE
 
 #if defined(ENABLE_VOICE_SENSOR)
       // read voice sensor
-//      if (Voice.isVoiceReady()) {
-//    	  Voice.read();
-//      }
-      if (TIME_LSD == 50) {
-    	  Voice.read();
-      }
+    case 40: { Voice.read(); break; }
 #endif // (ENABLE_VOICE_SENSOR)
+
+#ifdef OCCUPANCY_SUPPORT
+    case 50: { Occupancy.read(); break; } // Needs regular poll.
+#endif // OCCUPANCY_SUPPORT
+  }
+
+
+
+
+
 
 //#if defined(USE_MODULE_FHT8VSIMPLE)
 //  if(useExtraFHT8VTXSlots)
