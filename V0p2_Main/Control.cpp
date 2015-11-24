@@ -311,7 +311,7 @@ uint8_t OccupancyTracker::read()
 // Thread-safe.
 void OccupancyTracker::markAsPossiblyOccupied()
   {
-//  if(0 == activityCountdownM) // Only flash the UI at start of external activity to limit flashing.
+  if(0 == occupationCountdownM) // Flash at first sign only of occupancy after vacancy to limit annoyance.
     { LED_HEATCALL_ON_ISR_SAFE(); }
   ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
     {
