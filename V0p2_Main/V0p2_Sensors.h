@@ -464,6 +464,16 @@ class VoiceDetection : public OTV0P2BASE::SimpleTSUint8Sensor
     // True if voice is detected.
     // Marked volatile for thread-safe lock-free access.
     volatile bool isDetected;
+    // Last time sensor was polled
+    // Marked volatile for thread-safe (simple) lock-free access.
+//    volatile uint16_t endOfLocking;
+//    // True if there is new data to poll
+//    // Marked volatile for thread-safe (simple) lock-free access.
+//    volatile bool isTriggered;
+//    // Lock out time after interrupt
+//    // only needs to be > 10secs, but go for between 2 mins to make sure (we have a 4 min cycle anyway)
+//    static const uint8_t lockingPeriod = 2;
+
  
   public:
     // Initialise to cautious values.
@@ -487,9 +497,12 @@ class VoiceDetection : public OTV0P2BASE::SimpleTSUint8Sensor
     // Returns true if voice has been detected in this or previous poll period.
     bool isVoiceDetected() { return(isDetected); }
 
+    // Returns true if more than a minute has passed since last interrupt and sensor has not been polled.
+//    bool isVoiceReady() { return (isTriggered && (OTV0P2BASE::getMinutesSinceMidnightLT() >= endOfLocking)); }
+
     // Returns a suggested (JSON) tag/field/key name including units of get(); NULL means no recommended tag.
     // The lifetime of the pointed-to text must be at least that of the Sensor instance.
-    virtual const char *tag() const { return("av"); } // TODO do we want this here?
+    virtual const char *tag() const { return("av"); }
 
   };
 // Singleton implementation/instance.

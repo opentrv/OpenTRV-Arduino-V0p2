@@ -985,7 +985,7 @@ TemperaturePot TempPot;
 // the room is deemed to be occupied.
 // Strictly positive.
 // DHD20151119: even now it seems a threshold of >= 2 is needed to avoid false positives.
-#define VOICE_DETECTION_THRESHOLD 2
+#define VOICE_DETECTION_THRESHOLD 4
 
 // Force a read/poll of the voice level and return the value sensed.
 // Thread-safe and ISR-safe.
@@ -993,8 +993,10 @@ uint8_t VoiceDetection::read()
   {
   ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
     {
-    isDetected = ((value = count) >= VOICE_DETECTION_THRESHOLD);
-    count = 0;
+	  isDetected = ((value = count) >= VOICE_DETECTION_THRESHOLD);
+	  // clear count and detection flag
+//	  isTriggered = false;
+      count = 0;
     }
   return(value);
   }
@@ -1018,6 +1020,10 @@ bool VoiceDetection::handleInterruptSimple()
       Occupancy.markAsPossiblyOccupied();
       }
     }
+
+//    // Flag that interrupt has occurred
+//    endOfLocking = OTV0P2BASE::getMinutesSinceMidnightLT() + lockingPeriod;
+//    isTriggered = true;
     // No further work to be done to 'clear' interrupt.
     return(true);
   }

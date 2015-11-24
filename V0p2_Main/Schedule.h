@@ -39,7 +39,7 @@ static const uint8_t MAX_SIMPLE_SCHEDULES = V0P2BASE_EE_START_MAX_SIMPLE_SCHEDUL
 uint_least16_t getSimpleScheduleOn(uint8_t which);
 
 // Get the simple schedule off time, as minutes after midnight [0,1439]; invalid (eg ~0) if none set.
-// This is based on specifed start time and some element of the current eco/comfort bias.
+// This is based on specified start time and some element of the current eco/comfort bias.
 //   * which  schedule number, counting from 0
 uint_least16_t getSimpleScheduleOff(uint8_t which);
 
