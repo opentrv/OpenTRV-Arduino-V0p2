@@ -307,7 +307,7 @@ uint8_t OccupancyTracker::read()
 // Doesn't force the room to appear recently occupied.
 // If the hardware allows this may immediately turn on the main GUI LED until normal GUI reverts it,
 // at least periodically.
-// Probably do not call on manual control operation to avoid interfering with UI operation.
+// Preferably do not call for manual control operation to avoid interfering with UI operation.
 // Thread-safe.
 void OccupancyTracker::markAsPossiblyOccupied()
   {
@@ -2035,11 +2035,15 @@ void loopOpenTRV()
         if(localFHT8VTRVEnabled()) { FHT8V.set(NominalRadValve.get() /*, NominalRadValve.isCallingForHeat() */); }
         }
 
+#if defined(ENABLE_BOILER_HUB)
       // Feed in the local valve position when calling for heat just as if over the air.
       // (Does not arrive with the normal FHT8V timing of 2-minute gaps so boiler may turn off out of sync.)
       if(FHT8V.isControlledValveReallyOpen()) { remoteCallForHeatRX(FHT8VGetHC(), FHT8V.get()); }
+#endif // defined(ENABLE_BOILER_HUB)
 #elif defined(ENABLE_NOMINAL_RAD_VALVE) && defined(LOCAL_TRV) // Other local valve types, simulate a remote call for heat with a fake ID.
+#if defined(ENABLE_BOILER_HUB)
       if(NominalRadValve.isControlledValveReallyOpen()) { remoteCallForHeatRX(~0, NominalRadValve.get()); }
+#endif // defined(ENABLE_BOILER_HUB)
 #endif
 
 #if defined(ENABLE_BOILER_HUB)
