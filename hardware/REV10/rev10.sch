@@ -9496,10 +9496,6 @@ www.irf.com&lt;p&gt;
 <library name="arduino">
 <packages>
 <package name="ARDUINO">
-<circle x="6.35" y="53.34" radius="1.796" width="0.127" layer="51"/>
-<circle x="5.08" y="5.08" radius="1.796" width="0.127" layer="51"/>
-<circle x="57.15" y="38.1" radius="1.796" width="0.127" layer="51"/>
-<circle x="57.15" y="10.16" radius="1.796" width="0.127" layer="51"/>
 <pad name="D4" x="44.45" y="53.34" drill="1" diameter="1.6764" shape="octagon"/>
 <pad name="A0" x="41.91" y="5.08" drill="1" diameter="1.6764" shape="octagon"/>
 <pad name="D3" x="46.99" y="53.34" drill="1" diameter="1.6764" shape="octagon"/>
@@ -11385,8 +11381,8 @@ Source: www.kingbright.com</description>
 <instance part="GND8" gate="1" x="251.46" y="223.52"/>
 <instance part="U2" gate="G$1" x="223.52" y="127" rot="R90"/>
 <instance part="GND1" gate="1" x="63.5" y="177.8"/>
-<instance part="X1" gate="-1" x="20.32" y="180.34"/>
-<instance part="X1" gate="-2" x="20.32" y="190.5"/>
+<instance part="X1" gate="-1" x="22.86" y="190.5"/>
+<instance part="X1" gate="-2" x="22.86" y="180.34"/>
 <instance part="GND2" gate="1" x="248.92" y="160.02"/>
 <instance part="R1" gate="G$1" x="129.54" y="200.66" rot="R90"/>
 <instance part="R3" gate="G$1" x="129.54" y="226.06" rot="R270"/>
@@ -11996,13 +11992,6 @@ Source: www.kingbright.com</description>
 <wire x1="365.76" y1="254" x2="353.06" y2="254" width="0.1524" layer="91"/>
 </segment>
 </net>
-<net name="N$4" class="0">
-<segment>
-<wire x1="25.4" y1="180.34" x2="27.94" y2="180.34" width="0.1524" layer="91"/>
-<pinref part="PSU" gate="G$1" pin="N"/>
-<pinref part="X1" gate="-1" pin="KL"/>
-</segment>
-</net>
 <net name="N$15" class="0">
 <segment>
 <wire x1="226.06" y1="116.84" x2="213.36" y2="116.84" width="0.1524" layer="91"/>
@@ -12229,13 +12218,6 @@ Source: www.kingbright.com</description>
 <wire x1="185.42" y1="124.46" x2="185.42" y2="157.48" width="0.1524" layer="91"/>
 </segment>
 </net>
-<net name="N$8" class="0">
-<segment>
-<pinref part="PSU" gate="G$1" pin="L"/>
-<pinref part="X1" gate="-2" pin="KL"/>
-<wire x1="25.4" y1="190.5" x2="27.94" y2="190.5" width="0.1524" layer="91"/>
-</segment>
-</net>
 <net name="N$21" class="0">
 <segment>
 <pinref part="REL1" gate="G$1" pin="C"/>
@@ -12248,6 +12230,18 @@ Source: www.kingbright.com</description>
 <pinref part="REL1" gate="G$1" pin="S"/>
 <pinref part="X3" gate="-2" pin="KL"/>
 <wire x1="345.44" y1="96.52" x2="347.98" y2="96.52" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="N$4" class="0">
+<segment>
+<pinref part="PSU" gate="G$1" pin="N"/>
+<pinref part="X1" gate="-2" pin="KL"/>
+</segment>
+</net>
+<net name="N$8" class="0">
+<segment>
+<pinref part="PSU" gate="G$1" pin="L"/>
+<pinref part="X1" gate="-1" pin="KL"/>
 </segment>
 </net>
 </nets>
