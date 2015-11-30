@@ -662,7 +662,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 #ifdef CONFIG_REV9_cut1
 #define V0p2_REV 9 // Just like cut2 but with some bugs...
-// For 1st-cust REV9 boards phototransistor was accidentally pulling down not up.
+// For 1st-cut REV9 boards phototransistor was accidentally pulling down not up.
 #define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400_WRONG_WAY
 #endif
 
