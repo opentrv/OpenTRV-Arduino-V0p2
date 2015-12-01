@@ -11219,7 +11219,6 @@ Source: www.kingbright.com</description>
 <part name="GND2" library="SparkFun-Aesthetics" deviceset="GND" device=""/>
 <part name="R1" library="resistor" deviceset="R-EU_" device="R0603" value="4.7K"/>
 <part name="R3" library="resistor" deviceset="R-EU_" device="R0603" value="4.7K"/>
-<part name="C5" library="resistor" deviceset="C-EU" device="C0603" value="100nF"/>
 <part name="I2C_EXT" library="pinhead" deviceset="PINHD-2X7" device=""/>
 <part name="IC2" library="Arduino-AVR" deviceset="ATMEGA168" device="-AU"/>
 <part name="USBPOWER" library="micro-usb-fci-10103592" deviceset="MICRO-USB-FCI-10103592" device=""/>
@@ -11308,7 +11307,6 @@ Source: www.kingbright.com</description>
 <text x="55.88" y="106.68" size="1.778" layer="94" rot="R90">On BOM</text>
 <text x="17.78" y="139.7" size="1.778" layer="94">On BOM</text>
 <text x="134.62" y="195.58" size="1.778" layer="94" rot="R90">On BOM</text>
-<text x="124.46" y="203.2" size="1.778" layer="94" rot="R180">On BOM</text>
 <text x="129.54" y="226.06" size="1.778" layer="94">On BOM</text>
 <text x="205.74" y="231.14" size="1.778" layer="94" rot="R90">On BOM</text>
 <text x="243.84" y="236.22" size="1.778" layer="94">On BOM</text>
@@ -11386,7 +11384,6 @@ Source: www.kingbright.com</description>
 <instance part="GND2" gate="1" x="248.92" y="160.02"/>
 <instance part="R1" gate="G$1" x="129.54" y="200.66" rot="R90"/>
 <instance part="R3" gate="G$1" x="129.54" y="226.06" rot="R270"/>
-<instance part="C5" gate="G$1" x="121.92" y="200.66" rot="R180"/>
 <instance part="I2C_EXT" gate="A" x="124.46" y="213.36" rot="R90"/>
 <instance part="IC2" gate="1" x="195.58" y="91.44"/>
 <instance part="USBPOWER" gate="G$1" x="12.7" y="243.84" rot="R270"/>
@@ -11888,9 +11885,9 @@ Source: www.kingbright.com</description>
 <pinref part="IC2" gate="1" pin="RESET"/>
 </segment>
 <segment>
-<pinref part="C5" gate="G$1" pin="1"/>
-<wire x1="121.92" y1="198.12" x2="121.92" y2="190.5" width="0.1524" layer="91"/>
 <label x="121.92" y="187.96" size="1.778" layer="95" rot="R270"/>
+<pinref part="I2C_EXT" gate="A" pin="5"/>
+<wire x1="121.92" y1="190.5" x2="121.92" y2="210.82" width="0.1524" layer="91"/>
 </segment>
 <segment>
 <wire x1="236.22" y1="152.4" x2="228.6" y2="152.4" width="0.1524" layer="91"/>
@@ -12030,13 +12027,6 @@ Source: www.kingbright.com</description>
 <wire x1="195.58" y1="73.66" x2="190.5" y2="73.66" width="0.1524" layer="91"/>
 <pinref part="U2" gate="G$1" pin="D7"/>
 <pinref part="R5" gate="G$1" pin="2"/>
-</segment>
-</net>
-<net name="N$25" class="0">
-<segment>
-<wire x1="121.92" y1="210.82" x2="121.92" y2="205.74" width="0.1524" layer="91"/>
-<pinref part="C5" gate="G$1" pin="2"/>
-<pinref part="I2C_EXT" gate="A" pin="5"/>
 </segment>
 </net>
 <net name="N$26" class="0">
