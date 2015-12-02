@@ -69,7 +69,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_REV9_STATS // REV9 as stats node, cut 2 of the board.
 //#define CONFIG_REV9_cut1 // REV9 as CC1 relay, cut1 of board.
 //#define CONFIG_DE_TESTLAB // Deniz's test environment.
-#define CONFIG_REV10_BUSSHELTER // REV10-based stripboard precursor for bus shelters
+#define CONFIG_REV10_STRIPBOARD // REV10-based stripboard precursor for bus shelters
 //#define CONFIG_BAREBONES // No peripherals / on breadboard.
 
 
@@ -749,7 +749,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 // REV8 + GSM Arduino shield + I2CEXT, see TODO-551
 
-#ifdef CONFIG_REV10_BUSSHELTER // REV10-based stripboard precursor for bus shelters
+#ifdef CONFIG_REV10_STRIPBOARD // REV10-based stripboard precursor for bus shelters
 // use alternative loop
 #define ALT_MAIN_LOOP
 #define V0p2_REV 10
