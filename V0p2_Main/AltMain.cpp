@@ -49,7 +49,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
   // FOR FLASH.
   static const char myPin[] PROGMEM = "0000";
   static const char myAPN[] PROGMEM = "m2mkit.telefonica.com";
-  static const char myUDPAddr[] PROGMEM = "46.101.52.242";
+  static const char myUDPAddr[] PROGMEM = "46.101.64.191";
   static const char myUDPPort[] PROGMEM = "9999";
 
 
@@ -201,7 +201,6 @@ void POSTalt()
 //  pinMode(3, INPUT);        // FIXME Move to where they are set automatically
 //  digitalWrite(3, LOW);
 
-  RFM23B.queueToSend((uint8_t *)"start", 6);
   bareStatsTX(false, false, false);
 
   }
@@ -372,7 +371,7 @@ void loopAlt()
     // Regular transmission of stats if NOT driving a local valve (else stats can be piggybacked onto that).
     case 10:
       {
-//      if((OTV0P2BASE::getMinutesLT() & 0x3) == 0) // Send once every 4 minutes.
+      if((OTV0P2BASE::getMinutesLT() & 0x3) == 0) // Send once every 4 minutes.
           {
           // Send it!
           // Try for double TX for extra robustness unless:
@@ -409,7 +408,7 @@ void loopAlt()
   }
 
 
-
+RFM23B.poll();
 
 
 
