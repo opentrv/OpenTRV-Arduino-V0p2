@@ -819,7 +819,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // REV4 (ie SHT21 sensor and phototransistor) + PCB antenna + PCB battery back (probably AAA), see TODO-566
 #ifdef CONFIG_REV11_RFM23BTEST
 // Revision of V0.2 board.
-#define V0p2_REV 11 // REV0 covers DHD's breadboard and first V0.2 PCB.
+#define V0p2_REV 11 // REV11 covers first sensor only board.
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
 #define SENSOR_SHT21_ENABLE
 // Using RoHS-compliant phototransistor in place of LDR.
