@@ -548,13 +548,16 @@ void ModelledRadValve::computeTargetTemperature()
   inputState.glacial = glacial;
   inputState.inBakeMode = inBakeMode();
   inputState.hasEcoBias = hasEcoBias();
+  // Request a fast response from the valve if user is manually adjusting controls.
+  const bool veryRecentUIUse = veryRecentUIControlUse();
+  inputState.fastResponseRequired = veryRecentUIUse;
   // Widen the allowed deadband significantly in a dark/quiet/vacant room (TODO-383, TODO-593)
   // (or in FROST mode, or if temperature is jittery eg changing fast and filtering has been engaged)
   // to attempt to reduce the total number and size of adjustments and thus reduce noise/disturbance (and battery drain).
   // The wider deadband (less good temperature regulation) might be noticeable/annoying to sensitive occupants.
   // With a wider deadband may also simply suppress any movement/noise on some/most minutes while close to target temperature.
   // For responsiveness, don't widen the deadband immediately after manual controls have been used (TODO-593).
-  inputState.widenDeadband = (!veryRecentUIControlUse()) &&
+  inputState.widenDeadband = (!veryRecentUIUse) &&
       (retainedState.isFiltering || AmbLight.isRoomDark() || Occupancy.longVacant() || (!inWarmMode()));
   // Capture adjusted reference/room temperatures
   // and set callingForHeat flag also using same outline logic as computeRequiredTRVPercentOpen() will use.
