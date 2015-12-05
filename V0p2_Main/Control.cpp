@@ -562,7 +562,11 @@ void ModelledRadValve::computeTargetTemperature()
   // Capture adjusted reference/room temperatures
   // and set callingForHeat flag also using same outline logic as computeRequiredTRVPercentOpen() will use.
   inputState.setReferenceTemperatures(TemperatureC16.get());
-  callingForHeat = (newTarget >= (inputState.refTempC16 >> 4));
+  // Only report as calling for heat when actively doing so.
+  // (Eg opening the valve a little in case the boiler is already running does not count.)
+  callingForHeat = (newTarget >= (inputState.refTempC16 >> 4)) &&
+    (value >= OTRadValve::DEFAULT_VALVE_PC_SAFER_OPEN) &&
+    isControlledValveReallyOpen();
   }
 
 // Compute target temperature and set heat demand for TRV and boiler; update state.

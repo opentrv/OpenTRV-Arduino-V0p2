@@ -342,7 +342,10 @@ class ModelledRadValve : public OTRadValve::AbstractRadValve
     // Can be used to trigger rebuild of messages, force updates to actuators, etc.
     bool isValveMoved() const { return(retainedState.valveMoved); }
 
-    // True if this unit is nominally calling for heat (temperature is under target).
+    // True if this unit is actively calling for heat.
+    // This implies that the temperature is (significantly) under target,
+    // the valve is really open,
+    // and this needs more heat than can be passively drawn from an already-running boiler.
     // Thread-safe and ISR safe.
     bool isCallingForHeat() const { return(callingForHeat); }
 
