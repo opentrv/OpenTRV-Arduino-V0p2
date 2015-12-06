@@ -313,8 +313,8 @@ bool tickUI(const uint_fast8_t sec)
     // DHD20131223: do not flash if the room is dark so as to save energy and avoid disturbing sleep, etc.
     else if(forthTick &&
             !AmbLight.isRoomDark() &&
-            NominalRadValve.isCallingForHeat() &&
-            NominalRadValve.isControlledValveReallyOpen())
+            NominalRadValve.isCallingForHeat() /* &&
+            NominalRadValve.isControlledValveReallyOpen() */ )
       {
       // Double flash every 4th tick indicates call for heat while in FROST MODE (matches call for heat in WARM mode).
       LED_HEATCALL_ON(); // flash

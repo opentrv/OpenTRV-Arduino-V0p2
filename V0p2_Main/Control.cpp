@@ -1480,8 +1480,8 @@ void loopOpenTRV()
     (!isBoilerOn()) && // Unless the boiler is off, stay responsive.
 #endif
 #ifdef ENABLE_NOMINAL_RAD_VALVE
-    (!NominalRadValve.isControlledValveReallyOpen()); // &&  // Run at full speed until valve(s) should actually have shut and the boiler gone off.
-//    (!NominalRadValve.isCallingForHeat()); // Run at full speed until not nominally demanding heat, eg even during FROST mode or pre-heating.
+//    (!NominalRadValve.isControlledValveReallyOpen()); // &&  // Run at full speed until valve(s) should actually have shut and the boiler gone off.
+    (!NominalRadValve.isCallingForHeat()); // Run at full speed until not nominally demanding heat, eg even during FROST mode or pre-heating.
 #else
     true; // Allow local power conservation if all other factors are right.
 #endif
