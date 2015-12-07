@@ -2,24 +2,24 @@ EAGLE AutoRouter Statistics:
 
 Job           : C:/Users/Bo/Documents/GitHub/OpenTRV/Arduino/hardware/REV10/rev10.brd
 
-Start at      : 16:24:13 (05-12-2015)
-End at        : 16:24:47 (05-12-2015)
-Elapsed time  : 00:00:33
+Start at      : 20:22:13 (07-12-2015)
+End at        : 20:24:19 (07-12-2015)
+Elapsed time  : 00:02:05
 
-Signals       :    59   RoutingGrid: 4.92126 mil  Layers: 2
-Connections   :   147   predefined:  10 ( 22 Vias )
+Signals       :    60   RoutingGrid: 4 mil  Layers: 2
+Connections   :   149   predefined:  10 ( 22 Vias )
 
-Router memory :   2624300
+Router memory :   3979736
 
-Passname          :     Route Optimize1 Optimize2 Optimize3 Optimize4
+Passname          : TopRouter     Route Optimize1 Optimize2 Optimize3 Optimize4 Optimize5 Optimize6 Optimize7 Optimize8 Optimize9Optimize10Optimize11Optimize12
 
-Time per pass     :  00:00:08  00:00:06  00:00:06  00:00:06  00:00:07
-Number of Ripups  :         2         0         0         0         0
-max. Level        :         1         0         0         0         0
-max. Total        :        20         0         0         0         0
+Time per pass     :  00:00:20  00:00:09  00:00:09  00:00:09  00:00:08  00:00:08  00:00:08  00:00:08  00:00:08  00:00:08  00:00:07  00:00:08  00:00:07  00:00:08
+Number of Ripups  :         0         0         0         0         0         0         0         0         0         0         0         0         0         0
+max. Level        :         0         0         0         0         0         0         0         0         0         0         0         0         0         0
+max. Total        :         0         0         0         0         0         0         0         0         0         0         0         0         0         0
 
-Routed            :       137       137       137       137       137
-Vias              :       125        92        86        77        72
-Resolution        :   100.0 %   100.0 %   100.0 %   100.0 %   100.0 %
+Routed            :        33       139       139       139       139       139       139       139       139       139       139       139       139       139
+Vias              :         0        94        90        69        67        67        67        67        66        63        59        59        59        59
+Resolution        :    28.9 %   100.0 %   100.0 %   100.0 %   100.0 %   100.0 %   100.0 %   100.0 %   100.0 %   100.0 %   100.0 %   100.0 %   100.0 %   100.0 %
 
 Final             : 100.0% finished

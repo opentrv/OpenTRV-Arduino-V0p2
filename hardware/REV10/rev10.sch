@@ -11375,19 +11375,14 @@ Source: www.kingbright.com</description>
 <wire x1="93.98" y1="152.4" x2="0" y2="152.4" width="0.3048" layer="94"/>
 <wire x1="93.98" y1="91.44" x2="0" y2="91.44" width="0.3048" layer="94"/>
 <wire x1="93.98" y1="160.02" x2="93.98" y2="91.44" width="0.3048" layer="94"/>
-<text x="327.66" y="160.02" size="1.778" layer="94">On BOM</text>
-<text x="327.66" y="185.42" size="1.778" layer="94">On BOM</text>
-<text x="231.14" y="213.36" size="1.778" layer="94">On BOM</text>
-<text x="60.96" y="243.84" size="1.778" layer="94">On BOM</text>
-<text x="22.86" y="119.38" size="1.778" layer="94">On BOM</text>
-<text x="162.56" y="210.82" size="1.778" layer="94">On BOM</text>
+<text x="345.44" y="167.64" size="1.778" layer="94">On BOM</text>
+<text x="350.52" y="193.04" size="1.778" layer="94">On BOM</text>
+<text x="38.1" y="121.92" size="1.778" layer="94">On BOM</text>
+<text x="175.26" y="228.6" size="1.778" layer="94">On BOM</text>
 <text x="208.28" y="220.98" size="1.778" layer="94" rot="R90">On BOM</text>
-<text x="86.36" y="233.68" size="1.778" layer="94" rot="R90">On BOM</text>
-<text x="35.56" y="228.6" size="1.778" layer="94" rot="R90">On BOM</text>
 <text x="25.4" y="228.6" size="1.778" layer="94" rot="R90">On BOM</text>
 <text x="55.88" y="106.68" size="1.778" layer="94" rot="R90">On BOM</text>
 <text x="17.78" y="139.7" size="1.778" layer="94">On BOM</text>
-<text x="137.16" y="233.68" size="1.778" layer="94" rot="R270">On BOM</text>
 <text x="205.74" y="231.14" size="1.778" layer="94" rot="R90">On BOM</text>
 <text x="243.84" y="236.22" size="1.778" layer="94">On BOM</text>
 <text x="259.08" y="228.6" size="1.778" layer="94">On BOM</text>
@@ -11418,7 +11413,12 @@ Source: www.kingbright.com</description>
 <text x="353.06" y="119.38" size="1.778" layer="94" rot="R180">On BOM</text>
 <text x="15.24" y="193.04" size="1.778" layer="94" rot="R270">On BOM</text>
 <text x="332.74" y="96.52" size="1.778" layer="94" rot="R270">On BOM</text>
-<text x="135.636" y="222.25" size="1.778" layer="94" rot="R90">On BOM</text>
+<text x="35.56" y="228.6" size="1.778" layer="94" rot="R90">On BOM</text>
+<text x="88.9" y="233.68" size="1.778" layer="94" rot="R90">On BOM</text>
+<text x="66.04" y="238.76" size="1.778" layer="94" rot="R180">On BOM</text>
+<text x="139.7" y="226.06" size="1.778" layer="94" rot="R180">On BOM</text>
+<text x="337.82" y="241.3" size="1.778" layer="94">On BOM</text>
+<text x="309.88" y="142.24" size="1.778" layer="94">On BOM</text>
 </plain>
 <instances>
 <instance part="C8" gate="G$1" x="274.32" y="233.68"/>
@@ -12349,6 +12349,7 @@ Source: www.kingbright.com</description>
 </sheets>
 <errors>
 <approved hash="104,1,78.74,241.3,U1,+3.3V,VCC,,,"/>
+<approved hash="204,1,228.6,165.1,U2,VIN,,,,"/>
 <approved hash="104,1,228.6,162.56,U2,GND1,GND,,,"/>
 <approved hash="104,1,228.6,160.02,U2,GND2,GND,,,"/>
 <approved hash="104,1,228.6,157.48,U2,5V,5VGSM,,,"/>
@@ -12358,6 +12359,9 @@ Source: www.kingbright.com</description>
 <approved hash="104,1,165.1,68.58,IC2,GND/ANALOG,GND,,,"/>
 <approved hash="104,1,165.1,60.96,IC2,GND2,GND,,,"/>
 <approved hash="104,1,165.1,88.9,IC2,VCC2,VCC,,,"/>
+<approved hash="106,1,226.06,104.14,N$1,,,,,"/>
+<approved hash="106,1,226.06,101.6,N$5,,,,,"/>
+<approved hash="106,1,226.06,88.9,VOICE,,,,,"/>
 <approved hash="113,1,194.206,131.976,FRAME1,,,,,"/>
 <approved hash="113,1,203.522,236.474,LED,,,,,"/>
 <approved hash="113,1,24.6697,190.5,X1,,,,,"/>
