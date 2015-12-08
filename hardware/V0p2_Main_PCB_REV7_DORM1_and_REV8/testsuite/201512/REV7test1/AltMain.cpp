@@ -255,21 +255,12 @@ void loopAlt()
   // Flash lights, read sensors.
   LED_HEATCALL_ON();
   LED_UI2_ON();
-  const int heat = TemperatureC16.read();
-#if 1 && defined(DEBUG)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("temp: ");
-  DEBUG_SERIAL_PRINT(heat);
+  DEBUG_SERIAL_PRINT_FLASHSTRING("buttons: ");
+  DEBUG_SERIAL_PRINT((LOW == fastDigitalRead(BUTTON_MODE_L)) ? 'm' : ' ');
+  DEBUG_SERIAL_PRINT((LOW == fastDigitalRead(BUTTON_LEARN_L)) ? 'l' : ' ');
+  DEBUG_SERIAL_PRINT((LOW == fastDigitalRead(BUTTON_LEARN2_L)) ? '2' : ' ');
   DEBUG_SERIAL_PRINTLN();
-#endif
   LED_UI2_OFF();
-
-  const int light = AmbLight.read();
-#if 1 && defined(DEBUG)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("light: ");
-  DEBUG_SERIAL_PRINT(light);
-  DEBUG_SERIAL_PRINTLN();
-#endif
-  LED_HEATCALL_OFF();
 
 
 
@@ -287,20 +278,44 @@ void loopAlt()
 
   switch(TIME_LSD)
     {
-    // Poll ambient light level at a fixed rate.
-    // This allows the unit to respond consistently to (eg) switching lights on (eg TODO-388).
-    case 20: { AmbLight.read(); break; }
+    case 10:
+      {
+      const int light = AmbLight.read();
+      DEBUG_SERIAL_PRINT_FLASHSTRING("light: ");
+      DEBUG_SERIAL_PRINT(light);
+      DEBUG_SERIAL_PRINTLN();
+      break;
+      }
 
-#if defined(SENSOR_DS18B20_ENABLE)
-    case 30: { TemperatureC16.read(); break; }
-#endif // SENSOR_DS18B20_ENABLE
+    case 20:
+      {
+      const int heat = TemperatureC16.read();
+      DEBUG_SERIAL_PRINT_FLASHSTRING("temp: ");
+      DEBUG_SERIAL_PRINT(heat);
+      DEBUG_SERIAL_PRINTLN();
+      break;
+      }
 
-#if defined(ENABLE_VOICE_SENSOR)
-      // read voice sensor
-    case 40: { Voice.read(); break; }
-#endif // (ENABLE_VOICE_SENSOR)
+    case 30:
+      {
+      const int rh = RelHumidity.read();
+      DEBUG_SERIAL_PRINT_FLASHSTRING("RH%: ");
+      DEBUG_SERIAL_PRINT(rh);
+      DEBUG_SERIAL_PRINTLN();
+      break;
+      }
+
+    case 40:
+      {
+      const int tp = TempPot.read();
+      DEBUG_SERIAL_PRINT_FLASHSTRING("dial: ");
+      DEBUG_SERIAL_PRINT(tp);
+      DEBUG_SERIAL_PRINTLN();
+      break;
+      }
   }
 
+ LED_HEATCALL_OFF();
 
 RFM23B.poll();
 
