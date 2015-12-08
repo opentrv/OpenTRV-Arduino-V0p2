@@ -52,12 +52,12 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include <OTRadValve.h>
 
 #include "V0p2_Sensors.h"
-#include "V0p2_Actuators.h"
-#include "Control.h"
+//#include "V0p2_Actuators.h"
+//#include "Control.h"
 #include "Power_Management.h"
 #include "RFM22_Radio.h"
 #include "Serial_IO.h"
-#include "UI_Minimal.h"
+//#include "UI_Minimal.h"
 
 
 // Indicate that the system is broken in an obvious way (distress flashing the main LED).
@@ -80,9 +80,9 @@ void panic()
   for( ; ; )
     {
     LED_HEATCALL_ON();
-    tinyPause();
+    OTV0P2BASE::nap(WDTO_15MS); // tinyPause();
     LED_HEATCALL_OFF();
-    bigPause();
+    OTV0P2BASE::nap(WDTO_120MS); // bigPause();
     }
   }
 
@@ -126,7 +126,7 @@ static uint16_t eeCRC()
 //   * Each of the 5 main sections of Power On Self Test is 1 second LED on, 0.5 second off, n short flashes separated by 0.25s off, then 0.5s off, then 1s on.
 //     The value of n is 1, 2, 3, 4, 5.
 //   * The LED should then go off except for optional faint flickers as the radio is being driven if set up to do so.
-#ifdef ALT_MAIN_LOOP
+#ifndef ALT_MAIN_LOOP
 #define PP_OFF_MS 250
 static void posPOST(const uint8_t position, const __FlashStringHelper *s)
   {
@@ -570,7 +570,7 @@ void setup()
 #endif
 #endif
 
-
+#ifndef ALT_MAIN_LOOP
   // Ensure that the unique node ID is set up (mainly on first use).
   // Have one attempt (don't want to stress an already failing EEPROM) to force-reset if not good, then panic.
   // Needs to have had entropy gathered, etc.
@@ -579,6 +579,7 @@ void setup()
     if(!ensureIDCreated(true)) // Force reset.
       { panic(F("!Bad ID: can't fix")); }
     }
+#endif // ALT_MAIN_LOOP
 
 
   // Initialised: turn heatcall UI LED off.
