@@ -19,7 +19,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 /*
   Alternate POST / setup and loop / main for non-OpenTRV code running on OpenTRV h/w platform.
 
-  Also for rapid prototyping without dead-weight of OpenTRV intricate timing, etc!
+  DHD20151208: TEST CODE FOR REV7 PRODUCTION 2015Q4.
  */
 
 
