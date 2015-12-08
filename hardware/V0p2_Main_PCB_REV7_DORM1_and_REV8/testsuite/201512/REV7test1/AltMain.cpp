@@ -282,9 +282,9 @@ void loopAlt()
 
 
 
-  switch(TIME_LSD)
+  switch(TIME_LSD >> 1) // 30s cycle to reduce boredom!
     {
-    case 10:
+    case 1:
       {
       const int light = AmbLight.read();
       DEBUG_SERIAL_PRINT_FLASHSTRING("light: ");
@@ -293,7 +293,7 @@ void loopAlt()
       break;
       }
 
-    case 20:
+    case 2:
       {
       const int heat = TemperatureC16.read();
       DEBUG_SERIAL_PRINT_FLASHSTRING("temp: ");
@@ -302,7 +302,7 @@ void loopAlt()
       break;
       }
 
-    case 30:
+    case 3:
       {
       const int rh = RelHumidity.read();
       DEBUG_SERIAL_PRINT_FLASHSTRING("RH%: ");
@@ -311,7 +311,7 @@ void loopAlt()
       break;
       }
 
-    case 40:
+    case 4:
       {
       const int tp = TempPot.read();
       DEBUG_SERIAL_PRINT_FLASHSTRING("dial: ");
@@ -323,7 +323,6 @@ void loopAlt()
 
  LED_HEATCALL_OFF();
 
-RFM23B.poll();
 
 
 
