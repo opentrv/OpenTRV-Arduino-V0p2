@@ -86,19 +86,19 @@ void POSTalt()
 #endif
 
 
-  // Force initialisation into low-power state.
-  const int heat = TemperatureC16.read();
-#if 1 && defined(DEBUG)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("temp: ");
-  DEBUG_SERIAL_PRINT(heat);
-  DEBUG_SERIAL_PRINTLN();
-#endif
-  const int light = AmbLight.read();
-#if 1 && defined(DEBUG)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("light: ");
-  DEBUG_SERIAL_PRINT(light);
-  DEBUG_SERIAL_PRINTLN();
-#endif
+//  // Force initialisation into low-power state.
+//  const int heat = TemperatureC16.read();
+//#if 1 && defined(DEBUG)
+//  DEBUG_SERIAL_PRINT_FLASHSTRING("temp: ");
+//  DEBUG_SERIAL_PRINT(heat);
+//  DEBUG_SERIAL_PRINTLN();
+//#endif
+//  const int light = AmbLight.read();
+//#if 1 && defined(DEBUG)
+//  DEBUG_SERIAL_PRINT_FLASHSTRING("light: ");
+//  DEBUG_SERIAL_PRINT(light);
+//  DEBUG_SERIAL_PRINTLN();
+//#endif
 
 
 
@@ -238,7 +238,7 @@ void loopAlt()
     }
   TIME_LSD = newTLSD;
 
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("*S"); // Start-of-cycle wake.
 #endif
 
@@ -251,6 +251,25 @@ void loopAlt()
 //  // Power up serial for the loop body.
 //  // May just want to turn it on in POSTalt() and leave it on...
 //  const bool neededWaking = powerUpSerialIfDisabled();
+
+  // Flash lights, read sensors.
+  LED_HEATCALL_ON();
+  LED_UI2_ON();
+  const int heat = TemperatureC16.read();
+#if 1 && defined(DEBUG)
+  DEBUG_SERIAL_PRINT_FLASHSTRING("temp: ");
+  DEBUG_SERIAL_PRINT(heat);
+  DEBUG_SERIAL_PRINTLN();
+#endif
+  LED_UI2_OFF();
+
+  const int light = AmbLight.read();
+#if 1 && defined(DEBUG)
+  DEBUG_SERIAL_PRINT_FLASHSTRING("light: ");
+  DEBUG_SERIAL_PRINT(light);
+  DEBUG_SERIAL_PRINTLN();
+#endif
+  LED_HEATCALL_OFF();
 
 
 
