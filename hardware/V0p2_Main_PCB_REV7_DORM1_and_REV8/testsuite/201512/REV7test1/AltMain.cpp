@@ -255,11 +255,17 @@ void loopAlt()
   // Flash lights, read sensors.
   LED_HEATCALL_ON();
   LED_UI2_ON();
-  DEBUG_SERIAL_PRINT_FLASHSTRING("buttons: ");
-  DEBUG_SERIAL_PRINT((LOW == fastDigitalRead(BUTTON_MODE_L)) ? 'm' : ' ');
-  DEBUG_SERIAL_PRINT((LOW == fastDigitalRead(BUTTON_LEARN_L)) ? 'l' : ' ');
-  DEBUG_SERIAL_PRINT((LOW == fastDigitalRead(BUTTON_LEARN2_L)) ? '2' : ' ');
-  DEBUG_SERIAL_PRINTLN();
+  const bool m = (LOW == fastDigitalRead(BUTTON_MODE_L));
+  const bool l1 = (LOW == fastDigitalRead(BUTTON_LEARN_L));
+  const bool l2 = (LOW == fastDigitalRead(BUTTON_LEARN2_L));
+  if(m || l1 || l2)
+    {
+    DEBUG_SERIAL_PRINT_FLASHSTRING("button(s): ");
+    DEBUG_SERIAL_PRINT(m ? 'm' : ' ');
+    DEBUG_SERIAL_PRINT(l1 ? 'l' : ' ');
+    DEBUG_SERIAL_PRINT(l2 ? '2' : ' ');
+    DEBUG_SERIAL_PRINTLN();
+    }
   LED_UI2_OFF();
 
 
