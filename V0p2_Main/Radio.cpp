@@ -19,10 +19,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 */
 
 /*
- RFM22/RFM23 wireless transceiver module support.
+ Wireless transceiver module support.
  */
 
-#include "RFM22_Radio.h"
+#include "Radio.h"
 
 #include "V0p2_Board_IO_Config.h" // I/O pin allocation: include ahead of I/O module headers.
 #include "Power_Management.h"
