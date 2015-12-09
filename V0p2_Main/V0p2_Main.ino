@@ -126,7 +126,7 @@ static uint16_t eeCRC()
 //   * Each of the 5 main sections of Power On Self Test is 1 second LED on, 0.5 second off, n short flashes separated by 0.25s off, then 0.5s off, then 1s on.
 //     The value of n is 1, 2, 3, 4, 5.
 //   * The LED should then go off except for optional faint flickers as the radio is being driven if set up to do so.
-#ifdef ALT_MAIN_LOOP
+#ifndef ALT_MAIN_LOOP
 #define PP_OFF_MS 250
 static void posPOST(const uint8_t position, const __FlashStringHelper *s)
   {
