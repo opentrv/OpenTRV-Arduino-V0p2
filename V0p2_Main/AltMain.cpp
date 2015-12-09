@@ -136,6 +136,9 @@ void POSTalt()
                                                     SIM900_UDP_ADDR,
                                                     SIM900_UDP_PORT };
   static const OTRadioLink::OTRadioChannelConfig RFMConfig(&SIM900Config, true, true, true);
+  fastDigitalWrite(A3, LOW);  // This turns power to the shield on
+  pinMode(A3, OUTPUT);
+  
 #elif defined(USE_MODULE_RFM22RADIOSIMPLE)
   static const OTRadioLink::OTRadioChannelConfig RFMConfig(NULL, true, true, true);
 #endif // USE_MODULE_SIM900
