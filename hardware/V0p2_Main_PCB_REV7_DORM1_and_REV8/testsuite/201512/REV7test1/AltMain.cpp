@@ -36,21 +36,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 #include <OTV0p2Base.h>
 #include <OTRadioLink.h>
 
-#include "Control.h"
 #include "Power_Management.h"
 #include "RFM22_Radio.h"
 #include "Serial_IO.h"
-#include "UI_Minimal.h"
 #include "V0p2_Sensors.h"
-
-#include <avr/pgmspace.h> // for radio config
-
-
-  // FOR FLASH.
-  static const char myPin[] PROGMEM = "0000";
-  static const char myAPN[] PROGMEM = "m2mkit.telefonica.com";
-  static const char myUDPAddr[] PROGMEM = "46.101.64.191";
-  static const char myUDPPort[] PROGMEM = "9999";
 
 
 
@@ -82,66 +71,12 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 #define MASK_PD MASK_PD_BASIC // Just RX.
 #endif
 
+static const OTRadioLink::OTRadioChannelConfig RFMConfig(OTRadValve::FHT8VRadValveBase::FHT8V_RFM23_Reg_Values, true, true, true);
 
 // Called from startup() after some initial setup has been done.
 // Can abort with panic() if need be.
 void POSTalt()
   {
-#ifdef USE_OTNULLRADIO
-// FIXME
-#elif defined USE_MODULE_SIM900
-//The config for the GSM depends on if you want it stored in flash or EEPROM.
-//
-//The SIM900LinkConfig object is located at the start of POSTalt() in AltMain.cpp and takes a set of void pointers to a \0 terminated string, either stored in flash or EEPROM.
-//
-//For EEPROM:
-//- Set the first field of SIM900LinkConfig to true.
-//- The configs are stored as \0 terminated strings starting at 0x300.
-//- You can program the eeprom using ./OTRadioLink/dev/utils/sim900eepromWrite.ino
-
-//  static const void *SIM900_PIN      = (void *)0x0300; // TODO confirm this address
-//  static const void *SIM900_APN      = (void *)0x0305;
-//  static const void *SIM900_UDP_ADDR = (void *)0x031B;
-//  static const void *SIM900_UDP_PORT = (void *)0x0329;
-//  static const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config {
-//                                                  true, 
-//                                                  SIM900_PIN,
-//                                                  SIM900_APN,
-//                                                  SIM900_UDP_ADDR,
-//                                                  SIM900_UDP_PORT };
-//For Flash:
-//- Set the first field of SIM900LinkConfig to false.
-//- Make a set of \0 terminated strings with the PROGMEM attribute holding the config details.
-//- set the void pointers to point to the strings (or just cast the strings and pass them to SIM900LinkConfig directly)
-//
-//  const char myPin[] PROGMEM = "0000";
-//  const char myAPN[] PROGMEM = "m2mkit.telefonica.com"; // FIXME check this
-//  const char myUDPAddr[] PROGMEM = "46.101.52.242";
-//  const char myUDPPort[] PROGMEM = "9999";
-//  static const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config {
-//                                                  false,
-//                                                  SIM900_PIN,
-//                                                  SIM900_APN,
-//                                                  SIM900_UDP_ADDR,
-//                                                  SIM900_UDP_PORT };
-
-    static const void *SIM900_PIN      = (void *)myPin;
-    static const void *SIM900_APN      = (void *)myAPN;
-    static const void *SIM900_UDP_ADDR = (void *)myUDPAddr;
-    static const void *SIM900_UDP_PORT = (void *)myUDPPort;
-    static const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config {
-                                                    false,
-                                                    SIM900_PIN,
-                                                    SIM900_APN,
-                                                    SIM900_UDP_ADDR,
-                                                    SIM900_UDP_PORT };
-  static const OTRadioLink::OTRadioChannelConfig RFMConfig(&SIM900Config, true, true, true);
-  fastDigitalWrite(A3, LOW);  // This turns power to the shield on
-  pinMode(A3, OUTPUT);
-  
-#elif defined(USE_MODULE_RFM22RADIOSIMPLE)
-  static const OTRadioLink::OTRadioChannelConfig RFMConfig(NULL, true, true, true);
-#endif // USE_MODULE_SIM900
 
 #if defined(USE_MODULE_RFM22RADIOSIMPLE) 
   // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
@@ -151,15 +86,15 @@ void POSTalt()
 #endif
 
 
-  // Force initialisation into low-power state.
-  const int heat = TemperatureC16.read();
-#if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("temp: ");
-  DEBUG_SERIAL_PRINT(heat);
-  DEBUG_SERIAL_PRINTLN();
-#endif
-  const int light = AmbLight.read();
-//#if 0 && defined(DEBUG)
+//  // Force initialisation into low-power state.
+//  const int heat = TemperatureC16.read();
+//#if 1 && defined(DEBUG)
+//  DEBUG_SERIAL_PRINT_FLASHSTRING("temp: ");
+//  DEBUG_SERIAL_PRINT(heat);
+//  DEBUG_SERIAL_PRINTLN();
+//#endif
+//  const int light = AmbLight.read();
+//#if 1 && defined(DEBUG)
 //  DEBUG_SERIAL_PRINT_FLASHSTRING("light: ");
 //  DEBUG_SERIAL_PRINT(light);
 //  DEBUG_SERIAL_PRINTLN();
@@ -199,13 +134,6 @@ void POSTalt()
     PCMSK2 = MASK_PD;
 #endif
     }
-
-
-//  pinMode(3, INPUT);        // FIXME Move to where they are set automatically
-//  digitalWrite(3, LOW);
-
-  bareStatsTX(false, false, false);
-
   }
 
 
@@ -306,37 +234,7 @@ void loopAlt()
   uint_fast8_t newTLSD;
   while(TIME_LSD == (newTLSD = OTV0P2BASE::getSecondsLT()))
     {
-    // Poll I/O and process message incrementally (in this otherwise idle time)
-    // before sleep and on wakeup in case some IO needs further processing now,
-    // eg work was accrued during the previous major slow/outer loop
-    // or the in a previous orbit of this loop sleep or nap was terminated by an I/O interrupt.
-    // Come back and have another go if work was done, until the next tick at most.
-    if(handleQueuedMessages(&Serial, true, &RFM23B)) { continue; }
-
-// If missing h/w interrupts for anything that needs rapid response
-// then AVOID the lowest-power long sleep.
-#if CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX && !defined(PIN_RFM_NIRQ)
-#define MUST_POLL_FREQUENTLY true
-#else
-#define MUST_POLL_FREQUENTLY false
-#endif
-    if(MUST_POLL_FREQUENTLY /** && in hub mode */ )
-      {
-      // No h/w interrupt wakeup on receipt of frame,
-      // so can only sleep for a short time between explicit poll()s,
-      // though allow wake on interrupt anyway to minimise loop timing jitter.
-      OTV0P2BASE::nap(WDTO_15MS, true);
-      }
-    else
-      {
-      // Normal long minimal-power sleep until wake-up interrupt.
-      // Rely on interrupt to force fall through to I/O poll() below.
-      OTV0P2BASE::sleepUntilInt();
-      }
-//    DEBUG_SERIAL_PRINTLN_FLASHSTRING("w"); // Wakeup.
-
-//    idle15AndPoll(); // Attempt to crash the board!
-
+    OTV0P2BASE::sleepUntilInt();
     }
   TIME_LSD = newTLSD;
 
@@ -354,6 +252,22 @@ void loopAlt()
 //  // May just want to turn it on in POSTalt() and leave it on...
 //  const bool neededWaking = powerUpSerialIfDisabled();
 
+  // Flash lights, read sensors.
+  LED_HEATCALL_ON();
+  LED_UI2_ON();
+  const bool m = (LOW == fastDigitalRead(BUTTON_MODE_L));
+  const bool l1 = (LOW == fastDigitalRead(BUTTON_LEARN_L));
+  const bool l2 = (LOW == fastDigitalRead(BUTTON_LEARN2_L));
+  if(m || l1 || l2)
+    {
+    DEBUG_SERIAL_PRINT_FLASHSTRING("button(s): ");
+    DEBUG_SERIAL_PRINT(m ? 'm' : ' ');
+    DEBUG_SERIAL_PRINT(l1 ? 'l' : ' ');
+    DEBUG_SERIAL_PRINT(l2 ? '2' : ' ');
+    DEBUG_SERIAL_PRINTLN();
+    }
+  LED_UI2_OFF();
+
 
 
 
@@ -368,50 +282,47 @@ void loopAlt()
 
 
 
-  switch(TIME_LSD)
+  switch(TIME_LSD >> 1) // 30s cycle to reduce boredom!
     {
-#ifdef ALLOW_STATS_TX
-    // Regular transmission of stats if NOT driving a local valve (else stats can be piggybacked onto that).
-    case 10:
+    case 1:
       {
-//      if((OTV0P2BASE::getMinutesLT() & 0x3) == 0) // Send once every 4 minutes.
-          {
-          // Send it!
-          // Try for double TX for extra robustness unless:
-          //   * this is a speculative 'extra' TX
-          //   * battery is low
-          //   * this node is a hub so needs to listen as much as possible
-          // This doesn't generally/always need to send binary/both formats
-          // if this is controlling a local FHT8V on which the binary stats can be piggybacked.
-          // Ie, if doesn't have a local TRV then it must send binary some of the time.
-          // Any recently-changed stats value is a hint that a strong transmission might be a good idea.
-          const bool doBinary = false; // !localFHT8VTRVEnabled() && OTV0P2BASE::randRNG8NextBoolean();
-          bareStatsTX(false, false, false);
-          }
+      const int light = AmbLight.read();
+      DEBUG_SERIAL_PRINT_FLASHSTRING("light: ");
+      DEBUG_SERIAL_PRINT(light);
+      DEBUG_SERIAL_PRINTLN();
       break;
       }
-#endif
 
-    // Poll ambient light level at a fixed rate.
-    // This allows the unit to respond consistently to (eg) switching lights on (eg TODO-388).
-    case 20: { AmbLight.read(); break; }
+    case 2:
+      {
+      const int heat = TemperatureC16.read();
+      DEBUG_SERIAL_PRINT_FLASHSTRING("temp: ");
+      DEBUG_SERIAL_PRINT(heat);
+      DEBUG_SERIAL_PRINTLN();
+      break;
+      }
 
-#if defined(SENSOR_DS18B20_ENABLE)
-    case 30: { TemperatureC16.read(); break; }
-#endif // SENSOR_DS18B20_ENABLE
+    case 3:
+      {
+      const int rh = RelHumidity.read();
+      DEBUG_SERIAL_PRINT_FLASHSTRING("RH%: ");
+      DEBUG_SERIAL_PRINT(rh);
+      DEBUG_SERIAL_PRINTLN();
+      break;
+      }
 
-#if defined(ENABLE_VOICE_SENSOR)
-      // read voice sensor
-    case 40: { Voice.read(); break; }
-#endif // (ENABLE_VOICE_SENSOR)
-
-#ifdef OCCUPANCY_SUPPORT
-    case 50: { Occupancy.read(); break; } // Needs regular poll.
-#endif // OCCUPANCY_SUPPORT
+    case 4:
+      {
+      const int tp = TempPot.read();
+      DEBUG_SERIAL_PRINT_FLASHSTRING("dial: ");
+      DEBUG_SERIAL_PRINT(tp);
+      DEBUG_SERIAL_PRINTLN();
+      break;
+      }
   }
 
+ LED_HEATCALL_OFF();
 
-RFM23B.poll();
 
 
 
