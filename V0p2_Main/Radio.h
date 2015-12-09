@@ -18,11 +18,11 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 */
 
 /*
- RFM22/RFM23 wireless transceiver module support.
+ Wireless transceiver module support.
  */
 
-#ifndef RFM22_H
-#define RFM22_H
+#ifndef RADIO_H
+#define RADIO_H
 
 #include "V0p2_Main.h"
 
