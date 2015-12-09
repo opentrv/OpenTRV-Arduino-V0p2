@@ -374,7 +374,7 @@ void loopAlt()
     // Regular transmission of stats if NOT driving a local valve (else stats can be piggybacked onto that).
     case 10:
       {
-      if((OTV0P2BASE::getMinutesLT() & 0x3) == 0) // Send once every 4 minutes.
+//      if((OTV0P2BASE::getMinutesLT() & 0x3) == 0) // Send once every 4 minutes.
           {
           // Send it!
           // Try for double TX for extra robustness unless:
