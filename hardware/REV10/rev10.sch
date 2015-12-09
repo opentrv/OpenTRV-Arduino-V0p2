@@ -11396,7 +11396,7 @@ Source: www.kingbright.com</description>
 <text x="190.5" y="114.3" size="1.778" layer="94" rot="R90">On BOM</text>
 <text x="307.34" y="177.8" size="1.778" layer="94" rot="R90">On BOM</text>
 <text x="45.72" y="175.26" size="1.778" layer="94" rot="R180">On BOM</text>
-<text x="121.92" y="195.58" size="1.778" layer="94" rot="R90">On BOM</text>
+<text x="139.7" y="233.68" size="1.778" layer="94" rot="R270">On BOM</text>
 <wire x1="325.12" y1="157.48" x2="325.12" y2="124.46" width="0.3048" layer="94"/>
 <wire x1="325.12" y1="124.46" x2="325.12" y2="83.82" width="0.3048" layer="94"/>
 <wire x1="325.12" y1="83.82" x2="388.62" y2="83.82" width="0.3048" layer="94"/>
@@ -11517,8 +11517,8 @@ Source: www.kingbright.com</description>
 <instance part="DQ" gate="1" x="139.7" y="203.2" rot="R180"/>
 <instance part="R1" gate="G$1" x="137.16" y="226.06" rot="R270"/>
 <instance part="R3" gate="G$1" x="134.62" y="226.06" rot="R270"/>
-<instance part="C5" gate="G$1" x="121.92" y="200.66" smashed="yes" rot="R180">
-<attribute name="NAME" x="125.476" y="202.819" size="1.778" layer="95" rot="R180"/>
+<instance part="C5" gate="G$1" x="139.7" y="228.6" smashed="yes">
+<attribute name="NAME" x="136.144" y="226.441" size="1.778" layer="95"/>
 </instance>
 <instance part="JP1" gate="A" x="271.78" y="106.68" smashed="yes">
 <attribute name="NAME" x="270.51" y="112.395" size="1.778" layer="95"/>
@@ -11986,8 +11986,13 @@ Source: www.kingbright.com</description>
 </segment>
 <segment>
 <pinref part="C5" gate="G$1" pin="1"/>
-<wire x1="121.92" y1="198.12" x2="121.92" y2="190.5" width="0.1524" layer="91"/>
+<wire x1="139.7" y1="231.14" x2="139.7" y2="238.76" width="0.1524" layer="91"/>
+<label x="139.7" y="246.38" size="1.778" layer="95" rot="R270"/>
+</segment>
+<segment>
+<wire x1="121.92" y1="190.5" x2="121.92" y2="210.82" width="0.1524" layer="91"/>
 <label x="121.92" y="187.96" size="1.778" layer="95" rot="R270"/>
+<pinref part="I2C_EXT" gate="A" pin="5"/>
 </segment>
 </net>
 <net name="XTAL1" class="0">
@@ -12339,9 +12344,9 @@ Source: www.kingbright.com</description>
 </net>
 <net name="N$26" class="0">
 <segment>
-<wire x1="121.92" y1="210.82" x2="121.92" y2="205.74" width="0.1524" layer="91"/>
+<pinref part="I2C_EXT" gate="A" pin="20"/>
 <pinref part="C5" gate="G$1" pin="2"/>
-<pinref part="I2C_EXT" gate="A" pin="5"/>
+<wire x1="139.7" y1="218.44" x2="139.7" y2="223.52" width="0.1524" layer="91"/>
 </segment>
 </net>
 </nets>
