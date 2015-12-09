@@ -139,6 +139,19 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #undef SENSOR_SHT21_ENABLE
 // IF DEFINED: enable use of second UI LED if available.
 #define ENABLE_UI_LED_2_IF_AVAILABLE
+// IF DEFINED: enable a primary radio module; without this unit is stand-alone.
+#define ENABLE_RADIO_PRIMARYARY_MODULE
+// Default primary radio module; RFM23B from REV1 to REV11.
+#define RADIO_PRIMARY_MODULE_TYPE OTRadioLink::OTRFM23BLink
+// IF DEFINED: enable a secondary (typically WAN-relay) radio module.
+#undef ENABLE_RADIO_SECONDARY_MODULE
+// IF DEFINED: enable a WAN-relay radio module.
+#undef ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY
+// Default (null) secondary radio module.
+#define RADIO_SECONDARY_MODULE_TYPE OTRFM23BLink::OTRFM23BLink
+
+
+
 // IF DEFINED: enable use AVR's 'idle' mode to stop the CPU but leave I/O (eg Serial) running to save power.
 // DHD20150920: CURRENTLY NOT RECOMMENDED AS STILL SEEMS TO CAUSE SOME BOARDS TO CRASH.
 #if 1 || defined(OTV0P2BASE_IDLE_NOT_RECOMMENDED)
