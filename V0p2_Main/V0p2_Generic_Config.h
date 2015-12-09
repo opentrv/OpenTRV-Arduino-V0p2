@@ -140,7 +140,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: enable use of second UI LED if available.
 #define ENABLE_UI_LED_2_IF_AVAILABLE
 // IF DEFINED: enable a primary radio module; without this unit is stand-alone.
-#define ENABLE_RADIO_PRIMARYARY_MODULE
+#define ENABLE_RADIO_PRIMARY_MODULE
 // Default primary radio module; RFM23B from REV1 to REV11.
 #define RADIO_PRIMARY_MODULE_TYPE OTRadioLink::OTRFM23BLink
 // IF DEFINED: enable a secondary (typically WAN-relay) radio module.
@@ -148,7 +148,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: enable a WAN-relay radio module.
 #undef ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY
 // Default (null) secondary radio module.
-#define RADIO_SECONDARY_MODULE_TYPE OTRFM23BLink::OTRFM23BLink
+#define RADIO_SECONDARY_MODULE_TYPE OTRadioLink::OTNullRadioLink
 
 
 
