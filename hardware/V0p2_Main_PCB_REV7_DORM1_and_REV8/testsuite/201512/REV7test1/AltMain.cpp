@@ -352,27 +352,25 @@ void loopAlt()
 
   esncbh.endStopHit = false;
 
-  // Manual open, manual close, soak test, or nothing...
-  if(open)
+  // Run motor if appropriate, for half a minor cycle, aborting if end-stop hit.
+  if(open || (soakTestMode && (OTRadValve::HardwareMotorDriverInterface::motorDriveOpening == soakTestDir)))
     {
     ValveDirect.motorRun(128, OTRadValve::HardwareMotorDriverInterface::motorDriveOpening, esncbh);
     }
-  else if(close)
+  else if(close || (soakTestMode && (OTRadValve::HardwareMotorDriverInterface::motorDriveClosing == soakTestDir)))
     {
     ValveDirect.motorRun(128, OTRadValve::HardwareMotorDriverInterface::motorDriveClosing, esncbh);
     }
-  else if(soakTestMode)
-    {
-    
-    }
-  // else leave the pin alone...
 
   if(esncbh.endStopHit)
     {
+    // Reverse soak-test direction when end-stop hit.
+    soakTestDir = (OTRadValve::HardwareMotorDriverInterface::motorDriveOpening == soakTestDir) ?
+        OTRadValve::HardwareMotorDriverInterface::motorDriveClosing : OTRadValve::HardwareMotorDriverInterface::motorDriveOpening;
     DEBUG_SERIAL_PRINTLN_FLASHSTRING("HIT END-STOP / STALLED");
     }
 
-  // Ensure that the motor is off before the end of cycle.
+  // Ensure that the motor is off before the end of the minor cycle.
   ValveDirect.motorRun(0, OTRadValve::HardwareMotorDriverInterface::motorOff, esncbh);
 
 
