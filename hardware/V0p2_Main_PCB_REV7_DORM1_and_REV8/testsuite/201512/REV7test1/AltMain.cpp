@@ -293,7 +293,6 @@ void loopAlt()
 
 
 
-
   switch(TIME_LSD >> 1) // 30s cycle to reduce boredom!
     {
     case 1:
