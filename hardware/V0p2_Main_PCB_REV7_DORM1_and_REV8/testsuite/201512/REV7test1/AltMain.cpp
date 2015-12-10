@@ -281,7 +281,6 @@ void loopAlt()
   const bool close = !soakTestMode && !l1 && l2;
   if(open || close)
     {
-    soakTestMode = !soakTestMode;
     DEBUG_SERIAL_PRINT_FLASHSTRING("manual valve open: ");
     DEBUG_SERIAL_PRINT(open);
     DEBUG_SERIAL_PRINTLN();
@@ -330,6 +329,15 @@ void loopAlt()
       const int tp = TempPot.read();
       DEBUG_SERIAL_PRINT_FLASHSTRING("dial: ");
       DEBUG_SERIAL_PRINT(tp);
+      DEBUG_SERIAL_PRINTLN();
+      break;
+      }
+
+    case 5:
+      {
+      const int mV = Supply_mV.read();
+      DEBUG_SERIAL_PRINT_FLASHSTRING("battery mV: ");
+      DEBUG_SERIAL_PRINT(mV);
       DEBUG_SERIAL_PRINTLN();
       break;
       }
