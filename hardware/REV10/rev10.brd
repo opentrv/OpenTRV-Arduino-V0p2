@@ -203,6 +203,10 @@
 <rectangle x1="29.845" y1="68.58" x2="36.195" y2="80.01" layer="41"/>
 <rectangle x1="7.82" y1="44.25" x2="32.585" y2="74.495" layer="42" rot="R90"/>
 <rectangle x1="7.82" y1="44.25" x2="32.585" y2="74.495" layer="41" rot="R90"/>
+<text x="91.201028125" y="64.13876875" size="1" layer="25" font="vector" rot="R180">H1</text>
+<text x="91.201028125" y="43.81876875" size="1" layer="25" font="vector" rot="R180">H3</text>
+<text x="50.561028125" y="61.59876875" size="1" layer="25" font="vector" rot="R180">H4</text>
+<text x="50.561028125" y="37.46876875" size="1" layer="25" font="vector" rot="R180">H5</text>
 </plain>
 <libraries>
 <library name="SparkFun-Passives">
