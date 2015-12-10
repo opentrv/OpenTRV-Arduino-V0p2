@@ -276,6 +276,16 @@ void loopAlt()
     DEBUG_SERIAL_PRINT(soakTestMode);
     DEBUG_SERIAL_PRINTLN();
     }
+  // Open or close as directed by learn buttons; only one can be true.
+  const bool open = l1 && !l2;
+  const bool close = !l1 && l2;
+  if(open || close)
+    {
+    soakTestMode = !soakTestMode;
+    DEBUG_SERIAL_PRINT_FLASHSTRING("manual valve open: ");
+    DEBUG_SERIAL_PRINT(open);
+    DEBUG_SERIAL_PRINTLN();
+    }
   LED_UI2_OFF();
 
 
