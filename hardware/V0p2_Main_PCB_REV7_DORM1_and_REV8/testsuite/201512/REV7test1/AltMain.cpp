@@ -297,6 +297,9 @@ void loopAlt()
     {
     case 1:
       {
+      // All LEDs off before measuring ambient light...
+      LED_HEATCALL_OFF();
+      LED_UI2_OFF();
       const int light = AmbLight.read();
       DEBUG_SERIAL_PRINT_FLASHSTRING("light: ");
       DEBUG_SERIAL_PRINT(light);
@@ -336,16 +339,16 @@ void loopAlt()
 
   // Valve controller...
   static OTRadValve::NullHardwareMotorDriverInterfaceCallbackHandler ncbh;
-  static OTRadValve::ValveMotorDirectV1<MOTOR_DRIVE_ML, MOTOR_DRIVE_MR, MOTOR_DRIVE_MI_AIN> ValveDirect;
+  static OTRadValve::ValveMotorDirectV1HardwareDriver<MOTOR_DRIVE_ML, MOTOR_DRIVE_MR, MOTOR_DRIVE_MI_AIN> ValveDirect;
 
   // Manual open, manual close, soak test, or nothing...
   if(open)
     {
- 
+    ValveDirect.motorRun(128, OTRadValve::HardwareMotorDriverInterface::motorDriveOpening, ncbh);
     }
   else if(close)
     {
-
+    ValveDirect.motorRun(128, OTRadValve::HardwareMotorDriverInterface::motorDriveClosing, ncbh);
     }
   else if(soakTestMode)
     {
@@ -353,32 +356,9 @@ void loopAlt()
     }
   // else leave the pin alone...
 
-//#ifdef HAS_DORM1_VALVE_DRIVE
-//  // Move valve to new target every minute to try to upset it!
-//  // Targets at key thresholds and random.
-//  if(0 == TIME_LSD)
-//    {
-//    switch(OTV0P2BASE::randRNG8() & 1)
-//      {
-//      case 0: ValveDirect.set(OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN-1); break; // Nominally shut.
-//      case 1: ValveDirect.set(OTRadValve::DEFAULT_VALVE_PC_MODERATELY_OPEN); break; // Nominally open.
-//      // Random.
-////      default: ValveDirect.set(OTV0P2BASE::randRNG8() % 101); break;
-//      }
-//    }
-//
-//  // Simulate human doing the right thing after fitting valve when required.
-//  if(ValveDirect.isWaitingForValveToBeFitted()) { ValveDirect.signalValveFitted(); }
-//
-//  // Provide regular poll to motor driver.
-//  // May take significant time to run
-//  // so don't call when timing is critical or not much left,
-//  // eg around critical TXes.
-//  const uint8_t pc = ValveDirect.read();
-//  DEBUG_SERIAL_PRINT_FLASHSTRING("Pos%: ");
-//  DEBUG_SERIAL_PRINT(pc);
-//  DEBUG_SERIAL_PRINTLN();
-//#endif
+  // And ensure that the motor is off before the end of cycle.
+  ValveDirect.motorRun(0, OTRadValve::HardwareMotorDriverInterface::motorOff, ncbh);
+
 
 
 
