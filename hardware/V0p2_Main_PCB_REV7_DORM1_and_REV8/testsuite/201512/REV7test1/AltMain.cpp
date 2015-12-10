@@ -336,16 +336,17 @@ void loopAlt()
 
 
 
- // In soak test keep the LED on for a while each cycle.
- if(soakTestMode)
-   {
-   while(OTV0P2BASE::getSubCycleTime() < 128) { }
-   }
- // Main LED off...
- LED_HEATCALL_OFF();
+  // In soak test keep the LED on for a while each cycle.
+  if(soakTestMode)
+    {
+    while(OTV0P2BASE::getSubCycleTime() < 128) { }
+    }
+  // Main LED off...
+  LED_HEATCALL_OFF();
 
 
-
+  // Valve controller...
+  static OTRadValve::ValveMotorDirectV1<MOTOR_DRIVE_ML, MOTOR_DRIVE_MR, MOTOR_DRIVE_MI_AIN> ValveDirect;
 
 
 
