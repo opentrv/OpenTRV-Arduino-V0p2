@@ -276,19 +276,21 @@ void loopAlt()
     DEBUG_SERIAL_PRINT(soakTestMode);
     DEBUG_SERIAL_PRINTLN();
     }
+  // Open or close as directed by learn buttons; only one can be true.
+  const bool open = l1 && !l2;
+  const bool close = !l1 && l2;
+  if(open || close)
+    {
+    soakTestMode = !soakTestMode;
+    DEBUG_SERIAL_PRINT_FLASHSTRING("manual valve open: ");
+    DEBUG_SERIAL_PRINT(open);
+    DEBUG_SERIAL_PRINTLN();
+    }
+  // If not in soak test keep both LEDs on for a while each cycle.
+  if(!soakTestMode) { OTV0P2BASE::nap(WDTO_15MS); }
+  // Secondary UI LED off first...
   LED_UI2_OFF();
 
-
-
-
-//#if defined(USE_MODULE_FHT8VSIMPLE)
-//  // Try for double TX for more robust conversation with valve?
-//  const bool doubleTXForFTH8V = false;
-//  // FHT8V is highest priority and runs first.
-//  // ---------- HALF SECOND #0 -----------
-//  bool useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_First(doubleTXForFTH8V); // Time for extra TX before UI.
-////  if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@0"); }
-//#endif
 
 
 
@@ -331,46 +333,21 @@ void loopAlt()
       }
   }
 
+
+
+
+
+ // In soak test keep the LED on for a while each cycle.
+ if(soakTestMode)
+   {
+   while(OTV0P2BASE::getSubCycleTime() < 128) { }
+   }
+ // Main LED off...
  LED_HEATCALL_OFF();
 
 
 
 
-//#if defined(USE_MODULE_FHT8VSIMPLE)
-//  if(useExtraFHT8VTXSlots)
-//    {
-//    // Time for extra TX before other actions, but don't bother if minimising power in frost mode.
-//    // ---------- HALF SECOND #1 -----------
-//    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V); 
-////    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@1"); }
-//    }
-//#endif
-
-
-
-
-
-//#if defined(USE_MODULE_FHT8VSIMPLE) && defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
-//  if(useExtraFHT8VTXSlots)
-//    {
-//    // ---------- HALF SECOND #2 -----------
-//    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V); 
-////    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@2"); }
-//    }
-//#endif
-
-
-
-
-
-//#if defined(USE_MODULE_FHT8VSIMPLE) && defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
-//  if(useExtraFHT8VTXSlots)
-//    {
-//    // ---------- HALF SECOND #3 -----------
-//    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V); 
-////    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@3"); }
-//    }
-//#endif
 
 
 //#ifdef HAS_DORM1_VALVE_DRIVE
