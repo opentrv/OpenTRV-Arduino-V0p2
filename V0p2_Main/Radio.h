@@ -31,6 +31,25 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#include <OTNullRadioLink.h>
 #include <OTSIM900Link.h>
 
+
+#if 0
+
+#ifdef ENABLE_RADIO_PRIMARY_MODULE
+extern RADIO_PRIMARY_MODULE_TYPE PrimaryRadio;
+//  DO NOT USE // extern OTRadioLink::OTRadioLink &RFM23B = PrimaryRadio;
+#endif // ENABLE_RADIO_PRIMARY_MODULE
+
+#ifdef ENABLE_RADIO_SECONDARY_MODULE
+extern RADIO_SECONDARY_MODULE_TYPE SecondaryRadio;
+#ifdef ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY
+extern OTRadioLink::OTRadioLink &RelayRadio = SecondaryRadio;
+#endif // ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY
+#endif // RADIO_SECONDARY_MODULE_TYPE
+
+#endif // 0 
+
+
+
 #ifdef USE_NULLRADIO
 extern OTRadioLink::OTNullRadioLink RFM23B;
 #elif defined(USE_MODULE_SIM900)

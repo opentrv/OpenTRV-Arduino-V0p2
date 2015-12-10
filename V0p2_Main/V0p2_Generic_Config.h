@@ -142,7 +142,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: enable a primary radio module; without this unit is stand-alone.
 #define ENABLE_RADIO_PRIMARY_MODULE
 // Default primary radio module; RFM23B from REV1 to REV11.
-#define RADIO_PRIMARY_MODULE_TYPE OTRadioLink::OTRFM23BLink
+#define RADIO_PRIMARY_MODULE_TYPE OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, PIN_RFM_NIRQ>
 // IF DEFINED: enable a secondary (typically WAN-relay) radio module.
 #undef ENABLE_RADIO_SECONDARY_MODULE
 // IF DEFINED: enable a WAN-relay radio module.
