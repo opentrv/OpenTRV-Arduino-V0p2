@@ -180,7 +180,7 @@
 <text x="20.065" y="2.53" size="1" layer="25" rot="R270">RX</text>
 <text x="35.305" y="11.42" size="1" layer="25" rot="R270">RST</text>
 <rectangle x1="2.74" y1="49.33" x2="27.505" y2="79.575" layer="41" rot="R90"/>
-<text x="4.9" y="4.065" size="1" layer="25" rot="R180">VOICE</text>
+<text x="3.355" y="8.635" size="1" layer="25">VOICE</text>
 <text x="9.145" y="9.07" size="1" layer="25" rot="R90">A7</text>
 <text x="9.145" y="0.645" size="1" layer="25" rot="R90">A6</text>
 <wire x1="16.51" y1="67.31" x2="16.51" y2="68.58" width="0.4064" layer="26"/>
@@ -194,7 +194,7 @@
 <text x="27.685" y="3.2" size="1" layer="25" rot="R270">GND</text>
 <text x="51.69" y="3.355" size="1" layer="25" rot="R90">GND</text>
 <text x="50.42" y="3.355" size="1" layer="25" rot="R90">GND</text>
-<text x="5.46" y="11.455" size="1" layer="25" rot="R270">GND</text>
+<text x="6.095" y="3.2" size="1" layer="25" rot="R270">GND</text>
 <text x="11.175" y="11.455" size="1" layer="25" rot="R270">VCC</text>
 <text x="11.685" y="0.645" size="1" layer="25" rot="R90">5V</text>
 <rectangle x1="90.805" y1="-4.35" x2="100.005" y2="4.85" layer="46"/>
@@ -2505,7 +2505,7 @@ Source: http://www.osram.convergy.de/ ... Lb_q993.pdf</description>
 <attribute name="NAME" x="52.451" y="44.704" size="1" layer="25"/>
 </element>
 <element name="DQ" library="wirepad" package="2,15/1,0" value="" x="1.905" y="10.795" smashed="yes">
-<attribute name="NAME" x="3.048" y="8.763" size="1" layer="25" rot="R180"/>
+<attribute name="NAME" x="5.588" y="11.303" size="1" layer="25" rot="R180"/>
 <attribute name="VALUE" x="1.905" y="11.795" size="0.0254" layer="27"/>
 </element>
 <element name="R1" library="resistor" package="R0603" value="4.7K" x="52.07" y="20.32" smashed="yes" rot="R180">
