@@ -253,6 +253,7 @@ void loopAlt()
 //  const bool neededWaking = powerUpSerialIfDisabled();
 
   static bool soakTestMode;
+  static OTRadValve::HardwareMotorDriverInterface::motor_drive soakTestDir = OTRadValve::HardwareMotorDriverInterface::motorDriveOpening;
 
   // Flash lights, read sensors.
   LED_HEATCALL_ON();
@@ -281,7 +282,6 @@ void loopAlt()
   const bool close = !soakTestMode && !l1 && l2;
   if(open || close)
     {
-    soakTestMode = !soakTestMode;
     DEBUG_SERIAL_PRINT_FLASHSTRING("manual valve open: ");
     DEBUG_SERIAL_PRINT(open);
     DEBUG_SERIAL_PRINTLN();
@@ -333,31 +333,47 @@ void loopAlt()
       DEBUG_SERIAL_PRINTLN();
       break;
       }
+
+    case 5:
+      {
+      const int mV = Supply_mV.read();
+      DEBUG_SERIAL_PRINT_FLASHSTRING("battery mV: ");
+      DEBUG_SERIAL_PRINT(mV);
+      DEBUG_SERIAL_PRINTLN();
+      break;
+      }
   }
 
 
 
   // Valve controller...
-  static OTRadValve::NullHardwareMotorDriverInterfaceCallbackHandler ncbh;
+  static OTRadValve::EndStopHardwareMotorDriverInterfaceCallbackHandler esncbh;
   static OTRadValve::ValveMotorDirectV1HardwareDriver<MOTOR_DRIVE_ML, MOTOR_DRIVE_MR, MOTOR_DRIVE_MI_AIN> ValveDirect;
+
+  esncbh.endStopHit = false;
 
   // Manual open, manual close, soak test, or nothing...
   if(open)
     {
-    ValveDirect.motorRun(128, OTRadValve::HardwareMotorDriverInterface::motorDriveOpening, ncbh);
+    ValveDirect.motorRun(128, OTRadValve::HardwareMotorDriverInterface::motorDriveOpening, esncbh);
     }
   else if(close)
     {
-    ValveDirect.motorRun(128, OTRadValve::HardwareMotorDriverInterface::motorDriveClosing, ncbh);
+    ValveDirect.motorRun(128, OTRadValve::HardwareMotorDriverInterface::motorDriveClosing, esncbh);
     }
   else if(soakTestMode)
     {
-
+    
     }
   // else leave the pin alone...
 
-  // And ensure that the motor is off before the end of cycle.
-  ValveDirect.motorRun(0, OTRadValve::HardwareMotorDriverInterface::motorOff, ncbh);
+  if(esncbh.endStopHit)
+    {
+    DEBUG_SERIAL_PRINTLN_FLASHSTRING("HIT END-STOP / STALLED");
+    }
+
+  // Ensure that the motor is off before the end of cycle.
+  ValveDirect.motorRun(0, OTRadValve::HardwareMotorDriverInterface::motorOff, esncbh);
 
 
 
