@@ -350,16 +350,19 @@ void loopAlt()
   static OTRadValve::EndStopHardwareMotorDriverInterfaceCallbackHandler esncbh;
   static OTRadValve::ValveMotorDirectV1HardwareDriver<MOTOR_DRIVE_ML, MOTOR_DRIVE_MR, MOTOR_DRIVE_MI_AIN> ValveDirect;
 
+  // Ensure that the motor is off.
+  ValveDirect.motorRun(0, OTRadValve::HardwareMotorDriverInterface::motorOff, esncbh);
+
   esncbh.endStopHit = false;
 
-  // Run motor if appropriate, for half a minor cycle, aborting if end-stop hit.
+  // Run motor if appropriate, for as long as possible this minor cycle, aborting if end-stop hit.
   if(open || (soakTestMode && (OTRadValve::HardwareMotorDriverInterface::motorDriveOpening == soakTestDir)))
     {
-    ValveDirect.motorRun(128, OTRadValve::HardwareMotorDriverInterface::motorDriveOpening, esncbh);
+    ValveDirect.motorRun(~0, OTRadValve::HardwareMotorDriverInterface::motorDriveOpening, esncbh);
     }
   else if(close || (soakTestMode && (OTRadValve::HardwareMotorDriverInterface::motorDriveClosing == soakTestDir)))
     {
-    ValveDirect.motorRun(128, OTRadValve::HardwareMotorDriverInterface::motorDriveClosing, esncbh);
+    ValveDirect.motorRun(~0, OTRadValve::HardwareMotorDriverInterface::motorDriveClosing, esncbh);
     }
 
   if(esncbh.endStopHit)
