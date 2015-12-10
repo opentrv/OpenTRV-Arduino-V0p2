@@ -252,6 +252,8 @@ void loopAlt()
 //  // May just want to turn it on in POSTalt() and leave it on...
 //  const bool neededWaking = powerUpSerialIfDisabled();
 
+  static bool soakTestMode;
+
   // Flash lights, read sensors.
   LED_HEATCALL_ON();
   LED_UI2_ON();
@@ -264,6 +266,24 @@ void loopAlt()
     DEBUG_SERIAL_PRINT(m ? 'm' : ' ');
     DEBUG_SERIAL_PRINT(l1 ? 'l' : ' ');
     DEBUG_SERIAL_PRINT(l2 ? '2' : ' ');
+    DEBUG_SERIAL_PRINTLN();
+    }
+  // Toggle soak-test mode with mode button held down.
+  if(m)
+    {
+    soakTestMode = !soakTestMode;
+    DEBUG_SERIAL_PRINT_FLASHSTRING("soak test mode: ");
+    DEBUG_SERIAL_PRINT(soakTestMode);
+    DEBUG_SERIAL_PRINTLN();
+    }
+  // Open or close as directed by learn buttons; only one can be true.
+  const bool open = l1 && !l2;
+  const bool close = !l1 && l2;
+  if(open || close)
+    {
+    soakTestMode = !soakTestMode;
+    DEBUG_SERIAL_PRINT_FLASHSTRING("manual valve open: ");
+    DEBUG_SERIAL_PRINT(open);
     DEBUG_SERIAL_PRINTLN();
     }
   LED_UI2_OFF();
