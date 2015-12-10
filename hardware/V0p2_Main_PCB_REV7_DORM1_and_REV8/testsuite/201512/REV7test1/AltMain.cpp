@@ -276,9 +276,9 @@ void loopAlt()
     DEBUG_SERIAL_PRINT(soakTestMode);
     DEBUG_SERIAL_PRINTLN();
     }
-  // Open or close as directed by learn buttons; only one can be true.
-  const bool open = l1 && !l2;
-  const bool close = !l1 && l2;
+  // Open or close as directed by learn buttons if not soak-test mode; at most one can be true.
+  const bool open = !soakTestMode && l1 && !l2;
+  const bool close = !soakTestMode && !l1 && l2;
   if(open || close)
     {
     soakTestMode = !soakTestMode;
@@ -334,19 +334,23 @@ void loopAlt()
 
 
 
+  // Valve controller...
+  static OTRadValve::NullHardwareMotorDriverInterfaceCallbackHandler ncbh;
+  static OTRadValve::ValveMotorDirectV1<MOTOR_DRIVE_ML, MOTOR_DRIVE_MR, MOTOR_DRIVE_MI_AIN> ValveDirect;
 
+  // Manual open, manual close, soak test, or nothing...
+  if(open)
+    {
+ 
+    }
+  else if(close)
+    {
 
- // In soak test keep the LED on for a while each cycle.
- if(soakTestMode)
-   {
-   while(OTV0P2BASE::getSubCycleTime() < 128) { }
-   }
- // Main LED off...
- LED_HEATCALL_OFF();
+    }
+  else if(soakTestMode)
+    {
 
-
-
-
+    }
 
 
 //#ifdef HAS_DORM1_VALVE_DRIVE
@@ -397,6 +401,16 @@ void loopAlt()
 
 
 
+
+
+
+  // In soak test keep the LED on for a decent while each minor cycle.
+  if(soakTestMode)
+    {
+    while(OTV0P2BASE::getSubCycleTime() < 128) { }
+    }
+  // Main LED off...
+  LED_HEATCALL_OFF();
 
 
 
