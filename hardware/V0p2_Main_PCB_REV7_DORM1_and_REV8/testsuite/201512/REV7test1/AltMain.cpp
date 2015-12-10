@@ -351,7 +351,7 @@ void loopAlt()
     {
 
     }
-
+  // else leave the pin alone...
 
 //#ifdef HAS_DORM1_VALVE_DRIVE
 //  // Move valve to new target every minute to try to upset it!
