@@ -188,8 +188,8 @@
 <hole x="98.335" y="72.5" drill="3"/>
 <hole x="1.35" y="40" drill="3"/>
 <hole x="98.335" y="40" drill="3"/>
-<rectangle x1="2.74" y1="52.505" x2="27.505" y2="82.75" layer="41" rot="R90"/>
-<rectangle x1="2.74" y1="49.33" x2="27.505" y2="79.575" layer="42" rot="R90"/>
+<rectangle x1="2.74" y1="44.25" x2="27.505" y2="74.495" layer="41" rot="R90"/>
+<rectangle x1="2.74" y1="44.25" x2="27.505" y2="74.495" layer="42" rot="R90"/>
 <text x="30.225" y="3.2" size="1" layer="25" rot="R270">GND</text>
 <text x="27.685" y="3.2" size="1" layer="25" rot="R270">GND</text>
 <text x="51.69" y="3.355" size="1" layer="25" rot="R90">GND</text>
@@ -201,6 +201,8 @@
 <rectangle x1="90.805" y1="75.47" x2="100.005" y2="84.67" layer="46"/>
 <rectangle x1="29.845" y1="68.58" x2="36.195" y2="80.01" layer="42"/>
 <rectangle x1="29.845" y1="68.58" x2="36.195" y2="80.01" layer="41"/>
+<rectangle x1="7.82" y1="44.25" x2="32.585" y2="74.495" layer="42" rot="R90"/>
+<rectangle x1="7.82" y1="44.25" x2="32.585" y2="74.495" layer="41" rot="R90"/>
 </plain>
 <libraries>
 <library name="SparkFun-Passives">
