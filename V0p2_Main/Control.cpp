@@ -930,7 +930,7 @@ bool pollIO(const bool force)
       _pO_lastPoll = sct;
       // Poll for inbound frames.
       // The will generally be little time to do this before getting an overrun or dropped frame.
-      RFM23B.poll();
+      PrimaryRadio.poll();
       }
 //    }
   return(false);
@@ -987,7 +987,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
     // Record stats as if remote, and treat channel as secure.
 //    recordCoreStats(true, &content);
     outputCoreStats(&Serial, true, &content);
-    handleQueuedMessages(&Serial, false, &RFM23B); // Serial must already be running!
+    handleQueuedMessages(&Serial, false, &PrimaryRadio); // Serial must already be running!
 #endif // ALLOW_BINARY_STATS_TX
     }
 
@@ -1056,7 +1056,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
 
     outputJSONStats(&Serial, true, bptr, sizeof(buf) - (bptr-buf)); // Serial must already be running!
 #ifdef ENABLE_RADIO_RX
-    handleQueuedMessages(&Serial, false, &RFM23B); // Serial must already be running!
+    handleQueuedMessages(&Serial, false, &PrimaryRadio); // Serial must already be running!
 #endif
     // Adjust JSON message for transmission.
     // (Set high-bit on final closing brace to make it unique, and compute (non-0xff) CRC.)
@@ -1107,7 +1107,7 @@ static void wireComponentsTogether()
   {
 #ifdef USE_MODULE_FHT8VSIMPLE
   // Set up radio.
-  FHT8V.setRadio(&RFM23B);
+  FHT8V.setRadio(&PrimaryRadio);
   // Load EEPROM house codes into primary FHT8V instance at start.
   FHT8VLoadHCFromEEPROM();
 #endif // USE_MODULE_FHT8VSIMPLE
@@ -1202,7 +1202,7 @@ void setupOpenTRV()
 
   // Radio not listening to start with.
   // Ignore any initial spurious RX interrupts for example.
-  RFM23B.listen(false);
+  PrimaryRadio.listen(false);
 
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("RFM23B.listen(false);");
@@ -1317,7 +1317,7 @@ ISR(PCINT0_vect)
   // Handler routine not required/expected to 'clear' this interrupt.
   // TODO: try to ensure that OTRFM23BLink.handleInterruptSimple() is inlineable to minimise ISR prologue/epilogue time and space.
   if((changes & RFM23B_INT_MASK) && !(pins & RFM23B_INT_MASK))
-    { RFM23B.handleInterruptSimple(); }
+    { PrimaryRadio.handleInterruptSimple(); }
 #endif
   }
 #endif
@@ -1647,18 +1647,18 @@ void loopOpenTRV()
 
 #if CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX
   // Act on eavesdropping need, setting up or clearing down hooks as required.
-  RFM23B.listen(needsToEavesdrop);
+  PrimaryRadio.listen(needsToEavesdrop);
 //#if defined(USE_MODULE_FHT8VSIMPLE)
   if(needsToEavesdrop)
     {
 #if 1 && defined(DEBUG)
-    for(uint8_t lastErr; 0 != (lastErr = RFM23B.getRXErr()); )
+    for(uint8_t lastErr; 0 != (lastErr = PrimaryRadio.getRXErr()); )
       {
       DEBUG_SERIAL_PRINT_FLASHSTRING("!RX err ");
       DEBUG_SERIAL_PRINT(lastErr);
       DEBUG_SERIAL_PRINTLN();
       }
-    const uint8_t dropped = RFM23B.getRXMsgsDroppedRecent();
+    const uint8_t dropped = PrimaryRadio.getRXMsgsDroppedRecent();
     static uint8_t oldDropped;
     if(dropped != oldDropped)
       {
@@ -1670,7 +1670,7 @@ void loopOpenTRV()
 #endif
 #if 0 && defined(DEBUG)
     // Filtered out messages are not any sort of error.
-    const uint8_t filtered = RFM23B.getRXMsgsFilteredRecent();
+    const uint8_t filtered = PrimaryRadio.getRXMsgsFilteredRecent();
     static uint8_t oldFiltered;
     if(filtered != oldFiltered)
       {
@@ -1731,7 +1731,7 @@ void loopOpenTRV()
     // or the in a previous orbit of this loop sleep or nap was terminated by an I/O interrupt.
     // May generate output to host on Serial.
     // Come back and have another go if work was done, until the next tick at most.
-    if(handleQueuedMessages(&Serial, true, &RFM23B)) { continue; }
+    if(handleQueuedMessages(&Serial, true, &PrimaryRadio)) { continue; }
 #endif
 
 //#if defined(USE_MODULE_RFM22RADIOSIMPLE) // Force radio to power-saving standby state if appropriate.
@@ -1858,7 +1858,7 @@ void loopOpenTRV()
     }
 #ifdef ENABLE_RADIO_RX
   // Handling the UI may have taken a little while, so process I/O a little.
-  handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O.
+  handleQueuedMessages(&Serial, true, &PrimaryRadio); // Deal with any pending I/O.
 #endif
 
 
@@ -1879,7 +1879,7 @@ void loopOpenTRV()
     useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8V.FHT8VPollSyncAndTX_Next(doubleTXForFTH8V);
 //    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@1"); }
     // Handling the FHT8V may have taken a little while, so process I/O a little.
-    handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O.
+    handleQueuedMessages(&Serial, true, &PrimaryRadio); // Deal with any pending I/O.
     }
 #endif
 
@@ -1942,7 +1942,7 @@ void loopOpenTRV()
         // Sleep randomly up to 128ms to spread transmissions and thus help avoid collisions.
         OTV0P2BASE::sleepLowPowerLessThanMs(1 + (OTV0P2BASE::randRNG8() & 0x7f));
 //        nap(randRNG8NextBoolean() ? WDTO_60MS : WDTO_120MS); // FIXME: need a different random interval generator!
-        handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O.
+        handleQueuedMessages(&Serial, true, &PrimaryRadio); // Deal with any pending I/O.
         // Send it!
         // Try for double TX for extra robustness unless:
         //   * this is a speculative 'extra' TX
@@ -2108,7 +2108,7 @@ void loopOpenTRV()
     useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8V.FHT8VPollSyncAndTX_Next(doubleTXForFTH8V);
 //    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@2"); }
     // Handling the FHT8V may have taken a little while, so process I/O a little.
-    handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O.
+    handleQueuedMessages(&Serial, true, &PrimaryRadio); // Deal with any pending I/O.
     }
 #endif
 
@@ -2122,7 +2122,7 @@ void loopOpenTRV()
     useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8V.FHT8VPollSyncAndTX_Next(doubleTXForFTH8V);
 //    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@3"); }
     // Handling the FHT8V may have taken a little while, so process I/O a little.
-    handleQueuedMessages(&Serial, true, &RFM23B); // Deal with any pending I/O.
+    handleQueuedMessages(&Serial, true, &PrimaryRadio); // Deal with any pending I/O.
     }
 #endif
 

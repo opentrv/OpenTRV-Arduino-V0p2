@@ -29,15 +29,27 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include "Serial_IO.h"
 
 
-#ifdef USE_NULLRADIO
-OTRadioLink::OTNullRadioLink RFM23B;
-#elif defined(USE_MODULE_SIM900)
-OTSIM900Link::OTSIM900Link RFM23B(A3, A2, (uint8_t)8, (uint8_t)5);
-#elif defined(PIN_RFM_NIRQ)
+
+
+// TODO ifdef to define when NullRadio needed
+OTRadioLink::OTNullRadioLink NullRadio;
+
+// Brings in necessary radio libs
+#ifdef ENABLE_RADIO_RFM23B
 OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, PIN_RFM_NIRQ> RFM23B;
-#else
-OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, -1> RFM23B;
+#endif ENABLE_RADIO_RFM23B
+#ifdef ENABLE_RADIO_SIM900
+OTSIM900Link::OTSIM900Link SIM900(A3, A2, 8, 5);
 #endif
+
+// Assigns radio to PrimaryRadio alias
+#if defined(RADIO_PRIMARY_RFM23B)
+OTRadioLink::OTRadioLink &PrimaryRadio = RFM23B;
+#elif defined(RADIO_PRIMARY_SIM900)
+OTRadioLink::OTRadioLink &PrimaryRadio = SIM900;
+#else
+OTRadioLink::OTRadioLink &PrimaryRadio = NullRadio;
+#endif // RADIO_PRIMARY_RFM23B
 
 // RFM22 is apparently SPI mode 0 for Arduino library pov.
 
@@ -64,7 +76,7 @@ void RFM22RawStatsTXFFTerminated(uint8_t * const buf, const bool doubleTX, bool 
     DEBUG_SERIAL_PRINTLN();
 #endif // DEBUG
   //if(!RFM23B.sendRaw(buf, buflen, 0, (doubleTX ? OTRadioLink::OTRadioLink::TXmax : OTRadioLink::OTRadioLink::TXnormal)))
-  if(!RFM23B.queueToSend(buf, buflen, 0, (doubleTX ? OTRadioLink::OTRadioLink::TXmax : OTRadioLink::OTRadioLink::TXnormal)))
+  if(!PrimaryRadio.queueToSend(buf, buflen, 0, (doubleTX ? OTRadioLink::OTRadioLink::TXmax : OTRadioLink::OTRadioLink::TXnormal)))
     {
 #if 0 && defined(DEBUG)
     DEBUG_SERIAL_PRINTLN_FLASHSTRING("!TX failed");
@@ -94,7 +106,7 @@ OTRadioLink::printRXMsg(p, txbuf, buflen);
     // Send loud since the hub may be relatively far away,
     // there is no 'ACK', and these messages should not be sent very often.
     // Should be consistent with automatically-generated alerts to help with diagnosis.
-    return(RFM23B.sendRaw(txbuf, buflen, 0, OTRadioLink::OTRadioLink::TXmax));
+    return(PrimaryRadio.sendRaw(txbuf, buflen, 0, OTRadioLink::OTRadioLink::TXmax));
     }
   return(false); // Failed.
   }

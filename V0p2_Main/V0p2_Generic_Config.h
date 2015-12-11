@@ -47,7 +47,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
 //#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as plain boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
-//#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
+#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
 //#define CONFIG_DORM1 // REV7 / DORM1 Winter 2014/2015 all-in-one valve unit.
 //#define CONFIG_DORM1_BOILER // REV8 / DORM1 Winter 2014/2015 boiler-control unit.
 
@@ -69,7 +69,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_REV9_STATS // REV9 as stats node, cut 2 of the board.
 //#define CONFIG_REV9_cut1 // REV9 as CC1 relay, cut1 of board.
 //#define CONFIG_DE_TESTLAB // Deniz's test environment.
-#define CONFIG_REV10_STRIPBOARD // REV10-based stripboard precursor for bus shelters
+//#define CONFIG_REV10_STRIPBOARD // REV10-based stripboard precursor for bus shelters
 //#define CONFIG_REV11_RFM23BTEST // Basic test to see if stats send
 //#define CONFIG_BAREBONES // No peripherals / on breadboard.
 
@@ -94,7 +94,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: basic FROST/WARM temperatures are settable.
 #define SETTABLE_TARGET_TEMPERATURES
 // IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
-#define LOCAL_TRV
+#undef LOCAL_TRV // FIXME
 // IF DEFINED: this unit controls a valve, but provides slave valve control only.
 #undef SLAVE_TRV
 // IF DEFINED: this unit *can* act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
@@ -140,9 +140,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: enable use of second UI LED if available.
 #define ENABLE_UI_LED_2_IF_AVAILABLE
 // IF DEFINED: enable a primary radio module; without this unit is stand-alone.
-#define ENABLE_RADIO_PRIMARY_MODULE
+#define ENABLE_RADIO_PRIMARY_MODULE // TODO currently does nothing
 // Default primary radio module; RFM23B from REV1 to REV11.
-#define RADIO_PRIMARY_MODULE_TYPE OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, PIN_RFM_NIRQ>
+#define ENABLE_RADIO_RFM23B   // Enable RFM23B by default
+#define RADIO_PRIMARY_RFM23B  // Assign RFM23B to primary radio
 // IF DEFINED: enable a secondary (typically WAN-relay) radio module.
 #undef ENABLE_RADIO_SECONDARY_MODULE
 // IF DEFINED: enable a WAN-relay radio module.
@@ -803,10 +804,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: enable use AVR's 'idle' mode to stop the CPU but leave I/O (eg Serial) running to save power.
 // DHD20150920: CURRENTLY NOT RECOMMENDED AS STILL SEEMS TO CAUSE SOME BOARDS TO CRASH.
 #define ENABLE_USE_OF_AVR_IDLE_MODE
-// IF DEFINED: Use OTNullRadioLink instead of a radio module
-// Undefine other radio //FIXME make this a part of the automatic stuff
-//#define USE_NULLRADIO
-#define USE_MODULE_SIM900
+#define ENABLE_RADIO_SIM900   // Enable SIM900
+#define RADIO_PRIMARY_SIM900  // Assign SIM900
 // Define voice module
 #define ENABLE_VOICE_SENSOR
 #define OCCUPANCY_DETECT_FROM_VOICE
@@ -848,6 +847,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #undef ENABLE_BOILER_HUB
 // IF DEFINED: allow RX of stats frames.
 #undef ALLOW_STATS_RX
+#undef LOCAL_TRV
 
 #endif // CONFIG_REV11_RFM23BTEST
 

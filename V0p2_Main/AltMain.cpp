@@ -145,9 +145,9 @@ void POSTalt()
 
 #if defined(USE_MODULE_RFM22RADIOSIMPLE) 
   // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
-  RFM23B.preinit(NULL);
+  PrimaryRadio.preinit(NULL);
   // Check that the radio is correctly connected; panic if not...
-  if(!RFM23B.configure(1, &RFMConfig) || !RFM23B.begin()) { panic(F("PANIC!")); }
+  if(!PrimaryRadio.configure(1, &RFMConfig) || !PrimaryRadio.begin()) { panic(F("PANIC!")); }
 #endif
 
 
@@ -229,7 +229,7 @@ ISR(PCINT0_vect)
   // Handler routine not required/expected to 'clear' this interrupt.
   // TODO: try to ensure that OTRFM23BLink.handleInterruptSimple() is inlineable to minimise ISR prologue/epilogue time and space.
   if((changes & RFM23B_INT_MASK) && !(pins & RFM23B_INT_MASK))
-    { RFM23B.handleInterruptSimple(); }
+    { PrimaryRadio.handleInterruptSimple(); }
 #endif
 
   }
@@ -311,7 +311,7 @@ void loopAlt()
     // eg work was accrued during the previous major slow/outer loop
     // or the in a previous orbit of this loop sleep or nap was terminated by an I/O interrupt.
     // Come back and have another go if work was done, until the next tick at most.
-    if(handleQueuedMessages(&Serial, true, &RFM23B)) { continue; }
+    if(handleQueuedMessages(&Serial, true, &PrimaryRadio)) { continue; }
 
 // If missing h/w interrupts for anything that needs rapid response
 // then AVOID the lowest-power long sleep.
@@ -411,7 +411,7 @@ void loopAlt()
   }
 
 
-RFM23B.poll();
+PrimaryRadio.poll();
 
 
 

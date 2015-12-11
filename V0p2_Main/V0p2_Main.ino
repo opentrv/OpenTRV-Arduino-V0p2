@@ -68,7 +68,7 @@ void panic()
   {
 #ifdef USE_MODULE_RFM22RADIOSIMPLE
   // Reset radio and go into low-power mode.
-  RFM23B.panicShutdown();
+  PrimaryRadio.panicShutdown();
 #endif
   // Power down almost everything else...
   minimisePowerWithoutSleep();
@@ -270,12 +270,18 @@ void optionalPOST()
 #if !defined(RFM22_IS_ACTUALLY_RFM23) && defined(DEBUG) && !defined(MIN_ENERGY_BOOT)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("(Using RFM22.)");
 #endif
+
+#ifdef ENABLE_RADIO_SIM900
+fastDigitalWrite(A3, 0);
+pinMode(A3, OUTPUT);
+#endif // ENABLE_RADIO_SIM900
+
   // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
-  RFM23B.preinit(NULL);
+  PrimaryRadio.preinit(NULL);
   // Check that the radio is correctly connected; panic if not...
-  if(!RFM23B.configure(1, &RFMConfig) || !RFM23B.begin()) { panic(); }
+  if(!PrimaryRadio.configure(1, &RFMConfig) || !PrimaryRadio.begin()) { panic(); }
   // Apply filtering, if any, while we're having fun...
-  RFM23B.setFilterRXISR(FilterRXISR);
+  PrimaryRadio.setFilterRXISR(FilterRXISR);
 //  if(neededToWakeSPI) { OTV0P2BASE::powerDownSPI(); }
 #endif
 

@@ -473,7 +473,7 @@ static bool extCLIHandler(Print *const p, char *const buf, const uint8_t n)
     OTRadioLink::printRXMsg(p, txbuf, buflen);
 #endif
           // TX at normal volume since ACKed and can be repeated if necessary.
-          if(RFM23B.sendRaw(txbuf, buflen))
+          if(PrimaryRadio.sendRaw(txbuf, buflen))
             { return(true); } // Done it!
           }
         }
