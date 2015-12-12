@@ -475,12 +475,10 @@ uint8_t ModelledRadValve::computeTargetTemp()
     return(frostC);
     }
 
-#ifdef SUPPORT_BAKE
   else if(inBakeMode()) // If in BAKE mode then use elevated target.
     {
     return(fnmin((uint8_t)(getWARMTargetC() + BAKE_UPLIFT), (uint8_t)MAX_TARGET_C)); // No setbacks apply in BAKE mode.
     }
-#endif
 
   else // In 'WARM' mode with possible setback.
     {
@@ -562,13 +560,13 @@ void ModelledRadValve::computeTargetTemperature()
   // Capture adjusted reference/room temperatures
   // and set callingForHeat flag also using same outline logic as computeRequiredTRVPercentOpen() will use.
   inputState.setReferenceTemperatures(TemperatureC16.get());
-  // True if the target temperature has already been met/passed.
-  const bool targetTemperatureReached = (newTarget >= (inputState.refTempC16 >> 4));
+  // True if the target temperature has not been met.
+  const bool targetNotReached = (newTarget >= (inputState.refTempC16 >> 4));
   // If the target temperature is already reached then cancel any BAKE mode in progress (TODO-648).
-  if(targetTemperatureReached) { cancelBakeDebounced(); }
+  if(!targetNotReached) { cancelBakeDebounced(); }
   // Only report as calling for heat when actively doing so.
   // (Eg opening the valve a little in case the boiler is already running does not count.)
-  callingForHeat = targetTemperatureReached &&
+  callingForHeat = targetNotReached &&
     (value >= OTRadValve::DEFAULT_VALVE_PC_SAFER_OPEN) &&
     isControlledValveReallyOpen();
   }
