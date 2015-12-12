@@ -58,13 +58,11 @@ void setWarmModeDebounced(const bool warm)
   DEBUG_SERIAL_PRINTLN();
 #endif
   isWarmMode = warm;
-#ifdef SUPPORT_BAKE
   if(!warm) { cancelBakeDebounced(); }
-#endif
   }
 
 
-#ifdef SUPPORT_BAKE // IF DEFINED: this unit supports BAKE mode.
+//#ifdef SUPPORT_BAKE // IF DEFINED: this unit supports BAKE mode.
 // Only relevant if isWarmMode is true,
 static uint_least8_t bakeCountdownM;
 // If true then the unit is in 'BAKE' mode, a subset of 'WARM' mode which boosts the temperature target temporarily.
@@ -75,7 +73,7 @@ void cancelBakeDebounced() { bakeCountdownM = 0; }
 // Start/restart 'BAKE' mode and timeout.
 // Should be only be called once 'debounced' if coming from a button press for example.
 void startBakeDebounced() { isWarmMode = true; bakeCountdownM = BAKE_MAX_M; }
-#endif
+//#endif
 
 
 
@@ -536,9 +534,11 @@ uint8_t ModelledRadValve::computeTargetTemp()
 
 
 // Compute/update target temperature and set up state for tick()/computeRequiredTRVPercentOpen().
+//
+// Will clear any BAKE mode if the newly-computed target temperature is already exceeded.
 void ModelledRadValve::computeTargetTemperature()
   {
-  // Compute basic target temperature.
+  // Compute basic target temperature statelessly.
   const uint8_t newTarget = computeTargetTemp();
 
   // Set up state for computeRequiredTRVPercentOpen().
@@ -562,9 +562,13 @@ void ModelledRadValve::computeTargetTemperature()
   // Capture adjusted reference/room temperatures
   // and set callingForHeat flag also using same outline logic as computeRequiredTRVPercentOpen() will use.
   inputState.setReferenceTemperatures(TemperatureC16.get());
+  // True if the target temperature has already been met/passed.
+  const bool targetTemperatureReached = (newTarget >= (inputState.refTempC16 >> 4));
+  // If the target temperature is already reached then cancel any BAKE mode in progress (TODO-648).
+  if(targetTemperatureReached) { cancelBakeDebounced(); }
   // Only report as calling for heat when actively doing so.
   // (Eg opening the valve a little in case the boiler is already running does not count.)
-  callingForHeat = (newTarget >= (inputState.refTempC16 >> 4)) &&
+  callingForHeat = targetTemperatureReached &&
     (value >= OTRadValve::DEFAULT_VALVE_PC_SAFER_OPEN) &&
     isControlledValveReallyOpen();
   }
@@ -581,12 +585,8 @@ void ModelledRadValve::computeCallForHeat()
   {
   ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
     {
-#ifdef SUPPORT_BAKE
-    // Cancel any BAKE mode once temperature target has been hit.
-    if(!callingForHeat) { bakeCountdownM = 0; }
     // Run down BAKE mode timer if need be, one tick per minute.
-    else if(bakeCountdownM > 0) { --bakeCountdownM; }
-#endif
+    if(bakeCountdownM > 0) { --bakeCountdownM; }
     }
 
   // Compute target and ensure that required input state is set for computeRequiredTRVPercentOpen().
