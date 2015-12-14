@@ -166,9 +166,7 @@ bool tickUI(const uint_fast8_t sec)
   // Should be only be set when 'debounced'.
   // Defaults to (starts as) false/FROST.
   static bool isWarmModePutative;
-#ifdef SUPPORT_BAKE
   static bool isBakeModePutative;
-#endif
 
   static bool modeButtonWasPressed;
   if(fastDigitalRead(BUTTON_MODE_L) == LOW)
@@ -177,9 +175,7 @@ bool tickUI(const uint_fast8_t sec)
       {
       // Capture real mode variable as button is pressed.
       isWarmModePutative = inWarmMode();
-#ifdef SUPPORT_BAKE
       isBakeModePutative = inBakeMode();
-#endif      
       modeButtonWasPressed = true;
       }
 
@@ -192,16 +188,13 @@ bool tickUI(const uint_fast8_t sec)
     if(!isWarmModePutative) // Was in FROST mode; moving to WARM mode.
       {
       isWarmModePutative = true;
-#ifdef SUPPORT_BAKE
       isBakeModePutative = false;
-#endif
       // 2 x flash 'heat call' to indicate now in WARM mode.
       LED_HEATCALL_OFF();
       offPause();
       LED_HEATCALL_ON();
       tinyPause();
       }
-#ifdef SUPPORT_BAKE
     else if(!isBakeModePutative) // Was in WARM mode, move to BAKE (with full timeout to run).
       {
       isBakeModePutative = true;
@@ -215,13 +208,10 @@ bool tickUI(const uint_fast8_t sec)
       LED_HEATCALL_ON();
       mediumPause();
       }
-#endif
     else // Was in BAKE (if supported, else was in WARM), move to FROST.
       {
       isWarmModePutative = false;
-#ifdef SUPPORT_BAKE
       isBakeModePutative = false;
-#endif
       // 1 x flash 'heat call' to indicate now in FROST mode.
       }
     }
@@ -234,9 +224,7 @@ bool tickUI(const uint_fast8_t sec)
       // Will also capture programmatic changes to isWarmMode, eg from schedules.
       const bool isWarmModeDebounced = isWarmModePutative;
       setWarmModeDebounced(isWarmModeDebounced);
-#ifdef SUPPORT_BAKE
       if(isBakeModePutative) { startBakeDebounced(); } else { cancelBakeDebounced(); }
-#endif
 
       markUIControlUsed(); // Note activity on release of MODE button...
       modeButtonWasPressed = false;
@@ -278,7 +266,7 @@ bool tickUI(const uint_fast8_t sec)
 
 #if defined(ENABLE_NOMINAL_RAD_VALVE) && defined(LOCAL_TRV)
         // Second flash to indicate actually calling for heat.
-        if(NominalRadValve.isCallingForHeat())
+        if(NominalRadValve.isCallingForHeat() || inBakeMode())
           {
           LED_HEATCALL_OFF();
           offPause(); // V0.09 was mediumPause().
@@ -287,7 +275,6 @@ bool tickUI(const uint_fast8_t sec)
           else if(!isComfortTemperature(wt)) { OTV0P2BASE::sleepLowPowerMs((VERYTINY_PAUSE_MS + TINY_PAUSE_MS) / 2); }
           else { tinyPause(); }
 
-#ifdef SUPPORT_BAKE
           if(inBakeMode())
             {
             // Third (lengthened) flash to indicate BAKE mode.
@@ -299,7 +286,6 @@ bool tickUI(const uint_fast8_t sec)
             else if(!isComfortTemperature(wt)) { smallPause(); }
             else { mediumPause(); }
             }
-#endif
           }
 #endif
         }
@@ -547,11 +533,11 @@ void serialStatusReport()
   // Stats line starts with distingushed marker character.
   // Initial '=' section with common essentials.
   Serial.print(LINE_START_CHAR_STATS);
-#ifdef SUPPORT_BAKE
+//#ifdef SUPPORT_BAKE
   Serial.print(inWarmMode() ? (inBakeMode() ? 'B' : 'W') : 'F');
-#else
-  Serial.print(inWarmMode() ? 'W' : 'F');
-#endif
+//#else
+//  Serial.print(inWarmMode() ? 'W' : 'F');
+//#endif
 #if defined(ENABLE_NOMINAL_RAD_VALVE)
   Serial.print(NominalRadValve.get()); Serial.print('%'); // Target valve position.
 #endif
@@ -754,9 +740,7 @@ static void dumpCLIUsage(const uint8_t stopBy)
 #if defined(ENABLE_NOMINAL_RAD_VALVE)
   printCLILine(deadline, 'O', F("reset Open %"));
 #endif
-#ifdef SUPPORT_BAKE
   printCLILine(deadline, 'Q', F("Quick Heat"));
-#endif
 //  printCLILine(deadline, F("R N"), F("dump Raw stats set N"));
 
   printCLILine(deadline, F("T HH MM"), F("set 24h Time"));
@@ -1230,10 +1214,8 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         break;
         }
 
-#ifdef SUPPORT_BAKE
       // Switch to (or restart) BAKE (Quick Heat) mode: Q
       case 'Q': { startBakeDebounced(); break; }
-#endif
 
       // Time set T HH MM.
       case 'T':
@@ -1269,9 +1251,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         else
 #endif
           {
-#ifdef SUPPORT_BAKE
           cancelBakeDebounced(); // Ensure BAKE mode not entered.
-#endif
           setWarmModeDebounced(true); // No parameter supplied; switch to WARM mode.
           }
         break;

@@ -128,7 +128,7 @@ void setWarmModeDebounced(const bool warm);
 // This is a 'debounced' value to reduce accidental triggering.
 bool inWarmMode();
 
-#ifdef SUPPORT_BAKE // IF DEFINED: this unit supports BAKE mode.
+//#ifdef SUPPORT_BAKE // IF DEFINED: this unit supports BAKE mode.
 // Force to BAKE mode;
 // Should be only be called once 'debounced' if coming from a button press for example.
 // Is safe to call repeatedly from test routines, eg does not cause EEPROM wear.
@@ -141,13 +141,13 @@ bool inBakeMode();
 // Should be only be called once 'debounced' if coming from a button press for example.
 // Cancel 'bake' mode if active; does not force to FROST mode.
 void cancelBakeDebounced();
-#else
-#define startBakeDebounced() {}
-// NO-OP versions if BAKE mode not supported.
-//#define inBakeMode() (false)
-#define inBakeModeDebounced() (false)
-#define cancelBakeDebounced() {}
-#endif
+//#else
+//#define startBakeDebounced() {}
+//// NO-OP versions if BAKE mode not supported.
+////#define inBakeMode() (false)
+//#define inBakeModeDebounced() (false)
+//#define cancelBakeDebounced() {}
+//#endif
 
 
 
@@ -368,6 +368,8 @@ class ModelledRadValve : public OTRadValve::AbstractRadValve
     // even if the device is left in WARM mode all the time,
     // using occupancy/light/etc to determine when temperature can be set back
     // without annoying users.
+    //
+    // Will clear any BAKE mode if the newly-computed target temperature is already exceeded.
     void computeTargetTemperature();
 
     // Computes optimal valve position given supplied input state including current position; [0,100].

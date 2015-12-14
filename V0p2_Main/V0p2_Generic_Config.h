@@ -467,7 +467,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#undef SETTABLE_TARGET_TEMPERATURES
 // IF DEFINED: use active-low LEARN button(s).  Needs SUPPORT_SINGLETON_SCHEDULE.  ***
 //#undef LEARN_BUTTON_AVAILABLE // OPTIONAL ON V0.09 PCB1  UI_Minimal.cpp:1180:32: error: 'handleLEARN' was not declared in this scope
-#define SUPPORT_BAKE  // UI_Minimal.cpp:266:28: error: 'inBakeMode' was not declared in this scope
 #define USE_MODULE_FHT8VSIMPLE //Control.cpp:1322:27: error: 'localFHT8VTRVEnabled' was not declared in this scope
 // If LDR is not to be used then specifically define OMIT_... as below.
 //#define OMIT_MODULE_LDROCCUPANCYDETECTION //  LDR 'occupancy' sensing irrelevant for DHW. Messaging.cpp:232:87: error: 'class AmbientLight' has no member named 'getRaw
@@ -530,7 +529,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#undef SETTABLE_TARGET_TEMPERATURES
 // IF DEFINED: use active-low LEARN button(s).  Needs SUPPORT_SINGLETON_SCHEDULE.  ***
 //#undef LEARN_BUTTON_AVAILABLE // OPTIONAL ON V0.09 PCB1  UI_Minimal.cpp:1180:32: error: 'handleLEARN' was not declared in this scope
-#define SUPPORT_BAKE  // UI_Minimal.cpp:266:28: error: 'inBakeMode' was not declared in this scope
 #define USE_MODULE_FHT8VSIMPLE //Control.cpp:1322:27: error: 'localFHT8VTRVEnabled' was not declared in this scope
 // If LDR is not to be used then specifically define OMIT_... as below.
 //#define OMIT_MODULE_LDROCCUPANCYDETECTION //  LDR 'occupancy' sensing irrelevant for DHW. Messaging.cpp:232:87: error: 'class AmbientLight' has no member named 'getRaw
@@ -820,7 +818,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#undef SETTABLE_TARGET_TEMPERATURES
 // IF DEFINED: use active-low LEARN button(s).  Needs SUPPORT_SINGLETON_SCHEDULE.  ***
 //#undef LEARN_BUTTON_AVAILABLE // OPTIONAL ON V0.09 PCB1  UI_Minimal.cpp:1180:32: error: 'handleLEARN' was not declared in this scope
-//#define SUPPORT_BAKE  // UI_Minimal.cpp:266:28: error: 'inBakeMode' was not declared in this scope
 //#define USE_MODULE_FHT8VSIMPLE //Control.cpp:1322:27: error: 'localFHT8VTRVEnabled' was not declared in this scope
 
 #endif // CONFIG_REV10_BUSSHELTER
@@ -912,8 +909,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #endif // RFM22_IS_ACTUALLY_RFM23
 // Anticipation logic not yet ready for prime-time.
 //#define ENABLE_ANTICIPATION
-// IF DEFINED: this unit supports BAKE mode.
-#define SUPPORT_BAKE
 // IF DEFINED: this unit may run on 2xAA cells, preferably rechargeable eg NiMH, ~2V--2.4V, and should monitor supply voltage.
 #define SUPPLY_VOLTAGE_LOW_2AA // May require limiting clock speed and using some alternative peripherals/sensors...
 // IF DEFINED: use FHT8V wireless radio module/valve.

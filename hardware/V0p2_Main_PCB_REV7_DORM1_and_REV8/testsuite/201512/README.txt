@@ -16,9 +16,9 @@ REV7test1:
 
 Derived from at subset of the the V0p2_Main mainline code.
 
-Built with Arduino 1.6.5 against the OTRadioLink library checked in in this directory.
+** Built with Arduino 1.6.5 against the OTRadioLink library checked in in this directory.
 
-The output .hex file are checked in.
+** The compiled output .hex file is checked in in this directory.
 
 Edit the AltMain.cpp file to make simple changes.
 

@@ -252,6 +252,9 @@ void loopAlt()
 //  // May just want to turn it on in POSTalt() and leave it on...
 //  const bool neededWaking = powerUpSerialIfDisabled();
 
+  static bool soakTestMode;
+  static OTRadValve::HardwareMotorDriverInterface::motor_drive soakTestDir = OTRadValve::HardwareMotorDriverInterface::motorDriveOpening;
+
   // Flash lights, read sensors.
   LED_HEATCALL_ON();
   LED_UI2_ON();
@@ -266,19 +269,27 @@ void loopAlt()
     DEBUG_SERIAL_PRINT(l2 ? '2' : ' ');
     DEBUG_SERIAL_PRINTLN();
     }
+  // Toggle soak-test mode with mode button held down.
+  if(m)
+    {
+    soakTestMode = !soakTestMode;
+    DEBUG_SERIAL_PRINT_FLASHSTRING("soak test mode: ");
+    DEBUG_SERIAL_PRINT(soakTestMode);
+    DEBUG_SERIAL_PRINTLN();
+    }
+  // Open or close as directed by learn buttons if not soak-test mode; at most one can be true.
+  const bool open = !soakTestMode && l1 && !l2;
+  const bool close = !soakTestMode && !l1 && l2;
+  if(open || close)
+    {
+    DEBUG_SERIAL_PRINT_FLASHSTRING("manual valve open: ");
+    DEBUG_SERIAL_PRINT(open);
+    DEBUG_SERIAL_PRINTLN();
+    }
+  // If not in soak test keep both LEDs on for a while each cycle.
+  if(!soakTestMode) { OTV0P2BASE::nap(WDTO_15MS); }
+  // Secondary UI LED off first...
   LED_UI2_OFF();
-
-
-
-
-//#if defined(USE_MODULE_FHT8VSIMPLE)
-//  // Try for double TX for more robust conversation with valve?
-//  const bool doubleTXForFTH8V = false;
-//  // FHT8V is highest priority and runs first.
-//  // ---------- HALF SECOND #0 -----------
-//  bool useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_First(doubleTXForFTH8V); // Time for extra TX before UI.
-////  if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@0"); }
-//#endif
 
 
 
@@ -286,6 +297,9 @@ void loopAlt()
     {
     case 1:
       {
+      // All LEDs off before measuring ambient light...
+      LED_HEATCALL_OFF();
+      LED_UI2_OFF();
       const int light = AmbLight.read();
       DEBUG_SERIAL_PRINT_FLASHSTRING("light: ");
       DEBUG_SERIAL_PRINT(light);
@@ -319,76 +333,49 @@ void loopAlt()
       DEBUG_SERIAL_PRINTLN();
       break;
       }
+
+    case 5:
+      {
+      const int mV = Supply_mV.read();
+      DEBUG_SERIAL_PRINT_FLASHSTRING("battery mV: ");
+      DEBUG_SERIAL_PRINT(mV);
+      DEBUG_SERIAL_PRINTLN();
+      break;
+      }
   }
 
- LED_HEATCALL_OFF();
 
 
+  // Valve controller...
+  static OTRadValve::EndStopHardwareMotorDriverInterfaceCallbackHandler esncbh;
+  static OTRadValve::ValveMotorDirectV1HardwareDriver<MOTOR_DRIVE_ML, MOTOR_DRIVE_MR, MOTOR_DRIVE_MI_AIN> ValveDirect;
 
+  // Ensure that the motor is off.
+  ValveDirect.motorRun(0, OTRadValve::HardwareMotorDriverInterface::motorOff, esncbh);
 
-//#if defined(USE_MODULE_FHT8VSIMPLE)
-//  if(useExtraFHT8VTXSlots)
-//    {
-//    // Time for extra TX before other actions, but don't bother if minimising power in frost mode.
-//    // ---------- HALF SECOND #1 -----------
-//    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V); 
-////    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@1"); }
-//    }
-//#endif
+  esncbh.endStopHit = false;
 
+  // Run motor if appropriate, for as long as possible this minor cycle, aborting if end-stop hit.
+  if(open || (soakTestMode && (OTRadValve::HardwareMotorDriverInterface::motorDriveOpening == soakTestDir)))
+    {
+    ValveDirect.motorRun(~0, OTRadValve::HardwareMotorDriverInterface::motorDriveOpening, esncbh);
+    }
+  else if(close || (soakTestMode && (OTRadValve::HardwareMotorDriverInterface::motorDriveClosing == soakTestDir)))
+    {
+    ValveDirect.motorRun(~0, OTRadValve::HardwareMotorDriverInterface::motorDriveClosing, esncbh);
+    }
 
+  if(esncbh.endStopHit)
+    {
+    // Reverse soak-test direction when end-stop hit.
+    soakTestDir = (OTRadValve::HardwareMotorDriverInterface::motorDriveOpening == soakTestDir) ?
+        OTRadValve::HardwareMotorDriverInterface::motorDriveClosing : OTRadValve::HardwareMotorDriverInterface::motorDriveOpening;
+    DEBUG_SERIAL_PRINTLN_FLASHSTRING("HIT END-STOP / STALLED");
+    }
 
+  // Ensure that the motor is off before the end of the minor cycle.
+  ValveDirect.motorRun(0, OTRadValve::HardwareMotorDriverInterface::motorOff, esncbh);
 
-
-//#if defined(USE_MODULE_FHT8VSIMPLE) && defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
-//  if(useExtraFHT8VTXSlots)
-//    {
-//    // ---------- HALF SECOND #2 -----------
-//    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V); 
-////    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@2"); }
-//    }
-//#endif
-
-
-
-
-
-//#if defined(USE_MODULE_FHT8VSIMPLE) && defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
-//  if(useExtraFHT8VTXSlots)
-//    {
-//    // ---------- HALF SECOND #3 -----------
-//    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V); 
-////    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@3"); }
-//    }
-//#endif
-
-
-//#ifdef HAS_DORM1_VALVE_DRIVE
-//  // Move valve to new target every minute to try to upset it!
-//  // Targets at key thresholds and random.
-//  if(0 == TIME_LSD)
-//    {
-//    switch(OTV0P2BASE::randRNG8() & 1)
-//      {
-//      case 0: ValveDirect.set(OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN-1); break; // Nominally shut.
-//      case 1: ValveDirect.set(OTRadValve::DEFAULT_VALVE_PC_MODERATELY_OPEN); break; // Nominally open.
-//      // Random.
-////      default: ValveDirect.set(OTV0P2BASE::randRNG8() % 101); break;
-//      }
-//    }
-//
-//  // Simulate human doing the right thing after fitting valve when required.
-//  if(ValveDirect.isWaitingForValveToBeFitted()) { ValveDirect.signalValveFitted(); }
-//
-//  // Provide regular poll to motor driver.
-//  // May take significant time to run
-//  // so don't call when timing is critical or not much left,
-//  // eg around critical TXes.
-//  const uint8_t pc = ValveDirect.read();
-//  DEBUG_SERIAL_PRINT_FLASHSTRING("Pos%: ");
-//  DEBUG_SERIAL_PRINT(pc);
-//  DEBUG_SERIAL_PRINTLN();
-//#endif
 
 
 
@@ -411,6 +398,16 @@ void loopAlt()
 
 
 
+
+
+
+  // In soak test keep the LED on for a decent while each minor cycle.
+  if(soakTestMode)
+    {
+    while(OTV0P2BASE::getSubCycleTime() < 128) { }
+    }
+  // Main LED off...
+  LED_HEATCALL_OFF();
 
 
 
