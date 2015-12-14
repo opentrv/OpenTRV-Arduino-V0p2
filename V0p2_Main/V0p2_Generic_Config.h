@@ -291,8 +291,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define ALLOW_STATS_RX
 // IF DEFINED: allow TX of stats frames.
 #undef ALLOW_STATS_TX // Don't allow it to TX its own...
-// IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
-#undef LOCAL_TRV
 #endif
 
 #ifdef CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
@@ -303,8 +301,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #undef ALLOW_STATS_RX
 // IF DEFINED: allow TX of stats frames.
 #define ALLOW_STATS_TX
-// IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
-#undef LOCAL_TRV
 #endif
 
 
