@@ -51,6 +51,15 @@ OTRadioLink::OTRadioLink &PrimaryRadio = SIM900;
 OTRadioLink::OTRadioLink &PrimaryRadio = NullRadio;
 #endif // RADIO_PRIMARY_RFM23B
 
+// Assign radio to SecondaryRadio alias
+#if defined(RADIO_SECONDARY_RFM23B)
+OTRadioLink::OTRadioLink &SecondaryRadio = RFM23B;
+#elif defined(RADIO_SECONDARY_SIM900)
+OTRadioLink::OTRadioLink &SecondaryRadio = SIM900;
+#else
+OTRadioLink::OTRadioLink &SecondaryRadio = NullRadio;
+#endif // RADIO_SECONDARY_RFM23B
+
 // RFM22 is apparently SPI mode 0 for Arduino library pov.
 
 // Send the underlying stats binary/text 'whitened' message.
@@ -83,6 +92,10 @@ void RFM22RawStatsTXFFTerminated(uint8_t * const buf, const bool doubleTX, bool 
 #endif
     } // DEBUG
   //DEBUG_SERIAL_PRINTLN_FLASHSTRING("RS");
+#ifdef ENABLE_RADIO_SECONDARY_MODULE
+    // TODO Send function
+    SecondaryRadio.queueToSend(buf, buflen, 0, (doubleTX ? OTRadioLink::OTRadioLink::TXmax : OTRadioLink::OTRadioLink::TXnormal));
+#endif // ENABLE_RADIO_SECONDARY_MODULE
   }
 
 

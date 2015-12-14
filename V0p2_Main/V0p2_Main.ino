@@ -185,7 +185,9 @@ void serialPrintlnBuildVersion()
   OTV0P2BASE::serialPrintlnAndFlush();
   }
 
+// FIXME deal with this
 static const OTRadioLink::OTRadioChannelConfig RFMConfig(OTRadValve::FHT8VRadValveBase::FHT8V_RFM23_Reg_Values, true, true, true);
+static const OTRadioLink::OTRadioChannelConfig SecondaryRadioConfig(&SIM900Config, true, true, true);
 
 #if defined(ALLOW_CC1_SUPPORT_RELAY)
 // For a CC1 relay, ignore everything except FTp2_CC1PollAndCmd messages.
@@ -262,6 +264,7 @@ void optionalPOST()
 
 //  posPOST(1, F("about to test radio module"));
 
+// FIXME  This section needs refactoring
 #ifdef USE_MODULE_RFM22RADIOSIMPLE
 // TODO-547: why does nested SPI enable break things?
 //  const bool neededToWakeSPI = OTV0P2BASE::powerUpSPIIfDisabled();
@@ -269,7 +272,7 @@ void optionalPOST()
 //  DEBUG_SERIAL_PRINTLN();
 #if !defined(RFM22_IS_ACTUALLY_RFM23) && defined(DEBUG) && !defined(MIN_ENERGY_BOOT)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("(Using RFM22.)");
-#endif
+#endif // !defined(RFM22_IS_ACTUALLY_RFM23) && defined(DEBUG) && !defined(MIN_ENERGY_BOOT)
 
 #ifdef ENABLE_RADIO_SIM900
 fastDigitalWrite(A3, 0);
@@ -283,27 +286,37 @@ pinMode(A3, OUTPUT);
   // Apply filtering, if any, while we're having fun...
   PrimaryRadio.setFilterRXISR(FilterRXISR);
 //  if(neededToWakeSPI) { OTV0P2BASE::powerDownSPI(); }
-#endif
+#endif // USE_MODULE_RFM22RADIOSIMPLE
+
+#ifdef ENABLE_RADIO_SECONDARY_MODULE
+  // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
+  SecondaryRadio.preinit(NULL);
+  // Check that the radio is correctly connected; panic if not...
+  if(!SecondaryRadio.configure(1, &SecondaryRadioConfig) || !SecondaryRadio.begin()) { panic(); }
+  // Apply filtering, if any, while we're having fun...
+  SecondaryRadio.setFilterRXISR(FilterRXISR);
+#endif // ENABLE_RADIO_SECONDARY_MODULE
+
 
 //  posPOST(1, F("Radio OK, checking buttons/sensors and xtal"));
 
-// Buttons should not be activated DURING boot; activated button implies fault.
-#if (9 != V0p2_REV) || !defined(CONFIG_REV9_cut1) // Usual tests for stuck control buttons.
-  // Check buttons not stuck in the activated position.
-  if((fastDigitalRead(BUTTON_MODE_L) == LOW)
-#if defined(BUTTON_LEARN_L)
-     || (fastDigitalRead(BUTTON_LEARN_L) == LOW)
-#endif
-#if defined(BUTTON_LEARN2_L) && (9 != V0p2_REV) // This input is not momentary with REV9.
-     || (fastDigitalRead(BUTTON_LEARN2_L) == LOW)
-#endif
-    )
-    { panic(F("button stuck")); }
-#else
-    DEBUG_SERIAL_PRINT(fastDigitalRead(BUTTON_MODE_L)); DEBUG_SERIAL_PRINTLN(); // Should be BOOSTSWITCH_L for REV9.
-    DEBUG_SERIAL_PRINT(fastDigitalRead(BUTTON_LEARN_L)); DEBUG_SERIAL_PRINTLN();
-    DEBUG_SERIAL_PRINT(fastDigitalRead(BUTTON_LEARN2_L)); DEBUG_SERIAL_PRINTLN(); // AKA WINDOW SWITCH
-#endif
+//// Buttons should not be activated DURING boot; activated button implies fault. FIXME
+//#if (9 != V0p2_REV) || !defined(CONFIG_REV9_cut1) // Usual tests for stuck control buttons.
+//  // Check buttons not stuck in the activated position.
+//  if((fastDigitalRead(BUTTON_MODE_L) == LOW)
+//#if defined(BUTTON_LEARN_L)
+//     || (fastDigitalRead(BUTTON_LEARN_L) == LOW)
+//#endif
+//#if defined(BUTTON_LEARN2_L) && (9 != V0p2_REV) // This input is not momentary with REV9.
+//     || (fastDigitalRead(BUTTON_LEARN2_L) == LOW)
+//#endif
+//    )
+//    { panic(F("button stuck")); }
+//#else
+//    DEBUG_SERIAL_PRINT(fastDigitalRead(BUTTON_MODE_L)); DEBUG_SERIAL_PRINTLN(); // Should be BOOSTSWITCH_L for REV9.
+//    DEBUG_SERIAL_PRINT(fastDigitalRead(BUTTON_LEARN_L)); DEBUG_SERIAL_PRINTLN();
+//    DEBUG_SERIAL_PRINT(fastDigitalRead(BUTTON_LEARN2_L)); DEBUG_SERIAL_PRINTLN(); // AKA WINDOW SWITCH
+//#endif
 
 #if defined(WAKEUP_32768HZ_XTAL)
   // Check that the 32768Hz async clock is actually running having done significant CPU-intensive work.

@@ -929,6 +929,7 @@ bool pollIO(const bool force)
       // Poll for inbound frames.
       // The will generally be little time to do this before getting an overrun or dropped frame.
       PrimaryRadio.poll();
+      SecondaryRadio.poll();
       }
 //    }
   return(false);

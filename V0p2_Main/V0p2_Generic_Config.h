@@ -47,7 +47,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
 //#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as plain boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
-#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
+//#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
 //#define CONFIG_DORM1 // REV7 / DORM1 Winter 2014/2015 all-in-one valve unit.
 //#define CONFIG_DORM1_BOILER // REV8 / DORM1 Winter 2014/2015 boiler-control unit.
 
@@ -70,6 +70,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_REV9_cut1 // REV9 as CC1 relay, cut1 of board.
 //#define CONFIG_DE_TESTLAB // Deniz's test environment.
 //#define CONFIG_REV10_STRIPBOARD // REV10-based stripboard precursor for bus shelters
+#define CONFIG_REV10 // Generic REV10 config
 //#define CONFIG_REV11_RFM23BTEST // Basic test to see if stats send
 //#define CONFIG_BAREBONES // No peripherals / on breadboard.
 
@@ -94,7 +95,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: basic FROST/WARM temperatures are settable.
 #define SETTABLE_TARGET_TEMPERATURES
 // IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
-#undef LOCAL_TRV // FIXME
+#define LOCAL_TRV // FIXME
 // IF DEFINED: this unit controls a valve, but provides slave valve control only.
 #undef SLAVE_TRV
 // IF DEFINED: this unit *can* act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
@@ -148,8 +149,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #undef ENABLE_RADIO_SECONDARY_MODULE
 // IF DEFINED: enable a WAN-relay radio module.
 #undef ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY
-// Default (null) secondary radio module.
-#define RADIO_SECONDARY_MODULE_TYPE OTRadioLink::OTNullRadioLink
 
 
 
@@ -292,6 +291,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define ALLOW_STATS_RX
 // IF DEFINED: allow TX of stats frames.
 #undef ALLOW_STATS_TX // Don't allow it to TX its own...
+// IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
+#undef LOCAL_TRV
 #endif
 
 #ifdef CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
@@ -302,6 +303,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #undef ALLOW_STATS_RX
 // IF DEFINED: allow TX of stats frames.
 #define ALLOW_STATS_TX
+// IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
+#undef LOCAL_TRV
 #endif
 
 
@@ -802,6 +805,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: enable use AVR's 'idle' mode to stop the CPU but leave I/O (eg Serial) running to save power.
 // DHD20150920: CURRENTLY NOT RECOMMENDED AS STILL SEEMS TO CAUSE SOME BOARDS TO CRASH.
 #define ENABLE_USE_OF_AVR_IDLE_MODE
+#undef ENABLE_RADIO_RFM23B
+#undef RADIO_PRIMARY_RFM23B
 #define ENABLE_RADIO_SIM900   // Enable SIM900
 #define RADIO_PRIMARY_SIM900  // Assign SIM900
 // Define voice module
@@ -822,6 +827,47 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 #endif // CONFIG_REV10_BUSSHELTER
 
+#ifdef CONFIG_REV10 // REV10 base config
+// use alternative loop
+#define V0p2_REV 10
+#define COMMON_SETTINGS
+// IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
+#undef LOCAL_TRV
+// IF DEFINED: this unit *can* act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.  ***
+#define ENABLE_BOILER_HUB // TODO this should be defined but won't fit.
+// IF DEFINED: allow RX of stats frames.
+#define ALLOW_STATS_RX
+// IF DEFINED: allow TX of stats frames.
+#define ALLOW_STATS_TX
+// IF DEFINED: allow minimal binary format in addition to more generic one: ~400 bytes code cost.
+#undef ALLOW_MINIMAL_STATS_TXRX
+// IF DEFINED: this unit supports CLI over the USB/serial connection, eg for run-time reconfig.
+#undef SUPPORT_CLI
+// IF DEFINED: enable a full OpenTRV CLI.
+#undef ENABLE_FULL_OT_CLI
+// IF DEFINED: enable a full OpenTRV UI with normal LEDs etc. ***
+#undef ENABLE_FULL_OT_UI
+// IF DEFINED: enable and extended CLI with a longer input buffer for example.
+#undef ENABLE_EXTENDED_CLI
+// IF DEFINED: minimise boot effort and energy eg for intermittently-powered energy-harvesting applications.  ***
+#undef MIN_ENERGY_BOOT
+// IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).   ***
+#undef SENSOR_SHT21_ENABLE
+// IF DEFINED: enable use AVR's 'idle' mode to stop the CPU but leave I/O (eg Serial) running to save power.
+// DHD20150920: CURRENTLY NOT RECOMMENDED AS STILL SEEMS TO CAUSE SOME BOARDS TO CRASH.
+#define ENABLE_USE_OF_AVR_IDLE_MODE
+#undef ENABLE_FULL_OT_UI
+
+//#undef ENABLE_RADIO_RFM23B
+//#undef RADIO_PRIMARY_RFM23B
+
+// Secondary radio
+// IF DEFINED: enable a secondary (typically WAN-relay) radio module.
+#define ENABLE_RADIO_SECONDARY_MODULE
+#define ENABLE_RADIO_SIM900   // Enable SIM900
+#define RADIO_SECONDARY_SIM900  // Assign SIM900
+
+#endif // CONFIG_REV10
 
 // ------------------------- REV11
 
