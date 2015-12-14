@@ -92,10 +92,6 @@ void RFM22RawStatsTXFFTerminated(uint8_t * const buf, const bool doubleTX, bool 
 #endif
     } // DEBUG
   //DEBUG_SERIAL_PRINTLN_FLASHSTRING("RS");
-#ifdef ENABLE_RADIO_SECONDARY_MODULE
-    // TODO Send function
-    SecondaryRadio.queueToSend(buf, buflen, 0, (doubleTX ? OTRadioLink::OTRadioLink::TXmax : OTRadioLink::OTRadioLink::TXnormal));
-#endif // ENABLE_RADIO_SECONDARY_MODULE
   }
 
 

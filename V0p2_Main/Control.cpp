@@ -1088,6 +1088,10 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
 #endif
     // Send it!
     RFM22RawStatsTXFFTerminated(buf, allowDoubleTX, RFM23BFramed);
+    #ifdef ENABLE_RADIO_SECONDARY_MODULE
+    // TODO Send function
+//    SecondaryRadio.queueToSend(buf, buflen, 0, (doubleTX ? OTRadioLink::OTRadioLink::TXmax : OTRadioLink::OTRadioLink::TXnormal));
+#endif // ENABLE_RADIO_SECONDARY_MODULE
     }
 #endif // defined(ALLOW_JSON_OUTPUT)
 

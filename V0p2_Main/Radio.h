@@ -32,15 +32,15 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include <OTSIM900Link.h>
 
 
-#if 1
 
-#ifdef ENABLE_RADIO_PRIMARY_MODULE
+
+//#ifdef ENABLE_RADIO_PRIMARY_MODULE
 extern OTRadioLink::OTRadioLink &PrimaryRadio;
-#endif // ENABLE_RADIO_PRIMARY_MODULE
+//#endif // ENABLE_RADIO_PRIMARY_MODULE
 
-#ifdef ENABLE_RADIO_SECONDARY_MODULE
+//#ifdef ENABLE_RADIO_SECONDARY_MODULE
 extern OTRadioLink::OTRadioLink &SecondaryRadio;
-#endif // RADIO_SECONDARY_MODULE_TYPE
+//#endif // RADIO_SECONDARY_MODULE_TYPE
 
 #ifdef ENABLE_RADIO_SIM900
 //For EEPROM:
@@ -59,8 +59,6 @@ extern OTRadioLink::OTRadioLink &SecondaryRadio;
                                                   SIM900_UDP_ADDR,
                                                   SIM900_UDP_PORT };
 #endif // ENABLE_RADIO_SIM900
-
-#endif // 0 
 
 
 
