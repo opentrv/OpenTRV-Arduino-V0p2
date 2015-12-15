@@ -187,8 +187,8 @@ void serialPrintlnBuildVersion()
 
 // FIXME deal with this
 static const OTRadioLink::OTRadioChannelConfig RFMConfig(OTRadValve::FHT8VRadValveBase::FHT8V_RFM23_Reg_Values, true, true, true);
-//static const OTRadioLink::OTRadioChannelConfig SecondaryRadioConfig(&SIM900Config, true, true, true);
-static const OTRadioLink::OTRadioChannelConfig SecondaryRadioConfig(NULL, true, true, true);
+static const OTRadioLink::OTRadioChannelConfig SecondaryRadioConfig(&SIM900Config, true, true, true);
+//static const OTRadioLink::OTRadioChannelConfig SecondaryRadioConfig(NULL, true, true, true);
 
 #if defined(ALLOW_CC1_SUPPORT_RELAY)
 // For a CC1 relay, ignore everything except FTp2_CC1PollAndCmd messages.
@@ -302,22 +302,22 @@ pinMode(A3, OUTPUT);
 //  posPOST(1, F("Radio OK, checking buttons/sensors and xtal"));
 
 // Buttons should not be activated DURING boot; activated button implies fault.
-#if (9 != V0p2_REV) || !defined(CONFIG_REV9_cut1) // Usual tests for stuck control buttons.
-  // Check buttons not stuck in the activated position.
-  if((fastDigitalRead(BUTTON_MODE_L) == LOW)
-#if defined(BUTTON_LEARN_L)
-     || (fastDigitalRead(BUTTON_LEARN_L) == LOW)
-#endif
-#if defined(BUTTON_LEARN2_L) && (9 != V0p2_REV) // This input is not momentary with REV9.
-     || (fastDigitalRead(BUTTON_LEARN2_L) == LOW)
-#endif
-    )
-    { panic(F("button stuck")); }
-#else
-    DEBUG_SERIAL_PRINT(fastDigitalRead(BUTTON_MODE_L)); DEBUG_SERIAL_PRINTLN(); // Should be BOOSTSWITCH_L for REV9.
-    DEBUG_SERIAL_PRINT(fastDigitalRead(BUTTON_LEARN_L)); DEBUG_SERIAL_PRINTLN();
-    DEBUG_SERIAL_PRINT(fastDigitalRead(BUTTON_LEARN2_L)); DEBUG_SERIAL_PRINTLN(); // AKA WINDOW SWITCH
-#endif
+//#if (9 != V0p2_REV) || !defined(CONFIG_REV9_cut1) // Usual tests for stuck control buttons.
+//  // Check buttons not stuck in the activated position.
+//  if((fastDigitalRead(BUTTON_MODE_L) == LOW)
+//#if defined(BUTTON_LEARN_L)
+//     || (fastDigitalRead(BUTTON_LEARN_L) == LOW)
+//#endif
+//#if defined(BUTTON_LEARN2_L) && (9 != V0p2_REV) // This input is not momentary with REV9.
+//     || (fastDigitalRead(BUTTON_LEARN2_L) == LOW)
+//#endif
+//    )
+//    { panic(F("button stuck")); }
+//#else
+//    DEBUG_SERIAL_PRINT(fastDigitalRead(BUTTON_MODE_L)); DEBUG_SERIAL_PRINTLN(); // Should be BOOSTSWITCH_L for REV9.
+//    DEBUG_SERIAL_PRINT(fastDigitalRead(BUTTON_LEARN_L)); DEBUG_SERIAL_PRINTLN();
+//    DEBUG_SERIAL_PRINT(fastDigitalRead(BUTTON_LEARN2_L)); DEBUG_SERIAL_PRINTLN(); // AKA WINDOW SWITCH
+//#endif
 
 #if defined(WAKEUP_32768HZ_XTAL)
   // Check that the 32768Hz async clock is actually running having done significant CPU-intensive work.

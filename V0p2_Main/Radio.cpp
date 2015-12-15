@@ -84,7 +84,6 @@ void RFM22RawStatsTXFFTerminated(uint8_t * const buf, const bool doubleTX, bool 
     DEBUG_SERIAL_PRINT(buflen);
     DEBUG_SERIAL_PRINTLN();
 #endif // DEBUG
-  //if(!RFM23B.sendRaw(buf, buflen, 0, (doubleTX ? OTRadioLink::OTRadioLink::TXmax : OTRadioLink::OTRadioLink::TXnormal)))
   if(!PrimaryRadio.queueToSend(buf, buflen, 0, (doubleTX ? OTRadioLink::OTRadioLink::TXmax : OTRadioLink::OTRadioLink::TXnormal)))
     {
 #if 0 && defined(DEBUG)
