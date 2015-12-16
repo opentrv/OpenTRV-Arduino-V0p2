@@ -963,6 +963,10 @@ void bareStatsTX(const bool allowDoubleTX, const bool doBinary, const bool RFM23
   //   * max binary length, or max JSON length + 1 for CRC + 1 to allow detection of oversize message
   //   * terminating 0xff
   uint8_t buf[STATS_MSG_START_OFFSET + max(FullStatsMessageCore_MAX_BYTES_ON_WIRE,  MSG_JSON_MAX_LENGTH+1) + 1];
+#if 0
+  // Make sure buffer is cleared for debug purposes
+  memset(buf, 0, sizeof(buf));
+#endif // 0
 
 #if defined(ALLOW_JSON_OUTPUT)
   if(doBinary)
@@ -1057,6 +1061,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
 
 #ifdef ENABLE_RADIO_SECONDARY_MODULE
 // FIXME secondary send assumes SIM900.
+//    NullRadio.queueToSend(buf + STATS_MSG_START_OFFSET, strlen((const char*)buf+STATS_MSG_START_OFFSET));
     SecondaryRadio.queueToSend(buf + STATS_MSG_START_OFFSET, strlen((const char*)buf+STATS_MSG_START_OFFSET));
 #endif // ENABLE_RADIO_SECONDARY_MODULE
 
