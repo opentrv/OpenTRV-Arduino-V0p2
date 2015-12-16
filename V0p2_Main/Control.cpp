@@ -1054,6 +1054,12 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
       }
 
     outputJSONStats(&Serial, true, bptr, sizeof(buf) - (bptr-buf)); // Serial must already be running!
+
+#ifdef ENABLE_RADIO_SECONDARY_MODULE
+// FIXME secondary send assumes SIM900.
+    SecondaryRadio.queueToSend(buf + STATS_MSG_START_OFFSET, strlen((const char*)buf+STATS_MSG_START_OFFSET));
+#endif // ENABLE_RADIO_SECONDARY_MODULE
+
 #ifdef ENABLE_RADIO_RX
     handleQueuedMessages(&Serial, false, &PrimaryRadio); // Serial must already be running!
 #endif
@@ -1088,15 +1094,6 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
 #endif
     // Send it!
     RFM22RawStatsTXFFTerminated(buf, allowDoubleTX, RFM23BFramed);
-    #ifdef ENABLE_RADIO_SECONDARY_MODULE
-// FIXME secondary send assumes SIM900. Also this is horrible.
-//bptr -= 2;
-//    *bptr = '}';
-//    bptr++;
-//    *bptr = 0xff;
-    // TODO how the hell do I work out the frame length?
-    SecondaryRadio.queueToSend(buf + STATS_MSG_START_OFFSET, OTRadioLink::frameLenFFTerminated(buf)-9);
-#endif // ENABLE_RADIO_SECONDARY_MODULE
     }
 #endif // defined(ALLOW_JSON_OUTPUT)
 
