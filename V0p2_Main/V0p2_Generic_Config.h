@@ -44,7 +44,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_Trial2013Winter_Round2_LVBHSH // REV2 cut4: local valve control, boiler hub, stats hub & TX.
 //#define CONFIG_Trial2013Winter_Round2_LVBH // REV2 cut4 local valve control and boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as plain boiler hub.
-#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
+//#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
 //#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as plain boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
 //#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
@@ -70,7 +70,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_REV9_cut1 // REV9 as CC1 relay, cut1 of board.
 //#define CONFIG_DE_TESTLAB // Deniz's test environment.
 //#define CONFIG_REV10_STRIPBOARD // REV10-based stripboard precursor for bus shelters
-//#define CONFIG_REV10 // Generic REV10 config
+#define CONFIG_REV10 // Generic REV10 config
 //#define CONFIG_REV11_RFM23BTEST // Basic test to see if stats send
 //#define CONFIG_BAREBONES // No peripherals / on breadboard.
 
@@ -90,6 +90,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define WAKEUP_32768HZ_XTAL
 // May require limiting clock speed and using some alternative peripherals/sensors.
 #define SUPPLY_VOLTAGE_LOW_2AA
+// IF DEFINED: enable use AVR's 'idle' mode to stop the CPU but leave I/O (eg Serial) running to save power.
+// DHD20150920: CURRENTLY NOT RECOMMENDED AS STILL SEEMS TO CAUSE SOME BOARDS TO CRASH.
+#undef ENABLE_USE_OF_AVR_IDLE_MODE
 // Provide software RTC support by default.
 #define USE_RTC_INTERNAL_SIMPLE
 // IF DEFINED: basic FROST/WARM temperatures are settable.
@@ -149,14 +152,15 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #undef ENABLE_RADIO_SECONDARY_MODULE
 // IF DEFINED: enable a WAN-relay radio module.
 #undef ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY
+// IF DEFINED: enable support for FS20 carrier for RX or TX.
+#undef ENABLE_FS20_CARRIER_SUPPORT
+//// IF DEFINED: enable support for FS20 carrier for TX specifically.
+//#undef ENABLE_FS20_CARRIER_SUPPORT_TX
+// IF DEFINED: enable support for FS20 encoding/decoding, eg to send to FHT8V.
+#undef ENABLE_FS20_ENCODING_SUPPORT
+// IF DEFINED: enable OpenTRV secure frame encoding/deciding (as of 2015/12).
+#undef ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
 
-
-
-// IF DEFINED: enable use AVR's 'idle' mode to stop the CPU but leave I/O (eg Serial) running to save power.
-// DHD20150920: CURRENTLY NOT RECOMMENDED AS STILL SEEMS TO CAUSE SOME BOARDS TO CRASH.
-#if 1 || defined(OTV0P2BASE_IDLE_NOT_RECOMMENDED)
-#undef ENABLE_USE_OF_AVR_IDLE_MODE
-#endif
 
 
 
@@ -994,6 +998,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // By default, use the RFM22/RFM23 module to talk to an FHT8V wireless radiator valve.
 #ifdef USE_MODULE_FHT8VSIMPLE
 #define USE_MODULE_RFM22RADIOSIMPLE
+#define ENABLE_FS20_CARRIER_SUPPORT
+#define ENABLE_FS20_ENCODING_SUPPORT
 // If this can be a hub, enable extra RX code.
 #ifdef ENABLE_BOILER_HUB
 #define USE_MODULE_FHT8VSIMPLE_RX
