@@ -1064,6 +1064,13 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uin
     {  
     switch(msg[1]) // Switch on type.
       {
+#ifdef ENABLE_OTSECUREFRAME_INSECURE_RX_PERMITTED // Allow parsing of insecure frame version...
+      case 'O': // Non-secure basic OpenTRV secureable frame...
+          {
+          break;
+          }
+#endif // ENABLE_OTSECUREFRAME_INSECURE_RX_PERMITTED
+
       // Reject unrecognised type, though potentially fall through to recognise other encodings.
       default: break;
       }
