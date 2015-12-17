@@ -61,6 +61,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 
 
 
+#ifdef ENABLE_FS20_ENCODING_SUPPORT
 
 // Return true if header/structure and CRC looks valid for (3-byte) buffered stats payload.
 bool verifyHeaderAndCRCForTrailingMinimalStatsPayload(uint8_t const *const buf)
@@ -134,6 +135,8 @@ void extractTrailingMinimalStatsPayload(const uint8_t *const buf, trailingMinima
   payload->tempC16 = ((((int16_t) buf[1]) << 4) | (buf[0] & 0xf)) + MESSAGING_TRAILING_MINIMAL_STATS_TEMP_BIAS;
   }
 
+#endif // ENABLE_FS20_ENCODING_SUPPORT
+
 
 #if defined(ALLOW_STATS_RX)
 #ifndef getInboundStatsQueueOverrun
@@ -150,7 +153,7 @@ uint16_t getInboundStatsQueueOverrun()
 #endif
 #endif
 
-
+#ifdef ENABLE_FS20_ENCODING_SUPPORT
 // Send (valid) core binary stats to specified print channel, followed by "\r\n".
 // This does NOT attempt to flush output nor wait after writing.
 // Will only write stats with a source ID.
@@ -184,7 +187,9 @@ void outputCoreStats(Print *p, bool secure, const FullStatsMessageCore_t *stats)
     p->println();
     }
   }
+#endif // ENABLE_FS20_ENCODING_SUPPORT
 
+#ifdef ENABLE_FS20_ENCODING_SUPPORT
 // Send (valid) minimal binary stats to specified print channel, followed by "\r\n".
 // This does NOT attempt to flush output nor wait after writing.
 void outputMinimalStats(Print *p, bool secure, uint8_t id0, uint8_t id1, const trailingMinimalStatsPayload_t *stats)
@@ -199,6 +204,7 @@ void outputMinimalStats(Print *p, bool secure, uint8_t id0, uint8_t id1, const t
     fullstats.containsTempAndPower = true;
     outputCoreStats(p, secure, &fullstats);
     }
+#endif // ENABLE_FS20_ENCODING_SUPPORT
 
 #if defined(ALLOW_STATS_TX)
 #if !defined(enableTrailingStatsPayload)
@@ -257,6 +263,8 @@ bool ensureIDCreated(const bool force)
   return(allGood);
   }
 
+
+#ifdef ENABLE_FS20_ENCODING_SUPPORT
 
 // Send core/common 'full' stats message.
 //   * content contains data to be sent in the message; must be non-null
@@ -454,6 +462,8 @@ const uint8_t *decodeFullStatsMessageCore(const uint8_t * const buf, const uint8
 
   return(b); // Point to just after CRC.
   }
+
+#endif // ENABLE_FS20_ENCODING_SUPPORT
 
 
 // Returns true unless the buffer clearly does not contain a possible valid raw JSON message.
@@ -779,11 +789,9 @@ uint8_t SimpleStatsRotationBase::writeJSON(uint8_t *const buf, const uint8_t buf
   // else compute it taking the housecode by preference if it is set.
   bp.print(F("\"@\":\""));
 
-#ifdef USE_MODULE_FHT8VSIMPLE
   if(NULL != id) { bp.print(id); } // Value has to be 'safe' (eg no " nor \ in it).
-  else
-    {
-    if(localFHT8VTRVEnabled())
+#ifdef USE_MODULE_FHT8VSIMPLE
+  else if(localFHT8VTRVEnabled())
       {
       const uint8_t hc1 = FHT8VGetHC1();
       const uint8_t hc2 = FHT8VGetHC2();
@@ -792,8 +800,8 @@ uint8_t SimpleStatsRotationBase::writeJSON(uint8_t *const buf, const uint8_t buf
       bp.print(hexDigit(hc2 >> 4));
       bp.print(hexDigit(hc2));
       }
-    else
 #endif
+  else
       {
       const uint8_t id1 = eeprom_read_byte(0 + (uint8_t *)V0P2BASE_EE_START_ID);
       const uint8_t id2 = eeprom_read_byte(1 + (uint8_t *)V0P2BASE_EE_START_ID);
@@ -802,7 +810,6 @@ uint8_t SimpleStatsRotationBase::writeJSON(uint8_t *const buf, const uint8_t buf
       bp.print(hexDigit(id2 >> 4));
       bp.print(hexDigit(id2));
       }
-    }
 
   bp.print('"');
   commaPending = true;
@@ -1170,7 +1177,7 @@ OTRadioLink::printRXMsg(p, txbuf, buflen);
       }
 #endif
 
-#ifdef ALLOW_STATS_RX
+#if defined(ALLOW_STATS_RX) && defined(ENABLE_FS20_ENCODING_SUPPORT)
     // Stand-alone stats message.
     case OTRadioLink::FTp2_FullStatsIDL: case OTRadioLink::FTp2_FullStatsIDH:
       {
@@ -1200,7 +1207,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats IDx");
       }
 #endif
 
-#if defined(LISTEN_FOR_FTp2_FS20_native) // Listen for calls for heat from remote valves...
+#if defined(LISTEN_FOR_FTp2_FS20_native) && defined(ENABLE_FS20_ENCODING_SUPPORT) // Listen for calls for heat from remote valves...
     case OTRadioLink::FTp2_FS20_native:
       {
       decodeAndHandleFTp2_FS20_native(p, secure, msg, msglen);
@@ -1208,7 +1215,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats IDx");
       }
 #endif
 
-#ifdef ALLOW_STATS_RX
+#if defined(ALLOW_STATS_RX) && defined(ENABLE_FS20_ENCODING_SUPPORT)
     case OTRadioLink::FTp2_JSONRaw:
       {
       if(-1 != checkJSONMsgRXCRC(msg, msglen))

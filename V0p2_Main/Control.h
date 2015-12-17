@@ -698,11 +698,12 @@ int expandTempC16(uint8_t cTemp);
 #define MAX_STATS_AMBLIGHT 254 // Maximum valid ambient light value in stats (very top of range is compressed).
 
 
-
+#ifdef ENABLE_FS20_ENCODING_SUPPORT
 // Clear and populate core stats structure with information from this node.
 // Exactly what gets filled in will depend on sensors on the node,
 // and may depend on stats TX security level (if collecting some sensitive items is also expensive).
 void populateCoreStats(FullStatsMessageCore_t *content);
+#endif // ENABLE_FS20_ENCODING_SUPPORT
 
 // Do bare stats transmission.
 // Output should be filtered for items appropriate

@@ -868,6 +868,7 @@ int expandTempC16(uint8_t cTemp)
   }
 
 
+#ifdef ENABLE_FS20_ENCODING_SUPPORT
 // Clear and populate core stats structure with information from this node.
 // Exactly what gets filled in will depend on sensors on the node,
 // and may depend on stats TX security level (eg if collecting some sensitive items is also expensive).
@@ -900,7 +901,7 @@ void populateCoreStats(FullStatsMessageCore_t *const content)
   content->occ = 0; // Not supported.
 #endif
   }
-
+#endif // ENABLE_FS20_ENCODING_SUPPORT
 
 
 
@@ -962,14 +963,17 @@ void bareStatsTX(const bool allowDoubleTX, const bool doBinary, const bool RFM23
   //   * buffer offset/preamble
   //   * max binary length, or max JSON length + 1 for CRC + 1 to allow detection of oversize message
   //   * terminating 0xff
-  uint8_t buf[STATS_MSG_START_OFFSET + max(FullStatsMessageCore_MAX_BYTES_ON_WIRE,  MSG_JSON_MAX_LENGTH+1) + 1];
+//  uint8_t buf[STATS_MSG_START_OFFSET + max(FullStatsMessageCore_MAX_BYTES_ON_WIRE,  MSG_JSON_MAX_LENGTH+1) + 1];
+  // Buffer need be no larger than typical 64-byte radio module TX buffer limit + optional terminator.
+  const uint8_t MSG_BUF_SIZE = 64 + 1;
+  uint8_t buf[MSG_BUF_SIZE];
 
 #if defined(ALLOW_JSON_OUTPUT)
   if(doBinary)
 #endif // ALLOW_JSON_OUTPUT
     {
-#ifdef ALLOW_BINARY_STATS_TX
-    // Send binary message first.
+#if defined(ALLOW_BINARY_STATS_TX) && defined(ENABLE_FS20_ENCODING_SUPPORT)
+    // Send binary message first (insecure, FS20-piggyback format).
     // Gather core stats.
     FullStatsMessageCore_t content;
     populateCoreStats(&content);
@@ -1955,7 +1959,7 @@ void loopOpenTRV()
         // if this is controlling a local FHT8V on which the binary stats can be piggybacked.
         // Ie, if doesn't have a local TRV then it must send binary some of the time.
         // Any recently-changed stats value is a hint that a strong transmission might be a good idea.
-#ifdef ALLOW_BINARY_STATS_TX
+#if defined(ALLOW_BINARY_STATS_TX) && defined(ENABLE_FS20_ENCODING_SUPPORT)
         const bool doBinary = !localFHT8VTRVEnabled() && OTV0P2BASE::randRNG8NextBoolean();
 #else
         const bool doBinary = false;

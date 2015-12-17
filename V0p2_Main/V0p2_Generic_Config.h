@@ -57,6 +57,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_DHD_TESTLAB_REV1 // REV1.
 //#define CONFIG_Trial2013Winter_Round1_STATSHUB // REV1 as stats hub.
 //#define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
+#define CONFIG_Trial2013Winter_Round2_SECURE_NOHUB // REV2 cut4 leaf (valve/sensor) 2015/12 secure protocol.
 //#define CONFIG_DHD_TESTLAB_REV4 // REV4 cut2.
 //#define CONFIG_DHD_TESTLAB_REV4_NOHUB // REV4 cut2, no hub.
 //#define CONFIG_BH_DHW // Bo's hot water.
@@ -70,7 +71,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_REV9_cut1 // REV9 as CC1 relay, cut1 of board.
 //#define CONFIG_DE_TESTLAB // Deniz's test environment.
 //#define CONFIG_REV10_STRIPBOARD // REV10-based stripboard precursor for bus shelters
-#define CONFIG_REV10 // Generic REV10 config
+//#define CONFIG_REV10 // Generic REV10 config
+// TODO //#define CONFIG_REV10_SECURE_BOILERHUB_GSM_SECURE // REV10 PCB boiler hub, relay to GSM, 2015/12 secure protocol.
 //#define CONFIG_REV11_RFM23BTEST // Basic test to see if stats send
 //#define CONFIG_BAREBONES // No peripherals / on breadboard.
 
@@ -88,8 +90,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // Defaults for V0.2; have to be undefined if not required.
 // Use sleep wakeup (2Hz by default) from external 32768Hz xtal and timer 2.
 #define WAKEUP_32768HZ_XTAL
-// May require limiting clock speed and using some alternative peripherals/sensors.
-#define SUPPLY_VOLTAGE_LOW_2AA
+// IF DEFINED: this unit may run on 2xAA cells, preferably rechargeable eg NiMH, ~2V--2.4V, and should monitor supply voltage.
+#define SUPPLY_VOLTAGE_LOW_2AA // May require limiting clock speed and using some alternative peripherals/sensors...
 // IF DEFINED: enable use AVR's 'idle' mode to stop the CPU but leave I/O clocls (eg Serial) running to save power.
 // DHD20150920: CURRENTLY NOT RECOMMENDED AS SEEMS TO CAUSE SOME BOARDS (REV1,REV9) TO CRASH.
 #undef ENABLE_USE_OF_AVR_IDLE_MODE
@@ -153,11 +155,13 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: enable a WAN-relay radio module.
 #undef ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY
 // IF DEFINED: enable support for FS20 carrier for RX or TX.
-#undef ENABLE_FS20_CARRIER_SUPPORT
-//// IF DEFINED: enable support for FS20 carrier for TX specifically.
-//#undef ENABLE_FS20_CARRIER_SUPPORT_TX
+#define ENABLE_FS20_CARRIER_SUPPORT
+// IF DEFINED: use FHT8V wireless radio module/valve.
+#define USE_MODULE_FHT8VSIMPLE
+//// IF DEFINED: enable support for FS20 carrier for TX specifically (to allow RX-only).
+//#define ENABLE_FS20_CARRIER_SUPPORT_TX
 // IF DEFINED: enable support for FS20 encoding/decoding, eg to send to FHT8V.
-#undef ENABLE_FS20_ENCODING_SUPPORT
+#define ENABLE_FS20_ENCODING_SUPPORT
 // IF DEFINED: enable OpenTRV secure frame encoding/deciding (as of 2015/12).
 #undef ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
 
@@ -335,6 +339,30 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: act as CC1 simple hub node.
 #define ALLOW_CC1_SUPPORT
 #define ALLOW_CC1_SUPPORT_HUB
+#endif
+
+#ifdef CONFIG_Trial2013Winter_Round2_SECURE_NOHUB
+#define CONFIG_Trial2013Winter_Round2 // Just like normal REV2 except...
+// IF DEFINED: this unit can act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
+#undef ENABLE_BOILER_HUB
+// IF DEFINED: allow RX of stats frames.
+#undef ALLOW_STATS_RX
+// IF DEFINED: allow TX of stats frames.
+#define ALLOW_STATS_TX
+// IF DEFINED: allow JSON stats frames alongside binary ones.
+#define ALLOW_JSON_OUTPUT
+// IF DEFINED: allow binary stats to be TXed.
+#undef ALLOW_BINARY_STATS_TX
+// IF DEFINED: enable support for FS20 carrier for RX or TX.
+#define ENABLE_FS20_CARRIER_SUPPORT
+// IF DEFINED: use FHT8V wireless radio module/valve.
+#undef USE_MODULE_FHT8VSIMPLE
+//// IF DEFINED: enable support for FS20 carrier for TX specifically (to allow RX-only).
+//#define ENABLE_FS20_CARRIER_SUPPORT_TX
+// IF DEFINED: enable support for FS20 encoding/decoding, eg to send to FHT8V.
+#undef ENABLE_FS20_ENCODING_SUPPORT
+// IF DEFINED: enable OpenTRV secure frame encoding/deciding (as of 2015/12).
+#define ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
 #endif
 
 
@@ -955,10 +983,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #endif // RFM22_IS_ACTUALLY_RFM23
 // Anticipation logic not yet ready for prime-time.
 //#define ENABLE_ANTICIPATION
-// IF DEFINED: this unit may run on 2xAA cells, preferably rechargeable eg NiMH, ~2V--2.4V, and should monitor supply voltage.
-#define SUPPLY_VOLTAGE_LOW_2AA // May require limiting clock speed and using some alternative peripherals/sensors...
-// IF DEFINED: use FHT8V wireless radio module/valve.
-#define USE_MODULE_FHT8VSIMPLE
 // IF DEFINED: use simple LDR-based detection of room use/occupancy; brings in getRoomInUseFromLDR subroutne.
 #define USE_MODULE_LDROCCUPANCYDETECTION
 // If LDR is not to be used then specifically define OMIT_... as below.
