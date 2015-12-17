@@ -90,8 +90,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define WAKEUP_32768HZ_XTAL
 // May require limiting clock speed and using some alternative peripherals/sensors.
 #define SUPPLY_VOLTAGE_LOW_2AA
-// IF DEFINED: enable use AVR's 'idle' mode to stop the CPU but leave I/O (eg Serial) running to save power.
-// DHD20150920: CURRENTLY NOT RECOMMENDED AS STILL SEEMS TO CAUSE SOME BOARDS TO CRASH.
+// IF DEFINED: enable use AVR's 'idle' mode to stop the CPU but leave I/O clocls (eg Serial) running to save power.
+// DHD20150920: CURRENTLY NOT RECOMMENDED AS SEEMS TO CAUSE SOME BOARDS (REV1,REV9) TO CRASH.
 #undef ENABLE_USE_OF_AVR_IDLE_MODE
 // Provide software RTC support by default.
 #define USE_RTC_INTERNAL_SIMPLE
