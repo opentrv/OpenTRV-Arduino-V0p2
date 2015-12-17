@@ -1053,21 +1053,29 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uin
   OTRadioLink::printRXMsg(p, msg, msglen);
 #endif
   if(msglen < 2) { return; } // Too short to be useful, so ignore.
-  switch(msg[0])
+
+  const uint8_t firstByte = msg[0];
+
+   // Length-first OpenTRV secureable-frame format...
+#ifdef ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
+  // Don't try to parse any apparently-truncated message.
+  // (It might be in a different format for example.)
+  if(firstByte <= msglen)
+    {  
+    switch(msg[1]) // Switch on type.
+      {
+      // Reject unrecognised type, though potentially fall through to recognise other encodings.
+      default: break;
+      }
+  }
+#endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
+
+#ifdef ENABLE_FS20_ENCODING_SUPPORT
+  switch(firstByte)
     {
     default:
     case OTRadioLink::FTp2_NONE: // Also zero-length with leading length byte.
-      {
-#if 0 && defined(DEBUG)
-      p->print(F("!RX bad msg ")); OTRadioLink::printRXMsg(p, msg, min(msglen, 8));
-#endif
-      return;
-      }
-
-    // Length-first OpenTRV secureable-frame format...
-#ifdef ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
-// TODO
-#endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
+      break;
 
 #ifdef ALLOW_CC1_SUPPORT_HUB
     // Handle alert message (at hub).
@@ -1238,6 +1246,13 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats IDx");
       }
 #endif
     }
+#endif // ENABLE_FS20_ENCODING_SUPPORT
+
+  // Unparseable frame: drop it.
+#if 1 && defined(DEBUG)
+  p->print(F("!RX bad msg prefix ")); OTRadioLink::printRXMsg(p, msg, min(msglen, 8));
+#endif
+  return;
   }
 #endif // ENABLE_RADIO_RX
 
