@@ -1602,42 +1602,42 @@ void loopOpenTRV()
 //    // Turn boiler output on or off in response to calls for heat.
 //    hubModeBoilerOn = isBoilerOn();
 
-    // In hub/listen/RX mode of some sort...
-    //
-    // If in stats hub mode then always listen; don't attempt to save power.
-    if(inStatsHubMode())
-      { needsToEavesdrop = true; }
-    // If not running a local TRV, and thus without local temperature measurement problems from self-heating,
-    // then just listen all the time for maximum simplicity and responsiveness at some cost in extra power consumption.
-    // (At least as long as power is not running low for some reason.)
-    else if(!localFHT8VTRVEnabled() && !batteryLow)
-      { needsToEavesdrop = true; }
-    // Try to avoid listening in the 'quiet' sensor minute in order to minimise noise and power consumption and self-heating.
-    // Optimisation: if just heard a call need not listen on this next cycle.
-    // Optimisation: if boiler timeout is a long time away (>> one FHT8V TX cycle, ~2 minutes excl quiet minute), then can avoid listening for now.
-    //    Longish period without any RX listening may allow hub unit to cool and get better sample of local temperature if marginal.
-    // Aim to listen in one stretch for greater than full FHT8V TX cycle of ~2m to avoid missing a call for heat.
-    // MUST listen for all of final 2 mins of boiler-on to avoid missing TX (without forcing boiler over-run).
-    else if((boilerCountdownTicks <= ((OTRadValve::FHT8VRadValveBase::MAX_FHT8V_TX_CYCLE_HS+1)/(2 * OTV0P2BASE::MAIN_TICK_S))) && // Don't miss a final TX that would keep the boiler on...
-       (boilerCountdownTicks != 0)) // But don't force unit to listen/RX all the time if no recent call for heat.
-      { needsToEavesdrop = true; }
-    else if((!heardIt) &&
-       (!minute0From4ForSensors) &&
-       (boilerCountdownTicks <= (RX_REDUCE_MIN_M*(60 / OTV0P2BASE::MAIN_TICK_S)))) // Listen eagerly for fresh calls for heat for last few minutes before turning boiler off.
-      {
-#if defined(RX_REDUCE_MAX_M) && defined(LOCAL_TRV)
-      // Skip the minute before the 'quiet' minute also in very quiet mode to improve local temp measurement.
-      // (Should still catch at least one TX per 4 minutes at worst.)
-      needsToEavesdrop =
-          ((boilerNoCallM <= RX_REDUCE_MAX_M) || (3 != (minuteCount & 3)));
-#else
-      needsToEavesdrop = true;
-#endif
-      }
+//    // In hub/listen/RX mode of some sort...
+//    //
+//    // If in stats hub mode then always listen; don't attempt to save power.
+//    if(inStatsHubMode())
+//      { needsToEavesdrop = true; }
+//    // If not running a local TRV, and thus without local temperature measurement problems from self-heating,
+//    // then just listen all the time for maximum simplicity and responsiveness at some cost in extra power consumption.
+//    // (At least as long as power is not running low for some reason.)
+//    else if(!localFHT8VTRVEnabled() && !batteryLow)
+//      { needsToEavesdrop = true; }
+//    // Try to avoid listening in the 'quiet' sensor minute in order to minimise noise and power consumption and self-heating.
+//    // Optimisation: if just heard a call need not listen on this next cycle.
+//    // Optimisation: if boiler timeout is a long time away (>> one FHT8V TX cycle, ~2 minutes excl quiet minute), then can avoid listening for now.
+//    //    Longish period without any RX listening may allow hub unit to cool and get better sample of local temperature if marginal.
+//    // Aim to listen in one stretch for greater than full FHT8V TX cycle of ~2m to avoid missing a call for heat.
+//    // MUST listen for all of final 2 mins of boiler-on to avoid missing TX (without forcing boiler over-run).
+//    else if((boilerCountdownTicks <= ((OTRadValve::FHT8VRadValveBase::MAX_FHT8V_TX_CYCLE_HS+1)/(2 * OTV0P2BASE::MAIN_TICK_S))) && // Don't miss a final TX that would keep the boiler on...
+//       (boilerCountdownTicks != 0)) // But don't force unit to listen/RX all the time if no recent call for heat.
+//      { needsToEavesdrop = true; }
+//    else if((!heardIt) &&
+//       (!minute0From4ForSensors) &&
+//       (boilerCountdownTicks <= (RX_REDUCE_MIN_M*(60 / OTV0P2BASE::MAIN_TICK_S)))) // Listen eagerly for fresh calls for heat for last few minutes before turning boiler off.
+//      {
+//#if defined(RX_REDUCE_MAX_M) && defined(LOCAL_TRV)
+//      // Skip the minute before the 'quiet' minute also in very quiet mode to improve local temp measurement.
+//      // (Should still catch at least one TX per 4 minutes at worst.)
+//      needsToEavesdrop =
+//          ((boilerNoCallM <= RX_REDUCE_MAX_M) || (3 != (minuteCount & 3)));
+//#else
+//      needsToEavesdrop = true;
+//#endif
+//      }
 
-#else
+#endif // defined(ENABLE_BOILER_HUB)
+
       needsToEavesdrop = true; // Listen if in hub mode.
-#endif
     }
 #endif
 

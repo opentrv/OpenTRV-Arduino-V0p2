@@ -62,7 +62,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 
 
 #ifdef ENABLE_FS20_ENCODING_SUPPORT
-
 // Return true if header/structure and CRC looks valid for (3-byte) buffered stats payload.
 bool verifyHeaderAndCRCForTrailingMinimalStatsPayload(uint8_t const *const buf)
   {
@@ -70,7 +69,9 @@ bool verifyHeaderAndCRCForTrailingMinimalStatsPayload(uint8_t const *const buf)
          (0 == (buf[1] & 0x80)) && // Top bit is clear on this byte also.
          (buf[2] == OTRadioLink::crc7_5B_update(buf[0], buf[1]))); // CRC validates, top bit implicitly zero.
   }
+#endif // ENABLE_FS20_ENCODING_SUPPORT
 
+#ifdef ENABLE_FS20_ENCODING_SUPPORT
 // Store minimal stats payload into (2-byte) buffer from payload struct (without CRC); values are coerced to fit as necessary..
 //   * payload  must be non-null
 // Used for minimal and full packet forms,
@@ -112,7 +113,9 @@ void writeTrailingMinimalStatsPayloadBody(uint8_t *buf, const trailingMinimalSta
   for(uint8_t i = 0; i < 2; ++i) { if(0 != (buf[i] & 0x80)) { panic(); } } // MSBits should be clear.
 #endif
   }
+#endif // ENABLE_FS20_ENCODING_SUPPORT
 
+#ifdef ENABLE_FS20_ENCODING_SUPPORT
 // Store minimal stats payload into (3-byte) buffer from payload struct and append CRC; values are coerced to fit as necessary..
 //   * payload  must be non-null
 void writeTrailingMinimalStatsPayload(uint8_t *buf, const trailingMinimalStatsPayload_t *payload)
@@ -123,7 +126,9 @@ void writeTrailingMinimalStatsPayload(uint8_t *buf, const trailingMinimalStatsPa
   for(uint8_t i = 0; i < 3; ++i) { if(0 != (buf[i] & 0x80)) { panic(); } } // MSBits should be clear.
 #endif
   }
+#endif // ENABLE_FS20_ENCODING_SUPPORT
 
+#ifdef ENABLE_FS20_ENCODING_SUPPORT
 // Extract payload from valid (3-byte) header+payload+CRC into payload struct; only 2 bytes are actually read.
 // Input bytes (eg header and check value) must already have been validated.
 void extractTrailingMinimalStatsPayload(const uint8_t *const buf, trailingMinimalStatsPayload_t *const payload)
@@ -134,9 +139,6 @@ void extractTrailingMinimalStatsPayload(const uint8_t *const buf, trailingMinima
   payload->powerLow = (0 != (buf[0] & 0x10));
   payload->tempC16 = ((((int16_t) buf[1]) << 4) | (buf[0] & 0xf)) + MESSAGING_TRAILING_MINIMAL_STATS_TEMP_BIAS;
   }
-
-#endif // ENABLE_FS20_ENCODING_SUPPORT
-
 #endif // ENABLE_FS20_ENCODING_SUPPORT
 
 
@@ -937,7 +939,7 @@ uint8_t SimpleStatsRotationBase::writeJSON(uint8_t *const buf, const uint8_t buf
 #define LISTEN_FOR_FTp2_FS20_native
 static void decodeAndHandleFTp2_FS20_native(Print *p, const bool secure, const uint8_t * const msg, const uint8_t msglen)
 {
-#if 0 && defined(DEBUG)
+#if (0 && defined(DEBUG)) || defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
   OTRadioLink::printRXMsg(p, msg, msglen);
 #endif
 
@@ -1054,13 +1056,18 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uin
   switch(msg[0])
     {
     default:
-    case OTRadioLink::FTp2_NONE:
+    case OTRadioLink::FTp2_NONE: // Also zero-length with leading length byte.
       {
 #if 0 && defined(DEBUG)
       p->print(F("!RX bad msg ")); OTRadioLink::printRXMsg(p, msg, min(msglen, 8));
 #endif
       return;
       }
+
+    // Length-first OpenTRV secureable-frame format...
+#ifdef ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
+// TODO
+#endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
 
 #ifdef ALLOW_CC1_SUPPORT_HUB
     // Handle alert message (at hub).
