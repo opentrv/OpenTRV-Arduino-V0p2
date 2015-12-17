@@ -1064,6 +1064,19 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uin
     {  
     switch(msg[1]) // Switch on type.
       {
+#ifdef ENABLE_OTSECUREFRAME_INSECURE_RX_PERMITTED // Allow parsing of insecure frame version...
+      case 'O': // Non-secure basic OpenTRV secureable frame...
+          {
+          // Do some simple validation of structure and number ranges.
+          const uint8_t fl = firstByte + 1; // (Full) frame length, including the length byte itself.
+          if(fl < 8) { break; } // Too short to be valid.
+          const uint8_t il = msg[2] & 0xf;
+          if(0 == il) { break; } // Anonymous sender (zero-length ID) not (yet) permitted.
+          // TODO
+          break;
+          }
+#endif // ENABLE_OTSECUREFRAME_INSECURE_RX_PERMITTED
+
       // Reject unrecognised type, though potentially fall through to recognise other encodings.
       default: break;
       }
