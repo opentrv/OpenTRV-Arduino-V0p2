@@ -85,7 +85,7 @@ typedef const char *SimpleStatsKey;
 // to avoid having to escape anything.
 bool isValidKey(SimpleStatsKey key);
 
-// Generic stats descripotor.
+// Generic stats descriptor.
 // Includes last value transmitted (to allow changed items to be sent selectively).
 struct GenericStatsDescriptor
   {
@@ -368,7 +368,8 @@ bool ensureIDCreated(const bool force = false);
 // Returns true iff valid ID byte: must have the top bit set and not be 0xff.
 static inline bool validIDByte(const uint8_t v) { return((0 != (0x80 & v)) && (0xff != v)); }
 
-// Minimal stats trailer
+#ifdef ENABLE_FS20_ENCODING_SUPPORT
+// Minimal stats trailer (for devices supporting FS20 encoding only)
 // =====================
 // When already sending an (FS20/FHT8V) message for some other reason
 // it may be convenient to add a trailing minimal stats payload
@@ -421,10 +422,11 @@ bool verifyHeaderAndCRCForTrailingMinimalStatsPayload(uint8_t const *buf);
 // Extract payload from valid (3-byte) header+payload+CRC into payload struct; only 2 bytes are actually read.
 // Input data must already have been validated.
 void extractTrailingMinimalStatsPayload(const uint8_t *buf, trailingMinimalStatsPayload_t *payload);
+#endif // ENABLE_FS20_ENCODING_SUPPORT
 
 
-
-// Full Stats Message (short ID)
+#ifdef ENABLE_FS20_ENCODING_SUPPORT
+// Full Stats Message (short ID) (for devices supporting FS20 encoding only)
 // =============================
 // Can be sent on its own or as a trailer for (say) an FHT8V message.
 // Can be recognised by the msbits of the leading (header) byte
@@ -501,7 +503,6 @@ void extractTrailingMinimalStatsPayload(const uint8_t *buf, trailingMinimalStats
 #define MESSAGING_FULL_STATS_CRC_INIT 0x7f // Initialisation value for CRC.
 // *           |  0  |  C6 |  C5 |  C5 |  C3 |  C2 |  C1 |  C0 |    7-bit CRC (crc7_5B_update), unencrypted
 
-
 // Representation of core/common elements of a 'full' stats message.
 // Flags indicate which fields are actually present.
 // All-zeros initialisation ensures no fields marked as present.
@@ -534,7 +535,6 @@ typedef struct FullStatsMessageCore
 // Clear a FullStatsMessageCore_t, also indicating no optional fields present.
 static inline void clearFullStatsMessageCore(FullStatsMessageCore_t *const p) { memset(p, 0, sizeof(FullStatsMessageCore_t)); }
 
-
 // Send core/common 'full' stats message.
 // Note that up to 7 bytes of payload is optimal for the CRC used.
 // If successful, returns pointer to terminating 0xff at end of message.
@@ -560,7 +560,7 @@ void outputCoreStats(Print *p, bool secure, const FullStatsMessageCore_t *stats)
 // Send (valid) minimal binary stats to specified print channel, followed by "\r\n".
 // This does NOT attempt to flush output nor wait after writing.
 void outputMinimalStats(Print *p, bool secure, uint8_t id0, uint8_t id1, const trailingMinimalStatsPayload_t *stats);
-
+#endif // ENABLE_FS20_ENCODING_SUPPORT
 
 // Maximum length of JSON (text) message payload.
 // A little bit less than a power of 2

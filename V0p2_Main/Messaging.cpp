@@ -61,6 +61,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 
 
 
+#ifdef ENABLE_FS20_ENCODING_SUPPORT
 
 // Return true if header/structure and CRC looks valid for (3-byte) buffered stats payload.
 bool verifyHeaderAndCRCForTrailingMinimalStatsPayload(uint8_t const *const buf)
@@ -133,6 +134,8 @@ void extractTrailingMinimalStatsPayload(const uint8_t *const buf, trailingMinima
   payload->powerLow = (0 != (buf[0] & 0x10));
   payload->tempC16 = ((((int16_t) buf[1]) << 4) | (buf[0] & 0xf)) + MESSAGING_TRAILING_MINIMAL_STATS_TEMP_BIAS;
   }
+
+#endif // ENABLE_FS20_ENCODING_SUPPORT
 
 
 #if defined(ALLOW_STATS_RX)
@@ -257,6 +260,8 @@ bool ensureIDCreated(const bool force)
   return(allGood);
   }
 
+
+#ifdef ENABLE_FS20_ENCODING_SUPPORT
 
 // Send core/common 'full' stats message.
 //   * content contains data to be sent in the message; must be non-null
@@ -454,6 +459,8 @@ const uint8_t *decodeFullStatsMessageCore(const uint8_t * const buf, const uint8
 
   return(b); // Point to just after CRC.
   }
+
+#endif // ENABLE_FS20_ENCODING_SUPPORT
 
 
 // Returns true unless the buffer clearly does not contain a possible valid raw JSON message.
@@ -1170,7 +1177,7 @@ OTRadioLink::printRXMsg(p, txbuf, buflen);
       }
 #endif
 
-#ifdef ALLOW_STATS_RX
+#if defined(ALLOW_STATS_RX) && defined(ENABLE_FS20_ENCODING_SUPPORT)
     // Stand-alone stats message.
     case OTRadioLink::FTp2_FullStatsIDL: case OTRadioLink::FTp2_FullStatsIDH:
       {
@@ -1200,7 +1207,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats IDx");
       }
 #endif
 
-#if defined(LISTEN_FOR_FTp2_FS20_native) // Listen for calls for heat from remote valves...
+#if defined(LISTEN_FOR_FTp2_FS20_native) && defined(ENABLE_FS20_ENCODING_SUPPORT) // Listen for calls for heat from remote valves...
     case OTRadioLink::FTp2_FS20_native:
       {
       decodeAndHandleFTp2_FS20_native(p, secure, msg, msglen);
@@ -1208,7 +1215,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats IDx");
       }
 #endif
 
-#ifdef ALLOW_STATS_RX
+#if defined(ALLOW_STATS_RX) && defined(ENABLE_FS20_ENCODING_SUPPORT)
     case OTRadioLink::FTp2_JSONRaw:
       {
       if(-1 != checkJSONMsgRXCRC(msg, msglen))
