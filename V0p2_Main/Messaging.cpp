@@ -137,6 +137,8 @@ void extractTrailingMinimalStatsPayload(const uint8_t *const buf, trailingMinima
 
 #endif // ENABLE_FS20_ENCODING_SUPPORT
 
+#endif // ENABLE_FS20_ENCODING_SUPPORT
+
 
 #if defined(ALLOW_STATS_RX)
 #ifndef getInboundStatsQueueOverrun

@@ -162,9 +162,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define ENABLE_FS20_CARRIER_SUPPORT_TX
 // IF DEFINED: enable support for FS20 encoding/decoding, eg to send to FHT8V.
 #define ENABLE_FS20_ENCODING_SUPPORT
-// IF DEFINED: enable OpenTRV secure frame encoding/deciding (as of 2015/12).
-#undef ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
-
+// IF DEFINED: enable OpenTRV secure frame encoding/decoding (as of 2015/12).
+#define ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
+// IF DEFINED: allow non-secure OpenTRV secure frame RX (as of 2015/12): DISABLED BY DEFAULT.
+#undef ENABLE_OTSECUREFRAME_INSECURE_RX_PERMITTED
 
 
 
@@ -361,8 +362,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define ENABLE_FS20_CARRIER_SUPPORT_TX
 // IF DEFINED: enable support for FS20 encoding/decoding, eg to send to FHT8V.
 #undef ENABLE_FS20_ENCODING_SUPPORT
-// IF DEFINED: enable OpenTRV secure frame encoding/deciding (as of 2015/12).
+// IF DEFINED: enable OpenTRV secure frame encoding/decoding (as of 2015/12).
 #define ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
+// IF DEFINED: allow non-secure OpenTRV secure frame RX (as of 2015/12): DISABLED BY DEFAULT.
+#define ENABLE_OTSECUREFRAME_INSECURE_RX_PERMITTED
 #endif
 
 
