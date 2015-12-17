@@ -57,7 +57,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_DHD_TESTLAB_REV1 // REV1.
 //#define CONFIG_Trial2013Winter_Round1_STATSHUB // REV1 as stats hub.
 //#define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
-#define CONFIG_Trial2013Winter_Round2_SECURE_NOHUB // REV2 cut4 leaf (valve/sensor) 2015/12 secure protocol.
+//#define CONFIG_Trial2013Winter_Round2_SECURE_NOHUB // REV2 cut4 leaf (valve/sensor) 2015/12 secure protocol.
+#define CONFIG_Trial2013Winter_Round2_SECURE_HUB // REV2 cut4 hub (boiler/stats) 2015/12 secure protocol.
 //#define CONFIG_DHD_TESTLAB_REV4 // REV4 cut2.
 //#define CONFIG_DHD_TESTLAB_REV4_NOHUB // REV4 cut2, no hub.
 //#define CONFIG_BH_DHW // Bo's hot water.
@@ -368,6 +369,32 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define ENABLE_OTSECUREFRAME_INSECURE_RX_PERMITTED
 #endif
 
+
+#ifdef CONFIG_Trial2013Winter_Round2_SECURE_HUB
+#define CONFIG_Trial2013Winter_Round2 // Just like normal REV2 except...
+// IF DEFINED: this unit can act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
+#define ENABLE_BOILER_HUB
+// IF DEFINED: allow RX of stats frames.
+#define ALLOW_STATS_RX
+// IF DEFINED: allow TX of stats frames.
+#define ALLOW_STATS_TX
+// IF DEFINED: allow JSON stats frames alongside binary ones.
+#define ALLOW_JSON_OUTPUT
+// IF DEFINED: allow binary stats to be TXed.
+#undef ALLOW_BINARY_STATS_TX
+// IF DEFINED: enable support for FS20 carrier for RX or TX.
+#define ENABLE_FS20_CARRIER_SUPPORT
+// IF DEFINED: use FHT8V wireless radio module/valve.
+#undef USE_MODULE_FHT8VSIMPLE
+//// IF DEFINED: enable support for FS20 carrier for TX specifically (to allow RX-only).
+//#define ENABLE_FS20_CARRIER_SUPPORT_TX
+// IF DEFINED: enable support for FS20 encoding/decoding, eg to send to FHT8V.
+#undef ENABLE_FS20_ENCODING_SUPPORT
+// IF DEFINED: enable OpenTRV secure frame encoding/decoding (as of 2015/12).
+#define ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
+// IF DEFINED: allow non-secure OpenTRV secure frame RX (as of 2015/12): DISABLED BY DEFAULT.
+#define ENABLE_OTSECUREFRAME_INSECURE_RX_PERMITTED
+#endif
 
 #ifdef CONFIG_Trial2013Winter_Round2 // For trial over winter of 2013--4, second round (REV2).
 // Revision REV2 (cut4+) of V0.2 board.
