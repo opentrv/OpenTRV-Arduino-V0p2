@@ -1061,6 +1061,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
 
 #ifdef ENABLE_RADIO_SECONDARY_MODULE
 // FIXME secondary send assumes SIM900.
+// FIXME cannot use strlen for binary frames
 //    NullRadio.queueToSend(buf + STATS_MSG_START_OFFSET, strlen((const char*)buf+STATS_MSG_START_OFFSET));
     SecondaryRadio.queueToSend(buf + STATS_MSG_START_OFFSET, strlen((const char*)buf+STATS_MSG_START_OFFSET));
 #endif // ENABLE_RADIO_SECONDARY_MODULE
