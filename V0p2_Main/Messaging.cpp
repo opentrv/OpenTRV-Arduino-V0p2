@@ -73,7 +73,7 @@ bool verifyHeaderAndCRCForTrailingMinimalStatsPayload(uint8_t const *const buf)
 
 #ifdef ENABLE_FS20_ENCODING_SUPPORT
 // Store minimal stats payload into (2-byte) buffer from payload struct (without CRC); values are coerced to fit as necessary..
-//   * payload  must be non-null
+//   * payload  must be non-NULL
 // Used for minimal and full packet forms,
 void writeTrailingMinimalStatsPayloadBody(uint8_t *buf, const trailingMinimalStatsPayload_t *payload)
   {
@@ -117,7 +117,7 @@ void writeTrailingMinimalStatsPayloadBody(uint8_t *buf, const trailingMinimalSta
 
 #ifdef ENABLE_FS20_ENCODING_SUPPORT
 // Store minimal stats payload into (3-byte) buffer from payload struct and append CRC; values are coerced to fit as necessary..
-//   * payload  must be non-null
+//   * payload  must be non-NULL
 void writeTrailingMinimalStatsPayload(uint8_t *buf, const trailingMinimalStatsPayload_t *payload)
   {
   writeTrailingMinimalStatsPayloadBody(buf, payload);
@@ -271,10 +271,10 @@ bool ensureIDCreated(const bool force)
 #ifdef ENABLE_FS20_ENCODING_SUPPORT
 
 // Send core/common 'full' stats message.
-//   * content contains data to be sent in the message; must be non-null
+//   * content contains data to be sent in the message; must be non-NULL
 // Note that up to 7 bytes of payload is optimal for the CRC used.
 // If successful, returns pointer to terminating 0xff at end of message.
-// Returns null if failed (eg because of bad inputs or insufficient buffer space);
+// Returns NULL if failed (eg because of bad inputs or insufficient buffer space);
 // part of the message may have have been written in this case and in particular the previous terminating 0xff may have been overwritten.
 uint8_t *encodeFullStatsMessageCore(uint8_t * const buf, const uint8_t buflen, const OTV0P2BASE::stats_TX_level secLevel, const bool secureChannel,
     const FullStatsMessageCore_t * const content)
@@ -373,9 +373,9 @@ uint8_t *encodeFullStatsMessageCore(uint8_t * const buf, const uint8_t buflen, c
 
 // Decode core/common 'full' stats message.
 // If successful returns pointer to next byte of message, ie just after full stats message decoded.
-// Returns null if failed (eg because of corrupt/insufficient message data) and state of 'content' result is undefined.
+// Returns NULL if failed (eg because of corrupt/insufficient message data) and state of 'content' result is undefined.
 // This will avoid copying into the result data (possibly tainted) that has arrived at an inappropriate security level.
-//   * content will contain data decoded from the message; must be non-null
+//   * content will contain data decoded from the message; must be non-NULL
 const uint8_t *decodeFullStatsMessageCore(const uint8_t * const buf, const uint8_t buflen, const OTV0P2BASE::stats_TX_level secLevel, const bool secureChannel,
     FullStatsMessageCore_t * const content)
   {

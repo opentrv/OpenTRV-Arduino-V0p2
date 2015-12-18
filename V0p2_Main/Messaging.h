@@ -169,8 +169,8 @@ class SimpleStatsRotationBase
     // True iff the item existed and was removed.
     bool remove(SimpleStatsKey key);
 
-    // Set ID to given value, or null to track system ID; returns false if ID unsafe.
-    // If null (the default) then dynamically generate the system ID,
+    // Set ID to given value, or NULL to track system ID; returns false if ID unsafe.
+    // If NULL (the default) then dynamically generate the system ID,
     // eg house code as two bytes of hex if set, else first two bytes of binary ID as hex.
     // The lifetime of the pointed to string must exceed that of this instance.
     bool setID(const char * const _id)
@@ -250,7 +250,7 @@ class SimpleStatsRotationBase
     // Returns pointer to stat tuple with given key if present, else NULL.
     DescValueTuple *findByKey(SimpleStatsKey key) const;
 
-    // Initialise base with appropriate storage (non-null) and capacity knowledge.
+    // Initialise base with appropriate storage (non-NULL) and capacity knowledge.
     SimpleStatsRotationBase(DescValueTuple *_stats, const uint8_t _capacity)
       : capacity(_capacity), stats(_stats), nStats(0),
         lastTXed(~0), lastTXedLoPri(~0), lastTXedHiPri(~0), // Show the first item on the first pass...
@@ -258,7 +258,7 @@ class SimpleStatsRotationBase
       { }
 
   private:
-    // Stats to be tracked and sent; never null.
+    // Stats to be tracked and sent; never NULL.
     // The initial nStats slots are used.
     DescValueTuple * const stats;
 
@@ -277,7 +277,7 @@ class SimpleStatsRotationBase
     // Coerced into range if necessary.
     uint8_t lastTXedHiPri;
 
-    // ID as null terminated string, or null to track system ID.
+    // ID as null terminated string, or NULL to track system ID.
     // Used as string value of compulsory leading "@" key/field.
     // Can be changed at run-time.
     const char *id;
@@ -411,11 +411,11 @@ typedef struct trailingMinimalStatsPayload
   } trailingMinimalStatsPayload_t;
 
 // Store minimal stats payload into (2-byte) buffer from payload struct (without CRC); values are coerced to fit as necessary..
-//   * payload  must be non-null
+//   * payload  must be non-NULL
 // Used for minimal and full packet forms,
 void writeTrailingMinimalStatsPayloadBody(uint8_t *buf, const trailingMinimalStatsPayload_t *payload);
 // Store minimal stats payload into (3-byte) buffer from payload struct and append CRC; values are coerced to fit as necessary..
-//   * payload  must be non-null
+//   * payload  must be non-NULL
 void writeTrailingMinimalStatsPayload(uint8_t *buf, const trailingMinimalStatsPayload_t *payload);
 // Return true if header/structure and CRC looks valid for (3-byte) buffered stats payload.
 bool verifyHeaderAndCRCForTrailingMinimalStatsPayload(uint8_t const *buf);
@@ -538,7 +538,7 @@ static inline void clearFullStatsMessageCore(FullStatsMessageCore_t *const p) { 
 // Send core/common 'full' stats message.
 // Note that up to 7 bytes of payload is optimal for the CRC used.
 // If successful, returns pointer to terminating 0xff at end of message.
-// Returns null if failed (eg because of bad inputs or insufficient buffer space).
+// Returns NULL if failed (eg because of bad inputs or insufficient buffer space).
 // This will omit from transmission data not appropriate given the channel security and the stats_TX_level.
 uint8_t *encodeFullStatsMessageCore(uint8_t *buf, uint8_t buflen, OTV0P2BASE::stats_TX_level secLevel, bool secureChannel,
     const FullStatsMessageCore_t *content);
@@ -546,9 +546,9 @@ uint8_t *encodeFullStatsMessageCore(uint8_t *buf, uint8_t buflen, OTV0P2BASE::st
 #if defined(ENABLE_RADIO_RX)
 // Decode core/common 'full' stats message.
 // If successful returns pointer to next byte of message, ie just after full stats message decoded.
-// Returns null if failed (eg because of corrupt/insufficient message data) and state of 'content' result is undefined.
+// Returns NULL if failed (eg because of corrupt/insufficient message data) and state of 'content' result is undefined.
 // This will avoid copying into the result data (possibly tainted) that has arrived at an inappropriate security level.
-//   * content will contain data decoded from the message; must be non-null
+//   * content will contain data decoded from the message; must be non-NULL
 const uint8_t *decodeFullStatsMessageCore(const uint8_t *buf, uint8_t buflen, OTV0P2BASE::stats_TX_level secLevel, bool secureChannel,
     FullStatsMessageCore_t *content);
 #endif
