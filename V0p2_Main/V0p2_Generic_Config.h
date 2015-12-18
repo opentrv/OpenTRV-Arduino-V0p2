@@ -65,7 +65,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_DORM1_SANS32K // REV7 / DORM1 without working 32768Hz clock.
 //#define CONFIG_DORM1_MUT // REV7 / DORM1 Winter 2014/2015 minimal for unit testing.
 //#define CONFIG_REV7N // REV7 with external "Model N" valve.
-#define CONFIG_REV7_STATSL // REV7 as JSON-only stats leaf.
+#define CONFIG_REV7_AS_SENSOR // REV7 as JSON-only stats/sensor leaf.
 //#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
 //#define CONFIG_REV9_STATS // REV9 as stats node, cut 2 of the board.
 //#define CONFIG_REV9_cut1 // REV9 as CC1 relay, cut1 of board.
@@ -683,7 +683,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 // ------------------------- REV7
 
-#ifdef CONFIG_REV7_STATSL // REV7 as JSON-only stats leaf.
+#ifdef CONFIG_REV7_AS_SENSOR // REV7 as JSON-only stats/sensor leaf.
 // Revision REV7 of V0.2 board, all-in-one valve unit with local motor drive.
 // In this off-label mode being used as stats gatherers or simple hubs.
 #define V0p2_REV 7
@@ -707,6 +707,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define ALLOW_STATS_TX
 // IF DEFINED: allow JSON stats frames.
 #define ALLOW_JSON_OUTPUT
+// IF DEFINED: allow binary stats to be TXed.
+#undef ALLOW_BINARY_STATS_TX
 // IF DEFINED: enable support for FS20 carrier for RX of raw FS20 and piggybacked binary (non-JSON) stats.
 #undef ENABLE_FS20_NATIVE_AND_BINARY_STATS_RX
 // Use common settings.
