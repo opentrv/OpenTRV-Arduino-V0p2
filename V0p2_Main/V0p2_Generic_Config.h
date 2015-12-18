@@ -354,6 +354,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #undef SLAVE_TRV
 // IF DEFINED: this unit can act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
 #define ENABLE_BOILER_HUB
+// IF DEFINED: allow binary stats to be TXed.
+#undef ALLOW_BINARY_STATS_TX
 // IF DEFINED: allow RX of stats frames.
 #define ALLOW_STATS_RX
 // IF DEFINED: allow TX of stats frames.
