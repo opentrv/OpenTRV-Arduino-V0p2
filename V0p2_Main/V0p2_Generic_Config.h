@@ -48,6 +48,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
 //#define CONFIG_DORM1 // REV7 / DORM1 Winter 2014/2015 all-in-one valve unit.
 //#define CONFIG_DORM1_BOILER // REV8 / DORM1 Winter 2014/2015 boiler-control unit.
+#define CONFIG_REV11_RAW_JSON // REV11 as raw JSON-only stats/sensor leaf.
 
 
 // One-offs and special cases.
@@ -65,7 +66,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_DORM1_SANS32K // REV7 / DORM1 without working 32768Hz clock.
 //#define CONFIG_DORM1_MUT // REV7 / DORM1 Winter 2014/2015 minimal for unit testing.
 //#define CONFIG_REV7N // REV7 with external "Model N" valve.
-#define CONFIG_REV7_AS_SENSOR // REV7 as JSON-only stats/sensor leaf.
+//#define CONFIG_REV7_AS_SENSOR // REV7 as JSON-only stats/sensor leaf.
 //#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
 //#define CONFIG_REV9_STATS // REV9 as stats node, cut 2 of the board.
 //#define CONFIG_REV9_cut1 // REV9 as CC1 relay, cut1 of board.
@@ -689,16 +690,16 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define V0p2_REV 7
 // IF DEFINED: initial direct motor drive design.  Doesn't imply it gets used, but I/O can be set up safely.
 #define DIRECT_MOTOR_DRIVE_V1
+// IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
+#define SENSOR_SHT21_ENABLE
+// Using RoHS-compliant phototransistor in place of LDR.
+#define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // IF DEFINED: basic FROST/WARM temperatures are settable.
 #undef SETTABLE_TARGET_TEMPERATURES
 // IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
 #undef LOCAL_TRV
 // IF DEFINED: this unit controls a valve, but provides slave valve control only.
 #undef SLAVE_TRV
-// IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
-#define SENSOR_SHT21_ENABLE
-// Using RoHS-compliant phototransistor in place of LDR.
-#define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // IF DEFINED: this unit can act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
 #undef ENABLE_BOILER_HUB // NO BOILER CODE
 // IF DEFINED: allow RX of stats frames.
@@ -986,14 +987,41 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#undef ENABLE_BOILER_HUB
 // Use common settings.
 #define COMMON_SETTINGS
-
 // IF DEFINED: this unit can act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
 #undef ENABLE_BOILER_HUB
 // IF DEFINED: allow RX of stats frames.
 #undef ALLOW_STATS_RX
 #undef LOCAL_TRV
-
 #endif // CONFIG_REV11_RFM23BTEST
+
+#ifdef CONFIG_REV11_RAW_JSON // REV11 as raw JSON-only stats/sensor leaf.
+// Revision of V0.2 board.
+#define V0p2_REV 11 // REV11 covers first sensor only board.
+// IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
+#define SENSOR_SHT21_ENABLE
+// Using RoHS-compliant phototransistor in place of LDR.
+#define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
+// IF DEFINED: basic FROST/WARM temperatures are settable.
+#undef SETTABLE_TARGET_TEMPERATURES
+// IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
+#undef LOCAL_TRV
+// IF DEFINED: this unit controls a valve, but provides slave valve control only.
+#undef SLAVE_TRV
+// IF DEFINED: this unit can act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
+#undef ENABLE_BOILER_HUB // NO BOILER CODE
+// IF DEFINED: allow RX of stats frames.
+#undef ALLOW_STATS_RX
+// IF DEFINED: allow TX of stats frames.
+#define ALLOW_STATS_TX
+// IF DEFINED: allow JSON stats frames.
+#define ALLOW_JSON_OUTPUT
+// IF DEFINED: allow binary stats to be TXed.
+#undef ALLOW_BINARY_STATS_TX
+// IF DEFINED: enable support for FS20 carrier for RX of raw FS20 and piggybacked binary (non-JSON) stats.
+#undef ENABLE_FS20_NATIVE_AND_BINARY_STATS_RX
+// Use common settings.
+#define COMMON_SETTINGS
+#endif
 
 // -------------------------
 
