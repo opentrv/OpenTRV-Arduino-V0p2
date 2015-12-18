@@ -1295,6 +1295,10 @@ bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadi
   if(NULL != (pb = rl->peekRXMsg(msglen)))
     {
     if(!neededWaking && wakeSerialIfNeeded && OTV0P2BASE::powerUpSerialIfDisabled<V0P2_UART_BAUD>()) { neededWaking = true; } // FIXME
+    // FIXME Rush job for Brent
+#ifdef ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY
+    SecondaryRadio.queueToSend((const uint8_t *) pb, msglen); // Take raw rx frame and send to UDP server without thinking too much
+#endif // ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY
     // Don't currently regard anything arriving over the air as 'secure'.
     // FIXME: cast away volatile to process the message content.
     decodeAndHandleRawRXedMessage(p, false, (const uint8_t *)pb, msglen);

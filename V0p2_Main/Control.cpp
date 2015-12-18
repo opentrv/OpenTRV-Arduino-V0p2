@@ -967,6 +967,10 @@ void bareStatsTX(const bool allowDoubleTX, const bool doBinary, const bool RFM23
   // Buffer need be no larger than typical 64-byte radio module TX buffer limit + optional terminator.
   const uint8_t MSG_BUF_SIZE = 64 + 1;
   uint8_t buf[MSG_BUF_SIZE];
+#if 0
+  // Make sure buffer is cleared for debug purposes
+  memset(buf, 0, sizeof(buf));
+#endif // 0
 
 #if defined(ALLOW_JSON_OUTPUT)
   if(doBinary)
@@ -1058,6 +1062,14 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
       }
 
     outputJSONStats(&Serial, true, bptr, sizeof(buf) - (bptr-buf)); // Serial must already be running!
+
+#ifdef ENABLE_RADIO_SECONDARY_MODULE
+// FIXME secondary send assumes SIM900.
+// FIXME cannot use strlen for binary frames
+//    NullRadio.queueToSend(buf + STATS_MSG_START_OFFSET, strlen((const char*)buf+STATS_MSG_START_OFFSET));
+    SecondaryRadio.queueToSend(buf + STATS_MSG_START_OFFSET, strlen((const char*)buf+STATS_MSG_START_OFFSET));
+#endif // ENABLE_RADIO_SECONDARY_MODULE
+
 #ifdef ENABLE_RADIO_RX
     handleQueuedMessages(&Serial, false, &PrimaryRadio); // Serial must already be running!
 #endif
@@ -1092,10 +1104,6 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
 #endif
     // Send it!
     RFM22RawStatsTXFFTerminated(buf, allowDoubleTX, RFM23BFramed);
-    #ifdef ENABLE_RADIO_SECONDARY_MODULE
-    // TODO Send function
-//    SecondaryRadio.queueToSend(buf, buflen, 0, (doubleTX ? OTRadioLink::OTRadioLink::TXmax : OTRadioLink::OTRadioLink::TXnormal));
-#endif // ENABLE_RADIO_SECONDARY_MODULE
     }
 #endif // defined(ALLOW_JSON_OUTPUT)
 

@@ -44,6 +44,11 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_Trial2013Winter_Round2_LVBHSH // REV2 cut4: local valve control, boiler hub, stats hub & TX.
 //#define CONFIG_Trial2013Winter_Round2_LVBH // REV2 cut4 local valve control and boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as plain boiler hub.
+<<<<<<< HEAD
+//#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
+//#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as plain boiler hub.
+=======
+>>>>>>> refs/heads/DHD-master
 //#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
 //#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
 //#define CONFIG_DORM1 // REV7 / DORM1 Winter 2014/2015 all-in-one valve unit.
@@ -71,8 +76,12 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_REV9_cut1 // REV9 as CC1 relay, cut1 of board.
 //#define CONFIG_DE_TESTLAB // Deniz's test environment.
 //#define CONFIG_REV10_STRIPBOARD // REV10-based stripboard precursor for bus shelters
+<<<<<<< HEAD
+#define CONFIG_REV10 // Generic REV10 config
+=======
 //#define CONFIG_REV10 // Generic REV10 config
 // TODO //#define CONFIG_REV10_SECURE_BOILERHUB_GSM_SECURE // REV10 PCB boiler hub, relay to GSM, 2015/12 secure protocol.
+>>>>>>> refs/heads/DHD-master
 //#define CONFIG_REV11_RFM23BTEST // Basic test to see if stats send
 //#define CONFIG_BAREBONES // No peripherals / on breadboard.
 
@@ -927,7 +936,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: this unit supports CLI over the USB/serial connection, eg for run-time reconfig.
 #define SUPPORT_CLI
 // IF DEFINED: enable a full OpenTRV CLI.
-#define ENABLE_FULL_OT_CLI
+#undef ENABLE_FULL_OT_CLI
 // IF DEFINED: enable a full OpenTRV UI with normal LEDs etc. ***
 #undef ENABLE_FULL_OT_UI
 // IF DEFINED: enable and extended CLI with a longer input buffer for example.
@@ -947,8 +956,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // Secondary radio
 // IF DEFINED: enable a secondary (typically WAN-relay) radio module.
 #define ENABLE_RADIO_SECONDARY_MODULE
-//#define ENABLE_RADIO_SIM900   // Enable SIM900
-//#define RADIO_SECONDARY_SIM900  // Assign SIM900
+#define ENABLE_RADIO_SIM900   // Enable SIM900
+#define RADIO_SECONDARY_SIM900  // Assign SIM900
 
 #endif // CONFIG_REV10
 
