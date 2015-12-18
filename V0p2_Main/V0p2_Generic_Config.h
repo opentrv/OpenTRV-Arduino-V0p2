@@ -154,7 +154,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define RADIO_PRIMARY_RFM23B  // Assign RFM23B to primary radio
 // IF DEFINED: enable a secondary (typically WAN-relay) radio module.
 #undef ENABLE_RADIO_SECONDARY_MODULE
-// IF DEFINED: enable a WAN-relay radio module.
+// IF DEFINED: enable a WAN-relay radio module, primarily to relay stats outbound.
 #undef ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY
 // IF DEFINED: enable support for FS20 carrier for RX or TX.
 #define ENABLE_FS20_CARRIER_SUPPORT
@@ -368,6 +368,12 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define SUPPORT_CLI
 // IF DEFINED: support for general timed and multi-input occupancy detection / use.
 #undef OCCUPANCY_SUPPORT
+// IF DEFINED: enable a secondary (typically WAN-relay) radio module.
+#define ENABLE_RADIO_SECONDARY_MODULE
+// IF DEFINED: enable a WAN-relay radio module, primarily to relay stats outbound.
+#define ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY
+// Chose NullRadio as secondary.
+#define RADIO_SECONDARY_NULL
 #endif
 
 #ifdef CONFIG_Trial2013Winter_Round2_SECURE_NOHUB

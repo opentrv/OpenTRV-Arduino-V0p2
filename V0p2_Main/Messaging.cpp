@@ -1251,10 +1251,18 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats IDx");
       {
       if(-1 != checkJSONMsgRXCRC(msg, msglen))
         {
+#ifdef ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY
+        // Initial pass for Brent.
+        // FIXME should strip trailing high bit and CRC.
+        // FIXME should only relay authenticated (and encrypted) traffic.
+        // Relay raw RX frame over secondary radio.
+        SecondaryRadio.queueToSend(msg, msglen); 
+#else // Don't write to console/Serial if relaying.
         // Write out the JSON message.
         outputJSONStats(&Serial, secure, msg, msglen);
         // Attempt to ensure that trailing characters are pushed out fully.
         OTV0P2BASE::flushSerialProductive();
+#endif // ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY
         }
       return;
       }
@@ -1294,10 +1302,6 @@ bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadi
   if(NULL != (pb = rl->peekRXMsg(msglen)))
     {
     if(!neededWaking && wakeSerialIfNeeded && OTV0P2BASE::powerUpSerialIfDisabled<V0P2_UART_BAUD>()) { neededWaking = true; } // FIXME
-    // FIXME Rush job for Brent
-#ifdef ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY
-    SecondaryRadio.queueToSend((const uint8_t *) pb, msglen); // Take raw rx frame and send to UDP server without thinking too much
-#endif // ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY
     // Don't currently regard anything arriving over the air as 'secure'.
     // FIXME: cast away volatile to process the message content.
     decodeAndHandleRawRXedMessage(p, false, (const uint8_t *)pb, msglen);
