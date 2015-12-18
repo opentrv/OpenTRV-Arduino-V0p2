@@ -187,8 +187,8 @@ void serialPrintlnBuildVersion()
 
 // FIXME deal with this
 static const OTRadioLink::OTRadioChannelConfig RFMConfig(OTRadValve::FHT8VRadValveBase::FHT8V_RFM23_Reg_Values, true, true, true);
-static const OTRadioLink::OTRadioChannelConfig SecondaryRadioConfig(&SIM900Config, true, true, true);
-//static const OTRadioLink::OTRadioChannelConfig SecondaryRadioConfig(NULL, true, true, true);
+//static const OTRadioLink::OTRadioChannelConfig SecondaryRadioConfig(&SIM900Config, true, true, true);
+static const OTRadioLink::OTRadioChannelConfig SecondaryRadioConfig(NULL, true, true, true);
 
 #if defined(ALLOW_CC1_SUPPORT_RELAY)
 // For a CC1 relay, ignore everything except FTp2_CC1PollAndCmd messages.
