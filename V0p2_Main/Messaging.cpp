@@ -1253,11 +1253,19 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats IDx");
         {
 #ifdef ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY
         // Initial pass for Brent.
-        // FIXME should strip trailing high bit and CRC.
+        // Strip trailing high bit and CRC.  Not very nice, but it'll have to do.
+        uint8_t buf[MSG_JSON_ABS_MAX_LENGTH + 1];
+        uint8_t buflen = 0;
+        while(buflen < sizeof(buf))
+          {
+          const uint8_t b = msg[buflen];
+          if(('}' | 0x80) == b) { buf[buflen++] = '}'; break; } // End of JSON found.
+          buf[buflen++] = b;
+          }
         // FIXME should only relay authenticated (and encrypted) traffic.
-        // Relay raw RX frame over secondary radio.
-        SecondaryRadio.queueToSend(msg, msglen); 
-#else // Don't write to console/Serial if relaying.
+        // Relay stats frame over secondary radio.
+        SecondaryRadio.queueToSend(buf, buflen); 
+#else // Don't write to console/Serial also if relayed.
         // Write out the JSON message.
         outputJSONStats(&Serial, secure, msg, msglen);
         // Attempt to ensure that trailing characters are pushed out fully.

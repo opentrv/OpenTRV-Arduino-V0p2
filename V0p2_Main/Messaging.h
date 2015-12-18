@@ -574,7 +574,7 @@ void outputMinimalStats(Print *p, bool secure, uint8_t id0, uint8_t id1, const t
 // Typical/recommended maximum.
 #define MSG_JSON_MAX_LENGTH 54
 // Maximum for frames in 'secure' format, eg with authentication and encryption wrappers.
-#define MSG_JSON_MAX_LENGTH_SECURE 32
+#define MSG_JSON_MAX_LENGTH_SECURE 31
 
 #define MSG_JSON_LEADING_CHAR ('{') // This is for a JSON object { ... }.
 
