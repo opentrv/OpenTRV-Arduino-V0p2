@@ -158,10 +158,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #undef ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY
 // IF DEFINED: enable support for FS20 carrier for RX or TX.
 #define ENABLE_FS20_CARRIER_SUPPORT
-// IF DEFINED: use FHT8V wireless radio module/valve.
+// IF DEFINED: use FHT8V wireless radio module/valve, eg to control FHT8V local valve.
 #define USE_MODULE_FHT8VSIMPLE
-//// IF DEFINED: enable support for FS20 carrier for TX specifically (to allow RX-only).
-//#define ENABLE_FS20_CARRIER_SUPPORT_TX
+// IF DEFINED: enable support for FS20 carrier for RX of raw FS20 and piggybacked binary (non-JSON) stats.
+#define ENABLE_FS20_NATIVE_AND_BINARY_STATS_RX
 // IF DEFINED: enable support for FS20 encoding/decoding, eg to send to FHT8V.
 #define ENABLE_FS20_ENCODING_SUPPORT
 // IF DEFINED: enable OpenTRV secure frame encoding/decoding (as of 2015/12).
