@@ -209,7 +209,8 @@ static bool FilterRXISR(const volatile uint8_t *buf, volatile uint8_t &buflen)
   buflen = 8; // Truncate message to correct size for efficiency.
   return(true); // Accept message.
   }
-#elif defined(ALLOW_STATS_RX)
+#elif defined(ALLOW_STATS_RX) && defined(ENABLE_FS20_ENCODING_SUPPORT)
+// If using FS20-based non-secured messaging...
 // If a stats hub then be prepared to accept a wide variety of binary and JSON message types.
 // It may yet be good to trim the smaller message types down to size in particular to help queueing.
 // It may also be kinder to some of the older FS20+trailer handling routines to not over-trim!

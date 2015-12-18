@@ -61,7 +61,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 
 
 
-
+#ifdef ENABLE_FS20_ENCODING_SUPPORT
 // Return true if header/structure and CRC looks valid for (3-byte) buffered stats payload.
 bool verifyHeaderAndCRCForTrailingMinimalStatsPayload(uint8_t const *const buf)
   {
@@ -69,9 +69,11 @@ bool verifyHeaderAndCRCForTrailingMinimalStatsPayload(uint8_t const *const buf)
          (0 == (buf[1] & 0x80)) && // Top bit is clear on this byte also.
          (buf[2] == OTRadioLink::crc7_5B_update(buf[0], buf[1]))); // CRC validates, top bit implicitly zero.
   }
+#endif // ENABLE_FS20_ENCODING_SUPPORT
 
+#ifdef ENABLE_FS20_ENCODING_SUPPORT
 // Store minimal stats payload into (2-byte) buffer from payload struct (without CRC); values are coerced to fit as necessary..
-//   * payload  must be non-null
+//   * payload  must be non-NULL
 // Used for minimal and full packet forms,
 void writeTrailingMinimalStatsPayloadBody(uint8_t *buf, const trailingMinimalStatsPayload_t *payload)
   {
@@ -111,9 +113,11 @@ void writeTrailingMinimalStatsPayloadBody(uint8_t *buf, const trailingMinimalSta
   for(uint8_t i = 0; i < 2; ++i) { if(0 != (buf[i] & 0x80)) { panic(); } } // MSBits should be clear.
 #endif
   }
+#endif // ENABLE_FS20_ENCODING_SUPPORT
 
+#ifdef ENABLE_FS20_ENCODING_SUPPORT
 // Store minimal stats payload into (3-byte) buffer from payload struct and append CRC; values are coerced to fit as necessary..
-//   * payload  must be non-null
+//   * payload  must be non-NULL
 void writeTrailingMinimalStatsPayload(uint8_t *buf, const trailingMinimalStatsPayload_t *payload)
   {
   writeTrailingMinimalStatsPayloadBody(buf, payload);
@@ -122,7 +126,9 @@ void writeTrailingMinimalStatsPayload(uint8_t *buf, const trailingMinimalStatsPa
   for(uint8_t i = 0; i < 3; ++i) { if(0 != (buf[i] & 0x80)) { panic(); } } // MSBits should be clear.
 #endif
   }
+#endif // ENABLE_FS20_ENCODING_SUPPORT
 
+#ifdef ENABLE_FS20_ENCODING_SUPPORT
 // Extract payload from valid (3-byte) header+payload+CRC into payload struct; only 2 bytes are actually read.
 // Input bytes (eg header and check value) must already have been validated.
 void extractTrailingMinimalStatsPayload(const uint8_t *const buf, trailingMinimalStatsPayload_t *const payload)
@@ -133,6 +139,7 @@ void extractTrailingMinimalStatsPayload(const uint8_t *const buf, trailingMinima
   payload->powerLow = (0 != (buf[0] & 0x10));
   payload->tempC16 = ((((int16_t) buf[1]) << 4) | (buf[0] & 0xf)) + MESSAGING_TRAILING_MINIMAL_STATS_TEMP_BIAS;
   }
+#endif // ENABLE_FS20_ENCODING_SUPPORT
 
 
 #if defined(ALLOW_STATS_RX)
@@ -150,7 +157,7 @@ uint16_t getInboundStatsQueueOverrun()
 #endif
 #endif
 
-
+#ifdef ENABLE_FS20_ENCODING_SUPPORT
 // Send (valid) core binary stats to specified print channel, followed by "\r\n".
 // This does NOT attempt to flush output nor wait after writing.
 // Will only write stats with a source ID.
@@ -184,7 +191,9 @@ void outputCoreStats(Print *p, bool secure, const FullStatsMessageCore_t *stats)
     p->println();
     }
   }
+#endif // ENABLE_FS20_ENCODING_SUPPORT
 
+#ifdef ENABLE_FS20_ENCODING_SUPPORT
 // Send (valid) minimal binary stats to specified print channel, followed by "\r\n".
 // This does NOT attempt to flush output nor wait after writing.
 void outputMinimalStats(Print *p, bool secure, uint8_t id0, uint8_t id1, const trailingMinimalStatsPayload_t *stats)
@@ -199,6 +208,7 @@ void outputMinimalStats(Print *p, bool secure, uint8_t id0, uint8_t id1, const t
     fullstats.containsTempAndPower = true;
     outputCoreStats(p, secure, &fullstats);
     }
+#endif // ENABLE_FS20_ENCODING_SUPPORT
 
 #if defined(ALLOW_STATS_TX)
 #if !defined(enableTrailingStatsPayload)
@@ -258,11 +268,13 @@ bool ensureIDCreated(const bool force)
   }
 
 
+#ifdef ENABLE_FS20_ENCODING_SUPPORT
+
 // Send core/common 'full' stats message.
-//   * content contains data to be sent in the message; must be non-null
+//   * content contains data to be sent in the message; must be non-NULL
 // Note that up to 7 bytes of payload is optimal for the CRC used.
 // If successful, returns pointer to terminating 0xff at end of message.
-// Returns null if failed (eg because of bad inputs or insufficient buffer space);
+// Returns NULL if failed (eg because of bad inputs or insufficient buffer space);
 // part of the message may have have been written in this case and in particular the previous terminating 0xff may have been overwritten.
 uint8_t *encodeFullStatsMessageCore(uint8_t * const buf, const uint8_t buflen, const OTV0P2BASE::stats_TX_level secLevel, const bool secureChannel,
     const FullStatsMessageCore_t * const content)
@@ -361,9 +373,9 @@ uint8_t *encodeFullStatsMessageCore(uint8_t * const buf, const uint8_t buflen, c
 
 // Decode core/common 'full' stats message.
 // If successful returns pointer to next byte of message, ie just after full stats message decoded.
-// Returns null if failed (eg because of corrupt/insufficient message data) and state of 'content' result is undefined.
+// Returns NULL if failed (eg because of corrupt/insufficient message data) and state of 'content' result is undefined.
 // This will avoid copying into the result data (possibly tainted) that has arrived at an inappropriate security level.
-//   * content will contain data decoded from the message; must be non-null
+//   * content will contain data decoded from the message; must be non-NULL
 const uint8_t *decodeFullStatsMessageCore(const uint8_t * const buf, const uint8_t buflen, const OTV0P2BASE::stats_TX_level secLevel, const bool secureChannel,
     FullStatsMessageCore_t * const content)
   {
@@ -454,6 +466,8 @@ const uint8_t *decodeFullStatsMessageCore(const uint8_t * const buf, const uint8
 
   return(b); // Point to just after CRC.
   }
+
+#endif // ENABLE_FS20_ENCODING_SUPPORT
 
 
 // Returns true unless the buffer clearly does not contain a possible valid raw JSON message.
@@ -779,11 +793,9 @@ uint8_t SimpleStatsRotationBase::writeJSON(uint8_t *const buf, const uint8_t buf
   // else compute it taking the housecode by preference if it is set.
   bp.print(F("\"@\":\""));
 
-#ifdef USE_MODULE_FHT8VSIMPLE
   if(NULL != id) { bp.print(id); } // Value has to be 'safe' (eg no " nor \ in it).
-  else
-    {
-    if(localFHT8VTRVEnabled())
+#ifdef USE_MODULE_FHT8VSIMPLE
+  else if(localFHT8VTRVEnabled())
       {
       const uint8_t hc1 = FHT8VGetHC1();
       const uint8_t hc2 = FHT8VGetHC2();
@@ -792,8 +804,8 @@ uint8_t SimpleStatsRotationBase::writeJSON(uint8_t *const buf, const uint8_t buf
       bp.print(hexDigit(hc2 >> 4));
       bp.print(hexDigit(hc2));
       }
-    else
 #endif
+  else
       {
       const uint8_t id1 = eeprom_read_byte(0 + (uint8_t *)V0P2BASE_EE_START_ID);
       const uint8_t id2 = eeprom_read_byte(1 + (uint8_t *)V0P2BASE_EE_START_ID);
@@ -802,7 +814,6 @@ uint8_t SimpleStatsRotationBase::writeJSON(uint8_t *const buf, const uint8_t buf
       bp.print(hexDigit(id2 >> 4));
       bp.print(hexDigit(id2));
       }
-    }
 
   bp.print('"');
   commaPending = true;
@@ -1042,16 +1053,44 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uin
   OTRadioLink::printRXMsg(p, msg, msglen);
 #endif
   if(msglen < 2) { return; } // Too short to be useful, so ignore.
-  switch(msg[0])
+
+  const uint8_t firstByte = msg[0];
+
+   // Length-first OpenTRV secureable-frame format...
+#ifdef ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
+  // Don't try to parse any apparently-truncated message.
+  // (It might be in a different format for example.)
+  if(firstByte <= msglen)
+    {  
+    switch(msg[1]) // Switch on type.
+      {
+#ifdef ENABLE_OTSECUREFRAME_INSECURE_RX_PERMITTED // Allow parsing of insecure frame version...
+      case 'O': // Non-secure basic OpenTRV secureable frame...
+          {
+          // Do some simple validation of structure and number ranges.
+          const uint8_t fl = firstByte + 1; // (Full) frame length, including the length byte itself.
+          if(fl < 8) { break; } // Too short to be valid.
+          const uint8_t il = msg[2] & 0xf;
+          if(0 == il) { break; } // Anonymous sender (zero-length ID) not (yet) permitted.
+          //
+          // TODO
+          //
+          break;
+          }
+#endif // ENABLE_OTSECUREFRAME_INSECURE_RX_PERMITTED
+
+      // Reject unrecognised type, though potentially fall through to recognise other encodings.
+      default: break;
+      }
+  }
+#endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
+
+#ifdef ENABLE_FS20_ENCODING_SUPPORT
+  switch(firstByte)
     {
     default:
-    case OTRadioLink::FTp2_NONE:
-      {
-#if 0 && defined(DEBUG)
-      p->print(F("!RX bad msg ")); OTRadioLink::printRXMsg(p, msg, min(msglen, 8));
-#endif
-      return;
-      }
+    case OTRadioLink::FTp2_NONE: // Also zero-length with leading length byte.
+      break;
 
 #ifdef ALLOW_CC1_SUPPORT_HUB
     // Handle alert message (at hub).
@@ -1170,7 +1209,7 @@ OTRadioLink::printRXMsg(p, txbuf, buflen);
       }
 #endif
 
-#ifdef ALLOW_STATS_RX
+#if defined(ALLOW_STATS_RX) && defined(ENABLE_FS20_ENCODING_SUPPORT)
     // Stand-alone stats message.
     case OTRadioLink::FTp2_FullStatsIDL: case OTRadioLink::FTp2_FullStatsIDH:
       {
@@ -1200,7 +1239,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats IDx");
       }
 #endif
 
-#if defined(LISTEN_FOR_FTp2_FS20_native) // Listen for calls for heat from remote valves...
+#if defined(LISTEN_FOR_FTp2_FS20_native) && defined(ENABLE_FS20_ENCODING_SUPPORT) // Listen for calls for heat from remote valves...
     case OTRadioLink::FTp2_FS20_native:
       {
       decodeAndHandleFTp2_FS20_native(p, secure, msg, msglen);
@@ -1208,7 +1247,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats IDx");
       }
 #endif
 
-#ifdef ALLOW_STATS_RX
+#if defined(ALLOW_STATS_RX) && defined(ENABLE_FS20_ENCODING_SUPPORT)
     case OTRadioLink::FTp2_JSONRaw:
       {
       if(-1 != checkJSONMsgRXCRC(msg, msglen))
@@ -1222,6 +1261,13 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats IDx");
       }
 #endif
     }
+#endif // ENABLE_FS20_ENCODING_SUPPORT
+
+  // Unparseable frame: drop it.
+#if 1 && defined(DEBUG)
+  p->print(F("!RX bad msg prefix ")); OTRadioLink::printRXMsg(p, msg, min(msglen, 8));
+#endif
+  return;
   }
 #endif // ENABLE_RADIO_RX
 

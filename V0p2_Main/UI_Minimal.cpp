@@ -104,7 +104,7 @@ static void handleLEARN(const uint8_t which)
   // Clear simple schedule.
   else { clearSimpleSchedule(which); }
   }
-#endif
+#endif // LEARN_BUTTON_AVAILABLE
 
 
 // Pause between flashes to allow them to be distinguished (>100ms); was mediumPause() for PICAXE V0.09 impl.
@@ -733,9 +733,11 @@ static void dumpCLIUsage(const uint8_t stopBy)
 #endif
 
   //printCLILine(deadline, 'L', F("Learn to warm every 24h from now, clear if in frost mode, schedule 0"));
+#ifdef LEARN_BUTTON_AVAILABLE
   printCLILine(deadline, F("L S"), F("Learn daily warm now, clear if in frost mode, schedule S"));
   //printCLILine(deadline, F("P HH MM"), F("Program: warm daily starting at HH MM schedule 0"));
   printCLILine(deadline, F("P HH MM S"), F("Program: warm daily starting at HH MM schedule S"));
+#endif
   printCLILine(deadline, F("O PP"), F("min % for valve to be Open"));
 #if defined(ENABLE_NOMINAL_RAD_VALVE)
   printCLILine(deadline, 'O', F("reset Open %"));
@@ -1155,6 +1157,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         break;
         }
 
+#ifdef LEARN_BUTTON_AVAILABLE
       // Learn current settings, just as if primary/specified LEARN button had been pressed.
       case 'L':
         {
@@ -1171,6 +1174,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         handleLEARN((uint8_t) s); break;
         break;
         }
+#endif // LEARN_BUTTON_AVAILABLE
 
 #if defined(ENABLE_NOMINAL_RAD_VALVE)
       // Set/clear min-valve-open-% threshold override.
@@ -1186,6 +1190,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         }
 #endif
 
+#ifdef LEARN_BUTTON_AVAILABLE
       // Program simple schedule HH MM [N].
       case 'P':
         {
@@ -1213,6 +1218,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
           }
         break;
         }
+#endif // LEARN_BUTTON_AVAILABLE
 
       // Switch to (or restart) BAKE (Quick Heat) mode: Q
       case 'Q': { startBakeDebounced(); break; }

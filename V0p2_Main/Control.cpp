@@ -868,6 +868,7 @@ int expandTempC16(uint8_t cTemp)
   }
 
 
+#ifdef ENABLE_FS20_ENCODING_SUPPORT
 // Clear and populate core stats structure with information from this node.
 // Exactly what gets filled in will depend on sensors on the node,
 // and may depend on stats TX security level (eg if collecting some sensitive items is also expensive).
@@ -900,7 +901,7 @@ void populateCoreStats(FullStatsMessageCore_t *const content)
   content->occ = 0; // Not supported.
 #endif
   }
-
+#endif // ENABLE_FS20_ENCODING_SUPPORT
 
 
 
@@ -962,7 +963,10 @@ void bareStatsTX(const bool allowDoubleTX, const bool doBinary, const bool RFM23
   //   * buffer offset/preamble
   //   * max binary length, or max JSON length + 1 for CRC + 1 to allow detection of oversize message
   //   * terminating 0xff
-  uint8_t buf[STATS_MSG_START_OFFSET + max(FullStatsMessageCore_MAX_BYTES_ON_WIRE,  MSG_JSON_MAX_LENGTH+1) + 1];
+//  uint8_t buf[STATS_MSG_START_OFFSET + max(FullStatsMessageCore_MAX_BYTES_ON_WIRE,  MSG_JSON_MAX_LENGTH+1) + 1];
+  // Buffer need be no larger than typical 64-byte radio module TX buffer limit + optional terminator.
+  const uint8_t MSG_BUF_SIZE = 64 + 1;
+  uint8_t buf[MSG_BUF_SIZE];
 #if 0
   // Make sure buffer is cleared for debug purposes
   memset(buf, 0, sizeof(buf));
@@ -972,8 +976,8 @@ void bareStatsTX(const bool allowDoubleTX, const bool doBinary, const bool RFM23
   if(doBinary)
 #endif // ALLOW_JSON_OUTPUT
     {
-#ifdef ALLOW_BINARY_STATS_TX
-    // Send binary message first.
+#if defined(ALLOW_BINARY_STATS_TX) && defined(ENABLE_FS20_ENCODING_SUPPORT)
+    // Send binary message first (insecure, FS20-piggyback format).
     // Gather core stats.
     FullStatsMessageCore_t content;
     populateCoreStats(&content);
@@ -1606,42 +1610,42 @@ void loopOpenTRV()
 //    // Turn boiler output on or off in response to calls for heat.
 //    hubModeBoilerOn = isBoilerOn();
 
-    // In hub/listen/RX mode of some sort...
-    //
-    // If in stats hub mode then always listen; don't attempt to save power.
-    if(inStatsHubMode())
-      { needsToEavesdrop = true; }
-    // If not running a local TRV, and thus without local temperature measurement problems from self-heating,
-    // then just listen all the time for maximum simplicity and responsiveness at some cost in extra power consumption.
-    // (At least as long as power is not running low for some reason.)
-    else if(!localFHT8VTRVEnabled() && !batteryLow)
-      { needsToEavesdrop = true; }
-    // Try to avoid listening in the 'quiet' sensor minute in order to minimise noise and power consumption and self-heating.
-    // Optimisation: if just heard a call need not listen on this next cycle.
-    // Optimisation: if boiler timeout is a long time away (>> one FHT8V TX cycle, ~2 minutes excl quiet minute), then can avoid listening for now.
-    //    Longish period without any RX listening may allow hub unit to cool and get better sample of local temperature if marginal.
-    // Aim to listen in one stretch for greater than full FHT8V TX cycle of ~2m to avoid missing a call for heat.
-    // MUST listen for all of final 2 mins of boiler-on to avoid missing TX (without forcing boiler over-run).
-    else if((boilerCountdownTicks <= ((OTRadValve::FHT8VRadValveBase::MAX_FHT8V_TX_CYCLE_HS+1)/(2 * OTV0P2BASE::MAIN_TICK_S))) && // Don't miss a final TX that would keep the boiler on...
-       (boilerCountdownTicks != 0)) // But don't force unit to listen/RX all the time if no recent call for heat.
-      { needsToEavesdrop = true; }
-    else if((!heardIt) &&
-       (!minute0From4ForSensors) &&
-       (boilerCountdownTicks <= (RX_REDUCE_MIN_M*(60 / OTV0P2BASE::MAIN_TICK_S)))) // Listen eagerly for fresh calls for heat for last few minutes before turning boiler off.
-      {
-#if defined(RX_REDUCE_MAX_M) && defined(LOCAL_TRV)
-      // Skip the minute before the 'quiet' minute also in very quiet mode to improve local temp measurement.
-      // (Should still catch at least one TX per 4 minutes at worst.)
-      needsToEavesdrop =
-          ((boilerNoCallM <= RX_REDUCE_MAX_M) || (3 != (minuteCount & 3)));
-#else
-      needsToEavesdrop = true;
-#endif
-      }
+//    // In hub/listen/RX mode of some sort...
+//    //
+//    // If in stats hub mode then always listen; don't attempt to save power.
+//    if(inStatsHubMode())
+//      { needsToEavesdrop = true; }
+//    // If not running a local TRV, and thus without local temperature measurement problems from self-heating,
+//    // then just listen all the time for maximum simplicity and responsiveness at some cost in extra power consumption.
+//    // (At least as long as power is not running low for some reason.)
+//    else if(!localFHT8VTRVEnabled() && !batteryLow)
+//      { needsToEavesdrop = true; }
+//    // Try to avoid listening in the 'quiet' sensor minute in order to minimise noise and power consumption and self-heating.
+//    // Optimisation: if just heard a call need not listen on this next cycle.
+//    // Optimisation: if boiler timeout is a long time away (>> one FHT8V TX cycle, ~2 minutes excl quiet minute), then can avoid listening for now.
+//    //    Longish period without any RX listening may allow hub unit to cool and get better sample of local temperature if marginal.
+//    // Aim to listen in one stretch for greater than full FHT8V TX cycle of ~2m to avoid missing a call for heat.
+//    // MUST listen for all of final 2 mins of boiler-on to avoid missing TX (without forcing boiler over-run).
+//    else if((boilerCountdownTicks <= ((OTRadValve::FHT8VRadValveBase::MAX_FHT8V_TX_CYCLE_HS+1)/(2 * OTV0P2BASE::MAIN_TICK_S))) && // Don't miss a final TX that would keep the boiler on...
+//       (boilerCountdownTicks != 0)) // But don't force unit to listen/RX all the time if no recent call for heat.
+//      { needsToEavesdrop = true; }
+//    else if((!heardIt) &&
+//       (!minute0From4ForSensors) &&
+//       (boilerCountdownTicks <= (RX_REDUCE_MIN_M*(60 / OTV0P2BASE::MAIN_TICK_S)))) // Listen eagerly for fresh calls for heat for last few minutes before turning boiler off.
+//      {
+//#if defined(RX_REDUCE_MAX_M) && defined(LOCAL_TRV)
+//      // Skip the minute before the 'quiet' minute also in very quiet mode to improve local temp measurement.
+//      // (Should still catch at least one TX per 4 minutes at worst.)
+//      needsToEavesdrop =
+//          ((boilerNoCallM <= RX_REDUCE_MAX_M) || (3 != (minuteCount & 3)));
+//#else
+//      needsToEavesdrop = true;
+//#endif
+//      }
 
-#else
+#endif // defined(ENABLE_BOILER_HUB)
+
       needsToEavesdrop = true; // Listen if in hub mode.
-#endif
     }
 #endif
 
@@ -1963,7 +1967,7 @@ void loopOpenTRV()
         // if this is controlling a local FHT8V on which the binary stats can be piggybacked.
         // Ie, if doesn't have a local TRV then it must send binary some of the time.
         // Any recently-changed stats value is a hint that a strong transmission might be a good idea.
-#ifdef ALLOW_BINARY_STATS_TX
+#if defined(ALLOW_BINARY_STATS_TX) && defined(ENABLE_FS20_ENCODING_SUPPORT)
         const bool doBinary = !localFHT8VTRVEnabled() && OTV0P2BASE::randRNG8NextBoolean();
 #else
         const bool doBinary = false;

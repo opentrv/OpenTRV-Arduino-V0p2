@@ -37,7 +37,7 @@ OTRadioLink::OTNullRadioLink NullRadio;
 // Brings in necessary radio libs
 #ifdef ENABLE_RADIO_RFM23B
 OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, PIN_RFM_NIRQ> RFM23B;
-#endif ENABLE_RADIO_RFM23B
+#endif // ENABLE_RADIO_RFM23B
 #ifdef ENABLE_RADIO_SIM900
 OTSIM900Link::OTSIM900Link SIM900(A3, A2, 8, 5);
 #endif
@@ -97,7 +97,7 @@ void RFM22RawStatsTXFFTerminated(uint8_t * const buf, const bool doubleTX, bool 
 
 #ifdef ALLOW_CC1_SUPPORT_RELAY
 #include <OTProtocolCC.h>
-#include "FHT8V_Wireless_Rad_Valve.h"
+//#include "FHT8V_Wireless_Rad_Valve.h"
 // Send a CC1 Alert message with this unit's house code via the RFM23B.
 bool sendCC1AlertByRFM23B()
   {

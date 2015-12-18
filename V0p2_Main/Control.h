@@ -102,7 +102,7 @@ void loopOpenTRV();
 // Prolonged inactivity time deemed to indicate room(s) really unoccupied to trigger full setback (minutes, strictly positive).
 #define SETBACK_FULL_M 50
 
-#ifdef LEARN_BUTTON_AVAILABLE
+//#ifdef LEARN_BUTTON_AVAILABLE
 // Period in minutes for simple learned on-time; strictly positive (and less than 256).
 #ifndef LEARNED_ON_PERIOD_M
 #define LEARNED_ON_PERIOD_M 60
@@ -113,7 +113,7 @@ void loopOpenTRV();
 #ifndef LEARNED_ON_PERIOD_COMFORT_M
 #define LEARNED_ON_PERIOD_COMFORT_M (min(2*(LEARNED_ON_PERIOD_M),255))
 #endif
-#endif
+//#endif // LEARN_BUTTON_AVAILABLE
 
 
 
@@ -698,11 +698,12 @@ int expandTempC16(uint8_t cTemp);
 #define MAX_STATS_AMBLIGHT 254 // Maximum valid ambient light value in stats (very top of range is compressed).
 
 
-
+#ifdef ENABLE_FS20_ENCODING_SUPPORT
 // Clear and populate core stats structure with information from this node.
 // Exactly what gets filled in will depend on sensors on the node,
 // and may depend on stats TX security level (if collecting some sensitive items is also expensive).
 void populateCoreStats(FullStatsMessageCore_t *content);
+#endif // ENABLE_FS20_ENCODING_SUPPORT
 
 // Do bare stats transmission.
 // Output should be filtered for items appropriate
