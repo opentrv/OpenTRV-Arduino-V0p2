@@ -939,7 +939,7 @@ uint8_t SimpleStatsRotationBase::writeJSON(uint8_t *const buf, const uint8_t buf
 #define LISTEN_FOR_FTp2_FS20_native
 static void decodeAndHandleFTp2_FS20_native(Print *p, const bool secure, const uint8_t * const msg, const uint8_t msglen)
 {
-#if (0 && defined(DEBUG)) || defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
+#if 0 && defined(DEBUG)
   OTRadioLink::printRXMsg(p, msg, msglen);
 #endif
 

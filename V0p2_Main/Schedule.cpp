@@ -50,7 +50,7 @@ static const uint8_t MAX_COMPRESSED_MINS_AFTER_MIDNIGHT = ((OTV0P2BASE::MINS_PER
 
 
 // If LEARN_BUTTON_AVAILABLE then what is the schedule on time?
-#ifdef LEARN_BUTTON_AVAILABLE
+//#ifdef LEARN_BUTTON_AVAILABLE
 // Number of minutes of schedule on time to use.
 // Will depend on eco bias.
 // TODO: make gradual.
@@ -73,7 +73,7 @@ static uint8_t onTime()
   else { return((LEARNED_ON_PERIOD_M + LEARNED_ON_PERIOD_COMFORT_M) / 2); }
 #endif
   }
-#endif
+// #endif // LEARN_BUTTON_AVAILABLE
 
 // Pre-warm time before learned/scheduled WARM period.
 // DHD20151122: even half an hour may not be enough if very cold and heating system not good.
