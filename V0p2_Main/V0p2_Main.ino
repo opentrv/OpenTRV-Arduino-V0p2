@@ -614,7 +614,6 @@ void loop()
   const unsigned long usStart = micros();
 #endif
 
-
 #if defined(UNIT_TESTS) // Run unit tests *instead* of normal loop() code.
   loopUnitTest();
 #elif defined(ALT_MAIN_LOOP) // Run alternative main loop.
