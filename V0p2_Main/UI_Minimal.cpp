@@ -476,13 +476,10 @@ static bool extCLIHandler(Print *const p, char *const buf, const uint8_t n)
 #endif 
 
 
-
-
-
-
 // Prints a single space to Serial (which must be up and running).
 static void Serial_print_space() { Serial.print(' '); }
 
+#if defined(ENABLE_SERIAL_STATUS_REPORT) && !defined(serialStatusReport)
 // Sends a short 1-line CRLF-terminated status report on the serial connection (at 'standard' baud).
 // Ideally should be similar to PICAXE V0.1 output to allow the same parser to handle either.
 // Will turn on UART just for the duration of this call if powered off.
@@ -672,6 +669,7 @@ void serialStatusReport()
 
   if(neededWaking) { OTV0P2BASE::powerDownSerial(); }
   }
+#endif // defined(ENABLE_SERIAL_STATUS_REPORT) && !defined(serialStatusReport)
 
 #ifdef ENABLE_CLI_HELP
 #define SYNTAX_COL_WIDTH 10 // Width of 'syntax' column; strictly positive.
