@@ -376,6 +376,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY
 // Chose NullRadio as secondary.
 #define RADIO_SECONDARY_NULL
+// Use common settings.
+#define COMMON_SETTINGS
 #endif
 
 #ifdef CONFIG_Trial2013Winter_Round2_SECURE_NOHUB
@@ -1008,6 +1010,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // SIM900 relay.
 #define ENABLE_RADIO_SIM900   // Enable SIM900
 #define RADIO_PRIMARY_SIM900  // Assign SIM900
+// Use common settings.
+#define COMMON_SETTINGS
 #endif
 
 
