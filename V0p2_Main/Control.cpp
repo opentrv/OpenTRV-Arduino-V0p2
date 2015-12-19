@@ -1521,13 +1521,17 @@ void loopOpenTRV()
 //  bool hubModeBoilerOn = false; // If true then remote call for heat is in progress.
 //#if defined(USE_MODULE_FHT8VSIMPLE)
 #ifdef ENABLE_DEFAULT_ALWAYS_RX
-  bool needsToEavesdrop = true; // By default listen.
+  const bool needsToEavesdrop = true; // By default listen.
 #else
   bool needsToEavesdrop = false; // By default assume no need to eavesdrop.
 #endif
 //#endif
   if(hubMode)
     {
+#ifndef ENABLE_DEFAULT_ALWAYS_RX
+    needsToEavesdrop = true; // If not already set as const above...
+#endif
+
 #if defined(ENABLE_BOILER_HUB) // && defined(USE_MODULE_FHT8VSIMPLE)   // ***** FIXME *******
     // Final poll to to cover up to end of previous minor loop.
     // Keep time from here to following SetupToEavesdropOnFHT8V() as short as possible to avoid missing remote calls.
@@ -1644,23 +1648,9 @@ void loopOpenTRV()
 //      }
 
 #endif // defined(ENABLE_BOILER_HUB)
-
-      needsToEavesdrop = true; // Listen if in hub mode.
     }
-#endif
 
 
-
-
-
-
-
-
-
-
-
-
-#if CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX
   // Act on eavesdropping need, setting up or clearing down hooks as required.
   PrimaryRadio.listen(needsToEavesdrop);
 //#if defined(USE_MODULE_FHT8VSIMPLE)
