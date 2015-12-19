@@ -133,6 +133,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define OCCUPANCY_DETECT_FROM_RH
 // IF DEFINED: detect occupancy based on voice detection, if available. This undefines learn button 2
 #undef OCCUPANCY_DETECT_FROM_VOICE
+// IF DEFINED: allow periodic machine- and human- readable status report to serial, starting with "="/
+#define ENABLE_SERIAL_STATUS_REPORT
 // IF DEFINED: this unit supports CLI over the USB/serial connection, eg for run-time reconfig.
 #define SUPPORT_CLI
 // IF DEFINED: there is run-time help available for the CLI.
@@ -354,6 +356,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #undef LOCAL_TRV
 // IF DEFINED: this unit controls a valve, but provides slave valve control only.
 #undef SLAVE_TRV
+// IF DEFINED: (default) forced always-on radio listen/RX, eg not requiring setup to explicitly enable.
+#define ENABLE_DEFAULT_ALWAYS_RX
 // IF DEFINED: this unit can act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
 #define ENABLE_BOILER_HUB
 // IF DEFINED: allow binary stats to be TXed.
@@ -376,6 +380,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY
 // Chose NullRadio as secondary.
 #define RADIO_SECONDARY_NULL
+// IF DEFINED: allow periodic machine- and human- readable status report to serial, starting with "="/
+//#undef ENABLE_SERIAL_STATUS_REPORT
 // Use common settings.
 #define COMMON_SETTINGS
 #endif
@@ -987,6 +993,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #undef LOCAL_TRV
 // IF DEFINED: this unit controls a valve, but provides slave valve control only.
 #undef SLAVE_TRV
+// IF DEFINED: (default) forced always-on radio listen/RX, eg not requiring setup to explicitly enable.
+#define ENABLE_DEFAULT_ALWAYS_RX
 // IF DEFINED: this unit can act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
 #define ENABLE_BOILER_HUB
 // IF DEFINED: allow binary stats to be TXed.

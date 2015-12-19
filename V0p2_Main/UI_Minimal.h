@@ -106,7 +106,11 @@ void checkUserSchedule();
 
 // Sends a short 1-line CRLF-terminated status report on the serial connection (at 'standard' baud).
 // Should be similar to PICAXE V0.1 output to allow the same parser to handle either.
+#ifdef ENABLE_SERIAL_STATUS_REPORT
 void serialStatusReport();
+#else
+#define serialStatusReport() { }
+#endif
 
 // Character that should trigger any pending command from user to be sent.
 #define CLIPromptChar (LINE_START_CHAR_CLI) // Printable ASCII char that should be avoided in status output.
