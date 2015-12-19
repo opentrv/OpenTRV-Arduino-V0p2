@@ -1009,7 +1009,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY
 // SIM900 relay.
 #define ENABLE_RADIO_SIM900   // Enable SIM900
-#define RADIO_PRIMARY_SIM900  // Assign SIM900
+#define RADIO_SECONDARY_SIM900  // Assign SIM900
 // Use common settings.
 #define COMMON_SETTINGS
 #endif
