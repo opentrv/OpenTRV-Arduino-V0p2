@@ -30,6 +30,24 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 
 
+#ifdef ENABLE_RADIO_SIM900
+//For EEPROM:
+//- Set the first field of SIM900LinkConfig to true.
+//- The configs are stored as \0 terminated strings starting at 0x300.
+//- You can program the eeprom using ./OTRadioLink/dev/utils/sim900eepromWrite.ino
+
+  static const void *SIM900_PIN      = (void *)0x0300; // TODO confirm this address
+  static const void *SIM900_APN      = (void *)0x0305;
+  static const void *SIM900_UDP_ADDR = (void *)0x031B;
+  static const void *SIM900_UDP_PORT = (void *)0x0329;
+  const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config {
+                                                  true, 
+                                                  SIM900_PIN,
+                                                  SIM900_APN,
+                                                  SIM900_UDP_ADDR,
+                                                  SIM900_UDP_PORT };
+#endif // ENABLE_RADIO_SIM900
+
 
 // TODO ifdef to define when NullRadio needed
 OTRadioLink::OTNullRadioLink NullRadio;
