@@ -56,7 +56,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_DHD_TESTLAB_REV1 // REV1.
 //#define CONFIG_Trial2013Winter_Round1_STATSHUB // REV1 as stats hub.
 //#define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
-#define CONFIG_Trial2013Winter_Round2_BHR // REV2 cut4: boiler hub and stats relay.
+//#define CONFIG_Trial2013Winter_Round2_BHR // REV2 cut4: boiler hub and stats relay.
 //#define CONFIG_Trial2013Winter_Round2_SECURE_NOHUB // REV2 cut4 leaf (valve/sensor) 2015/12 secure protocol.
 //#define CONFIG_Trial2013Winter_Round2_SECURE_HUB // REV2 cut4 hub (boiler/stats) 2015/12 secure protocol.
 //#define CONFIG_DHD_TESTLAB_REV4 // REV4 cut2.
@@ -73,6 +73,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_DE_TESTLAB // Deniz's test environment.
 //#define CONFIG_REV10_STRIPBOARD // REV10-based stripboard precursor for bus shelters
 //#define CONFIG_REV10 // Generic REV10 config
+#define CONFIG_REV10_BHR // REV10: boiler hub and stats relay.
 // TODO //#define CONFIG_REV10_SECURE_BOILERHUB_GSM_SECURE // REV10 PCB boiler hub, relay to GSM, 2015/12 secure protocol.
 //#define CONFIG_REV11_RFM23BTEST // Basic test to see if stats send
 //#define CONFIG_BAREBONES // No peripherals / on breadboard.
@@ -970,6 +971,46 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define RADIO_SECONDARY_SIM900  // Assign SIM900
 
 #endif // CONFIG_REV10
+
+
+
+
+#ifdef CONFIG_REV10_BHR // REV10: boiler hub and stats relay.
+#define V0p2_REV 10
+// Using RoHS-compliant phototransistor in place of LDR.
+#define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
+// IF DEFINED: basic FROST/WARM temperatures are settable.
+#undef SETTABLE_TARGET_TEMPERATURES
+// IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
+#undef LOCAL_TRV
+// IF DEFINED: this unit controls a valve, but provides slave valve control only.
+#undef SLAVE_TRV
+// IF DEFINED: this unit can act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
+#define ENABLE_BOILER_HUB
+// IF DEFINED: allow binary stats to be TXed.
+#undef ALLOW_BINARY_STATS_TX
+// IF DEFINED: enable support for FS20 carrier for RX of raw FS20 and piggybacked binary (non-JSON) stats.
+#undef ENABLE_FS20_NATIVE_AND_BINARY_STATS_RX
+// IF DEFINED: allow RX of stats frames.
+#define ALLOW_STATS_RX
+// IF DEFINED: allow TX of stats frames.
+#define ALLOW_STATS_TX
+// IF DEFINED: use active-low LEARN button(s).  Needs SUPPORT_SINGLETON_SCHEDULE.
+#undef LEARN_BUTTON_AVAILABLE // OPTIONAL ON V0.09 PCB1
+// IF DEFINED: this unit supports CLI over the USB/serial connection, eg for run-time reconfig.
+#define SUPPORT_CLI
+// IF DEFINED: support for general timed and multi-input occupancy detection / use.
+#undef OCCUPANCY_SUPPORT
+// IF DEFINED: enable a secondary (typically WAN-relay) radio module.
+#define ENABLE_RADIO_SECONDARY_MODULE
+// IF DEFINED: enable a WAN-relay radio module, primarily to relay stats outbound.
+#define ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY
+// SIM900 relay.
+#define ENABLE_RADIO_SIM900   // Enable SIM900
+#define RADIO_PRIMARY_SIM900  // Assign SIM900
+#endif
+
+
 
 // ------------------------- REV11
 

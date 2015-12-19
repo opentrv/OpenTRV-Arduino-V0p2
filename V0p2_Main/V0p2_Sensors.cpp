@@ -128,8 +128,8 @@ uint8_t AmbientLight::read()
   if(al0 >= ADAPTIVE_THRESHOLD)
     {
     const uint16_t al1 = OTV0P2BASE::analogueNoiseReducedRead(LDR_SENSOR_AIN, DEFAULT); // Vsupply reference.
-    Supply_mV.read();
-    const uint16_t vbg = Supply_mV.getRawInv(); // Vbandgap wrt Vsupply.
+    Supply_cV.read();
+    const uint16_t vbg = Supply_cV.getRawInv(); // Vbandgap wrt Vsupply.
     // Compute value in extended range up to ~1024 * Vsupply/Vbandgap.
     const uint16_t ale = ((al1 << 5) / ((vbg+16) >> 5)); // Faster int-only approximation to (int)((al1 * 1024L) / vbg)).
     // Assuming typical V supply of 2--3 times Vbandgap,
