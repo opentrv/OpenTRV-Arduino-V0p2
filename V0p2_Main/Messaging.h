@@ -574,7 +574,11 @@ void outputMinimalStats(Print *p, bool secure, uint8_t id0, uint8_t id1, const t
 // Typical/recommended maximum.
 #define MSG_JSON_MAX_LENGTH 54
 // Maximum for frames in 'secure' format, eg with authentication and encryption wrappers.
-#define MSG_JSON_MAX_LENGTH_SECURE 31
+// Fits in a 32-byte (256-bit) typical encrypted block
+// minus some overheads, padding, etc,
+// but usually can dispense with one or both of
+// ID ("@") and sequence number ("+") fields.
+#define MSG_JSON_MAX_LENGTH_SECURE 30
 
 #define MSG_JSON_LEADING_CHAR ('{') // This is for a JSON object { ... }.
 
