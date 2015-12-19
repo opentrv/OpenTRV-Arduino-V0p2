@@ -163,10 +163,13 @@ void serialPrintlnBuildVersion()
   OTV0P2BASE::serialPrintlnAndFlush();
   }
 
-// FIXME deal with this
+// FIXME Temporary fix
 static const OTRadioLink::OTRadioChannelConfig RFMConfig(OTRadValve::FHT8VRadValveBase::FHT8V_RFM23_Reg_Values, true, true, true);
-//static const OTRadioLink::OTRadioChannelConfig SecondaryRadioConfig(&SIM900Config, true, true, true);
+#ifdef RADIO_SECONDARY_SIM900
+static const OTRadioLink::OTRadioChannelConfig SecondaryRadioConfig(&SIM900Config, true, true, true);
+#else
 static const OTRadioLink::OTRadioChannelConfig SecondaryRadioConfig(NULL, true, true, true);
+#endif // RADIO_SECONDARY_SIM900
 
 #if defined(ALLOW_CC1_SUPPORT_RELAY)
 // For a CC1 relay, ignore everything except FTp2_CC1PollAndCmd messages.
