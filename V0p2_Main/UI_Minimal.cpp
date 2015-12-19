@@ -117,12 +117,14 @@ static void inline offPause()
 // Counts calls to tickUI.
 static uint8_t tickCount;
 
+
 // Call this on even numbered seconds (with current time in seconds) to allow the UI to operate.
 // Should never be skipped, so as to allow the UI to remain responsive.
 // Runs in 350ms or less; usually takes only a few milliseconds or microseconds.
 // Returns true iff the user interacted with the system, and maybe caused a status change.
 // NOTE: since this is on the minimum idle-loop code path, minimise CPU cycles, esp in frost mode.
 // Also re-activates CLI on main button push.
+#ifndef tickUI
 bool tickUI(const uint_fast8_t sec)
   {
   // Perform any once-per-minute operations.
@@ -353,6 +355,7 @@ bool tickUI(const uint_fast8_t sec)
   statusChange = false; // Potential race.
   return(statusChanged);
   }
+#endif // tickUI
 
 
 // Check/apply the user's schedule, at least once each minute, and act on any timed events.

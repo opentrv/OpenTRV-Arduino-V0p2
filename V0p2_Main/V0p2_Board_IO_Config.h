@@ -107,11 +107,12 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #endif
 
 // UI main 'mode' button (active/pulled low by button, pref using weak internal pull-up), digital in.
+// Should always be available where a local TRV is being controlled.
 // NOT AVAILABLE FOR REV10 (used for GSM module TX pin).
-//#if (V0p2_REV != 10) // FIXME rest of V0p2_Main assumes there is always a mode button
-#define BUTTON_MODE_L 5 // ATMega328P-PU PDIP pin 11, PD5, PCINT21, no analogue input.
 #if (V0p2_REV == 10)	// FIXME might be better to define pins by peripheral
 #define SIM900_TX_PIN 5
+#else
+#define BUTTON_MODE_L 5 // ATMega328P-PU PDIP pin 11, PD5, PCINT21, no analogue input.
 #endif
 
 #ifdef LEARN_BUTTON_AVAILABLE
@@ -235,7 +236,12 @@ static inline void IOSetup()
 
       // Make button pins (and others) inputs with internal weak pull-ups
       // (saving an external resistor in each case if aggressively reducing BOM costs).
-      case BUTTON_MODE_L: // Mode button is mandatory.
+#ifdef BUTTON_MODE_L
+      case BUTTON_MODE_L: // Mode button is (usually!) mandatory, at least where a local TRV is being controlled.
+#endif
+#ifdef SIM900_TX_PIN
+      case SIM900_TX_PIN: // When driving SIM900 this pin has external pull-up so should start high.
+#endif
 #ifdef BUTTON_LEARN_L
       case BUTTON_LEARN_L: // Learn button is optional.
 #endif

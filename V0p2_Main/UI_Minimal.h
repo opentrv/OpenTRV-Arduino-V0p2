@@ -74,7 +74,16 @@ The OpenTRV project licenses this file to you
 // Returns true iff the user interacted with the system, and maybe caused a status change.
 // NOTE: since this is on the minimum idle-loop code path, minimise CPU cycles, esp in frost mode.
 // Also re-activates CLI on main button push.
+//
+#if !defined(BUTTON_MODE_L) || (!defined(LOCAL_TRV) && !defined(SLAVE_TRV))
+// If the appropriate button input is not available
+// or this is not driving a local TRV (eg because this is a sensor module)
+// then disable the usual interactive UI entirely.
+#define NO_UI_SUPPORT
+#define tickUI(sec) (false) // Always false.
+#else
 bool tickUI(uint_fast8_t sec);
+#endif
 
 // Record local manual operation of a local physical UI control, eg not remote or via CLI.
 // Thread-safe.
