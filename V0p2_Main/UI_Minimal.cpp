@@ -652,7 +652,7 @@ void serialStatusReport()
   ss1.put(RelHumidity);
 #endif
   ss1.put(AmbLight);
-  ss1.put(Supply_mV);
+  ss1.put(Supply_cV);
 #if defined(OCCUPANCY_SUPPORT)
   ss1.put(Occupancy);
 //  ss1.put(Occupancy.vacHTag(), Occupancy.getVacancyH()); // EXPERIMENTAL

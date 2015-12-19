@@ -94,28 +94,6 @@ void panic(const __FlashStringHelper *s)
   }
 
 
-// Compute a CRC of all of SRAM as a hash that should contain some entropy, especially after power-up.
-#if !defined(RAMSTART)
-#define RAMSTART (0x100)
-#endif
-static uint16_t sramCRC()
-  {
-  uint16_t result = ~0U;
-  for(uint8_t *p = (uint8_t *)RAMSTART; p <= (uint8_t *)RAMEND; ++p)
-    { result = _crc_ccitt_update(result, *p); }
-  return(result);
-  }
-// Compute a CRC of all of EEPROM as a hash that may contain some entropy, particularly across restarts.
-static uint16_t eeCRC()
-  {
-  uint16_t result = ~0U;
-  for(uint8_t *p = (uint8_t *)0; p <= (uint8_t *)E2END; ++p)
-    {
-    const uint8_t v = eeprom_read_byte(p);
-    result = _crc_ccitt_update(result, v);
-    }
-  return(result);
-  }
 
 // Signal position in basic POST sequence as a small positive integer, or zero for done/none.
 // Simple count of position in ON flashes.
@@ -488,11 +466,11 @@ void setup()
 
 #if !defined(ALT_MAIN_LOOP) && !defined(UNIT_TESTS)
   // Get current power supply voltage (internal sensor).
-  const uint16_t Vcc = Supply_mV.read();
+  const uint16_t Vcc = Supply_cV.read();
 #if 1 && defined(DEBUG)
   DEBUG_SERIAL_PRINT_FLASHSTRING("Vcc: ");
   DEBUG_SERIAL_PRINT(Vcc);
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("mV");
+  DEBUG_SERIAL_PRINTLN_FLASHSTRING("cV");
 #endif
   // Get internal temperature measurement (internal sensor).
   const int intTempC16 = readInternalTemperatureC16();
@@ -509,8 +487,8 @@ void setup()
   // Also sweeps over SRAM and EEPROM (see RAMEND and E2END), especially for non-volatile state and uninitialised areas of SRAM.
   // TODO: add better PRNG with entropy pool (eg for crypto).
   // TODO: add RFM22B WUT clock jitter, RSSI, temperature and battery voltage measures.
-  const uint16_t srseed = sramCRC();
-  const uint16_t eeseed = eeCRC();
+  const uint16_t srseed = OTV0P2BASE::sramCRC();
+  const uint16_t eeseed = OTV0P2BASE::eeCRC();
   // DHD20130430: maybe as much as 16 bits of entropy on each reset in seed1, concentrated in the least-significant bits.
   const uint16_t s16 = (__DATE__[5]) ^
                        Vcc ^

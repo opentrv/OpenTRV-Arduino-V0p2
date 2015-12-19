@@ -1376,16 +1376,38 @@ static void testInternalTempSensor()
 static void testSupplyVoltageMonitor()
   {
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("SupplyVoltageMonitor");
-  const int mv = Supply_mV.read();
-#if 0
-  OTV0P2BASE::serialPrintAndFlush("  Battery mv: ");
-  OTV0P2BASE::serialPrintAndFlush(mv, DEC);
+
+  //  const int mv = Supply_mV.read();
+//#if 0
+//  OTV0P2BASE::serialPrintAndFlush("  Battery mv: ");
+//  OTV0P2BASE::serialPrintAndFlush(mv, DEC);
+//  OTV0P2BASE::serialPrintlnAndFlush();
+//#endif
+//  // During testing power supply voltage should be above ~1.7V BOD limit,
+//  // and no higher than 3.6V for V0p2 boards which is RFM22 Vss limit.
+//  // Note that REV9 first boards are running at 3.6V nominal!
+//  AssertIsTrueWithErr((mv >= 1700) && (mv < 3700), mv);
+
+  const bool neededPowerUp = OTV0P2BASE::powerUpADCIfDisabled();
+  const uint8_t cV = Supply_cV.read();
+  const uint8_t ri = Supply_cV.getRawInv();
+#if 1
+  OTV0P2BASE::serialPrintAndFlush("  Battery cV: ");
+  OTV0P2BASE::serialPrintAndFlush(cV);
+  OTV0P2BASE::serialPrintlnAndFlush();
+  OTV0P2BASE::serialPrintAndFlush("  Raw inverse: ");
+  OTV0P2BASE::serialPrintAndFlush(ri);
   OTV0P2BASE::serialPrintlnAndFlush();
 #endif
   // During testing power supply voltage should be above ~1.7V BOD limit,
   // and no higher than 3.6V for V0p2 boards which is RFM22 Vss limit.
   // Note that REV9 first boards are running at 3.6V nominal!
-  AssertIsTrueWithErr((mv >= 1700) && (mv < 3700), mv);
+  // Also, this test may get run on UNO/5V hardware.
+  AssertIsTrueWithErr((cV >= 170) && (cV < 510), cV);
+  // Would expect raw inverse to be <= 1023 for Vcc >= 1.1V.
+  // Should be ~512 at 2.2V, ~310 at 3.3V.
+  AssertIsTrueWithErr((ri >= 200) && (ri < 1023), ri);
+  if(neededPowerUp) { OTV0P2BASE::powerDownADC(); }
   }
 #endif
 
