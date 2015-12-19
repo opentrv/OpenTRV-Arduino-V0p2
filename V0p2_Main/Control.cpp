@@ -889,7 +889,7 @@ void populateCoreStats(FullStatsMessageCore_t *const content)
     }
   content->containsID = true;
   content->tempAndPower.tempC16 = TemperatureC16.get();
-  content->tempAndPower.powerLow = Supply_mV.isSupplyVoltageLow();
+  content->tempAndPower.powerLow = Supply_cV.isSupplyVoltageLow();
   content->containsTempAndPower = true;
   content->ambL = fnmax((uint8_t)1, fnmin((uint8_t)254, AmbLight.get())); // Coerce to allowed value in range [1,254]. Bug-fix (twice! TODO-510) c/o Gary Gladman!
   content->containsAmbL = true;
@@ -1030,7 +1030,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 #endif
     // OPTIONAL items
     // Only TX supply voltage for units apparently not mains powered.
-    if(!Supply_mV.isMains()) { ss1.put(Supply_mV); } else { ss1.remove(Supply_mV.tag()); }
+    if(!Supply_cV.isMains()) { ss1.put(Supply_cV); } else { ss1.remove(Supply_cV.tag()); }
 #ifdef ENABLE_BOILER_HUB
     // Show boiler state for boiler hubs.
     ss1.put("b", (int) isBoilerOn());
@@ -1484,7 +1484,7 @@ void loopOpenTRV()
   const bool minute1From4AfterSensors = (1 == minuteFrom4);
 
   // Note last-measured battery status.
-  const bool batteryLow = Supply_mV.isSupplyVoltageLow();
+  const bool batteryLow = Supply_cV.isSupplyVoltageLow();
 
   // Run some tasks less often when not demanding heat (at the valve or boiler), so as to conserve battery/energy.
   // Spare the batteries if they are low, or the unit is in FROST mode, or if the room/area appears to be vacant.
@@ -1934,9 +1934,9 @@ void loopOpenTRV()
       }
 
     // Churn/reseed PRNG(s) a little to improve unpredictability in use: should be lightweight.
-    case 2: { if(runAll) { OTV0P2BASE::seedRNG8(minuteCount ^ OTV0P2BASE::getCPUCycleCount() ^ (uint8_t)Supply_mV.get(), OTV0P2BASE::_getSubCycleTime() ^ AmbLight.get(), (uint8_t)TemperatureC16.get()); } break; }
+    case 2: { if(runAll) { OTV0P2BASE::seedRNG8(minuteCount ^ OTV0P2BASE::getCPUCycleCount() ^ (uint8_t)Supply_cV.get(), OTV0P2BASE::_getSubCycleTime() ^ AmbLight.get(), (uint8_t)TemperatureC16.get()); } break; }
     // Force read of supply/battery voltage; measure and recompute status (etc) less often when already thought to be low, eg when conserving.
-    case 4: { if(runAll) { Supply_mV.read(); } break; }
+    case 4: { if(runAll) { Supply_cV.read(); } break; }
 
 #ifdef ALLOW_STATS_TX
     // Regular transmission of stats if NOT driving a local valve (else stats can be piggybacked onto that).

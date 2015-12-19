@@ -49,49 +49,49 @@ void powerSetup();
 // Does NOT attempt to adjust serial power state.
 void minimisePowerWithoutSleep();
 
-
-// Sensor for supply (eg battery) voltage in millivolts.
-class SupplyVoltageMilliVolts : public OTV0P2BASE::Sensor<uint16_t>
-  {
-  private:
-    // Internal bandgap (1.1V nominal, 1.0--1.2V) as fraction of Vcc [0,1023].
-    uint16_t rawInv;
-    // Last measured supply voltage (mV);
-    uint16_t mV;
-    // True if last-measured voltage was low.
-    bool isLow;
- 
-  public:
-    // Initialise to cautious values.
-    SupplyVoltageMilliVolts() : mV(0), isLow(true) { }
-
-    // Force a read/poll of the supply voltage and return the value sensed.
-    // Expensive/slow.
-    // NOT thread-safe or usable within ISRs (Interrupt Service Routines).
-    virtual uint16_t read();
-
-    // Return last value fetched by read(); undefined before first read()).
-    // Fast.
-    // NOT thread-safe nor usable within ISRs (Interrupt Service Routines).
-    virtual uint16_t get() const { return(mV); }
-
-    // Returns a suggested (JSON) tag/field/key name including units of get(); NULL means no recommended tag.
-    // The lifetime of the pointed-to text must be at least that of the Sensor instance.
-    virtual const char *tag() const { return("B|mV"); }
-
-    // Get internal bandgap (1.1V nominal, 1.0--1.2V) as fraction of Vcc.
-    uint16_t getRawInv() const { return(rawInv); }
-
-    // Returns true if the supply voltage is low/marginal.
-    // This depends on the AVR and other hardware components (eg sensors) in use.
-    bool isSupplyVoltageLow() const { return(isLow); }
-
-    // Returns true if the supply appears to be something like mains, that does not need monitoring.
-    // This assumes that anything at/above 3V is mains or at least a long way from needing monitoring.
-    bool isMains() const { return(!isLow && (mV >= 3000)); }
-  };
+//
+//// Sensor for supply (eg battery) voltage in millivolts.
+//class SupplyVoltageMilliVolts : public OTV0P2BASE::Sensor<uint16_t>
+//  {
+//  private:
+//    // Internal bandgap (1.1V nominal, 1.0--1.2V) as fraction of Vcc [0,1023].
+//    uint16_t rawInv;
+//    // Last measured supply voltage (mV);
+//    uint16_t mV;
+//    // True if last-measured voltage was low.
+//    bool isLow;
+// 
+//  public:
+//    // Initialise to cautious values.
+//    SupplyVoltageMilliVolts() : mV(0), isLow(true) { }
+//
+//    // Force a read/poll of the supply voltage and return the value sensed.
+//    // Expensive/slow.
+//    // NOT thread-safe or usable within ISRs (Interrupt Service Routines).
+//    virtual uint16_t read();
+//
+//    // Return last value fetched by read(); undefined before first read()).
+//    // Fast.
+//    // NOT thread-safe nor usable within ISRs (Interrupt Service Routines).
+//    virtual uint16_t get() const { return(mV); }
+//
+//    // Returns a suggested (JSON) tag/field/key name including units of get(); NULL means no recommended tag.
+//    // The lifetime of the pointed-to text must be at least that of the Sensor instance.
+//    virtual const char *tag() const { return("B|mV"); }
+//
+//    // Get internal bandgap (1.1V nominal, 1.0--1.2V) as fraction of Vcc.
+//    uint16_t getRawInv() const { return(rawInv); }
+//
+//    // Returns true if the supply voltage is low/marginal.
+//    // This depends on the AVR and other hardware components (eg sensors) in use.
+//    bool isSupplyVoltageLow() const { return(isLow); }
+//
+//    // Returns true if the supply appears to be something like mains, that does not need monitoring.
+//    // This assumes that anything at/above 3V is mains or at least a long way from needing monitoring.
+//    bool isMains() const { return(!isLow && (mV >= 3000)); }
+//  };
 // Singleton implementation/instance.
-extern SupplyVoltageMilliVolts Supply_mV;
+extern OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
 
 
 

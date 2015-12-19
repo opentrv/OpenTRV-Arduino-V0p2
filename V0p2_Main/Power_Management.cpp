@@ -236,45 +236,45 @@ void power_intermittent_peripherals_disable()
   }
 
 
-// Default low-battery threshold suitable for 2xAA NiMH, with AVR BOD at 1.8V.
-#define BATTERY_LOW_MV 2000
-
-// Using some sensors forces a higher voltage threshold for 'low battery'.
-#if defined(SENSOR_SHT21_ENABLE)
-#define SENSOR_SHT21_MINMV 2199 // Only specified down to 2.1V.
-#if BATTERY_LOW_MV < SENSOR_SHT21_MINMV
-#undef BATTERY_LOW_MV
-#define BATTERY_LOW_MV SENSOR_SHT21_MINMV
-#endif
-#endif
-
-// Force a read/poll of the supply voltage and return the value sensed.
-// Expensive/slow.
-// NOT thread-safe nor usable within ISRs (Interrupt Service Routines).
-uint16_t SupplyVoltageMilliVolts::read()
-  {
-  // Measure internal bandgap (1.1V nominal, 1.0--1.2V) as fraction of Vcc [0,1023].
-//  const uint16_t raw = read1V1wrtBattery();
-  const uint16_t raw = OTV0P2BASE::_analogueNoiseReducedReadM(_BV(REFS0) | 14);
-  // If Vcc was 1.1V ADC would give 1023.
-  // If Vcc was 2.2V ADC would give 511.
-  const uint16_t result = ((1023U<<6) / raw) * (1100U>>6);
-  rawInv = raw;
-  mV = result;
-  isLow = (result < BATTERY_LOW_MV);
-#if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("Battery mv: ");
-  DEBUG_SERIAL_PRINT(result);
-  DEBUG_SERIAL_PRINT_FLASHSTRING(" raw ");
-  DEBUG_SERIAL_PRINT(raw);
-  if(batteryLow) { DEBUG_SERIAL_PRINT_FLASHSTRING(" LOW"); }
-  DEBUG_SERIAL_PRINTLN();
-#endif
-  return(result);
-  }
+//// Default low-battery threshold suitable for 2xAA NiMH, with AVR BOD at 1.8V.
+//#define BATTERY_LOW_MV 2000
+//
+//// Using some sensors forces a higher voltage threshold for 'low battery'.
+//#if defined(SENSOR_SHT21_ENABLE)
+//#define SENSOR_SHT21_MINMV 2199 // Only specified down to 2.1V.
+//#if BATTERY_LOW_MV < SENSOR_SHT21_MINMV
+//#undef BATTERY_LOW_MV
+//#define BATTERY_LOW_MV SENSOR_SHT21_MINMV
+//#endif
+//#endif
+//
+//// Force a read/poll of the supply voltage and return the value sensed.
+//// Expensive/slow.
+//// NOT thread-safe nor usable within ISRs (Interrupt Service Routines).
+//uint16_t SupplyVoltageMilliVolts::read()
+//  {
+//  // Measure internal bandgap (1.1V nominal, 1.0--1.2V) as fraction of Vcc [0,1023].
+////  const uint16_t raw = read1V1wrtBattery();
+//  const uint16_t raw = OTV0P2BASE::_analogueNoiseReducedReadM(_BV(REFS0) | 14);
+//  // If Vcc was 1.1V ADC would give 1023.
+//  // If Vcc was 2.2V ADC would give 511.
+//  const uint16_t result = ((1023U<<6) / raw) * (1100U>>6);
+//  rawInv = raw;
+//  mV = result;
+//  isLow = (result < BATTERY_LOW_MV);
+//#if 0 && defined(DEBUG)
+//  DEBUG_SERIAL_PRINT_FLASHSTRING("Battery mv: ");
+//  DEBUG_SERIAL_PRINT(result);
+//  DEBUG_SERIAL_PRINT_FLASHSTRING(" raw ");
+//  DEBUG_SERIAL_PRINT(raw);
+//  if(batteryLow) { DEBUG_SERIAL_PRINT_FLASHSTRING(" LOW"); }
+//  DEBUG_SERIAL_PRINTLN();
+//#endif
+//  return(result);
+//  }
 
 // Singleton implementation/instance.
-SupplyVoltageMilliVolts Supply_mV;
+OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
 
 // Get approximate internal temperature in nominal C/16.
 // Only accurate to +/- 10C uncalibrated.
@@ -295,24 +295,24 @@ int readInternalTemperatureC16()
   }
 
 
-// If ADC was disabled, power it up, do Serial.begin(), and return true.
-// If already powered up then do nothing other than return false.
-// This does not power up the analogue comparator; this needs to be manually enabled if required.
-// If this returns true then a matching powerDownADC() may be advisable.
-bool powerUpADCIfDisabled()
-  {
-  if(!(PRR & _BV(PRADC))) { return(false); }
-  PRR &= ~_BV(PRADC); // Enable the ADC.
-  ADCSRA |= _BV(ADEN);
-  return(true);
-  }
-
-// Power ADC down.
-void powerDownADC()
-  {
-  ADCSRA &= ~_BV(ADEN); // Do before power_[adc|all]_disable() to avoid freezing the ADC in an active state!
-  PRR |= _BV(PRADC); // Disable the ADC.
-  }
+//// If ADC was disabled, power it up, do Serial.begin(), and return true.
+//// If already powered up then do nothing other than return false.
+//// This does not power up the analogue comparator; this needs to be manually enabled if required.
+//// If this returns true then a matching powerDownADC() may be advisable.
+//bool powerUpADCIfDisabled()
+//  {
+//  if(!(PRR & _BV(PRADC))) { return(false); }
+//  PRR &= ~_BV(PRADC); // Enable the ADC.
+//  ADCSRA |= _BV(ADEN);
+//  return(true);
+//  }
+//
+//// Power ADC down.
+//void powerDownADC()
+//  {
+//  ADCSRA &= ~_BV(ADEN); // Do before power_[adc|all]_disable() to avoid freezing the ADC in an active state!
+//  PRR |= _BV(PRADC); // Disable the ADC.
+//  }
 
 // If TWI (I2C) was disabled, power it up, do Wire.begin(), and return true.
 // If already powered up then do nothing other than return false.
