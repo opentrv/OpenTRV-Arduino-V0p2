@@ -40,12 +40,12 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
   static const void *SIM900_APN      = (void *)0x0305;
   static const void *SIM900_UDP_ADDR = (void *)0x031B;
   static const void *SIM900_UDP_PORT = (void *)0x0329;
-  const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config {
+  const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config(
                                                   true, 
                                                   SIM900_PIN,
                                                   SIM900_APN,
                                                   SIM900_UDP_ADDR,
-                                                  SIM900_UDP_PORT };
+                                                  SIM900_UDP_PORT);
 #endif // ENABLE_RADIO_SIM900
 
 
