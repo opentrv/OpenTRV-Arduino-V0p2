@@ -277,7 +277,7 @@ pinMode(A3, OUTPUT);
   // Check that the radio is correctly connected; panic if not...
   if(!SecondaryRadio.configure(1, &SecondaryRadioConfig) || !SecondaryRadio.begin()) { panic(); }
   // Apply filtering, if any, while we're having fun...
-  SecondaryRadio.setFilterRXISR(FilterRXISR);
+//  SecondaryRadio.setFilterRXISR(FilterRXISR); // Assume no RX on secondary radio.
 #endif // ENABLE_RADIO_SECONDARY_MODULE
 
 
