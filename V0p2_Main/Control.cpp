@@ -1652,6 +1652,15 @@ void loopOpenTRV()
 
 
   // Act on eavesdropping need, setting up or clearing down hooks as required.
+#if 1 && defined(DEBUG) && defined(ENABLE_DEFAULT_ALWAYS_RX)
+  const int8_t listenChannel = PrimaryRadio.getListenChannel();
+  if(listenChannel < 0)
+    {
+    DEBUG_SERIAL_PRINT_FLASHSTRING("NOT LISTENING lc=");
+    DEBUG_SERIAL_PRINT(listenChannel);
+    DEBUG_SERIAL_PRINTLN();
+    }
+#endif
   PrimaryRadio.listen(needsToEavesdrop);
 //#if defined(USE_MODULE_FHT8VSIMPLE)
   if(needsToEavesdrop)
