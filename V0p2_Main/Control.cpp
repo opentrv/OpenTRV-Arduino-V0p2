@@ -1660,6 +1660,12 @@ void loopOpenTRV()
     DEBUG_SERIAL_PRINT(listenChannel);
     DEBUG_SERIAL_PRINTLN();
     }
+#if 1 && defined(ENABLE_RADIO_RFM23B) // ONLY IF PrimaryRadio really is RFM23B!
+    const uint8_t rmode = RFM23B.getMode();
+    DEBUG_SERIAL_PRINT_FLASHSTRING("RFM23B mode ");
+    DEBUG_SERIAL_PRINT(rmode);
+    DEBUG_SERIAL_PRINTLN();
+#endif
 #endif
   PrimaryRadio.listen(needsToEavesdrop);
 //#if defined(USE_MODULE_FHT8VSIMPLE)
