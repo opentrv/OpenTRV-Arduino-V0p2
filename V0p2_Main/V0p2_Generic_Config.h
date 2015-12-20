@@ -114,6 +114,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: allow TX of stats frames.
 #define ALLOW_STATS_TX
 // IF DEFINED: always allow some kind of stats TX, whatever the privacy settings.
+// HAS HUGE PRIVACY IMPLICATIONS: DO NOT ENABLE UNNECESSARILY!
 #undef CONFIG_ALWAYS_TX_ALL_STATS
 // IF DEFINED: allow minimal binary format in addition to more generic one: ~400 bytes code cost.
 #undef ALLOW_MINIMAL_STATS_TXRX
