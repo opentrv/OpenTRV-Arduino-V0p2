@@ -78,9 +78,11 @@ The OpenTRV project licenses this file to you
 #if !defined(BUTTON_MODE_L) || (!defined(LOCAL_TRV) && !defined(SLAVE_TRV))
 // If the appropriate button input is not available
 // or this is not driving a local TRV (eg because this is a sensor module)
-// then disable the usual interactive UI entirely.
+// then disable the usual interactive UI entirely
+// (except to ensure the main LED is turned off once per minor cycle).
 #define NO_UI_SUPPORT
-#define tickUI(sec) (false) // Always false.
+// Ensure LED forced off unconditionally at least once each cycle.
+inline bool tickUI(uint_fast8_t) { LED_HEATCALL_OFF(); return(false); } // Always false.
 #else
 bool tickUI(uint_fast8_t sec);
 #endif

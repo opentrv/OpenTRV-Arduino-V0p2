@@ -257,11 +257,6 @@ void optionalPOST()
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("(Using RFM22.)");
 #endif // !defined(RFM22_IS_ACTUALLY_RFM23) && defined(DEBUG) && !defined(MIN_ENERGY_BOOT)
 
-#ifdef ENABLE_RADIO_SIM900
-fastDigitalWrite(A3, 0);
-pinMode(A3, OUTPUT);
-#endif // ENABLE_RADIO_SIM900
-
   // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
   PrimaryRadio.preinit(NULL);
   // Check that the radio is correctly connected; panic if not...
@@ -271,8 +266,16 @@ pinMode(A3, OUTPUT);
 //  if(neededToWakeSPI) { OTV0P2BASE::powerDownSPI(); }
 #endif // USE_MODULE_RFM22RADIOSIMPLE
 
+
+
 #ifdef ENABLE_RADIO_SECONDARY_MODULE
-  // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
+#ifdef ENABLE_RADIO_SIM900
+// Turn power on for SIM900 with PFET for secondary power control.
+fastDigitalWrite(A3, 0);
+pinMode(A3, OUTPUT);
+#endif // ENABLE_RADIO_SIM900
+
+// Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
   SecondaryRadio.preinit(NULL);
   // Check that the radio is correctly connected; panic if not...
   if(!SecondaryRadio.configure(1, &SecondaryRadioConfig) || !SecondaryRadio.begin()) { panic(); }
