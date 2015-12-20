@@ -1652,7 +1652,7 @@ void loopOpenTRV()
 
 
   // Act on eavesdropping need, setting up or clearing down hooks as required.
-#if 1 && defined(DEBUG) && defined(ENABLE_DEFAULT_ALWAYS_RX)
+#if 0 && defined(DEBUG) && defined(ENABLE_DEFAULT_ALWAYS_RX)
   const int8_t listenChannel = PrimaryRadio.getListenChannel();
   if(listenChannel < 0)
     {
@@ -1660,7 +1660,7 @@ void loopOpenTRV()
     DEBUG_SERIAL_PRINT(listenChannel);
     DEBUG_SERIAL_PRINTLN();
     }
-#if 1 && defined(ENABLE_RADIO_RFM23B) // ONLY IF PrimaryRadio really is RFM23B!
+#if 0 && defined(ENABLE_RADIO_RFM23B) // ONLY IF PrimaryRadio really is RFM23B!
     const uint8_t rmode = RFM23B.getMode();
     DEBUG_SERIAL_PRINT_FLASHSTRING("RFM23B mode ");
     DEBUG_SERIAL_PRINT(rmode);
