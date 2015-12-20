@@ -266,15 +266,12 @@ void optionalPOST()
 //  if(neededToWakeSPI) { OTV0P2BASE::powerDownSPI(); }
 #endif // USE_MODULE_RFM22RADIOSIMPLE
 
-
-
 #ifdef ENABLE_RADIO_SECONDARY_MODULE
 #ifdef ENABLE_RADIO_SIM900
 // Turn power on for SIM900 with PFET for secondary power control.
 fastDigitalWrite(A3, 0);
 pinMode(A3, OUTPUT);
 #endif // ENABLE_RADIO_SIM900
-
 // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
   SecondaryRadio.preinit(NULL);
   // Check that the radio is correctly connected; panic if not...
