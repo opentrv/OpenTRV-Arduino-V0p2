@@ -604,7 +604,11 @@ int8_t checkJSONMsgRXCRC(const uint8_t * bptr, uint8_t bufLen);
 // True if the TX_ENABLE value is no higher than stTXmostUnsec.
 // Some filtering may be required even if this is true.
 #if defined(ALLOW_STATS_TX)
+#if !defined(CONFIG_ALWAYS_TX_ALL_STATS)
 bool enableTrailingStatsPayload();
+#else
+#define enableTrailingStatsPayload() (true) // Always allow at least some stats to be TXed.
+#endif // !defined(CONFIG_ALWAYS_TX_ALL_STATS)
 #else
 #define enableTrailingStatsPayload() (false)
 #endif

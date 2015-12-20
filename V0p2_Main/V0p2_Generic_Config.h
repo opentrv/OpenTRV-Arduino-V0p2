@@ -56,7 +56,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_DHD_TESTLAB_REV1 // REV1.
 //#define CONFIG_Trial2013Winter_Round1_STATSHUB // REV1 as stats hub.
 //#define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
-#define CONFIG_Trial2013Winter_Round2_BHR // REV2 cut4: boiler hub and stats relay.
+//#define CONFIG_Trial2013Winter_Round2_BHR // REV2 cut4: boiler hub and stats relay.
 //#define CONFIG_Trial2013Winter_Round2_SECURE_NOHUB // REV2 cut4 leaf (valve/sensor) 2015/12 secure protocol.
 //#define CONFIG_Trial2013Winter_Round2_SECURE_HUB // REV2 cut4 hub (boiler/stats) 2015/12 secure protocol.
 //#define CONFIG_DHD_TESTLAB_REV4 // REV4 cut2.
@@ -66,7 +66,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_DORM1_SANS32K // REV7 / DORM1 without working 32768Hz clock.
 //#define CONFIG_DORM1_MUT // REV7 / DORM1 Winter 2014/2015 minimal for unit testing.
 //#define CONFIG_REV7N // REV7 with external "Model N" valve.
-//#define CONFIG_REV7_AS_SENSOR // REV7 as JSON-only stats/sensor leaf.
+#define CONFIG_REV7_AS_SENSOR // REV7 as JSON-only stats/sensor leaf.
 //#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
 //#define CONFIG_REV9_STATS // REV9 as stats node, cut 2 of the board.
 //#define CONFIG_REV9_cut1 // REV9 as CC1 relay, cut1 of board.
@@ -113,6 +113,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define ALLOW_STATS_RX
 // IF DEFINED: allow TX of stats frames.
 #define ALLOW_STATS_TX
+// IF DEFINED: always allow some kind of stats TX, whatever the privacy settings.
+#undef CONFIG_ALWAYS_TX_ALL_STATS
 // IF DEFINED: allow minimal binary format in addition to more generic one: ~400 bytes code cost.
 #undef ALLOW_MINIMAL_STATS_TXRX
 // IF DEFINED: allow JSON stats frames alongside binary ones.
@@ -718,6 +720,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #undef ALLOW_STATS_RX
 // IF DEFINED: allow TX of stats frames.
 #define ALLOW_STATS_TX
+// IF DEFINED: always allow some kind of stats TX, whatever the privacy settings.
+#define CONFIG_ALWAYS_TX_ALL_STATS
 // IF DEFINED: allow JSON stats frames.
 #define ALLOW_JSON_OUTPUT
 // IF DEFINED: allow binary stats to be TXed.
