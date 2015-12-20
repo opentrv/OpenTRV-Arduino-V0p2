@@ -172,6 +172,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
 // IF DEFINED: allow non-secure OpenTRV secure frame RX (as of 2015/12): DISABLED BY DEFAULT.
 #undef ENABLE_OTSECUREFRAME_INSECURE_RX_PERMITTED
+// IF DEFINED: force all receivers back into RX mode periodically.  BODGE: DISABLED BY DEFAULT.
+#undef CONFIG_FORCE_TO_RX_MODE_REGULARLY
 
 
 
@@ -382,6 +384,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define RADIO_SECONDARY_NULL
 // IF DEFINED: allow periodic machine- and human- readable status report to serial, starting with "="/
 //#undef ENABLE_SERIAL_STATUS_REPORT
+#define CONFIG_FORCE_TO_RX_MODE_REGULARLY // FIXME
 // Use common settings.
 #define COMMON_SETTINGS
 #endif
@@ -1018,6 +1021,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // SIM900 relay.
 #define ENABLE_RADIO_SIM900   // Enable SIM900
 #define RADIO_SECONDARY_SIM900  // Assign SIM900
+#define CONFIG_FORCE_TO_RX_MODE_REGULARLY // FIXME
 // Use common settings.
 #define COMMON_SETTINGS
 #endif

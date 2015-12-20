@@ -1651,7 +1651,6 @@ void loopOpenTRV()
     }
 
 
-  // Act on eavesdropping need, setting up or clearing down hooks as required.
 #if 0 && defined(DEBUG) && defined(ENABLE_DEFAULT_ALWAYS_RX)
   const int8_t listenChannel = PrimaryRadio.getListenChannel();
   if(listenChannel < 0)
@@ -1667,6 +1666,16 @@ void loopOpenTRV()
     DEBUG_SERIAL_PRINTLN();
 #endif
 #endif
+
+#if defined(CONFIG_FORCE_TO_RX_MODE_REGULARLY)
+  // Force radio off (to be forced on again)
+  // to try to get into a reasonable state.
+  // BODGE: should not be necessary.
+  // May cause incoming frames to be lost.
+  PrimaryRadio.listen(false);
+#endif
+
+  // Act on eavesdropping need, setting up or clearing down hooks as required.
   PrimaryRadio.listen(needsToEavesdrop);
 //#if defined(USE_MODULE_FHT8VSIMPLE)
   if(needsToEavesdrop)
