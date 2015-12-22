@@ -56,7 +56,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_DHD_TESTLAB_REV1 // REV1.
 //#define CONFIG_Trial2013Winter_Round1_STATSHUB // REV1 as stats hub.
 //#define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
-//#define CONFIG_Trial2013Winter_Round2_BHR // REV2 cut4: boiler hub and stats relay.
+#define CONFIG_Trial2013Winter_Round2_BHR // REV2 cut4: boiler hub and stats relay.
 //#define CONFIG_Trial2013Winter_Round2_SECURE_NOHUB // REV2 cut4 leaf (valve/sensor) 2015/12 secure protocol.
 //#define CONFIG_Trial2013Winter_Round2_SECURE_HUB // REV2 cut4 hub (boiler/stats) 2015/12 secure protocol.
 //#define CONFIG_DHD_TESTLAB_REV4 // REV4 cut2.
@@ -66,7 +66,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_DORM1_SANS32K // REV7 / DORM1 without working 32768Hz clock.
 //#define CONFIG_DORM1_MUT // REV7 / DORM1 Winter 2014/2015 minimal for unit testing.
 //#define CONFIG_REV7N // REV7 with external "Model N" valve.
-#define CONFIG_REV7_AS_SENSOR // REV7 as JSON-only stats/sensor leaf.
+//#define CONFIG_REV7_AS_SENSOR // REV7 as JSON-only stats/sensor leaf.
 //#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
 //#define CONFIG_REV9_STATS // REV9 as stats node, cut 2 of the board.
 //#define CONFIG_REV9_cut1 // REV9 as CC1 relay, cut1 of board.
@@ -387,7 +387,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define RADIO_SECONDARY_NULL
 // IF DEFINED: allow periodic machine- and human- readable status report to serial, starting with "="/
 //#undef ENABLE_SERIAL_STATUS_REPORT
-#define CONFIG_FORCE_TO_RX_MODE_REGULARLY // FIXME
+#undef CONFIG_FORCE_TO_RX_MODE_REGULARLY // FIXME
 // Use common settings.
 #define COMMON_SETTINGS
 #endif
@@ -1026,7 +1026,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // SIM900 relay.
 #define ENABLE_RADIO_SIM900   // Enable SIM900
 #define RADIO_SECONDARY_SIM900  // Assign SIM900
-#define CONFIG_FORCE_TO_RX_MODE_REGULARLY // FIXME
+#undef CONFIG_FORCE_TO_RX_MODE_REGULARLY // FIXME
 // Use common settings.
 #define COMMON_SETTINGS
 #endif
