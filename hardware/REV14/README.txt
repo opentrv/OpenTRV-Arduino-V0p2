@@ -1,4 +1,6 @@
-REV 14 is I2CEXTV1 connector + LoRa (Microchip or RFM95W (plus optional coprocessor)) and phototransistor and light, temp, voice, crude mobile chatter detector, with no UI eg neither buttons nor LEDs.
+REV 14 is I2CEXTV1 connector + LoRa (Microchip or RFM95W (plus optional coprocessor)) +
+    phototransistor and light, temp, voice, crude mobile chatter detector
+    with no UI eg neither buttons nor LEDs.
 Designed for deployment to bus shelters in box 3 with LoRa comms for IoT Launchpad.
 
 
