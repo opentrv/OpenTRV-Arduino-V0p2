@@ -127,8 +127,10 @@ static const int LDR_THR_HIGH = 200U; // Was 35.
 
 // Measure/store/return the current room ambient light levels in range [0,255].
 // This may consume significant power and time.
-// Probably no need to do this more than (say) once per minute.
-// This implementation expects LDR (1M dark resistance) from IO_POWER_UP to LDR_SENSOR_AIN and 100k to ground.
+// Probably no need to do this more than (say) once per minute,
+// but at a regular rate to catch such events as lights being switched on.
+// This implementation expects LDR (1M dark resistance) from IO_POWER_UP to LDR_SENSOR_AIN and 100k to ground,
+// or a phototransistor TEPT4400 in place of the LDR.
 // (Not intended to be called from ISR.)
 uint8_t AmbientLight::read()
   {
@@ -144,7 +146,6 @@ uint8_t AmbientLight::read()
     const uint16_t vbg = Supply_cV.getRawInv(); // Vbandgap wrt Vsupply.
     // Compute value in extended range up to ~1024 * Vsupply/Vbandgap.
     const uint16_t ale = ((al1 << 5) / vbg) << 5; // Faster uint16_t-only approximation to (uint16_t)((al1 * 1024L) / vbg)).
-//    const uint16_t aleThreshold = (uint16_t)((ADAPTIVE_THRESHOLD * (long) normalScale) / extendedScale);
     const uint16_t aleThreshold = (vbg >> 5) * (ADAPTIVE_THRESHOLD >> 5) ; //  Faster uint16_t-only approximation to (uint16_t) (vbg * (long) ADAPTIVE_THRESHOLD) / 1024L;
     if(ale <= aleThreshold)
       { al = ADAPTIVE_THRESHOLD; } // Keep output scale monotonic...
@@ -198,10 +199,6 @@ uint8_t AmbientLight::read()
 
   if(newValue != value)
     {
-//    const uint16_t oldRawImplied = ((uint16_t)value) << 2;
-//    const uint16_t absDiff = (oldRawImplied > al) ? (oldRawImplied - al) : (al - oldRawImplied);
-//    if(absDiff > 2)
-
 #ifdef OCCUPANCY_DETECT_FROM_AMBLIGHT
     // Treat a sharp brightening as a possible/weak indication of occupancy, eg light flicked on.
     // Ignore false trigger at start-up.
@@ -293,17 +290,9 @@ void AmbientLight::_recomputeThresholds()
     }
 
   // Compute thresholds to fit within the observed sensed value range.
-  // TODO: a more sophisticated notion of distribution of values within range may be needed.
-//#if defined(ADAPTIVE_THRESHOLD)
-//  // If recent light levels extend into more sensitive measurement reason
-//  // then take wider than normal hysteresis to compensate.
-//  // Take upwards delta indicative of lights on, and hysteresis, as ~50% of min--max mean levels.
-//  if(recentMin < (ADAPTIVE_THRESHOLD>>2))
-//    { upDelta = max((recentMax - recentMin) >> 1, ABS_MIN_AMBLIGHT_HYST_UINT8); }
-//  else
-//#endif // defined(ADAPTIVE_THRESHOLD)
-  // Take upwards delta indicative of lights on, and hysteresis, as ~25%.
-    { upDelta = max((recentMax - recentMin) >> 2, ABS_MIN_AMBLIGHT_HYST_UINT8); }
+  // TODO: a more sophisticated notion of distribution of values may be needed, esp for non-linear scale.
+  // Take upwards delta indicative of lights on, and hysteresis, as ~25% of FSD.
+  upDelta = max((recentMax - recentMin) >> 2, ABS_MIN_AMBLIGHT_HYST_UINT8);
   // Provide some noise elbow-room above the observed minimum.
   // Set the hysteresis values to be the same as the upDelta.
   darkThreshold = (uint8_t) min(254, recentMin+1 + (upDelta>>1));
