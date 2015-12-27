@@ -153,7 +153,7 @@ uint8_t AmbientLight::read()
       { al = fnmin(1023U, ADAPTIVE_THRESHOLD + fnmax(0U, ((ale - aleThreshold) / scaleFactor))); }
 #if 1 && defined(DEBUG)
     DEBUG_SERIAL_PRINT_FLASHSTRING("Ambient raw: ");
-    DEBUG_SERIAL_PRINT(al0);
+    DEBUG_SERIAL_PRINT(al0); 
     DEBUG_SERIAL_PRINT_FLASHSTRING(", against Vcc: ");
     DEBUG_SERIAL_PRINT(al1);
     DEBUG_SERIAL_PRINT_FLASHSTRING(", Vref against Vcc: ");
@@ -178,7 +178,7 @@ uint8_t AmbientLight::read()
   // Capture entropy from changed LS bits.
   if((uint8_t)al != (uint8_t)rawValue) { ::OTV0P2BASE::addEntropyToPool((uint8_t)al ^ (uint8_t)rawValue, 0); } // Claim zero entropy as may be forced by Eve.
 
-  // Apply a little bit of noise reduction (hysteresis) to the normalised version.
+  // Compute the new normalised value.
   const uint8_t newValue = (uint8_t)(al >> 2);
 
   // Adjust room-lit flag, with hysteresis.
@@ -245,7 +245,6 @@ DEBUG_SERIAL_PRINTLN();
 
   // Store new value, in its various forms.
   rawValue = al;
-//  expandedRawValue = ale;
   value = newValue;
   return(value);
   }
