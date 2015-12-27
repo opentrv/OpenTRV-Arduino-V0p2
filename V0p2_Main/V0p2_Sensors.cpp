@@ -183,7 +183,7 @@ uint8_t AmbientLight::read()
     }
 
   // Store new value, raw and normalised.
-  // Unconditionbally store raw value.
+  // Unconditionally store raw value.
   rawValue = al;
   if(newValue != value)
     {
@@ -200,7 +200,7 @@ uint8_t AmbientLight::read()
       else if(isUp && ((absDiff >> 2) >= upDelta))
         {
         Occupancy.markAsPossiblyOccupied();
-#if 0 && defined(DEBUG)
+#if 1 && defined(DEBUG)
   DEBUG_SERIAL_PRINT_FLASHSTRING("Ambient light absDiff/dt/lt: ");
   DEBUG_SERIAL_PRINT(absDiff);
   DEBUG_SERIAL_PRINT(' ');
