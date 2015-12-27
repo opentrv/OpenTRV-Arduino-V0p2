@@ -55,12 +55,6 @@ OTV0P2BASE::MinimalOneWire<PIN_OW_DQ_DATA> MinOW;
 
 
 
-
-
-
-
-
-
 #ifndef OMIT_MODULE_LDROCCUPANCYDETECTION
 
 // Note on: phototransistor variant.
@@ -153,7 +147,7 @@ uint8_t AmbientLight::read()
       { al = fnmin(1023U, ADAPTIVE_THRESHOLD + fnmax(0U, ((ale - aleThreshold) / scaleFactor))); }
 #if 1 && defined(DEBUG)
     DEBUG_SERIAL_PRINT_FLASHSTRING("Ambient raw: ");
-    DEBUG_SERIAL_PRINT(al0); 
+    DEBUG_SERIAL_PRINT(al0);
     DEBUG_SERIAL_PRINT_FLASHSTRING(", against Vcc: ");
     DEBUG_SERIAL_PRINT(al1);
     DEBUG_SERIAL_PRINT_FLASHSTRING(", Vref against Vcc: ");
@@ -354,9 +348,6 @@ AmbientLight AmbLight;
 #define TMP102_CTRL_B1_OS 0x80 // Control register: one-shot flag in byte 1.
 #define TMP102_CTRL_B2 0x0 // Byte 2 for control register: 0.25Hz conversion rate and not extended mode (EM).
 
-//// Last temperature read with readTemperatureC16(); initially 0 and set to 0 on error.
-//static int temp16;
-
 #if !defined(SENSOR_SHT21_ENABLE) && !defined(SENSOR_DS18B20_ENABLE) // Don't use TMP112 if SHT21 or DS18B20 are available.
 // Measure/store/return the current room ambient temperature in units of 1/16th C.
 // This may contain up to 4 bits of information to the right of the fixed binary point.
@@ -420,9 +411,6 @@ static int TMP112_readTemperatureC16()
   // Builds 12-bit value (assumes not in extended mode) and sign-extends if necessary for sub-zero temps.
   const int t16 = (b1 << 4) | (b2 >> 4) | ((b1 & 0x80) ? 0xf000 : 0);
 
-//  // Store the result for access at any time.
-//  temp16 = t16;
-
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINT_FLASHSTRING("TMP102 temp: ");
   DEBUG_SERIAL_PRINT(b1);
@@ -436,11 +424,6 @@ static int TMP112_readTemperatureC16()
   return(t16);
   }
 #endif
-
-//// Return previously-read (with readTemperatureC16()) temperature; very fast.
-//int getTemperatureC16() { return(temp16); }
-
-
 
 
 
