@@ -142,7 +142,7 @@ extern ExtTemperatureDS18B20C16 extDS18B20_0;
 class AmbientLight : public OTV0P2BASE::SimpleTSUint8Sensor
   {
   private:
-    // Raw ambient light value [0,1023] dark--light.
+    // Raw ambient light value [0,1023] dark--light, possibly companded.
     uint16_t rawValue;
 
     // True iff room appears lit well enough for activity.
@@ -171,18 +171,16 @@ class AmbientLight : public OTV0P2BASE::SimpleTSUint8Sensor
     // but in a very narrow range which implies a broken sensor or shadowed location.
     bool unusable;
 
-    // Ignore first false trigger at start-up.
-    bool ignoredFirst;
-
     // Recomputes thresholds and 'unusable' based on current state.
     // WARNING: called from (static) constructors so do not attempt (eg) use of Serial.
     void _recomputeThresholds();
 
   public:
     AmbientLight()
-      : isRoomLitFlag(false), darkTicks(0),
+      : rawValue(~0U), // Initial values is distinct.
+        isRoomLitFlag(false), darkTicks(0),
         recentMin(~0), recentMax(~0),
-        unusable(false), ignoredFirst(false)
+        unusable(false)
       { _recomputeThresholds(); }
 
     // Force a read/poll of the ambient light level and return the value sensed [0,255] (dark to light).

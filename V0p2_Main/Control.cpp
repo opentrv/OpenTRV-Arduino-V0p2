@@ -2019,7 +2019,17 @@ void loopOpenTRV()
 
     // Poll ambient light level at a fixed rate.
     // This allows the unit to respond consistently to (eg) switching lights on (eg TODO-388).
-    case 52: { AmbLight.read(); break; }
+    case 52:
+      {
+      // Force all UI lights off before sampling ambient light level.
+      LED_HEATCALL_OFF();
+#if defined(LED_UI2_EXISTS) && defined(ENABLE_UI_LED_2_IF_AVAILABLE)
+      // Turn off second UI LED if available.
+      LED_UI2_OFF();
+#endif
+      AmbLight.read();
+      break;
+      }
 
     // At a hub, sample temperature regularly as late as possible in the minute just before recomputing valve position.
     // Force a regular read to make stats such as rate-of-change simple and to minimise lag.
