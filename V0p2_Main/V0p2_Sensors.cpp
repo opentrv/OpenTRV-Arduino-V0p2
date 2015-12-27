@@ -153,7 +153,7 @@ uint8_t AmbientLight::read()
       { al = fnmin(1023U, ADAPTIVE_THRESHOLD + fnmax(0U, ((ale - aleThreshold) / scaleFactor))); }
 #if 1 && defined(DEBUG)
     DEBUG_SERIAL_PRINT_FLASHSTRING("Ambient raw: ");
-    DEBUG_SERIAL_PRINT(al0);
+    DEBUG_SERIAL_PRINT(al0); 
     DEBUG_SERIAL_PRINT_FLASHSTRING(", against Vcc: ");
     DEBUG_SERIAL_PRINT(al1);
     DEBUG_SERIAL_PRINT_FLASHSTRING(", Vref against Vcc: ");
@@ -245,7 +245,6 @@ DEBUG_SERIAL_PRINTLN();
 
   // Store new value, in its various forms.
   rawValue = al;
-//  expandedRawValue = ale;
   value = newValue;
   return(value);
   }
