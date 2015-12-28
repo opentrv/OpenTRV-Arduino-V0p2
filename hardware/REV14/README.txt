@@ -4,7 +4,7 @@ REV 14 is I2CEXTV1 connector + LoRa (Microchip or RFM95W (plus optional coproces
 Designed for deployment to bus shelters in box 3 with LoRa comms for IoT Launchpad.
 
 
-Possible target box: 
+Possible target box: LP Box 3, also in LDN Landmark seatwell space.
 
 (Note: board is smaller than the maximum possible.)
 
