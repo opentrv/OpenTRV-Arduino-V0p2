@@ -1187,11 +1187,11 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #if defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX)
 #define USE_MODULE_FHT8VSIMPLE_RX
 #define LISTEN_FOR_FTp2_FS20_native
-#endif
+#endif // defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX)
 #if defined(ALLOW_STATS_RX)
 #define ENABLE_FS20_NATIVE_AND_BINARY_STATS_RX
-#endif
-#endif
+#endif // defined(ALLOW_STATS_RX)
+#endif // USE_MODULE_FHT8VSIMPLE
 
 
 #endif
