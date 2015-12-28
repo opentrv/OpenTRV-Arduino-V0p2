@@ -325,6 +325,9 @@ void AmbientLight::_recomputeThresholds()
   // Could (say) increment an additional margin (up to ~25%) on each non-zero-trigger last hour, else decrement.
   //
   // Take upwards delta indicative of lights on, and hysteresis, as ~25% of FSD.
+  // TODO: possibly allow a small adjustment on top of this to allow at least one trigger-free hour each day.
+  // Some areas may have background flicker eg from trees moving or cars passing, so units there may need desensitising.
+  // Could (say) increment an additional margin (up to ~25%) on each non-zero-trigger last hour, else decrement.
   upDelta = max((recentMax - recentMin) >> 2, ABS_MIN_AMBLIGHT_HYST_UINT8);
   // Provide some noise elbow-room above the observed minimum.
   // Set the hysteresis values to be the same as the upDelta.
