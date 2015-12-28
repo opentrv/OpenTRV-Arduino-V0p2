@@ -154,7 +154,7 @@ uint8_t AmbientLight::read()
   {
   // Power on to top of LDR/phototransistor.
 //  power_intermittent_peripherals_enable(false); // No need to wait for anything to stablise as direct of IO_POWER_UP.
-  power_intermittent_peripherals_enable(false); // Will take a nap() to quiet supply shortly.
+  power_intermittent_peripherals_enable(false); // Will take a nap() below to allow supply to quieten.
   OTV0P2BASE::nap(WDTO_30MS); // Give supply a moment to settle, eg from heavy current draw.
   // Photosensor vs Vbandgap or Vsupply as selected by ALREFERENCE, [0,1023].
   const uint16_t al0 = OTV0P2BASE::analogueNoiseReducedRead(LDR_SENSOR_AIN, ALREFERENCE);
@@ -232,7 +232,7 @@ uint8_t AmbientLight::read()
     if((~0U != rawValue) && (newValue > oldValue) && ((newValue - oldValue) >= upDelta))
       {
       Occupancy.markAsPossiblyOccupied();
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
 DEBUG_SERIAL_PRINT_FLASHSTRING("  UP: ambient light rise/upDelta/newval/dt/lt: ");
 DEBUG_SERIAL_PRINT((newValue - value));
 DEBUG_SERIAL_PRINT(' ');
@@ -250,7 +250,7 @@ DEBUG_SERIAL_PRINTLN();
       }
     }
 
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINT_FLASHSTRING("Ambient light (/1023): ");
   DEBUG_SERIAL_PRINT(al);
   DEBUG_SERIAL_PRINTLN();
@@ -266,7 +266,7 @@ DEBUG_SERIAL_PRINTLN();
   DEBUG_SERIAL_PRINTLN();
 #endif
 
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINT_FLASHSTRING("isRoomLit: ");
   DEBUG_SERIAL_PRINT(isRoomLitFlag);
   DEBUG_SERIAL_PRINTLN();
@@ -350,7 +350,7 @@ void AmbientLight::setMax(uint8_t recentMaximumOrFF, uint8_t longerTermMaximumOr
     }
   _recomputeThresholds();
 
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINT_FLASHSTRING("Ambient recent min/max: ");
   DEBUG_SERIAL_PRINT(recentMin);
   DEBUG_SERIAL_PRINT(' ');
