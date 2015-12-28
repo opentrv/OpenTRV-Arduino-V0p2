@@ -1265,25 +1265,28 @@ void setupOpenTRV()
 
 #ifdef ALLOW_STATS_TX
   // Do early 'wake-up' stats transmission if possible
-  // when everything else is set up and ready
+  // when everything else is set up and ready and allowed (TODO-636)
   // including all set-up and inter-wiring of sensors/actuators.
-  // Attempt to maximise chance of reception with a double TX.
-  // Assume not in hub mode (yet).
-  // Send all possible formats, binary first (assumed complete in one message).
-  bareStatsTX(true, true);
-  // Send JSON stats repeatedly (typically once or twice)
-  // until all values pushed out (no 'changed' values unsent)
-  // or limit reached.
-  for(uint8_t i = 5; --i > 0; )
+  if(enableTrailingStatsPayload())
     {
-    ::OTV0P2BASE::nap(WDTO_120MS, false); // Sleep long enough for receiver to have a chance to process previous TX.
+    // Attempt to maximise chance of reception with a double TX.
+    // Assume not in hub mode (yet).
+    // Send all possible formats, binary first (assumed complete in one message).
+    bareStatsTX(true, true);
+    // Send JSON stats repeatedly (typically once or twice)
+    // until all values pushed out (no 'changed' values unsent)
+    // or limit reached.
+    for(uint8_t i = 5; --i > 0; )
+      {
+      ::OTV0P2BASE::nap(WDTO_120MS, false); // Sleep long enough for receiver to have a chance to process previous TX.
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING(" TX...");
 #endif
-    bareStatsTX(true, false);
-    if(!ss1.changedValue()) { break; }
+      bareStatsTX(true, false);
+      if(!ss1.changedValue()) { break; }
+      }
+  //  nap(WDTO_120MS, false);
     }
-//  nap(WDTO_120MS, false);
 #endif
 
 #if 0 && defined(DEBUG)
