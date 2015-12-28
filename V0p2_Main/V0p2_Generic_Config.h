@@ -42,10 +42,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_Trial2013Winter_Round1_BOILERHUB // REV1 as plain boiler node.
 //#define CONFIG_Trial2013Winter_Round2 // REV2 cut4 default config.
 //#define CONFIG_Trial2013Winter_Round2_LVBHSH // REV2 cut4: local valve control, boiler hub, stats hub & TX.
-//#define CONFIG_Trial2013Winter_Round2_LVBH // REV2 cut4 local valve control and boiler hub.
+#define CONFIG_Trial2013Winter_Round2_LVBH // REV2 cut4 local valve control and boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as plain boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
-#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
+//#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
 //#define CONFIG_DORM1 // REV7 / DORM1 Winter 2014/2015 all-in-one valve unit.
 //#define CONFIG_DORM1_BOILER // REV8 / DORM1 Winter 2014/2015 boiler-control unit.
 //#define CONFIG_REV11_RAW_JSON // REV11 as raw JSON-only stats/sensor leaf.
@@ -1150,8 +1150,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define USE_MODULE_LDROCCUPANCYDETECTION
 // If LDR is not to be used then specifically define OMIT_... as below.
 //#define OMIT_MODULE_LDROCCUPANCYDETECTION //  LDR 'occupancy' sensing irrelevant for DHW.
-// IF DEFINED: use software RTC.
-#define USE_RTC_INTERNAL_SIMPLE // Provide software RTC support by default.
 #endif // COMMON_SETTINGS
 
 // If LEARN_BUTTON_AVAILABLE then in the absence of anything better SUPPORT_SINGLETON_SCHEDULE should be supported.
@@ -1189,6 +1187,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #if defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX)
 #define USE_MODULE_FHT8VSIMPLE_RX
 #define LISTEN_FOR_FTp2_FS20_native
+#endif
+#if defined(ALLOW_STATS_RX)
+#define ENABLE_FS20_NATIVE_AND_BINARY_STATS_RX
 #endif
 #endif
 
