@@ -186,6 +186,8 @@ class AmbientLight : public OTV0P2BASE::SimpleTSUint8Sensor
     // Force a read/poll of the ambient light level and return the value sensed [0,255] (dark to light).
     // Potentially expensive/slow.
     // Not thread-safe nor usable within ISRs (Interrupt Service Routines).
+    // If possible turn off all local light sources (eg UI LEDs) before calling.
+    // If possible turn off all heavy current drains on supply before calling.
     virtual uint8_t read();
 
     // Preferred poll interval (in seconds); should be called at constant rate, usually 1/60s.
