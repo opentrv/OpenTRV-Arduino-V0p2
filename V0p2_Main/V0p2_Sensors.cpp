@@ -318,7 +318,12 @@ void AmbientLight::_recomputeThresholds()
     }
 
   // Compute thresholds to fit within the observed sensed value range.
+  //
   // TODO: a more sophisticated notion of distribution of values may be needed, esp for non-linear scale.
+  // TODO: possibly allow a small adjustment on top of this to allow at least one trigger-free hour each day.
+  // Some areas may have background flicker eg from trees moving or cars passing, so units there may need desensitising.
+  // Could (say) increment an additional margin (up to ~25%) on each non-zero-trigger last hour, else decrement.
+  //
   // Take upwards delta indicative of lights on, and hysteresis, as ~25% of FSD.
   upDelta = max((recentMax - recentMin) >> 2, ABS_MIN_AMBLIGHT_HYST_UINT8);
   // Provide some noise elbow-room above the observed minimum.
