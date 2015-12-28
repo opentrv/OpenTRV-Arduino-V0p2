@@ -1279,7 +1279,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats IDx");
 #endif // ENABLE_FS20_ENCODING_SUPPORT
 
   // Unparseable frame: drop it.
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
   p->print(F("!RX bad msg prefix ")); OTRadioLink::printRXMsg(p, msg, min(msglen, 8));
 #endif
   return;
