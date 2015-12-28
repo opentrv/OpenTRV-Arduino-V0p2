@@ -1150,8 +1150,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define USE_MODULE_LDROCCUPANCYDETECTION
 // If LDR is not to be used then specifically define OMIT_... as below.
 //#define OMIT_MODULE_LDROCCUPANCYDETECTION //  LDR 'occupancy' sensing irrelevant for DHW.
-// IF DEFINED: use software RTC.
-#define USE_RTC_INTERNAL_SIMPLE // Provide software RTC support by default.
 #endif // COMMON_SETTINGS
 
 // If LEARN_BUTTON_AVAILABLE then in the absence of anything better SUPPORT_SINGLETON_SCHEDULE should be supported.
@@ -1189,8 +1187,11 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #if defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX)
 #define USE_MODULE_FHT8VSIMPLE_RX
 #define LISTEN_FOR_FTp2_FS20_native
-#endif
-#endif
+#endif // defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX)
+#if defined(ALLOW_STATS_RX)
+#define ENABLE_FS20_NATIVE_AND_BINARY_STATS_RX
+#endif // defined(ALLOW_STATS_RX)
+#endif // USE_MODULE_FHT8VSIMPLE
 
 
 #endif
