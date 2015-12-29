@@ -222,8 +222,10 @@ class AmbientLight : public OTV0P2BASE::SimpleTSUint8Sensor
     uint8_t getDarkMinutes() const { return(darkTicks); }
 
     // Set minimum eg from recent stats, to allow auto adjustment to dark; ~0/0xff means no min available.
+    // Call regularly, roughly hourly, to drive other internal time-dependent adaptation.
     void setMin(uint8_t recentMinimumOrFF, uint8_t longerTermMinimumOrFF = 0xff);
     // Set maximum eg from recent stats, to allow auto adjustment to dark; ~0/0xff means no max available.
+    // Call regularly, roughly hourly, to drive other internal time-dependent adaptation.
     void setMax(uint8_t recentMaximumOrFF, uint8_t longerTermMaximumOrFF = 0xff);
     
 
