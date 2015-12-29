@@ -247,6 +247,10 @@ class ModelledRadValve : public OTRadValve::AbstractRadValve
     // Marked volatile for thread-safe lock-free access.
     volatile bool callingForHeat;
 
+    // True if the room/ambient temperature is below target, enough to likely call for heat.
+    // Marked volatile for thread-safe lock-free access.
+    volatile bool underTarget;
+
     // True if in glacial mode.
     // TODO: not fully implemented.
     bool glacial;
@@ -268,7 +272,7 @@ class ModelledRadValve : public OTRadValve::AbstractRadValve
   public:
     ModelledRadValve()
       : inputState(0),
-        callingForHeat(false),
+        callingForHeat(false), underTarget(false),
 #if defined(TRV_SLEW_GLACIAL)
         glacial(true)
 #else
@@ -348,6 +352,13 @@ class ModelledRadValve : public OTRadValve::AbstractRadValve
     // and this needs more heat than can be passively drawn from an already-running boiler.
     // Thread-safe and ISR safe.
     bool isCallingForHeat() const { return(callingForHeat); }
+
+    // True if the room/ambient temperature is below target, enough to likely call for heat.
+    // This implies that the temperature is (significantly) under target,
+    // the valve is really open,
+    // and this needs more heat than can be passively drawn from an already-running boiler.
+    // Thread-safe and ISR safe.
+    bool isUnderTarget() const { return(underTarget); }
 
     // Get target temperature in C as computed by computeTargetTemperature().
     uint8_t getTargetTempC() const { return(inputState.targetTempC); }

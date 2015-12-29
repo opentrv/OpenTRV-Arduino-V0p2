@@ -339,19 +339,17 @@ void AmbientLight::_recomputeThresholds()
   unusable = false;
   }
 
-// Set minimum eg from recent stats, to allow auto adjustment to dark; ~0/0xff means no min available.
+
+// Set recent min and max ambient light levels from recent stats, to allow auto adjustment to dark; ~0/0xff means no min/max available.
+// Short term stats are typically over the last day,
+// longer term typically over the last week or so (eg rolling exponential decays).
 // Call regularly, roughly hourly, to drive other internal time-dependent adaptation.
-void AmbientLight::setMin(uint8_t recentMinimumOrFF, uint8_t longerTermMinimumOrFF)
+void AmbientLight::setMinMax(const uint8_t recentMinimumOrFF, const uint8_t recentMaximumOrFF,
+                             const uint8_t longerTermMinimumOrFF, const uint8_t longerTermMaximumOrFF)
   {
   // Simple approach: will ignore an 'unset'/0xff value if the other is good.
   recentMin = min(recentMinimumOrFF, longerTermMinimumOrFF);
-  _recomputeThresholds();
-  }
 
-// Set maximum eg from recent stats, to allow auto adjustment to dark; ~0/0xff means no max available.
-// Call regularly, roughly hourly, to drive other internal time-dependent adaptation.
-void AmbientLight::setMax(uint8_t recentMaximumOrFF, uint8_t longerTermMaximumOrFF)
-  {
   if(0xff == recentMaximumOrFF) { recentMin = longerTermMaximumOrFF; }
   else if(0xff == longerTermMaximumOrFF) { recentMin = recentMaximumOrFF; }
   else
@@ -359,6 +357,7 @@ void AmbientLight::setMax(uint8_t recentMaximumOrFF, uint8_t longerTermMaximumOr
     // Both values available; weight towards the more recent one for quick adaptation.
     recentMax = (uint8_t) (((3*(uint16_t)recentMaximumOrFF) + (uint16_t)longerTermMaximumOrFF) >> 2);
     }
+
   _recomputeThresholds();
 
 #if 0 && defined(DEBUG)

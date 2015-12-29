@@ -221,13 +221,12 @@ class AmbientLight : public OTV0P2BASE::SimpleTSUint8Sensor
     // Does not increment if the sensor decides that it is unusable.
     uint8_t getDarkMinutes() const { return(darkTicks); }
 
-    // Set minimum eg from recent stats, to allow auto adjustment to dark; ~0/0xff means no min available.
+    // Set recent min and max ambient light levels from recent stats, to allow auto adjustment to dark; ~0/0xff means no min/max available.
+    // Short term stats are typically over the last day,
+    // longer term typically over the last week or so (eg rolling exponential decays).
     // Call regularly, roughly hourly, to drive other internal time-dependent adaptation.
-    void setMin(uint8_t recentMinimumOrFF, uint8_t longerTermMinimumOrFF = 0xff);
-    // Set maximum eg from recent stats, to allow auto adjustment to dark; ~0/0xff means no max available.
-    // Call regularly, roughly hourly, to drive other internal time-dependent adaptation.
-    void setMax(uint8_t recentMaximumOrFF, uint8_t longerTermMaximumOrFF = 0xff);
-    
+    void setMinMax(uint8_t recentMinimumOrFF, uint8_t recentMaximumOrFF,
+                   uint8_t longerTermMinimumOrFF = 0xff, uint8_t longerTermMaximumOrFF = 0xff);
 
 #ifdef UNIT_TESTS
     // Set new value(s) for unit test only.
@@ -262,11 +261,13 @@ extern AmbientLight AmbLight;
 // Update with rolling stats to adapt to sensors and local environment.       
 inline void updateAmbLightFromStats()
   {
-  AmbLight.setMin(OTV0P2BASE::getMinByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR), OTV0P2BASE::getMinByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED));
-  AmbLight.setMax(OTV0P2BASE::getMaxByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR), OTV0P2BASE::getMaxByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED));
+  AmbLight.setMinMax(
+          OTV0P2BASE::getMinByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR),
+          OTV0P2BASE::getMaxByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR),
+          OTV0P2BASE::getMinByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED),
+          OTV0P2BASE::getMaxByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED));
   }
-
-#endif
+#endif // OMIT_MODULE_LDROCCUPANCYDETECTION
 
 
 
