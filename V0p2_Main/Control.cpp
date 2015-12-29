@@ -1294,10 +1294,10 @@ void setupOpenTRV()
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("setup stats sent");
 #endif
 
-#if defined(LOCAL_TRV) && defined(DIRECT_MOTOR_DRIVE_V1)
-  // Signal some sort of life on waking up...
-  ValveDirect.wiggle();
-#endif
+//#if defined(LOCAL_TRV) && defined(DIRECT_MOTOR_DRIVE_V1)
+//  // Signal some sort of life on waking up...
+//  ValveDirect.wiggle();
+//#endif
 
 #if !defined(DONT_RANDOMISE_MINUTE_CYCLE)
   // Start local counters in randomised positions to help avoid inter-unit collisions,
