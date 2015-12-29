@@ -55,10 +55,10 @@ void minimisePowerWithoutSleep();
 extern OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
 
 
-// Get approximate internal temperature in nominal C/16.
-// Only accurate to +/- 10C uncalibrated.
-// May set sleep mode to SLEEP_MODE_ADC, and disables sleep on exit.
-int readInternalTemperatureC16();
+//// Get approximate internal temperature in nominal C/16.
+//// Only accurate to +/- 10C uncalibrated.
+//// May set sleep mode to SLEEP_MODE_ADC, and disables sleep on exit.
+//int readInternalTemperatureC16();
 
 
 // Call this to do an I/O poll if needed; returns true if something useful happened.
@@ -99,22 +99,22 @@ void burnHundredsOfCyclesProductivelyAndPoll();
 bool sleepUntilSubCycleTime(uint8_t sleepUntil);
 
 
-// If TWI (I2C) was disabled, power it up, do Wire.begin(), and return true.
-// If already powered up then do nothing other than return false.
-// If this returns true then a matching powerDownTWI() may be advisable.
-bool powerUpTWIIfDisabled();
-// Power down TWI (I2C).
-void powerDownTWI();
+//// If TWI (I2C) was disabled, power it up, do Wire.begin(), and return true.
+//// If already powered up then do nothing other than return false.
+//// If this returns true then a matching powerDownTWI() may be advisable.
+//bool powerUpTWIIfDisabled();
+//// Power down TWI (I2C).
+//void powerDownTWI();
 
 
-// Enable power to intermittent peripherals.
-//   * waitUntilStable  wait long enough (and maybe test) for I/O power to become stable.
-// Waiting for stable may only be necessary for those items hung from IO_POWER cap;
-// items powered direct from IO_POWER_UP may need no such wait.
-void power_intermittent_peripherals_enable(bool waitUntilStable = false);
-
-// Disable/remove power to intermittent peripherals.
-void power_intermittent_peripherals_disable();
+//// Enable power to intermittent peripherals.
+////   * waitUntilStable  wait long enough (and maybe test) for I/O power to become stable.
+//// Waiting for stable may only be necessary for those items hung from IO_POWER cap;
+//// items powered direct from IO_POWER_UP may need no such wait.
+//void power_intermittent_peripherals_enable(bool waitUntilStable = false);
+//
+//// Disable/remove power to intermittent peripherals.
+//void power_intermittent_peripherals_disable();
 
 #endif
 
