@@ -1013,7 +1013,7 @@ p->print("FS20 msg HC "); p->print(command.hc1); p->print(' '); p->println(comma
         // TODO: record error with mismatched ID.
         }
       }
-#if defined(ALLOW_MINIMAL_STATS_TXRX)
+#if defined(ENABLE_MINIMAL_STATS_TXRX)
     // Check for minimal stats trailer.
     else if((trailer + MESSAGING_TRAILING_MINIMAL_STATS_PAYLOAD_BYTES <= lastByte) && // Enough space for minimum-stats trailer.
        (MESSAGING_TRAILING_MINIMAL_STATS_HEADER_MSBS == (trailer[0] & MESSAGING_TRAILING_MINIMAL_STATS_HEADER_MASK)))

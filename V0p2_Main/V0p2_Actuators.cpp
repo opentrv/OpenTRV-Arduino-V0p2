@@ -57,7 +57,7 @@ uint8_t *appendStatsToTXBufferWithFF(uint8_t *bptr, const uint8_t bufSize)
   // Ensure that no ID is encoded in the message sent on the air since it would be a repeat from the FHT8V frame.
   trailer.containsID = false;
 
-#if defined(ALLOW_MINIMAL_STATS_TXRX)
+#if defined(ENABLE_MINIMAL_STATS_TXRX)
   // As bandwidth optimisation just write minimal trailer if only temp&power available.
   if(trailer.containsTempAndPower &&
      !trailer.containsID && !trailer.containsAmbL)

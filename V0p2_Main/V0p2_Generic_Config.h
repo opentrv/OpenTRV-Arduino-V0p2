@@ -25,9 +25,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #ifndef V0P2_GENERIC_CONFIG_H
 #define V0P2_GENERIC_CONFIG_H
 
-// Define/uncomment exactly one of the CONFIG_XXX labels to enable a configuration set below.
+// Define/uncomment exactly one of the CONFIG_XXX flags to enable a configuration set below.
 // Some can be specific to particular locations and boards,
 // others can be vanilla ready to be configured by the end-user one way or another.
+// As far as possible the configs should #define/#undef a set of ENABLE_XXX flags.
 
 //#define CONFIG_GENERIC_ROOM_NODE
 //#define CONFIG_GENERIC_BOILER_NODE
@@ -117,7 +118,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // HAS HUGE PRIVACY IMPLICATIONS: DO NOT ENABLE UNNECESSARILY!
 #undef CONFIG_ALWAYS_TX_ALL_STATS
 // IF DEFINED: allow minimal binary format in addition to more generic one: ~400 bytes code cost.
-#undef ALLOW_MINIMAL_STATS_TXRX
+#undef ENABLE_MINIMAL_STATS_TXRX
 // IF DEFINED: allow JSON stats frames alongside binary ones.
 #define ALLOW_JSON_OUTPUT
 // IF DEFINED: allow binary stats to be TXed.
@@ -548,7 +549,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: allow TX of stats frames.
 #undef ALLOW_STATS_TX
 // IF DEFINED: allow minimal binary format in addition to more generic one: ~400 bytes code cost.
-#undef ALLOW_MINIMAL_STATS_TXRX
+#undef ENABLE_MINIMAL_STATS_TXRX
 // IF DEFINED: allow JSON stats frames alongside binary ones.
 #undef ALLOW_JSON_OUTPUT
 // IF DEFINED: (default) forced always-on radio listen/RX, eg not requiring setup to explicitly enable. ***
@@ -603,7 +604,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: allow TX of stats frames.
 #define ALLOW_STATS_TX
 // IF DEFINED: allow minimal binary format in addition to more generic one: ~400 bytes code cost.
-#undef ALLOW_MINIMAL_STATS_TXRX
+#undef ENABLE_MINIMAL_STATS_TXRX
 // IF DEFINED: allow JSON stats frames alongside binary ones.
 //#undef ALLOW_JSON_OUTPUT
 // IF DEFINED: (default) forced always-on radio listen/RX, eg not requiring setup to explicitly enable. ***
@@ -904,7 +905,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: allow TX of stats frames.
 #define ALLOW_STATS_TX
 // IF DEFINED: allow minimal binary format in addition to more generic one: ~400 bytes code cost.
-#undef ALLOW_MINIMAL_STATS_TXRX
+#undef ENABLE_MINIMAL_STATS_TXRX
 // IF DEFINED: allow JSON stats frames alongside binary ones.
 //#undef ALLOW_JSON_OUTPUT
 // IF DEFINED: (default) forced always-on radio listen/RX, eg not requiring setup to explicitly enable. ***
@@ -959,7 +960,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: allow TX of stats frames.
 #define ALLOW_STATS_TX
 // IF DEFINED: allow minimal binary format in addition to more generic one: ~400 bytes code cost.
-#undef ALLOW_MINIMAL_STATS_TXRX
+#undef ENABLE_MINIMAL_STATS_TXRX
 // IF DEFINED: this unit supports CLI over the USB/serial connection, eg for run-time reconfig.
 #define SUPPORT_CLI
 // IF DEFINED: enable a full OpenTRV CLI.
