@@ -21,7 +21,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include <avr/wdt.h>
 #include <util/crc16.h>
 
-#include <Wire.h>
+//#include <Wire.h>
 #include <OTV0p2Base.h> // Underlying hardware support definitions.
 
 #include "Power_Management.h"
@@ -146,67 +146,67 @@ void burnHundredsOfCyclesProductivelyAndPoll()
   else { OTV0P2BASE::captureEntropy1(); }
   }
 
-// Sleep in reasonably low-power mode until specified target subcycle time.
-// Returns true if OK, false if specified time already passed or significantly missed (eg by more than one tick).
-// May use a combination of techniques to hit the required time.
-// Requesting a sleep until at or near the end of the cycle risks overrun and may be unwise.
-// Using this to sleep less then 2 ticks may prove unreliable as the RTC rolls on underneath...
-// This is NOT intended to be used to sleep over the end of a minor cycle.
-// May poll I/O.
-bool sleepUntilSubCycleTime(const uint8_t sleepUntil)
-  {
-  for( ; ; )
-    {
-    const uint8_t now = OTV0P2BASE::getSubCycleTime();
-    if(now == sleepUntil) { return(true); } // Done it!
-    if(now > sleepUntil) { return(false); } // Too late...
-
-    // Compute time left to sleep.
-    // It is easy to sleep a bit more later if necessary, but oversleeping is bad.
-    const uint8_t ticksLeft = sleepUntil - now;
-    // Deal with shortest sleep specially to avoid missing target from overheads...
-    if(1 == ticksLeft)
-      {
-      // Take a very short sleep, much less than half a tick,
-      // eg as may be some way into this tick already.
-      //burnHundredsOfCyclesProductively();
-      OTV0P2BASE::sleepLowPowerLessThanMs(1);
-      continue;
-      }
-
-    // Compute remaining time in milliseconds, rounded down...
-    const uint16_t msLeft = ((uint16_t)OTV0P2BASE::SUBCYCLE_TICK_MS_RD) * ticksLeft;
-
-    // If comfortably in the area of nap()s then use one of them for improved energy savings.
-    // Allow for nap() to overrun a little as its timing can vary with temperature and supply voltage,
-    // and the bulk of energy savings should still be available without pushing the timing to the wire.
-    // Note that during nap() timer0 should be stopped and thus not cause premature wakeup (from overflow interrupt).
-    if(msLeft >= 20)
-      {
-      if(msLeft >= 80)
-        {
-        if(msLeft >= 333)
-          {
-          ::OTV0P2BASE::nap(WDTO_250MS); // Nominal 250ms sleep.
-          continue;
-          }
-        ::OTV0P2BASE::nap(WDTO_60MS); // Nominal 60ms sleep.
-        continue;
-        }
-      ::OTV0P2BASE::nap(WDTO_15MS); // Nominal 15ms sleep.
-      continue;
-      }
-
-    // Use low-power CPU sleep for residual time, but being very careful not to over-sleep.
-    // Aim to sleep somewhat under residual time, eg to allow for overheads, interrupts, and other slippages.
-    // Assumed to be > 1 else would have been special-cased above.
-    // Assumed to be << 1s else a nap() would have been used above.
-#ifdef DEBUG
-    if((msLeft < 2) || (msLeft > 1000)) { panic(); }
-#endif
-    OTV0P2BASE::sleepLowPowerLessThanMs(msLeft - 1);
-    }
-  }
+//// Sleep in reasonably low-power mode until specified target subcycle time.
+//// Returns true if OK, false if specified time already passed or significantly missed (eg by more than one tick).
+//// May use a combination of techniques to hit the required time.
+//// Requesting a sleep until at or near the end of the cycle risks overrun and may be unwise.
+//// Using this to sleep less then 2 ticks may prove unreliable as the RTC rolls on underneath...
+//// This is NOT intended to be used to sleep over the end of a minor cycle.
+//// May poll I/O.
+//bool sleepUntilSubCycleTime(const uint8_t sleepUntil)
+//  {
+//  for( ; ; )
+//    {
+//    const uint8_t now = OTV0P2BASE::getSubCycleTime();
+//    if(now == sleepUntil) { return(true); } // Done it!
+//    if(now > sleepUntil) { return(false); } // Too late...
+//
+//    // Compute time left to sleep.
+//    // It is easy to sleep a bit more later if necessary, but oversleeping is bad.
+//    const uint8_t ticksLeft = sleepUntil - now;
+//    // Deal with shortest sleep specially to avoid missing target from overheads...
+//    if(1 == ticksLeft)
+//      {
+//      // Take a very short sleep, much less than half a tick,
+//      // eg as may be some way into this tick already.
+//      //burnHundredsOfCyclesProductively();
+//      OTV0P2BASE::sleepLowPowerLessThanMs(1);
+//      continue;
+//      }
+//
+//    // Compute remaining time in milliseconds, rounded down...
+//    const uint16_t msLeft = ((uint16_t)OTV0P2BASE::SUBCYCLE_TICK_MS_RD) * ticksLeft;
+//
+//    // If comfortably in the area of nap()s then use one of them for improved energy savings.
+//    // Allow for nap() to overrun a little as its timing can vary with temperature and supply voltage,
+//    // and the bulk of energy savings should still be available without pushing the timing to the wire.
+//    // Note that during nap() timer0 should be stopped and thus not cause premature wakeup (from overflow interrupt).
+//    if(msLeft >= 20)
+//      {
+//      if(msLeft >= 80)
+//        {
+//        if(msLeft >= 333)
+//          {
+//          ::OTV0P2BASE::nap(WDTO_250MS); // Nominal 250ms sleep.
+//          continue;
+//          }
+//        ::OTV0P2BASE::nap(WDTO_60MS); // Nominal 60ms sleep.
+//        continue;
+//        }
+//      ::OTV0P2BASE::nap(WDTO_15MS); // Nominal 15ms sleep.
+//      continue;
+//      }
+//
+//    // Use low-power CPU sleep for residual time, but being very careful not to over-sleep.
+//    // Aim to sleep somewhat under residual time, eg to allow for overheads, interrupts, and other slippages.
+//    // Assumed to be > 1 else would have been special-cased above.
+//    // Assumed to be << 1s else a nap() would have been used above.
+//#ifdef DEBUG
+//    if((msLeft < 2) || (msLeft > 1000)) { panic(); }
+//#endif
+//    OTV0P2BASE::sleepLowPowerLessThanMs(msLeft - 1);
+//    }
+//  }
 
 
 // Singleton implementation/instance.

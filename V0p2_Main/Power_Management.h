@@ -84,13 +84,13 @@ static bool inline idle15AndPoll() { const bool wd = ::OTV0P2BASE::_idleCPU(WDTO
 void burnHundredsOfCyclesProductivelyAndPoll();
 
 
-// Sleep in reasonably low-power mode until specified target subcycle time.
-// Returns true if OK, false if specified time already passed or significantly missed (eg by more than one tick).
-// May use a combination of techniques to hit the required time.
-// Requesting a sleep until at or near the end of the cycle risks overrun and may be unwise.
-// Using this to sleep less then 2 ticks may prove unreliable as the RTC rolls on underneath...
-// This is NOT intended to be used to sleep over the end of a minor cycle.
-bool sleepUntilSubCycleTime(uint8_t sleepUntil);
+//// Sleep in reasonably low-power mode until specified target subcycle time.
+//// Returns true if OK, false if specified time already passed or significantly missed (eg by more than one tick).
+//// May use a combination of techniques to hit the required time.
+//// Requesting a sleep until at or near the end of the cycle risks overrun and may be unwise.
+//// Using this to sleep less then 2 ticks may prove unreliable as the RTC rolls on underneath...
+//// This is NOT intended to be used to sleep over the end of a minor cycle.
+//bool sleepUntilSubCycleTime(uint8_t sleepUntil);
 
 
 #endif
