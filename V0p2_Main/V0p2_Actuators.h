@@ -35,10 +35,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 #if /* defined(LOCAL_TRV) && */ defined(DIRECT_MOTOR_DRIVE_V1)
 #define HAS_DORM1_VALVE_DRIVE
 // Singleton implementation/instance.
-#ifdef HAS_DORM1_MOTOR_REVERSED // Reversed vs sample 2015/12
-extern OTRadValve::ValveMotorDirectV1<MOTOR_DRIVE_ML, MOTOR_DRIVE_MR, MOTOR_DRIVE_MI_AIN> ValveDirect;
+#ifdef ENABLE_DORM1_MOTOR_REVERSED // Reversed vs sample 2015/12
+extern OTRadValve::ValveMotorDirectV1<MOTOR_DRIVE_ML, MOTOR_DRIVE_MR, MOTOR_DRIVE_MI_AIN, MOTOR_DRIVE_MC_AIN> ValveDirect;
 #else
-extern OTRadValve::ValveMotorDirectV1<MOTOR_DRIVE_MR, MOTOR_DRIVE_ML, MOTOR_DRIVE_MI_AIN> ValveDirect;
+extern OTRadValve::ValveMotorDirectV1<MOTOR_DRIVE_MR, MOTOR_DRIVE_ML, MOTOR_DRIVE_MI_AIN, MOTOR_DRIVE_MC_AIN> ValveDirect;
 #endif // HAS_DORM1_MOTOR_REVERSED
 #endif
 
