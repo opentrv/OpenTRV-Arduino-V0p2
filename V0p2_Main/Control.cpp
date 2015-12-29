@@ -96,7 +96,6 @@ void _TEST_set_basetemp_override(const _TEST_basetemp_override override)
 #endif
 
 
-
 // Get 'FROST' protection target in C; no higher than getWARMTargetC() returns, strictly positive, in range [MIN_TARGET_C,MAX_TARGET_C].
 #if defined(TEMP_POT_AVAILABLE)
 // Derived from temperature pot position.
