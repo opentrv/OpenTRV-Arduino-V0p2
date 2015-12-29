@@ -562,6 +562,7 @@ void ModelledRadValve::computeTargetTemperature()
   inputState.setReferenceTemperatures(TemperatureC16.get());
   // True if the target temperature has not been met.
   const bool targetNotReached = (newTarget >= (inputState.refTempC16 >> 4));
+  underTarget = targetNotReached;
   // If the target temperature is already reached then cancel any BAKE mode in progress (TODO-648).
   if(!targetNotReached) { cancelBakeDebounced(); }
   // Only report as calling for heat when actively doing so.
@@ -1505,7 +1506,7 @@ void loopOpenTRV()
 #endif
 
   // Try if very near to end of cycle and thus causing an overrun.
-  // Conversely, if not true, should have time to savely log outputs, etc.
+  // Conversely, if not true, should have time to safely log outputs, etc.
   const uint8_t nearOverrunThreshold = OTV0P2BASE::GSCT_MAX - 8; // ~64ms/~32 serial TX chars of grace time...
 //  bool tooNearOverrun = false; // Set flag that can be checked later.
 

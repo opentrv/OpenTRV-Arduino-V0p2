@@ -133,10 +133,8 @@ bool tickUI(const uint_fast8_t sec)
     {
     ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
       {
-      // Run down UI iteraction timer if need be, one tick per minute.
+      // Run down UI interaction timer if need be, one tick per minute.
       if(uiTimeoutM > 0) { --uiTimeoutM; }
-//      // Run down CLI timer if need be.
-//      if(CLITimeoutM > 0) { --CLITimeoutM; }
       }
     }
 
@@ -155,9 +153,12 @@ bool tickUI(const uint_fast8_t sec)
   // True on every 4th tick/call, ie about once every 8 seconds.
   const bool forthTick = !((++tickCount) & 3); // True on every 4th tick.
 
+  // Provide enhanced feedback when the has been very recent interaction with the UI,
+  // since the user is still quite likely to be continuing.
+  const bool enhancedUIFeedback = veryRecentUIControlUse();
+
 #ifdef TEMP_POT_AVAILABLE
-  const bool rUIcu = veryRecentUIControlUse();
-  if(rUIcu || forthTick) // If recent UI activity, and periodically.
+  if(enhancedUIFeedback || forthTick) // If recent UI activity, and periodically.
     {
     // Force relatively-frequent re-read of temp pot UI device.
     TempPot.read();
@@ -232,13 +233,8 @@ bool tickUI(const uint_fast8_t sec)
       modeButtonWasPressed = false;
       }
 
-    // Keep reporting UI status if the user has just touched the unit in some way.
-    // (Or if occupancy/activity was just detected, to give the use some feedback for indirectly interacting.)
-    const bool justTouched = statusChange || veryRecentUIControlUse()
-#if 0 && defined(OCCUPANCY_SUPPORT)
-        || Occupancy.reportedRecently() // TODO-587: waking the UI to indicate occupancy detected can be annoying.
-#endif
-        ;
+    // Keep reporting UI status if the user has just touched the unit in some way or UI is enhanced
+    const bool justTouched = statusChange || enhancedUIFeedback;
 
     // Mode button not pressed: indicate current mode with flash(es); more flashes if actually calling for heat.
     // Force display while UI controls are being used, eg to indicate temp pot position.
@@ -267,8 +263,11 @@ bool tickUI(const uint_fast8_t sec)
         else { mediumPause(); }
 
 #if defined(ENABLE_NOMINAL_RAD_VALVE) && defined(LOCAL_TRV)
-        // Second flash to indicate actually calling for heat.
-        if(NominalRadValve.isCallingForHeat() || inBakeMode())
+        // Second flash to indicate actually calling for heat,
+        // or likely to be calling for heat while interacting with the controls, to give fast user feedback (TODO-695).
+        if((enhancedUIFeedback && NominalRadValve.isUnderTarget()) ||
+            NominalRadValve.isCallingForHeat() ||
+            inBakeMode())
           {
           LED_HEATCALL_OFF();
           offPause(); // V0.09 was mediumPause().
