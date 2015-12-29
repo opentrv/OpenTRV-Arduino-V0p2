@@ -134,7 +134,6 @@ void minimisePowerWithoutSleep()
   }
 
 
-
 // Call this to productively burn tens to hundreds of CPU cycles, and poll I/O, eg in a busy-wait loop.
 // This may churn PRNGs or gather entropy for example.
 // This call should typically take << 1ms at 1MHz CPU.
