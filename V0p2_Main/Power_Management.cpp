@@ -89,7 +89,7 @@ void minimisePowerWithoutSleep()
   wdt_disable();
 
   // Ensure that external peripherals are powered down.
-  power_intermittent_peripherals_disable();
+  OTV0P2BASE::power_intermittent_peripherals_disable();
 
   // Turn off analogue stuff that eats power.
   ADCSRA = 0; // Do before power_[adc|all]_disable() to avoid freezing the ADC in an active state!
@@ -113,7 +113,7 @@ void minimisePowerWithoutSleep()
   OTV0P2BASE::powerDownSPI();
 
   // Ensure that TWI is powered down.
-  powerDownTWI();
+  OTV0P2BASE::powerDownTWI();
 
   // TIMERS
   // See: http://letsmakerobots.com/node/28278
@@ -209,88 +209,8 @@ bool sleepUntilSubCycleTime(const uint8_t sleepUntil)
   }
 
 
-// Enable power to intermittent peripherals.
-//   * waitUntilStable  wait long enough (and maybe test) for I/O power to become stable.
-// Waiting for stable may only be necessary for those items hung from IO_POWER cap;
-// items powered direct from IO_POWER_UP may need no such wait.
-//
-// Switches the digital line to high then output (to avoid ever *discharging* the output cap).
-// Note that with 100nF cap, and 330R (or lower) resistor from the output pin,
-// then 1ms delay should be plenty for the voltage on the cap to settle.
-void power_intermittent_peripherals_enable(bool waitUntilStable)
-  {
-  fastDigitalWrite(IO_POWER_UP, HIGH);
-  pinMode(IO_POWER_UP, OUTPUT);
-  // If requested, wait long enough that I/O peripheral power should be stable.
-  // Wait in a relatively low-power way...
-  if(waitUntilStable) { OTV0P2BASE::sleepLowPowerMs(1); }
-  }
-
-// Disable/remove power to intermittent peripherals.
-// Switches the digital line to input with no pull-up (ie high-Z).
-// There should be some sort of load to stop this floating.
-void power_intermittent_peripherals_disable()
-  {
-  pinMode(IO_POWER_UP, INPUT);
-  }
-
-
 // Singleton implementation/instance.
 OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
-
-// Get approximate internal temperature in nominal C/16.
-// Only accurate to +/- 10C uncalibrated.
-// May set sleep mode to SLEEP_MODE_ADC, and disables sleep on exit.
-int readInternalTemperatureC16()
-  {
-  // Measure internal temperature sensor against internal voltage source.
-  // Response is ~1mv/C with 0C at ~289mV according to the data sheet.
-  const uint16_t raw = OTV0P2BASE::_analogueNoiseReducedReadM(_BV(REFS1) | _BV(REFS0) | _BV(MUX3), 1);
-#if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("Int temp raw: ");
-  DEBUG_SERIAL_PRINT(raw);
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("");
-#endif
-  //const int degC = (raw - 328) ; // Crude fast adjustment for one sensor at ~20C (DHD20130429).
-  const int degC = ((((int)raw) - 324) * 210) >> 4; // Slightly less crude adjustment, see http://playground.arduino.cc//Main/InternalTemperatureSensor
-  return(degC);
-  }
-
-
-// If TWI (I2C) was disabled, power it up, do Wire.begin(), and return true.
-// If already powered up then do nothing other than return false.
-// If this returns true then a matching powerDownRWI() may be advisable.
-bool powerUpTWIIfDisabled()
-  {
-  if(!(PRR & _BV(PRTWI))) { return(false); }
-
-  PRR &= ~_BV(PRTWI); // Enable TWI power.
-  TWCR |= _BV(TWEN); // Enable TWI.
-  Wire.begin(); // Set it going.
-  // TODO: reset TWBR and prescaler for our low CPU frequency     (TWBR = ((F_CPU / TWI_FREQ) - 16) / 2 gives -3!)
-#if F_CPU <= 1000000
-  TWBR = 0; // Implies SCL freq of F_CPU / (16 + 2 * TBWR * PRESC) = 62.5kHz @ F_CPU==1MHz and PRESC==1 (from Wire/TWI code).
-#endif
-  return(true);
-  }
-
-// Power down TWI (I2C).
-void powerDownTWI()
-  {
-  TWCR &= ~_BV(TWEN); // Disable TWI.
-  PRR |= _BV(PRTWI); // Disable TWI power.
-
-  // De-activate internal pullups for TWI especially if powering down all TWI devices.
-  //digitalWrite(SDA, 0);
-  //digitalWrite(SCL, 0);
-
-  // Convert to hi-Z inputs.
-  //pinMode(SDA, INPUT);
-  //pinMode(SCL, INPUT);
-  }
-
-
-
 
 
 /*

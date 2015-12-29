@@ -154,7 +154,7 @@ uint8_t AmbientLight::read()
   {
   // Power on to top of LDR/phototransistor.
 //  power_intermittent_peripherals_enable(false); // No need to wait for anything to stablise as direct of IO_POWER_UP.
-  power_intermittent_peripherals_enable(false); // Will take a nap() below to allow supply to quieten.
+  OTV0P2BASE::power_intermittent_peripherals_enable(false); // Will take a nap() below to allow supply to quieten.
   OTV0P2BASE::nap(WDTO_30MS); // Give supply a moment to settle, eg from heavy current draw.
   // Photosensor vs Vbandgap or Vsupply as selected by ALREFERENCE, [0,1023].
   const uint16_t al0 = OTV0P2BASE::analogueNoiseReducedRead(LDR_SENSOR_AIN, ALREFERENCE);
@@ -198,7 +198,7 @@ uint8_t AmbientLight::read()
 //    }
 //#endif // defined(EXTEND_OPTO_SENSOR_RANGE)
   // Power off to top of LDR/phototransistor.
-  power_intermittent_peripherals_disable();
+  OTV0P2BASE::power_intermittent_peripherals_disable();
 
   // Capture entropy from changed LS bits.
   if((uint8_t)al != (uint8_t)rawValue) { ::OTV0P2BASE::addEntropyToPool((uint8_t)al, 0); } // Claim zero entropy as may be forced by Eve.
@@ -530,7 +530,7 @@ static void SHT21_init()
 // The first read will initialise the device as necessary and leave it in a low-power mode afterwards.
 static int Sensor_SHT21_readTemperatureC16()
   {
-  const bool neededPowerUp = powerUpTWIIfDisabled();
+  const bool neededPowerUp = OTV0P2BASE::powerUpTWIIfDisabled();
 
   // Initialise/config if necessary.
   if(!SHT21_initialised) { SHT21_init(); }
@@ -562,7 +562,7 @@ static int Sensor_SHT21_readTemperatureC16()
   rawTemp |= (Wire.read() & 0xfc); // Clear status ls bits.
 
   // Power down TWI ASAP.
-  if(neededPowerUp) { powerDownTWI(); }
+  if(neededPowerUp) { OTV0P2BASE::powerDownTWI(); }
 
   // TODO: capture entropy if (transformed) value has changed.
 
@@ -579,7 +579,7 @@ static int Sensor_SHT21_readTemperatureC16()
 // Returns 255 (~0) in case of error.
 uint8_t HumiditySensorSHT21::read()
   {
-  const bool neededPowerUp = powerUpTWIIfDisabled();
+  const bool neededPowerUp = OTV0P2BASE::powerUpTWIIfDisabled();
 
   // Initialise/config if necessary.
   if(!SHT21_initialised) { SHT21_init(); }
@@ -611,7 +611,7 @@ uint8_t HumiditySensorSHT21::read()
   const uint8_t rawRL = Wire.read();
 
   // Power down TWI ASAP.
-  if(neededPowerUp) { powerDownTWI(); }
+  if(neededPowerUp) { OTV0P2BASE::powerDownTWI(); }
 
   const uint16_t raw = (((uint16_t)rawRH) << 8) | (rawRL & 0xfc); // Clear status ls bits.
   const uint8_t result = -6 + ((125L * raw) >> 16);
@@ -943,9 +943,9 @@ extern ExtTemperatureDS18B20C16 extDS18B20_0(0);
 uint8_t TemperaturePot::read()
   {
   // No need to wait for voltage to stablise as pot top end directly driven by IO_POWER_UP.
-  power_intermittent_peripherals_enable(false);
+  OTV0P2BASE::power_intermittent_peripherals_enable(false);
   const uint16_t tpRaw = OTV0P2BASE::analogueNoiseReducedRead(TEMP_POT_AIN, DEFAULT); // Vcc reference.
-  power_intermittent_peripherals_disable();
+  OTV0P2BASE::power_intermittent_peripherals_disable();
 
 #if defined(TEMP_POT_REVERSE)
   const uint16_t tp = TEMP_POT_RAW_MAX - tpRaw; // Travel is in opposite direction to natural!

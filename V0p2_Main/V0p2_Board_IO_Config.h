@@ -64,8 +64,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define PIN_SPI_MOSI (::OTV0P2BASE::V0p2_PIN_SPI_MOSI) // 11: ATMega328P-PU PDIP pin 17, PB3.
 #define PIN_SPI_nSS (::OTV0P2BASE::V0p2_PIN_SPI_nSS) // 10: ATMega328P-PU PDIP pin 16, PB2.  Active low enable.
 // I2C/TWI: SDA (ain 4), SCL (ain 5), interrupt (dpin3)
-#define PIN_SDA_AIN 4 // ATMega328P-PU PDIP pin 27, PC4.
-#define PIN_SCL_AIN 5 // ATMega328P-PU PDIP pin 28, PC5.
+#define PIN_SDA_AIN 4 (::OTV0P2BASE::V0p2_PIN_SDA_AIN) // ATMega328P-PU PDIP pin 27, PC4.
+#define PIN_SCL_AIN 5 (::OTV0P2BASE::V0p2_PIN_SCL_AIN) // ATMega328P-PU PDIP pin 28, PC5.
+
 // OneWire: DQ (dpin2)
 // PWM / general digital I/O: dpin 5, 6, 9, 10
 // Interrupts: INT0 (dpin2, PD2, also OneWire), INT1 (dpin3, PD3, PCINT19)
@@ -130,7 +131,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 // Pin to power-up I/O devices only intermittently enabled, when high, digital out.
 // Pref connected via 330R+ current limit and 100nF+ decoupling).
-#define IO_POWER_UP 7 // ATMega328P-PU PDIP pin 13, PD7, no usable analogue input.
+#define IO_POWER_UP 7 (::OTV0P2BASE::V0p2_PIN_DEFAULT_IO_POWER_UP) // ATMega328P-PU PDIP pin 13, PD7, no usable analogue input.
 
 // Ambient light sensor (eg LDR) analogue input: higher voltage means more light.
 #define LDR_SENSOR_AIN 0 // ATMega328P-PU PDIP pin 23, PC0.
