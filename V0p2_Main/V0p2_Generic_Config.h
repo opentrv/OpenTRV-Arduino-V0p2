@@ -130,13 +130,13 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: use active-low LEARN button(s).  Needs SUPPORT_SINGLETON_SCHEDULE.
 #define LEARN_BUTTON_AVAILABLE // OPTIONAL ON V0.09 PCB1
 // IF DEFINED: support for general timed and multi-input occupancy detection / use.
-#define OCCUPANCY_SUPPORT
+#define ENABLE_OCCUPANCY_SUPPORT
 // IF DEFINED: detect occupancy based on ambient light, if available.
-#define OCCUPANCY_DETECT_FROM_AMBLIGHT
+#define ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
 // IF DEFINED: detect occupancy based on relative humidity, if available.
-#define OCCUPANCY_DETECT_FROM_RH
+#define ENABLE_OCCUPANCY_DETECTION_FROM_RH
 // IF DEFINED: detect occupancy based on voice detection, if available. This undefines learn button 2
-#undef OCCUPANCY_DETECT_FROM_VOICE
+#undef ENABLE_OCCUPANCY_DETECTION_FROM_VOICE
 // IF DEFINED: allow periodic machine- and human- readable status report to serial, starting with "="/
 #define ENABLE_SERIAL_STATUS_REPORT
 // IF DEFINED: this unit supports CLI over the USB/serial connection, eg for run-time reconfig.
@@ -205,7 +205,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: this unit supports CLI over the USB/serial connection, eg for run-time reconfig.
 #define SUPPORT_CLI
 // IF DEFINED: support for general timed and multi-input occupancy detection / use.
-#define OCCUPANCY_SUPPORT
+#define ENABLE_OCCUPANCY_SUPPORT
 #endif
 
 #ifdef CONFIG_Trial2013Winter_Round1_BOILERHUB // REV1 as plain boiler hub + can TX stats.
@@ -269,7 +269,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: this unit supports CLI over the USB/serial connection, eg for run-time reconfig.
 #define SUPPORT_CLI
 // IF DEFINED: support for general timed and multi-input occupancy detection / use.
-#define OCCUPANCY_SUPPORT
+#define ENABLE_OCCUPANCY_SUPPORT
 #endif
 
 #ifdef CONFIG_Trial2013Winter_Round2_LVBH // REV2 cut4: local valve control, boiler hub & TX.
@@ -289,7 +289,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: this unit supports CLI over the USB/serial connection, eg for run-time reconfig.
 #define SUPPORT_CLI
 // IF DEFINED: support for general timed and multi-input occupancy detection / use.
-#define OCCUPANCY_SUPPORT
+#define ENABLE_OCCUPANCY_SUPPORT
 #endif
 
 #ifdef CONFIG_Trial2013Winter_Round2_BOILERHUB // For trial over winter of 2013--4, second round (REV2), as pure boiler hub + can TX stats.
@@ -348,7 +348,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: enable and extended CLI with a longer input buffer for example.
 #define ENABLE_EXTENDED_CLI
 // IF DEFINED: support for general timed and multi-input occupancy detection / use.
-#undef OCCUPANCY_SUPPORT // None of that logic required at hub.
+#undef ENABLE_OCCUPANCY_SUPPORT // None of that logic required at hub.
 // IF DEFINED: act as CC1 simple hub node.
 #define ALLOW_CC1_SUPPORT
 #define ALLOW_CC1_SUPPORT_HUB
@@ -379,7 +379,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: this unit supports CLI over the USB/serial connection, eg for run-time reconfig.
 #define SUPPORT_CLI
 // IF DEFINED: support for general timed and multi-input occupancy detection / use.
-#undef OCCUPANCY_SUPPORT
+#undef ENABLE_OCCUPANCY_SUPPORT
 // IF DEFINED: enable a secondary (typically WAN-relay) radio module.
 #define ENABLE_RADIO_SECONDARY_MODULE
 // IF DEFINED: enable a WAN-relay radio module, primarily to relay stats outbound.
@@ -845,7 +845,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: enable and extended CLI with a longer input buffer for example.
 #define ENABLE_EXTENDED_CLI
 // IF DEFINED: support for general timed and multi-input occupancy detection / use.
-#undef OCCUPANCY_SUPPORT // No direct occupancy tracking at relay unit itself.
+#undef ENABLE_OCCUPANCY_SUPPORT // No direct occupancy tracking at relay unit itself.
 // IF UNDEFINED: no LEARN mode for REV9 boards (window sensor(s) instead).
 //#undef LEARN_BUTTON_AVAILABLE
 // IF DEFINED: act as CC1 simple relay node.
@@ -931,7 +931,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define RADIO_PRIMARY_SIM900  // Assign SIM900
 // Define voice module
 #define ENABLE_VOICE_SENSOR
-#define OCCUPANCY_DETECT_FROM_VOICE
+#define ENABLE_OCCUPANCY_DETECTION_FROM_VOICE
 #define ENABLE_VOICE_STATS
 // Enable use of OneWire devices.
 #define SUPPORT_ONEWIRE
@@ -1019,7 +1019,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: this unit supports CLI over the USB/serial connection, eg for run-time reconfig.
 #define SUPPORT_CLI
 // IF DEFINED: support for general timed and multi-input occupancy detection / use.
-#undef OCCUPANCY_SUPPORT
+#undef ENABLE_OCCUPANCY_SUPPORT
 // IF DEFINED: enable a secondary (typically WAN-relay) radio module.
 #define ENABLE_RADIO_SECONDARY_MODULE
 // IF DEFINED: enable a WAN-relay radio module, primarily to relay stats outbound.

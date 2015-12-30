@@ -138,7 +138,7 @@ bool tickUI(const uint_fast8_t sec)
       }
     }
 
-#ifdef OCCUPANCY_SUPPORT
+#ifdef ENABLE_OCCUPANCY_SUPPORT
   const bool reportedRecently = Occupancy.reportedRecently();
 #else
   const bool reportedRecently = false;
@@ -649,7 +649,7 @@ void serialStatusReport()
 #endif
   ss1.put(AmbLight);
   ss1.put(Supply_cV);
-#if defined(OCCUPANCY_SUPPORT)
+#if defined(ENABLE_OCCUPANCY_SUPPORT)
   ss1.put(Occupancy);
 //  ss1.put(Occupancy.vacHTag(), Occupancy.getVacancyH()); // EXPERIMENTAL
 #endif
@@ -1137,7 +1137,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         if(n == 2)
           {
           if('!' == buf[1]) { Serial.println(F("hols")); }
-#ifdef OCCUPANCY_SUPPORT
+#ifdef ENABLE_OCCUPANCY_SUPPORT
           Occupancy.setHolidayMode();
 #endif
           setWarmModeDebounced(false);

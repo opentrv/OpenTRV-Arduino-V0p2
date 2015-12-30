@@ -493,7 +493,7 @@ extern SimpleSlaveRadValve NominalRadValve;
 
 
 // IF DEFINED: support for general timed and multi-input occupancy detection / use.
-#ifdef OCCUPANCY_SUPPORT
+#ifdef ENABLE_OCCUPANCY_SUPPORT
 
 // Number of minutes that room is regarded as occupied after markAsOccupied(); strictly positive.
 // DHD20130528: no activity for ~30 minutes usually enough to declare room empty in my experience.
@@ -547,7 +547,7 @@ class OccupancyTracker : public OTV0P2BASE::SimpleTSUint8Sensor
 
     // Returns true if the room appears to be likely occupied (with active users) now.
     // Operates on a timeout; calling markAsOccupied() restarts the timer.
-    // Defaults to false (and API still exists) when OCCUPANCY_SUPPORT not defined.
+    // Defaults to false (and API still exists) when ENABLE_OCCUPANCY_SUPPORT not defined.
     // Thread-safe.
     bool isLikelyOccupied() { return(0 != occupationCountdownM); }
 
@@ -559,7 +559,7 @@ class OccupancyTracker : public OTV0P2BASE::SimpleTSUint8Sensor
     bool isLikelyRecentlyOccupied() { return(occupationCountdownM > OCCUPATION_TIMEOUT_1_M); }
 
     // False if room likely currently unoccupied (no active occupants).
-    // Defaults to false (and API still exists) when OCCUPANCY_SUPPORT not defined.
+    // Defaults to false (and API still exists) when ENABLE_OCCUPANCY_SUPPORT not defined.
     // This may require a substantial time after activity stops to become true.
     // This and isLikelyOccupied() cannot be true together; it is possible for neither to be true.
     // Thread-safe.
@@ -647,13 +647,13 @@ class OccupancyTracker
   public:
     static void markAsOccupied() {} // Defined as NO-OP for convenience when no general occupancy support.
     static void markAsPossiblyOccupied() {} // Defined as NO-OP for convenience when no general occupancy support.
-    static bool isLikelyRecentlyOccupied() { return(false); } // Always false without OCCUPANCY_SUPPORT
-    static bool isLikelyOccupied() { return(false); } // Always false without OCCUPANCY_SUPPORT
-    static bool isLikelyUnoccupied() { return(false); } // Always false without OCCUPANCY_SUPPORT
-    static uint8_t twoBitOccValue() { return(0); } // Always 0 without OCCUPANCY_SUPPORT.
-    static uint16_t getVacancyH() { return(0); } // Always 0 without OCCUPANCY_SUPPORT.
-    static bool longVacant() { return(false); } // Always false without OCCUPANCY_SUPPORT.
-    static bool longLongVacant() { return(false); } // Always false without OCCUPANCY_SUPPORT.
+    static bool isLikelyRecentlyOccupied() { return(false); } // Always false without ENABLE_OCCUPANCY_SUPPORT
+    static bool isLikelyOccupied() { return(false); } // Always false without ENABLE_OCCUPANCY_SUPPORT
+    static bool isLikelyUnoccupied() { return(false); } // Always false without ENABLE_OCCUPANCY_SUPPORT
+    static uint8_t twoBitOccValue() { return(0); } // Always 0 without ENABLE_OCCUPANCY_SUPPORT.
+    static uint16_t getVacancyH() { return(0); } // Always 0 without ENABLE_OCCUPANCY_SUPPORT.
+    static bool longVacant() { return(false); } // Always false without ENABLE_OCCUPANCY_SUPPORT.
+    static bool longLongVacant() { return(false); } // Always false without ENABLE_OCCUPANCY_SUPPORT.
   };
 #endif
 // Singleton implementation for entire node.

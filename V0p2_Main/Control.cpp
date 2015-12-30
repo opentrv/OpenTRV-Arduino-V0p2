@@ -265,7 +265,7 @@ void setMinBoilerOnMinutes(uint8_t mins) { OTV0P2BASE::eeprom_smart_update_byte(
 #endif
 
 
-#ifdef OCCUPANCY_SUPPORT
+#ifdef ENABLE_OCCUPANCY_SUPPORT
 // Singleton implementation for entire node.
 OccupancyTracker Occupancy;
 
@@ -332,7 +332,7 @@ bool shouldBeWarmedAtHour(const uint_least8_t hh)
   if(inOutlierQuartile(false, EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED, hh)) { return(false); }
 #endif
 
-#ifdef OCCUPANCY_SUPPORT
+#ifdef ENABLE_OCCUPANCY_SUPPORT
   // Return false immediately if the sample hour's historic occupancy level falls in the bottom quartile (or is zero).
   // Thus aim to shave off 'smart' warming for at least 25% of the daily cycle.
   if(inOutlierQuartile(false, EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, hh)) { return(false); }
@@ -750,7 +750,7 @@ void sampleStats(const bool fullSample)
   const int tempC16 = TemperatureC16.get();
   static int tempC16Total;
   tempC16Total = firstSample ? tempC16 : (tempC16Total + tempC16);
-#ifdef OCCUPANCY_SUPPORT
+#ifdef ENABLE_OCCUPANCY_SUPPORT
   const uint16_t occpc = Occupancy.get();
   static uint16_t occpcTotal;
   occpcTotal = firstSample ? occpc : (occpcTotal + occpc);
@@ -796,7 +796,7 @@ void sampleStats(const bool fullSample)
   // Ambient light; last and smoothed data sets,
   simpleUpdateStatsPair(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR, hh, smartDivToU8(ambLightTotal, sc));
 
-#ifdef OCCUPANCY_SUPPORT
+#ifdef ENABLE_OCCUPANCY_SUPPORT
   // Occupancy confidence percent, if supported; last and smoothed data sets,
   simpleUpdateStatsPair(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR, hh, smartDivToU8(occpcTotal, sc));
 #endif 
@@ -895,7 +895,7 @@ void populateCoreStats(FullStatsMessageCore_t *const content)
   content->containsAmbL = true;
   // OC1/OC2 = Occupancy: 00 not disclosed, 01 not occupied, 10 possibly occupied, 11 probably occupied.
   // The encodeFullStatsMessageCore() route should omit data not appopriate for security reasons.
-#ifdef OCCUPANCY_SUPPORT
+#ifdef ENABLE_OCCUPANCY_SUPPORT
   content->occ = Occupancy.twoBitOccupancyValue();
 #else
   content->occ = 0; // Not supported.
@@ -1024,7 +1024,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 #if defined(HUMIDITY_SENSOR_SUPPORT)
     ss1.put(RelHumidity);
 #endif
-#if defined(OCCUPANCY_SUPPORT)
+#if defined(ENABLE_OCCUPANCY_SUPPORT)
     ss1.put(Occupancy.twoBitTag(), Occupancy.twoBitOccupancyValue()); // Reduce spurious TX cf percentage.
     ss1.put(Occupancy.vacHTag(), Occupancy.getVacancyH()); // EXPERIMENTAL
 #endif
@@ -2044,9 +2044,9 @@ void loopOpenTRV()
     // This should happen as soon after the latest readings as possible (temperature especially).
     case 56:
       {
-#ifdef OCCUPANCY_SUPPORT
+#ifdef ENABLE_OCCUPANCY_SUPPORT
       // Update occupancy measures that partially use rolling stats.
-#if defined(OCCUPANCY_DETECT_FROM_RH) && defined(HUMIDITY_SENSOR_SUPPORT)
+#if defined(ENABLE_OCCUPANCY_DETECTION_FROM_RH) && defined(HUMIDITY_SENSOR_SUPPORT)
       // If RH% is rising fast enough then take this a mild occupancy indicator.
       // Suppress this if temperature is falling since RH% change may be misleading.  (TODO-696)
       // Suppress this in the dark to avoid nuisance behaviour

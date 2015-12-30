@@ -226,7 +226,7 @@ uint8_t AmbientLight::read()
 
   if(newValue != value)
     {
-#ifdef OCCUPANCY_DETECT_FROM_AMBLIGHT
+#ifdef ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
     // Treat a sharp brightening as a possible/weak indication of occupancy, eg light flicked on.
     // Ignore false trigger at start-up.
     if((~0U != rawValue) && (newValue > oldValue) && ((newValue - oldValue) >= upDelta))
@@ -246,7 +246,7 @@ DEBUG_SERIAL_PRINT(lightThreshold);
 DEBUG_SERIAL_PRINTLN();
 #endif
 
-#endif // OCCUPANCY_DETECT_FROM_AMBLIGHT
+#endif // ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
       }
     }
 

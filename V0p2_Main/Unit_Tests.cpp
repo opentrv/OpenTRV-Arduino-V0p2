@@ -534,7 +534,7 @@ static void testTargetComputation()
         AssertIsTrue((getFROSTTargetC() >= MIN_TARGET_C) && (getFROSTTargetC() <= MAX_TARGET_C));
         AssertIsTrue((getWARMTargetC() >= MIN_TARGET_C) && (getWARMTargetC() <= MAX_TARGET_C));
         AssertIsTrue(getFROSTTargetC() <= getWARMTargetC());
-#ifdef OCCUPANCY_SUPPORT
+#ifdef ENABLE_OCCUPANCY_SUPPORT
         // ENERGY SAVING RULE TEST (TODO-442 1a: "No prewarm (eg 'smart' extra heating in FROST mode) in a long-vacant room.")
         // In FROST mode target temperature must stay at frost level once the room has been vacant for a while.
         // IE: pre-warming is disabled in long-vacant rooms as an energy-saving strategy.
@@ -566,7 +566,7 @@ static void testTargetComputation()
             NominalRadValve.computeTargetTemperature();
             AssertIsTrue(NominalRadValve.getTargetTempC() < getWARMTargetC()); // Temp must be set back (assumes FROST < WARM).
             }
-#if defined(OCCUPANCY_SUPPORT)
+#if defined(ENABLE_OCCUPANCY_SUPPORT)
           if(!AmbLight.isRoomDark())
             {
             Occupancy.setHolidayMode();
@@ -578,7 +578,7 @@ static void testTargetComputation()
 
         // Try to discover/force maximum WARM-mode setback with dark and long vacancy.
         setWarmModeDebounced(true);
-#ifdef OCCUPANCY_SUPPORT
+#ifdef ENABLE_OCCUPANCY_SUPPORT
 //        Occupancy._TEST_set_vacH_(OccupancyTracker::longLongVacantHThrH+1);
         Occupancy.setHolidayMode();
 #endif
@@ -601,7 +601,7 @@ DEBUG_SERIAL_PRINTLN();
         }
 
       // ENERGY SAVING RULE TEST (TODO-442 1c: "Prewarm temperature must be set back from normal WARM target.")
-#ifdef OCCUPANCY_SUPPORT
+#ifdef ENABLE_OCCUPANCY_SUPPORT
 //      Occupancy._TEST_set_vacH_(randRNG8() % OccupancyTracker::longVacantHThrH); // Mark occupied or at least not long vacant.
       Occupancy.markAsOccupied(); // Mark occupied or at least not long vacant.
 #endif
@@ -645,7 +645,7 @@ static void testSensorMocking()
 //    AssertIsEqual(nal2, AmbLight.get());
     }
 #endif
-#ifdef OCCUPANCY_SUPPORT
+#ifdef ENABLE_OCCUPANCY_SUPPORT
   // Occupancy
 //  const uint8_t vacH = randRNG8() | 1; // Ensure non-zero.
 //  Occupancy._TEST_set_vacH_(vacH);
