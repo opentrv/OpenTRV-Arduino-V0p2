@@ -240,7 +240,7 @@ bool tickUI(const uint_fast8_t sec)
     // Force display while UI controls are being used, eg to indicate temp pot position.
     if(justTouched || inWarmMode()) // Generate flash(es) if in WARM mode or fiddling with UI other than Mode button.
       {
-      // DHD20131223: do not flash if the room is dark so as to save energy and avoid disturbing sleep, etc.
+      // DHD20131223: only flash if the room is lit so as to save energy and avoid disturbing sleep, etc.
       // In this case force resample of light level frequently in case user turns light on eg to operate unit.
       // Do show LED flash if user has recently operated controls (other than mode button) manually.
       // Flash infrequently if no recently operated controls and not in BAKE mode and not actually calling for heat;
@@ -250,7 +250,7 @@ bool tickUI(const uint_fast8_t sec)
 #if defined(ENABLE_NOMINAL_RAD_VALVE) && defined(LOCAL_TRV)
              || NominalRadValve.isCallingForHeat()
 #endif
-             || inBakeMode()) && !AmbLight.isRoomDark()))
+             || inBakeMode()) && AmbLight.isRoomLit()))
         {
         // First flash to indicate WARM mode (or pot being twiddled).
         LED_HEATCALL_ON();
@@ -297,9 +297,9 @@ bool tickUI(const uint_fast8_t sec)
     // then emit a tiny double flash on every 4th tick.
     // This call for heat may be frost protection or pre-warming / anticipating demand.
     // DHD20130528: new 4th-tick flash in FROST mode...
-    // DHD20131223: do not flash if the room is dark so as to save energy and avoid disturbing sleep, etc.
+    // DHD20131223: only flash if the room is lit so as to save energy and avoid disturbing sleep, etc.
     else if(forthTick &&
-            !AmbLight.isRoomDark() &&
+            AmbLight.isRoomLit() &&
             NominalRadValve.isCallingForHeat() /* &&
             NominalRadValve.isControlledValveReallyOpen() */ )
       {
