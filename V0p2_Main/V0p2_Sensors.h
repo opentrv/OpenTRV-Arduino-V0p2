@@ -345,15 +345,14 @@ extern RoomTemperatureC16 TemperatureC16;
 // Simple implementations can assume that the sensor will be present if defined;
 // more sophisticated implementations may wish to make run-time checks.
 
-// IF SHT21 support is enabled at compile-time then its humidity sensor may be used at run-time.
-// There may be other alternatived
-#if defined(SENSOR_SHT21_ENABLE)
+// If SHT21 support is enabled at compile-time then its humidity sensor may be used at run-time.
+#if defined(ENABLE_SENSOR_SHT21)
 #define HUMIDITY_SENSOR_SUPPORT // Humidity sensing available.
 #endif
 
 // If humidity is supported, provide definitions.
-#if defined(SENSOR_SHT21_ENABLE)
-// Functionality and code only enabled if SENSOR_SHT21_ENABLE is defined.
+#if defined(ENABLE_SENSOR_SHT21)
+// Functionality and code only enabled if ENABLE_SENSOR_SHT21 is defined.
 // Sensor for relative humidity percentage; 0 is dry, 100 is condensing humid, 255 for error.
 class HumiditySensorSHT21 : public OTV0P2BASE::SimpleTSUint8Sensor
   {

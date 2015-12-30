@@ -393,7 +393,7 @@ AmbientLight AmbLight;
 #define TMP102_CTRL_B1_OS 0x80 // Control register: one-shot flag in byte 1.
 #define TMP102_CTRL_B2 0x0 // Byte 2 for control register: 0.25Hz conversion rate and not extended mode (EM).
 
-#if !defined(SENSOR_SHT21_ENABLE) && !defined(SENSOR_DS18B20_ENABLE) // Don't use TMP112 if SHT21 or DS18B20 are available.
+#if !defined(ENABLE_SENSOR_SHT21) && !defined(SENSOR_DS18B20_ENABLE) // Don't use TMP112 if SHT21 or DS18B20 are available.
 // Measure/store/return the current room ambient temperature in units of 1/16th C.
 // This may contain up to 4 bits of information to the right of the fixed binary point.
 // This may consume significant power and time.
@@ -472,8 +472,8 @@ static int TMP112_readTemperatureC16()
 
 
 
-// Functionality and code only enabled if SENSOR_SHT21_ENABLE is defined.
-#if defined(SENSOR_SHT21_ENABLE)
+// Functionality and code only enabled if ENABLE_SENSOR_SHT21 is defined.
+#if defined(ENABLE_SENSOR_SHT21)
 
 #define SHT21_I2C_ADDR 0x40
 #define SHT21_I2C_CMD_TEMP_HOLD	0xe3
@@ -802,7 +802,7 @@ int RoomTemperatureC16::read()
   {
 #if defined(SENSOR_DS18B20_ENABLE)
   const int raw = Sensor_DS18B10_readTemperatureC16();
-#elif defined(SENSOR_SHT21_ENABLE)
+#elif defined(ENABLE_SENSOR_SHT21)
   const int raw = Sensor_SHT21_readTemperatureC16();
 #else
   const int raw = TMP112_readTemperatureC16();
