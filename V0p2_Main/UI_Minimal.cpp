@@ -258,7 +258,8 @@ bool tickUI(const uint_fast8_t sec)
         // Small number of steps (3) should help make positioning more obvious.
         const uint8_t wt = getWARMTargetC();
         // Makes vtiny|tiny|medium flash for cool|OK|warm temperature target.
-        if(isEcoTemperature(wt)) { veryTinyPause(); }
+        // Stick to minimum length flashes to save energy unless just touched.
+        if(!justTouched || isEcoTemperature(wt)) { veryTinyPause(); }
         else if(!isComfortTemperature(wt)) { tinyPause(); }
         else { mediumPause(); }
 
@@ -272,7 +273,8 @@ bool tickUI(const uint_fast8_t sec)
           LED_HEATCALL_OFF();
           offPause(); // V0.09 was mediumPause().
           LED_HEATCALL_ON(); // flash
-          if(isEcoTemperature(wt)) { veryTinyPause(); }
+          // Stick to minimum length flashes to save energy unless just touched.
+          if(!justTouched || isEcoTemperature(wt)) { veryTinyPause(); }
           else if(!isComfortTemperature(wt)) { OTV0P2BASE::sleepLowPowerMs((VERYTINY_PAUSE_MS + TINY_PAUSE_MS) / 2); }
           else { tinyPause(); }
 
@@ -283,7 +285,8 @@ bool tickUI(const uint_fast8_t sec)
             mediumPause(); // Note different flash off time to try to distinguish this last flash.
             LED_HEATCALL_ON();
             // Makes tiny|small|medium flash for eco|OK|comfort temperature target.
-            if(isEcoTemperature(wt)) { tinyPause(); }
+            // Stick to minimum length flashes to save energy unless just touched.
+            if(!justTouched || isEcoTemperature(wt)) { veryTinyPause(); }
             else if(!isComfortTemperature(wt)) { smallPause(); }
             else { mediumPause(); }
             }
