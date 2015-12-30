@@ -2048,25 +2048,32 @@ void loopOpenTRV()
       // Update occupancy measures that partially use rolling stats.
 #if defined(OCCUPANCY_DETECT_FROM_RH) && defined(HUMIDITY_SENSOR_SUPPORT)
       // If RH% is rising fast enough then take this a mild occupancy indicator.
-      // Suppress this in the dark to avoid nusiance behaviour,
+      // Suppress this if temperature is falling since RH% change may be misleading.  (TODO-696)
+      // Suppress this in the dark to avoid nuisance behaviour,
       // even if not a false positive (ie the room is occupied, by a sleeper),
       // such as a valve opening and/or the boiler firing up at night.
       // Use a guard formulated to allow the RH%-based detection to work
       // if ambient light sensing is disabled,
       // eg allow RH%-based sensing unless known to be dark.
-      // TODO: consider ignoring potential false positives from rising RH% while temperature is falling.
       if(runAll && // Only if all sensors have been refreshed.
-         !AmbLight.isRoomDark()) // Only if known to be dark.
+         !AmbLight.isRoomDark()) // Only if room not known to be dark.
         {
-        const uint8_t lastRH = OTV0P2BASE::getByHourStat(OTV0P2BASE::getPrevHourLT(), V0P2BASE_EE_STATS_SET_RHPC_BY_HOUR);
-        if((OTV0P2BASE::STATS_UNSET_BYTE != lastRH) &&
-           (RelHumidity.get() >= lastRH + HUMIDITY_OCCUPANCY_PC_MIN_RISE_PER_H))
+        // Only continue if temperature appears not to be falling compared to previous hour (TODO-696).
+        // A missing previous temperature will show as a very large number so fail safe.
+        // Note: the companding granularity may complicate things here (false +ves and -ves).
+        if(TemperatureC16.get() >= expandTempC16(OTV0P2BASE::getByHourStat(OTV0P2BASE::getPrevHourLT(), V0P2BASE_EE_STATS_SET_TEMP_BY_HOUR)))
+          {
+          const uint8_t lastRH = OTV0P2BASE::getByHourStat(OTV0P2BASE::getPrevHourLT(), V0P2BASE_EE_STATS_SET_RHPC_BY_HOUR);
+          if((OTV0P2BASE::STATS_UNSET_BYTE != lastRH) &&
+             (RelHumidity.get() >= lastRH + HUMIDITY_OCCUPANCY_PC_MIN_RISE_PER_H))
             { Occupancy.markAsPossiblyOccupied(); }
+          }
         }
 #endif
       // Update occupancy status (fresh for target recomputation) at a fixed rate.
       Occupancy.read();
 #endif
+
 
 #ifdef ENABLE_NOMINAL_RAD_VALVE
       // Recompute target, valve position and call for heat, etc.
