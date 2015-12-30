@@ -2057,7 +2057,7 @@ void loopOpenTRV()
       // if ambient light sensing is disabled,
       // eg allow RH%-based sensing unless known to be dark.
       if(runAll && // Only if all sensors have been refreshed.
-         !AmbLight.isRoomDark()) // Only if room not known to be dark from working sensor.
+         !AmbLight.isRoomDark()) // Only if room not known to be dark, from a working sensor.
         {
         // Only continue if temperature appears not to be falling compared to previous hour (TODO-696).
         // No previous temperature will show as a very large number so should fail safe.
