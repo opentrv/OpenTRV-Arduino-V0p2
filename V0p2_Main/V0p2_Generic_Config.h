@@ -467,6 +467,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define ENABLE_SENSOR_SHT21
 // Using RoHS-compliant phototransistor in place of LDR.
 #define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
+// IF DEFINED: detect occupancy based on relative humidity, if available.
+// DHD20160101: seems to still be set off spuriously by fast drop in temp when rad turns off (TODO-696).
+#undef ENABLE_OCCUPANCY_DETECTION_FROM_RH
 // IF UNDEFINED: this unit cannot act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
 #undef ENABLE_BOILER_HUB
 // IF UNDEFINED: do not allow TX of stats frames.
