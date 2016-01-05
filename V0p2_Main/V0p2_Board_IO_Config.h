@@ -204,6 +204,7 @@ static inline void IOSetup()
     switch(i)
       {
       // Low output is good safe low-power default.
+      // NOTE: not good for some such as DORM1/REV7 ML+MR motor H-bridge outputs!
       default: { digitalWrite(i, LOW); pinMode(i, OUTPUT); break; }
 
 #if !defined(ALT_MAIN_LOOP)
@@ -270,32 +271,14 @@ static inline void IOSetup()
       // when 2xAA NiMH battery powered and connected to TTL-232R-3V3 USB lead.
       case PIN_SERIAL_RX: case PIN_SERIAL_TX:
 #endif
+#ifdef MOTOR_DRIVE_ML
+      // Weakly pull up both motor REV7 H-bridge driver lines by default.
+      // Safe for all boards and may reduce parasitic floating power consumption on non-REV7 boards.
+      case MOTOR_DRIVE_ML: case MOTOR_DRIVE_MR:
+#endif
         { pinMode(i, INPUT_PULLUP); break; }
       }
     }
-
-#ifdef MOTOR_DRIVE_ML
-  // Weakly pull up both motor REV7 H-bridge driver lines by default.
-  // Safe for all boards and may reduce parasitic floating power consumption on non-REV7 boards.
-  pinMode(MOTOR_DRIVE_ML, INPUT_PULLUP);
-  pinMode(MOTOR_DRIVE_MR, INPUT_PULLUP);
-#endif
-
-  // All covered by minimisePowerWithoutSleep()...  (Saving 12 bytes!)
-//  // Turn off the digital input buffers on analogue comparator inputs not being used as such.
-//  // DHD20141218: being used as IO_POWER_UP and OUT_HEATCALL.
-//  DIDR1 = 3;
-//
-//  // Turn off the digital input buffers on analogue inputs in use as such
-//  // so as to reduce power consumption with mid-supply input voltages.
-//  DIDR0 = 0
-//#if defined(TEMP_POT_AIN)
-//    | (1 << TEMP_POT_AIN)
-//#endif
-//#if defined(LDR_SENSOR_AIN)
-//    | (1 << LDR_SENSOR_AIN)
-//#endif
-//    ;
   }
 
 
