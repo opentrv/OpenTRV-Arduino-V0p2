@@ -2189,17 +2189,23 @@ void loopOpenTRV()
   // ('Any' manual interaction may prove too sensitive.)
   // Also have a timeout of somewhat over ~10m from startup
   // for automatic recovery after any crash and restart.
-  if(ValveDirect.isWaitingForValveToBeFitted())
+  const uint8_t isWaitingFVTBF = ValveDirect.isWaitingForValveToBeFitted();
+  if(isWaitingFVTBF)
       {
       if(veryRecentUIControlUse() || (minuteCount > 15))
           { ValveDirect.signalValveFitted(); }
       }
   // Provide regular poll to motor driver.
   // May take significant time to run
-  // so don't call when timing is critical or not much time left this cycle.
+  // so don't call when timing is critical
+  // nor when not much time left this cycle,
+  // nor some of the time during startup if possible,
+  // so as (for example) to allow the CLI to be operable.
   // Only calling this after most other heavy-lifting work is likely done.
   // Note that FHT8V sync will take up at least the first 1s of a 2s subcycle.
-  if(!showStatus && (OTV0P2BASE::getSubCycleTime() < ((OTV0P2BASE::GSCT_MAX/4)*3)))
+  if(!showStatus &&
+     (!isWaitingFVTBF || (0 == (3 & TIME_LSD))) &&
+     (OTV0P2BASE::getSubCycleTime() < ((OTV0P2BASE::GSCT_MAX/4)*3)))
     { ValveDirect.read(); }
 #endif
 
