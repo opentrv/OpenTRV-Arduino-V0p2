@@ -476,7 +476,7 @@ void setup()
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("cV");
 #endif
   // Get internal temperature measurement (internal sensor).
-  const int intTempC16 = readInternalTemperatureC16();
+  const int intTempC16 = OTV0P2BASE::readInternalTemperatureC16();
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINT_FLASHSTRING("Int temp: ");
   DEBUG_SERIAL_PRINT((intTempC16 + 8) >> 4);

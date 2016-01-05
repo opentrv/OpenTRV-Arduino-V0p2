@@ -142,7 +142,7 @@ extern ExtTemperatureDS18B20C16 extDS18B20_0;
 class AmbientLight : public OTV0P2BASE::SimpleTSUint8Sensor
   {
   private:
-    // Raw ambient light value [0,1023] dark--light.
+    // Raw ambient light value [0,1023] dark--light, possibly companded.
     uint16_t rawValue;
 
     // True iff room appears lit well enough for activity.
@@ -171,23 +171,23 @@ class AmbientLight : public OTV0P2BASE::SimpleTSUint8Sensor
     // but in a very narrow range which implies a broken sensor or shadowed location.
     bool unusable;
 
-    // Ignore first false trigger at start-up.
-    bool ignoredFirst;
-
     // Recomputes thresholds and 'unusable' based on current state.
     // WARNING: called from (static) constructors so do not attempt (eg) use of Serial.
     void _recomputeThresholds();
 
   public:
     AmbientLight()
-      : isRoomLitFlag(false), darkTicks(0),
+      : rawValue(~0U), // Initial values is distinct.
+        isRoomLitFlag(false), darkTicks(0),
         recentMin(~0), recentMax(~0),
-        unusable(false), ignoredFirst(false)
+        unusable(false)
       { _recomputeThresholds(); }
 
     // Force a read/poll of the ambient light level and return the value sensed [0,255] (dark to light).
     // Potentially expensive/slow.
     // Not thread-safe nor usable within ISRs (Interrupt Service Routines).
+    // If possible turn off all local light sources (eg UI LEDs) before calling.
+    // If possible turn off all heavy current drains on supply before calling.
     virtual uint8_t read();
 
     // Preferred poll interval (in seconds); should be called at constant rate, usually 1/60s.
@@ -221,11 +221,12 @@ class AmbientLight : public OTV0P2BASE::SimpleTSUint8Sensor
     // Does not increment if the sensor decides that it is unusable.
     uint8_t getDarkMinutes() const { return(darkTicks); }
 
-    // Set minimum eg from recent stats, to allow auto adjustment to dark; ~0/0xff means no min available.
-    void setMin(uint8_t recentMinimumOrFF, uint8_t longerTermMinimumOrFF = 0xff);
-    // Set maximum eg from recent stats, to allow auto adjustment to dark; ~0/0xff means no max available.
-    void setMax(uint8_t recentMaximumOrFF, uint8_t longerTermMaximumOrFF = 0xff);
-    
+    // Set recent min and max ambient light levels from recent stats, to allow auto adjustment to dark; ~0/0xff means no min/max available.
+    // Short term stats are typically over the last day,
+    // longer term typically over the last week or so (eg rolling exponential decays).
+    // Call regularly, roughly hourly, to drive other internal time-dependent adaptation.
+    void setMinMax(uint8_t recentMinimumOrFF, uint8_t recentMaximumOrFF,
+                   uint8_t longerTermMinimumOrFF = 0xff, uint8_t longerTermMaximumOrFF = 0xff);
 
 #ifdef UNIT_TESTS
     // Set new value(s) for unit test only.
@@ -260,11 +261,13 @@ extern AmbientLight AmbLight;
 // Update with rolling stats to adapt to sensors and local environment.       
 inline void updateAmbLightFromStats()
   {
-  AmbLight.setMin(OTV0P2BASE::getMinByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR), OTV0P2BASE::getMinByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED));
-  AmbLight.setMax(OTV0P2BASE::getMaxByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR), OTV0P2BASE::getMaxByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED));
+  AmbLight.setMinMax(
+          OTV0P2BASE::getMinByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR),
+          OTV0P2BASE::getMaxByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR),
+          OTV0P2BASE::getMinByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED),
+          OTV0P2BASE::getMaxByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED));
   }
-
-#endif
+#endif // OMIT_MODULE_LDROCCUPANCYDETECTION
 
 
 
@@ -342,15 +345,14 @@ extern RoomTemperatureC16 TemperatureC16;
 // Simple implementations can assume that the sensor will be present if defined;
 // more sophisticated implementations may wish to make run-time checks.
 
-// IF SHT21 support is enabled at compile-time then its humidity sensor may be used at run-time.
-// There may be other alternatived
-#if defined(SENSOR_SHT21_ENABLE)
+// If SHT21 support is enabled at compile-time then its humidity sensor may be used at run-time.
+#if defined(ENABLE_SENSOR_SHT21)
 #define HUMIDITY_SENSOR_SUPPORT // Humidity sensing available.
 #endif
 
 // If humidity is supported, provide definitions.
-#if defined(SENSOR_SHT21_ENABLE)
-// Functionality and code only enabled if SENSOR_SHT21_ENABLE is defined.
+#if defined(ENABLE_SENSOR_SHT21)
+// Functionality and code only enabled if ENABLE_SENSOR_SHT21 is defined.
 // Sensor for relative humidity percentage; 0 is dry, 100 is condensing humid, 255 for error.
 class HumiditySensorSHT21 : public OTV0P2BASE::SimpleTSUint8Sensor
   {

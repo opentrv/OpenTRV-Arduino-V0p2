@@ -55,13 +55,12 @@ OTV0P2BASE::MinimalOneWire<PIN_OW_DQ_DATA> MinOW;
 
 
 
-
-
-
-
-
-
 #ifndef OMIT_MODULE_LDROCCUPANCYDETECTION
+
+// Normal raw scale internally is 10 bits [0,1023].
+static const uint16_t rawScale = 1024;
+// Normal 2 bit shift between raw and externally-presented 
+static const uint8_t shiftRawScaleTo8Bit = 2;
 
 // Note on: phototransistor variant.
 // Note that if AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400 is defined
@@ -71,13 +70,39 @@ OTV0P2BASE::MinimalOneWire<PIN_OW_DQ_DATA> MinOW;
 
 #ifdef AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 #define ALREFERENCE INTERNAL // Internal 1.1V reference.
-#ifdef AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400_WRONG_WAY
+
+#ifdef AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400_WRONG_WAY // Schematic error in one board!
 #define ALREFERENCE DEFAULT // Supply voltage as reference for REV9 cut1.  HACK HACK!
-#endif
+#endif // AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400_WRONG_WAY
+
 // If defined, then allow adaptive compression of top part of range when would otherwise max out.
 // This may be somewhat supply-voltage dependent, eg capped by the supply voltage.
 // Supply voltage is expected to be 2--3 times the bandgap reference, typically.
-#define ADAPTIVE_THRESHOLD 896U // (1024-128) Top ~10%, companding by 8x.
+//#define ADAPTIVE_THRESHOLD 896U // (1024-128) Top ~10%, companding by 8x.
+//#define ADAPTIVE_THRESHOLD 683U // (1024-683) Top ~33%, companding by 4x.
+//static const uint16_t scaleFactor = (extendedScale - ADAPTIVE_THRESHOLD) / (normalScale - ADAPTIVE_THRESHOLD);
+// Assuming typical V supply of 2--3 times Vbandgap,
+// compress above threshold to extend top of range by a factor of two.
+// Ensure that scale stays monotonic in face of calculation lumpiness, etc...
+// Scale all remaining space above threshold to new top value into remaining space.
+// Ensure scaleFactor is a power of two for speed.
+
+#ifndef LDR_EXTRA_SENSITIVE 
+// Don't extend the dynamic range of this ambient light sensor
+// if the photosensor is badly located or otherwise needs to be made more sensitive.
+//
+// IF DEFINED: extend optosensor range as far as possible at the expense of loss of linearity.
+#define EXTEND_OPTO_SENSOR_RANGE
+// Switch to measuring against supply voltage to maximise range.
+// Will be severely non-linear at top end
+// and will change with battery voltage at bottom end,
+// but rely on dynamic adaptation to deal with some of that.
+// Note that with low supply voltage headroom there may not be much linear range if any.
+#undef ALREFERENCE
+#define ALREFERENCE DEFAULT
+//static const uint16_t extendedScale = 2048;
+//static const uint8_t shiftExtendedToRawScale = 1;
+#endif
 
 // This implementation expects a phototransitor TEPT4400 (50nA dark current, nominal 200uA@100lx@Vce=50V) from IO_POWER_UP to LDR_SENSOR_AIN and 220k to ground.
 // Measurement should be taken wrt to internal fixed 1.1V bandgap reference, since light indication is current flow across a fixed resistor.
@@ -89,7 +114,9 @@ OTV0P2BASE::MinimalOneWire<PIN_OW_DQ_DATA> MinOW;
 // http://www.pocklington-trust.org.uk/Resources/Thomas%20Pocklington/Documents/PDF/Research%20Publications/GPG5.pdf
 // http://www.vishay.com/docs/84154/appnotesensors.pdf
 
-#if (7 == V0p2_REV) // REV7 board uses slightly different phototransistor to TEPT4400.
+#if (7 == V0p2_REV) // REV7 board uses different phototransistor (not TEPT4400).
+// Note that some REV7s from initial batch were fitted with wrong device entirely,
+// an IR device, with very low effective sensitivity (FSD ~ 20 rather than 1023).
 static const int LDR_THR_LOW = 180U;
 static const int LDR_THR_HIGH = 250U;
 #else // REV4 default values.
@@ -116,63 +143,78 @@ static const int LDR_THR_HIGH = 200U; // Was 35.
 
 // Measure/store/return the current room ambient light levels in range [0,255].
 // This may consume significant power and time.
-// Probably no need to do this more than (say) once per minute.
-// This implementation expects LDR (1M dark resistance) from IO_POWER_UP to LDR_SENSOR_AIN and 100k to ground.
+// Probably no need to do this more than (say) once per minute,
+// but at a regular rate to catch such events as lights being switched on.
+// This implementation expects LDR (1M dark resistance) from IO_POWER_UP to LDR_SENSOR_AIN and 100k to ground,
+// or a phototransistor TEPT4400 in place of the LDR.
 // (Not intended to be called from ISR.)
+// If possible turn off all local light sources (eg UI LEDs) before calling.
+// If possible turn off all heavy current drains on supply before calling.
 uint8_t AmbientLight::read()
   {
-  power_intermittent_peripherals_enable(false); // No need to wait for anything to stablise as direct of IO_POWER_UP.
+  // Power on to top of LDR/phototransistor.
+//  power_intermittent_peripherals_enable(false); // No need to wait for anything to stablise as direct of IO_POWER_UP.
+  OTV0P2BASE::power_intermittent_peripherals_enable(false); // Will take a nap() below to allow supply to quieten.
+  OTV0P2BASE::nap(WDTO_30MS); // Give supply a moment to settle, eg from heavy current draw.
+  // Photosensor vs Vbandgap or Vsupply as selected by ALREFERENCE, [0,1023].
   const uint16_t al0 = OTV0P2BASE::analogueNoiseReducedRead(LDR_SENSOR_AIN, ALREFERENCE);
-#if defined(ADAPTIVE_THRESHOLD)
-  uint16_t al;
-  if(al0 >= ADAPTIVE_THRESHOLD)
-    {
-    const uint16_t al1 = OTV0P2BASE::analogueNoiseReducedRead(LDR_SENSOR_AIN, DEFAULT); // Vsupply reference.
-    Supply_cV.read();
-    const uint16_t vbg = Supply_cV.getRawInv(); // Vbandgap wrt Vsupply.
-    // Compute value in extended range up to ~1024 * Vsupply/Vbandgap.
-    const uint16_t ale = ((al1 << 5) / ((vbg+16) >> 5)); // Faster int-only approximation to (int)((al1 * 1024L) / vbg)).
-    // Assuming typical V supply of 2--3 times Vbandgap,
-    // compress above threshold to extend top of range by a factor of two.
-    // Ensure that scale stays monotonic in face of calculation lumpiness, etc...
-    // Scale all remaining space above threshold to new top value into remaining space.
-    // TODO: ensure scaleFactor is a power of two for speed.
-    const uint16_t scaleFactor = (2048 - ADAPTIVE_THRESHOLD) / (1024 - ADAPTIVE_THRESHOLD);
-    al = fnmin(1023U,
-        ADAPTIVE_THRESHOLD + fnmax(0U, ((ale - ADAPTIVE_THRESHOLD) / scaleFactor)));
-#if 0 && defined(DEBUG)
-    DEBUG_SERIAL_PRINT_FLASHSTRING("Ambient raw: ");
-    DEBUG_SERIAL_PRINT(al0);
-    DEBUG_SERIAL_PRINT_FLASHSTRING(", against Vcc: ");
-    DEBUG_SERIAL_PRINT(al1);
-    DEBUG_SERIAL_PRINT_FLASHSTRING(", Vref against Vcc: ");
-    DEBUG_SERIAL_PRINT(vbg);
-    DEBUG_SERIAL_PRINT_FLASHSTRING(", extended scale value: ");
-    DEBUG_SERIAL_PRINT(ale);
-    DEBUG_SERIAL_PRINT_FLASHSTRING(", compressed value: ");
-    DEBUG_SERIAL_PRINT(al);
-    DEBUG_SERIAL_PRINTLN();
-#endif
-    }
-  else { al = al0; }
-#else
-  const uint16_t al = al0;
-#endif
-  power_intermittent_peripherals_disable();
+  const uint16_t al = al0; // Use raw value as-is.
+//#if !defined(EXTEND_OPTO_SENSOR_RANGE)
+//  const uint16_t al = al0; // Use raw value as-is.
+//#else // defined(EXTEND_OPTO_SENSOR_RANGE)
+//  uint16_t al; // Ambient light.
+//  // Default shift of raw value to extend effective scale.
+//  al = al0 >> shiftExtendedToRawScale;
+//  // If simple reading against bandgap at full scale then compute extended range.
+//  // Two extra ADC measurements take extra time and introduce noise.
+//  if(al0 >= rawScale-1)
+//    {
+//    // Photosensor vs Vsupply reference, [0,1023].
+//    const uint16_t al1 = OTV0P2BASE::analogueNoiseReducedRead(LDR_SENSOR_AIN, DEFAULT);
+//    const uint16_t vcc = Supply_cV.read();
+//    const uint16_t vbg = Supply_cV.getRawInv(); // Vbandgap wrt Vsupply, [0,1023].
+//    // Compute value in extended range up to ~1024 * Vsupply/Vbandgap.
+//    // Faster overflow-free uint16_t-only approximation to (uint16_t)((al1 * 1024L) / vbg)).
+//    const uint16_t ale = fnmin(4095U, ((al1 << 6) / vbg)) << 4;
+//    if(ale > al0) // Keep output scale monotonic...
+//      { al = fnmin(1023U, ale >> shiftExtendedToRawScale); }
+//#if 1 && defined(DEBUG)
+//    DEBUG_SERIAL_PRINT_FLASHSTRING("Ambient raw: ");
+//    DEBUG_SERIAL_PRINT(al0);
+//    DEBUG_SERIAL_PRINT_FLASHSTRING(", against Vcc: ");
+//    DEBUG_SERIAL_PRINT(al1);
+//    DEBUG_SERIAL_PRINT_FLASHSTRING(", extended scale value: ");
+//    DEBUG_SERIAL_PRINT(ale);
+//    DEBUG_SERIAL_PRINT_FLASHSTRING(", Vref against Vcc: ");
+//    DEBUG_SERIAL_PRINT(vbg);
+//    DEBUG_SERIAL_PRINT_FLASHSTRING(", Vcc: ");
+//    DEBUG_SERIAL_PRINT(vcc);
+////    DEBUG_SERIAL_PRINT_FLASHSTRING(", es threshold: ");
+////    DEBUG_SERIAL_PRINT(aleThreshold);
+//    DEBUG_SERIAL_PRINT_FLASHSTRING(", compressed: ");
+//    DEBUG_SERIAL_PRINT(al);
+//    DEBUG_SERIAL_PRINTLN();
+//#endif
+//    }
+//#endif // defined(EXTEND_OPTO_SENSOR_RANGE)
+  // Power off to top of LDR/phototransistor.
+  OTV0P2BASE::power_intermittent_peripherals_disable();
 
   // Capture entropy from changed LS bits.
-  if((uint8_t)al != (uint8_t)rawValue) { ::OTV0P2BASE::addEntropyToPool((uint8_t)al ^ (uint8_t)rawValue, 0); } // Claim zero entropy as may be forced by Eve.
+  if((uint8_t)al != (uint8_t)rawValue) { ::OTV0P2BASE::addEntropyToPool((uint8_t)al, 0); } // Claim zero entropy as may be forced by Eve.
 
-  // Apply a little bit of noise reduction (hysteresis) to the normalised version.
-  const uint8_t newValue = (uint8_t)(al >> 2);
+  // Hold the existing/old value for comparison.
+  const uint8_t oldValue = value;
+  // Compute the new normalised value.
+  const uint8_t newValue = (uint8_t)(al >> shiftRawScaleTo8Bit);
 
   // Adjust room-lit flag, with hysteresis.
   // Should be able to detect dark when darkThreshold is zero and newValue is zero.
   if(newValue <= darkThreshold)
     {
     isRoomLitFlag = false;
-    // If dark enough to isRoomLitFlag false then increment counter.
-    // Do not do increment the count if the sensor seems to be unusable.
+    // If dark enough to set isRoomLitFlag false then increment counter.
+    // Do not do increment the count if the sensor seems to be unusable / dubiously usable.
     if(!unusable && (darkTicks < 255)) { ++darkTicks; }
     }
   else if(newValue > lightThreshold)
@@ -182,35 +224,29 @@ uint8_t AmbientLight::read()
     darkTicks = 0;
     }
 
-  // Store new value, raw and normalised.
-  // Unconditionbally store raw value.
-  rawValue = al;
   if(newValue != value)
     {
-    const uint16_t oldRawImplied = ((uint16_t)value) << 2;
-    const uint16_t absDiff = (oldRawImplied > al) ? (oldRawImplied - al) : (al - oldRawImplied);
-    if(absDiff > 2)
+#ifdef ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
+    // Treat a sharp brightening as a possible/weak indication of occupancy, eg light flicked on.
+    // Ignore false trigger at start-up.
+    if((~0U != rawValue) && (newValue > oldValue) && ((newValue - oldValue) >= upDelta))
       {
-      const bool isUp = newValue > value;
-      value = newValue;
-#ifdef OCCUPANCY_DETECT_FROM_AMBLIGHT
-      // Treat a sharp brightening as a possible/weak indication of occupancy, eg light flicked on.
-      // Ignore trigger at start-up.
-      if(!ignoredFirst) { ignoredFirst = true; }
-      else if(isUp && ((absDiff >> 2) >= upDelta))
-        {
-        Occupancy.markAsPossiblyOccupied();
+      Occupancy.markAsPossiblyOccupied();
 #if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("Ambient light absDiff/dt/lt: ");
-  DEBUG_SERIAL_PRINT(absDiff);
-  DEBUG_SERIAL_PRINT(' ');
-  DEBUG_SERIAL_PRINT(darkThreshold);
-  DEBUG_SERIAL_PRINT(' ');
-  DEBUG_SERIAL_PRINT(lightThreshold);
-  DEBUG_SERIAL_PRINTLN();
+DEBUG_SERIAL_PRINT_FLASHSTRING("  UP: ambient light rise/upDelta/newval/dt/lt: ");
+DEBUG_SERIAL_PRINT((newValue - value));
+DEBUG_SERIAL_PRINT(' ');
+DEBUG_SERIAL_PRINT(upDelta);
+DEBUG_SERIAL_PRINT(' ');
+DEBUG_SERIAL_PRINT(newValue);
+DEBUG_SERIAL_PRINT(' ');
+DEBUG_SERIAL_PRINT(darkThreshold);
+DEBUG_SERIAL_PRINT(' ');
+DEBUG_SERIAL_PRINT(lightThreshold);
+DEBUG_SERIAL_PRINTLN();
 #endif
-        }
-#endif
+
+#endif // ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
       }
     }
 
@@ -236,6 +272,9 @@ uint8_t AmbientLight::read()
   DEBUG_SERIAL_PRINTLN();
 #endif
 
+  // Store new value, in its various forms.
+  rawValue = al;
+  value = newValue;
   return(value);
   }
 
@@ -256,8 +295,8 @@ void AmbientLight::_recomputeThresholds()
   if((0xff == recentMin) || (0xff == recentMax))
     {
     // Use the built-in default thresholds.
-    darkThreshold = LDR_THR_LOW >> 2;
-    lightThreshold = LDR_THR_HIGH >> 2;
+    darkThreshold = LDR_THR_LOW >> shiftRawScaleTo8Bit;
+    lightThreshold = LDR_THR_HIGH >> shiftRawScaleTo8Bit;
     upDelta = lightThreshold - darkThreshold;
     // Assume OK for now.
     unusable = false;
@@ -270,8 +309,8 @@ void AmbientLight::_recomputeThresholds()
      (recentMax - recentMin < ABS_MIN_AMBLIGHT_RANGE_UINT8))
     {
     // Use the built-in default thresholds.
-    darkThreshold = LDR_THR_LOW >> 2;
-    lightThreshold = LDR_THR_HIGH >> 2;
+    darkThreshold = LDR_THR_LOW >> shiftRawScaleTo8Bit;
+    lightThreshold = LDR_THR_HIGH >> shiftRawScaleTo8Bit;
     upDelta = lightThreshold - darkThreshold;
     // Assume unusable.
     unusable = true;
@@ -279,9 +318,18 @@ void AmbientLight::_recomputeThresholds()
     }
 
   // Compute thresholds to fit within the observed sensed value range.
-  // TODO: a more sophisticated notion of distribution of values within range may be needed.
-  // Take upwards delta indicative of lights on, and hysteresis, as ~25%.
-  upDelta = max((recentMax - recentMin) >> 2, ABS_MIN_AMBLIGHT_HYST_UINT8);
+  //
+  // TODO: a more sophisticated notion of distribution of values may be needed, esp for non-linear scale.
+  // TODO: possibly allow a small adjustment on top of this to allow at least one trigger-free hour each day.
+  // Some areas may have background flicker eg from trees moving or cars passing, so units there may need desensitising.
+  // Could (say) increment an additional margin (up to ~25%) on each non-zero-trigger last hour, else decrement.
+  //
+  // Take upwards delta indicative of lights on, and hysteresis, as ~12.5% of FSD.
+  //
+  // TODO: possibly allow a small adjustment on top of this to allow >= 1 each trigger and trigger-free hours each day.
+  // Some areas may have background flicker eg from trees moving or cars passing, so units there may need desensitising.
+  // Could (say) increment an additional margin (up to half) on each non-zero-trigger last hour, else decrement.
+  upDelta = max((recentMax - recentMin) >> 3, ABS_MIN_AMBLIGHT_HYST_UINT8);
   // Provide some noise elbow-room above the observed minimum.
   // Set the hysteresis values to be the same as the upDelta.
   darkThreshold = (uint8_t) min(254, recentMin+1 + (upDelta>>1));
@@ -291,17 +339,17 @@ void AmbientLight::_recomputeThresholds()
   unusable = false;
   }
 
-// Set minimum eg from recent stats, to allow auto adjustment to dark; ~0/0xff means no min available.
-void AmbientLight::setMin(uint8_t recentMinimumOrFF, uint8_t longerTermMinimumOrFF)
+
+// Set recent min and max ambient light levels from recent stats, to allow auto adjustment to dark; ~0/0xff means no min/max available.
+// Short term stats are typically over the last day,
+// longer term typically over the last week or so (eg rolling exponential decays).
+// Call regularly, roughly hourly, to drive other internal time-dependent adaptation.
+void AmbientLight::setMinMax(const uint8_t recentMinimumOrFF, const uint8_t recentMaximumOrFF,
+                             const uint8_t longerTermMinimumOrFF, const uint8_t longerTermMaximumOrFF)
   {
   // Simple approach: will ignore an 'unset'/0xff value if the other is good.
   recentMin = min(recentMinimumOrFF, longerTermMinimumOrFF);
-  _recomputeThresholds();
-  }
 
-// Set maximum eg from recent stats, to allow auto adjustment to dark; ~0/0xff means no max available.
-void AmbientLight::setMax(uint8_t recentMaximumOrFF, uint8_t longerTermMaximumOrFF)
-  {
   if(0xff == recentMaximumOrFF) { recentMin = longerTermMaximumOrFF; }
   else if(0xff == longerTermMaximumOrFF) { recentMin = recentMaximumOrFF; }
   else
@@ -309,6 +357,7 @@ void AmbientLight::setMax(uint8_t recentMaximumOrFF, uint8_t longerTermMaximumOr
     // Both values available; weight towards the more recent one for quick adaptation.
     recentMax = (uint8_t) (((3*(uint16_t)recentMaximumOrFF) + (uint16_t)longerTermMaximumOrFF) >> 2);
     }
+
   _recomputeThresholds();
 
 #if 0 && defined(DEBUG)
@@ -344,10 +393,7 @@ AmbientLight AmbLight;
 #define TMP102_CTRL_B1_OS 0x80 // Control register: one-shot flag in byte 1.
 #define TMP102_CTRL_B2 0x0 // Byte 2 for control register: 0.25Hz conversion rate and not extended mode (EM).
 
-//// Last temperature read with readTemperatureC16(); initially 0 and set to 0 on error.
-//static int temp16;
-
-#if !defined(SENSOR_SHT21_ENABLE) && !defined(SENSOR_DS18B20_ENABLE) // Don't use TMP112 if SHT21 or DS18B20 are available.
+#if !defined(ENABLE_SENSOR_SHT21) && !defined(SENSOR_DS18B20_ENABLE) // Don't use TMP112 if SHT21 or DS18B20 are available.
 // Measure/store/return the current room ambient temperature in units of 1/16th C.
 // This may contain up to 4 bits of information to the right of the fixed binary point.
 // This may consume significant power and time.
@@ -410,9 +456,6 @@ static int TMP112_readTemperatureC16()
   // Builds 12-bit value (assumes not in extended mode) and sign-extends if necessary for sub-zero temps.
   const int t16 = (b1 << 4) | (b2 >> 4) | ((b1 & 0x80) ? 0xf000 : 0);
 
-//  // Store the result for access at any time.
-//  temp16 = t16;
-
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINT_FLASHSTRING("TMP102 temp: ");
   DEBUG_SERIAL_PRINT(b1);
@@ -427,15 +470,10 @@ static int TMP112_readTemperatureC16()
   }
 #endif
 
-//// Return previously-read (with readTemperatureC16()) temperature; very fast.
-//int getTemperatureC16() { return(temp16); }
 
 
-
-
-
-// Functionality and code only enabled if SENSOR_SHT21_ENABLE is defined.
-#if defined(SENSOR_SHT21_ENABLE)
+// Functionality and code only enabled if ENABLE_SENSOR_SHT21 is defined.
+#if defined(ENABLE_SENSOR_SHT21)
 
 #define SHT21_I2C_ADDR 0x40
 #define SHT21_I2C_CMD_TEMP_HOLD	0xe3
@@ -492,7 +530,7 @@ static void SHT21_init()
 // The first read will initialise the device as necessary and leave it in a low-power mode afterwards.
 static int Sensor_SHT21_readTemperatureC16()
   {
-  const bool neededPowerUp = powerUpTWIIfDisabled();
+  const bool neededPowerUp = OTV0P2BASE::powerUpTWIIfDisabled();
 
   // Initialise/config if necessary.
   if(!SHT21_initialised) { SHT21_init(); }
@@ -524,7 +562,7 @@ static int Sensor_SHT21_readTemperatureC16()
   rawTemp |= (Wire.read() & 0xfc); // Clear status ls bits.
 
   // Power down TWI ASAP.
-  if(neededPowerUp) { powerDownTWI(); }
+  if(neededPowerUp) { OTV0P2BASE::powerDownTWI(); }
 
   // TODO: capture entropy if (transformed) value has changed.
 
@@ -541,7 +579,7 @@ static int Sensor_SHT21_readTemperatureC16()
 // Returns 255 (~0) in case of error.
 uint8_t HumiditySensorSHT21::read()
   {
-  const bool neededPowerUp = powerUpTWIIfDisabled();
+  const bool neededPowerUp = OTV0P2BASE::powerUpTWIIfDisabled();
 
   // Initialise/config if necessary.
   if(!SHT21_initialised) { SHT21_init(); }
@@ -573,7 +611,7 @@ uint8_t HumiditySensorSHT21::read()
   const uint8_t rawRL = Wire.read();
 
   // Power down TWI ASAP.
-  if(neededPowerUp) { powerDownTWI(); }
+  if(neededPowerUp) { OTV0P2BASE::powerDownTWI(); }
 
   const uint16_t raw = (((uint16_t)rawRH) << 8) | (rawRL & 0xfc); // Clear status ls bits.
   const uint8_t result = -6 + ((125L * raw) >> 16);
@@ -764,7 +802,7 @@ int RoomTemperatureC16::read()
   {
 #if defined(SENSOR_DS18B20_ENABLE)
   const int raw = Sensor_DS18B10_readTemperatureC16();
-#elif defined(SENSOR_SHT21_ENABLE)
+#elif defined(ENABLE_SENSOR_SHT21)
   const int raw = Sensor_SHT21_readTemperatureC16();
 #else
   const int raw = TMP112_readTemperatureC16();
@@ -905,9 +943,9 @@ extern ExtTemperatureDS18B20C16 extDS18B20_0(0);
 uint8_t TemperaturePot::read()
   {
   // No need to wait for voltage to stablise as pot top end directly driven by IO_POWER_UP.
-  power_intermittent_peripherals_enable(false);
+  OTV0P2BASE::power_intermittent_peripherals_enable(false);
   const uint16_t tpRaw = OTV0P2BASE::analogueNoiseReducedRead(TEMP_POT_AIN, DEFAULT); // Vcc reference.
-  power_intermittent_peripherals_disable();
+  OTV0P2BASE::power_intermittent_peripherals_disable();
 
 #if defined(TEMP_POT_REVERSE)
   const uint16_t tp = TEMP_POT_RAW_MAX - tpRaw; // Travel is in opposite direction to natural!

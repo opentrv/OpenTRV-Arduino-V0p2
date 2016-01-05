@@ -96,7 +96,6 @@ void _TEST_set_basetemp_override(const _TEST_basetemp_override override)
 #endif
 
 
-
 // Get 'FROST' protection target in C; no higher than getWARMTargetC() returns, strictly positive, in range [MIN_TARGET_C,MAX_TARGET_C].
 #if defined(TEMP_POT_AVAILABLE)
 // Derived from temperature pot position.
@@ -266,7 +265,7 @@ void setMinBoilerOnMinutes(uint8_t mins) { OTV0P2BASE::eeprom_smart_update_byte(
 #endif
 
 
-#ifdef OCCUPANCY_SUPPORT
+#ifdef ENABLE_OCCUPANCY_SUPPORT
 // Singleton implementation for entire node.
 OccupancyTracker Occupancy;
 
@@ -333,7 +332,7 @@ bool shouldBeWarmedAtHour(const uint_least8_t hh)
   if(inOutlierQuartile(false, EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED, hh)) { return(false); }
 #endif
 
-#ifdef OCCUPANCY_SUPPORT
+#ifdef ENABLE_OCCUPANCY_SUPPORT
   // Return false immediately if the sample hour's historic occupancy level falls in the bottom quartile (or is zero).
   // Thus aim to shave off 'smart' warming for at least 25% of the daily cycle.
   if(inOutlierQuartile(false, EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, hh)) { return(false); }
@@ -562,6 +561,7 @@ void ModelledRadValve::computeTargetTemperature()
   inputState.setReferenceTemperatures(TemperatureC16.get());
   // True if the target temperature has not been met.
   const bool targetNotReached = (newTarget >= (inputState.refTempC16 >> 4));
+  underTarget = targetNotReached;
   // If the target temperature is already reached then cancel any BAKE mode in progress (TODO-648).
   if(!targetNotReached) { cancelBakeDebounced(); }
   // Only report as calling for heat when actively doing so.
@@ -750,7 +750,7 @@ void sampleStats(const bool fullSample)
   const int tempC16 = TemperatureC16.get();
   static int tempC16Total;
   tempC16Total = firstSample ? tempC16 : (tempC16Total + tempC16);
-#ifdef OCCUPANCY_SUPPORT
+#ifdef ENABLE_OCCUPANCY_SUPPORT
   const uint16_t occpc = Occupancy.get();
   static uint16_t occpcTotal;
   occpcTotal = firstSample ? occpc : (occpcTotal + occpc);
@@ -796,7 +796,7 @@ void sampleStats(const bool fullSample)
   // Ambient light; last and smoothed data sets,
   simpleUpdateStatsPair(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR, hh, smartDivToU8(ambLightTotal, sc));
 
-#ifdef OCCUPANCY_SUPPORT
+#ifdef ENABLE_OCCUPANCY_SUPPORT
   // Occupancy confidence percent, if supported; last and smoothed data sets,
   simpleUpdateStatsPair(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR, hh, smartDivToU8(occpcTotal, sc));
 #endif 
@@ -895,7 +895,7 @@ void populateCoreStats(FullStatsMessageCore_t *const content)
   content->containsAmbL = true;
   // OC1/OC2 = Occupancy: 00 not disclosed, 01 not occupied, 10 possibly occupied, 11 probably occupied.
   // The encodeFullStatsMessageCore() route should omit data not appopriate for security reasons.
-#ifdef OCCUPANCY_SUPPORT
+#ifdef ENABLE_OCCUPANCY_SUPPORT
   content->occ = Occupancy.twoBitOccupancyValue();
 #else
   content->occ = 0; // Not supported.
@@ -1024,7 +1024,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 #if defined(HUMIDITY_SENSOR_SUPPORT)
     ss1.put(RelHumidity);
 #endif
-#if defined(OCCUPANCY_SUPPORT)
+#if defined(ENABLE_OCCUPANCY_SUPPORT)
     ss1.put(Occupancy.twoBitTag(), Occupancy.twoBitOccupancyValue()); // Reduce spurious TX cf percentage.
     ss1.put(Occupancy.vacHTag(), Occupancy.getVacancyH()); // EXPERIMENTAL
 #endif
@@ -1062,6 +1062,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
       }
 
     outputJSONStats(&Serial, true, bptr, sizeof(buf) - (bptr-buf)); // Serial must already be running!
+    OTV0P2BASE::flushSerialSCTSensitive(); // Ensure all flushed since system clock may be messed with...
 
 #ifdef ENABLE_RADIO_SECONDARY_MODULE
 // FIXME secondary send assumes SIM900.
@@ -1265,35 +1266,38 @@ void setupOpenTRV()
 
 #ifdef ALLOW_STATS_TX
   // Do early 'wake-up' stats transmission if possible
-  // when everything else is set up and ready
+  // when everything else is set up and ready and allowed (TODO-636)
   // including all set-up and inter-wiring of sensors/actuators.
-  // Attempt to maximise chance of reception with a double TX.
-  // Assume not in hub mode (yet).
-  // Send all possible formats, binary first (assumed complete in one message).
-  bareStatsTX(true, true);
-  // Send JSON stats repeatedly (typically once or twice)
-  // until all values pushed out (no 'changed' values unsent)
-  // or limit reached.
-  for(uint8_t i = 5; --i > 0; )
+  if(enableTrailingStatsPayload())
     {
-    ::OTV0P2BASE::nap(WDTO_120MS, false); // Sleep long enough for receiver to have a chance to process previous TX.
+    // Attempt to maximise chance of reception with a double TX.
+    // Assume not in hub mode (yet).
+    // Send all possible formats, binary first (assumed complete in one message).
+    bareStatsTX(true, true);
+    // Send JSON stats repeatedly (typically once or twice)
+    // until all values pushed out (no 'changed' values unsent)
+    // or limit reached.
+    for(uint8_t i = 5; --i > 0; )
+      {
+      ::OTV0P2BASE::nap(WDTO_120MS, false); // Sleep long enough for receiver to have a chance to process previous TX.
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING(" TX...");
 #endif
-    bareStatsTX(true, false);
-    if(!ss1.changedValue()) { break; }
+      bareStatsTX(true, false);
+      if(!ss1.changedValue()) { break; }
+      }
+  //  nap(WDTO_120MS, false);
     }
-//  nap(WDTO_120MS, false);
 #endif
 
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("setup stats sent");
 #endif
 
-#if defined(LOCAL_TRV) && defined(DIRECT_MOTOR_DRIVE_V1)
-  // Signal some sort of life on waking up...
-  ValveDirect.wiggle();
-#endif
+//#if defined(LOCAL_TRV) && defined(DIRECT_MOTOR_DRIVE_V1)
+//  // Signal some sort of life on waking up...
+//  ValveDirect.wiggle();
+//#endif
 
 #if !defined(DONT_RANDOMISE_MINUTE_CYCLE)
   // Start local counters in randomised positions to help avoid inter-unit collisions,
@@ -1502,7 +1506,7 @@ void loopOpenTRV()
 #endif
 
   // Try if very near to end of cycle and thus causing an overrun.
-  // Conversely, if not true, should have time to savely log outputs, etc.
+  // Conversely, if not true, should have time to safely log outputs, etc.
   const uint8_t nearOverrunThreshold = OTV0P2BASE::GSCT_MAX - 8; // ~64ms/~32 serial TX chars of grace time...
 //  bool tooNearOverrun = false; // Set flag that can be checked later.
 
@@ -2019,7 +2023,17 @@ void loopOpenTRV()
 
     // Poll ambient light level at a fixed rate.
     // This allows the unit to respond consistently to (eg) switching lights on (eg TODO-388).
-    case 52: { AmbLight.read(); break; }
+    case 52:
+      {
+      // Force all UI lights off before sampling ambient light level.
+      LED_HEATCALL_OFF();
+#if defined(LED_UI2_EXISTS) && defined(ENABLE_UI_LED_2_IF_AVAILABLE)
+      // Turn off second UI LED if available.
+      LED_UI2_OFF();
+#endif
+      AmbLight.read();
+      break;
+      }
 
     // At a hub, sample temperature regularly as late as possible in the minute just before recomputing valve position.
     // Force a regular read to make stats such as rate-of-change simple and to minimise lag.
@@ -2031,29 +2045,37 @@ void loopOpenTRV()
     // This should happen as soon after the latest readings as possible (temperature especially).
     case 56:
       {
-#ifdef OCCUPANCY_SUPPORT
+#ifdef ENABLE_OCCUPANCY_SUPPORT
       // Update occupancy measures that partially use rolling stats.
-#if defined(OCCUPANCY_DETECT_FROM_RH) && defined(HUMIDITY_SENSOR_SUPPORT)
+#if defined(ENABLE_OCCUPANCY_DETECTION_FROM_RH) && defined(HUMIDITY_SENSOR_SUPPORT)
       // If RH% is rising fast enough then take this a mild occupancy indicator.
-      // Suppress this in the dark to avoid nusiance behaviour,
+      // Suppress this if temperature is falling since RH% change may be misleading.  (TODO-696)
+      // Suppress this in the dark to avoid nuisance behaviour
+      // (if there is a working ambient light sensor, else don't suppress),
       // even if not a false positive (ie the room is occupied, by a sleeper),
       // such as a valve opening and/or the boiler firing up at night.
       // Use a guard formulated to allow the RH%-based detection to work
       // if ambient light sensing is disabled,
       // eg allow RH%-based sensing unless known to be dark.
-      // TODO: consider ignoring potential false positives from rising RH% while temperature is falling.
       if(runAll && // Only if all sensors have been refreshed.
-         !AmbLight.isRoomDark()) // Only if known to be dark.
+         !AmbLight.isRoomDark()) // Only if room not known to be dark, from a working sensor.
         {
-        const uint8_t lastRH = OTV0P2BASE::getByHourStat(OTV0P2BASE::getPrevHourLT(), V0P2BASE_EE_STATS_SET_RHPC_BY_HOUR);
-        if((OTV0P2BASE::STATS_UNSET_BYTE != lastRH) &&
-           (RelHumidity.get() >= lastRH + HUMIDITY_OCCUPANCY_PC_MIN_RISE_PER_H))
+        // Only continue if temperature appears not to be falling compared to previous hour (TODO-696).
+        // No previous temperature will show as a very large number so should fail safe.
+        // Note use of compress/expand to try to get round companding granularity issues.
+        if(expandTempC16(compressTempC16(TemperatureC16.get())) >= expandTempC16(OTV0P2BASE::getByHourStat(OTV0P2BASE::getPrevHourLT(), V0P2BASE_EE_STATS_SET_TEMP_BY_HOUR)))
+          {
+          const uint8_t lastRH = OTV0P2BASE::getByHourStat(OTV0P2BASE::getPrevHourLT(), V0P2BASE_EE_STATS_SET_RHPC_BY_HOUR);
+          if((OTV0P2BASE::STATS_UNSET_BYTE != lastRH) &&
+             (RelHumidity.get() >= lastRH + HUMIDITY_OCCUPANCY_PC_MIN_RISE_PER_H))
             { Occupancy.markAsPossiblyOccupied(); }
+          }
         }
 #endif
       // Update occupancy status (fresh for target recomputation) at a fixed rate.
       Occupancy.read();
 #endif
+
 
 #ifdef ENABLE_NOMINAL_RAD_VALVE
       // Recompute target, valve position and call for heat, etc.
@@ -2167,17 +2189,23 @@ void loopOpenTRV()
   // ('Any' manual interaction may prove too sensitive.)
   // Also have a timeout of somewhat over ~10m from startup
   // for automatic recovery after any crash and restart.
-  if(ValveDirect.isWaitingForValveToBeFitted())
+  const uint8_t isWaitingFVTBF = ValveDirect.isWaitingForValveToBeFitted();
+  if(isWaitingFVTBF)
       {
       if(veryRecentUIControlUse() || (minuteCount > 15))
           { ValveDirect.signalValveFitted(); }
       }
   // Provide regular poll to motor driver.
   // May take significant time to run
-  // so don't call when timing is critical or not much time left this cycle.
+  // so don't call when timing is critical
+  // nor when not much time left this cycle,
+  // nor some of the time during startup if possible,
+  // so as (for example) to allow the CLI to be operable.
   // Only calling this after most other heavy-lifting work is likely done.
   // Note that FHT8V sync will take up at least the first 1s of a 2s subcycle.
-  if(!showStatus && (OTV0P2BASE::getSubCycleTime() < ((OTV0P2BASE::GSCT_MAX/4)*3)))
+  if(!showStatus &&
+     (!isWaitingFVTBF || (0 == (3 & TIME_LSD))) &&
+     (OTV0P2BASE::getSubCycleTime() < ((OTV0P2BASE::GSCT_MAX/4)*3)))
     { ValveDirect.read(); }
 #endif
 

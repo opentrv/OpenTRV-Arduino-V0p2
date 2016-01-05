@@ -37,7 +37,11 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 #ifdef HAS_DORM1_VALVE_DRIVE
 //#ifdef DIRECT_MOTOR_DRIVE_V1
 // Singleton implementation/instance.
-OTRadValve::ValveMotorDirectV1<MOTOR_DRIVE_ML, MOTOR_DRIVE_MR, MOTOR_DRIVE_MI_AIN> ValveDirect;
+#ifdef ENABLE_DORM1_MOTOR_REVERSED // Reversed vs sample 2015/12
+OTRadValve::ValveMotorDirectV1<MOTOR_DRIVE_ML, MOTOR_DRIVE_MR, MOTOR_DRIVE_MI_AIN, MOTOR_DRIVE_MC_AIN> ValveDirect;
+#else
+OTRadValve::ValveMotorDirectV1<MOTOR_DRIVE_MR, MOTOR_DRIVE_ML, MOTOR_DRIVE_MI_AIN, MOTOR_DRIVE_MC_AIN> ValveDirect;
+#endif // HAS_DORM1_MOTOR_REVERSED
 #endif
 
 
@@ -53,7 +57,7 @@ uint8_t *appendStatsToTXBufferWithFF(uint8_t *bptr, const uint8_t bufSize)
   // Ensure that no ID is encoded in the message sent on the air since it would be a repeat from the FHT8V frame.
   trailer.containsID = false;
 
-#if defined(ALLOW_MINIMAL_STATS_TXRX)
+#if defined(ENABLE_MINIMAL_STATS_TXRX)
   // As bandwidth optimisation just write minimal trailer if only temp&power available.
   if(trailer.containsTempAndPower &&
      !trailer.containsID && !trailer.containsAmbL)

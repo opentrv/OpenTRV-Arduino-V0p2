@@ -405,9 +405,9 @@ void loopAlt()
     case 40: { Voice.read(); break; }
 #endif // (ENABLE_VOICE_SENSOR)
 
-#ifdef OCCUPANCY_SUPPORT
+#ifdef ENABLE_OCCUPANCY_SUPPORT
     case 50: { Occupancy.read(); break; } // Needs regular poll.
-#endif // OCCUPANCY_SUPPORT
+#endif // ENABLE_OCCUPANCY_SUPPORT
   }
 
 

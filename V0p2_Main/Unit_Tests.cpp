@@ -534,7 +534,7 @@ static void testTargetComputation()
         AssertIsTrue((getFROSTTargetC() >= MIN_TARGET_C) && (getFROSTTargetC() <= MAX_TARGET_C));
         AssertIsTrue((getWARMTargetC() >= MIN_TARGET_C) && (getWARMTargetC() <= MAX_TARGET_C));
         AssertIsTrue(getFROSTTargetC() <= getWARMTargetC());
-#ifdef OCCUPANCY_SUPPORT
+#ifdef ENABLE_OCCUPANCY_SUPPORT
         // ENERGY SAVING RULE TEST (TODO-442 1a: "No prewarm (eg 'smart' extra heating in FROST mode) in a long-vacant room.")
         // In FROST mode target temperature must stay at frost level once the room has been vacant for a while.
         // IE: pre-warming is disabled in long-vacant rooms as an energy-saving strategy.
@@ -566,7 +566,7 @@ static void testTargetComputation()
             NominalRadValve.computeTargetTemperature();
             AssertIsTrue(NominalRadValve.getTargetTempC() < getWARMTargetC()); // Temp must be set back (assumes FROST < WARM).
             }
-#if defined(OCCUPANCY_SUPPORT)
+#if defined(ENABLE_OCCUPANCY_SUPPORT)
           if(!AmbLight.isRoomDark())
             {
             Occupancy.setHolidayMode();
@@ -578,7 +578,7 @@ static void testTargetComputation()
 
         // Try to discover/force maximum WARM-mode setback with dark and long vacancy.
         setWarmModeDebounced(true);
-#ifdef OCCUPANCY_SUPPORT
+#ifdef ENABLE_OCCUPANCY_SUPPORT
 //        Occupancy._TEST_set_vacH_(OccupancyTracker::longLongVacantHThrH+1);
         Occupancy.setHolidayMode();
 #endif
@@ -601,7 +601,7 @@ DEBUG_SERIAL_PRINTLN();
         }
 
       // ENERGY SAVING RULE TEST (TODO-442 1c: "Prewarm temperature must be set back from normal WARM target.")
-#ifdef OCCUPANCY_SUPPORT
+#ifdef ENABLE_OCCUPANCY_SUPPORT
 //      Occupancy._TEST_set_vacH_(randRNG8() % OccupancyTracker::longVacantHThrH); // Mark occupied or at least not long vacant.
       Occupancy.markAsOccupied(); // Mark occupied or at least not long vacant.
 #endif
@@ -645,7 +645,7 @@ static void testSensorMocking()
 //    AssertIsEqual(nal2, AmbLight.get());
     }
 #endif
-#ifdef OCCUPANCY_SUPPORT
+#ifdef ENABLE_OCCUPANCY_SUPPORT
   // Occupancy
 //  const uint8_t vacH = randRNG8() | 1; // Ensure non-zero.
 //  Occupancy._TEST_set_vacH_(vacH);
@@ -1033,7 +1033,7 @@ static void testFHTEncodingHeadAndTail()
   result1 = FHT8VCreateValveSetCmdFrameHT_r(buf, true, &command, 0, &fullStats);
   AssertIsTrueWithErr(((uint8_t)~0U) == *result1, *result1); // Check that result points at terminator value 0xff/~0.
   //AssertIsTrue((result1 - buf < MIN_FHT8V_200US_BIT_STREAM_BUF_SIZE), result1-buf); // Check not overflowing the buffer.
-#if defined(ALLOW_MINIMAL_STATS_TXRX)
+#if defined(ENABLE_MINIMAL_STATS_TXRX)
   AssertIsTrueWithErr((result1 - buf == 41 + RFM22_PREAMBLE_BYTES), result1-buf); // Check correct length:preamble + 38-byte body + 3-byte trailer.
 #else // Expect longer encoding in this case...
   AssertIsTrueWithErr((result1 - buf == 43 + RFM22_PREAMBLE_BYTES), result1-buf); // Check correct length:preamble + 38-byte body + 5-byte trailer.
@@ -1049,7 +1049,7 @@ static void testFHTEncodingHeadAndTail()
   AssertIsTrueWithErr(73 == commandDecoded.hc2, commandDecoded.hc2);
   AssertIsTrueWithErr(0x26 == commandDecoded.command, commandDecoded.command);
   AssertIsTrueWithErr(0 == commandDecoded.extension, commandDecoded.extension);
-#if 0 && defined(ALLOW_MINIMAL_STATS_TXRX)
+#if 0 && defined(ENABLE_MINIMAL_STATS_TXRX)
   OTV0P2BASE::serialPrintAndFlush(F("  Minimal trailer bytes: "));
   OTV0P2BASE::serialPrintAndFlush(afterBody[0], HEX);
   OTV0P2BASE::serialPrintAndFlush(' ');
@@ -1064,11 +1064,11 @@ static void testFHTEncodingHeadAndTail()
     AssertIsTrueWithErr(0xff != afterBody[i], i); // No trailer byte should be 0xff (so 0xff can be terminator).
     AssertIsTrueWithErr(0 == (0x80 & afterBody[i]), i); // No trailer byte should have its high bit set.
     }
-#if defined(ALLOW_MINIMAL_STATS_TXRX)
+#if defined(ENABLE_MINIMAL_STATS_TXRX)
   AssertIsTrueWithErr(verifyHeaderAndCRCForTrailingMinimalStatsPayload(afterBody), *afterBody);
 #endif
   // Decode values...
-#if defined(ALLOW_MINIMAL_STATS_TXRX)
+#if defined(ENABLE_MINIMAL_STATS_TXRX)
   trailingMinimalStatsPayload_t statsDecoded;
   extractTrailingMinimalStatsPayload(afterBody, &statsDecoded);
   AssertIsEqual(powerLow, statsDecoded.powerLow);
@@ -1093,7 +1093,7 @@ static void testFHTEncodingHeadAndTail()
   AssertIsTrueWithErr((result1 - buf) < sizeof(buf), (result1 - buf) - sizeof(buf)); // result1 points to the terminating 0xff, not just after it.
   AssertIsTrueWithErr(((uint8_t)~0U) == *result1, *result1); // Check that result points at terminator value 0xff/~0.
   //AssertIsTrue((result1 - buf < MIN_FHT8V_200US_BIT_STREAM_BUF_SIZE), result1-buf); // Check not overflowing the buffer.
-#if defined(ALLOW_MINIMAL_STATS_TXRX)
+#if defined(ENABLE_MINIMAL_STATS_TXRX)
   AssertIsTrueWithErr((result1 - buf == 42 + RFM22_PREAMBLE_BYTES), result1-buf); // Check correct length.
 #else
   AssertIsTrueWithErr((result1 - buf == 44 + RFM22_PREAMBLE_BYTES), result1-buf); // Check correct length.
@@ -1115,12 +1115,12 @@ static void testFHTEncodingHeadAndTail()
     AssertIsTrueWithErr(0xff != afterBody[i], i); // No trailer byte should be 0xff (so 0xff can be terminator).
     AssertIsTrueWithErr(0 == (0x80 & afterBody[i]), i); // No trailer byte should have its high bit set.
     }
-#if defined(ALLOW_MINIMAL_STATS_TXRX)
+#if defined(ENABLE_MINIMAL_STATS_TXRX)
   AssertIsTrueWithErr(verifyHeaderAndCRCForTrailingMinimalStatsPayload(afterBody), *afterBody);
 #endif
   // Decode values...
   memset(&statsDecoded, 0xff, sizeof(statsDecoded)); // Clear structure...
-#if defined(ALLOW_MINIMAL_STATS_TXRX)
+#if defined(ENABLE_MINIMAL_STATS_TXRX)
   extractTrailingMinimalStatsPayload(afterBody, &statsDecoded);
   AssertIsEqual(powerLow, statsDecoded.powerLow);
   AssertIsEqual(tempC16, statsDecoded.tempC16);

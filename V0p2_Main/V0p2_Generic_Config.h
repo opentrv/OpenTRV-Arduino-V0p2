@@ -13,7 +13,7 @@ KIND, either express or implied. See the Licence for the
 specific language governing permissions and limitations
 under the Licence.
 
-Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
+Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
                            Deniz Erbilgin 2015
 */
 
@@ -25,9 +25,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #ifndef V0P2_GENERIC_CONFIG_H
 #define V0P2_GENERIC_CONFIG_H
 
-// Define/uncomment exactly one of the CONFIG_XXX labels to enable a configuration set below.
+// Define/uncomment exactly one of the CONFIG_XXX flags to enable a configuration set below.
 // Some can be specific to particular locations and boards,
 // others can be vanilla ready to be configured by the end-user one way or another.
+// As far as possible the configs should #define/#undef a set of ENABLE_XXX flags.
 
 //#define CONFIG_GENERIC_ROOM_NODE
 //#define CONFIG_GENERIC_BOILER_NODE
@@ -46,7 +47,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as plain boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
 //#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
-//#define CONFIG_DORM1 // REV7 / DORM1 Winter 2014/2015 all-in-one valve unit.
+#define CONFIG_DORM1 // REV7 / DORM1 Winter 2014/2015 all-in-one valve unit.
 //#define CONFIG_DORM1_BOILER // REV8 / DORM1 Winter 2014/2015 boiler-control unit.
 //#define CONFIG_REV11_RAW_JSON // REV11 as raw JSON-only stats/sensor leaf.
 
@@ -114,9 +115,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: allow TX of stats frames.
 #define ALLOW_STATS_TX
 // IF DEFINED: always allow some kind of stats TX, whatever the privacy settings.
+// HAS HUGE PRIVACY IMPLICATIONS: DO NOT ENABLE UNNECESSARILY!
 #undef CONFIG_ALWAYS_TX_ALL_STATS
 // IF DEFINED: allow minimal binary format in addition to more generic one: ~400 bytes code cost.
-#undef ALLOW_MINIMAL_STATS_TXRX
+#undef ENABLE_MINIMAL_STATS_TXRX
 // IF DEFINED: allow JSON stats frames alongside binary ones.
 #define ALLOW_JSON_OUTPUT
 // IF DEFINED: allow binary stats to be TXed.
@@ -128,13 +130,13 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: use active-low LEARN button(s).  Needs SUPPORT_SINGLETON_SCHEDULE.
 #define LEARN_BUTTON_AVAILABLE // OPTIONAL ON V0.09 PCB1
 // IF DEFINED: support for general timed and multi-input occupancy detection / use.
-#define OCCUPANCY_SUPPORT
+#define ENABLE_OCCUPANCY_SUPPORT
 // IF DEFINED: detect occupancy based on ambient light, if available.
-#define OCCUPANCY_DETECT_FROM_AMBLIGHT
+#define ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
 // IF DEFINED: detect occupancy based on relative humidity, if available.
-#define OCCUPANCY_DETECT_FROM_RH
+#define ENABLE_OCCUPANCY_DETECTION_FROM_RH
 // IF DEFINED: detect occupancy based on voice detection, if available. This undefines learn button 2
-#undef OCCUPANCY_DETECT_FROM_VOICE
+#undef ENABLE_OCCUPANCY_DETECTION_FROM_VOICE
 // IF DEFINED: allow periodic machine- and human- readable status report to serial, starting with "="/
 #define ENABLE_SERIAL_STATUS_REPORT
 // IF DEFINED: this unit supports CLI over the USB/serial connection, eg for run-time reconfig.
@@ -150,7 +152,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: minimise boot effort and energy eg for intermittently-powered energy-harvesting applications.
 #undef MIN_ENERGY_BOOT
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
-#undef SENSOR_SHT21_ENABLE
+#undef ENABLE_SENSOR_SHT21
 // IF DEFINED: enable use of second UI LED if available.
 #define ENABLE_UI_LED_2_IF_AVAILABLE
 // IF DEFINED: enable a primary radio module; without this unit is stand-alone.
@@ -203,7 +205,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: this unit supports CLI over the USB/serial connection, eg for run-time reconfig.
 #define SUPPORT_CLI
 // IF DEFINED: support for general timed and multi-input occupancy detection / use.
-#define OCCUPANCY_SUPPORT
+#define ENABLE_OCCUPANCY_SUPPORT
 #endif
 
 #ifdef CONFIG_Trial2013Winter_Round1_BOILERHUB // REV1 as plain boiler hub + can TX stats.
@@ -267,7 +269,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: this unit supports CLI over the USB/serial connection, eg for run-time reconfig.
 #define SUPPORT_CLI
 // IF DEFINED: support for general timed and multi-input occupancy detection / use.
-#define OCCUPANCY_SUPPORT
+#define ENABLE_OCCUPANCY_SUPPORT
 #endif
 
 #ifdef CONFIG_Trial2013Winter_Round2_LVBH // REV2 cut4: local valve control, boiler hub & TX.
@@ -287,7 +289,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: this unit supports CLI over the USB/serial connection, eg for run-time reconfig.
 #define SUPPORT_CLI
 // IF DEFINED: support for general timed and multi-input occupancy detection / use.
-#define OCCUPANCY_SUPPORT
+#define ENABLE_OCCUPANCY_SUPPORT
 #endif
 
 #ifdef CONFIG_Trial2013Winter_Round2_BOILERHUB // For trial over winter of 2013--4, second round (REV2), as pure boiler hub + can TX stats.
@@ -346,7 +348,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: enable and extended CLI with a longer input buffer for example.
 #define ENABLE_EXTENDED_CLI
 // IF DEFINED: support for general timed and multi-input occupancy detection / use.
-#undef OCCUPANCY_SUPPORT // None of that logic required at hub.
+#undef ENABLE_OCCUPANCY_SUPPORT // None of that logic required at hub.
 // IF DEFINED: act as CC1 simple hub node.
 #define ALLOW_CC1_SUPPORT
 #define ALLOW_CC1_SUPPORT_HUB
@@ -377,7 +379,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: this unit supports CLI over the USB/serial connection, eg for run-time reconfig.
 #define SUPPORT_CLI
 // IF DEFINED: support for general timed and multi-input occupancy detection / use.
-#undef OCCUPANCY_SUPPORT
+#undef ENABLE_OCCUPANCY_SUPPORT
 // IF DEFINED: enable a secondary (typically WAN-relay) radio module.
 #define ENABLE_RADIO_SECONDARY_MODULE
 // IF DEFINED: enable a WAN-relay radio module, primarily to relay stats outbound.
@@ -386,7 +388,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define RADIO_SECONDARY_NULL
 // IF DEFINED: allow periodic machine- and human- readable status report to serial, starting with "="/
 //#undef ENABLE_SERIAL_STATUS_REPORT
-#define CONFIG_FORCE_TO_RX_MODE_REGULARLY // FIXME
+#undef CONFIG_FORCE_TO_RX_MODE_REGULARLY // FIXME
 // Use common settings.
 #define COMMON_SETTINGS
 #endif
@@ -462,9 +464,12 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: initial direct motor drive design.
 #define DIRECT_MOTOR_DRIVE_V1
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
-#define SENSOR_SHT21_ENABLE
+#define ENABLE_SENSOR_SHT21
 // Using RoHS-compliant phototransistor in place of LDR.
 #define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
+// IF DEFINED: detect occupancy based on relative humidity, if available.
+// DHD20160101: seems to still be set off spuriously by fast drop in temp when rad turns off (TODO-696).
+#undef ENABLE_OCCUPANCY_DETECTION_FROM_RH
 // IF UNDEFINED: this unit cannot act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
 #undef ENABLE_BOILER_HUB
 // IF UNDEFINED: do not allow TX of stats frames.
@@ -512,7 +517,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //// Enable use of DS18B20 temp sensor.
 //#define SENSOR_DS18B20_ENABLE
 //// IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
-//#define SENSOR_SHT21_ENABLE
+//#define ENABLE_SENSOR_SHT21
 // Using RoHS-compliant phototransistor in place of LDR.
 #define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // Anticipation logic not yet ready for prime-time.
@@ -547,7 +552,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: allow TX of stats frames.
 #undef ALLOW_STATS_TX
 // IF DEFINED: allow minimal binary format in addition to more generic one: ~400 bytes code cost.
-#undef ALLOW_MINIMAL_STATS_TXRX
+#undef ENABLE_MINIMAL_STATS_TXRX
 // IF DEFINED: allow JSON stats frames alongside binary ones.
 #undef ALLOW_JSON_OUTPUT
 // IF DEFINED: (default) forced always-on radio listen/RX, eg not requiring setup to explicitly enable. ***
@@ -563,7 +568,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: minimise boot effort and energy eg for intermittently-powered energy-harvesting applications.  ***
 #undef MIN_ENERGY_BOOT
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).   ***
-#undef SENSOR_SHT21_ENABLE
+#undef ENABLE_SENSOR_SHT21
 // IF DEFINED: enable use AVR's 'idle' mode to stop the CPU but leave I/O (eg Serial) running to save power.
 // DHD20150920: CURRENTLY NOT RECOMMENDED AS STILL SEEMS TO CAUSE SOME BOARDS TO CRASH.
 #define ENABLE_USE_OF_AVR_IDLE_MODE
@@ -602,7 +607,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: allow TX of stats frames.
 #define ALLOW_STATS_TX
 // IF DEFINED: allow minimal binary format in addition to more generic one: ~400 bytes code cost.
-#undef ALLOW_MINIMAL_STATS_TXRX
+#undef ENABLE_MINIMAL_STATS_TXRX
 // IF DEFINED: allow JSON stats frames alongside binary ones.
 //#undef ALLOW_JSON_OUTPUT
 // IF DEFINED: (default) forced always-on radio listen/RX, eg not requiring setup to explicitly enable. ***
@@ -618,7 +623,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: minimise boot effort and energy eg for intermittently-powered energy-harvesting applications.  ***
 #undef MIN_ENERGY_BOOT
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).   ***
-#undef SENSOR_SHT21_ENABLE
+#undef ENABLE_SENSOR_SHT21
 // IF DEFINED: enable use AVR's 'idle' mode to stop the CPU but leave I/O (eg Serial) running to save power.
 // DHD20150920: CURRENTLY NOT RECOMMENDED AS STILL SEEMS TO CAUSE SOME BOARDS TO CRASH.
 #define ENABLE_USE_OF_AVR_IDLE_MODE
@@ -684,7 +689,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // Revision of V0.2 board.
 #define V0p2_REV 4 // REV0 covers DHD's breadboard and first V0.2 PCB.
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
-#define SENSOR_SHT21_ENABLE
+#define ENABLE_SENSOR_SHT21
 // Using RoHS-compliant phototransistor in place of LDR.
 #define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // Anticipation logic not yet ready for prime-time.
@@ -705,7 +710,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: initial direct motor drive design.  Doesn't imply it gets used, but I/O can be set up safely.
 #define DIRECT_MOTOR_DRIVE_V1
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
-#define SENSOR_SHT21_ENABLE
+#define ENABLE_SENSOR_SHT21
 // Using RoHS-compliant phototransistor in place of LDR.
 #define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // IF DEFINED: basic FROST/WARM temperatures are settable.
@@ -745,7 +750,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: initial direct motor drive design.
 #undef DIRECT_MOTOR_DRIVE_V1
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
-#define SENSOR_SHT21_ENABLE
+#define ENABLE_SENSOR_SHT21
 // Using RoHS-compliant phototransistor in place of LDR.
 #define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // IF UNDEFINED: this unit cannot act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
@@ -778,7 +783,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // BOTH TMP112 AND SHT21 FITTED on REV8.B BOARDS.
 #define V0p2_REV 8
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
-#define SENSOR_SHT21_ENABLE
+#define ENABLE_SENSOR_SHT21
 // Using RoHS-compliant phototransistor in place of LDR.
 //#define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // IF DEFINED: this unit can act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
@@ -809,7 +814,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //// Enable use of DS18B20 temp sensor (in lieu of on-board TMP112).
 //#define SENSOR_DS18B20_ENABLE
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
-#define SENSOR_SHT21_ENABLE
+#define ENABLE_SENSOR_SHT21
 // IF DEFINED: enable use of additional (eg external) DS18B20 temp sensor(s).
 #define SENSOR_EXTERNAL_DS18B20_ENABLE
 // SENSOR_EXTERNAL_DS18B20_ENABLE requires SUPPORTS_MINIMAL_ONEWIRE.
@@ -843,7 +848,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: enable and extended CLI with a longer input buffer for example.
 #define ENABLE_EXTENDED_CLI
 // IF DEFINED: support for general timed and multi-input occupancy detection / use.
-#undef OCCUPANCY_SUPPORT // No direct occupancy tracking at relay unit itself.
+#undef ENABLE_OCCUPANCY_SUPPORT // No direct occupancy tracking at relay unit itself.
 // IF UNDEFINED: no LEARN mode for REV9 boards (window sensor(s) instead).
 //#undef LEARN_BUTTON_AVAILABLE
 // IF DEFINED: act as CC1 simple relay node.
@@ -857,7 +862,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #ifdef CONFIG_REV9_STATS // REV9 cut2, derived from REV4, as stats node, for testing.
 #define V0p2_REV 9
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
-#define SENSOR_SHT21_ENABLE
+#define ENABLE_SENSOR_SHT21
 // Using RoHS-compliant phototransistor in place of LDR.
 #define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
@@ -903,7 +908,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: allow TX of stats frames.
 #define ALLOW_STATS_TX
 // IF DEFINED: allow minimal binary format in addition to more generic one: ~400 bytes code cost.
-#undef ALLOW_MINIMAL_STATS_TXRX
+#undef ENABLE_MINIMAL_STATS_TXRX
 // IF DEFINED: allow JSON stats frames alongside binary ones.
 //#undef ALLOW_JSON_OUTPUT
 // IF DEFINED: (default) forced always-on radio listen/RX, eg not requiring setup to explicitly enable. ***
@@ -919,7 +924,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: minimise boot effort and energy eg for intermittently-powered energy-harvesting applications.  ***
 #undef MIN_ENERGY_BOOT
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).   ***
-#undef SENSOR_SHT21_ENABLE
+#undef ENABLE_SENSOR_SHT21
 // IF DEFINED: enable use AVR's 'idle' mode to stop the CPU but leave I/O (eg Serial) running to save power.
 // DHD20150920: CURRENTLY NOT RECOMMENDED AS STILL SEEMS TO CAUSE SOME BOARDS TO CRASH.
 #define ENABLE_USE_OF_AVR_IDLE_MODE
@@ -929,7 +934,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define RADIO_PRIMARY_SIM900  // Assign SIM900
 // Define voice module
 #define ENABLE_VOICE_SENSOR
-#define OCCUPANCY_DETECT_FROM_VOICE
+#define ENABLE_OCCUPANCY_DETECTION_FROM_VOICE
 #define ENABLE_VOICE_STATS
 // Enable use of OneWire devices.
 #define SUPPORT_ONEWIRE
@@ -958,7 +963,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: allow TX of stats frames.
 #define ALLOW_STATS_TX
 // IF DEFINED: allow minimal binary format in addition to more generic one: ~400 bytes code cost.
-#undef ALLOW_MINIMAL_STATS_TXRX
+#undef ENABLE_MINIMAL_STATS_TXRX
 // IF DEFINED: this unit supports CLI over the USB/serial connection, eg for run-time reconfig.
 #define SUPPORT_CLI
 // IF DEFINED: enable a full OpenTRV CLI.
@@ -970,7 +975,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: minimise boot effort and energy eg for intermittently-powered energy-harvesting applications.  ***
 #undef MIN_ENERGY_BOOT
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).   ***
-#undef SENSOR_SHT21_ENABLE
+#undef ENABLE_SENSOR_SHT21
 // IF DEFINED: enable use AVR's 'idle' mode to stop the CPU but leave I/O (eg Serial) running to save power.
 // DHD20150920: CURRENTLY NOT RECOMMENDED AS STILL SEEMS TO CAUSE SOME BOARDS TO CRASH.
 #define ENABLE_USE_OF_AVR_IDLE_MODE
@@ -1017,7 +1022,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // IF DEFINED: this unit supports CLI over the USB/serial connection, eg for run-time reconfig.
 #define SUPPORT_CLI
 // IF DEFINED: support for general timed and multi-input occupancy detection / use.
-#undef OCCUPANCY_SUPPORT
+#undef ENABLE_OCCUPANCY_SUPPORT
 // IF DEFINED: enable a secondary (typically WAN-relay) radio module.
 #define ENABLE_RADIO_SECONDARY_MODULE
 // IF DEFINED: enable a WAN-relay radio module, primarily to relay stats outbound.
@@ -1025,7 +1030,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // SIM900 relay.
 #define ENABLE_RADIO_SIM900   // Enable SIM900
 #define RADIO_SECONDARY_SIM900  // Assign SIM900
-#define CONFIG_FORCE_TO_RX_MODE_REGULARLY // FIXME
+#undef CONFIG_FORCE_TO_RX_MODE_REGULARLY // FIXME
 // Use common settings.
 #define COMMON_SETTINGS
 #endif
@@ -1039,7 +1044,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // Revision of V0.2 board.
 #define V0p2_REV 11 // REV11 covers first sensor only board.
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
-#define SENSOR_SHT21_ENABLE
+#define ENABLE_SENSOR_SHT21
 // Using RoHS-compliant phototransistor in place of LDR.
 #define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // Anticipation logic not yet ready for prime-time.
@@ -1059,7 +1064,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 // Revision of V0.2 board.
 #define V0p2_REV 11 // REV11 covers first sensor only board.
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
-#define SENSOR_SHT21_ENABLE
+#define ENABLE_SENSOR_SHT21
 // Using RoHS-compliant phototransistor in place of LDR.
 #define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // IF DEFINED: basic FROST/WARM temperatures are settable.
@@ -1149,8 +1154,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #define USE_MODULE_LDROCCUPANCYDETECTION
 // If LDR is not to be used then specifically define OMIT_... as below.
 //#define OMIT_MODULE_LDROCCUPANCYDETECTION //  LDR 'occupancy' sensing irrelevant for DHW.
-// IF DEFINED: use software RTC.
-#define USE_RTC_INTERNAL_SIMPLE // Provide software RTC support by default.
 #endif // COMMON_SETTINGS
 
 // If LEARN_BUTTON_AVAILABLE then in the absence of anything better SUPPORT_SINGLETON_SCHEDULE should be supported.
@@ -1188,8 +1191,11 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #if defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX)
 #define USE_MODULE_FHT8VSIMPLE_RX
 #define LISTEN_FOR_FTp2_FS20_native
-#endif
-#endif
+#endif // defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX)
+#if defined(ALLOW_STATS_RX)
+#define ENABLE_FS20_NATIVE_AND_BINARY_STATS_RX
+#endif // defined(ALLOW_STATS_RX)
+#endif // USE_MODULE_FHT8VSIMPLE
 
 
 #endif

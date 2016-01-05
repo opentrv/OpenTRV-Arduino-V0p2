@@ -55,12 +55,6 @@ void minimisePowerWithoutSleep();
 extern OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
 
 
-// Get approximate internal temperature in nominal C/16.
-// Only accurate to +/- 10C uncalibrated.
-// May set sleep mode to SLEEP_MODE_ADC, and disables sleep on exit.
-int readInternalTemperatureC16();
-
-
 // Call this to do an I/O poll if needed; returns true if something useful happened.
 // This call should typically take << 1ms at 1MHz CPU.
 // Does not change CPU clock speeds, mess with interrupts (other than possible brief blocking), or sleep.
@@ -89,32 +83,6 @@ static bool inline idle15AndPoll() { const bool wd = ::OTV0P2BASE::_idleCPU(WDTO
 // May capture some entropy in secure and non-secure PRNGs.
 void burnHundredsOfCyclesProductivelyAndPoll();
 
-
-// Sleep in reasonably low-power mode until specified target subcycle time.
-// Returns true if OK, false if specified time already passed or significantly missed (eg by more than one tick).
-// May use a combination of techniques to hit the required time.
-// Requesting a sleep until at or near the end of the cycle risks overrun and may be unwise.
-// Using this to sleep less then 2 ticks may prove unreliable as the RTC rolls on underneath...
-// This is NOT intended to be used to sleep over the end of a minor cycle.
-bool sleepUntilSubCycleTime(uint8_t sleepUntil);
-
-
-// If TWI (I2C) was disabled, power it up, do Wire.begin(), and return true.
-// If already powered up then do nothing other than return false.
-// If this returns true then a matching powerDownTWI() may be advisable.
-bool powerUpTWIIfDisabled();
-// Power down TWI (I2C).
-void powerDownTWI();
-
-
-// Enable power to intermittent peripherals.
-//   * waitUntilStable  wait long enough (and maybe test) for I/O power to become stable.
-// Waiting for stable may only be necessary for those items hung from IO_POWER cap;
-// items powered direct from IO_POWER_UP may need no such wait.
-void power_intermittent_peripherals_enable(bool waitUntilStable = false);
-
-// Disable/remove power to intermittent peripherals.
-void power_intermittent_peripherals_disable();
 
 #endif
 

@@ -133,14 +133,12 @@ bool tickUI(const uint_fast8_t sec)
     {
     ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
       {
-      // Run down UI iteraction timer if need be, one tick per minute.
+      // Run down UI interaction timer if need be, one tick per minute.
       if(uiTimeoutM > 0) { --uiTimeoutM; }
-//      // Run down CLI timer if need be.
-//      if(CLITimeoutM > 0) { --CLITimeoutM; }
       }
     }
 
-#ifdef OCCUPANCY_SUPPORT
+#ifdef ENABLE_OCCUPANCY_SUPPORT
   const bool reportedRecently = Occupancy.reportedRecently();
 #else
   const bool reportedRecently = false;
@@ -155,9 +153,12 @@ bool tickUI(const uint_fast8_t sec)
   // True on every 4th tick/call, ie about once every 8 seconds.
   const bool forthTick = !((++tickCount) & 3); // True on every 4th tick.
 
+  // Provide enhanced feedback when the has been very recent interaction with the UI,
+  // since the user is still quite likely to be continuing.
+  const bool enhancedUIFeedback = veryRecentUIControlUse();
+
 #ifdef TEMP_POT_AVAILABLE
-  const bool rUIcu = veryRecentUIControlUse();
-  if(rUIcu || forthTick) // If recent UI activity, and periodically.
+  if(enhancedUIFeedback || forthTick) // If recent UI activity, and periodically.
     {
     // Force relatively-frequent re-read of temp pot UI device.
     TempPot.read();
@@ -232,19 +233,14 @@ bool tickUI(const uint_fast8_t sec)
       modeButtonWasPressed = false;
       }
 
-    // Keep reporting UI status if the user has just touched the unit in some way.
-    // (Or if occupancy/activity was just detected, to give the use some feedback for indirectly interacting.)
-    const bool justTouched = statusChange || veryRecentUIControlUse()
-#if 0 && defined(OCCUPANCY_SUPPORT)
-        || Occupancy.reportedRecently() // TODO-587: waking the UI to indicate occupancy detected can be annoying.
-#endif
-        ;
+    // Keep reporting UI status if the user has just touched the unit in some way or UI is enhanced
+    const bool justTouched = statusChange || enhancedUIFeedback;
 
     // Mode button not pressed: indicate current mode with flash(es); more flashes if actually calling for heat.
     // Force display while UI controls are being used, eg to indicate temp pot position.
     if(justTouched || inWarmMode()) // Generate flash(es) if in WARM mode or fiddling with UI other than Mode button.
       {
-      // DHD20131223: do not flash if the room is dark so as to save energy and avoid disturbing sleep, etc.
+      // DHD20131223: only flash if the room is lit so as to save energy and avoid disturbing sleep, etc.
       // In this case force resample of light level frequently in case user turns light on eg to operate unit.
       // Do show LED flash if user has recently operated controls (other than mode button) manually.
       // Flash infrequently if no recently operated controls and not in BAKE mode and not actually calling for heat;
@@ -254,7 +250,7 @@ bool tickUI(const uint_fast8_t sec)
 #if defined(ENABLE_NOMINAL_RAD_VALVE) && defined(LOCAL_TRV)
              || NominalRadValve.isCallingForHeat()
 #endif
-             || inBakeMode()) && !AmbLight.isRoomDark()))
+             || inBakeMode()) && AmbLight.isRoomLit()))
         {
         // First flash to indicate WARM mode (or pot being twiddled).
         LED_HEATCALL_ON();
@@ -262,18 +258,23 @@ bool tickUI(const uint_fast8_t sec)
         // Small number of steps (3) should help make positioning more obvious.
         const uint8_t wt = getWARMTargetC();
         // Makes vtiny|tiny|medium flash for cool|OK|warm temperature target.
-        if(isEcoTemperature(wt)) { veryTinyPause(); }
+        // Stick to minimum length flashes to save energy unless just touched.
+        if(!justTouched || isEcoTemperature(wt)) { veryTinyPause(); }
         else if(!isComfortTemperature(wt)) { tinyPause(); }
         else { mediumPause(); }
 
 #if defined(ENABLE_NOMINAL_RAD_VALVE) && defined(LOCAL_TRV)
-        // Second flash to indicate actually calling for heat.
-        if(NominalRadValve.isCallingForHeat() || inBakeMode())
+        // Second flash to indicate actually calling for heat,
+        // or likely to be calling for heat while interacting with the controls, to give fast user feedback (TODO-695).
+        if((enhancedUIFeedback && NominalRadValve.isUnderTarget()) ||
+            NominalRadValve.isCallingForHeat() ||
+            inBakeMode())
           {
           LED_HEATCALL_OFF();
           offPause(); // V0.09 was mediumPause().
           LED_HEATCALL_ON(); // flash
-          if(isEcoTemperature(wt)) { veryTinyPause(); }
+          // Stick to minimum length flashes to save energy unless just touched.
+          if(!justTouched || isEcoTemperature(wt)) { veryTinyPause(); }
           else if(!isComfortTemperature(wt)) { OTV0P2BASE::sleepLowPowerMs((VERYTINY_PAUSE_MS + TINY_PAUSE_MS) / 2); }
           else { tinyPause(); }
 
@@ -284,7 +285,8 @@ bool tickUI(const uint_fast8_t sec)
             mediumPause(); // Note different flash off time to try to distinguish this last flash.
             LED_HEATCALL_ON();
             // Makes tiny|small|medium flash for eco|OK|comfort temperature target.
-            if(isEcoTemperature(wt)) { tinyPause(); }
+            // Stick to minimum length flashes to save energy unless just touched.
+            if(!justTouched || isEcoTemperature(wt)) { veryTinyPause(); }
             else if(!isComfortTemperature(wt)) { smallPause(); }
             else { mediumPause(); }
             }
@@ -298,9 +300,9 @@ bool tickUI(const uint_fast8_t sec)
     // then emit a tiny double flash on every 4th tick.
     // This call for heat may be frost protection or pre-warming / anticipating demand.
     // DHD20130528: new 4th-tick flash in FROST mode...
-    // DHD20131223: do not flash if the room is dark so as to save energy and avoid disturbing sleep, etc.
+    // DHD20131223: only flash if the room is lit so as to save energy and avoid disturbing sleep, etc.
     else if(forthTick &&
-            !AmbLight.isRoomDark() &&
+            AmbLight.isRoomLit() &&
             NominalRadValve.isCallingForHeat() /* &&
             NominalRadValve.isControlledValveReallyOpen() */ )
       {
@@ -650,7 +652,7 @@ void serialStatusReport()
 #endif
   ss1.put(AmbLight);
   ss1.put(Supply_cV);
-#if defined(OCCUPANCY_SUPPORT)
+#if defined(ENABLE_OCCUPANCY_SUPPORT)
   ss1.put(Occupancy);
 //  ss1.put(Occupancy.vacHTag(), Occupancy.getVacancyH()); // EXPERIMENTAL
 #endif
@@ -1138,7 +1140,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         if(n == 2)
           {
           if('!' == buf[1]) { Serial.println(F("hols")); }
-#ifdef OCCUPANCY_SUPPORT
+#ifdef ENABLE_OCCUPANCY_SUPPORT
           Occupancy.setHolidayMode();
 #endif
           setWarmModeDebounced(false);

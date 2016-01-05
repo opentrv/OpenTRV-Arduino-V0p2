@@ -21,7 +21,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include <avr/wdt.h>
 #include <util/crc16.h>
 
-#include <Wire.h>
+//#include <Wire.h>
 #include <OTV0p2Base.h> // Underlying hardware support definitions.
 
 #include "Power_Management.h"
@@ -89,7 +89,7 @@ void minimisePowerWithoutSleep()
   wdt_disable();
 
   // Ensure that external peripherals are powered down.
-  power_intermittent_peripherals_disable();
+  OTV0P2BASE::power_intermittent_peripherals_disable();
 
   // Turn off analogue stuff that eats power.
   ADCSRA = 0; // Do before power_[adc|all]_disable() to avoid freezing the ADC in an active state!
@@ -113,7 +113,7 @@ void minimisePowerWithoutSleep()
   OTV0P2BASE::powerDownSPI();
 
   // Ensure that TWI is powered down.
-  powerDownTWI();
+  OTV0P2BASE::powerDownTWI();
 
   // TIMERS
   // See: http://letsmakerobots.com/node/28278
@@ -134,7 +134,6 @@ void minimisePowerWithoutSleep()
   }
 
 
-
 // Call this to productively burn tens to hundreds of CPU cycles, and poll I/O, eg in a busy-wait loop.
 // This may churn PRNGs or gather entropy for example.
 // This call should typically take << 1ms at 1MHz CPU.
@@ -146,151 +145,9 @@ void burnHundredsOfCyclesProductivelyAndPoll()
   else { OTV0P2BASE::captureEntropy1(); }
   }
 
-// Sleep in reasonably low-power mode until specified target subcycle time.
-// Returns true if OK, false if specified time already passed or significantly missed (eg by more than one tick).
-// May use a combination of techniques to hit the required time.
-// Requesting a sleep until at or near the end of the cycle risks overrun and may be unwise.
-// Using this to sleep less then 2 ticks may prove unreliable as the RTC rolls on underneath...
-// This is NOT intended to be used to sleep over the end of a minor cycle.
-// May poll I/O.
-bool sleepUntilSubCycleTime(const uint8_t sleepUntil)
-  {
-  for( ; ; )
-    {
-    const uint8_t now = OTV0P2BASE::getSubCycleTime();
-    if(now == sleepUntil) { return(true); } // Done it!
-    if(now > sleepUntil) { return(false); } // Too late...
-
-    // Compute time left to sleep.
-    // It is easy to sleep a bit more later if necessary, but oversleeping is bad.
-    const uint8_t ticksLeft = sleepUntil - now;
-    // Deal with shortest sleep specially to avoid missing target from overheads...
-    if(1 == ticksLeft)
-      {
-      // Take a very short sleep, much less than half a tick,
-      // eg as may be some way into this tick already.
-      //burnHundredsOfCyclesProductively();
-      OTV0P2BASE::sleepLowPowerLessThanMs(1);
-      continue;
-      }
-
-    // Compute remaining time in milliseconds, rounded down...
-    const uint16_t msLeft = ((uint16_t)OTV0P2BASE::SUBCYCLE_TICK_MS_RD) * ticksLeft;
-
-    // If comfortably in the area of nap()s then use one of them for improved energy savings.
-    // Allow for nap() to overrun a little as its timing can vary with temperature and supply voltage,
-    // and the bulk of energy savings should still be available without pushing the timing to the wire.
-    // Note that during nap() timer0 should be stopped and thus not cause premature wakeup (from overflow interrupt).
-    if(msLeft >= 20)
-      {
-      if(msLeft >= 80)
-        {
-        if(msLeft >= 333)
-          {
-          ::OTV0P2BASE::nap(WDTO_250MS); // Nominal 250ms sleep.
-          continue;
-          }
-        ::OTV0P2BASE::nap(WDTO_60MS); // Nominal 60ms sleep.
-        continue;
-        }
-      ::OTV0P2BASE::nap(WDTO_15MS); // Nominal 15ms sleep.
-      continue;
-      }
-
-    // Use low-power CPU sleep for residual time, but being very careful not to over-sleep.
-    // Aim to sleep somewhat under residual time, eg to allow for overheads, interrupts, and other slippages.
-    // Assumed to be > 1 else would have been special-cased above.
-    // Assumed to be << 1s else a nap() would have been used above.
-#ifdef DEBUG
-    if((msLeft < 2) || (msLeft > 1000)) { panic(); }
-#endif
-    OTV0P2BASE::sleepLowPowerLessThanMs(msLeft - 1);
-    }
-  }
-
-
-// Enable power to intermittent peripherals.
-//   * waitUntilStable  wait long enough (and maybe test) for I/O power to become stable.
-// Waiting for stable may only be necessary for those items hung from IO_POWER cap;
-// items powered direct from IO_POWER_UP may need no such wait.
-//
-// Switches the digital line to high then output (to avoid ever *discharging* the output cap).
-// Note that with 100nF cap, and 330R (or lower) resistor from the output pin,
-// then 1ms delay should be plenty for the voltage on the cap to settle.
-void power_intermittent_peripherals_enable(bool waitUntilStable)
-  {
-  fastDigitalWrite(IO_POWER_UP, HIGH);
-  pinMode(IO_POWER_UP, OUTPUT);
-  // If requested, wait long enough that I/O peripheral power should be stable.
-  // Wait in a relatively low-power way...
-  if(waitUntilStable) { OTV0P2BASE::sleepLowPowerMs(1); }
-  }
-
-// Disable/remove power to intermittent peripherals.
-// Switches the digital line to input with no pull-up (ie high-Z).
-// There should be some sort of load to stop this floating.
-void power_intermittent_peripherals_disable()
-  {
-  pinMode(IO_POWER_UP, INPUT);
-  }
-
 
 // Singleton implementation/instance.
 OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
-
-// Get approximate internal temperature in nominal C/16.
-// Only accurate to +/- 10C uncalibrated.
-// May set sleep mode to SLEEP_MODE_ADC, and disables sleep on exit.
-int readInternalTemperatureC16()
-  {
-  // Measure internal temperature sensor against internal voltage source.
-  // Response is ~1mv/C with 0C at ~289mV according to the data sheet.
-  const uint16_t raw = OTV0P2BASE::_analogueNoiseReducedReadM(_BV(REFS1) | _BV(REFS0) | _BV(MUX3), 1);
-#if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("Int temp raw: ");
-  DEBUG_SERIAL_PRINT(raw);
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("");
-#endif
-  //const int degC = (raw - 328) ; // Crude fast adjustment for one sensor at ~20C (DHD20130429).
-  const int degC = ((((int)raw) - 324) * 210) >> 4; // Slightly less crude adjustment, see http://playground.arduino.cc//Main/InternalTemperatureSensor
-  return(degC);
-  }
-
-
-// If TWI (I2C) was disabled, power it up, do Wire.begin(), and return true.
-// If already powered up then do nothing other than return false.
-// If this returns true then a matching powerDownRWI() may be advisable.
-bool powerUpTWIIfDisabled()
-  {
-  if(!(PRR & _BV(PRTWI))) { return(false); }
-
-  PRR &= ~_BV(PRTWI); // Enable TWI power.
-  TWCR |= _BV(TWEN); // Enable TWI.
-  Wire.begin(); // Set it going.
-  // TODO: reset TWBR and prescaler for our low CPU frequency     (TWBR = ((F_CPU / TWI_FREQ) - 16) / 2 gives -3!)
-#if F_CPU <= 1000000
-  TWBR = 0; // Implies SCL freq of F_CPU / (16 + 2 * TBWR * PRESC) = 62.5kHz @ F_CPU==1MHz and PRESC==1 (from Wire/TWI code).
-#endif
-  return(true);
-  }
-
-// Power down TWI (I2C).
-void powerDownTWI()
-  {
-  TWCR &= ~_BV(TWEN); // Disable TWI.
-  PRR |= _BV(PRTWI); // Disable TWI power.
-
-  // De-activate internal pullups for TWI especially if powering down all TWI devices.
-  //digitalWrite(SDA, 0);
-  //digitalWrite(SCL, 0);
-
-  // Convert to hi-Z inputs.
-  //pinMode(SDA, INPUT);
-  //pinMode(SCL, INPUT);
-  }
-
-
-
 
 
 /*
