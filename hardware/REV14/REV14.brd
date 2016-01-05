@@ -2488,10 +2488,9 @@ for trimmer refence see : &lt;u&gt;www.electrospec-inc.com/cross_references/trim
 <library name="RFM95W-RN2483">
 <packages>
 <package name="RN2483">
-<wire x1="0" y1="26.67" x2="17.78" y2="26.67" width="0.2032" layer="21"/>
-<wire x1="17.78" y1="26.67" x2="17.78" y2="0" width="0.2032" layer="21"/>
+<wire x1="17.78" y1="0.508" x2="17.78" y2="0" width="0.2032" layer="21"/>
 <wire x1="17.78" y1="0" x2="0" y2="0" width="0.2032" layer="21"/>
-<wire x1="0" y1="0" x2="0" y2="26.67" width="0.2032" layer="21"/>
+<wire x1="0" y1="0" x2="0" y2="0.508" width="0.2032" layer="21"/>
 <smd name="4" x="17.78" y="5.08" dx="1.524" dy="1.016" layer="1"/>
 <smd name="3" x="17.78" y="3.81" dx="1.524" dy="1.016" layer="1"/>
 <smd name="2" x="17.78" y="2.54" dx="1.524" dy="1.016" layer="1"/>
@@ -2542,6 +2541,10 @@ for trimmer refence see : &lt;u&gt;www.electrospec-inc.com/cross_references/trim
 <smd name="45" x="0" y="3.81" dx="1.524" dy="1.016" layer="1" rot="R180"/>
 <smd name="46" x="0" y="2.54" dx="1.524" dy="1.016" layer="1" rot="R180"/>
 <smd name="47" x="0" y="1.27" dx="1.524" dy="1.016" layer="1" rot="R180"/>
+<wire x1="17.78" y1="26.162" x2="17.78" y2="26.67" width="0.2032" layer="21"/>
+<wire x1="17.78" y1="26.67" x2="13.462" y2="26.67" width="0.2032" layer="21"/>
+<wire x1="4.318" y1="26.67" x2="0" y2="26.67" width="0.2032" layer="21"/>
+<wire x1="0" y1="26.67" x2="0" y2="26.162" width="0.2032" layer="21"/>
 </package>
 </packages>
 </library>
@@ -2622,7 +2625,7 @@ for trimmer refence see : &lt;u&gt;www.electrospec-inc.com/cross_references/trim
 <wire x1="10.16" y1="-1.905" x2="10.795" y2="-2.54" width="0.1524" layer="21"/>
 <wire x1="12.7" y1="1.905" x2="12.7" y2="-1.905" width="0.1524" layer="21"/>
 <wire x1="10.795" y1="-2.54" x2="12.065" y2="-2.54" width="0.1524" layer="21"/>
-<pad name="1" x="-11.43" y="-1.27" drill="1.016" shape="square"/>
+<pad name="1" x="-11.43" y="-1.27" drill="1.016" shape="octagon"/>
 <pad name="2" x="-11.43" y="1.27" drill="1.016" shape="octagon"/>
 <pad name="3" x="-8.89" y="-1.27" drill="1.016" shape="octagon"/>
 <pad name="4" x="-8.89" y="1.27" drill="1.016" shape="octagon"/>
@@ -2676,7 +2679,6 @@ Radiall  and M/A COM.&lt;p&gt;
 <description>&lt;b&gt;SMA 50 Ohm&lt;/b&gt; Board Thickness &lt;b&gt;0.031&lt;/b&gt; Inch, End Launch Jack Receptacle&lt;p&gt;
 Johnson Components&lt;br&gt;
 Source: www.johnsoncomponents.com .. J502-ND.pdf</description>
-<wire x1="0" y1="5.588" x2="0" y2="-5.588" width="0" layer="20"/>
 <wire x1="-1.55" y1="-4.65" x2="-1.55" y2="-2" width="0.2032" layer="21"/>
 <wire x1="-1.55" y1="-2" x2="-3.7" y2="-2" width="0.2032" layer="21"/>
 <wire x1="-3.7" y1="-2" x2="-4.45" y2="-2.75" width="0.2032" layer="21"/>
@@ -2690,15 +2692,9 @@ Source: www.johnsoncomponents.com .. J502-ND.pdf</description>
 <wire x1="-4.45" y1="2.75" x2="-3.7" y2="2" width="0.2032" layer="21"/>
 <wire x1="-3.7" y1="2" x2="-1.55" y2="2" width="0.2032" layer="21"/>
 <wire x1="-1.55" y1="2" x2="-1.55" y2="4.65" width="0.2032" layer="21"/>
-<wire x1="-0.1" y1="-3.85" x2="-0.1" y2="3.85" width="0.2032" layer="21"/>
-<wire x1="-1.55" y1="4.65" x2="-0.1" y2="4.65" width="0.2032" layer="21"/>
-<wire x1="-0.1" y1="-4.65" x2="-1.55" y2="-4.65" width="0.2032" layer="21"/>
-<wire x1="-1.55" y1="4.65" x2="4.65" y2="4.65" width="0.2032" layer="51"/>
-<wire x1="4.65" y1="-4.65" x2="-1.55" y2="-4.65" width="0.2032" layer="51"/>
-<wire x1="4.65" y1="-4.65" x2="4.65" y2="-3.85" width="0.2032" layer="51"/>
-<wire x1="4.65" y1="-3.85" x2="-0.1" y2="-3.85" width="0.2032" layer="51"/>
-<wire x1="-0.1" y1="3.85" x2="4.65" y2="3.85" width="0.2032" layer="51"/>
-<wire x1="4.65" y1="3.85" x2="4.65" y2="4.65" width="0.2032" layer="51"/>
+<wire x1="-0.15" y1="-3.85" x2="-0.15" y2="3.85" width="0.2032" layer="21"/>
+<wire x1="-1.55" y1="4.65" x2="-0.15" y2="4.65" width="0.2032" layer="21"/>
+<wire x1="-0.15" y1="-4.65" x2="-1.55" y2="-4.65" width="0.2032" layer="21"/>
 <smd name="1" x="2.5654" y="0" dx="5.08" dy="1.143" layer="1"/>
 <smd name="G@1" x="2.5654" y="4.4196" dx="5.08" dy="2.286" layer="1"/>
 <smd name="G@2" x="2.5654" y="-4.4196" dx="5.08" dy="2.286" layer="1"/>
@@ -2706,7 +2702,6 @@ Source: www.johnsoncomponents.com .. J502-ND.pdf</description>
 <smd name="G@3" x="2.5654" y="4.4196" dx="5.08" dy="2.286" layer="16"/>
 <text x="0.635" y="6.35" size="1.778" layer="25">&gt;NAME</text>
 <text x="1.27" y="-8.89" size="1.778" layer="27">&gt;VALUE</text>
-<rectangle x1="-0.025" y1="-0.5" x2="4.05" y2="0.5" layer="51"/>
 </package>
 </packages>
 </library>
@@ -2910,26 +2905,26 @@ design rules under a new name.</description>
 <attribute name="NAME" x="22.225" y="26.67" size="1" layer="25"/>
 </element>
 <element name="C9" library="resistor" package="C0603" value="100nF" x="26.035" y="39.37" smashed="yes" rot="R90">
-<attribute name="NAME" x="25.4" y="38.735" size="1.27" layer="25" rot="R90"/>
+<attribute name="NAME" x="26.67" y="41.275" size="1.27" layer="25" rot="R90"/>
 </element>
 <element name="C10" library="resistor" package="C0603" value="100nF" x="46.355" y="34.925" smashed="yes" rot="R90">
-<attribute name="NAME" x="45.72" y="34.29" size="1" layer="25" rot="R90"/>
+<attribute name="NAME" x="48.5775" y="33.9725" size="1" layer="25" rot="R90"/>
 </element>
 <element name="C12" library="resistor" package="C0603" value="100nF" x="41.91" y="34.925" smashed="yes">
-<attribute name="NAME" x="41.275" y="35.56" size="1" layer="25"/>
+<attribute name="NAME" x="40.64" y="36.195" size="1" layer="25"/>
 </element>
 <element name="IC2" library="Arduino-AVR" package="TQFP32-08" value="ATMEGA168-AU" x="34.29" y="35.56" smashed="yes">
 <attribute name="NAME" x="33.4264" y="34.925" size="1" layer="25"/>
 </element>
 <element name="R6" library="resistor" package="R0603" value="4.7K" x="45.72" y="3.81" smashed="yes" rot="R270">
-<attribute name="NAME" x="46.355" y="4.445" size="1" layer="25" rot="R270"/>
+<attribute name="NAME" x="46.99" y="4.445" size="1" layer="25" rot="R270"/>
 </element>
 <element name="R8" library="resistor" package="R0603" value="4.7K" x="41.91" y="7.62" smashed="yes">
-<attribute name="NAME" x="41.275" y="8.255" size="1" layer="25"/>
+<attribute name="NAME" x="41.275" y="8.89" size="1" layer="25"/>
 </element>
 <element name="U4" library="SHT21" package="SHT21" value="SHT21" x="41.91" y="3.81"/>
 <element name="R1" library="resistor" package="R0603" value="100K" x="30.48" y="46.99" smashed="yes" rot="R180">
-<attribute name="NAME" x="31.115" y="46.355" size="1" layer="25" rot="R180"/>
+<attribute name="NAME" x="30.7975" y="49.2125" size="1" layer="25" rot="R180"/>
 </element>
 <element name="PHT" library="opto-trans-siemens" package="BPX65" value="BPX65" x="38.1" y="45.72" smashed="yes" rot="R315">
 <attribute name="OC_FARNELL" value="327451" x="33.609871875" y="41.229875" size="1.778" layer="27" rot="R315" display="off"/>
@@ -2939,36 +2934,45 @@ design rules under a new name.</description>
 <attribute name="NAME" x="41.6150625" y="46.0149375" size="1" layer="25" ratio="10"/>
 </element>
 <element name="R9" library="resistor" package="R0603" value="4.7K" x="19.05" y="40.64" smashed="yes" rot="R270">
-<attribute name="NAME" x="19.685" y="41.275" size="1" layer="25" rot="R270"/>
+<attribute name="NAME" x="20.32" y="39.37" size="1" layer="25"/>
 </element>
 <element name="Q1" library="crystal" package="MC-306" value="32768Hz" x="20.51" y="33.255" smashed="yes" rot="R180">
 <attribute name="OC_FARNELL" value="1278040" x="30.67" y="21.825" size="1.778" layer="27" rot="R180" display="off"/>
 <attribute name="OC_NEWARK" value="31M5576" x="30.67" y="21.825" size="1.778" layer="27" rot="R180" display="off"/>
 <attribute name="MF" value="" x="30.67" y="21.825" size="1.778" layer="27" rot="R180" display="off"/>
 <attribute name="MPN" value="MC-306 60.0KHZ  100PPM ,12.5PF" x="30.67" y="21.825" size="1.778" layer="27" rot="R180" display="off"/>
-<attribute name="NAME" x="21.3542" y="34.25" size="1" layer="25" rot="R180"/>
+<attribute name="NAME" x="21.3542" y="33.9325" size="1" layer="25" rot="R180"/>
 </element>
 <element name="R2" library="resistor" package="R0603" value="4.7K" x="44.45" y="41.91" smashed="yes" rot="R180">
-<attribute name="NAME" x="45.085" y="41.275" size="1" layer="25" rot="R180"/>
+<attribute name="NAME" x="45.085" y="44.1325" size="1" layer="25" rot="R180"/>
 </element>
-<element name="-" library="wirepad" package="2,15/1,0" value="" x="46.99" y="21.59"/>
-<element name="+" library="wirepad" package="2,15/1,0" value="" x="46.99" y="26.67"/>
+<element name="-" library="wirepad" package="2,15/1,0" value="" x="46.99" y="21.59" smashed="yes">
+<attribute name="NAME" x="43.307" y="21.082" size="1.27" layer="25" ratio="10"/>
+<attribute name="VALUE" x="46.99" y="22.59" size="0.0254" layer="27"/>
+</element>
+<element name="+" library="wirepad" package="2,15/1,0" value="" x="46.99" y="26.67" smashed="yes">
+<attribute name="NAME" x="42.9895" y="26.162" size="1.27" layer="25" ratio="10"/>
+<attribute name="VALUE" x="46.99" y="27.67" size="0.0254" layer="27"/>
+</element>
 <element name="U1" library="RFM95W-RN2483" package="RN2483" value="RN2483" x="38.4" y="4.9" smashed="yes" rot="R90">
-<attribute name="NAME" x="23.05" y="11.41" size="1.27" layer="25" rot="R90"/>
+<attribute name="NAME" x="25.2725" y="12.045" size="1.27" layer="25" rot="R90"/>
 </element>
 <element name="I2C_EXT" library="pinhead" package="2X10" value="" x="13.335" y="46.99" smashed="yes">
 <attribute name="NAME" x="17.145" y="43.815" size="1.27" layer="25" ratio="10" rot="R180"/>
 <attribute name="VALUE" x="0.635" y="42.545" size="1.27" layer="27"/>
 </element>
-<element name="DQ" library="wirepad" package="2,15/1,0" value="" x="22.225" y="42.545" rot="R270"/>
+<element name="DQ" library="wirepad" package="2,15/1,0" value="" x="22.225" y="42.545" smashed="yes" rot="R270">
+<attribute name="NAME" x="22.352" y="40.8305" size="1.27" layer="25" ratio="10" rot="R270"/>
+<attribute name="VALUE" x="23.225" y="42.545" size="0.0254" layer="27" rot="R270"/>
+</element>
 <element name="R3" library="resistor" package="R0603" value="4.7K" x="16.51" y="40.64" smashed="yes" rot="R90">
-<attribute name="NAME" x="15.875" y="40.005" size="1.27" layer="25" rot="R90"/>
+<attribute name="NAME" x="17.4625" y="38.735" size="1.27" layer="25" rot="R180"/>
 </element>
 <element name="R4" library="resistor" package="R0603" value="4.7K" x="13.97" y="40.64" smashed="yes" rot="R90">
-<attribute name="NAME" x="13.335" y="40.005" size="1.27" layer="25" rot="R90"/>
+<attribute name="NAME" x="11.43" y="41.275" size="1.27" layer="25" rot="R270"/>
 </element>
 <element name="C5" library="resistor" package="C0603" value="100nF" x="4.445" y="41.91" smashed="yes" rot="R270">
-<attribute name="NAME" x="5.08" y="42.545" size="1.27" layer="25" rot="R270"/>
+<attribute name="NAME" x="1.905" y="42.8625" size="1.27" layer="25" rot="R270"/>
 </element>
 <element name="X1" library="con-coax" package="J502-ND-142-0701-881/886" value="SMA-142-0701-881/886" x="1.27" y="19.55" smashed="yes">
 <attribute name="OC_NEWARK" value="08B906" x="1.27" y="19.55" size="1.778" layer="27" display="off"/>
@@ -3055,8 +3059,8 @@ design rules under a new name.</description>
 <via x="1.525" y="1.81" extent="1-16" drill="0.25"/>
 <via x="5.525" y="5.81" extent="1-16" drill="0.25"/>
 <via x="3.525" y="5.81" extent="1-16" drill="0.25"/>
-<via x="1.525" y="5.81" extent="1-16" drill="0.25"/>
-<via x="1.525" y="9.81" extent="1-16" drill="0.25"/>
+<wire x1="1.525" y1="5.81" x2="1.525" y2="5.81" width="0" layer="19" extent="1-16"/>
+<wire x1="1.525" y1="9.81" x2="1.525" y2="9.81" width="0" layer="19" extent="1-16"/>
 <via x="3.525" y="9.81" extent="1-16" drill="0.25"/>
 <via x="5.525" y="9.81" extent="1-16" drill="0.25"/>
 <via x="9.525" y="9.81" extent="1-16" drill="0.25"/>
@@ -3067,10 +3071,10 @@ design rules under a new name.</description>
 <via x="9.525" y="19.81" extent="1-16" drill="0.25"/>
 <via x="5.525" y="17.81" extent="1-16" drill="0.25"/>
 <via x="3.525" y="17.81" extent="1-16" drill="0.25"/>
-<via x="1.525" y="17.81" extent="1-16" drill="0.25"/>
+<wire x1="1.525" y1="17.81" x2="1.525" y2="17.81" width="0" layer="19" extent="1-16"/>
 <via x="5.525" y="21.81" extent="1-16" drill="0.25"/>
 <via x="3.525" y="21.81" extent="1-16" drill="0.25"/>
-<via x="1.525" y="21.81" extent="1-16" drill="0.25"/>
+<wire x1="1.525" y1="21.81" x2="1.525" y2="21.81" width="0" layer="19" extent="1-16"/>
 <via x="11.525" y="19.81" extent="1-16" drill="0.25"/>
 <via x="11.525" y="21.81" extent="1-16" drill="0.25"/>
 <via x="9.525" y="21.81" extent="1-16" drill="0.25"/>
@@ -3087,15 +3091,15 @@ design rules under a new name.</description>
 <via x="26.51" y="31.8" extent="1-16" drill="0.25"/>
 <via x="26.51" y="36.255" extent="1-16" drill="0.25"/>
 <via x="26.51" y="34.5" extent="1-16" drill="0.25"/>
-<via x="22.51" y="30.255" extent="1-16" drill="0.25"/>
+<via x="22.51" y="30.21" extent="1-16" drill="0.25"/>
 <via x="20.51" y="30.255" extent="1-16" drill="0.25"/>
 <via x="16.51" y="30.255" extent="1-16" drill="0.25"/>
-<via x="18.51" y="30.255" extent="1-16" drill="0.25"/>
+<via x="18.51" y="30.21" extent="1-16" drill="0.25"/>
 <via x="24.51" y="30.255" extent="1-16" drill="0.25"/>
-<via x="22.51" y="36.255" extent="1-16" drill="0.25"/>
+<via x="22.51" y="36.3" extent="1-16" drill="0.25"/>
 <via x="20.51" y="36.255" extent="1-16" drill="0.25"/>
 <via x="16.51" y="36.255" extent="1-16" drill="0.25"/>
-<via x="18.51" y="36.255" extent="1-16" drill="0.25"/>
+<via x="18.51" y="36.3" extent="1-16" drill="0.25"/>
 <via x="24.51" y="36.255" extent="1-16" drill="0.25"/>
 <contactref element="U1" pad="28"/>
 <contactref element="U1" pad="33"/>
@@ -3287,6 +3291,8 @@ design rules under a new name.</description>
 </signal>
 <signal name="RN2483_UART_RTS">
 <contactref element="U1" pad="2"/>
+<contactref element="IC2" pad="11"/>
+<wire x1="35.86" y1="22.68" x2="33.09" y2="31.2674" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="N$22" class="2">
 <contactref element="U1" pad="23"/>
@@ -3308,8 +3314,16 @@ design rules under a new name.</description>
 </signal>
 </signals>
 <errors>
-<approved hash="3,16,839d7f777e8b8261"/>
-<approved hash="3,1,743ac1d0c0f6751c"/>
+<approved hash="3,1,bf44c5bcc2a1b859"/>
+<approved hash="3,1,827849fe1c3b580e"/>
+<approved hash="3,1,cf9df5e5f4f9ce81"/>
+<approved hash="3,1,1d494bcb45ccd6f6"/>
+<approved hash="3,1,7cfca304ad0472fc"/>
+<approved hash="3,1,cce8f690f695cced"/>
+<approved hash="3,1,3027d2ec5574a518"/>
+<approved hash="3,1,e90d36f52992f66a"/>
+<approved hash="3,1,746b543334d342a3"/>
+<approved hash="3,1,b8dec226c0a5ba5d"/>
 </errors>
 </board>
 </drawing>

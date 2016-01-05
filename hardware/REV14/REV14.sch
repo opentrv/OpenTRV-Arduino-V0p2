@@ -5936,10 +5936,10 @@ Source: http://www.mouser.com/ds/2/392/products_18-2245.pdf</description>
 <wire x1="342.265" y1="13.97" x2="342.265" y2="19.05" width="0.1016" layer="94"/>
 <wire x1="342.265" y1="19.05" x2="383.54" y2="19.05" width="0.1016" layer="94"/>
 <wire x1="342.265" y1="19.05" x2="342.265" y2="24.13" width="0.1016" layer="94"/>
-<text x="344.17" y="15.24" size="2.54" layer="94" font="vector">&gt;DRAWING_NAME</text>
-<text x="344.17" y="10.16" size="2.286" layer="94" font="vector">&gt;LAST_DATE_TIME</text>
-<text x="357.505" y="5.08" size="2.54" layer="94" font="vector">&gt;SHEET</text>
-<text x="343.916" y="4.953" size="2.54" layer="94" font="vector">Sheet:</text>
+<text x="344.17" y="15.24" size="2.54" layer="94">&gt;DRAWING_NAME</text>
+<text x="344.17" y="10.16" size="2.286" layer="94">&gt;LAST_DATE_TIME</text>
+<text x="357.505" y="5.08" size="2.54" layer="94">&gt;SHEET</text>
+<text x="343.916" y="4.953" size="2.54" layer="94">Sheet:</text>
 <frame x1="0" y1="0" x2="387.35" y2="260.35" columns="8" rows="5" layer="94"/>
 </symbol>
 </symbols>
@@ -9916,10 +9916,9 @@ Source: AVX .. aphvc.pdf</description>
 <library name="RFM95W-RN2483">
 <packages>
 <package name="RN2483">
-<wire x1="0" y1="26.67" x2="17.78" y2="26.67" width="0.2032" layer="21"/>
-<wire x1="17.78" y1="26.67" x2="17.78" y2="0" width="0.2032" layer="21"/>
+<wire x1="17.78" y1="0.508" x2="17.78" y2="0" width="0.2032" layer="21"/>
 <wire x1="17.78" y1="0" x2="0" y2="0" width="0.2032" layer="21"/>
-<wire x1="0" y1="0" x2="0" y2="26.67" width="0.2032" layer="21"/>
+<wire x1="0" y1="0" x2="0" y2="0.508" width="0.2032" layer="21"/>
 <smd name="4" x="17.78" y="5.08" dx="1.524" dy="1.016" layer="1"/>
 <smd name="3" x="17.78" y="3.81" dx="1.524" dy="1.016" layer="1"/>
 <smd name="2" x="17.78" y="2.54" dx="1.524" dy="1.016" layer="1"/>
@@ -9970,6 +9969,10 @@ Source: AVX .. aphvc.pdf</description>
 <smd name="45" x="0" y="3.81" dx="1.524" dy="1.016" layer="1" rot="R180"/>
 <smd name="46" x="0" y="2.54" dx="1.524" dy="1.016" layer="1" rot="R180"/>
 <smd name="47" x="0" y="1.27" dx="1.524" dy="1.016" layer="1" rot="R180"/>
+<wire x1="17.78" y1="26.162" x2="17.78" y2="26.67" width="0.2032" layer="21"/>
+<wire x1="17.78" y1="26.67" x2="13.462" y2="26.67" width="0.2032" layer="21"/>
+<wire x1="4.318" y1="26.67" x2="0" y2="26.67" width="0.2032" layer="21"/>
+<wire x1="0" y1="26.67" x2="0" y2="26.162" width="0.2032" layer="21"/>
 </package>
 </packages>
 <symbols>
@@ -10170,7 +10173,7 @@ Source: AVX .. aphvc.pdf</description>
 <wire x1="10.16" y1="-1.905" x2="10.795" y2="-2.54" width="0.1524" layer="21"/>
 <wire x1="12.7" y1="1.905" x2="12.7" y2="-1.905" width="0.1524" layer="21"/>
 <wire x1="10.795" y1="-2.54" x2="12.065" y2="-2.54" width="0.1524" layer="21"/>
-<pad name="1" x="-11.43" y="-1.27" drill="1.016" shape="square"/>
+<pad name="1" x="-11.43" y="-1.27" drill="1.016" shape="octagon"/>
 <pad name="2" x="-11.43" y="1.27" drill="1.016" shape="octagon"/>
 <pad name="3" x="-8.89" y="-1.27" drill="1.016" shape="octagon"/>
 <pad name="4" x="-8.89" y="1.27" drill="1.016" shape="octagon"/>
@@ -10558,7 +10561,6 @@ Source: www.johnsoncomponents.com .. J502-ND.pdf</description>
 <description>&lt;b&gt;SMA 50 Ohm&lt;/b&gt; Board Thickness &lt;b&gt;0.031&lt;/b&gt; Inch, End Launch Jack Receptacle&lt;p&gt;
 Johnson Components&lt;br&gt;
 Source: www.johnsoncomponents.com .. J502-ND.pdf</description>
-<wire x1="0" y1="5.588" x2="0" y2="-5.588" width="0" layer="20"/>
 <wire x1="-1.55" y1="-4.65" x2="-1.55" y2="-2" width="0.2032" layer="21"/>
 <wire x1="-1.55" y1="-2" x2="-3.7" y2="-2" width="0.2032" layer="21"/>
 <wire x1="-3.7" y1="-2" x2="-4.45" y2="-2.75" width="0.2032" layer="21"/>
@@ -10572,15 +10574,9 @@ Source: www.johnsoncomponents.com .. J502-ND.pdf</description>
 <wire x1="-4.45" y1="2.75" x2="-3.7" y2="2" width="0.2032" layer="21"/>
 <wire x1="-3.7" y1="2" x2="-1.55" y2="2" width="0.2032" layer="21"/>
 <wire x1="-1.55" y1="2" x2="-1.55" y2="4.65" width="0.2032" layer="21"/>
-<wire x1="-0.1" y1="-3.85" x2="-0.1" y2="3.85" width="0.2032" layer="21"/>
-<wire x1="-1.55" y1="4.65" x2="-0.1" y2="4.65" width="0.2032" layer="21"/>
-<wire x1="-0.1" y1="-4.65" x2="-1.55" y2="-4.65" width="0.2032" layer="21"/>
-<wire x1="-1.55" y1="4.65" x2="4.65" y2="4.65" width="0.2032" layer="51"/>
-<wire x1="4.65" y1="-4.65" x2="-1.55" y2="-4.65" width="0.2032" layer="51"/>
-<wire x1="4.65" y1="-4.65" x2="4.65" y2="-3.85" width="0.2032" layer="51"/>
-<wire x1="4.65" y1="-3.85" x2="-0.1" y2="-3.85" width="0.2032" layer="51"/>
-<wire x1="-0.1" y1="3.85" x2="4.65" y2="3.85" width="0.2032" layer="51"/>
-<wire x1="4.65" y1="3.85" x2="4.65" y2="4.65" width="0.2032" layer="51"/>
+<wire x1="-0.15" y1="-3.85" x2="-0.15" y2="3.85" width="0.2032" layer="21"/>
+<wire x1="-1.55" y1="4.65" x2="-0.15" y2="4.65" width="0.2032" layer="21"/>
+<wire x1="-0.15" y1="-4.65" x2="-1.55" y2="-4.65" width="0.2032" layer="21"/>
 <smd name="1" x="2.5654" y="0" dx="5.08" dy="1.143" layer="1"/>
 <smd name="G@1" x="2.5654" y="4.4196" dx="5.08" dy="2.286" layer="1"/>
 <smd name="G@2" x="2.5654" y="-4.4196" dx="5.08" dy="2.286" layer="1"/>
@@ -10588,7 +10584,6 @@ Source: www.johnsoncomponents.com .. J502-ND.pdf</description>
 <smd name="G@3" x="2.5654" y="4.4196" dx="5.08" dy="2.286" layer="16"/>
 <text x="0.635" y="6.35" size="1.778" layer="25">&gt;NAME</text>
 <text x="1.27" y="-8.89" size="1.778" layer="27">&gt;VALUE</text>
-<rectangle x1="-0.025" y1="-0.5" x2="4.05" y2="0.5" layer="51"/>
 </package>
 <package name="J502-ND-142-0711-821/826">
 <description>&lt;b&gt;SMA 50 Ohm&lt;/b&gt; Board Thickness &lt;b&gt;0.062&lt;/b&gt; Inch, End Launch Jack Receptacle&lt;p&gt;
@@ -11540,6 +11535,7 @@ Source: www.johnsoncomponents.com .. J502-ND.pdf</description>
 <segment>
 <wire x1="198.12" y1="63.5" x2="218.44" y2="63.5" width="0.1524" layer="91"/>
 <label x="220.98" y="63.5" size="1.778" layer="95"/>
+<pinref part="IC2" gate="1" pin="DIGITAL_7"/>
 </segment>
 </net>
 <net name="N$22" class="2">
@@ -11562,18 +11558,17 @@ Source: www.johnsoncomponents.com .. J502-ND.pdf</description>
 </sheet>
 </sheets>
 <errors>
-<approved hash="202,1,360.68,218.44,U2,DIO0,,,,"/>
-<approved hash="202,1,360.68,213.36,U2,DIO2,,,,"/>
-<approved hash="202,1,360.68,215.9,U2,DIO1,,,,"/>
 <approved hash="104,1,137.16,48.26,IC2,GND1,GND,,,"/>
 <approved hash="104,1,137.16,76.2,IC2,VCC1,VCC,,,"/>
 <approved hash="104,1,137.16,53.34,IC2,GND/ANALOG,GND,,,"/>
 <approved hash="104,1,137.16,45.72,IC2,GND2,GND,,,"/>
 <approved hash="104,1,137.16,73.66,IC2,VCC2,VCC,,,"/>
-<approved hash="111,1,198.12,104.14,LDR,,,,,"/>
-<approved hash="113,1,148.548,224.921,I2C_EXT,,,,,"/>
+<approved hash="104,1,358.14,187.96,U1,3.3V,VCC,,,"/>
+<approved hash="104,1,307.34,193.04,U1,3.3V,VCC,,,"/>
 <approved hash="113,1,114.021,171.353,-,,,,,"/>
 <approved hash="113,1,114.021,178.973,+,,,,,"/>
+<approved hash="113,1,143.552,220.849,I2C_EXT,,,,,"/>
+<approved hash="113,1,156.113,231.419,DQ,,,,,"/>
 </errors>
 </schematic>
 </drawing>
