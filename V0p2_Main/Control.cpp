@@ -1722,7 +1722,7 @@ void loopOpenTRV()
     }
 //#endif
 #else // !CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX
-  PrimaryRadio.listen(false); // Ensure radio is off or at least not listening.
+  if(0 == TIME_LSD) { PrimaryRadio.listen(false); } // Periodically force radio off or at least not listening.
 #endif // CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX
 
 
