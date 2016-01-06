@@ -403,7 +403,7 @@ AmbientLight AmbLight;
 // Check for errors at certain critical places, not everywhere.
 static int TMP112_readTemperatureC16()
   {
-  const bool neededPowerUp = powerUpTWIIfDisabled();
+  const bool neededPowerUp = OTV0P2BASE::powerUpTWIIfDisabled();
   
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINT_FLASHSTRING("TMP102 needed power-up: ");
@@ -464,7 +464,7 @@ static int TMP112_readTemperatureC16()
   DEBUG_SERIAL_PRINTLN();
 #endif
 
-  if(neededPowerUp) { powerDownTWI(); }
+  if(neededPowerUp) { OTV0P2BASE::powerDownTWI(); }
 
   return(t16);
   }

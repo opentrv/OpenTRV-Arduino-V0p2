@@ -1654,12 +1654,11 @@ void loopOpenTRV()
 #endif // defined(ENABLE_BOILER_HUB)
     }
 
-
 #if 0 && defined(DEBUG) && defined(ENABLE_DEFAULT_ALWAYS_RX)
   const int8_t listenChannel = PrimaryRadio.getListenChannel();
-  if(listenChannel < 0)
+ if(listenChannel < 0)
     {
-    DEBUG_SERIAL_PRINT_FLASHSTRING("NOT LISTENING lc=");
+    DEBUG_SERIAL_PRINT_FLASHSTRING("LISTEN CHANNEL ");
     DEBUG_SERIAL_PRINT(listenChannel);
     DEBUG_SERIAL_PRINTLN();
     }
@@ -1671,13 +1670,13 @@ void loopOpenTRV()
 #endif
 #endif
 
-#if defined(CONFIG_FORCE_TO_RX_MODE_REGULARLY)
-  // Force radio off (to be forced on again)
-  // to try to get into a reasonable state.
-  // BODGE: should not be necessary.
-  // May cause incoming frames to be lost.
-  PrimaryRadio.listen(false);
-#endif
+//#if defined(CONFIG_FORCE_TO_RX_MODE_REGULARLY)
+//  // Force radio off (to be forced on again)
+//  // to try to get into a reasonable state.
+//  // BODGE: should not be necessary.
+//  // May cause incoming frames to be lost.
+//  PrimaryRadio.listen(false);
+//#endif
 
   // Act on eavesdropping need, setting up or clearing down hooks as required.
   PrimaryRadio.listen(needsToEavesdrop);
@@ -1722,7 +1721,12 @@ void loopOpenTRV()
 #endif
     }
 //#endif
-#endif
+#else // !CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX
+  // Possible paranoia...
+  // Periodically (every few hours) force radio off or at least to be not listening.
+  if((30 == TIME_LSD) && (128 == minuteCount)) { PrimaryRadio.listen(false); }
+#endif // CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX
+
 
 
   // Set BOILER_OUT as appropriate for calls for heat.
@@ -2178,7 +2182,7 @@ void loopOpenTRV()
 #endif
 
 
-#ifdef HAS_DORM1_VALVE_DRIVE
+#if defined(HAS_DORM1_VALVE_DRIVE) && defined(LOCAL_TRV)
   // Handle local direct-drive valve, eg DORM1.
 #ifdef ENABLE_NOMINAL_RAD_VALVE
   // Get current modelled valve position into abstract driver.
@@ -2189,8 +2193,7 @@ void loopOpenTRV()
   // ('Any' manual interaction may prove too sensitive.)
   // Also have a timeout of somewhat over ~10m from startup
   // for automatic recovery after any crash and restart.
-  const uint8_t isWaitingFVTBF = ValveDirect.isWaitingForValveToBeFitted();
-  if(isWaitingFVTBF)
+  if(ValveDirect.isWaitingForValveToBeFitted())
       {
       if(veryRecentUIControlUse() || (minuteCount > 15))
           { ValveDirect.signalValveFitted(); }
@@ -2204,7 +2207,7 @@ void loopOpenTRV()
   // Only calling this after most other heavy-lifting work is likely done.
   // Note that FHT8V sync will take up at least the first 1s of a 2s subcycle.
   if(!showStatus &&
-     (!isWaitingFVTBF || (0 == (3 & TIME_LSD))) &&
+     (ValveDirect.isInNormalRunState() || (0 == (3 & TIME_LSD))) &&
      (OTV0P2BASE::getSubCycleTime() < ((OTV0P2BASE::GSCT_MAX/4)*3)))
     { ValveDirect.read(); }
 #endif

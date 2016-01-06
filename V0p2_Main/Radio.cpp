@@ -35,13 +35,25 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 //- Set the first field of SIM900LinkConfig to true.
 //- The configs are stored as \0 terminated strings starting at 0x300.
 //- You can program the eeprom using ./OTRadioLink/dev/utils/sim900eepromWrite.ino
-
-  static const void *SIM900_PIN      = (void *)0x0300; // TODO confirm this address
-  static const void *SIM900_APN      = (void *)0x0305;
-  static const void *SIM900_UDP_ADDR = (void *)0x031B;
-  static const void *SIM900_UDP_PORT = (void *)0x0329;
+//  static const void *SIM900_PIN      = (void *)0x0300; // TODO confirm this address
+//  static const void *SIM900_APN      = (void *)0x0305;
+//  static const void *SIM900_UDP_ADDR = (void *)0x031B;
+//  static const void *SIM900_UDP_PORT = (void *)0x0329;
+//  const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config(
+//                                                  true, 
+//                                                  SIM900_PIN,
+//                                                  SIM900_APN,
+//                                                  SIM900_UDP_ADDR,
+//                                                  SIM900_UDP_PORT);
+//For Flash:
+//- Set the first field of SIM900LinkConfig to false.
+//- The configs are stored as \0 terminated strings.
+  static const char SIM900_PIN[5] PROGMEM       = "1111";
+  static const char SIM900_APN[13] PROGMEM      = "internet.cxn";
+  static const char SIM900_UDP_ADDR[14] PROGMEM = "46.101.64.191";
+  static const char SIM900_UDP_PORT[5] PROGMEM = "9999";
   const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config(
-                                                  true, 
+                                                  false, 
                                                   SIM900_PIN,
                                                   SIM900_APN,
                                                   SIM900_UDP_ADDR,
