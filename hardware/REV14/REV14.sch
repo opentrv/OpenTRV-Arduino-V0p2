@@ -10669,10 +10669,13 @@ Source: www.centralsemi.com ..SOT-563PD.pdf</description>
 <wire x1="3.81" y1="157.48" x2="48.26" y2="157.48" width="0.3048" layer="94"/>
 <wire x1="139.7" y1="157.48" x2="139.7" y2="193.04" width="0.3048" layer="94"/>
 <wire x1="104.14" y1="157.48" x2="139.954" y2="157.48" width="0.3048" layer="94"/>
-<wire x1="281.94" y1="129.54" x2="281.94" y2="193.04" width="0.3048" layer="94"/>
+<wire x1="281.94" y1="129.54" x2="281.94" y2="132.08" width="0.3048" layer="94"/>
+<wire x1="281.94" y1="132.08" x2="281.94" y2="193.04" width="0.3048" layer="94"/>
 <wire x1="281.94" y1="129.54" x2="383.54" y2="129.54" width="0.3048" layer="94"/>
 <text x="124.46" y="233.68" size="1.778" layer="94">On BOM</text>
 <text x="132.08" y="233.68" size="1.778" layer="94" rot="R270">On BOM</text>
+<wire x1="281.94" y1="68.58" x2="383.54" y2="68.58" width="0.3048" layer="94"/>
+<wire x1="281.94" y1="68.58" x2="281.94" y2="132.08" width="0.3048" layer="94"/>
 </plain>
 <instances>
 <instance part="P+3" gate="VCC" x="297.18" y="248.92"/>
