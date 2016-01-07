@@ -67,7 +67,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_DORM1_SANS32K // REV7 / DORM1 without working 32768Hz clock.
 //#define CONFIG_DORM1_MUT // REV7 / DORM1 Winter 2014/2015 minimal for unit testing.
 //#define CONFIG_REV7N // REV7 with external "Model N" valve.
-#define CONFIG_REV7_AS_SENSOR // REV7 as JSON-only stats/sensor leaf.
+//#define CONFIG_REV7_AS_SENSOR // REV7 as JSON-only stats/sensor leaf.
 //#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
 //#define CONFIG_REV9_STATS // REV9 as stats node, cut 2 of the board.
 //#define CONFIG_REV9_cut1 // REV9 as CC1 relay, cut1 of board.
@@ -970,7 +970,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: enable a secondary (typically WAN-relay) radio module.
 #define ENABLE_RADIO_SECONDARY_MODULE
 #define ENABLE_RADIO_SIM900   // Enable SIM900
-#define RADIO_PRIMARY_SIM900  // Assign SIM900
+//#define RADIO_PRIMARY_SIM900  // Assign SIM900
+#define RADIO_SECONDARY_SIM900  // Assign SIM900
 
 // Enable use of OneWire devices.
 #define SUPPORT_ONEWIRE
