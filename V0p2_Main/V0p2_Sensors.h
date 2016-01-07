@@ -13,7 +13,7 @@ KIND, either express or implied. See the Licence for the
 specific language governing permissions and limitations
 under the Licence.
 
-Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
+Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
                            Deniz Erbilgin 2015
 */
 
@@ -42,6 +42,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 extern OTV0P2BASE::MinimalOneWire<PIN_OW_DQ_DATA> MinOW;
 #endif
 
+
+// Sensor for supply (eg battery) voltage in millivolts.
+// Singleton implementation/instance.
+extern OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
 
 
 #if defined(SENSOR_EXTERNAL_DS18B20_ENABLE) // Needs defined(SUPPORTS_MINIMAL_ONEWIRE)
@@ -410,7 +414,7 @@ extern HumiditySensorSHT21 RelHumidity;
 
 
 
-
+#ifdef ENABLE_TEMP_POT_IF_PRESENT
 #if (V0p2_REV >= 2) && defined(TEMP_POT_AIN) // Only supported in REV2/3/4/7.
 #define TEMP_POT_AVAILABLE
 
@@ -442,7 +446,7 @@ class TemperaturePot : public OTV0P2BASE::SimpleTSUint8Sensor
 // Singleton implementation/instance.
 extern TemperaturePot TempPot;
 #endif
-
+#endif // ENABLE_TEMP_POT_IF_PRESENT
 
 
 

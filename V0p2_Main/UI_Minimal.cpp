@@ -31,7 +31,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include "V0p2_Actuators.h"
 #include "Control.h"
 #include "Messaging.h"
-#include "Power_Management.h"
 #include "Radio.h"
 #include "Schedule.h"
 #include "Serial_IO.h"

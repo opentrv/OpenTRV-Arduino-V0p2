@@ -54,7 +54,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include "V0p2_Sensors.h"
 #include "V0p2_Actuators.h"
 #include "Control.h"
-#include "Power_Management.h"
 #include "Radio.h"
 #include "Serial_IO.h"
 #include "UI_Minimal.h"
@@ -71,7 +70,7 @@ void panic()
   PrimaryRadio.panicShutdown();
 #endif
   // Power down almost everything else...
-  minimisePowerWithoutSleep();
+  OTV0P2BASE::minimisePowerWithoutSleep();
 #ifdef LED_HEATCALL
   pinMode(LED_HEATCALL, OUTPUT);
 #else
@@ -349,7 +348,7 @@ pinMode(A3, OUTPUT);
 void setup()
   {
   // Set appropriate low-power states, interrupts, etc, ASAP.
-  powerSetup();
+  OTV0P2BASE::powerSetup();
 
 #if defined(MIN_ENERGY_BOOT)
   nap(WDTO_120MS); // Sleep to let power supply recover a little.

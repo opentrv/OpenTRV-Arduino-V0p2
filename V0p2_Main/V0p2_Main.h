@@ -72,12 +72,34 @@ void panic(const __FlashStringHelper *s);
 // Format: "board VXXXX REVY; code YYYY/Mmm/DD HH:MM:SS".
 void serialPrintlnBuildVersion();
 
-
-
-
 // Templated function versions of min/max that do not evaluate the arguments twice.
 template <class T> const T& fnmin(const T& a, const T& b) { return((a>b)?b:a); }
 template <class T> const T& fnmax(const T& a, const T& b) { return((a<b)?b:a); }
+
+
+// Call this to do an I/O poll if needed; returns true if something useful happened.
+// This call should typically take << 1ms at 1MHz CPU.
+// Does not change CPU clock speeds, mess with interrupts (other than possible brief blocking), or sleep.
+// Limits actual poll rate to something like once every 32ms, unless force is true.
+//   * force if true then force full poll on every call (ie do not internally rate-limit)
+// NOTE: implementation may not be in power-management module.
+bool pollIO(bool force = false);
+// Nap productively polling I/O, etc, across the system while spending time in low-power mode if possible.
+// Typically sleeps for about 30ms; tries to allow earlier wakeup if interrupt is received, etc.
+// True iff watchdog timer expired; false if something else woke the CPU.
+static bool inline nap15AndPoll() { const bool wd = ::OTV0P2BASE::nap(WDTO_15MS, true); pollIO(!wd); return(wd); }
+
+// Call this to productively burn tens to hundreds of CPU cycles, and poll I/O, eg in a busy-wait loop.
+// This may churn PRNGs or gather entropy for example.
+// This call should typically take << 1ms at 1MHz CPU.
+// Does not change CPU clock speeds, mess with interrupts (other than possible brief blocking), or sleep.
+// May capture some entropy in secure and non-secure PRNGs.
+inline void burnHundredsOfCyclesProductivelyAndPoll()
+  {
+  if(pollIO()) { OTV0P2BASE::seedRNG8(OTV0P2BASE::getCPUCycleCount(), 37 /* _watchdogFired */, OTV0P2BASE::_getSubCycleTime()); }
+  else { OTV0P2BASE::captureEntropy1(); }
+  }
+
 
 
 #endif

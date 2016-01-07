@@ -15,7 +15,7 @@ under the Licence.
 
 Author(s) / Copyright (s): Damon Hart-Davis 2014--2015,
                            John Harvey 2014 (DS18B20 code)
-                           Deniz Erbilgin 2015
+                           Deniz Erbilgin 2015--2016
 */
 
 /*
@@ -34,7 +34,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015,
 
 #include "Control.h"
 #include "Serial_IO.h"
-#include "Power_Management.h"
 #include "UI_Minimal.h"
 
 
@@ -48,7 +47,8 @@ OTV0P2BASE::MinimalOneWire<PIN_OW_DQ_DATA> MinOW;
 #endif
 
 
-
+// Singleton implementation/instance.
+OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
 
 
 

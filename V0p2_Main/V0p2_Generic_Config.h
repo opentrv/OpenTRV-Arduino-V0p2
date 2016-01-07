@@ -67,7 +67,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_DORM1_SANS32K // REV7 / DORM1 without working 32768Hz clock.
 //#define CONFIG_DORM1_MUT // REV7 / DORM1 Winter 2014/2015 minimal for unit testing.
 //#define CONFIG_REV7N // REV7 with external "Model N" valve.
-//#define CONFIG_REV7_AS_SENSOR // REV7 as JSON-only stats/sensor leaf.
+#define CONFIG_REV7_AS_SENSOR // REV7 as JSON-only stats/sensor leaf.
 //#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
 //#define CONFIG_REV9_STATS // REV9 as stats node, cut 2 of the board.
 //#define CONFIG_REV9_cut1 // REV9 as CC1 relay, cut1 of board.
@@ -127,6 +127,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define ENABLE_RADIO_RX
 // IF DEFINED: (default) forced always-on radio listen/RX, eg not requiring setup to explicitly enable.
 #undef ENABLE_DEFAULT_ALWAYS_RX
+// IF DEFINED: use the temperature-setting potentiometer/dial if present.
+#define ENABLE_TEMP_POT_IF_PRESENT
 // IF DEFINED: use active-low LEARN button(s).  Needs SUPPORT_SINGLETON_SCHEDULE.
 #define LEARN_BUTTON_AVAILABLE // OPTIONAL ON V0.09 PCB1
 // IF DEFINED: support for general timed and multi-input occupancy detection / use.
@@ -711,6 +713,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define DIRECT_MOTOR_DRIVE_V1
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
 #define ENABLE_SENSOR_SHT21
+// IF DEFINED: use the temperature-setting potentiometer/dial if present.
+#undef ENABLE_TEMP_POT_IF_PRESENT
 // Using RoHS-compliant phototransistor in place of LDR.
 #define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // IF DEFINED: basic FROST/WARM temperatures are settable.

@@ -30,7 +30,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 #include "V0p2_Actuators.h" // I/O code access.
 #include "Control.h"
 #include "Serial_IO.h"
-#include "Power_Management.h"
 
 
 // DORM1/REV7 direct drive actuator.
