@@ -37,7 +37,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 #include <OTRadioLink.h>
 
 #include "Control.h"
-#include "Power_Management.h"
 #include "Radio.h"
 #include "Serial_IO.h"
 #include "UI_Minimal.h"

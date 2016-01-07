@@ -43,6 +43,10 @@ extern OTV0P2BASE::MinimalOneWire<PIN_OW_DQ_DATA> MinOW;
 #endif
 
 
+// Sensor for supply (eg battery) voltage in millivolts.
+// Singleton implementation/instance.
+extern OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
+
 
 #if defined(SENSOR_EXTERNAL_DS18B20_ENABLE) // Needs defined(SUPPORTS_MINIMAL_ONEWIRE)
 // External/off-board DS18B20 temperature sensor in nominal 1/16 C.

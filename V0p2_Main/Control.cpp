@@ -28,7 +28,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 #include "V0p2_Sensors.h"
 #include "V0p2_Actuators.h"
-#include "Power_Management.h"
 #include "Radio.h"
 #include "Serial_IO.h"
 #include "Schedule.h"
@@ -1757,7 +1756,7 @@ void loopOpenTRV()
   // Ensure that serial I/O is off while sleeping.
   OTV0P2BASE::powerDownSerial();
   // Power down most stuff (except radio for hub RX).
-  minimisePowerWithoutSleep();
+  OTV0P2BASE::minimisePowerWithoutSleep();
   uint_fast8_t newTLSD;
   while(TIME_LSD == (newTLSD = OTV0P2BASE::getSecondsLT()))
     {
