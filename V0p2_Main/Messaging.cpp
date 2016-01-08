@@ -31,7 +31,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 
 #include "Control.h"
 #include "Radio.h"
-#include "Serial_IO.h"
 #include "UI_Minimal.h"
 
 #include "V0p2_Sensors.h"
@@ -167,7 +166,7 @@ void outputCoreStats(Print *p, bool secure, const FullStatsMessageCore_t *stats)
     // Dump (remote) stats field '@<hexnodeID>;TnnCh[P;]'
     // where the T field shows temperature in C with a hex digit after the binary point indicated by C
     // and the optional P field indicates low power.
-    p->print(LINE_START_CHAR_RSTATS);
+    p->print(OTV0P2BASE::SERLINE_START_CHAR_RSTATS);
     p->print((((uint16_t)stats->id0) << 8) | stats->id1, HEX);
     if(stats->containsTempAndPower)
       {

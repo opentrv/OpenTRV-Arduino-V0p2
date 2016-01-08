@@ -25,7 +25,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include "Radio.h"
 
 #include "V0p2_Board_IO_Config.h" // I/O pin allocation: include ahead of I/O module headers.
-#include "Serial_IO.h"
 
 
 

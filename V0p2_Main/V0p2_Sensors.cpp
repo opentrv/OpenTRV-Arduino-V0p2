@@ -33,7 +33,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015,
 #include "V0p2_Sensors.h" // I/O code access.
 
 #include "Control.h"
-#include "Serial_IO.h"
 #include "UI_Minimal.h"
 
 

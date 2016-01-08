@@ -33,7 +33,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include "Messaging.h"
 #include "Radio.h"
 #include "Schedule.h"
-#include "Serial_IO.h"
 #include "UI_Minimal.h"
 
 
@@ -533,7 +532,7 @@ void serialStatusReport()
 
   // Stats line starts with distingushed marker character.
   // Initial '=' section with common essentials.
-  Serial.print(LINE_START_CHAR_STATS);
+  Serial.print(OTV0P2BASE::SERLINE_START_CHAR_STATS);
 //#ifdef SUPPORT_BAKE
   Serial.print(inWarmMode() ? (inBakeMode() ? 'B' : 'W') : 'F');
 //#else
