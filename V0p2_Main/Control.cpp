@@ -29,7 +29,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include "V0p2_Sensors.h"
 #include "V0p2_Actuators.h"
 #include "Radio.h"
-#include "Serial_IO.h"
 #include "Schedule.h"
 #include "UI_Minimal.h"
 

@@ -49,7 +49,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include "RFM22_Radio.h"
 #include "Schedule.h"
 #include "Security.h"
-#include "Serial_IO.h"
 #include "UI_Minimal.h"
 
 

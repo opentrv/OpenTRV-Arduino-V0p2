@@ -55,7 +55,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include "V0p2_Actuators.h"
 #include "Control.h"
 #include "Radio.h"
-#include "Serial_IO.h"
 #include "UI_Minimal.h"
 
 
