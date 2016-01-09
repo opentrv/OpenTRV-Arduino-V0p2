@@ -166,7 +166,7 @@ void outputCoreStats(Print *p, bool secure, const FullStatsMessageCore_t *stats)
     // Dump (remote) stats field '@<hexnodeID>;TnnCh[P;]'
     // where the T field shows temperature in C with a hex digit after the binary point indicated by C
     // and the optional P field indicates low power.
-    p->print(OTV0P2BASE::SERLINE_START_CHAR_RSTATS);
+    p->print((char) OTV0P2BASE::SERLINE_START_CHAR_RSTATS);
     p->print((((uint16_t)stats->id0) << 8) | stats->id1, HEX);
     if(stats->containsTempAndPower)
       {

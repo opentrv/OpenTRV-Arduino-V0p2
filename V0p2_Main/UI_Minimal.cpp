@@ -532,7 +532,7 @@ void serialStatusReport()
 
   // Stats line starts with distingushed marker character.
   // Initial '=' section with common essentials.
-  Serial.print(OTV0P2BASE::SERLINE_START_CHAR_STATS);
+  Serial.print((char) OTV0P2BASE::SERLINE_START_CHAR_STATS);
 //#ifdef SUPPORT_BAKE
   Serial.print(inWarmMode() ? (inBakeMode() ? 'B' : 'W') : 'F');
 //#else
