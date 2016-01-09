@@ -455,16 +455,20 @@ uint8_t ModelledRadValve::computeTargetTemp()
     const uint8_t frostC = getFROSTTargetC();
 
     // If scheduled WARM is due soon then ensure that room is at least at setback temperature
-    // to give room a chance to hit the target, and for furniture and surfaces to be warm, etc.
+    // to give room a chance to hit the target, and for furniture and surfaces to be warm, etc, on time.
     // Don't do this if the room has been vacant for a long time (eg so as to avoid pre-warm being higher than WARM ever).
     // Don't do this if there has been recent manual intervention, eg to allow manual 'cancellation' of pre-heat (TODO-464).
     // Only do this if the target WARM temperature is NOT an 'eco' temperature (ie very near the bottom of the scale).
+    // If well into the 'eco' zone go for a larger-than-usual setback, else go for usual small setback.
+    // Note: when pre-warm and warm time for schedule is ~1h, and default setback 1C,
+    // this is assuming that the room temperature can be raised by at least 1C/h.
+    // (A very long per-warm time may confuse or distress users, eg waking them in the morning.)
     if(!Occupancy.longVacant() && isAnyScheduleOnWARMSoon() && !recentUIControlUse())
       {
       const uint8_t warmTarget = getWARMTargetC();
-      // Compute putative pre-warm temperature...
-      const uint8_t preWarmTempC = fnmax((uint8_t)(warmTarget - (hasEcoBias() ? SETBACK_ECO : SETBACK_DEFAULT)), frostC);
-      if((frostC < preWarmTempC) && (!isEcoTemperature(warmTarget)))
+      // Compute putative pre-warm temperature, usually only just below WARM target,
+      const uint8_t preWarmTempC = fnmax((uint8_t)(warmTarget - (isEcoTemperature(warmTarget) ? SETBACK_ECO : SETBACK_DEFAULT)), frostC);
+      if(frostC < preWarmTempC) // && (!isEcoTemperature(warmTarget)))
         { return(preWarmTempC); }
       }
 
