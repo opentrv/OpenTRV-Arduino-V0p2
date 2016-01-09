@@ -43,9 +43,9 @@ extern OTRadioLink::OTRadioLink &SecondaryRadio;
 //#endif // RADIO_SECONDARY_MODULE_TYPE
 
 
-#if defined(ENABLE_RADIO_RFM23B) && defined(DEBUG) // Expose for debugging...
-extern OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, PIN_RFM_NIRQ> RFM23B;
-#endif
+//#if defined(ENABLE_RADIO_RFM23B) && defined(PIN_RFM_NIRQ) && defined(DEBUG) // Expose for debugging...
+//extern OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, PIN_RFM_NIRQ> RFM23B;
+//#endif
 
 #ifdef ENABLE_RADIO_SIM900
 //For EEPROM:
