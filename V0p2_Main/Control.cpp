@@ -462,6 +462,7 @@ uint8_t ModelledRadValve::computeTargetTemp()
     // If well into the 'eco' zone go for a larger-than-usual setback, else go for usual small setback.
     // Note: when pre-warm and warm time for schedule is ~1h, and default setback 1C,
     // this is assuming that the room temperature can be raised by at least 1C/h.
+    // See the effect of going from 2C to 1C setback: http://www.earth.org.uk/img/20160110-vat-b.png
     // (A very long pre-warm time may confuse or distress users, eg waking them in the morning.)
     if(!Occupancy.longVacant() && isAnyScheduleOnWARMSoon() && !recentUIControlUse())
       {
