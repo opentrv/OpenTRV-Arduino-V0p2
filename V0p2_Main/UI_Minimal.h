@@ -13,7 +13,7 @@ The OpenTRV project licenses this file to you
  specific language governing permissions and limitations
  under the Licence.
  
- Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
+ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
  */
 
 /*
