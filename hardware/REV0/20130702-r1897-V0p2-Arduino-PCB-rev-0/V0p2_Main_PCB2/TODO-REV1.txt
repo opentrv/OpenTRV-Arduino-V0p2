@@ -1,0 +1,30 @@
+Outstanding issues with the PCB for rev 1.
+
+
+
+TODO (initials/date for who noted the issue)
+
+MS20130702: What's with the AVR symbol? It looks kind of non-standard - is it some kind of weird Arduino version?  (BH hand-crafted but see http://www.cadsoftusa.com/downloads/libraries?language=en for future.)
+MS20130702: Since you have loads of spare IO, why not connect the RFM22B IRQ pin? (DHD: could make it an option.)
+MS20130702: A lot of the tracks could be thicker. If there is no need to make them thin then don't - you will get better board yield. I acknowledge that they have to be thin for connection to the TMP112, and where you pass between pads on the RFM22B (which I would have avoided).
+MS20130702: You have components on both sides. Not really a problem but it will complicate assembly if you want to do a run by pick and place (because one side needs to be glued down). You could argue that the through-hole stuff could go on the top and the SMT on the bottom, but in that case the RFM22 is still on the wrong side.
+DHD20130702: Find some good way to eliminate SJ1 entirely.
+
+
+
+
+DONE (initials/date for who fixed the issue)
+
+DHD20130702: Fixes to USB connector layers (still asymmetry in GTS/GBS files).
+MS20130702: Why not ground flood both sides?
+DHD20130702: Fix C13 label and remove "100nF" text.
+MS20130702: AREF should be decoupled
+MS20130702: The jumper is underneath IC1 on the same side of the board, so will be inaccessible.  The solder blob will prevent the chip from being properly seated.  (Would like to eliminate entirely.)
+
+
+
+Notes for antenna track thickness:
+[10:54] DamonHD When you made the antenna track 50 ohm did you carefully choose a thickness? I've just slapped it up to 0.032 which looks vaguely right by eye. I could copy whatever you did on V0.09 board if it's critical.
+[11:02] mikestir    the width is dependent on the board material and its thickness
+[11:02] mikestir    http://www.eeweb.com/toolbox/microstrip-impedance
+[11:02] mikestir    Er for FR4 is about 4 to 4.5

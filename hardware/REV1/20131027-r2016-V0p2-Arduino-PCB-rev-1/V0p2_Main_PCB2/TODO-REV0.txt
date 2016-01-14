@@ -1,0 +1,43 @@
+Outstanding issues with the PCB.
+
+
+
+TODO (initials/date for who noted the issue)
+
+
+
+
+
+
+DONE (initials/date for who fixed the issue)
+
+DHD20130702: Fixes to USB connector layers (still asymmetry in GTS/GBS files).
+DHD20130702: 1) Top-level GND plane (is clearance around antenna line enough?).  MS: No, it's a bit close. Just bring the polygon out of that corner rather than messing about, although if you want to increase polygon->track clearance in general then you can increase the "isolation" property of the polygon itself.
+DHD20130702: Flood fill top layer with GND.
+DHD20130702: Add 100nf (same as other decoupling caps) AREF to GND.
+DHD20130702: Move solder jumper out from under IC.
+DHD20130630:    Fix USB part with drills for tabs, and ack any imported .lbr part   properly.
+DHD20130629: 	Double-check RX and TX connections.
+DHD20130628: 	If possible create solder pads/holes for external wires down whole 	of AVR (or at least SPI, TWI and uncommitted pins) to allow further 	prototyping work.
+DHD20130629: 	Remove spurious track from C7.
+DHD20130629: 	Double thickness of power tracks.
+DHD20130629: 	Double thickness of RFM22 power tracks.
+DHD20130629: 	Update board date/label from BD20130513.
+DHD20130628: 	Create solder pads/holes for IO_POWER, 5V to allow further 	prototyping work.
+DHD20130629: 	DONE at 0.016: BH20130628: Beef up power tracks coming from usb/reg
+BH20130628:	Test that screw terminal fits -> Made new part... should fit... 
+BH20130628:	change crystal footprint to mc kind for smd.
+BH20130628: 	Xtal (and caps/AVR pins) should nut have anything running 	between/under.
+DHD20130628: 	R3/C3/IO_POWER not apparently correct: should be AVR -> R3 -> 	IO_POWER -> C3 -> GND.
+DHD20130629: 	BH20130629: Add "rev 0" to "V0.2" label to 	indicate pre-	production prototype board. Also moved the text to a 	free area 	rather than under the chip
+BH20130628:	Check for overlapping text. Done it might seem overlapping but 	remember that some text is on the other side
+DHD20130629: 	Fix antenna track impedance: see notes at end.  Currently at 0.032.
+	BH20130629: changed the grid view and its now 1.27... 3.81 is close 	to 4 but it overlaps the next pad on radio. i left it at same width 	as picaxe version. 2.81 something
+
+
+
+Notes for antenna track thickness:
+[10:54] DamonHD When you made the antenna track 50 ohm did you carefully choose a thickness? I've just slapped it up to 0.032 which looks vaguely right by eye. I could copy whatever you did on V0.09 board if it's critical.
+[11:02] mikestir    the width is dependent on the board material and its thickness
+[11:02] mikestir    http://www.eeweb.com/toolbox/microstrip-impedance
+[11:02] mikestir    Er for FR4 is about 4 to 4.5
