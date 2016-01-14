@@ -963,15 +963,21 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         break;
         }
 #endif
-      // Set new random ID
-      // Only if the command line is (nearly) exactly "I *" to avoid accidental reset.
+      // Set or display new random ID.
+      // Set only if the command line is (nearly) exactly "I *" to avoid accidental reset.
+      // In either cas display the current one.
       // Should possibly restart the system afterwards.
       case 'I':
         {
         if((3 == n) && ('*' == buf[2]))
           { ensureIDCreated(true); } // Force ID change.
-        else
-          { InvalidIgnored(); }
+        Serial.print(F("ID:"));
+        for(uint8_t i = 0; i < V0P2BASE_EE_LEN_ID; ++i)
+          {
+          Serial.print(' ');
+          Serial.print(eeprom_read_byte((uint8_t *)(V0P2BASE_EE_START_ID + i)), HEX);
+          }
+        Serial.println();
         break;
         }
       // Status line and optional smart/scheduled warming prediction request.
