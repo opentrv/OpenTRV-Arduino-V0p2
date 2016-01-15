@@ -585,7 +585,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#undef LEARN_BUTTON_AVAILABLE // OPTIONAL ON V0.09 PCB1  UI_Minimal.cpp:1180:32: error: 'handleLEARN' was not declared in this scope
 #define USE_MODULE_FHT8VSIMPLE //Control.cpp:1322:27: error: 'localFHT8VTRVEnabled' was not declared in this scope
 // If LDR is not to be used then specifically define OMIT_... as below.
-//#define OMIT_MODULE_LDROCCUPANCYDETECTION //  LDR 'occupancy' sensing irrelevant for DHW. Messaging.cpp:232:87: error: 'class AmbientLight' has no member named 'getRaw
+//#undef ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT //  LDR 'occupancy' sensing irrelevant for DHW. Messaging.cpp:232:87: error: 'class AmbientLight' has no member named 'getRaw
 //#undef USE_MODULE_RFM22RADIOSIMPLE
 #endif
 
@@ -647,7 +647,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#undef LEARN_BUTTON_AVAILABLE // OPTIONAL ON V0.09 PCB1  UI_Minimal.cpp:1180:32: error: 'handleLEARN' was not declared in this scope
 #define USE_MODULE_FHT8VSIMPLE //Control.cpp:1322:27: error: 'localFHT8VTRVEnabled' was not declared in this scope
 // If LDR is not to be used then specifically define OMIT_... as below.
-//#define OMIT_MODULE_LDROCCUPANCYDETECTION //  LDR 'occupancy' sensing irrelevant for DHW. Messaging.cpp:232:87: error: 'class AmbientLight' has no member named 'getRaw
+//#undef ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT //  LDR 'occupancy' sensing irrelevant for DHW. Messaging.cpp:232:87: error: 'class AmbientLight' has no member named 'getRaw
 
 //#undef USE_MODULE_RFM22RADIOSIMPLE
 
@@ -1154,7 +1154,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: use simple LDR-based detection of room use/occupancy; brings in getRoomInUseFromLDR subroutne.
 #define USE_MODULE_LDROCCUPANCYDETECTION
 // If LDR is not to be used then specifically define OMIT_... as below.
-//#define OMIT_MODULE_LDROCCUPANCYDETECTION //  LDR 'occupancy' sensing irrelevant for DHW.
+//#undef ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT //  LDR 'occupancy' sensing irrelevant for DHW.
 #endif // COMMON_SETTINGS
 
 // If LEARN_BUTTON_AVAILABLE then in the absence of anything better SUPPORT_SINGLETON_SCHEDULE should be supported.

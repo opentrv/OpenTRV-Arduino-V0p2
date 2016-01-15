@@ -54,7 +54,7 @@ OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
 
 
 
-#ifndef OMIT_MODULE_LDROCCUPANCYDETECTION
+#ifdef ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
 
 // Normal raw scale internally is 10 bits [0,1023].
 static const uint16_t rawScale = 1024;
@@ -223,14 +223,13 @@ uint8_t AmbientLight::read()
     darkTicks = 0;
     }
 
-  if(newValue != value)
+  if((NULL != possOccCallback) && (newValue != value))
     {
-#ifdef ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
+//#ifdef ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
     // Treat a sharp brightening as a possible/weak indication of occupancy, eg light flicked on.
     // Ignore false trigger at start-up.
     if((~0U != rawValue) && (newValue > oldValue) && ((newValue - oldValue) >= upDelta))
       {
-      Occupancy.markAsPossiblyOccupied();
 #if 0 && defined(DEBUG)
 DEBUG_SERIAL_PRINT_FLASHSTRING("  UP: ambient light rise/upDelta/newval/dt/lt: ");
 DEBUG_SERIAL_PRINT((newValue - value));
@@ -244,8 +243,8 @@ DEBUG_SERIAL_PRINT(' ');
 DEBUG_SERIAL_PRINT(lightThreshold);
 DEBUG_SERIAL_PRINTLN();
 #endif
-
-#endif // ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
+      possOccCallback(); // Ping the callback!
+//#endif // ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
       }
     }
 
@@ -376,7 +375,7 @@ void AmbientLight::setMinMax(const uint8_t recentMinimumOrFF, const uint8_t rece
 
 // Singleton implementation/instance.
 AmbientLight AmbLight;
-#endif
+#endif // ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
 
 
 

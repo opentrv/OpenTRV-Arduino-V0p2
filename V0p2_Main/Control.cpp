@@ -266,6 +266,9 @@ void setMinBoilerOnMinutes(uint8_t mins) { OTV0P2BASE::eeprom_smart_update_byte(
 #ifdef ENABLE_OCCUPANCY_SUPPORT
 // Singleton implementation for entire node.
 OccupancyTracker Occupancy;
+// Single generic occupancy callback for 'possibly occupied' for this instance.
+void genericMarkAsPossiblyOccupied() { Occupancy.markAsPossiblyOccupied(); }
+
 
 // Crude percentage occupancy confidence [0,100].
 // Returns 0 if unknown or known unoccupied.
@@ -324,17 +327,17 @@ void OccupancyTracker::markAsPossiblyOccupied()
 //   * hh hour to check for predictive warming [0,23]
 bool shouldBeWarmedAtHour(const uint_least8_t hh)
   {
-#ifndef OMIT_MODULE_LDROCCUPANCYDETECTION
+#ifdef ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
   // Return false immediately if the sample hour's historic ambient light level falls in the bottom quartile (or is zero).
   // Thus aim to shave off 'smart' warming for at least 25% of the daily cycle.
   if(inOutlierQuartile(false, EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED, hh)) { return(false); }
-#endif
+#endif // ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
 
-#ifdef ENABLE_OCCUPANCY_SUPPORT
+#ifdef
   // Return false immediately if the sample hour's historic occupancy level falls in the bottom quartile (or is zero).
   // Thus aim to shave off 'smart' warming for at least 25% of the daily cycle.
   if(inOutlierQuartile(false, EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, hh)) { return(false); }
-#endif
+#endif // ENABLE_OCCUPANCY_SUPPORT
 
   const uint8_t warmHistory = eeprom_read_byte((uint8_t *)(EE_STATS_START_ADDR(EE_STATS_SET_WARMMODE_BY_HOUR_OF_WK) + hh));
   if(0 == (0x80 & warmHistory)) // This hour has a history.
@@ -1132,6 +1135,9 @@ static void wireComponentsTogether()
   // Load EEPROM house codes into primary FHT8V instance at start.
   FHT8VLoadHCFromEEPROM();
 #endif // USE_MODULE_FHT8VSIMPLE
+#ifdef ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
+  AmbLight.setPossOccCallback(genericMarkAsPossiblyOccupied);
+#endif // ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
   // TODO
   }
 
@@ -1143,9 +1149,16 @@ static void wireComponentsTogether()
 // but can be called whenever user adjusts settings for example.
 static void updateSensorsFromStats()
   {
-#ifndef OMIT_MODULE_LDROCCUPANCYDETECTION
-  updateAmbLightFromStats();
-#endif
+#ifdef ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
+  // Update with rolling stats to adapt to sensors and local environment.
+  // ...and prevailing mode, so may take a while to adjust.
+  AmbLight.setMinMax(
+          OTV0P2BASE::getMinByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR),
+          OTV0P2BASE::getMaxByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR),
+          OTV0P2BASE::getMinByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED),
+          OTV0P2BASE::getMaxByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED),
+          !hasEcoBias());
+#endif // ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
   }
 
 

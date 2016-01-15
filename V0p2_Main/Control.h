@@ -658,6 +658,8 @@ class OccupancyTracker
 #endif
 // Singleton implementation for entire node.
 extern OccupancyTracker Occupancy;
+// Single generic occupancy callback for 'possibly occupied' for this instance.
+void genericMarkAsPossiblyOccupied();
 
 
 
