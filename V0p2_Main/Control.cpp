@@ -608,7 +608,8 @@ bool SimpleSlaveRadValve::set(const uint8_t newValue)
     {
     value = newValue;
     // Regenerate buffer ready to TX to FHT8V.
-    FHT8VCreateValveSetCmdFrame(*this);
+    //FHT8VCreateValveSetCmdFrame(*this);
+    FHT8V.set(newValue);
     }
   ticksLeft = TIMEOUT_MINS;
   return(true);
@@ -636,7 +637,8 @@ uint8_t SimpleSlaveRadValve::read()
 bool SimpleSlaveRadValve::isRecalibrating() const
   {
 #ifdef USE_MODULE_FHT8VSIMPLE
-  if(!isSyncedWithFHT8V()) { return(true); }
+//  if(!isSyncedWithFHT8V()) { return(true); }
+  if(!FHT8V.isInNormalRunState()) { return(true); }
 #endif
   return(false);
   }
@@ -1501,7 +1503,7 @@ void loopOpenTRV()
 #if defined(ENABLE_BOILER_HUB)
     (!isBoilerOn()) && // Unless the boiler is off, stay responsive.
 #endif
-#ifdef ENABLE_NOMINAL_RAD_VALVE
+#if defined(ENABLE_NOMINAL_RAD_VALVE) && defined(LOCAL_VALVE)
 //    (!NominalRadValve.isControlledValveReallyOpen()); // &&  // Run at full speed until valve(s) should actually have shut and the boiler gone off.
     (!NominalRadValve.isCallingForHeat()); // Run at full speed until not nominally demanding heat, eg even during FROST mode or pre-heating.
 #else
