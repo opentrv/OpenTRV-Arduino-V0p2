@@ -13,7 +13,7 @@ KIND, either express or implied. See the Licence for the
 specific language governing permissions and limitations
 under the Licence.
 
-Author(s) / Copyright (s): Damon Hart-Davis 2014--2015,
+Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
                            John Harvey 2014 (DS18B20 code)
                            Deniz Erbilgin 2015--2016
 */
@@ -33,7 +33,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015,
 #include "V0p2_Sensors.h" // I/O code access.
 
 #include "Control.h"
-#include "Serial_IO.h"
 #include "UI_Minimal.h"
 
 

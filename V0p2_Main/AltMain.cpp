@@ -13,7 +13,7 @@ KIND, either express or implied. See the Licence for the
 specific language governing permissions and limitations
 under the Licence.
 
-Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
+Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
 */
 
 /*
@@ -38,7 +38,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 
 #include "Control.h"
 #include "Radio.h"
-#include "Serial_IO.h"
 #include "UI_Minimal.h"
 #include "V0p2_Sensors.h"
 

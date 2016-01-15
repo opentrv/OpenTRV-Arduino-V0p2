@@ -13,7 +13,7 @@ KIND, either express or implied. See the Licence for the
 specific language governing permissions and limitations
 under the Licence.
 
-Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
+Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 */
 
 /*
@@ -45,11 +45,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 
 #include "FHT8V_Wireless_Rad_Valve.h"
 #include "Messaging.h"
-#include "Power_Management.h"
 #include "RFM22_Radio.h"
 #include "Schedule.h"
 #include "Security.h"
-#include "Serial_IO.h"
 #include "UI_Minimal.h"
 
 

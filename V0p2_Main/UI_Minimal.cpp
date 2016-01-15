@@ -13,7 +13,7 @@ KIND, either express or implied. See the Licence for the
 specific language governing permissions and limitations
 under the Licence.
 
-Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
+Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 */
 
 /*
@@ -33,7 +33,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include "Messaging.h"
 #include "Radio.h"
 #include "Schedule.h"
-#include "Serial_IO.h"
 #include "UI_Minimal.h"
 
 
@@ -392,7 +391,7 @@ void checkUserSchedule()
 // where EXT is the name of the extension, usually 3 letters.
 
 #include <OTProtocolCC.h>
-#include "RFM22_Radio.h"
+#include "Radio.h"
 
 // It is acceptable for extCLIHandler() to alter the buffer passed,
 // eg with strtok_t().
@@ -533,7 +532,7 @@ void serialStatusReport()
 
   // Stats line starts with distingushed marker character.
   // Initial '=' section with common essentials.
-  Serial.print(LINE_START_CHAR_STATS);
+  Serial.print((char) OTV0P2BASE::SERLINE_START_CHAR_STATS);
 //#ifdef SUPPORT_BAKE
   Serial.print(inWarmMode() ? (inBakeMode() ? 'B' : 'W') : 'F');
 //#else
@@ -718,7 +717,7 @@ static void dumpCLIUsage(const uint8_t stopBy)
   printCLILine(deadline, F("H H1 H2"), F("set FHT8V House codes 1&2"));
   printCLILine(deadline, 'H', F("clear House codes"));
 #endif
-  printCLILine(deadline, 'I', F("new ID"));
+  printCLILine(deadline, F("I *"), F("create new ID"));
   printCLILine(deadline, 'S', F("show Status"));
   printCLILine(deadline, 'V', F("sys Version"));
 
@@ -964,11 +963,51 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         break;
         }
 #endif
-      // Set new random ID.
+      // Set or display new random ID.
+      // Set only if the command line is (nearly) exactly "I *" to avoid accidental reset.
+      // In either cas display the current one.
       // Should possibly restart the system afterwards.
+      //
+      // Example use:
+      //
+      //>I
+      //ID: 98 A4 F5 99 E3 94 A8 C2
+      //=F0%@18C6;X0;T15 38 W255 0 F255 0 W255 0 F255 0;S6 6 16;{"@":"98a4","L":146,"B|cV":333,"occ|%":0,"vC|%":0}
+      //
+      //>I
+      //ID: 98 A4 F5 99 E3 94 A8 C2
+      //=F0%@18C6;X0;T15 38 W255 0 F255 0 W255 0 F255 0;S6 6 16;{"@":"98a4","L":146,"B|cV":333,"occ|%":0,"vC|%":0}
+      //
+      //>
+      //
+      //>
+      //
+      //>
+      //
+      //>I *
+      //Setting ID byte 0 9F
+      //Setting ID byte 1 9C
+      //Setting ID byte 2 8B
+      //Setting ID byte 3 B2
+      //Setting ID byte 4 A0
+      //Setting ID byte 5 E2
+      //Setting ID byte 6 E2
+      //Setting ID byte 7 AF
+      //ID: 9F 9C 8B B2 A0 E2 E2 AF
+      //=F0%@18C6;X0;T15 38 W255 0 F255 0 W255 0 F255 0;S6 6 16;{"@":"9f9c","L":146,"B|cV":333,"occ|%":0,"vC|%":0}
+      //
+      //>
       case 'I':
         {
-        ensureIDCreated(true); // Force ID change.
+        if((3 == n) && ('*' == buf[2]))
+          { ensureIDCreated(true); } // Force ID change.
+        Serial.print(F("ID:"));
+        for(uint8_t i = 0; i < V0P2BASE_EE_LEN_ID; ++i)
+          {
+          Serial.print(' ');
+          Serial.print(eeprom_read_byte((uint8_t *)(V0P2BASE_EE_START_ID + i)), HEX);
+          }
+        Serial.println();
         break;
         }
       // Status line and optional smart/scheduled warming prediction request.

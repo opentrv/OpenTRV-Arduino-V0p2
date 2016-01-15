@@ -13,7 +13,7 @@ KIND, either express or implied. See the Licence for the
 specific language governing permissions and limitations
 under the Licence.
 
-Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
+Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
                            Deniz Erbilgin 2015
 */
 
@@ -29,7 +29,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include "V0p2_Sensors.h"
 #include "V0p2_Actuators.h"
 #include "Radio.h"
-#include "Serial_IO.h"
 #include "Schedule.h"
 #include "UI_Minimal.h"
 
@@ -456,16 +455,21 @@ uint8_t ModelledRadValve::computeTargetTemp()
     const uint8_t frostC = getFROSTTargetC();
 
     // If scheduled WARM is due soon then ensure that room is at least at setback temperature
-    // to give room a chance to hit the target, and for furniture and surfaces to be warm, etc.
+    // to give room a chance to hit the target, and for furniture and surfaces to be warm, etc, on time.
     // Don't do this if the room has been vacant for a long time (eg so as to avoid pre-warm being higher than WARM ever).
     // Don't do this if there has been recent manual intervention, eg to allow manual 'cancellation' of pre-heat (TODO-464).
     // Only do this if the target WARM temperature is NOT an 'eco' temperature (ie very near the bottom of the scale).
+    // If well into the 'eco' zone go for a larger-than-usual setback, else go for usual small setback.
+    // Note: when pre-warm and warm time for schedule is ~1h, and default setback 1C,
+    // this is assuming that the room temperature can be raised by at least 1C/h.
+    // See the effect of going from 2C to 1C setback: http://www.earth.org.uk/img/20160110-vat-b.png
+    // (A very long pre-warm time may confuse or distress users, eg waking them in the morning.)
     if(!Occupancy.longVacant() && isAnyScheduleOnWARMSoon() && !recentUIControlUse())
       {
       const uint8_t warmTarget = getWARMTargetC();
-      // Compute putative pre-warm temperature...
-      const uint8_t preWarmTempC = fnmax((uint8_t)(warmTarget - (hasEcoBias() ? SETBACK_ECO : SETBACK_DEFAULT)), frostC);
-      if((frostC < preWarmTempC) && (!isEcoTemperature(warmTarget)))
+      // Compute putative pre-warm temperature, usually only just below WARM target,
+      const uint8_t preWarmTempC = fnmax((uint8_t)(warmTarget - (isEcoTemperature(warmTarget) ? SETBACK_ECO : SETBACK_DEFAULT)), frostC);
+      if(frostC < preWarmTempC) // && (!isEcoTemperature(warmTarget)))
         { return(preWarmTempC); }
       }
 
@@ -604,7 +608,8 @@ bool SimpleSlaveRadValve::set(const uint8_t newValue)
     {
     value = newValue;
     // Regenerate buffer ready to TX to FHT8V.
-    FHT8VCreateValveSetCmdFrame(*this);
+    //FHT8VCreateValveSetCmdFrame(*this);
+    FHT8V.set(newValue);
     }
   ticksLeft = TIMEOUT_MINS;
   return(true);
@@ -632,7 +637,8 @@ uint8_t SimpleSlaveRadValve::read()
 bool SimpleSlaveRadValve::isRecalibrating() const
   {
 #ifdef USE_MODULE_FHT8VSIMPLE
-  if(!isSyncedWithFHT8V()) { return(true); }
+//  if(!isSyncedWithFHT8V()) { return(true); }
+  if(!FHT8V.isInNormalRunState()) { return(true); }
 #endif
   return(false);
   }
@@ -1497,7 +1503,7 @@ void loopOpenTRV()
 #if defined(ENABLE_BOILER_HUB)
     (!isBoilerOn()) && // Unless the boiler is off, stay responsive.
 #endif
-#ifdef ENABLE_NOMINAL_RAD_VALVE
+#if defined(ENABLE_NOMINAL_RAD_VALVE) && defined(LOCAL_VALVE)
 //    (!NominalRadValve.isControlledValveReallyOpen()); // &&  // Run at full speed until valve(s) should actually have shut and the boiler gone off.
     (!NominalRadValve.isCallingForHeat()); // Run at full speed until not nominally demanding heat, eg even during FROST mode or pre-heating.
 #else

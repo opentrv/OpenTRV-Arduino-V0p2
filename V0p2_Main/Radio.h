@@ -13,7 +13,7 @@ KIND, either express or implied. See the Licence for the
 specific language governing permissions and limitations
 under the Licence.
 
-Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
+Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
                            Deniz Erbilgin 2015
 */
 
@@ -43,9 +43,9 @@ extern OTRadioLink::OTRadioLink &SecondaryRadio;
 //#endif // RADIO_SECONDARY_MODULE_TYPE
 
 
-#if defined(ENABLE_RADIO_RFM23B) && defined(DEBUG) // Expose for debugging...
-extern OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, PIN_RFM_NIRQ> RFM23B;
-#endif
+//#if defined(ENABLE_RADIO_RFM23B) && defined(PIN_RFM_NIRQ) && defined(DEBUG) // Expose for debugging...
+//extern OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, PIN_RFM_NIRQ> RFM23B;
+//#endif
 
 #ifdef ENABLE_RADIO_SIM900
 //For EEPROM:

@@ -1,0 +1,22 @@
+Outstanding issues with the button PCB for rev 2.
+
+
+
+TODO (initials/date for who noted the issue) - FIRST STEP IS ONLY ONE ALLOWED TO BE WORKED ON SO FAR
+
+DHD20131027: consider switch to friendly/easy board interconnect at both ends, eg FFC/IDC.
+
+
+BELOW is Things to remember when sending off to fab:
+
+BH20131017: Correct date stamp.
+DHD20130703: Send *ALL* generated Gerbers (eg including GML for milling)! 
+BH20130916: TIP: Zip up the Gerbers and Eagle files together.
+
+
+
+DONE (w/ optional initials/date for who fixed the issue) 
+
+
+DHD20131027: Ensure correct OpenTRV and licence URL and OHW logo (etc) on board.
+DHD20131027: Ensure correct date stamp on board.

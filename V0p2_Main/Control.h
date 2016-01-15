@@ -13,7 +13,7 @@ KIND, either express or implied. See the Licence for the
 specific language governing permissions and limitations
 under the Licence.
 
-Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
+Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 */
 
 /*
@@ -417,7 +417,7 @@ class ModelledRadValve : public OTRadValve::AbstractRadValve
 extern ModelledRadValve NominalRadValve;
 #elif defined(SLAVE_TRV)
 // Valve which is put where it is told; no smarts of its own.
-class SimpleSlaveRadValve : public AbstractRadValve
+class SimpleSlaveRadValve : public OTRadValve::AbstractRadValve
   {
   private:
     // Ticks left before comms timing out and valve should revert to 'safe' position.

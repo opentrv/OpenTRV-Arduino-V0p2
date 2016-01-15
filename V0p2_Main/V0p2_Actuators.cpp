@@ -13,7 +13,7 @@ KIND, either express or implied. See the Licence for the
 specific language governing permissions and limitations
 under the Licence.
 
-Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
+Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
 */
 
 /*
@@ -29,7 +29,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2015
 #include "V0p2_Board_IO_Config.h" // I/O pin allocation: include ahead of I/O module headers.
 #include "V0p2_Actuators.h" // I/O code access.
 #include "Control.h"
-#include "Serial_IO.h"
 
 
 // DORM1/REV7 direct drive actuator.

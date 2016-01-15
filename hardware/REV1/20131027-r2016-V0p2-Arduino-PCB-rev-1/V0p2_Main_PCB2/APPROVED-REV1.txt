@@ -1,0 +1,7 @@
+This is a list of DRC "errors" that should be approved for this revision as "by design".
+Examples include supply lines to components with small pad footprints,
+and links between distinct supply nets to allow star for wiring, etc.
+
+BH20130710: Approved overlap DRC on sh1 part, this part replaces SJ1 and the only way it can be done easily is by overlapping 2 pads.
+
+BH20130710: track width error at TMP112. Just made sure its as wide as the pad its comming from

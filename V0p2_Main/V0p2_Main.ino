@@ -13,7 +13,7 @@ KIND, either express or implied. See the Licence for the
 specific language governing permissions and limitations
 under the Licence.
 
-Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
+Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
                            Deniz Erbilgin 2015
 */
 
@@ -55,7 +55,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include "V0p2_Actuators.h"
 #include "Control.h"
 #include "Radio.h"
-#include "Serial_IO.h"
 #include "UI_Minimal.h"
 
 
@@ -282,23 +281,25 @@ pinMode(A3, OUTPUT);
 
 //  posPOST(1, F("Radio OK, checking buttons/sensors and xtal"));
 
-// Buttons should not be activated DURING boot; activated button implies fault.
-//#if (9 != V0p2_REV) || !defined(CONFIG_REV9_cut1) // Usual tests for stuck control buttons.
-//  // Check buttons not stuck in the activated position.
-//  if((fastDigitalRead(BUTTON_MODE_L) == LOW)
-//#if defined(BUTTON_LEARN_L)
-//     || (fastDigitalRead(BUTTON_LEARN_L) == LOW)
-//#endif
-//#if defined(BUTTON_LEARN2_L) && (9 != V0p2_REV) // This input is not momentary with REV9.
-//     || (fastDigitalRead(BUTTON_LEARN2_L) == LOW)
-//#endif
-//    )
-//    { panic(F("button stuck")); }
+// Buttons should not be activated DURING boot for user-facing boards; an activated button implies a fault.
+#if ((V0p2_REV >= 1) && (V0p2_REV <= 4)) || ((V0p2_REV >= 7) && (V0p2_REV <= 8))
+#if (9 != V0p2_REV) || !defined(CONFIG_REV9_cut1) // Usual tests for stuck control buttons.
+  // Check buttons not stuck in the activated position.
+  if((fastDigitalRead(BUTTON_MODE_L) == LOW)
+#if defined(BUTTON_LEARN_L)
+     || (fastDigitalRead(BUTTON_LEARN_L) == LOW)
+#endif
+#if defined(BUTTON_LEARN2_L) && (9 != V0p2_REV) // This input is not momentary with REV9.
+     || (fastDigitalRead(BUTTON_LEARN2_L) == LOW)
+#endif
+    )
+    { panic(F("button stuck")); }
 //#else
 //    DEBUG_SERIAL_PRINT(fastDigitalRead(BUTTON_MODE_L)); DEBUG_SERIAL_PRINTLN(); // Should be BOOSTSWITCH_L for REV9.
 //    DEBUG_SERIAL_PRINT(fastDigitalRead(BUTTON_LEARN_L)); DEBUG_SERIAL_PRINTLN();
 //    DEBUG_SERIAL_PRINT(fastDigitalRead(BUTTON_LEARN2_L)); DEBUG_SERIAL_PRINTLN(); // AKA WINDOW SWITCH
-//#endif
+#endif
+#endif // select user-facing boards.
 
 #if defined(WAKEUP_32768HZ_XTAL)
   // Check that the 32768Hz async clock is actually running having done significant CPU-intensive work.

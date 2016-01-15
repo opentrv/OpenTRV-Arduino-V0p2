@@ -13,7 +13,7 @@ The OpenTRV project licenses this file to you
  specific language governing permissions and limitations
  under the Licence.
  
- Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
+ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
  */
 
 /*
@@ -115,7 +115,7 @@ void serialStatusReport();
 #endif
 
 // Character that should trigger any pending command from user to be sent.
-#define CLIPromptChar (LINE_START_CHAR_CLI) // Printable ASCII char that should be avoided in status output.
+#define CLIPromptChar ((char) OTV0P2BASE::SERLINE_START_CHAR_CLI) // Printable ASCII char that should be avoided in status output.
 
 // Reset CLI active timer to the full whack before it goes inactive again (ie makes CLI active for a while).
 // Thread-safe.

@@ -13,7 +13,7 @@ KIND, either express or implied. See the Licence for the
 specific language governing permissions and limitations
 under the Licence.
 
-Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
+Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
                            Gary Gladman 2015
                            Mike Stirling 2013
 */
@@ -25,7 +25,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2015
 #include "Radio.h"
 
 #include "V0p2_Board_IO_Config.h" // I/O pin allocation: include ahead of I/O module headers.
-#include "Serial_IO.h"
 
 
 
@@ -67,7 +66,11 @@ OTRadioLink::OTNullRadioLink NullRadio;
 
 // Brings in necessary radio libs
 #ifdef ENABLE_RADIO_RFM23B
+#ifdef PIN_RFM_NIRQ
 OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, PIN_RFM_NIRQ> RFM23B;
+#else
+OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, -1> RFM23B;
+#endif
 #endif // ENABLE_RADIO_RFM23B
 #ifdef ENABLE_RADIO_SIM900
 OTSIM900Link::OTSIM900Link SIM900(A3, A2, 8, 5);
@@ -128,11 +131,13 @@ void RFM22RawStatsTXFFTerminated(uint8_t * const buf, const bool doubleTX, bool 
 
 #ifdef ALLOW_CC1_SUPPORT_RELAY
 #include <OTProtocolCC.h>
-//#include "FHT8V_Wireless_Rad_Valve.h"
+#include <OTRadValve.h>
+#include "V0p2_Actuators.h"
 // Send a CC1 Alert message with this unit's house code via the RFM23B.
 bool sendCC1AlertByRFM23B()
   {
-  OTProtocolCC::CC1Alert a = OTProtocolCC::CC1Alert::make(FHT8VGetHC1(), FHT8VGetHC2());
+//  OTProtocolCC::CC1Alert a = OTProtocolCC::CC1Alert::make(FHT8VGetHC1(), FHT8VGetHC2());
+  OTProtocolCC::CC1Alert a = OTProtocolCC::CC1Alert::make(FHT8V.getHC1(), FHT8V.getHC2());
   if(a.isValid()) // Might be invalid if house codes are, eg if house codes not set.
     {
     uint8_t txbuf[STATS_MSG_START_OFFSET + OTProtocolCC::CC1Alert::primary_frame_bytes+1]; // More than large enough for preamble + sync + alert message.
