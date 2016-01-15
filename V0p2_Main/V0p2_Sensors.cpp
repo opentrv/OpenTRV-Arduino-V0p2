@@ -61,84 +61,84 @@ static const uint16_t rawScale = 1024;
 // Normal 2 bit shift between raw and externally-presented 
 static const uint8_t shiftRawScaleTo8Bit = 2;
 
-// Note on: phototransistor variant.
-// Note that if AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400 is defined
-// This expects a current-response phototransistor in place of the LDR
-// with roughly full-scale value in full light against internal 1.1V reference
-// not against supply voltage as usual.
-
-#ifdef AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
-#define ALREFERENCE INTERNAL // Internal 1.1V reference.
-
-#ifdef AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400_WRONG_WAY // Schematic error in one board!
-#define ALREFERENCE DEFAULT // Supply voltage as reference for REV9 cut1.  HACK HACK!
-#endif // AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400_WRONG_WAY
-
-// If defined, then allow adaptive compression of top part of range when would otherwise max out.
-// This may be somewhat supply-voltage dependent, eg capped by the supply voltage.
-// Supply voltage is expected to be 2--3 times the bandgap reference, typically.
-//#define ADAPTIVE_THRESHOLD 896U // (1024-128) Top ~10%, companding by 8x.
-//#define ADAPTIVE_THRESHOLD 683U // (1024-683) Top ~33%, companding by 4x.
-//static const uint16_t scaleFactor = (extendedScale - ADAPTIVE_THRESHOLD) / (normalScale - ADAPTIVE_THRESHOLD);
-// Assuming typical V supply of 2--3 times Vbandgap,
-// compress above threshold to extend top of range by a factor of two.
-// Ensure that scale stays monotonic in face of calculation lumpiness, etc...
-// Scale all remaining space above threshold to new top value into remaining space.
-// Ensure scaleFactor is a power of two for speed.
-
-#ifndef ENABLE_AMBLIGHT_EXTRA_SENSITIVE 
-// Don't extend the dynamic range of this ambient light sensor
-// if the photosensor is badly located or otherwise needs to be made more sensitive.
+//// Note on: phototransistor variant.
+//// Note that if AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400 is defined
+//// This expects a current-response phototransistor in place of the LDR
+//// with roughly full-scale value in full light against internal 1.1V reference
+//// not against supply voltage as usual.
 //
-// IF DEFINED: extend optosensor range as far as possible at the expense of loss of linearity.
-#define EXTEND_OPTO_SENSOR_RANGE
-// Switch to measuring against supply voltage to maximise range.
-// Will be severely non-linear at top end
-// and will change with battery voltage at bottom end,
-// but rely on dynamic adaptation to deal with some of that.
-// Note that with low supply voltage headroom there may not be much linear range if any.
-#undef ALREFERENCE
-#define ALREFERENCE DEFAULT
-//static const uint16_t extendedScale = 2048;
-//static const uint8_t shiftExtendedToRawScale = 1;
-#endif
-
-// This implementation expects a phototransitor TEPT4400 (50nA dark current, nominal 200uA@100lx@Vce=50V) from IO_POWER_UP to LDR_SENSOR_AIN and 220k to ground.
-// Measurement should be taken wrt to internal fixed 1.1V bandgap reference, since light indication is current flow across a fixed resistor.
-// Aiming for maximum reading at or above 100--300lx, ie decent domestic internal lighting.
-// Note that phototransistor is likely far more directionally-sensitive than LDR and its response nearly linear.
-// This extends the dynamic range and switches to measurement vs supply when full-scale against bandgap ref, then scales by Vss/Vbandgap and compresses to fit.
-// http://home.wlv.ac.uk/~in6840/Lightinglevels.htm
-// http://www.engineeringtoolbox.com/light-level-rooms-d_708.html
-// http://www.pocklington-trust.org.uk/Resources/Thomas%20Pocklington/Documents/PDF/Research%20Publications/GPG5.pdf
-// http://www.vishay.com/docs/84154/appnotesensors.pdf
-
-#if (7 == V0p2_REV) // REV7 initial board run especially uses different phototransistor (not TEPT4400).
-// Note that some REV7s from initial batch were fitted with wrong device entirely,
-// an IR device, with very low effective sensitivity (FSD ~ 20 rather than 1023).
-static const int LDR_THR_LOW = 180U;
-static const int LDR_THR_HIGH = 250U;
-#else // REV4 default values.
-static const int LDR_THR_LOW = 270U;
-static const int LDR_THR_HIGH = 400U;
-#endif
-
-#else // LDR
-
-// This implementation expects an LDR (1M dark resistance) from IO_POWER_UP to LDR_SENSOR_AIN and 100k to ground.
-// Measurement should be taken wrt to supply voltage, since light indication is a fraction of that.
-// Values below from PICAXE V0.09 impl approx multiplied by 4+ to allow for scale change.
-#define ALREFERENCE DEFAULT // Supply voltage as reference.
-
-#ifdef ENABLE_AMBLIGHT_EXTRA_SENSITIVE // Define if LDR not exposed to much light, eg for REV2 cut4 sideways-pointing LDR (TODO-209).
-static const int LDR_THR_LOW = 50U;
-static const int LDR_THR_HIGH = 70U; 
-#else // Normal settings.
-static const int LDR_THR_LOW = 160U; // Was 30.
-static const int LDR_THR_HIGH = 200U; // Was 35.
-#endif
-
-#endif
+//#ifdef AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
+//#define ALREFERENCE INTERNAL // Internal 1.1V reference.
+//
+//#ifdef AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400_WRONG_WAY // Schematic error in one board!
+//#define ALREFERENCE DEFAULT // Supply voltage as reference for REV9 cut1.  HACK HACK!
+//#endif // AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400_WRONG_WAY
+//
+//// If defined, then allow adaptive compression of top part of range when would otherwise max out.
+//// This may be somewhat supply-voltage dependent, eg capped by the supply voltage.
+//// Supply voltage is expected to be 2--3 times the bandgap reference, typically.
+////#define ADAPTIVE_THRESHOLD 896U // (1024-128) Top ~10%, companding by 8x.
+////#define ADAPTIVE_THRESHOLD 683U // (1024-683) Top ~33%, companding by 4x.
+////static const uint16_t scaleFactor = (extendedScale - ADAPTIVE_THRESHOLD) / (normalScale - ADAPTIVE_THRESHOLD);
+//// Assuming typical V supply of 2--3 times Vbandgap,
+//// compress above threshold to extend top of range by a factor of two.
+//// Ensure that scale stays monotonic in face of calculation lumpiness, etc...
+//// Scale all remaining space above threshold to new top value into remaining space.
+//// Ensure scaleFactor is a power of two for speed.
+//
+//#ifndef ENABLE_AMBLIGHT_EXTRA_SENSITIVE 
+//// Don't extend the dynamic range of this ambient light sensor
+//// if the photosensor is badly located or otherwise needs to be made more sensitive.
+////
+//// IF DEFINED: extend optosensor range as far as possible at the expense of loss of linearity.
+//#define EXTEND_OPTO_SENSOR_RANGE
+//// Switch to measuring against supply voltage to maximise range.
+//// Will be severely non-linear at top end
+//// and will change with battery voltage at bottom end,
+//// but rely on dynamic adaptation to deal with some of that.
+//// Note that with low supply voltage headroom there may not be much linear range if any.
+//#undef ALREFERENCE
+//#define ALREFERENCE DEFAULT
+////static const uint16_t extendedScale = 2048;
+////static const uint8_t shiftExtendedToRawScale = 1;
+//#endif
+//
+//// This implementation expects a phototransitor TEPT4400 (50nA dark current, nominal 200uA@100lx@Vce=50V) from IO_POWER_UP to LDR_SENSOR_AIN and 220k to ground.
+//// Measurement should be taken wrt to internal fixed 1.1V bandgap reference, since light indication is current flow across a fixed resistor.
+//// Aiming for maximum reading at or above 100--300lx, ie decent domestic internal lighting.
+//// Note that phototransistor is likely far more directionally-sensitive than LDR and its response nearly linear.
+//// This extends the dynamic range and switches to measurement vs supply when full-scale against bandgap ref, then scales by Vss/Vbandgap and compresses to fit.
+//// http://home.wlv.ac.uk/~in6840/Lightinglevels.htm
+//// http://www.engineeringtoolbox.com/light-level-rooms-d_708.html
+//// http://www.pocklington-trust.org.uk/Resources/Thomas%20Pocklington/Documents/PDF/Research%20Publications/GPG5.pdf
+//// http://www.vishay.com/docs/84154/appnotesensors.pdf
+//
+//#if (7 == V0p2_REV) // REV7 initial board run especially uses different phototransistor (not TEPT4400).
+//// Note that some REV7s from initial batch were fitted with wrong device entirely,
+//// an IR device, with very low effective sensitivity (FSD ~ 20 rather than 1023).
+//static const int LDR_THR_LOW = 180U;
+//static const int LDR_THR_HIGH = 250U;
+//#else // REV4 default values.
+//static const int LDR_THR_LOW = 270U;
+//static const int LDR_THR_HIGH = 400U;
+//#endif
+//
+//#else // LDR
+//
+//// This implementation expects an LDR (1M dark resistance) from IO_POWER_UP to LDR_SENSOR_AIN and 100k to ground.
+//// Measurement should be taken wrt to supply voltage, since light indication is a fraction of that.
+//// Values below from PICAXE V0.09 impl approx multiplied by 4+ to allow for scale change.
+//#define ALREFERENCE DEFAULT // Supply voltage as reference.
+//
+//#ifdef ENABLE_AMBLIGHT_EXTRA_SENSITIVE // Define if LDR not exposed to much light, eg for REV2 cut4 sideways-pointing LDR (TODO-209).
+//static const int LDR_THR_LOW = 50U;
+//static const int LDR_THR_HIGH = 70U; 
+//#else // Normal settings.
+//static const int LDR_THR_LOW = 160U; // Was 30.
+//static const int LDR_THR_HIGH = 200U; // Was 35.
+//#endif
+//
+//#endif
 
 // Measure/store/return the current room ambient light levels in range [0,255].
 // This may consume significant power and time.
@@ -155,8 +155,8 @@ uint8_t AmbientLight::read()
 //  power_intermittent_peripherals_enable(false); // No need to wait for anything to stablise as direct of IO_POWER_UP.
   OTV0P2BASE::power_intermittent_peripherals_enable(false); // Will take a nap() below to allow supply to quieten.
   OTV0P2BASE::nap(WDTO_30MS); // Give supply a moment to settle, eg from heavy current draw.
-  // Photosensor vs Vbandgap or Vsupply as selected by ALREFERENCE, [0,1023].
-  const uint16_t al0 = OTV0P2BASE::analogueNoiseReducedRead(LDR_SENSOR_AIN, ALREFERENCE);
+  // Photosensor vs Vsupply [0,1023].  // May allow against Vbandgap again for some variants.
+  const uint16_t al0 = OTV0P2BASE::analogueNoiseReducedRead(LDR_SENSOR_AIN, DEFAULT); // ALREFERENCE);
   const uint16_t al = al0; // Use raw value as-is.
 //#if !defined(EXTEND_OPTO_SENSOR_RANGE)
 //  const uint16_t al = al0; // Use raw value as-is.
@@ -293,10 +293,14 @@ void AmbientLight::_recomputeThresholds(const boolean sensitive)
   // Use built-in thresholds.
   if((0xff == recentMin) || (0xff == recentMax))
     {
-    // Use the built-in default thresholds.
-    darkThreshold = LDR_THR_LOW >> shiftRawScaleTo8Bit;
-    lightThreshold = LDR_THR_HIGH >> shiftRawScaleTo8Bit;
-    upDelta = lightThreshold - darkThreshold;
+//    // Use the built-in default thresholds.
+//    darkThreshold = LDR_THR_LOW >> shiftRawScaleTo8Bit;
+//    lightThreshold = LDR_THR_HIGH >> shiftRawScaleTo8Bit;
+//    upDelta = lightThreshold - darkThreshold;
+    // Use the supplied default light threshold and derive the rest from it.
+    lightThreshold = defaultLightThreshold;
+    upDelta = max(1, lightThreshold >> 2);
+    darkThreshold = lightThreshold - upDelta;
     // Assume OK for now.
     unusable = false;
     return;
@@ -307,10 +311,14 @@ void AmbientLight::_recomputeThresholds(const boolean sensitive)
      (recentMax <= recentMin) ||
      (recentMax - recentMin < ABS_MIN_AMBLIGHT_RANGE_UINT8))
     {
-    // Use the built-in default thresholds.
-    darkThreshold = LDR_THR_LOW >> shiftRawScaleTo8Bit;
-    lightThreshold = LDR_THR_HIGH >> shiftRawScaleTo8Bit;
-    upDelta = lightThreshold - darkThreshold;
+//    // Use the built-in default thresholds.
+//    darkThreshold = LDR_THR_LOW >> shiftRawScaleTo8Bit;
+//    lightThreshold = LDR_THR_HIGH >> shiftRawScaleTo8Bit;
+//    upDelta = lightThreshold - darkThreshold;
+    // Use the supplied default light threshold and derive the rest from it.
+    lightThreshold = defaultLightThreshold;
+    upDelta = max(1, lightThreshold >> 2);
+    darkThreshold = lightThreshold - upDelta;
     // Assume unusable.
     unusable = true;
     return;
@@ -373,8 +381,89 @@ void AmbientLight::setMinMax(const uint8_t recentMinimumOrFF, const uint8_t rece
   }
 
 
+
+//// Note on: phototransistor variant.
+//// Note that if AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400 is defined
+//// This expects a current-response phototransistor in place of the LDR
+//// with roughly full-scale value in full light against internal 1.1V reference
+//// not against supply voltage as usual.
+//
+#ifdef AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
+//#define ALREFERENCE INTERNAL // Internal 1.1V reference.
+//
+//#ifdef AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400_WRONG_WAY // Schematic error in one board!
+//#define ALREFERENCE DEFAULT // Supply voltage as reference for REV9 cut1.  HACK HACK!
+//#endif // AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400_WRONG_WAY
+//
+//// If defined, then allow adaptive compression of top part of range when would otherwise max out.
+//// This may be somewhat supply-voltage dependent, eg capped by the supply voltage.
+//// Supply voltage is expected to be 2--3 times the bandgap reference, typically.
+////#define ADAPTIVE_THRESHOLD 896U // (1024-128) Top ~10%, companding by 8x.
+////#define ADAPTIVE_THRESHOLD 683U // (1024-683) Top ~33%, companding by 4x.
+////static const uint16_t scaleFactor = (extendedScale - ADAPTIVE_THRESHOLD) / (normalScale - ADAPTIVE_THRESHOLD);
+//// Assuming typical V supply of 2--3 times Vbandgap,
+//// compress above threshold to extend top of range by a factor of two.
+//// Ensure that scale stays monotonic in face of calculation lumpiness, etc...
+//// Scale all remaining space above threshold to new top value into remaining space.
+//// Ensure scaleFactor is a power of two for speed.
+//
+//#ifndef ENABLE_AMBLIGHT_EXTRA_SENSITIVE 
+//// Don't extend the dynamic range of this ambient light sensor
+//// if the photosensor is badly located or otherwise needs to be made more sensitive.
+////
+//// IF DEFINED: extend optosensor range as far as possible at the expense of loss of linearity.
+//#define EXTEND_OPTO_SENSOR_RANGE
+//// Switch to measuring against supply voltage to maximise range.
+//// Will be severely non-linear at top end
+//// and will change with battery voltage at bottom end,
+//// but rely on dynamic adaptation to deal with some of that.
+//// Note that with low supply voltage headroom there may not be much linear range if any.
+//#undef ALREFERENCE
+//#define ALREFERENCE DEFAULT
+////static const uint16_t extendedScale = 2048;
+////static const uint8_t shiftExtendedToRawScale = 1;
+//#endif
+//
+// This implementation expects a phototransitor TEPT4400 (50nA dark current, nominal 200uA@100lx@Vce=50V) from IO_POWER_UP to LDR_SENSOR_AIN and 220k to ground.
+// Measurement should be taken wrt to internal fixed 1.1V bandgap reference, since light indication is current flow across a fixed resistor.
+// Aiming for maximum reading at or above 100--300lx, ie decent domestic internal lighting.
+// Note that phototransistor is likely far more directionally-sensitive than LDR and its response nearly linear.
+// This extends the dynamic range and switches to measurement vs supply when full-scale against bandgap ref, then scales by Vss/Vbandgap and compresses to fit.
+// http://home.wlv.ac.uk/~in6840/Lightinglevels.htm
+// http://www.engineeringtoolbox.com/light-level-rooms-d_708.html
+// http://www.pocklington-trust.org.uk/Resources/Thomas%20Pocklington/Documents/PDF/Research%20Publications/GPG5.pdf
+// http://www.vishay.com/docs/84154/appnotesensors.pdf
+//
+#if (7 == V0p2_REV) // REV7 initial board run especially uses different phototransistor (not TEPT4400).
+// Note that some REV7s from initial batch were fitted with wrong device entirely,
+// an IR device, with very low effective sensitivity (FSD ~ 20 rather than 1023).
+static const int LDR_THR_LOW = 180U;
+static const int LDR_THR_HIGH = 250U;
+#else // REV4 default values.
+static const int LDR_THR_LOW = 270U;
+static const int LDR_THR_HIGH = 400U;
+#endif
+
+#else // LDR (!defined(AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400))
+
+// This implementation expects an LDR (1M dark resistance) from IO_POWER_UP to LDR_SENSOR_AIN and 100k to ground.
+// Measurement should be taken wrt to supply voltage, since light indication is a fraction of that.
+// Values below from PICAXE V0.09 impl approx multiplied by 4+ to allow for scale change.
+#define ALREFERENCE DEFAULT // Supply voltage as reference.
+
+#ifdef ENABLE_AMBLIGHT_EXTRA_SENSITIVE // Define if LDR not exposed to much light, eg for REV2 cut4 sideways-pointing LDR (TODO-209).
+static const int LDR_THR_LOW = 50U;
+static const int LDR_THR_HIGH = 70U; 
+#else // Normal settings.
+static const int LDR_THR_LOW = 160U; // Was 30.
+static const int LDR_THR_HIGH = 200U; // Was 35.
+#endif // ENABLE_AMBLIGHT_EXTRA_SENSITIVE
+
+#endif // AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
+
+
 // Singleton implementation/instance.
-AmbientLight AmbLight(LDR_THR_HIGH);
+AmbientLight AmbLight(LDR_THR_HIGH >> shiftRawScaleTo8Bit);
 #endif // ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
 
 

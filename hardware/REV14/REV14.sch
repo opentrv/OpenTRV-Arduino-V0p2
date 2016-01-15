@@ -11849,7 +11849,7 @@ Source: http://cache.national.com/ds/LM/LM321.pdf</description>
 <part name="IC3" library="TS1003IG5T" deviceset="TS1003IG5T" device="MF"/>
 <part name="C3" library="resistor" deviceset="C-EU" device="C0603" value="22pF"/>
 <part name="C6" library="resistor" deviceset="C-EU" device="C0603" value="22pF"/>
-<part name="C7" library="resistor" deviceset="C-EU" device="C0603" value="0.22uF"/>
+<part name="C7" library="rcl" deviceset="C-EU" device="050H075X075" value="0.22uF"/>
 <part name="C8" library="resistor" deviceset="C-EU" device="C0603" value="100uF"/>
 <part name="R19" library="resistor" deviceset="R-EU_" device="R0603" value="2.2M"/>
 <part name="R20" library="resistor" deviceset="R-EU_" device="R0603" value="100K"/>
