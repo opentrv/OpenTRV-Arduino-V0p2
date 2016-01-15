@@ -391,7 +391,7 @@ void checkUserSchedule()
 // where EXT is the name of the extension, usually 3 letters.
 
 #include <OTProtocolCC.h>
-#include "RFM22_Radio.h"
+#include "Radio.h"
 
 // It is acceptable for extCLIHandler() to alter the buffer passed,
 // eg with strtok_t().

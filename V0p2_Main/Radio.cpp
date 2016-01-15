@@ -129,11 +129,13 @@ void RFM22RawStatsTXFFTerminated(uint8_t * const buf, const bool doubleTX, bool 
 
 #ifdef ALLOW_CC1_SUPPORT_RELAY
 #include <OTProtocolCC.h>
-//#include "FHT8V_Wireless_Rad_Valve.h"
+#include <OTRadValve.h>
+#include "V0p2_Actuators.h"
 // Send a CC1 Alert message with this unit's house code via the RFM23B.
 bool sendCC1AlertByRFM23B()
   {
-  OTProtocolCC::CC1Alert a = OTProtocolCC::CC1Alert::make(FHT8VGetHC1(), FHT8VGetHC2());
+//  OTProtocolCC::CC1Alert a = OTProtocolCC::CC1Alert::make(FHT8VGetHC1(), FHT8VGetHC2());
+  OTProtocolCC::CC1Alert a = OTProtocolCC::CC1Alert::make(FHT8V.getHC1(), FHT8V.getHC2());
   if(a.isValid()) // Might be invalid if house codes are, eg if house codes not set.
     {
     uint8_t txbuf[STATS_MSG_START_OFFSET + OTProtocolCC::CC1Alert::primary_frame_bytes+1]; // More than large enough for preamble + sync + alert message.
