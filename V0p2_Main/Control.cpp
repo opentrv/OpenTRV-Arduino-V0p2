@@ -766,7 +766,7 @@ void sampleStats(const bool fullSample)
 #if defined(HUMIDITY_SENSOR_SUPPORT)
   // Assume for now RH% always available (compile-time determined) or not; not intermittent.
   // TODO: allow this to work with at least start-up-time availability detection.
-  const uint16_t rhpc = fnmin(RelHumidity.get(), (uint8_t)100); // Fail safe.
+  const uint16_t rhpc = OTV0P2BASE::fnmin(RelHumidity.get(), (uint8_t)100); // Fail safe.
   static uint16_t rhpcTotal;
   rhpcTotal = firstSample ? rhpc : (rhpcTotal + rhpc);
 #endif
