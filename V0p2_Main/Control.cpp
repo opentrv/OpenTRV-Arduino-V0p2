@@ -1135,7 +1135,7 @@ static void wireComponentsTogether()
   // Load EEPROM house codes into primary FHT8V instance at start.
   FHT8VLoadHCFromEEPROM();
 #endif // USE_MODULE_FHT8VSIMPLE
-#ifdef ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
+#if defined(ENABLE_OCCUPANCY_SUPPORT) && defined(ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT)
   AmbLight.setPossOccCallback(genericMarkAsPossiblyOccupied);
 #endif // ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
   // TODO
