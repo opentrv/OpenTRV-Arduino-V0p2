@@ -417,7 +417,7 @@ class ModelledRadValve : public OTRadValve::AbstractRadValve
 extern ModelledRadValve NominalRadValve;
 #elif defined(SLAVE_TRV)
 // Valve which is put where it is told; no smarts of its own.
-class SimpleSlaveRadValve : public AbstractRadValve
+class SimpleSlaveRadValve : public OTRadValve::AbstractRadValve
   {
   private:
     // Ticks left before comms timing out and valve should revert to 'safe' position.
