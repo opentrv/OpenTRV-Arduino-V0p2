@@ -170,6 +170,15 @@ class AmbientLight : public OTV0P2BASE::SimpleTSUint8Sensor
     // So lightThreshold is strictly greater than darkThreshold.
     uint8_t darkThreshold, lightThreshold;
 
+    // Default value for defaultLightThreshold.
+    // Works for normal LDR pointing forward.
+    static const uint8_t DEFAULT_defaultLightThreshold = 50;
+
+    // Default light threshold (from which dark will be deduced as ~25% lower).
+    // Set in constructor.
+    // This is used if setMinMax() is not used.
+    const uint8_t defaultLightThreshold;
+
     // Set true if ambient light sensor may be unusable or unreliable.
     // This will be where (for example) there are historic values
     // but in a very narrow range which implies a broken sensor or shadowed location.
@@ -185,10 +194,11 @@ class AmbientLight : public OTV0P2BASE::SimpleTSUint8Sensor
     void _recomputeThresholds(boolean sensitive = true);
 
   public:
-    AmbientLight()
+    AmbientLight(const uint8_t defaultLightThreshold_ = DEFAULT_defaultLightThreshold)
       : rawValue(~0U), // Initial values is distinct.
         isRoomLitFlag(false), darkTicks(0),
         recentMin(~0), recentMax(~0),
+        defaultLightThreshold(min(254, max(1, defaultLightThreshold_))),
         unusable(false),
         possOccCallback(NULL)
       { _recomputeThresholds(); }

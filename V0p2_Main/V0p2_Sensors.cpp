@@ -86,7 +86,7 @@ static const uint8_t shiftRawScaleTo8Bit = 2;
 // Scale all remaining space above threshold to new top value into remaining space.
 // Ensure scaleFactor is a power of two for speed.
 
-#ifndef LDR_EXTRA_SENSITIVE 
+#ifndef ENABLE_AMBLIGHT_EXTRA_SENSITIVE 
 // Don't extend the dynamic range of this ambient light sensor
 // if the photosensor is badly located or otherwise needs to be made more sensitive.
 //
@@ -113,7 +113,7 @@ static const uint8_t shiftRawScaleTo8Bit = 2;
 // http://www.pocklington-trust.org.uk/Resources/Thomas%20Pocklington/Documents/PDF/Research%20Publications/GPG5.pdf
 // http://www.vishay.com/docs/84154/appnotesensors.pdf
 
-#if (7 == V0p2_REV) // REV7 board uses different phototransistor (not TEPT4400).
+#if (7 == V0p2_REV) // REV7 initial board run especially uses different phototransistor (not TEPT4400).
 // Note that some REV7s from initial batch were fitted with wrong device entirely,
 // an IR device, with very low effective sensitivity (FSD ~ 20 rather than 1023).
 static const int LDR_THR_LOW = 180U;
@@ -130,7 +130,7 @@ static const int LDR_THR_HIGH = 400U;
 // Values below from PICAXE V0.09 impl approx multiplied by 4+ to allow for scale change.
 #define ALREFERENCE DEFAULT // Supply voltage as reference.
 
-#ifdef LDR_EXTRA_SENSITIVE // Define if LDR not exposed to much light, eg for REV2 cut4 sideways-pointing LDR (TODO-209).
+#ifdef ENABLE_AMBLIGHT_EXTRA_SENSITIVE // Define if LDR not exposed to much light, eg for REV2 cut4 sideways-pointing LDR (TODO-209).
 static const int LDR_THR_LOW = 50U;
 static const int LDR_THR_HIGH = 70U; 
 #else // Normal settings.
@@ -374,7 +374,7 @@ void AmbientLight::setMinMax(const uint8_t recentMinimumOrFF, const uint8_t rece
 
 
 // Singleton implementation/instance.
-AmbientLight AmbLight;
+AmbientLight AmbLight(LDR_THR_HIGH);
 #endif // ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
 
 

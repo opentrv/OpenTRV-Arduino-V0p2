@@ -46,7 +46,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_Trial2013Winter_Round2_LVBH // REV2 cut4 local valve control and boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as plain boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
-//#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
+#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
 //#define CONFIG_DORM1 // REV7 / DORM1 Winter 2014/2015 all-in-one valve unit.
 //#define CONFIG_DORM1_BOILER // REV8 / DORM1 Winter 2014/2015 boiler-control unit.
 //#define CONFIG_REV11_RAW_JSON // REV11 as raw JSON-only stats/sensor leaf.
@@ -61,7 +61,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_Trial2013Winter_Round2_SECURE_NOHUB // REV2 cut4 leaf (valve/sensor) 2015/12 secure protocol.
 //#define CONFIG_Trial2013Winter_Round2_SECURE_HUB // REV2 cut4 hub (boiler/stats) 2015/12 secure protocol.
 //#define CONFIG_DHD_TESTLAB_REV4 // REV4 cut2.
-#define CONFIG_DHD_TESTLAB_REV4_NOHUB // REV4 cut2, no hub.
+//#define CONFIG_DHD_TESTLAB_REV4_NOHUB // REV4 cut2, no hub.
 //#define CONFIG_BH_DHW // Bo's hot water.
 //#define CONFIG_BH_TESTLAB // Bo's test environment.
 //#define CONFIG_DORM1_SANS32K // REV7 / DORM1 without working 32768Hz clock.
@@ -90,7 +90,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // PRE-DEFINED CONFIG_... BUNDLE IMPLEMENTATION/EXPANSION
 // These features can be turned off if not required in particular implementations.
 
-// Defaults for V0.2; have to be undefined if not required.
+// Defaults for V0.2; should be undefined if not required.
+//
 // Use sleep wakeup (2Hz by default) from external 32768Hz xtal and timer 2.
 #define WAKEUP_32768HZ_XTAL
 // IF DEFINED: this unit may run on 2xAA cells, preferably rechargeable eg NiMH, ~2V--2.4V, and should monitor supply voltage.
@@ -127,18 +128,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define ENABLE_RADIO_RX
 // IF DEFINED: (default) forced always-on radio listen/RX, eg not requiring setup to explicitly enable.
 #undef ENABLE_DEFAULT_ALWAYS_RX
-// IF DEFINED: use the temperature-setting potentiometer/dial if present.
-#define ENABLE_TEMP_POT_IF_PRESENT
 // IF DEFINED: use active-low LEARN button(s).  Needs SUPPORT_SINGLETON_SCHEDULE.
 #define LEARN_BUTTON_AVAILABLE // OPTIONAL ON V0.09 PCB1
-// IF DEFINED: support for general timed and multi-input occupancy detection / use.
-#define ENABLE_OCCUPANCY_SUPPORT
-// IF DEFINED: detect occupancy based on ambient light, if available.
-#define ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
-// IF DEFINED: detect occupancy based on relative humidity, if available.
-#define ENABLE_OCCUPANCY_DETECTION_FROM_RH
-// IF DEFINED: detect occupancy based on voice detection, if available. This undefines learn button 2
-#undef ENABLE_OCCUPANCY_DETECTION_FROM_VOICE
 // IF DEFINED: allow periodic machine- and human- readable status report to serial, starting with "="/
 #define ENABLE_SERIAL_STATUS_REPORT
 // IF DEFINED: this unit supports CLI over the USB/serial connection, eg for run-time reconfig.
@@ -180,6 +171,20 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #undef ENABLE_OTSECUREFRAME_INSECURE_RX_PERMITTED
 // IF DEFINED: force all receivers back into RX mode periodically.  BODGE: DISABLED BY DEFAULT.
 #undef CONFIG_FORCE_TO_RX_MODE_REGULARLY
+//// SENSOR OPTIONS
+// IF DEFINED: allow for less light on sideways-pointing ambient light sensor, eg on cut4 2014/03/17 REV2 boards (TODO-209).
+#undef ENABLE_AMBLIGHT_EXTRA_SENSITIVE
+// IF DEFINED: use the temperature-setting potentiometer/dial if present.
+#define ENABLE_TEMP_POT_IF_PRESENT
+//// OCCUPANCY OPTIONS
+// IF DEFINED: support for general timed and multi-input occupancy detection / use.
+#define ENABLE_OCCUPANCY_SUPPORT
+// IF DEFINED: detect occupancy based on ambient light, if available.
+#define ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
+// IF DEFINED: detect occupancy based on relative humidity, if available.
+#define ENABLE_OCCUPANCY_DETECTION_FROM_RH
+// IF DEFINED: detect occupancy based on voice detection, if available. This undefines learn button 2
+#undef ENABLE_OCCUPANCY_DETECTION_FROM_VOICE
 
 
 
@@ -452,7 +457,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // Revision REV2 (cut4+) of V0.2 board.
 #define V0p2_REV 2
 // IF DEFINED: allow for less light on sideways-pointing LDR on cut4 2014/03/17 REV2 boards (TODO-209).
-#define LDR_EXTRA_SENSITIVE
+#define ENABLE_AMBLIGHT_EXTRA_SENSITIVE
 // Use common settings.
 #define COMMON_SETTINGS
 #endif
