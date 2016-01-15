@@ -61,14 +61,14 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_Trial2013Winter_Round2_SECURE_NOHUB // REV2 cut4 leaf (valve/sensor) 2015/12 secure protocol.
 //#define CONFIG_Trial2013Winter_Round2_SECURE_HUB // REV2 cut4 hub (boiler/stats) 2015/12 secure protocol.
 //#define CONFIG_DHD_TESTLAB_REV4 // REV4 cut2.
-//#define CONFIG_DHD_TESTLAB_REV4_NOHUB // REV4 cut2, no hub.
+#define CONFIG_DHD_TESTLAB_REV4_NOHUB // REV4 cut2, no hub.
 //#define CONFIG_BH_DHW // Bo's hot water.
 //#define CONFIG_BH_TESTLAB // Bo's test environment.
 //#define CONFIG_DORM1_SANS32K // REV7 / DORM1 without working 32768Hz clock.
 //#define CONFIG_DORM1_MUT // REV7 / DORM1 Winter 2014/2015 minimal for unit testing.
 //#define CONFIG_REV7N // REV7 with external "Model N" valve.
 //#define CONFIG_REV7_AS_SENSOR // REV7 as JSON-only stats/sensor leaf.
-#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
+//#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
 //#define CONFIG_REV9_STATS // REV9 as stats node, cut 2 of the board.
 //#define CONFIG_REV9_cut1 // REV9 as CC1 relay, cut1 of board.
 //#define CONFIG_DE_TESTLAB // Deniz's test environment.

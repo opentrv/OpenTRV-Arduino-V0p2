@@ -177,7 +177,8 @@ class AmbientLight : public OTV0P2BASE::SimpleTSUint8Sensor
 
     // Recomputes thresholds and 'unusable' based on current state.
     // WARNING: called from (static) constructors so do not attempt (eg) use of Serial.
-    void _recomputeThresholds();
+    //   * sensitive  if true be reasonably sensitive to possible occupancy changes, else less so.
+    void _recomputeThresholds(boolean sensitive = true);
 
   public:
     AmbientLight()
@@ -229,8 +230,10 @@ class AmbientLight : public OTV0P2BASE::SimpleTSUint8Sensor
     // Short term stats are typically over the last day,
     // longer term typically over the last week or so (eg rolling exponential decays).
     // Call regularly, roughly hourly, to drive other internal time-dependent adaptation.
+    //   * sensitive  if true be reasonably sensitive to possible occupancy changes, else less so.
     void setMinMax(uint8_t recentMinimumOrFF, uint8_t recentMaximumOrFF,
-                   uint8_t longerTermMinimumOrFF = 0xff, uint8_t longerTermMaximumOrFF = 0xff);
+                   uint8_t longerTermMinimumOrFF = 0xff, uint8_t longerTermMaximumOrFF = 0xff,
+                   boolean sensitive = true);
 
 #ifdef UNIT_TESTS
     // Set new value(s) for unit test only.
@@ -262,14 +265,17 @@ extern AmbientLight AmbLight;
 
 
 #ifndef OMIT_MODULE_LDROCCUPANCYDETECTION
-// Update with rolling stats to adapt to sensors and local environment.       
+bool hasEcoBias(); // Forward decl...
+// Update with rolling stats to adapt to sensors and local environment.
+// ...and prevailing mode, so may take a while to adjust.
 inline void updateAmbLightFromStats()
   {
   AmbLight.setMinMax(
           OTV0P2BASE::getMinByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR),
           OTV0P2BASE::getMaxByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR),
           OTV0P2BASE::getMinByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED),
-          OTV0P2BASE::getMaxByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED));
+          OTV0P2BASE::getMaxByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED),
+          !hasEcoBias());
   }
 #endif // OMIT_MODULE_LDROCCUPANCYDETECTION
 

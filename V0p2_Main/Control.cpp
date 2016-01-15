@@ -1139,6 +1139,8 @@ static void wireComponentsTogether()
 
 
 // Initialise sensors with stats info where needed.
+// Should be called at least hourly,
+// but can be called whenever user adjusts settings for example.
 static void updateSensorsFromStats()
   {
 #ifndef OMIT_MODULE_LDROCCUPANCYDETECTION
@@ -1909,6 +1911,8 @@ void loopOpenTRV()
     {
     // Force immediate recompute of target temperature for (UI) responsiveness.
     NominalRadValve.computeTargetTemperature();
+    // Keep dynamic adjustment of sensors up to date.
+    updateSensorsFromStats();
     }
 #endif
 

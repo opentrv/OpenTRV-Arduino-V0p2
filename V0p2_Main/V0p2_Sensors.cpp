@@ -287,7 +287,8 @@ static const uint8_t ABS_MIN_AMBLIGHT_HYST_UINT8 = 2;
 
 // Recomputes thresholds and 'unusable' based on current state.
 // WARNING: called from (static) constructors so do not attempt (eg) use of Serial.
-void AmbientLight::_recomputeThresholds()
+//   * sensitive  if true be reasonably sensitive to possible occupancy changes, else less so.
+void AmbientLight::_recomputeThresholds(const boolean sensitive)
   {
   // If either recent max or min is unset then assume device usable by default.
   // Use built-in thresholds.
@@ -323,12 +324,13 @@ void AmbientLight::_recomputeThresholds()
   // Some areas may have background flicker eg from trees moving or cars passing, so units there may need desensitising.
   // Could (say) increment an additional margin (up to ~25%) on each non-zero-trigger last hour, else decrement.
   //
-  // Take upwards delta indicative of lights on, and hysteresis, as ~12.5% of FSD.
+  // Take upwards delta indicative of lights on, and hysteresis, as ~12.5% of FSD if 'sensitive'/default,
+  // else 25% if less sensitive.
   //
   // TODO: possibly allow a small adjustment on top of this to allow >= 1 each trigger and trigger-free hours each day.
   // Some areas may have background flicker eg from trees moving or cars passing, so units there may need desensitising.
   // Could (say) increment an additional margin (up to half) on each non-zero-trigger last hour, else decrement.
-  upDelta = max((recentMax - recentMin) >> 3, ABS_MIN_AMBLIGHT_HYST_UINT8);
+  upDelta = max((recentMax - recentMin) >> (sensitive ? 3 : 2), ABS_MIN_AMBLIGHT_HYST_UINT8);
   // Provide some noise elbow-room above the observed minimum.
   // Set the hysteresis values to be the same as the upDelta.
   darkThreshold = (uint8_t) min(254, recentMin+1 + (upDelta>>1));
@@ -343,8 +345,10 @@ void AmbientLight::_recomputeThresholds()
 // Short term stats are typically over the last day,
 // longer term typically over the last week or so (eg rolling exponential decays).
 // Call regularly, roughly hourly, to drive other internal time-dependent adaptation.
+//   * sensitive if true be reasonably sensitive to possible occupancy changes, else less so.
 void AmbientLight::setMinMax(const uint8_t recentMinimumOrFF, const uint8_t recentMaximumOrFF,
-                             const uint8_t longerTermMinimumOrFF, const uint8_t longerTermMaximumOrFF)
+                             const uint8_t longerTermMinimumOrFF, const uint8_t longerTermMaximumOrFF,
+                             const boolean sensitive)
   {
   // Simple approach: will ignore an 'unset'/0xff value if the other is good.
   recentMin = min(recentMinimumOrFF, longerTermMinimumOrFF);
@@ -357,7 +361,7 @@ void AmbientLight::setMinMax(const uint8_t recentMinimumOrFF, const uint8_t rece
     recentMax = (uint8_t) (((3*(uint16_t)recentMaximumOrFF) + (uint16_t)longerTermMaximumOrFF) >> 2);
     }
 
-  _recomputeThresholds();
+  _recomputeThresholds(sensitive);
 
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINT_FLASHSTRING("Ambient recent min/max: ");
