@@ -706,7 +706,7 @@ static void dumpCLIUsage(const uint8_t stopBy)
 #ifndef ENABLE_CLI_HELP
   Serial.println(F("No CLI help")); // Minimal placeholder.
 #else
-  const uint8_t deadline = fnmin((uint8_t)(stopBy - fnmin(stopBy,CLI_PRINT_OH_SCT)), STOP_PRINTING_DESCRIPTION_AT);
+  const uint8_t deadline = OTV0P2BASE::fnmin((uint8_t)(stopBy - OTV0P2BASE::fnmin(stopBy,CLI_PRINT_OH_SCT)), STOP_PRINTING_DESCRIPTION_AT);
   Serial.println();
   //Serial.println(F("CLI usage:"));
   printCLILine(deadline, '?', F("this help"));
@@ -1323,7 +1323,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
       case 'Z':
         {
         // Try to avoid causing an overrun if near the end of the minor cycle (even allowing for the warning message if unfinished!).
-        if(OTV0P2BASE::zapStats((uint16_t) fnmax(1, ((int)OTV0P2BASE::msRemainingThisBasicCycle()/2) - 20)))
+        if(OTV0P2BASE::zapStats((uint16_t) OTV0P2BASE::fnmax(1, ((int)OTV0P2BASE::msRemainingThisBasicCycle()/2) - 20)))
           { Serial.println(F("Zapped.")); }
         else
           { Serial.println(F("Not finished.")); }

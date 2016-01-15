@@ -289,7 +289,7 @@ uint8_t OccupancyTracker::read()
     {
     // Compute as percentage.
     const uint8_t newValue = (0 == occupationCountdownM) ? 0 :
-        fnmin((uint8_t)((uint8_t)100 - (uint8_t)((((uint8_t)OCCUPATION_TIMEOUT_M) - occupationCountdownM) << OCCCP_SHIFT)), (uint8_t)100);
+        OTV0P2BASE::fnmin((uint8_t)((uint8_t)100 - (uint8_t)((((uint8_t)OCCUPATION_TIMEOUT_M) - occupationCountdownM) << OCCCP_SHIFT)), (uint8_t)100);
     value = newValue;
     // Run down occupation timer (or run up vacancy time) if need be.
     if(occupationCountdownM > 0) { --occupationCountdownM; vacancyM = 0; vacancyH = 0; }
@@ -313,7 +313,7 @@ void OccupancyTracker::markAsPossiblyOccupied()
     { LED_HEATCALL_ON_ISR_SAFE(); }
   ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
     {
-    occupationCountdownM = fnmax((uint8_t)occupationCountdownM, (uint8_t)(OCCUPATION_TIMEOUT_1_M));
+    occupationCountdownM = OTV0P2BASE::fnmax((uint8_t)occupationCountdownM, (uint8_t)(OCCUPATION_TIMEOUT_1_M));
     }
   activityCountdownM = 2;
   }
@@ -471,7 +471,7 @@ uint8_t ModelledRadValve::computeTargetTemp()
       {
       const uint8_t warmTarget = getWARMTargetC();
       // Compute putative pre-warm temperature, usually only just below WARM target,
-      const uint8_t preWarmTempC = fnmax((uint8_t)(warmTarget - (isEcoTemperature(warmTarget) ? SETBACK_ECO : SETBACK_DEFAULT)), frostC);
+      const uint8_t preWarmTempC = OTV0P2BASE::fnmax((uint8_t)(warmTarget - (isEcoTemperature(warmTarget) ? SETBACK_ECO : SETBACK_DEFAULT)), frostC);
       if(frostC < preWarmTempC) // && (!isEcoTemperature(warmTarget)))
         { return(preWarmTempC); }
       }
@@ -482,7 +482,7 @@ uint8_t ModelledRadValve::computeTargetTemp()
 
   else if(inBakeMode()) // If in BAKE mode then use elevated target.
     {
-    return(fnmin((uint8_t)(getWARMTargetC() + BAKE_UPLIFT), (uint8_t)MAX_TARGET_C)); // No setbacks apply in BAKE mode.
+    return(OTV0P2BASE::fnmin((uint8_t)(getWARMTargetC() + BAKE_UPLIFT), (uint8_t)MAX_TARGET_C)); // No setbacks apply in BAKE mode.
     }
 
   else // In 'WARM' mode with possible setback.
@@ -528,7 +528,7 @@ uint8_t ModelledRadValve::computeTargetTemp()
           ((hasEcoBias() && (longLongVacant || (notLikelyOccupiedSoon && isEcoTemperature(wt)))) ?
               SETBACK_FULL : SETBACK_ECO);
 
-      return(fnmax((uint8_t)(wt - setback), getFROSTTargetC())); // Target must never be set low enough to create a frost/freeze hazard.
+      return(OTV0P2BASE::fnmax((uint8_t)(wt - setback), getFROSTTargetC())); // Target must never be set low enough to create a frost/freeze hazard.
       }
     // Else use WARM target as-is.
     return(wt);
@@ -752,7 +752,7 @@ void sampleStats(const bool fullSample)
   if(inWarmMode()) { ++warmCount; } else { --warmCount; }
 #endif
   // Ambient light.
-  const uint16_t ambLight = fnmin(AmbLight.get(), (uint8_t)MAX_STATS_AMBLIGHT); // Constrain value at top end to avoid 'not set' value.
+  const uint16_t ambLight = OTV0P2BASE::fnmin(AmbLight.get(), (uint8_t)MAX_STATS_AMBLIGHT); // Constrain value at top end to avoid 'not set' value.
   static uint16_t ambLightTotal;
   ambLightTotal = firstSample ? ambLight : (ambLightTotal + ambLight);
   const int tempC16 = TemperatureC16.get();
@@ -899,7 +899,7 @@ void populateCoreStats(FullStatsMessageCore_t *const content)
   content->tempAndPower.tempC16 = TemperatureC16.get();
   content->tempAndPower.powerLow = Supply_cV.isSupplyVoltageLow();
   content->containsTempAndPower = true;
-  content->ambL = fnmax((uint8_t)1, fnmin((uint8_t)254, AmbLight.get())); // Coerce to allowed value in range [1,254]. Bug-fix (twice! TODO-510) c/o Gary Gladman!
+  content->ambL = OTV0P2BASE::fnmax((uint8_t)1, OTV0P2BASE::fnmin((uint8_t)254, AmbLight.get())); // Coerce to allowed value in range [1,254]. Bug-fix (twice! TODO-510) c/o Gary Gladman!
   content->containsAmbL = true;
   // OC1/OC2 = Occupancy: 00 not disclosed, 01 not occupied, 10 possibly occupied, 11 probably occupied.
   // The encodeFullStatsMessageCore() route should omit data not appopriate for security reasons.
