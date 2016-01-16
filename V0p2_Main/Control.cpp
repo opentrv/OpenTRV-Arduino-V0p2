@@ -407,12 +407,12 @@ uint8_t ModelledRadValve::computeTargetTemp()
          OTV0P2BASE::inOutlierQuartile(false, V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED) &&
          OTV0P2BASE::inOutlierQuartile(false, V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::inOutlierQuartile_NEXT_HOUR));
     if(longVacant ||
-       ((notLikelyOccupiedSoon || (AmbLight.getDarkMinutes() > 10)) && !isAnyScheduleOnWARMNow() && !Occupancy.reportedRecently() && !recentUIControlUse()))
+       ((notLikelyOccupiedSoon || (AmbLight.getDarkMinutes() > 10)) && !isAnyScheduleOnWARMNow() && !recentUIControlUse()))
       {
-      // Use a default minimal non-annoying setback if
+      // Use a default minimal non-annoying setback if:
       //   in upper part of comfort range
       //   or if the room is likely occupied now
-      //   or if the room is lit and hasn't been vacant for a very long time (TODO-107)
+      //   or if the room is not known to be dark and hasn't been vacant for a very long time (TODO-107)
       //   or if the room is commonly occupied at this time and hasn't been vacant for a very long time
       //   or if a scheduled WARM period is due soon and the room hasn't been vacant for a moderately long time,
       // else usually use a somewhat bigger 'eco' setback
@@ -421,7 +421,7 @@ uint8_t ModelledRadValve::computeTargetTemp()
       //   or is unlikely to be unoccupied at this time of day and in the lower part of the 'eco' range.
       const uint8_t setback = (isComfortTemperature(wt) ||
                                Occupancy.isLikelyOccupied() ||
-                               (!longLongVacant && AmbLight.isRoomLit()) ||
+                               (!longLongVacant && !AmbLight.isRoomDark()) ||
                                (!longLongVacant && OTV0P2BASE::inOutlierQuartile(true, V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED)) ||
                                (!longVacant && isAnyScheduleOnWARMSoon())) ?
               SETBACK_DEFAULT :

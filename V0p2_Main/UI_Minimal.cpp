@@ -586,22 +586,23 @@ void serialStatusReport()
   Serial.print('S'); // Current settable temperature target, and FROST and WARM settings.
 #ifdef LOCAL_TRV
   Serial.print(NominalRadValve.getTargetTempC());
-#endif
+#endif // LOCAL_TRV
   Serial_print_space();
   Serial.print(getFROSTTargetC());
   Serial_print_space();
-  Serial.print(getWARMTargetC());
-#if 0
+  const uint8_t wt = getWARMTargetC();
+  Serial.print(wt);
+#ifdef ENABLE_FULL_OT_CLI
   // Show bias.
   Serial_print_space();
-  Serial.print(hasEcoBias() ? 'e' : 'c'); // Show eco/comfort bias.
-#endif
-#ifdef ENABLE_ANTICIPATION
-  // Show warming predictions.
-  Serial.print(shouldBeWarmedAtHour(hh) ? 'w' : 'f');
-  Serial.print(shouldBeWarmedAtHour(hh < 23 ? (hh+1) : 0) ? 'w' : 'f');
-#endif
-#endif
+  Serial.print(hasEcoBias() ? (isEcoTemperature(wt) ? 'E' : 'e') : (isComfortTemperature(wt) ? 'C': 'c')); // Show eco/comfort bias.
+#endif // ENABLE_FULL_OT_CLI
+//#ifdef ENABLE_ANTICIPATION
+//  // Show warming predictions.
+//  Serial.print(shouldBeWarmedAtHour(hh) ? 'w' : 'f');
+//  Serial.print(shouldBeWarmedAtHour(hh < 23 ? (hh+1) : 0) ? 'w' : 'f');
+//#endif
+#endif // SETTABLE_TARGET_TEMPERATURES
 
   // *C* section: central hub values.
 #if defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX)
