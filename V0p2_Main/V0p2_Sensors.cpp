@@ -723,10 +723,8 @@ uint8_t TemperaturePot::read()
 
   // TODO: capture entropy from changed LS bits esp if reduced-noise version doesn't change.
 
-  // Store new raw value.
-  raw = tp;
-
   // Capture reduced-noise value with a little hysteresis.
+  // Only update the value if changed significantly.
   const uint8_t oldValue = value;
   const uint8_t shifted = tp >> 2;
   if(((shifted > oldValue) && (shifted - oldValue >= RN_HYST)) ||
@@ -739,22 +737,28 @@ uint8_t TemperaturePot::read()
     // Smart responses to adjustment/movement of temperature pot.
     // Possible to get reasonable functionality without using MODE button.
     //
-    // NOTE: without ignoredFirst this will also respond to the initial position of the pot
-    //   as the first reading is taken, ie may force to WARM or BAKE.
-    static bool ignoredFirst;
-    if(!ignoredFirst) { ignoredFirst = true; }
-    else
+    // Ignore first reading which might otherwise cause spurious mode change, etc.
+    if((uint16_t)~0U != (uint16_t)raw) // Ignore if raw not yet set for the first time.
       {
-      // Force FROST mode when dial turned right down to bottom.
-      if(rn < RN_FRBO) { setWarmModeDebounced(false); }
-      // Start BAKE mode when dial turned right up to top.
-      else if(rn > (255-RN_FRBO)) { startBakeDebounced(); }
-      // Cancel BAKE mode when dial/temperature turned down.
-      else if(rn < oldValue) { cancelBakeDebounced(); }
-      // Force WARM mode when dial/temperature turned up.
-      else if(rn > oldValue) { setWarmModeDebounced(true); }
+//      // Force FROST mode when dial turned right down to bottom.
+//      if(rn < RN_FRBO) { setWarmModeDebounced(false); }
+//      // Start BAKE mode when dial turned right up to top.
+//      else if(rn > (255-RN_FRBO)) { startBakeDebounced(); }
+//      // Cancel BAKE mode when dial/temperature turned down.
+//      else if(rn < oldValue) { cancelBakeDebounced(); }
+//      // Force WARM mode when dial/temperature turned up.
+//      else if(rn > oldValue) { setWarmModeDebounced(true); }
 
-      // Note user operation of pot.
+      // Force FROST mode when dial turned right down to bottom.
+      if(rn < RN_FRBO) { if(NULL != warmModeCallback) { warmModeCallback(false); } }
+      // Start BAKE mode when dial turned right up to top.
+      else if(rn > (255-RN_FRBO)) { if(NULL != bakeStartCallback) { bakeStartCallback(true); } }
+      // Cancel BAKE mode when dial/temperature turned down.
+      else if(rn < oldValue) { if(NULL != bakeStartCallback) { bakeStartCallback(false); } }
+      // Force WARM mode when dial/temperature turned up.
+      else if(rn > oldValue) { if(NULL != warmModeCallback) { warmModeCallback(true); } }
+
+      // Note that user operated the pot.
       // (Was a direct call to markUIControlUsed().)
       if(NULL != occCallback) { occCallback(); }
       }
@@ -768,6 +772,9 @@ uint8_t TemperaturePot::read()
   DEBUG_SERIAL_PRINTLN();
 #endif
 
+  // Store new raw value last.
+  raw = tp;
+  // Return noise-reduced value.
   return(value);
   }
 

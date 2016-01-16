@@ -313,14 +313,20 @@ class TemperaturePot : public OTV0P2BASE::SimpleTSUint8Sensor
     // Raw pot value [0,1023] if extra precision is required.
     uint16_t raw;
 
-    // Occupancy callback function (for good confidence of human presence).
+    // Occupancy callback function (for good confidence of human presence); NULL if not used.
     // Also indicates that the manual UI has been used.
     // If not NULL, is called when this sensor detects indications of occupancy.
     void (*occCallback)();
 
+    // WARM/FROST and BAKE start/cancel callbacks.
+    // If not NULL, are called when the pot is adjusted appropriately.
+    // Typically at most one call would be made on any approriate pot adjustment. 
+    void (*warmModeCallback)(bool);
+    void (*bakeStartCallback)(bool);
+
   public:
-    // Initialise to cautious values.
-    TemperaturePot() : raw(0), occCallback(NULL) { }
+    // Initialise raw to distinct/special value and all pointers to NULL.
+    TemperaturePot() : raw(~0U), occCallback(NULL), warmModeCallback(NULL), bakeStartCallback(NULL) { }
 
     // Force a read/poll of the temperature pot and return the value sensed [0,255] (cold to hot).
     // Potentially expensive/slow.
@@ -331,6 +337,12 @@ class TemperaturePot : public OTV0P2BASE::SimpleTSUint8Sensor
     // Set occupancy callback function (for good confidence of human presence); NULL for no callback.
     // Also indicates that the manual UI has been used.
     void setOccCallback(void (*occCallback_)()) { occCallback = occCallback_; }
+
+    // Set WARM/FROST and BAKE start/cancel callbacks.
+    // If not NULL, are called when the pot is adjusted appropriately.
+    // Typically at most one call would be made on any approriate pot adjustment. 
+    void setWFBCallbacks(void (*warmModeCallback_)(bool), void (*bakeStartCallback_)(bool))
+      { warmModeCallback = warmModeCallback_; bakeStartCallback = bakeStartCallback_; }
 
     // Return last value fetched by read(); undefined before first read()).
     // Fast.

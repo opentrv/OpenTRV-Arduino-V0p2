@@ -58,9 +58,7 @@ void setWarmModeDebounced(const bool warm)
   if(!warm) { cancelBakeDebounced(); }
   }
 
-
-//#ifdef SUPPORT_BAKE // IF DEFINED: this unit supports BAKE mode.
-// Only relevant if isWarmMode is true,
+// Only relevant if isWarmMode is true.
 static uint_least8_t bakeCountdownM;
 // If true then the unit is in 'BAKE' mode, a subset of 'WARM' mode which boosts the temperature target temporarily.
 bool inBakeMode() { return(isWarmMode && (0 != bakeCountdownM)); }
@@ -70,10 +68,13 @@ void cancelBakeDebounced() { bakeCountdownM = 0; }
 // Start/restart 'BAKE' mode and timeout.
 // Should be only be called once 'debounced' if coming from a button press for example.
 void startBakeDebounced() { isWarmMode = true; bakeCountdownM = BAKE_MAX_M; }
-//#endif
 
-
-
+// Start/cancel BAKE mode in one call.
+void setBakeModeDebounced(const bool start)
+  {
+  if(start) { startBakeDebounced(); }
+  else { cancelBakeDebounced(); }
+  }
 
 
 #if defined(UNIT_TESTS)
@@ -999,6 +1000,9 @@ static void wireComponentsTogether()
 //  TempPot.setOccCallback(genericMarkAsOccupied); // markUIControlUsed
   // Mark UI as used and indirectly mark occupancy when control is used.
   TempPot.setOccCallback(markUIControlUsed);
+  // Callbacks to set various mode combinations.
+  // Typically at most one call would be made on any approriate pot adjustment. 
+  TempPot.setWFBCallbacks(setWarmModeDebounced, setBakeModeDebounced);
 #endif // TEMP_POT_AVAILABLE
 
   // TODO
