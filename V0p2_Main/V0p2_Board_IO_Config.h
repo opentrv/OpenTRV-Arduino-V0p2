@@ -56,8 +56,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // 32768Hz xtal between pins 9 and 10, async timer 2, for accurate timekeeping and low-power sleep.
 //
 // Serial (bootloader/general): RX (dpin 0), TX (dpin 1)
-#define PIN_SERIAL_RX 0 // ATMega328P-PU PDIP pin 2, PD0.
-#define PIN_SERIAL_TX 1 // ATMega328P-PU PDIP pin 2, PD1.
+#define PIN_SERIAL_RX (::OTV0P2BASE::V0p2_PIN_SERIAL_RX) // 0: ATMega328P-PU PDIP pin 2, PD0.
+#define PIN_SERIAL_TX (::OTV0P2BASE::V0p2_PIN_SERIAL_TX) // 1: ATMega328P-PU PDIP pin 2, PD1.
 // SPI: SCK (dpin 13, also LED on Arduino boards that the bootloader may 'flash'), MISO (dpin 12), MOSI (dpin 11), nSS (dpin 10).
 #define PIN_SPI_SCK (::OTV0P2BASE::V0p2_PIN_SPI_SCK) // 13: ATMega328P-PU PDIP pin 19, PB5.
 #define PIN_SPI_MISO (::OTV0P2BASE::V0p2_PIN_SPI_MISO) // 12: ATMega328P-PU PDIP pin 18, PB4.
@@ -139,7 +139,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // Temperature potentiometer is present in REV 2/3/4/7.
 #if ((V0p2_REV >= 2) && (V0p2_REV <= 4)) || (V0p2_REV == 7)
 // Analogue input from pot.
-#define TEMP_POT_AIN 1 // ATMega328P-PU PDIP pin 24, PC1.
+#define TEMP_POT_AIN 1 (::OTV0P2BASE::V0p2_PIN_TEMP_POT_AIN) // AI1: ATMega328P-PU PDIP pin 24, PC1.
 // IF DEFINED: reverse the direction of temperature pot polarity.
 #define TEMP_POT_REVERSE
 #endif
