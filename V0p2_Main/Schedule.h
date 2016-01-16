@@ -17,7 +17,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 */
 
 /*
- Schedule support for TRV.
+ Simple schedule support for TRV.
  */
 
 #ifndef SCHEDULE_H

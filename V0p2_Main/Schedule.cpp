@@ -40,11 +40,6 @@ void _TEST_set_schedule_override(const _TEST_schedule_override override)
 
 
 
-
-
-
-// All EEPROM activity is made atomic by locking out interrupts where necessary.
-
 // Maximum mins-after-midnight compacted value in one byte.
 static const uint8_t MAX_COMPRESSED_MINS_AFTER_MIDNIGHT = ((OTV0P2BASE::MINS_PER_DAY / SIMPLE_SCHEDULE_GRANULARITY_MINS) - 1);
 
