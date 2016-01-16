@@ -269,17 +269,27 @@ OccupancyTracker Occupancy;
 void genericMarkAsPossiblyOccupied() { Occupancy.markAsPossiblyOccupied(); }
 
 
-// Crude percentage occupancy confidence [0,100].
-// Returns 0 if unknown or known unoccupied.
-#if (OCCUPATION_TIMEOUT_M < 25) || (OCCUPATION_TIMEOUT_M > 100)
-#error needs support for different occupancy timeout
-#elif OCCUPATION_TIMEOUT_M <= 25
-#define OCCCP_SHIFT 2
-#elif OCCUPATION_TIMEOUT_M <= 50
-#define OCCCP_SHIFT 1
-#elif OCCUPATION_TIMEOUT_M <= 100
-#define OCCCP_SHIFT 0
-#endif
+
+//#if (OCCUPATION_TIMEOUT_M < 25) || (OCCUPATION_TIMEOUT_M > 100)
+//#error needs support for different occupancy timeout
+//#elif OCCUPATION_TIMEOUT_M <= 25
+//#define OCCCP_SHIFT 2
+//#elif OCCUPATION_TIMEOUT_M <= 50
+//#define OCCCP_SHIFT 1
+//#elif OCCUPATION_TIMEOUT_M <= 100
+//#define OCCCP_SHIFT 0
+//#endif
+
+// Shift from minutes remaining to confidence.
+// Will not work correctly with timeout > 100.
+static const uint8_t OCCCP_SHIFT =
+  ((OCCUPATION_TIMEOUT_M <= 3) ? 5 :
+  ((OCCUPATION_TIMEOUT_M <= 6) ? 4 :
+  ((OCCUPATION_TIMEOUT_M <= 12) ? 3 :
+  ((OCCUPATION_TIMEOUT_M <= 25) ? 2 :
+  ((OCCUPATION_TIMEOUT_M <= 50) ? 1 :
+  ((OCCUPATION_TIMEOUT_M <= 100) ? 0 :
+  ((OCCUPATION_TIMEOUT_M <= 200) ? -1 : -2)))))));
 
 // Update notion of occupancy confidence.
 uint8_t OccupancyTracker::read()
