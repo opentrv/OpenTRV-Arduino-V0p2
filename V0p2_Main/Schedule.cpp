@@ -237,3 +237,52 @@ bool isAnyScheduleOnWARMSoon()
   return(false);
   }
 
+
+
+
+//#ifdef ENABLE_ANTICIPATION
+//// Returns true iff room likely to be occupied and need warming at the specified hour's sample point based on collected stats.
+//// Used for predictively warming a room in smart mode and for choosing setback depths.
+//// Returns false if no good evidence to warm the room at the given time based on past history over about one week.
+////   * hh hour to check for predictive warming [0,23]
+//bool shouldBeWarmedAtHour(const uint_least8_t hh)
+//  {
+//#ifdef ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
+//  // Return false immediately if the sample hour's historic ambient light level falls in the bottom quartile (or is zero).
+//  // Thus aim to shave off 'smart' warming for at least 25% of the daily cycle.
+//  if(inOutlierQuartile(false, EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED, hh)) { return(false); }
+//#endif // ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
+//
+//#ifdef
+//  // Return false immediately if the sample hour's historic occupancy level falls in the bottom quartile (or is zero).
+//  // Thus aim to shave off 'smart' warming for at least 25% of the daily cycle.
+//  if(inOutlierQuartile(false, EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, hh)) { return(false); }
+//#endif // ENABLE_OCCUPANCY_SUPPORT
+//
+//  const uint8_t warmHistory = eeprom_read_byte((uint8_t *)(EE_STATS_START_ADDR(EE_STATS_SET_WARMMODE_BY_HOUR_OF_WK) + hh));
+//  if(0 == (0x80 & warmHistory)) // This hour has a history.
+//    {
+////    // Return false immediately if no WARM mode this hour for the last week (ie the unit needs reminding at least once per week).
+////    if(0 == warmHistory) // No explicit WARM for a week at this hour, prevents 'smart' warming.
+////      { return(false); }
+//    // Return true immediately if this hour was in WARM mode yesterday or a week ago, and at least one other day.
+//    if((0 != (0x41 & warmHistory)) && (0 != (0x3e & warmHistory)))
+//      { return(true); }
+//    }
+//
+//  // Return true if immediately the sample hour is usually warm, ie at or above WARM target.
+//  const int smoothedTempHHNext = expandTempC16(eeprom_read_byte((uint8_t *)(EE_STATS_START_ADDR(EE_STATS_SET_TEMP_BY_HOUR_SMOOTHED) + hh)));
+//#if 0 && defined(DEBUG)
+//  DEBUG_SERIAL_PRINT_FLASHSTRING("Smoothed C for ");
+//  DEBUG_SERIAL_PRINT(hh);
+//  DEBUG_SERIAL_PRINT_FLASHSTRING("h is ");
+//  DEBUG_SERIAL_PRINT(smoothedTempHHNext >> 4);
+//  DEBUG_SERIAL_PRINTLN();
+//#endif
+//  if((STATS_UNSET_INT != smoothedTempHHNext) && (((smoothedTempHHNext+8)>>4) >= getWARMTargetC()))
+//    { return(true); }
+//
+//  // No good evidence for room to be warmed for specified hour.
+//  return(false);
+//  }
+//#endif
