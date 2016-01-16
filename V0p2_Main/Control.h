@@ -496,6 +496,8 @@ extern SimpleSlaveRadValve NominalRadValve;
 #ifdef ENABLE_OCCUPANCY_SUPPORT
 
 // Occupancy measure as a % confidence that the room/area controlled by this unit has active human occupants.
+// Occupancy also availble as more simple 3 (likely), 2 (possibly), 1 (not), 0 (unknown) scale.
+// Model is relatively simple based on time since last likely/possibly indication from sensors.
 class OccupancyTracker : public OTV0P2BASE::SimpleTSUint8Sensor
   {
   public:
