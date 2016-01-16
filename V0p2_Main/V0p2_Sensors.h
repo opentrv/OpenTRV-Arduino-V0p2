@@ -320,13 +320,29 @@ class TemperaturePot : public OTV0P2BASE::SimpleTSUint8Sensor
 
     // WARM/FROST and BAKE start/cancel callbacks.
     // If not NULL, are called when the pot is adjusted appropriately.
-    // Typically at most one call would be made on any approriate pot adjustment. 
+    // Typically at most one of these callbacks would be made on any approriate pot adjustment.
     void (*warmModeCallback)(bool);
     void (*bakeStartCallback)(bool);
 
   public:
     // Initialise raw to distinct/special value and all pointers to NULL.
-    TemperaturePot() : raw(~0U), occCallback(NULL), warmModeCallback(NULL), bakeStartCallback(NULL) { }
+    TemperaturePot(uint16_t minExpected_ = 0, uint16_t maxExpected_ = TEMP_POT_RAW_MAX)
+      : raw(~0U),
+        occCallback(NULL), warmModeCallback(NULL), bakeStartCallback(NULL),
+        minExpected(minExpected_), maxExpected(maxExpected_)
+      { }
+
+    // Lower and upper bounds of expected pot movement/output each in range [0,TEMP_POT_RAW_MAX].
+    // The values must be different and further apart at least than the noise threshold (~8).
+    // Max is lower than min if the pot value is to be reversed.
+    // Conservative values (ie with actual travel outside the specified range) should be specified
+    // if end-stop detection is to work (callbacks on hitting the extremes).
+    // The output is not rebased based on these values, though is reversed if necessary;
+    // whatever uses the pot output should map to the desired values.
+    // These read-only values are exposed to assist with any such mapping.
+    const uint16_t minExpected, maxExpected;
+    // Returns true if the pot output is to be reversed from the natural direction.
+    inline bool isReversed() { return(minExpected > maxExpected); }
 
     // Force a read/poll of the temperature pot and return the value sensed [0,255] (cold to hot).
     // Potentially expensive/slow.
@@ -340,7 +356,7 @@ class TemperaturePot : public OTV0P2BASE::SimpleTSUint8Sensor
 
     // Set WARM/FROST and BAKE start/cancel callbacks.
     // If not NULL, are called when the pot is adjusted appropriately.
-    // Typically at most one call would be made on any approriate pot adjustment. 
+    // Typically at most one of these callbacks would be made on any approriate pot adjustment.
     void setWFBCallbacks(void (*warmModeCallback_)(bool), void (*bakeStartCallback_)(bool))
       { warmModeCallback = warmModeCallback_; bakeStartCallback = bakeStartCallback_; }
 

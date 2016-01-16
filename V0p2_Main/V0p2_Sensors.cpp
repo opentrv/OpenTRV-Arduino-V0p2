@@ -697,12 +697,12 @@ extern ExtTemperatureDS18B20C16 extDS18B20_0(0);
 // Minimum change (hysteresis) enforced in 'reduced noise' version value; must be greater than 1.
 // Aim to provide reasonable noise immunity, even from an ageing carbon-track pot.
 // Allow reasonable remaining granularity of response, at least 10s of distinct positions (>=5 bits).
-#define RN_HYST 8
+static const uint8_t RN_HYST = 8;
 
 // Bottom and top parts of reduced noise range reserved for forcing FROST or BOOST.
 // Should be big enough to hit easily (and must be larger than RN_HYST)
 // but not so big as to really constrain the temperature range or cause confusion.
-#define RN_FRBO (max(8, 2*RN_HYST))
+static const uint8_t RN_FRBO = (max(8, 2*RN_HYST));
 
 // Force a read/poll of the temperature pot and return the value sensed [0,255] (cold to hot).
 // Potentially expensive/slow.
@@ -715,11 +715,13 @@ uint8_t TemperaturePot::read()
   const uint16_t tpRaw = OTV0P2BASE::analogueNoiseReducedRead(TEMP_POT_AIN, DEFAULT); // Vcc reference.
   OTV0P2BASE::power_intermittent_peripherals_disable();
 
-#if defined(TEMP_POT_REVERSE)
-  const uint16_t tp = TEMP_POT_RAW_MAX - tpRaw; // Travel is in opposite direction to natural!
-#else
-  const uint16_t tp = tpRaw;
-#endif
+//#if defined(TEMP_POT_REVERSE)
+//  const uint16_t tp = TEMP_POT_RAW_MAX - tpRaw; // Travel is in opposite direction to natural!
+//#else
+//  const uint16_t tp = tpRaw;
+//#endif
+  const bool reverse = isReversed();
+  const uint16_t tp = reverse ? (TEMP_POT_RAW_MAX - tpRaw) : tpRaw;
 
   // TODO: capture entropy from changed LS bits esp if reduced-noise version doesn't change.
 
@@ -740,26 +742,25 @@ uint8_t TemperaturePot::read()
     // Ignore first reading which might otherwise cause spurious mode change, etc.
     if((uint16_t)~0U != (uint16_t)raw) // Ignore if raw not yet set for the first time.
       {
-//      // Force FROST mode when dial turned right down to bottom.
-//      if(rn < RN_FRBO) { setWarmModeDebounced(false); }
-//      // Start BAKE mode when dial turned right up to top.
-//      else if(rn > (255-RN_FRBO)) { startBakeDebounced(); }
-//      // Cancel BAKE mode when dial/temperature turned down.
-//      else if(rn < oldValue) { cancelBakeDebounced(); }
-//      // Force WARM mode when dial/temperature turned up.
-//      else if(rn > oldValue) { setWarmModeDebounced(true); }
-
+      const uint8_t minS = minExpected >> 2;
+      const uint8_t maxS = maxExpected >> 2;
+      // Compute low end stop threshold avoiding overflow.
+      const uint8_t realMinScaled = reverse ? maxS : minS;
+      const uint8_t loEndStop = (realMinScaled >= 255 - RN_FRBO) ? realMinScaled : (realMinScaled + RN_FRBO);
+      // Compute high end stop threshold avoiding underflow.
+      const uint8_t realMaxScaled = reverse ? minS : maxS;
+      const uint8_t hiEndStop = (realMaxScaled < RN_FRBO) ? realMaxScaled : (realMaxScaled - RN_FRBO);
       // Force FROST mode when dial turned right down to bottom.
-      if(rn < RN_FRBO) { if(NULL != warmModeCallback) { warmModeCallback(false); } }
+      if(rn < loEndStop) { if(NULL != warmModeCallback) { warmModeCallback(false); } }
       // Start BAKE mode when dial turned right up to top.
-      else if(rn > (255-RN_FRBO)) { if(NULL != bakeStartCallback) { bakeStartCallback(true); } }
+      else if(rn > hiEndStop) { if(NULL != bakeStartCallback) { bakeStartCallback(true); } }
       // Cancel BAKE mode when dial/temperature turned down.
       else if(rn < oldValue) { if(NULL != bakeStartCallback) { bakeStartCallback(false); } }
       // Force WARM mode when dial/temperature turned up.
       else if(rn > oldValue) { if(NULL != warmModeCallback) { warmModeCallback(true); } }
 
-      // Note that user operated the pot.
-      // (Was a direct call to markUIControlUsed().)
+      // Report that the user operated the pot, ie part of the manual UI.
+      // Do this regardless of whether a specific mode change was invoked.
       if(NULL != occCallback) { occCallback(); }
       }
     }
@@ -779,7 +780,11 @@ uint8_t TemperaturePot::read()
   }
 
 // Singleton implementation/instance.
-TemperaturePot TempPot;
+#if defined(TEMP_POT_REVERSE)
+TemperaturePot TempPot(TemperaturePot::TEMP_POT_RAW_MAX, 0);
+#else
+TemperaturePot TempPot(0, TemperaturePot::TEMP_POT_RAW_MAX);
+#endif // defined(TEMP_POT_REVERSE)
 #endif
 
 
