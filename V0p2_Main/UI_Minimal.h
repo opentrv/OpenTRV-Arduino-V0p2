@@ -88,6 +88,7 @@ bool tickUI(uint_fast8_t sec);
 #endif
 
 // Record local manual operation of a local physical UI control, eg not remote or via CLI.
+// Marks room as occupied amongst other things.
 // Thread-safe.
 void markUIControlUsed();
 

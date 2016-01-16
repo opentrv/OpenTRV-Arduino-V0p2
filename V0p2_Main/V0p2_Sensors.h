@@ -296,25 +296,41 @@ extern HumiditySensorSHT21 RelHumidity;
 #if (V0p2_REV >= 2) && defined(TEMP_POT_AIN) // Only supported in REV2/3/4/7.
 #define TEMP_POT_AVAILABLE
 
-// Maximum 'raw' temperature pot/dial value.
-#define TEMP_POT_RAW_MAX 1023 // Max value.
-
 // Sensor for temperature potentiometer/dial; 0 is coldest, 255 is hottest.
+// Note that if the callbacks are enabled, the following are implemented:
+//   * Any operation of the pot calls the occupancy/"UI used" callback.
+//   * Force FROST mode when dial turned right down to bottom.
+//   * Start BAKE mode when dial turned right up to top.
+//   * Cancel BAKE mode when dial/temperature turned down.
+//   * Force WARM mode when dial/temperature turned up.
 class TemperaturePot : public OTV0P2BASE::SimpleTSUint8Sensor
   {
+  public:
+    // Maximum 'raw' temperature pot/dial value.
+    static const uint16_t TEMP_POT_RAW_MAX = 1023;
+
   private:
     // Raw pot value [0,1023] if extra precision is required.
     uint16_t raw;
 
+    // Occupancy callback function (for good confidence of human presence).
+    // Also indicates that the manual UI has been used.
+    // If not NULL, is called when this sensor detects indications of occupancy.
+    void (*occCallback)();
+
   public:
     // Initialise to cautious values.
-    TemperaturePot() : raw(0) { }
+    TemperaturePot() : raw(0), occCallback(NULL) { }
 
     // Force a read/poll of the temperature pot and return the value sensed [0,255] (cold to hot).
     // Potentially expensive/slow.
     // This value has some hysteresis applied to reduce noise.
     // Not thread-safe nor usable within ISRs (Interrupt Service Routines).
     virtual uint8_t read();
+
+    // Set occupancy callback function (for good confidence of human presence); NULL for no callback.
+    // Also indicates that the manual UI has been used.
+    void setOccCallback(void (*occCallback_)()) { occCallback = occCallback_; }
 
     // Return last value fetched by read(); undefined before first read()).
     // Fast.
