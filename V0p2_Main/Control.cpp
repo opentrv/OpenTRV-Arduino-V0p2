@@ -207,9 +207,9 @@ uint8_t getWARMTargetC()
   // Get persisted value, if any.
   const uint8_t stored = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_WARM_C);
   // If out of bounds or no stored value then use default (or frost value if set and higher).
-  if((stored < MIN_TARGET_C) || (stored > MAX_TARGET_C)) { return(fnmax((uint8_t)WARM, getFROSTTargetC())); }
+  if((stored < MIN_TARGET_C) || (stored > MAX_TARGET_C)) { return(OTV0P2BASE::fnmax((uint8_t)WARM, getFROSTTargetC())); }
   // Return valid persisted value (or frost value if set and higher).
-  return(fnmax(stored, getFROSTTargetC()));
+  return(OTV0P2BASE::fnmax(stored, getFROSTTargetC()));
   }
 #else
 uint8_t getWARMTargetC() { return((uint8_t) (WARM)); } // Fixed value.
