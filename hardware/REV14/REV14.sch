@@ -6464,20 +6464,6 @@ Source: MC-306_405_406_E07X.PDF &lt;a href="http://www.epsontoyocom.co.jp"&gt; H
 <text x="-1.143" y="1.397" size="1.27" layer="25" ratio="10">&gt;NAME</text>
 <text x="0" y="1" size="0.0254" layer="27">&gt;VALUE</text>
 </package>
-<package name="3,81/1,4">
-<description>&lt;b&gt;THROUGH-HOLE PAD&lt;/b&gt;</description>
-<wire x1="1.905" y1="-1.27" x2="1.905" y2="-1.905" width="0.1524" layer="21"/>
-<wire x1="1.905" y1="-1.905" x2="1.27" y2="-1.905" width="0.1524" layer="21"/>
-<wire x1="-1.27" y1="-1.905" x2="-1.905" y2="-1.905" width="0.1524" layer="21"/>
-<wire x1="-1.905" y1="-1.905" x2="-1.905" y2="-1.27" width="0.1524" layer="21"/>
-<wire x1="-1.905" y1="1.27" x2="-1.905" y2="1.905" width="0.1524" layer="21"/>
-<wire x1="-1.905" y1="1.905" x2="-1.27" y2="1.905" width="0.1524" layer="21"/>
-<wire x1="1.27" y1="1.905" x2="1.905" y2="1.905" width="0.1524" layer="21"/>
-<wire x1="1.905" y1="1.905" x2="1.905" y2="1.27" width="0.1524" layer="21"/>
-<pad name="1" x="0" y="0" drill="2" diameter="3" shape="octagon" stop="no"/>
-<text x="-1.905" y="2.286" size="1.27" layer="25" ratio="10">&gt;NAME</text>
-<text x="2.61" y="1.27" size="0.0254" layer="27" rot="R90">&gt;VALUE</text>
-</package>
 </packages>
 <symbols>
 <symbol name="PAD">
@@ -6496,22 +6482,6 @@ Source: MC-306_405_406_E07X.PDF &lt;a href="http://www.epsontoyocom.co.jp"&gt; H
 </gates>
 <devices>
 <device name="" package="2,15/1,0">
-<connects>
-<connect gate="1" pin="P" pad="1"/>
-</connects>
-<technologies>
-<technology name=""/>
-</technologies>
-</device>
-</devices>
-</deviceset>
-<deviceset name="3,81/1,4" prefix="PAD" uservalue="yes">
-<description>&lt;b&gt;THROUGH-HOLE PAD&lt;/b&gt;</description>
-<gates>
-<gate name="1" symbol="PAD" x="0" y="0"/>
-</gates>
-<devices>
-<device name="" package="3,81/1,4">
 <connects>
 <connect gate="1" pin="P" pad="1"/>
 </connects>
@@ -12669,12 +12639,12 @@ Source: http://cache.national.com/ds/LM/LM321.pdf</description>
 <variantdefs>
 </variantdefs>
 <classes>
-<class number="0" name="default" width="0.2032" drill="0">
+<class number="0" name="default" width="0.2032" drill="0.5">
 </class>
-<class number="1" name="supply" width="0.4" drill="0">
+<class number="1" name="supply" width="0.4" drill="0.5">
 <clearance class="1" value="0.2032"/>
 </class>
-<class number="2" name="ant" width="2.1844" drill="0">
+<class number="2" name="ant" width="2.1844" drill="0.5">
 </class>
 </classes>
 <parts>
@@ -12752,9 +12722,7 @@ Source: http://cache.national.com/ds/LM/LM321.pdf</description>
 <part name="GND5" library="SparkFun-Aesthetics" deviceset="GND" device=""/>
 <part name="P+6" library="SparkFun-Aesthetics" deviceset="VCC" device=""/>
 <part name="GND9" library="SparkFun-Aesthetics" deviceset="GND" device=""/>
-<part name="PAD2" library="wirepad" deviceset="3,81/1,4" device=""/>
-<part name="PAD3" library="wirepad" deviceset="3,81/1,4" device=""/>
-<part name="TP4" library="testpad" deviceset="TPSQ" device="TP06R"/>
+<part name="TP3" library="testpad" deviceset="TPSQ" device="TP07R"/>
 </parts>
 <sheets>
 <sheet>
@@ -12936,9 +12904,7 @@ Source: http://cache.national.com/ds/LM/LM321.pdf</description>
 <instance part="GND5" gate="1" x="40.64" y="15.24"/>
 <instance part="P+6" gate="G$1" x="40.64" y="71.12"/>
 <instance part="GND9" gate="1" x="63.5" y="43.18"/>
-<instance part="PAD2" gate="1" x="327.66" y="246.38" rot="R270"/>
-<instance part="PAD3" gate="1" x="337.82" y="241.3" rot="R180"/>
-<instance part="TP4" gate="G$1" x="317.5" y="241.3"/>
+<instance part="TP3" gate="G$1" x="322.58" y="246.38" rot="R180"/>
 </instances>
 <busses>
 </busses>
@@ -13225,7 +13191,6 @@ Source: http://cache.national.com/ds/LM/LM321.pdf</description>
 <segment>
 <wire x1="228.6" y1="205.74" x2="218.44" y2="205.74" width="0.1524" layer="91"/>
 <pinref part="U$4" gate="G$1" pin="V+"/>
-<label x="213.36" y="205.74" size="1.778" layer="95"/>
 </segment>
 <segment>
 <wire x1="83.82" y1="134.62" x2="83.82" y2="124.46" width="0.1524" layer="91"/>
@@ -13322,7 +13287,6 @@ Source: http://cache.national.com/ds/LM/LM321.pdf</description>
 <segment>
 <wire x1="254" y1="198.12" x2="259.08" y2="198.12" width="0.1524" layer="91"/>
 <pinref part="U$4" gate="G$1" pin="SDA"/>
-<label x="256.54" y="195.58" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="SCL" class="0">
@@ -13352,7 +13316,6 @@ Source: http://cache.national.com/ds/LM/LM321.pdf</description>
 <segment>
 <wire x1="218.44" y1="198.12" x2="228.6" y2="198.12" width="0.1524" layer="91"/>
 <pinref part="U$4" gate="G$1" pin="SCL"/>
-<label x="213.36" y="198.12" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="RESET" class="0">
@@ -13601,11 +13564,8 @@ Source: http://cache.national.com/ds/LM/LM321.pdf</description>
 <net name="N$22" class="2">
 <segment>
 <pinref part="U1" gate="G$1" pin="RFH"/>
-<wire x1="335.28" y1="226.06" x2="335.28" y2="241.3" width="0.1524" layer="91"/>
+<wire x1="335.28" y1="226.06" x2="335.28" y2="243.84" width="0.1524" layer="91"/>
 <pinref part="TP1" gate="G$1" pin="TP"/>
-<pinref part="PAD3" gate="1" pin="P"/>
-<wire x1="335.28" y1="241.3" x2="335.28" y2="243.84" width="0.1524" layer="91"/>
-<junction x="335.28" y="241.3"/>
 </segment>
 </net>
 <net name="N$33" class="2">
@@ -13613,10 +13573,8 @@ Source: http://cache.national.com/ds/LM/LM321.pdf</description>
 <pinref part="U1" gate="G$1" pin="RFL"/>
 <wire x1="330.2" y1="226.06" x2="330.2" y2="241.3" width="0.1524" layer="91"/>
 <wire x1="330.2" y1="241.3" x2="327.66" y2="243.84" width="0.1524" layer="91"/>
-<wire x1="327.66" y1="243.84" x2="317.5" y2="243.84" width="0.1524" layer="91"/>
-<pinref part="PAD2" gate="1" pin="P"/>
-<junction x="327.66" y="243.84"/>
-<pinref part="TP4" gate="G$1" pin="TP"/>
+<wire x1="327.66" y1="243.84" x2="322.58" y2="243.84" width="0.1524" layer="91"/>
+<pinref part="TP3" gate="G$1" pin="TP"/>
 </segment>
 </net>
 <net name="N$2" class="0">
@@ -13830,22 +13788,10 @@ Source: http://cache.national.com/ds/LM/LM321.pdf</description>
 <approved hash="104,1,137.16,73.66,IC2,VCC2,VCC,,,"/>
 <approved hash="104,1,358.14,187.96,U1,3.3V,VCC,,,"/>
 <approved hash="104,1,307.34,193.04,U1,3.3V,VCC,,,"/>
-<approved hash="104,1,241.3,139.7,IC1,GND1,GND,,,"/>
-<approved hash="104,1,246.38,139.7,IC1,GND2,GND,,,"/>
-<approved hash="104,1,256.54,154.94,IC1,VOUT,VCC1,,,"/>
-<approved hash="104,1,248.92,165.1,IC1,SW,N$10,,,"/>
-<approved hash="104,1,63.5,63.5,IC3,V+,VCC,,,"/>
-<approved hash="104,1,63.5,48.26,IC3,V-,GND,,,"/>
 <approved hash="113,1,114.021,171.353,-,,,,,"/>
 <approved hash="113,1,114.021,178.973,+,,,,,"/>
 <approved hash="113,1,143.552,220.849,I2C_EXT,,,,,"/>
 <approved hash="113,1,156.113,231.419,DQ,,,,,"/>
-<approved hash="113,1,334.01,118.724,FTDI_RN2483,,,,,"/>
-<approved hash="113,1,35.7971,146.181,JP1,,,,,"/>
-<approved hash="113,1,35.7971,129.671,JP2,,,,,"/>
-<approved hash="113,1,35.7971,110.621,JP3,,,,,"/>
-<approved hash="113,1,84.0571,139.831,JP4,,,,,"/>
-<approved hash="113,1,13.8726,66.3194,PAD1,,,,,"/>
 </errors>
 </schematic>
 </drawing>
