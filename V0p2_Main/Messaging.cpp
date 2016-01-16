@@ -1180,7 +1180,7 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uin
           const uint8_t al = AmbLight.read() >> 2; // Scale from [0,255] to [1,62] for TX (allow value coercion at extremes).
           const bool s = getSwitchToggleStateCO();
           const bool w = (fastDigitalRead(BUTTON_LEARN2_L) != LOW); // BUTTON_LEARN2_L high means open circuit means door/window open.
-          const bool sy = NominalRadValve.isRecalibrating();
+          const bool sy = !NominalRadValve.isInNormalRunState(); // Assume only non-normal FHT8V state is 'syncing'.
           OTProtocolCC::CC1PollResponse r =
               OTProtocolCC::CC1PollResponse::make(hc1, hc2, rh, tp, tr, al, s, w, sy);
           // Send message back to hub.

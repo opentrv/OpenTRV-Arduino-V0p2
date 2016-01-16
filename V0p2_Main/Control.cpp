@@ -498,53 +498,6 @@ void ModelledRadValve::computeCallForHeat()
   retainedState.tick(value, inputState);
   }
 //#endif // ENABLE_MODELLED_RAD_VALVE
-#elif defined(SLAVE_TRV)
-// Singleton implementation for entire node.
-SimpleSlaveRadValve NominalRadValve;
-
-// Set new value.
-// Ignores invalid values.
-bool SimpleSlaveRadValve::set(const uint8_t newValue)
-  {
-  if(!isValid(newValue)) { return(false); }
-  if(newValue != value)
-    {
-    value = newValue;
-    // Regenerate buffer ready to TX to FHT8V.
-    //FHT8VCreateValveSetCmdFrame(*this);
-    FHT8V.set(newValue);
-    }
-  ticksLeft = TIMEOUT_MINS;
-  return(true);
-  }
-
-// Do any regular work that needs doing.
-// Deals with timeout and reversion to 'safe' valve position if the controller goes quiet.
-// Call at a fixed rate (1/60s).
-// Potentially expensive/slow.
-uint8_t SimpleSlaveRadValve::read()
-  {
-  if((0 == ticksLeft) || (0 == --ticksLeft))
-    {
-    value = SAFE_POSITION_PC;
-#if 1 && defined(DEBUG)
-    DEBUG_SERIAL_PRINTLN_FLASHSTRING("!controller silent: valve moved to safe position");
-#endif
-    }
-  return(value);
-  }
-
-// Returns true if (re)calibrating/(re)initialising/(re)syncing.
-// The target valve position is not lost while this is true.
-// By default there is no recalibration step.
-bool SimpleSlaveRadValve::isRecalibrating() const
-  {
-#ifdef USE_MODULE_FHT8VSIMPLE
-//  if(!isSyncedWithFHT8V()) { return(true); }
-  if(!FHT8V.isInNormalRunState()) { return(true); }
-#endif
-  return(false);
-  }
 #endif
 
 
@@ -1040,8 +993,6 @@ static void wireComponentsTogether()
 #endif // ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
   // TODO
   }
-
-
 
 
 // Initialise sensors with stats info where needed.

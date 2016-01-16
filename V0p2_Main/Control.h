@@ -76,7 +76,7 @@ void loopOpenTRV();
 #define BIASCOM_WARM 65 // Target WARM temperature for Comfort bias; must be in range ]MIN_TARGET_C,MODEECO_WARM].
 #endif
 // Default to a 'safe' temperature.
-#define WARM max(BIASECO_WARM,SAFE_ROOM_TEMPERATURE) 
+#define WARM max(BIASECO_WARM,SAFE_ROOM_TEMPERATURE)
 
 // Scale can run from eco warm -1 to comfort warm + 1, eg: * 16 17 18 >19< 20 21 22 BOOST
 #define TEMP_SCALE_MIN (BIASECO_WARM-1) // Bottom of range for adjustable-base-temperature systems.
@@ -416,67 +416,9 @@ class ModelledRadValve : public OTRadValve::AbstractRadValve
 // Singleton implementation for entire node.
 extern ModelledRadValve NominalRadValve;
 #elif defined(SLAVE_TRV)
-// Valve which is put where it is told; no smarts of its own.
-class SimpleSlaveRadValve : public OTRadValve::AbstractRadValve
-  {
-  private:
-    // Ticks left before comms timing out and valve should revert to 'safe' position.
-    // Counts down to zero one tick per minute in the absence of valid calls to set().
-    uint8_t ticksLeft;
-
-  public:
-    // Initial time to wait with valve (almost) closed for initial command from controller.
-    // Helps avoid thrashing around during start-up when no heat may actually be required.
-    // Controller is required to send at least every 15 mins, ie just less than this.
-    static const uint8_t INITIAL_TIMEOUT_MINS = 16;
-
-    // Valid calls to set() must happen at less than this interval (minutes, positive).
-    // If this timeout triggers, a default valve position is used.
-    // Controller is required to send at least every 15 mins, ie at most half this.
-    static const uint8_t TIMEOUT_MINS = 30;
-
-    // Default (safe) valve position in percent.
-    // Similar to, but distinguishable from, eg FHT8V 'lost connection' 30% position.
-    static const uint8_t SAFE_POSITION_PC = 33;
-
-    // Create an instance with valve initially (almost) closed
-    // and a few minutes for controller to be heard before reverting to 'safe' position.
-    // This initial not-fully-closed position should help signal correct setup.
-    SimpleSlaveRadValve() : ticksLeft(INITIAL_TIMEOUT_MINS) { value = 1; }
-
-    // Get estimated minimum percentage open for significant flow for this device; strictly positive in range [1,99].
-    // Set to just above the initial value given. 
-    virtual uint8_t getMinPercentOpen() const { return(2); }
-
-    // Returns true if this sensor/actuator value is potentially valid, eg in-range.
-    virtual bool isValid(const uint8_t value) const { return(value <= 100); }
-
-    // Set new target valve percent open.
-    // Ignores invalid values.
-    virtual bool set(const uint8_t newValue);
-
-    // Do any regular work that needs doing.
-    // Deals with timeout and reversion to 'safe' valve position if the controller goes quiet.
-    // Call at a fixed rate (1/60s).
-    // Potentially expensive/slow.
-    virtual uint8_t read();
-
-    // Returns preferred poll interval (in seconds); non-zero.
-    // Must be polled at near constant rate, about once per minute.
-    virtual uint8_t preferredPollInterval_s() const { return(60); }
-
-    // Returns a suggested (JSON) tag/field/key name including units of get(); NULL means no recommended tag.
-    // The lifetime of the pointed-to text must be at least that of the Sensor instance.
-    virtual const char *tag() const { return("v|%"); }
-
-    // Returns true if (re)calibrating/(re)initialising/(re)syncing.
-    // The target valve position is not lost while this is true.
-    // By default there is no recalibration step.
-    virtual bool isRecalibrating() const;
-  };
 #define ENABLE_NOMINAL_RAD_VALVE
-// Singleton implementation for entire node.
-extern SimpleSlaveRadValve NominalRadValve;
+// Simply alias directly to FHT8V for REV9 slave for example.
+#define NominalRadValve FHT8V
 #endif
 
 
@@ -524,7 +466,7 @@ uint8_t smoothStatsValue(uint8_t oldSmoothed, uint8_t newValue);
 #define COMPRESSION_C16_CEIL_VAL_AFTER (COMPRESSION_C16_HIGH_THR_AFTER + ((COMPRESSION_C16_CEIL_VAL-COMPRESSION_C16_HIGH_THRESHOLD) >> 3)) // Ceiling input value after compression.
 uint8_t compressTempC16(int tempC16);
 // Reverses range compression done by compressTempC16(); results in range [0,100], with varying precision based on original value.
-// 0xff (or other invalid) input results in STATS_UNSET_INT. 
+// 0xff (or other invalid) input results in STATS_UNSET_INT.
 int expandTempC16(uint8_t cTemp);
 
 // Maximum valid encoded/compressed stats values.
@@ -561,4 +503,3 @@ void remoteCallForHeatRX(uint16_t id, uint8_t percentOpen);
 
 
 #endif
-

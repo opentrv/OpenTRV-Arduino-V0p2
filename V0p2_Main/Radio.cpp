@@ -130,7 +130,7 @@ void RFM22RawStatsTXFFTerminated(uint8_t * const buf, const bool doubleTX, bool 
 #ifdef ALLOW_CC1_SUPPORT_RELAY
 #include <OTProtocolCC.h>
 #include <OTRadValve.h>
-#include "V0p2_Actuators.h"
+#include "V0p2_Sensors.h"
 // Send a CC1 Alert message with this unit's house code via the RFM23B.
 bool sendCC1AlertByRFM23B()
   {
