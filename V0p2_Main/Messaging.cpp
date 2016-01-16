@@ -34,7 +34,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
 #include "UI_Minimal.h"
 
 #include "V0p2_Sensors.h"
-#include "V0p2_Actuators.h"
 
 
 //// Update 'C2' 8-bit CRC with next byte.

@@ -52,7 +52,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #include <OTRadValve.h>
 
 #include "V0p2_Sensors.h"
-#include "V0p2_Actuators.h"
 #include "Control.h"
 #include "Radio.h"
 #include "UI_Minimal.h"
