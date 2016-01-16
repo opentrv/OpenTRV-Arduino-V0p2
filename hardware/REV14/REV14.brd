@@ -2502,6 +2502,22 @@ Horizontal, grid 5 mm, outline 7.5 x 7.5 mm</description>
 <rectangle x1="-2.794" y1="0.127" x2="-2.286" y2="0.508" layer="51"/>
 <rectangle x1="2.286" y1="0.127" x2="2.794" y2="0.508" layer="51"/>
 </package>
+<package name="C1206">
+<description>&lt;b&gt;CAPACITOR&lt;/b&gt;</description>
+<wire x1="-2.473" y1="0.983" x2="2.473" y2="0.983" width="0.0508" layer="39"/>
+<wire x1="2.473" y1="-0.983" x2="-2.473" y2="-0.983" width="0.0508" layer="39"/>
+<wire x1="-2.473" y1="-0.983" x2="-2.473" y2="0.983" width="0.0508" layer="39"/>
+<wire x1="2.473" y1="0.983" x2="2.473" y2="-0.983" width="0.0508" layer="39"/>
+<wire x1="-0.965" y1="0.787" x2="0.965" y2="0.787" width="0.1016" layer="51"/>
+<wire x1="-0.965" y1="-0.787" x2="0.965" y2="-0.787" width="0.1016" layer="51"/>
+<smd name="1" x="-1.4" y="0" dx="1.6" dy="1.8" layer="1"/>
+<smd name="2" x="1.4" y="0" dx="1.6" dy="1.8" layer="1"/>
+<text x="-1.27" y="1.27" size="1.27" layer="25">&gt;NAME</text>
+<text x="-1.27" y="-2.54" size="1.27" layer="27">&gt;VALUE</text>
+<rectangle x1="-1.7018" y1="-0.8509" x2="-0.9517" y2="0.8491" layer="51"/>
+<rectangle x1="0.9517" y1="-0.8491" x2="1.7018" y2="0.8509" layer="51"/>
+<rectangle x1="-0.1999" y1="-0.4001" x2="0.1999" y2="0.4001" layer="35"/>
+</package>
 </packages>
 </library>
 <library name="RFM95W-RN2483">
@@ -3386,8 +3402,8 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <element name="C7" library="rcl" package="C050H075X075" value="0.22uF" x="90.805" y="25.0825" smashed="yes" rot="R90">
 <attribute name="NAME" x="90.043" y="24.1935" size="1" layer="25" rot="R90"/>
 </element>
-<element name="C8" library="resistor" package="C0603" value="100uF" x="87.3125" y="25.0825" smashed="yes" rot="R90">
-<attribute name="NAME" x="86.233" y="24.511" size="1" layer="25" rot="R90"/>
+<element name="C8" library="rcl" package="C1206" value="100uF" x="87.3125" y="25.0825" smashed="yes" rot="R90">
+<attribute name="NAME" x="85.9155" y="24.511" size="1" layer="25" rot="R90"/>
 </element>
 <element name="R19" library="resistor" package="R0603" value="2.2M" x="88.5825" y="33.3375" smashed="yes" rot="R180">
 <attribute name="NAME" x="89.4715" y="35.6235" size="1" layer="25" rot="R180"/>
@@ -3746,7 +3762,7 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <via x="43.875" y="22.0675" extent="1-16" drill="0.5"/>
 <via x="62.925" y="11.9075" extent="1-16" drill="0.5"/>
 <via x="92.135" y="12.86" extent="1-16" drill="0.5"/>
-<via x="88.325" y="21.75" extent="1-16" drill="0.5"/>
+<via x="88.0075" y="20.7975" extent="1-16" drill="0.5"/>
 <via x="96.8975" y="28.735" extent="1-16" drill="0.5"/>
 </signal>
 <signal name="VCC" class="1">
@@ -3855,8 +3871,7 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <wire x1="84.5" y1="20.25" x2="84.125" y2="19.875" width="0.4" layer="16"/>
 <wire x1="84.125" y1="19.875" x2="83.625" y2="19.375" width="0.4" layer="16"/>
 <wire x1="84.875" y1="20.25" x2="84.5" y2="20.25" width="0.4" layer="1"/>
-<wire x1="87.75" y1="23.125" x2="84.875" y2="20.25" width="0.4" layer="1"/>
-<wire x1="89.875" y1="23.125" x2="87.75" y2="23.125" width="0.4" layer="1"/>
+<wire x1="86.48" y1="21.855" x2="84.875" y2="20.25" width="0.4" layer="1"/>
 <wire x1="93.875" y1="27.125" x2="93.375" y2="26.625" width="0.4" layer="1"/>
 <wire x1="93.375" y1="26.625" x2="89.875" y2="23.125" width="0.4" layer="1"/>
 <wire x1="79.75" y1="16.125" x2="79.6925" y2="16.09" width="0.4" layer="1"/>
@@ -3890,6 +3905,11 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <via x="90.25" y="17.375" extent="1-16" drill="0.5"/>
 <via x="68" y="14.875" extent="1-16" drill="0.5"/>
 <via x="70.5" y="17.375" extent="1-16" drill="0.5"/>
+<wire x1="89.0016" y1="23.0632" x2="89.7128" y2="23.0632" width="0.4" layer="1"/>
+<wire x1="87.884" y1="21.9456" x2="89.0016" y2="23.0632" width="0.4" layer="1"/>
+<wire x1="86.6648" y1="21.9456" x2="87.884" y2="21.9456" width="0.4" layer="1"/>
+<wire x1="89.7128" y1="23.0632" x2="89.875" y2="23.125" width="0.4" layer="1"/>
+<wire x1="86.6648" y1="21.9456" x2="86.48" y2="21.855" width="0.4" layer="1"/>
 </signal>
 <signal name="SPI_SCK">
 <contactref element="IC2" pad="17"/>
@@ -4658,18 +4678,23 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <wire x1="84.9375" y1="30.5625" x2="84.875" y2="30.5" width="0.2032" layer="1"/>
 <wire x1="83.625" y1="30.5" x2="83.5025" y2="30.3775" width="0.2032" layer="1"/>
 <wire x1="87.625" y1="33.25" x2="87.7325" y2="33.3375" width="0.2032" layer="1"/>
-<wire x1="87.25" y1="24.5" x2="87.25" y2="24.25" width="0.2032" layer="1"/>
-<wire x1="85" y1="26.75" x2="87.25" y2="24.5" width="0.2032" layer="1"/>
+<wire x1="87.25" y1="24.5" x2="87.25" y2="24.4856" width="0.2032" layer="1"/>
+<wire x1="87.25" y1="24.4856" x2="87.25" y2="24.25" width="0.2032" layer="1"/>
 <wire x1="85" y1="30.5" x2="85" y2="26.75" width="0.2032" layer="1"/>
-<wire x1="87.25" y1="24.25" x2="87.3125" y2="24.2325" width="0.2032" layer="1"/>
+<wire x1="87.25" y1="24.25" x2="87.3125" y2="23.6825" width="0.2032" layer="1"/>
 <wire x1="85" y1="30.5" x2="84.9375" y2="30.5625" width="0.2032" layer="1"/>
 <wire x1="89.375" y1="24" x2="90.75" y2="22.625" width="0.2032" layer="16"/>
 <wire x1="87.5" y1="24" x2="89.375" y2="24" width="0.2032" layer="1"/>
 <wire x1="87.375" y1="24.125" x2="87.5" y2="24" width="0.2032" layer="1"/>
 <wire x1="90.75" y1="22.625" x2="90.805" y2="22.5425" width="0.2032" layer="16"/>
-<wire x1="87.375" y1="24.125" x2="87.3125" y2="24.2325" width="0.2032" layer="1"/>
+<wire x1="87.375" y1="24.125" x2="87.3125" y2="23.6825" width="0.2032" layer="1"/>
 <via x="92.125" y="21.125" extent="1-16" drill="0.5"/>
 <via x="89.375" y="24" extent="1-16" drill="0.5"/>
+<wire x1="86.0552" y1="25.7048" x2="85.0392" y2="26.7208" width="0.2032" layer="1"/>
+<wire x1="86.0552" y1="25.6032" x2="86.0552" y2="25.7048" width="0.2032" layer="1"/>
+<wire x1="87.1728" y1="24.4856" x2="86.0552" y2="25.6032" width="0.2032" layer="1"/>
+<wire x1="85.0392" y1="26.7208" x2="85" y2="26.75" width="0.2032" layer="1"/>
+<wire x1="87.1728" y1="24.4856" x2="87.25" y2="24.4856" width="0.2032" layer="1"/>
 </signal>
 </signals>
 <errors>
@@ -4678,8 +4703,8 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <approved hash="3,1,26b8dbded8042562"/>
 <approved hash="3,1,a4640516499086d8"/>
 <approved hash="3,1,261c8b7a8a1a277c"/>
-<approved hash="3,1,64040ae20a3d64db"/>
-<approved hash="3,16,64040ae20a3d64db"/>
+<approved hash="3,1,64e20a04099b677d"/>
+<approved hash="3,16,64060ae0083f66d9"/>
 <approved hash="3,1,67e5068301176071"/>
 <approved hash="3,16,67e5068301176071"/>
 <approved hash="3,1,43128634868743a1"/>
@@ -4714,11 +4739,11 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <approved hash="18,29,3c063b182525e606"/>
 <approved hash="18,29,c31c41821de3c54f"/>
 <approved hash="18,29,139067332c7902e8"/>
+<approved hash="4,1,1da2c7337b7576ea"/>
+<approved hash="4,1,83d5c7ebfeade01b"/>
+<approved hash="4,1,93238822a9ccf047"/>
 <approved hash="4,1,1d58b44b015038ee"/>
 <approved hash="4,1,7286a3b1a8cf4281"/>
-<approved hash="4,1,1da2c7337b7576ea"/>
-<approved hash="4,1,93238822a9ccf047"/>
-<approved hash="4,1,83d5c7ebfeade01b"/>
 <approved hash="19,1,45d7a529a53745c9"/>
 <approved hash="19,1,f81758695874f80a"/>
 <approved hash="19,1,907df063f061907f"/>
@@ -4737,8 +4762,8 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <approved hash="19,1,8b81171a17198b82"/>
 <approved hash="19,1,5958b9efb9e9595e"/>
 <approved hash="19,1,ed7e4d8d4d88ed7b"/>
-<approved hash="5,1,4c974823e3b34314"/>
 <approved hash="5,1,4c569a2be9ec4314"/>
+<approved hash="5,1,4c974823e3b34314"/>
 <approved hash="19,1,f74c096418cf4fec"/>
 <approved hash="19,1,449ef014f91b459b"/>
 <approved hash="19,1,9e02f69515937d02"/>
@@ -4760,10 +4785,10 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <approved hash="19,1,94dcf5ee00172d5d"/>
 <approved hash="5,1,de68d883aba57757"/>
 <approved hash="5,1,c8d748ec85b9e13a"/>
+<approved hash="19,1,8383d0bdefc026a2"/>
 <approved hash="19,1,24b2f723d72d04bc"/>
 <approved hash="19,1,81c55ab4a2ba79cb"/>
 <approved hash="19,1,b439fc6ed47d9c2a"/>
-<approved hash="19,1,8383d0bdefc026a2"/>
 <approved hash="19,1,6b2dba329a3c4b23"/>
 <approved hash="19,1,e07a3e1c2612f874"/>
 <approved hash="19,1,b18df7a8d7a79982"/>
@@ -4783,8 +4808,8 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <approved hash="19,1,4568a5d7a5ea4555"/>
 <approved hash="19,1,fb25579e57a0fb1b"/>
 <approved hash="19,1,af390a460a44af3b"/>
-<approved hash="19,1,6432e8453b95b60e"/>
 <approved hash="19,1,eef304253c22d6f4"/>
+<approved hash="19,1,6432e8453b95b60e"/>
 <approved hash="19,1,5fe0fa40da417fe1"/>
 <approved hash="19,1,3831a8eb90ea0030"/>
 <approved hash="19,1,88ae23760070abae"/>
