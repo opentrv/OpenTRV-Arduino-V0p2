@@ -6464,6 +6464,20 @@ Source: MC-306_405_406_E07X.PDF &lt;a href="http://www.epsontoyocom.co.jp"&gt; H
 <text x="-1.143" y="1.397" size="1.27" layer="25" ratio="10">&gt;NAME</text>
 <text x="0" y="1" size="0.0254" layer="27">&gt;VALUE</text>
 </package>
+<package name="3,81/1,4">
+<description>&lt;b&gt;THROUGH-HOLE PAD&lt;/b&gt;</description>
+<wire x1="1.905" y1="-1.27" x2="1.905" y2="-1.905" width="0.1524" layer="21"/>
+<wire x1="1.905" y1="-1.905" x2="1.27" y2="-1.905" width="0.1524" layer="21"/>
+<wire x1="-1.27" y1="-1.905" x2="-1.905" y2="-1.905" width="0.1524" layer="21"/>
+<wire x1="-1.905" y1="-1.905" x2="-1.905" y2="-1.27" width="0.1524" layer="21"/>
+<wire x1="-1.905" y1="1.27" x2="-1.905" y2="1.905" width="0.1524" layer="21"/>
+<wire x1="-1.905" y1="1.905" x2="-1.27" y2="1.905" width="0.1524" layer="21"/>
+<wire x1="1.27" y1="1.905" x2="1.905" y2="1.905" width="0.1524" layer="21"/>
+<wire x1="1.905" y1="1.905" x2="1.905" y2="1.27" width="0.1524" layer="21"/>
+<pad name="1" x="0" y="0" drill="2" diameter="3" shape="octagon" stop="no"/>
+<text x="-1.905" y="2.286" size="1.27" layer="25" ratio="10">&gt;NAME</text>
+<text x="2.61" y="1.27" size="0.0254" layer="27" rot="R90">&gt;VALUE</text>
+</package>
 </packages>
 <symbols>
 <symbol name="PAD">
@@ -6482,6 +6496,22 @@ Source: MC-306_405_406_E07X.PDF &lt;a href="http://www.epsontoyocom.co.jp"&gt; H
 </gates>
 <devices>
 <device name="" package="2,15/1,0">
+<connects>
+<connect gate="1" pin="P" pad="1"/>
+</connects>
+<technologies>
+<technology name=""/>
+</technologies>
+</device>
+</devices>
+</deviceset>
+<deviceset name="3,81/1,4" prefix="PAD" uservalue="yes">
+<description>&lt;b&gt;THROUGH-HOLE PAD&lt;/b&gt;</description>
+<gates>
+<gate name="1" symbol="PAD" x="0" y="0"/>
+</gates>
+<devices>
+<device name="" package="3,81/1,4">
 <connects>
 <connect gate="1" pin="P" pad="1"/>
 </connects>
@@ -12723,6 +12753,8 @@ Source: http://cache.national.com/ds/LM/LM321.pdf</description>
 <part name="P+6" library="SparkFun-Aesthetics" deviceset="VCC" device=""/>
 <part name="GND9" library="SparkFun-Aesthetics" deviceset="GND" device=""/>
 <part name="TP3" library="testpad" deviceset="TPSQ" device="TP07R"/>
+<part name="PAD2" library="wirepad" deviceset="3,81/1,4" device=""/>
+<part name="PAD3" library="wirepad" deviceset="3,81/1,4" device=""/>
 </parts>
 <sheets>
 <sheet>
@@ -12905,6 +12937,8 @@ Source: http://cache.national.com/ds/LM/LM321.pdf</description>
 <instance part="P+6" gate="G$1" x="40.64" y="71.12"/>
 <instance part="GND9" gate="1" x="63.5" y="43.18"/>
 <instance part="TP3" gate="G$1" x="322.58" y="246.38" rot="R180"/>
+<instance part="PAD2" gate="1" x="337.82" y="241.3" rot="R180"/>
+<instance part="PAD3" gate="1" x="327.66" y="241.3"/>
 </instances>
 <busses>
 </busses>
@@ -13564,8 +13598,11 @@ Source: http://cache.national.com/ds/LM/LM321.pdf</description>
 <net name="N$22" class="2">
 <segment>
 <pinref part="U1" gate="G$1" pin="RFH"/>
-<wire x1="335.28" y1="226.06" x2="335.28" y2="243.84" width="0.1524" layer="91"/>
+<wire x1="335.28" y1="226.06" x2="335.28" y2="241.3" width="0.1524" layer="91"/>
 <pinref part="TP1" gate="G$1" pin="TP"/>
+<pinref part="PAD2" gate="1" pin="P"/>
+<wire x1="335.28" y1="241.3" x2="335.28" y2="243.84" width="0.1524" layer="91"/>
+<junction x="335.28" y="241.3"/>
 </segment>
 </net>
 <net name="N$33" class="2">
@@ -13575,6 +13612,8 @@ Source: http://cache.national.com/ds/LM/LM321.pdf</description>
 <wire x1="330.2" y1="241.3" x2="327.66" y2="243.84" width="0.1524" layer="91"/>
 <wire x1="327.66" y1="243.84" x2="322.58" y2="243.84" width="0.1524" layer="91"/>
 <pinref part="TP3" gate="G$1" pin="TP"/>
+<pinref part="PAD3" gate="1" pin="P"/>
+<junction x="330.2" y="241.3"/>
 </segment>
 </net>
 <net name="N$2" class="0">
