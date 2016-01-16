@@ -100,7 +100,7 @@ void loopOpenTRV();
 // This must set back to no more than than MIN_TARGET_C to avoid problems with unsigned arithmetic.
 #define SETBACK_FULL 4
 // Prolonged inactivity time deemed to indicate room(s) really unoccupied to trigger full setback (minutes, strictly positive).
-#define SETBACK_FULL_M 50
+#define SETBACK_FULL_M min(60, max(30, OTV0P2BASE::PseudoSensorOccupancyTracker::OCCUPATION_TIMEOUT_M))
 
 //#ifdef LEARN_BUTTON_AVAILABLE
 // Period in minutes for simple learned on-time; strictly positive (and less than 256).
@@ -480,18 +480,6 @@ extern SimpleSlaveRadValve NominalRadValve;
 #endif
 
 
-
-//// Default maximum time to allow the boiler to run on to allow for lost call-for-heat transmissions etc.
-//// Should be (much) greater than the gap between transmissions (eg ~2m for FHT8V/FS20).
-//// Should be greater than the run-on time at the OpenTRV boiler unit and any further pump run-on time.
-//// Valves may have to linger open at minimum of this plus maybe an extra minute or so for timing skew
-//// for systems with poor/absent bypass to avoid overheating.
-//// Having too high a linger time value may cause excessive temperature overshoot.
-//#define DEFAULT_MAX_RUN_ON_TIME_M 5
-
-
-
-
 // IF DEFINED: support for general timed and multi-input occupancy detection / use.
 #ifdef ENABLE_OCCUPANCY_SUPPORT
 typedef OTV0P2BASE::PseudoSensorOccupancyTracker OccupancyTracker;
@@ -503,7 +491,6 @@ typedef OTV0P2BASE::DummySensorOccupancyTracker OccupancyTracker;
 extern OccupancyTracker Occupancy;
 // Single generic occupancy callback for 'possibly occupied' for this instance.
 void genericMarkAsPossiblyOccupied();
-
 
 
 // Sample statistics once per hour as background to simple monitoring and adaptive behaviour.
