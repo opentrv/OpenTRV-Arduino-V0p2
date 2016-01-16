@@ -3764,6 +3764,27 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <via x="92.135" y="12.86" extent="1-16" drill="0.5"/>
 <via x="88.0075" y="20.7975" extent="1-16" drill="0.5"/>
 <via x="96.8975" y="28.735" extent="1-16" drill="0.5"/>
+<via x="26.445" y="45.2125" extent="1-16" drill="0.5"/>
+<via x="30.255" y="45.2125" extent="1-16" drill="0.5"/>
+<via x="41.685" y="45.2125" extent="1-16" drill="0.5"/>
+<via x="45.495" y="45.2125" extent="1-16" drill="0.5"/>
+<via x="49.305" y="45.2125" extent="1-16" drill="0.5"/>
+<via x="51.845" y="45.2125" extent="1-16" drill="0.5"/>
+<via x="54.385" y="45.2125" extent="1-16" drill="0.5"/>
+<via x="58.195" y="45.2125" extent="1-16" drill="0.5"/>
+<via x="62.005" y="45.2125" extent="1-16" drill="0.5"/>
+<via x="65.815" y="45.2125" extent="1-16" drill="0.5"/>
+<via x="69.625" y="45.2125" extent="1-16" drill="0.5"/>
+<via x="73.435" y="45.2125" extent="1-16" drill="0.5"/>
+<via x="84.865" y="45.2125" extent="1-16" drill="0.5"/>
+<via x="6.825" y="5.1725" extent="1-16" drill="0.5"/>
+<via x="10.635" y="5.1725" extent="1-16" drill="0.5"/>
+<via x="14.445" y="5.1725" extent="1-16" drill="0.5"/>
+<via x="18.255" y="5.1725" extent="1-16" drill="0.5"/>
+<via x="22.065" y="5.1725" extent="1-16" drill="0.5"/>
+<via x="39.845" y="5.1725" extent="1-16" drill="0.5"/>
+<via x="96.995" y="5.1725" extent="1-16" drill="0.5"/>
+<via x="93.185" y="5.1725" extent="1-16" drill="0.5"/>
 </signal>
 <signal name="VCC" class="1">
 <contactref element="C4" pad="1"/>
