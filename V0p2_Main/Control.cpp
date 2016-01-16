@@ -407,7 +407,7 @@ uint8_t ModelledRadValve::computeTargetTemp()
          OTV0P2BASE::inOutlierQuartile(false, V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED) &&
          OTV0P2BASE::inOutlierQuartile(false, V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::inOutlierQuartile_NEXT_HOUR));
     if(longVacant ||
-       ((notLikelyOccupiedSoon || (AmbLight.getDarkMinutes() > 10)) && !Occupancy.isLikelyRecentlyOccupied() && !isAnyScheduleOnWARMNow() && !recentUIControlUse()))
+       ((notLikelyOccupiedSoon || (AmbLight.getDarkMinutes() > 10)) && !isAnyScheduleOnWARMNow() && !Occupancy.reportedRecently() && !recentUIControlUse()))
       {
       // Use a default minimal non-annoying setback if
       //   in upper part of comfort range
