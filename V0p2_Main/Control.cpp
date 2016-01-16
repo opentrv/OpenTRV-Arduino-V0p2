@@ -270,111 +270,111 @@ void genericMarkAsPossiblyOccupied() { Occupancy.markAsPossiblyOccupied(); }
 
 
 
-//#if (OCCUPATION_TIMEOUT_M < 25) || (OCCUPATION_TIMEOUT_M > 100)
-//#error needs support for different occupancy timeout
-//#elif OCCUPATION_TIMEOUT_M <= 25
-//#define OCCCP_SHIFT 2
-//#elif OCCUPATION_TIMEOUT_M <= 50
-//#define OCCCP_SHIFT 1
-//#elif OCCUPATION_TIMEOUT_M <= 100
-//#define OCCCP_SHIFT 0
+////#if (OCCUPATION_TIMEOUT_M < 25) || (OCCUPATION_TIMEOUT_M > 100)
+////#error needs support for different occupancy timeout
+////#elif OCCUPATION_TIMEOUT_M <= 25
+////#define OCCCP_SHIFT 2
+////#elif OCCUPATION_TIMEOUT_M <= 50
+////#define OCCCP_SHIFT 1
+////#elif OCCUPATION_TIMEOUT_M <= 100
+////#define OCCCP_SHIFT 0
+////#endif
+//
+//// Shift from minutes remaining to confidence.
+//// Will not work correctly with timeout > 100.
+//static const uint8_t OCCCP_SHIFT =
+//  ((OccupancyTracker::OCCUPATION_TIMEOUT_M <= 3) ? 5 :
+//  ((OccupancyTracker::OCCUPATION_TIMEOUT_M <= 6) ? 4 :
+//  ((OccupancyTracker::OCCUPATION_TIMEOUT_M <= 12) ? 3 :
+//  ((OccupancyTracker::OCCUPATION_TIMEOUT_M <= 25) ? 2 :
+//  ((OccupancyTracker::OCCUPATION_TIMEOUT_M <= 50) ? 1 :
+//  ((OccupancyTracker::OCCUPATION_TIMEOUT_M <= 100) ? 0 :
+//  ((OccupancyTracker::OCCUPATION_TIMEOUT_M <= 200) ? -1 : -2)))))));
+//
+//// Update notion of occupancy confidence.
+//uint8_t OccupancyTracker::read()
+//  {
+//  ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
+//    {
+//    // Compute as percentage.
+//    const uint8_t newValue = (0 == occupationCountdownM) ? 0 :
+//        OTV0P2BASE::fnmin((uint8_t)((uint8_t)100 - (uint8_t)((((uint8_t)OCCUPATION_TIMEOUT_M) - occupationCountdownM) << OCCCP_SHIFT)), (uint8_t)100);
+//    value = newValue;
+//    // Run down occupation timer (or run up vacancy time) if need be.
+//    if(occupationCountdownM > 0) { --occupationCountdownM; vacancyM = 0; vacancyH = 0; }
+//    else if(vacancyH < 0xffU) { if(++vacancyM >= 60) { vacancyM = 0; ++vacancyH; } }
+//    // Run down 'recent activity' timer.
+//    if(activityCountdownM > 0) { --activityCountdownM; }
+//    return(value);
+//    }
+//  }
+//
+//// Call when some/weak evidence of room occupation, such as a light being turned on, or voice heard.
+//// Do not call based on internal/synthetic events.
+//// Doesn't force the room to appear recently occupied.
+//// If the hardware allows this may immediately turn on the main GUI LED until normal GUI reverts it,
+//// at least periodically.
+//// Preferably do not call for manual control operation to avoid interfering with UI operation.
+//// Thread-safe.
+//void OccupancyTracker::markAsPossiblyOccupied()
+//  {
+//  if(0 == occupationCountdownM) // Flash at first sign only of occupancy after vacancy to limit annoyance.
+//    { LED_HEATCALL_ON_ISR_SAFE(); }
+//  ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
+//    {
+//    occupationCountdownM = OTV0P2BASE::fnmax((uint8_t)occupationCountdownM, (uint8_t)(OCCUPATION_TIMEOUT_1_M));
+//    }
+//  activityCountdownM = 2;
+//  }
+#endif
+
+
+//#ifdef ENABLE_ANTICIPATION
+//// Returns true iff room likely to be occupied and need warming at the specified hour's sample point based on collected stats.
+//// Used for predictively warming a room in smart mode and for choosing setback depths.
+//// Returns false if no good evidence to warm the room at the given time based on past history over about one week.
+////   * hh hour to check for predictive warming [0,23]
+//bool shouldBeWarmedAtHour(const uint_least8_t hh)
+//  {
+//#ifdef ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
+//  // Return false immediately if the sample hour's historic ambient light level falls in the bottom quartile (or is zero).
+//  // Thus aim to shave off 'smart' warming for at least 25% of the daily cycle.
+//  if(inOutlierQuartile(false, EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED, hh)) { return(false); }
+//#endif // ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
+//
+//#ifdef
+//  // Return false immediately if the sample hour's historic occupancy level falls in the bottom quartile (or is zero).
+//  // Thus aim to shave off 'smart' warming for at least 25% of the daily cycle.
+//  if(inOutlierQuartile(false, EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, hh)) { return(false); }
+//#endif // ENABLE_OCCUPANCY_SUPPORT
+//
+//  const uint8_t warmHistory = eeprom_read_byte((uint8_t *)(EE_STATS_START_ADDR(EE_STATS_SET_WARMMODE_BY_HOUR_OF_WK) + hh));
+//  if(0 == (0x80 & warmHistory)) // This hour has a history.
+//    {
+////    // Return false immediately if no WARM mode this hour for the last week (ie the unit needs reminding at least once per week).
+////    if(0 == warmHistory) // No explicit WARM for a week at this hour, prevents 'smart' warming.
+////      { return(false); }
+//    // Return true immediately if this hour was in WARM mode yesterday or a week ago, and at least one other day.
+//    if((0 != (0x41 & warmHistory)) && (0 != (0x3e & warmHistory)))
+//      { return(true); }
+//    }
+//
+//  // Return true if immediately the sample hour is usually warm, ie at or above WARM target.
+//  const int smoothedTempHHNext = expandTempC16(eeprom_read_byte((uint8_t *)(EE_STATS_START_ADDR(EE_STATS_SET_TEMP_BY_HOUR_SMOOTHED) + hh)));
+//#if 0 && defined(DEBUG)
+//  DEBUG_SERIAL_PRINT_FLASHSTRING("Smoothed C for ");
+//  DEBUG_SERIAL_PRINT(hh);
+//  DEBUG_SERIAL_PRINT_FLASHSTRING("h is ");
+//  DEBUG_SERIAL_PRINT(smoothedTempHHNext >> 4);
+//  DEBUG_SERIAL_PRINTLN();
 //#endif
-
-// Shift from minutes remaining to confidence.
-// Will not work correctly with timeout > 100.
-static const uint8_t OCCCP_SHIFT =
-  ((OccupancyTracker::OCCUPATION_TIMEOUT_M <= 3) ? 5 :
-  ((OccupancyTracker::OCCUPATION_TIMEOUT_M <= 6) ? 4 :
-  ((OccupancyTracker::OCCUPATION_TIMEOUT_M <= 12) ? 3 :
-  ((OccupancyTracker::OCCUPATION_TIMEOUT_M <= 25) ? 2 :
-  ((OccupancyTracker::OCCUPATION_TIMEOUT_M <= 50) ? 1 :
-  ((OccupancyTracker::OCCUPATION_TIMEOUT_M <= 100) ? 0 :
-  ((OccupancyTracker::OCCUPATION_TIMEOUT_M <= 200) ? -1 : -2)))))));
-
-// Update notion of occupancy confidence.
-uint8_t OccupancyTracker::read()
-  {
-  ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
-    {
-    // Compute as percentage.
-    const uint8_t newValue = (0 == occupationCountdownM) ? 0 :
-        OTV0P2BASE::fnmin((uint8_t)((uint8_t)100 - (uint8_t)((((uint8_t)OCCUPATION_TIMEOUT_M) - occupationCountdownM) << OCCCP_SHIFT)), (uint8_t)100);
-    value = newValue;
-    // Run down occupation timer (or run up vacancy time) if need be.
-    if(occupationCountdownM > 0) { --occupationCountdownM; vacancyM = 0; vacancyH = 0; }
-    else if(vacancyH < 0xffU) { if(++vacancyM >= 60) { vacancyM = 0; ++vacancyH; } }
-    // Run down 'recent activity' timer.
-    if(activityCountdownM > 0) { --activityCountdownM; }
-    return(value);
-    }
-  }
-
-// Call when some/weak evidence of room occupation, such as a light being turned on, or voice heard.
-// Do not call based on internal/synthetic events.
-// Doesn't force the room to appear recently occupied.
-// If the hardware allows this may immediately turn on the main GUI LED until normal GUI reverts it,
-// at least periodically.
-// Preferably do not call for manual control operation to avoid interfering with UI operation.
-// Thread-safe.
-void OccupancyTracker::markAsPossiblyOccupied()
-  {
-  if(0 == occupationCountdownM) // Flash at first sign only of occupancy after vacancy to limit annoyance.
-    { LED_HEATCALL_ON_ISR_SAFE(); }
-  ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
-    {
-    occupationCountdownM = OTV0P2BASE::fnmax((uint8_t)occupationCountdownM, (uint8_t)(OCCUPATION_TIMEOUT_1_M));
-    }
-  activityCountdownM = 2;
-  }
-#endif
-
-
-#ifdef ENABLE_ANTICIPATION
-// Returns true iff room likely to be occupied and need warming at the specified hour's sample point based on collected stats.
-// Used for predictively warming a room in smart mode and for choosing setback depths.
-// Returns false if no good evidence to warm the room at the given time based on past history over about one week.
-//   * hh hour to check for predictive warming [0,23]
-bool shouldBeWarmedAtHour(const uint_least8_t hh)
-  {
-#ifdef ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
-  // Return false immediately if the sample hour's historic ambient light level falls in the bottom quartile (or is zero).
-  // Thus aim to shave off 'smart' warming for at least 25% of the daily cycle.
-  if(inOutlierQuartile(false, EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED, hh)) { return(false); }
-#endif // ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
-
-#ifdef
-  // Return false immediately if the sample hour's historic occupancy level falls in the bottom quartile (or is zero).
-  // Thus aim to shave off 'smart' warming for at least 25% of the daily cycle.
-  if(inOutlierQuartile(false, EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, hh)) { return(false); }
-#endif // ENABLE_OCCUPANCY_SUPPORT
-
-  const uint8_t warmHistory = eeprom_read_byte((uint8_t *)(EE_STATS_START_ADDR(EE_STATS_SET_WARMMODE_BY_HOUR_OF_WK) + hh));
-  if(0 == (0x80 & warmHistory)) // This hour has a history.
-    {
-//    // Return false immediately if no WARM mode this hour for the last week (ie the unit needs reminding at least once per week).
-//    if(0 == warmHistory) // No explicit WARM for a week at this hour, prevents 'smart' warming.
-//      { return(false); }
-    // Return true immediately if this hour was in WARM mode yesterday or a week ago, and at least one other day.
-    if((0 != (0x41 & warmHistory)) && (0 != (0x3e & warmHistory)))
-      { return(true); }
-    }
-
-  // Return true if immediately the sample hour is usually warm, ie at or above WARM target.
-  const int smoothedTempHHNext = expandTempC16(eeprom_read_byte((uint8_t *)(EE_STATS_START_ADDR(EE_STATS_SET_TEMP_BY_HOUR_SMOOTHED) + hh)));
-#if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("Smoothed C for ");
-  DEBUG_SERIAL_PRINT(hh);
-  DEBUG_SERIAL_PRINT_FLASHSTRING("h is ");
-  DEBUG_SERIAL_PRINT(smoothedTempHHNext >> 4);
-  DEBUG_SERIAL_PRINTLN();
-#endif
-  if((STATS_UNSET_INT != smoothedTempHHNext) && (((smoothedTempHHNext+8)>>4) >= getWARMTargetC()))
-    { return(true); }
-
-  // No good evidence for room to be warmed for specified hour.
-  return(false);
-  }
-#endif
+//  if((STATS_UNSET_INT != smoothedTempHHNext) && (((smoothedTempHHNext+8)>>4) >= getWARMTargetC()))
+//    { return(true); }
+//
+//  // No good evidence for room to be warmed for specified hour.
+//  return(false);
+//  }
+//#endif
 
 
 
