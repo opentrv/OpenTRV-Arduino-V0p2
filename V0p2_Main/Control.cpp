@@ -394,7 +394,7 @@ uint8_t ModelledRadValve::computeTargetTemp()
     //   AND no WARM schedule is active now (TODO-111)
     //   AND no recent manual interaction with the unit's local UI (TODO-464) indicating local settings override.
     // Note that this mainly has to work in domestic settings in winter (with ~8h of daylight)
-    // but should also work in artificially-lit offices (maybe ~12h continuous lighting).
+    // but should ideally also work in artificially-lit offices (maybe ~12h continuous lighting).
     // No 'lights-on' signal for a whole day is a fairly strong indication that the heat can be turned down.
     // TODO-451: TODO-453: ignore a short lights-off, eg from someone briefly leaving room or a transient shadow.
     // TODO: consider bottom quartile of ambient light as alternative setback trigger for near-continuously-lit spaces (aiming to spot daylight signature).
@@ -407,7 +407,7 @@ uint8_t ModelledRadValve::computeTargetTemp()
          OTV0P2BASE::inOutlierQuartile(false, V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED) &&
          OTV0P2BASE::inOutlierQuartile(false, V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::inOutlierQuartile_NEXT_HOUR));
     if(longVacant ||
-       ((notLikelyOccupiedSoon || (AmbLight.getDarkMinutes() > 10)) && !isAnyScheduleOnWARMNow() && !recentUIControlUse()))
+       ((notLikelyOccupiedSoon || (AmbLight.getDarkMinutes() > 10)) && !Occupancy.isLikelyRecentlyOccupied() && !isAnyScheduleOnWARMNow() && !recentUIControlUse()))
       {
       // Use a default minimal non-annoying setback if
       //   in upper part of comfort range
