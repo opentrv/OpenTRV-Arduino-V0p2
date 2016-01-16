@@ -3462,10 +3462,10 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <via x="22.8575" y="42.3225" extent="1-16" drill="0.5"/>
 <via x="22.8575" y="40.3225" extent="1-16" drill="0.5"/>
 <via x="22.8575" y="38.3225" extent="1-16" drill="0.5"/>
-<via x="32.795" y="46.45" extent="1-16" drill="0.5"/>
-<via x="34.795" y="46.45" extent="1-16" drill="0.5"/>
-<via x="38.795" y="46.45" extent="1-16" drill="0.5"/>
-<via x="36.795" y="46.45" extent="1-16" drill="0.5"/>
+<via x="32.795" y="45.4975" extent="1-16" drill="0.5"/>
+<via x="34.795" y="45.4975" extent="1-16" drill="0.5"/>
+<via x="38.795" y="45.4975" extent="1-16" drill="0.5"/>
+<via x="36.795" y="45.4975" extent="1-16" drill="0.5"/>
 <via x="32.795" y="34.45" extent="1-16" drill="0.5"/>
 <via x="34.34" y="34.45" extent="1-16" drill="0.5"/>
 <via x="38.795" y="34.45" extent="1-16" drill="0.5"/>
@@ -3603,18 +3603,16 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <via x="38.795" y="35.4025" extent="1-16" drill="0.5"/>
 <via x="38.84" y="39.4025" extent="1-16" drill="0.5"/>
 <via x="38.795" y="41.4025" extent="1-16" drill="0.5"/>
-<via x="38.795" y="45.4025" extent="1-16" drill="0.5"/>
 <via x="39.1575" y="43.4025" extent="1-16" drill="0.5"/>
 <via x="39.1125" y="37.4025" extent="1-16" drill="0.5"/>
 <via x="32.795" y="35.4025" extent="1-16" drill="0.5"/>
 <via x="32.75" y="39.4025" extent="1-16" drill="0.5"/>
 <via x="32.795" y="41.4025" extent="1-16" drill="0.5"/>
-<via x="32.795" y="45.4025" extent="1-16" drill="0.5"/>
 <via x="32.4325" y="43.4025" extent="1-16" drill="0.5"/>
 <via x="32.4775" y="37.4025" extent="1-16" drill="0.5"/>
-<via x="33.8425" y="46.45" extent="1-16" drill="0.5"/>
-<via x="37.8425" y="46.45" extent="1-16" drill="0.5"/>
-<via x="35.8425" y="46.45" extent="1-16" drill="0.5"/>
+<via x="33.8425" y="45.4975" extent="1-16" drill="0.5"/>
+<via x="37.8425" y="45.4975" extent="1-16" drill="0.5"/>
+<via x="35.8425" y="45.4975" extent="1-16" drill="0.5"/>
 <via x="22.89" y="44.3225" extent="1-16" drill="0.5"/>
 <via x="22.89" y="46.3225" extent="1-16" drill="0.5"/>
 <via x="15.2975" y="44.3225" extent="1-16" drill="0.5"/>
@@ -3673,51 +3671,49 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <wire x1="37.465" y1="12.28" x2="37.465" y2="7.3025" width="0.3048" layer="1"/>
 <polygon width="0.3048" layer="1">
 <vertex x="22.86" y="24.13"/>
-<vertex x="22.86" y="3.81" curve="90"/>
-<vertex x="26.035" y="1.905"/>
-<vertex x="97.155" y="1.905" curve="90"/>
-<vertex x="99.06" y="3.81"/>
-<vertex x="99.06" y="46.6725" curve="90"/>
-<vertex x="97.79" y="47.9425"/>
-<vertex x="26.035" y="47.9425" curve="90"/>
+<vertex x="22.86" y="5.08" curve="90"/>
+<vertex x="19.685" y="4.445"/>
+<vertex x="97.155" y="4.445" curve="90"/>
+<vertex x="99.06" y="6.35"/>
+<vertex x="99.06" y="44.45" curve="90"/>
+<vertex x="97.79" y="45.4025"/>
+<vertex x="26.035" y="45.4025" curve="90"/>
 <vertex x="22.86" y="45.72"/>
 <vertex x="22.86" y="28.2575" curve="90"/>
 </polygon>
 <polygon width="0.3048" layer="16">
 <vertex x="22.86" y="24.13"/>
-<vertex x="22.86" y="3.81" curve="90"/>
-<vertex x="26.035" y="1.905"/>
-<vertex x="97.155" y="1.905" curve="90"/>
-<vertex x="99.06" y="3.81"/>
-<vertex x="99.06" y="46.6725" curve="90"/>
-<vertex x="97.79" y="47.9425"/>
-<vertex x="26.035" y="47.9425" curve="90"/>
+<vertex x="22.86" y="10.16" curve="90"/>
+<vertex x="23.495" y="4.445"/>
+<vertex x="97.155" y="4.445" curve="90"/>
+<vertex x="99.06" y="6.35"/>
+<vertex x="99.06" y="44.7675" curve="90"/>
+<vertex x="97.79" y="45.4025"/>
+<vertex x="26.035" y="45.4025" curve="90"/>
 <vertex x="22.86" y="45.72"/>
 <vertex x="22.86" y="28.2575" curve="90"/>
 </polygon>
 <polygon width="0.3048" layer="1">
 <vertex x="24.13" y="36.83"/>
 <vertex x="1.905" y="36.83"/>
-<vertex x="1.905" y="5.715"/>
-<vertex x="1.905" y="3.175" curve="90"/>
-<vertex x="3.175" y="1.905"/>
-<vertex x="26.035" y="1.905"/>
+<vertex x="1.905" y="6.985" curve="90"/>
+<vertex x="3.175" y="4.445"/>
+<vertex x="26.035" y="4.445"/>
 <vertex x="26.035" y="34.925" curve="90"/>
 </polygon>
 <polygon width="0.3048" layer="16">
 <vertex x="24.13" y="36.83"/>
 <vertex x="1.905" y="36.83"/>
-<vertex x="1.905" y="5.715"/>
-<vertex x="1.905" y="3.175" curve="90"/>
-<vertex x="3.175" y="1.905"/>
-<vertex x="26.035" y="1.905"/>
+<vertex x="1.905" y="5.715" curve="90"/>
+<vertex x="3.175" y="4.445"/>
+<vertex x="26.035" y="4.445"/>
 <vertex x="26.035" y="34.925" curve="90"/>
 </polygon>
 <via x="3.015" y="6.4425" extent="1-16" drill="0.5"/>
 <via x="2.095" y="33.37" extent="1-16" drill="0.5"/>
 <via x="94.0725" y="22.0675" extent="1-16" drill="0.5"/>
 <via x="61.02" y="8.0975" extent="1-16" drill="0.5"/>
-<via x="62.6075" y="9.05" extent="1-16" drill="0.5"/>
+<via x="62.6075" y="9.3675" extent="1-16" drill="0.5"/>
 <via x="66.4175" y="12.225" extent="1-16" drill="0.5"/>
 <via x="64.195" y="15.7175" extent="1-16" drill="0.5"/>
 <via x="60.0675" y="16.3525" extent="1-16" drill="0.5"/>
@@ -4221,9 +4217,8 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <wire x1="55" y1="9.625" x2="41.375" y2="23.25" width="0.2032" layer="1"/>
 <wire x1="56.875" y1="9.625" x2="55" y2="9.625" width="0.2032" layer="1"/>
 <wire x1="58.625" y1="9.625" x2="56.875" y2="9.625" width="0.2032" layer="16"/>
-<wire x1="62.23" y1="9.625" x2="58.625" y2="9.625" width="0.2032" layer="1"/>
-<wire x1="65.855" y1="13.25" x2="62.23" y2="9.625" width="0.2032" layer="1"/>
-<wire x1="76.5" y1="13.25" x2="65.855" y2="13.25" width="0.2032" layer="1"/>
+<wire x1="60.325" y1="9.625" x2="58.625" y2="9.625" width="0.2032" layer="1"/>
+<wire x1="76.5" y1="13.25" x2="68.395" y2="13.25" width="0.2032" layer="1"/>
 <wire x1="42.375" y1="29.375" x2="42.3926" y2="29.47" width="0.2032" layer="1"/>
 <wire x1="76.5" y1="13.25" x2="76.5175" y2="13.335" width="0.2032" layer="1"/>
 <wire x1="76.625" y1="13.25" x2="76.625" y2="10.375" width="0.2032" layer="1"/>
@@ -4231,6 +4226,11 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <wire x1="76.625" y1="13.25" x2="76.5175" y2="13.335" width="0.2032" layer="1"/>
 <via x="56.875" y="9.625" extent="1-16" drill="0.5"/>
 <via x="58.625" y="9.625" extent="1-16" drill="0.5"/>
+<wire x1="65.2272" y1="13.208" x2="68.3768" y2="13.208" width="0.2032" layer="1"/>
+<wire x1="61.6712" y1="9.652" x2="65.2272" y2="13.208" width="0.2032" layer="1"/>
+<wire x1="60.3504" y1="9.652" x2="61.6712" y2="9.652" width="0.2032" layer="1"/>
+<wire x1="68.3768" y1="13.208" x2="68.395" y2="13.25" width="0.2032" layer="1"/>
+<wire x1="60.3504" y1="9.652" x2="60.325" y2="9.625" width="0.2032" layer="1"/>
 </signal>
 <signal name="IO_POWER_UP" class="1">
 <contactref element="PHT" pad="A"/>
@@ -4687,19 +4687,19 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <approved hash="3,1,2081dcd0536229d0"/>
 <approved hash="3,1,2165379738aae540"/>
 <approved hash="3,1,6bfa5542484f76f7"/>
-<approved hash="3,1,1bf010e80ce407fc"/>
-<approved hash="3,1,ca6bd313cf1ed666"/>
 <approved hash="3,1,71232b535328e61d"/>
-<approved hash="3,1,7c4459fc5aff7f47"/>
+<approved hash="3,1,547271ca701655ae"/>
+<approved hash="3,1,de463bfe0521e099"/>
 <approved hash="3,1,3a90e8bae9943bbe"/>
-<approved hash="3,1,e5d3f96be56ef9d6"/>
+<approved hash="3,1,59bcdda4c1a945b1"/>
 <approved hash="3,1,4a09efde093b3a2f"/>
 <approved hash="3,1,c37aa0c2bdd0de68"/>
 <approved hash="3,1,e369d0cb310fe88a"/>
 <approved hash="3,1,b5481af01587ba3f"/>
 <approved hash="3,1,9a9330eb2ce08698"/>
 <approved hash="3,1,4e82560f63fed647"/>
-<approved hash="3,1,7f415c395f057c7d"/>
+<approved hash="3,1,5777740f75ec5694"/>
+<approved hash="3,1,dd433e3b00dbe3a3"/>
 <approved hash="3,1,b1900d7a0c52b0b8"/>
 <approved hash="3,1,1c9ef037072e752e"/>
 <approved hash="3,1,41353a8d3a294191"/>
@@ -4715,19 +4715,16 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <approved hash="18,29,c31c41821de3c54f"/>
 <approved hash="18,29,139067332c7902e8"/>
 <approved hash="4,1,1d58b44b015038ee"/>
-<approved hash="4,1,83d5c7ebfeade01b"/>
+<approved hash="4,1,7286a3b1a8cf4281"/>
 <approved hash="4,1,1da2c7337b7576ea"/>
 <approved hash="4,1,93238822a9ccf047"/>
-<approved hash="19,1,f6a5c50a51e94b7a"/>
-<approved hash="19,1,866b251f191eba6a"/>
-<approved hash="19,1,a6ed09aa310e6e3d"/>
-<approved hash="19,1,5b6e305a0c656751"/>
-<approved hash="5,1,a14d15cab45ae41d"/>
+<approved hash="4,1,83d5c7ebfeade01b"/>
 <approved hash="19,1,45d7a529a53745c9"/>
 <approved hash="19,1,f81758695874f80a"/>
 <approved hash="19,1,907df063f061907f"/>
 <approved hash="19,1,45a1a59ba59d45a7"/>
 <approved hash="19,1,f98359fd59f8f986"/>
+<approved hash="5,1,a14d15cab45ae41d"/>
 <approved hash="5,1,74964bc7a6335c86"/>
 <approved hash="19,1,d96a38983886d974"/>
 <approved hash="19,1,0961c3ed3c949f34"/>
@@ -4740,8 +4737,8 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <approved hash="19,1,8b81171a17198b82"/>
 <approved hash="19,1,5958b9efb9e9595e"/>
 <approved hash="19,1,ed7e4d8d4d88ed7b"/>
-<approved hash="5,1,4c569a2be9ec4314"/>
 <approved hash="5,1,4c974823e3b34314"/>
+<approved hash="5,1,4c569a2be9ec4314"/>
 <approved hash="19,1,f74c096418cf4fec"/>
 <approved hash="19,1,449ef014f91b459b"/>
 <approved hash="19,1,9e02f69515937d02"/>
@@ -4763,10 +4760,10 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <approved hash="19,1,94dcf5ee00172d5d"/>
 <approved hash="5,1,de68d883aba57757"/>
 <approved hash="5,1,c8d748ec85b9e13a"/>
-<approved hash="19,1,8383d0bdefc026a2"/>
 <approved hash="19,1,24b2f723d72d04bc"/>
 <approved hash="19,1,81c55ab4a2ba79cb"/>
 <approved hash="19,1,b439fc6ed47d9c2a"/>
+<approved hash="19,1,8383d0bdefc026a2"/>
 <approved hash="19,1,6b2dba329a3c4b23"/>
 <approved hash="19,1,e07a3e1c2612f874"/>
 <approved hash="19,1,b18df7a8d7a79982"/>
