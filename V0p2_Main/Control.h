@@ -495,17 +495,18 @@ extern SimpleSlaveRadValve NominalRadValve;
 // IF DEFINED: support for general timed and multi-input occupancy detection / use.
 #ifdef ENABLE_OCCUPANCY_SUPPORT
 
-// Number of minutes that room is regarded as occupied after markAsOccupied(); strictly positive.
-// DHD20130528: no activity for ~30 minutes usually enough to declare room empty in my experience.
-// Should probably be at least as long as, or a little longer than, the BAKE timeout.
-// Should probably be significantly shorter than normal 'learn' on time to allow savings from that in empty rooms.
-#define OCCUPATION_TIMEOUT_M (min(max(SETBACK_FULL_M, 30), 255))
-// Threshold from 'likely' to 'probably'.
-#define OCCUPATION_TIMEOUT_1_M ((OCCUPATION_TIMEOUT_M*2)/3)
-
 // Occupancy measure as a % confidence that the room/area controlled by this unit has active human occupants.
 class OccupancyTracker : public OTV0P2BASE::SimpleTSUint8Sensor
   {
+  public:
+    // Number of minutes that room is regarded as occupied after markAsOccupied(); strictly positive.
+    // DHD20130528: no activity for ~30 minutes usually enough to declare room empty; an hour is conservative.
+    // Should probably be at least as long as, or a little longer than, the BAKE timeout.
+    // Should probably be significantly shorter than normal 'learn' on time to allow savings from that in empty rooms.
+    static const uint8_t OCCUPATION_TIMEOUT_M = (min(max(SETBACK_FULL_M, 30), 255));
+    // Threshold from 'likely' to 'probably'.
+    static const uint8_t OCCUPATION_TIMEOUT_1_M = ((OCCUPATION_TIMEOUT_M*2)/3);
+
   private:
     // Time until room regarded as unoccupied, in minutes; initially zero (ie treated as unoccupied at power-up).
     // Marked volatile for thread-safe lock-free non-read-modify-write access to byte-wide value.
@@ -666,19 +667,10 @@ void genericMarkAsPossiblyOccupied();
 // Sample statistics once per hour as background to simple monitoring and adaptive behaviour.
 // Call this once per hour with fullSample==true, as near the end of the hour as possible;
 // this will update the non-volatile stats record for the current hour.
-// Optionally call this at a small (2--10) even number of evenly-spaced number of other times thoughout the hour
+// Optionally call this at a small (2--10) even number of evenly-spaced number of other times throughout the hour
 // with fullSample=false to sub-sample (and these may receive lower weighting or be ignored).
 // (EEPROM wear should not be an issue at this update rate in normal use.)
 void sampleStats(bool fullSample);
-
-
-#ifdef ENABLE_ANTICIPATION
-// Returns true iff room likely to be occupied and need warming at the specified hour's sample point based on collected stats.
-// Used for predictively warming a room in smart mode and for choosing setback depths.
-// Returns false if no good evidence to warm the room at the given time based on past history over about one week.
-//   * hh hour to check for predictive warming [0,23]
-bool shouldBeWarmedAtHour(const uint_least8_t hh);
-#endif
 
 
 #ifdef UNIT_TESTS

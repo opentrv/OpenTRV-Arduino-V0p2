@@ -137,8 +137,7 @@ extern ExtTemperatureDS18B20C16 extDS18B20_0;
 
 
 
-
-// Sense (maybe non-linearly) over full likely internal ambient lighting range of a (UK) home,
+// Sense (usually non-linearly) over full likely internal ambient lighting range of a (UK) home,
 // down to levels too dark to be active in (and at which heating could be set back for example).
 // This suggests a full scale of at least 50--100 lux, maybe as high as 300 lux, eg see:
 // http://home.wlv.ac.uk/~in6840/Lightinglevels.htm
@@ -150,29 +149,10 @@ extern ExtTemperatureDS18B20C16 extDS18B20_0;
 // Sensor for ambient light level; 0 is dark, 255 is bright.
 typedef OTV0P2BASE::SensorAmbientLight AmbientLight;
 #else // !defined(ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT)
-// Placeholder class with dummy static status methods to reduce code complexity.
-class AmbientLight
-  {
-  public:
-    // Not available, so always returns false.
-    static bool isAvailable() { return(false); }
-
-    // Unknown, so always false.
-    // Thread-safe and usable within ISRs (Interrupt Service Routines).
-    static bool isRoomLit() { return(false); }
-
-    // Unknown, so always false.
-    // Thread-safe and usable within ISRs (Interrupt Service Routines).
-    static bool isRoomDark() { return(false); }
-  };
+typedef OTV0P2BASE::DummySensorAmbientLight AmbientLight; // Dummy stand-in.
 #endif // ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
 // Singleton implementation/instance.
 extern AmbientLight AmbLight;
-
-
-
-
-
 
 
 
