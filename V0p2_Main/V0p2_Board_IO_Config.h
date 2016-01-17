@@ -38,7 +38,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #if !defined(V0p2_REV)
 #error Board revision not defined.
 #endif
-#if (V0p2_REV < 0) || (V0p2_REV > 11)
+#if (V0p2_REV < 0) || (V0p2_REV > 14)
 #error Board revision not defined correctly (out of range).
 #endif
 
@@ -47,7 +47,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // Force definitions for peripherals that should be present on every V0.09 board
 // (though may be ignored or not added to the board)
 // to enable safe I/O setup and (eg) avoid bus conflicts.
-#define USE_MODULE_RFM22RADIOSIMPLE // Always fitted on V0.2 board.
+//#define USE_MODULE_RFM22RADIOSIMPLE // Always fitted on V0.2 board.
 
 
 // Note 'standard' allocations of (ATmega328P-PU) pins, to be nominally Arduino compatible,
@@ -195,7 +195,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 
 
 // Call this ASAP in setup() to configure I/O safely for the board, avoid pins floating, etc.
-static inline void IOSetup()
+inline void IOSetup()
   {
   // Initialise all digital I/O to safe state ASAP and avoid floating lines where possible.
   // In absence of a specific alternative, drive low as an output to minimise consumption (eg from floating input).
