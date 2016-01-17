@@ -117,21 +117,6 @@ void extractTrailingMinimalStatsPayload(const uint8_t *const buf, trailingMinima
 #endif // ENABLE_FS20_ENCODING_SUPPORT
 
 
-#if defined(ALLOW_STATS_RX)
-#ifndef getInboundStatsQueueOverrun
-// Count of dropped inbound stats message due to insufficient queue space.
-// Must only be accessed under a lock (ATOMIC_BLOCK).
-static uint16_t inboundStatsQueueOverrun = 0;
-
-// Get count of dropped inbound stats messages due to insufficient queue space.
-uint16_t getInboundStatsQueueOverrun()
-  {
-  ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
-    { return(inboundStatsQueueOverrun); }
-  }
-#endif
-#endif
-
 #ifdef ENABLE_FS20_ENCODING_SUPPORT
 // Send (valid) core binary stats to specified print channel, followed by "\r\n".
 // This does NOT attempt to flush output nor wait after writing.
