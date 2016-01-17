@@ -249,16 +249,6 @@ void outputCoreStats(Print *p, bool secure, const FullStatsMessageCore_t *stats)
 void outputMinimalStats(Print *p, bool secure, uint8_t id0, uint8_t id1, const trailingMinimalStatsPayload_t *stats);
 #endif // ENABLE_FS20_ENCODING_SUPPORT
 
-#if defined(ALLOW_STATS_RX)
-// Checked received raw JSON message followed by CRC, up to MSG_JSON_ABS_MAX_LENGTH chars.
-// Returns length including bounding '{' and '}'|0x80 iff message superficially valid
-// (essentially as checked by quickValidateRawSimpleJSONMessage() for an in-memory message)
-// and that the CRC matches as computed by adjustJSONMsgForTXAndComputeCRC(),
-// else returns -1 (accepts 0 or 0x80 where raw CRC is zero).
-// Does not adjust buffer content.
-#define checkJSONMsgRXCRC_ERR -1
-int8_t checkJSONMsgRXCRC(const uint8_t * bptr, uint8_t bufLen);
-#endif
 
 
 // Returns true if an unencrypted trailing static payload and similar (eg bare stats transmission) is permitted.
@@ -266,7 +256,8 @@ int8_t checkJSONMsgRXCRC(const uint8_t * bptr, uint8_t bufLen);
 // Some filtering may be required even if this is true.
 #if defined(ALLOW_STATS_TX)
 #if !defined(CONFIG_ALWAYS_TX_ALL_STATS)
-bool enableTrailingStatsPayload();
+// TODO: allow cacheing in RAM for speed.
+inline bool enableTrailingStatsPayload() { return(OTV0P2BASE::getStatsTXLevel() <= OTV0P2BASE::stTXmostUnsec); }
 #else
 #define enableTrailingStatsPayload() (true) // Always allow at least some stats to be TXed.
 #endif // !defined(CONFIG_ALWAYS_TX_ALL_STATS)

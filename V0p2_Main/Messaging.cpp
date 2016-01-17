@@ -185,16 +185,6 @@ void outputMinimalStats(Print *p, bool secure, uint8_t id0, uint8_t id1, const t
     }
 #endif // ENABLE_FS20_ENCODING_SUPPORT
 
-#if defined(ALLOW_STATS_TX)
-#if !defined(enableTrailingStatsPayload)
-// Returns true if an unencrypted minimal trailing static payload and similar (eg bare stats transmission) is permitted.
-// True if the TX_ENABLE value is no higher than stTXmostUnsec.
-// Some filtering may be required even if this is true.
-// TODO: allow cacheing in RAM for speed.
-bool enableTrailingStatsPayload() { return(OTV0P2BASE::getStatsTXLevel() <= OTV0P2BASE::stTXmostUnsec); }
-#endif
-#endif
-
 
 #ifdef ENABLE_FS20_ENCODING_SUPPORT
 
