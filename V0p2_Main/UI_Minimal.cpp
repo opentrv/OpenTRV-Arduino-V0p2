@@ -98,9 +98,9 @@ bool recentUIControlUse() { return(0 != uiTimeoutM); }
 static void handleLEARN(const uint8_t which)
   {
   // Set simple schedule starting every 24h from a little before now and running for an hour or so.  
-  if(inWarmMode()) { setSimpleSchedule(OTV0P2BASE::getMinutesSinceMidnightLT(), which); }
+  if(inWarmMode()) { Scheduler.setSimpleSchedule(OTV0P2BASE::getMinutesSinceMidnightLT(), which); }
   // Clear simple schedule.
-  else { clearSimpleSchedule(which); }
+  else { Scheduler.clearSimpleSchedule(which); }
   }
 #endif // LEARN_BUTTON_AVAILABLE
 
@@ -319,7 +319,7 @@ bool tickUI(const uint_fast8_t sec)
     if(statusChange)
       {
       static bool prevScheduleStatus;
-      const bool currentScheduleStatus = isAnyScheduleOnWARMNow();
+      const bool currentScheduleStatus = Scheduler.isAnyScheduleOnWARMNow();
       if(currentScheduleStatus != prevScheduleStatus)
         {
         prevScheduleStatus = currentScheduleStatus;
@@ -366,16 +366,16 @@ void checkUserSchedule()
 
   // Check all available schedules.
   // FIXME: probably will NOT work as expected for overlapping schedules (ie will got to FROST at end of first one).
-  for(uint8_t which = 0; which < MAX_SIMPLE_SCHEDULES; ++which)
+  for(uint8_t which = 0; which < Scheduler.MAX_SIMPLE_SCHEDULES; ++which)
     {
     // Check if now is the simple scheduled off time, as minutes after midnight [0,1439]; invalid (eg ~0) if none set.
     // Programmed off/frost takes priority over on/warm if same to bias towards energy-saving.
     // Note that in the presence of multiple overlapping schedules only the last 'off' applies however.
-    if(((MAX_SIMPLE_SCHEDULES < 1) || !isAnyScheduleOnWARMNow()) &&
-       (msm == getSimpleScheduleOff(which)))
+    if(((Scheduler.MAX_SIMPLE_SCHEDULES < 1) || !Scheduler.isAnyScheduleOnWARMNow()) &&
+       (msm == Scheduler.getSimpleScheduleOff(which)))
       { setWarmModeDebounced(false); }
     // Check if now is the simple scheduled on time.
-    else if(msm == getSimpleScheduleOn(which))
+    else if(msm == Scheduler.getSimpleScheduleOn(which))
       { setWarmModeDebounced(true); }
     }
   }
@@ -563,22 +563,22 @@ void serialStatusReport()
   Serial.print(';'); // End previous section.
   Serial.print('T'); Serial.print(hh); Serial_print_space(); Serial.print(mm);
   // Show all schedules set.
-  for(uint8_t scheduleNumber = 0; scheduleNumber < MAX_SIMPLE_SCHEDULES; ++scheduleNumber)
+  for(uint8_t scheduleNumber = 0; scheduleNumber < Scheduler.MAX_SIMPLE_SCHEDULES; ++scheduleNumber)
     {
     Serial_print_space();
-    uint_least16_t startMinutesSinceMidnightLT = getSimpleScheduleOn(scheduleNumber);
+    uint_least16_t startMinutesSinceMidnightLT = Scheduler.getSimpleScheduleOn(scheduleNumber);
     const bool invalidStartTime = startMinutesSinceMidnightLT >= OTV0P2BASE::MINS_PER_DAY;
     const int startH = invalidStartTime ? 255 : (startMinutesSinceMidnightLT / 60);
     const int startM = invalidStartTime ? 0 : (startMinutesSinceMidnightLT % 60);
     Serial.print('W'); Serial.print(startH); Serial_print_space(); Serial.print(startM);
     Serial_print_space();
-    uint_least16_t endMinutesSinceMidnightLT = getSimpleScheduleOff(scheduleNumber);
+    uint_least16_t endMinutesSinceMidnightLT = Scheduler.getSimpleScheduleOff(scheduleNumber);
     const bool invalidEndTime = endMinutesSinceMidnightLT >= OTV0P2BASE::MINS_PER_DAY;
     const int endH = invalidEndTime ? 255 : (endMinutesSinceMidnightLT / 60);
     const int endM = invalidEndTime ? 0 : (endMinutesSinceMidnightLT % 60);
     Serial.print('F'); Serial.print(endH); Serial_print_space(); Serial.print(endM);
     }
-  if(isAnyScheduleOnWARMNow()) { Serial.print('*'); } // Indicate that at least one schedule is active now.
+  if(Scheduler.isAnyScheduleOnWARMNow()) { Serial.print('*'); } // Indicate that at least one schedule is active now.
 #endif
 
   // *S* section: settable target/threshold temperatures, current target, and eco/smart/occupied flags.
@@ -1255,7 +1255,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
               }
 //#endif
             // Does not fully validate user inputs (eg for -ve values), but cannot set impossible values.
-            if(!setSimpleSchedule((uint_least16_t) ((60 * hh) + mm), (uint8_t)s)) { InvalidIgnored(); }
+            if(!Scheduler.setSimpleSchedule((uint_least16_t) ((60 * hh) + mm), (uint8_t)s)) { InvalidIgnored(); }
             }
           }
         break;

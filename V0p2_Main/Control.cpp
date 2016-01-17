@@ -370,7 +370,7 @@ uint8_t ModelledRadValve::computeTargetTemp()
     // this is assuming that the room temperature can be raised by at least 1C/h.
     // See the effect of going from 2C to 1C setback: http://www.earth.org.uk/img/20160110-vat-b.png
     // (A very long pre-warm time may confuse or distress users, eg waking them in the morning.)
-    if(!Occupancy.longVacant() && isAnyScheduleOnWARMSoon() && !recentUIControlUse())
+    if(!Occupancy.longVacant() && Scheduler.isAnyScheduleOnWARMSoon() && !recentUIControlUse())
       {
       const uint8_t warmTarget = getWARMTargetC();
       // Compute putative pre-warm temperature, usually only just below WARM target,
@@ -410,7 +410,7 @@ uint8_t ModelledRadValve::computeTargetTemp()
          OTV0P2BASE::inOutlierQuartile(false, V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED) &&
          OTV0P2BASE::inOutlierQuartile(false, V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::inOutlierQuartile_NEXT_HOUR));
     if(longVacant ||
-       ((notLikelyOccupiedSoon || (AmbLight.getDarkMinutes() > 10)) && !isAnyScheduleOnWARMNow() && !recentUIControlUse()))
+       ((notLikelyOccupiedSoon || (AmbLight.getDarkMinutes() > 10)) && !Scheduler.isAnyScheduleOnWARMNow() && !recentUIControlUse()))
       {
       // Use a default minimal non-annoying setback if:
       //   in upper part of comfort range
@@ -426,7 +426,7 @@ uint8_t ModelledRadValve::computeTargetTemp()
                                Occupancy.isLikelyOccupied() ||
                                (!longLongVacant && !AmbLight.isRoomDark()) ||
                                (!longLongVacant && OTV0P2BASE::inOutlierQuartile(true, V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED)) ||
-                               (!longVacant && isAnyScheduleOnWARMSoon())) ?
+                               (!longVacant && Scheduler.isAnyScheduleOnWARMSoon())) ?
               SETBACK_DEFAULT :
           ((hasEcoBias() && (longLongVacant || (notLikelyOccupiedSoon && isEcoTemperature(wt)))) ?
               SETBACK_FULL : SETBACK_ECO);
