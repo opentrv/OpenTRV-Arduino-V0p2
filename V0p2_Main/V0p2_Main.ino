@@ -210,7 +210,7 @@ static bool FilterRXISR(const volatile uint8_t *buf, volatile uint8_t &buflen)
     case OTRadioLink::FTp2_JSONRaw:
       {
       // Maxmimum size is 56 including trailing CRC; fall through for possible further zeros trim.
-      buflen = min(initialBuflen, MSG_JSON_ABS_MAX_LENGTH + 1);
+      buflen = min(initialBuflen, OTV0P2BASE::MSG_JSON_ABS_MAX_LENGTH + 1);
       break;
       }
     case OTRadioLink::FTp2_FS20_native:

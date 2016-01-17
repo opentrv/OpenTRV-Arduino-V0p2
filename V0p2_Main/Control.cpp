@@ -740,7 +740,7 @@ int expandTempC16(uint8_t cTemp)
 // Clear and populate core stats structure with information from this node.
 // Exactly what gets filled in will depend on sensors on the node,
 // and may depend on stats TX security level (eg if collecting some sensitive items is also expensive).
-void populateCoreStats(FullStatsMessageCore_t *const content)
+void populateCoreStats(OTV0P2BASE::FullStatsMessageCore_t *const content)
   {
   clearFullStatsMessageCore(content); // Defensive programming: all fields should be set explicitly below.
   if(localFHT8VTRVEnabled())
@@ -847,7 +847,7 @@ void bareStatsTX(const bool allowDoubleTX, const bool doBinary, const bool RFM23
 #if defined(ALLOW_BINARY_STATS_TX) && defined(ENABLE_FS20_ENCODING_SUPPORT)
     // Send binary message first (insecure, FS20-piggyback format).
     // Gather core stats.
-    FullStatsMessageCore_t content;
+    OTV0P2BASE::FullStatsMessageCore_t content;
     populateCoreStats(&content);
     const uint8_t *msg1 = encodeFullStatsMessageCore(buf + STATS_MSG_START_OFFSET, sizeof(buf) - STATS_MSG_START_OFFSET, OTV0P2BASE::getStatsTXLevel(), false, &content);
     if(NULL == msg1)

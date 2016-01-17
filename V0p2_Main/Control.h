@@ -510,7 +510,7 @@ int expandTempC16(uint8_t cTemp);
 // Clear and populate core stats structure with information from this node.
 // Exactly what gets filled in will depend on sensors on the node,
 // and may depend on stats TX security level (if collecting some sensitive items is also expensive).
-void populateCoreStats(FullStatsMessageCore_t *content);
+void populateCoreStats(OTV0P2BASE::FullStatsMessageCore_t *content);
 #endif // ENABLE_FS20_ENCODING_SUPPORT
 
 // Do bare stats transmission.

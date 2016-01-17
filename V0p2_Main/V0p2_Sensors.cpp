@@ -770,7 +770,7 @@ OTRadValve::ValveMotorDirectV1<MOTOR_DRIVE_MR, MOTOR_DRIVE_ML, MOTOR_DRIVE_MI_AI
 #if defined(ALLOW_STATS_TX)
 uint8_t *appendStatsToTXBufferWithFF(uint8_t *bptr, const uint8_t bufSize)
   {
-  FullStatsMessageCore_t trailer;
+  OTV0P2BASE::FullStatsMessageCore_t trailer;
   populateCoreStats(&trailer);
   // Ensure that no ID is encoded in the message sent on the air since it would be a repeat from the FHT8V frame.
   trailer.containsID = false;
