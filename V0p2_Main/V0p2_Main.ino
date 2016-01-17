@@ -575,9 +575,9 @@ void setup()
   // Ensure that the unique node ID is set up (mainly on first use).
   // Have one attempt (don't want to stress an already failing EEPROM) to force-reset if not good, then panic.
   // Needs to have had entropy gathered, etc.
-  if(!ensureIDCreated())
+  if(!OTV0P2BASE::ensureIDCreated())
     {
-    if(!ensureIDCreated(true)) // Force reset.
+    if(!OTV0P2BASE::ensureIDCreated(true)) // Force reset.
       { panic(F("!Bad ID: can't fix")); }
     }
 

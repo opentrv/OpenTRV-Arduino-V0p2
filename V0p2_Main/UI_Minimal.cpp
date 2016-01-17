@@ -643,7 +643,7 @@ void serialStatusReport()
 #if 1 && defined(ALLOW_JSON_OUTPUT)
   Serial.print(';'); // Terminate previous section.
   char buf[80];
-  static SimpleStatsRotation<5> ss1; // Configured for maximum different stats.
+  static OTV0P2BASE::SimpleStatsRotation<5> ss1; // Configured for maximum different stats.
 //  ss1.put(TemperatureC16);
 #if defined(HUMIDITY_SENSOR_SUPPORT)
   ss1.put(RelHumidity);
@@ -1000,7 +1000,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
       case 'I':
         {
         if((3 == n) && ('*' == buf[2]))
-          { ensureIDCreated(true); } // Force ID change.
+          { OTV0P2BASE::ensureIDCreated(true); } // Force ID change.
         Serial.print(F("ID:"));
         for(uint8_t i = 0; i < V0P2BASE_EE_LEN_ID; ++i)
           {

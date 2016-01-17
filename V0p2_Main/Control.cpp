@@ -807,7 +807,7 @@ bool pollIO(const bool force)
 #ifdef ALLOW_STATS_TX
 #if defined(ALLOW_JSON_OUTPUT)
 // Managed JSON stats.
-static SimpleStatsRotation<10> ss1; // Configured for maximum different stats.	// FIXME increased for voice
+static OTV0P2BASE::SimpleStatsRotation<10> ss1; // Configured for maximum different stats.	// FIXME increased for voice
 #endif // ALLOW_STATS_TX
 // Do bare stats transmission.
 // Output should be filtered for items appropriate
@@ -929,7 +929,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
       return;
       }
 
-    outputJSONStats(&Serial, true, bptr, sizeof(buf) - (bptr-buf)); // Serial must already be running!
+    OTV0P2BASE::outputJSONStats(&Serial, true, bptr, sizeof(buf) - (bptr-buf)); // Serial must already be running!
     OTV0P2BASE::flushSerialSCTSensitive(); // Ensure all flushed since system clock may be messed with...
 
 #ifdef ENABLE_RADIO_SECONDARY_MODULE
@@ -946,7 +946,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
     // (Set high-bit on final closing brace to make it unique, and compute (non-0xff) CRC.)
     // This is only required for RFM23B
     if (RFM23BFramed) {
-          const uint8_t crc = adjustJSONMsgForTXAndComputeCRC((char *)bptr);
+          const uint8_t crc = OTV0P2BASE::adjustJSONMsgForTXAndComputeCRC((char *)bptr);
           if(0xff == crc)
             {
     #if 0 && defined(DEBUG)
