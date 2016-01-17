@@ -160,7 +160,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: enable support for FS20 carrier for RX or TX.
 #define ENABLE_FS20_CARRIER_SUPPORT
 // IF DEFINED: use FHT8V wireless radio module/valve, eg to control FHT8V local valve.
-#define USE_MODULE_FHT8VSIMPLE
+#define ENABLE_FHT8VSIMPLE
 // IF DEFINED: enable support for FS20 carrier for RX of raw FS20 and piggybacked binary (non-JSON) stats.
 #define ENABLE_FS20_NATIVE_AND_BINARY_STATS_RX
 // IF DEFINED: enable support for FS20 encoding/decoding, eg to send to FHT8V.
@@ -415,7 +415,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: enable support for FS20 carrier for RX or TX.
 #define ENABLE_FS20_CARRIER_SUPPORT
 // IF DEFINED: use FHT8V wireless radio module/valve.
-#undef USE_MODULE_FHT8VSIMPLE
+#undef ENABLE_FHT8VSIMPLE
 //// IF DEFINED: enable support for FS20 carrier for TX specifically (to allow RX-only).
 //#define ENABLE_FS20_CARRIER_SUPPORT_TX
 // IF DEFINED: enable support for FS20 encoding/decoding, eg to send to FHT8V.
@@ -442,7 +442,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: enable support for FS20 carrier for RX or TX.
 #define ENABLE_FS20_CARRIER_SUPPORT
 // IF DEFINED: use FHT8V wireless radio module/valve.
-#undef USE_MODULE_FHT8VSIMPLE
+#undef ENABLE_FHT8VSIMPLE
 //// IF DEFINED: enable support for FS20 carrier for TX specifically (to allow RX-only).
 //#define ENABLE_FS20_CARRIER_SUPPORT_TX
 // IF DEFINED: enable support for FS20 encoding/decoding, eg to send to FHT8V.
@@ -588,7 +588,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#undef SETTABLE_TARGET_TEMPERATURES
 // IF DEFINED: use active-low LEARN button(s).  Needs SUPPORT_SINGLETON_SCHEDULE.  ***
 //#undef LEARN_BUTTON_AVAILABLE // OPTIONAL ON V0.09 PCB1  UI_Minimal.cpp:1180:32: error: 'handleLEARN' was not declared in this scope
-#define USE_MODULE_FHT8VSIMPLE //Control.cpp:1322:27: error: 'localFHT8VTRVEnabled' was not declared in this scope
+#define ENABLE_FHT8VSIMPLE //Control.cpp:1322:27: error: 'localFHT8VTRVEnabled' was not declared in this scope
 // If LDR is not to be used then specifically define OMIT_... as below.
 //#undef ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT //  LDR 'occupancy' sensing irrelevant for DHW. Messaging.cpp:232:87: error: 'class AmbientLight' has no member named 'getRaw
 //#undef USE_MODULE_RFM22RADIOSIMPLE
@@ -650,7 +650,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#undef SETTABLE_TARGET_TEMPERATURES
 // IF DEFINED: use active-low LEARN button(s).  Needs SUPPORT_SINGLETON_SCHEDULE.  ***
 //#undef LEARN_BUTTON_AVAILABLE // OPTIONAL ON V0.09 PCB1  UI_Minimal.cpp:1180:32: error: 'handleLEARN' was not declared in this scope
-#define USE_MODULE_FHT8VSIMPLE //Control.cpp:1322:27: error: 'localFHT8VTRVEnabled' was not declared in this scope
+#define ENABLE_FHT8VSIMPLE //Control.cpp:1322:27: error: 'localFHT8VTRVEnabled' was not declared in this scope
 // If LDR is not to be used then specifically define OMIT_... as below.
 //#undef ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT //  LDR 'occupancy' sensing irrelevant for DHW. Messaging.cpp:232:87: error: 'class AmbientLight' has no member named 'getRaw
 
@@ -993,7 +993,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#undef SETTABLE_TARGET_TEMPERATURES
 // IF DEFINED: use active-low LEARN button(s).  Needs SUPPORT_SINGLETON_SCHEDULE.  ***
 //#undef LEARN_BUTTON_AVAILABLE // OPTIONAL ON V0.09 PCB1  UI_Minimal.cpp:1180:32: error: 'handleLEARN' was not declared in this scope
-//#define USE_MODULE_FHT8VSIMPLE //Control.cpp:1322:27: error: 'localFHT8VTRVEnabled' was not declared in this scope
+//#define ENABLE_FHT8VSIMPLE //Control.cpp:1322:27: error: 'localFHT8VTRVEnabled' was not declared in this scope
 
 #endif // CONFIG_REV10_BUSSHELTER
 
@@ -1189,19 +1189,19 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #endif
 
 // By default, use the RFM22/RFM23 module to talk to an FHT8V wireless radiator valve.
-#ifdef USE_MODULE_FHT8VSIMPLE
+#ifdef ENABLE_FHT8VSIMPLE
 #define USE_MODULE_RFM22RADIOSIMPLE
 #define ENABLE_FS20_CARRIER_SUPPORT
 #define ENABLE_FS20_ENCODING_SUPPORT
 // If this can be a hub, enable extra RX code.
 #if defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX)
-#define USE_MODULE_FHT8VSIMPLE_RX
+#define ENABLE_FHT8VSIMPLE_RX
 #define LISTEN_FOR_FTp2_FS20_native
 #endif // defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX)
 #if defined(ALLOW_STATS_RX)
 #define ENABLE_FS20_NATIVE_AND_BINARY_STATS_RX
 #endif // defined(ALLOW_STATS_RX)
-#endif // USE_MODULE_FHT8VSIMPLE
+#endif // ENABLE_FHT8VSIMPLE
 
 
 #endif

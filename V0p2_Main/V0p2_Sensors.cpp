@@ -764,7 +764,7 @@ OTRadValve::ValveMotorDirectV1<MOTOR_DRIVE_MR, MOTOR_DRIVE_ML, MOTOR_DRIVE_MI_AI
 
 
 // FHT8V radio-controlled actuator.
-#ifdef USE_MODULE_FHT8VSIMPLE
+#ifdef ENABLE_FHT8VSIMPLE
 // Function to append stats trailer (and 0xff) to FHT8V/FS20 TX buffer.
 // Assume enough space in buffer for largest possible stats message.
 #if defined(ALLOW_STATS_TX)
@@ -795,15 +795,15 @@ uint8_t *appendStatsToTXBufferWithFF(uint8_t *bptr, const uint8_t bufSize)
 #else
 #define appendStatsToTXBufferWithFF NULL // Do not append stats.
 #endif
-#endif // USE_MODULE_FHT8VSIMPLE
+#endif // ENABLE_FHT8VSIMPLE
 
-#ifdef USE_MODULE_FHT8VSIMPLE
+#ifdef ENABLE_FHT8VSIMPLE
 OTRadValve::FHT8VRadValve<_FHT8V_MAX_EXTRA_TRAILER_BYTES, OTRadValve::FHT8VRadValveBase::RFM23_PREAMBLE_BYTES, OTRadValve::FHT8VRadValveBase::RFM23_PREAMBLE_BYTE> FHT8V(appendStatsToTXBufferWithFF);
 #endif
 
 // Clear both housecode parts (and thus disable local valve).
 // Does nothing if FHT8V not in use.
-#ifdef USE_MODULE_FHT8VSIMPLE
+#ifdef ENABLE_FHT8VSIMPLE
 void FHT8VClearHC()
   {
   FHT8V.clearHC();
@@ -815,7 +815,7 @@ void FHT8VClearHC()
 // Set (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control.
 // Also set value in FHT8V rad valve model.
 // Does nothing if FHT8V not in use.
-#ifdef USE_MODULE_FHT8VSIMPLE
+#ifdef ENABLE_FHT8VSIMPLE
 void FHT8VSetHC1(uint8_t hc)
   {
   FHT8V.setHC1(hc);
@@ -831,7 +831,7 @@ void FHT8VSetHC2(uint8_t hc)
 // Get (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control (will be 0xff until set).
 // FHT8V instance values are used as a cache.
 // Does nothing if FHT8V not in use.
-#ifdef USE_MODULE_FHT8VSIMPLE
+#ifdef ENABLE_FHT8VSIMPLE
 uint8_t FHT8VGetHC1()
   {
   const uint8_t vv = FHT8V.getHC1();
@@ -856,9 +856,9 @@ uint8_t FHT8VGetHC2()
       { FHT8V.setHC2(ev); }
   return(ev);
   }
-#endif // USE_MODULE_FHT8VSIMPLE
+#endif // ENABLE_FHT8VSIMPLE
 
-#ifdef USE_MODULE_FHT8VSIMPLE
+#ifdef ENABLE_FHT8VSIMPLE
 // Load EEPROM house codes into primary FHT8V instance at start-up or once cleared in FHT8V instance.
 void FHT8VLoadHCFromEEPROM()
   {
@@ -866,7 +866,7 @@ void FHT8VLoadHCFromEEPROM()
   FHT8VGetHC1();
   FHT8VGetHC2();
   }
-#endif // USE_MODULE_FHT8VSIMPLE
+#endif // ENABLE_FHT8VSIMPLE
 
 
 //#if defined(ENABLE_BOILER_HUB)

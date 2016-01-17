@@ -617,7 +617,7 @@ void serialStatusReport()
 #endif
 
   // *H* section: house codes for local FHT8V valve and if syncing, iff set.
-#if defined(USE_MODULE_FHT8VSIMPLE)
+#if defined(ENABLE_FHT8VSIMPLE)
   // Print optional house code section if codes set.
   const uint8_t hc1 = FHT8VGetHC1();
   if(hc1 != 255)
@@ -713,7 +713,7 @@ static void dumpCLIUsage(const uint8_t stopBy)
   
   // Core CLI features first... (E, [H], I, S V)
   printCLILine(deadline, 'E', F("Exit CLI"));
-#if defined(USE_MODULE_FHT8VSIMPLE) && defined(LOCAL_TRV)
+#if defined(ENABLE_FHT8VSIMPLE) && defined(LOCAL_TRV)
   printCLILine(deadline, F("H H1 H2"), F("set FHT8V House codes 1&2"));
   printCLILine(deadline, 'H', F("clear House codes"));
 #endif
@@ -931,7 +931,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
       // This should be followed by JUST CR ('\r') OR LF ('\n')
       // else the second will wake the CLI up again.
       case 'E': { CLITimeoutM = 0; break; }
-#if defined(USE_MODULE_FHT8VSIMPLE) && (defined(LOCAL_TRV) || defined(SLAVE_TRV))
+#if defined(ENABLE_FHT8VSIMPLE) && (defined(LOCAL_TRV) || defined(SLAVE_TRV))
       // H nn nn
       // Set (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control.
       // Missing values will clear the code entirely (and disable use of the valve).

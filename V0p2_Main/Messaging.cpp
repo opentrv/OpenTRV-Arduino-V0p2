@@ -769,7 +769,7 @@ const uint8_t *decodeFullStatsMessageCore(const uint8_t * const buf, const uint8
 //  bp.print(F("\"@\":\""));
 //
 //  if(NULL != id) { bp.print(id); } // Value has to be 'safe' (eg no " nor \ in it).
-//#ifdef USE_MODULE_FHT8VSIMPLE
+//#ifdef ENABLE_FHT8VSIMPLE
 //  else if(localFHT8VTRVEnabled())
 //      {
 //      const uint8_t hc1 = FHT8VGetHC1();

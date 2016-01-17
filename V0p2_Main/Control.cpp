@@ -323,7 +323,7 @@ void ModelledRadValve::setMinValvePcReallyOpen(const uint8_t percent)
 bool ModelledRadValve::isControlledValveReallyOpen() const
   {
   if(isRecalibrating()) { return(false); }
-#ifdef USE_MODULE_FHT8VSIMPLE
+#ifdef ENABLE_FHT8VSIMPLE
   if(!FHT8V.isControlledValveReallyOpen()) { return(false); }
 #endif
   return(value >= getMinPercentOpen());
@@ -334,7 +334,7 @@ bool ModelledRadValve::isControlledValveReallyOpen() const
 // By default there is no recalibration step.
 bool ModelledRadValve::isRecalibrating() const
   {
-#ifdef USE_MODULE_FHT8VSIMPLE
+#ifdef ENABLE_FHT8VSIMPLE
   if(!FHT8V.isInNormalRunState()) { return(true); }
 #endif
   return(false);
@@ -344,7 +344,7 @@ bool ModelledRadValve::isRecalibrating() const
 // Default does nothing.
 void ModelledRadValve::recalibrate()
   {
-#ifdef USE_MODULE_FHT8VSIMPLE
+#ifdef ENABLE_FHT8VSIMPLE
   FHT8V.resyncWithValve(); // Should this be decalcinate instead/also/first?
 #endif
   }
@@ -878,6 +878,23 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
     // Use letters that correspond to the values in ParsedRemoteStatsRecord and when displaying/parsing @ status records.
     int8_t wrote;
 
+#ifdef ENABLE_FHT8VSIMPLE
+    // Insert FHT8V-style ID in stats messages if appropriate.
+    static char idBuf[5]; // Static so as to have lifetime not shorter than ss1.
+    if(localFHT8VTRVEnabled())
+      {
+      const uint8_t hc1 = FHT8VGetHC1();
+      const uint8_t hc2 = FHT8VGetHC2();
+      idBuf[0] = OTV0P2BASE::hexDigit(hc1 >> 4);
+      idBuf[1] = OTV0P2BASE::hexDigit(hc1);
+      idBuf[2] = OTV0P2BASE::hexDigit(hc2 >> 4);
+      idBuf[3] = OTV0P2BASE::hexDigit(hc2);
+      idBuf[4] = '\0';
+      ss1.setID(idBuf);
+      }
+    else { ss1.setID(NULL); } // Use build-in ID.
+#endif
+
     // Managed JSON stats.
     const bool maximise = true; // Make best use of available bandwidth...
     if(ss1.isEmpty())
@@ -989,12 +1006,12 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
 // Wire components directly together, eg for occupancy sensing.
 static void wireComponentsTogether()
   {
-#ifdef USE_MODULE_FHT8VSIMPLE
+#ifdef ENABLE_FHT8VSIMPLE
   // Set up radio.
   FHT8V.setRadio(&PrimaryRadio);
   // Load EEPROM house codes into primary FHT8V instance at start.
   FHT8VLoadHCFromEEPROM();
-#endif // USE_MODULE_FHT8VSIMPLE
+#endif // ENABLE_FHT8VSIMPLE
 
 #if defined(ENABLE_OCCUPANCY_SUPPORT) && defined(ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT)
   AmbLight.setPossOccCallback(genericMarkAsPossiblyOccupied);
@@ -1412,7 +1429,7 @@ void loopOpenTRV()
   // to avoid temperature over-estimates from self-heating,
   // and could be disabled if no local valve is being run to provide better response to remote nodes.
 //  bool hubModeBoilerOn = false; // If true then remote call for heat is in progress.
-//#if defined(USE_MODULE_FHT8VSIMPLE)
+//#if defined(ENABLE_FHT8VSIMPLE)
 #ifdef ENABLE_DEFAULT_ALWAYS_RX
   const bool needsToEavesdrop = true; // By default listen.
 #else
@@ -1425,7 +1442,7 @@ void loopOpenTRV()
     needsToEavesdrop = true; // If not already set as const above...
 #endif
 
-#if defined(ENABLE_BOILER_HUB) // && defined(USE_MODULE_FHT8VSIMPLE)   // ***** FIXME *******
+#if defined(ENABLE_BOILER_HUB) // && defined(ENABLE_FHT8VSIMPLE)   // ***** FIXME *******
     // Final poll to to cover up to end of previous minor loop.
     // Keep time from here to following SetupToEavesdropOnFHT8V() as short as possible to avoid missing remote calls.
 
@@ -1569,7 +1586,7 @@ void loopOpenTRV()
 
   // Act on eavesdropping need, setting up or clearing down hooks as required.
   PrimaryRadio.listen(needsToEavesdrop);
-//#if defined(USE_MODULE_FHT8VSIMPLE)
+//#if defined(ENABLE_FHT8VSIMPLE)
   if(needsToEavesdrop)
     {
 #if 1 && defined(DEBUG)
@@ -1694,7 +1711,7 @@ void loopOpenTRV()
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("*S"); // Start-of-cycle wake.
 #endif
 
-//#if defined(ENABLE_BOILER_HUB) && defined(USE_MODULE_FHT8VSIMPLE) // Deal with FHT8V eavesdropping if needed.
+//#if defined(ENABLE_BOILER_HUB) && defined(ENABLE_FHT8VSIMPLE) // Deal with FHT8V eavesdropping if needed.
 //  // Check RSSI...
 //  if(needsToEavesdrop)
 //    {
@@ -1739,7 +1756,7 @@ void loopOpenTRV()
 
 
 
-#if defined(USE_MODULE_FHT8VSIMPLE)
+#if defined(ENABLE_FHT8VSIMPLE)
   // Try for double TX for more robust conversation with valve unless:
   //   * battery is low
   //   * the valve is not required to be wide open (ie a reasonable temperature is currently being maintained).
@@ -1799,7 +1816,7 @@ void loopOpenTRV()
 #endif
 
 
-#if defined(USE_MODULE_FHT8VSIMPLE)
+#if defined(ENABLE_FHT8VSIMPLE)
   if(useExtraFHT8VTXSlots)
     {
     // Time for extra TX before other actions, but don't bother if minimising power in frost mode.
@@ -1856,7 +1873,7 @@ void loopOpenTRV()
     case 10:
       {
       if(!enableTrailingStatsPayload()) { break; } // Not allowed to send stuff like this.
-#if defined(USE_MODULE_FHT8VSIMPLE)
+#if defined(ENABLE_FHT8VSIMPLE)
       // Avoid transmit conflict with FS20; just drop the slot.
       // We should possibly choose between this and piggybacking stats to avoid busting duty-cycle rules.
       if(localFHT8VTRVEnabled() && useExtraFHT8VTXSlots) { break; }
@@ -1978,7 +1995,7 @@ void loopOpenTRV()
       NominalRadValve.read();
 #endif
 
-#if defined(USE_MODULE_FHT8VSIMPLE) && defined(LOCAL_TRV) // Only regen when needed.
+#if defined(ENABLE_FHT8VSIMPLE) && defined(LOCAL_TRV) // Only regen when needed.
       // If there was a change in target valve position,
       // or periodically in the minute after all sensors should have been read,
       // precompute some or all of any outgoing frame/stats/etc ready for the next transmission.
@@ -2047,7 +2064,7 @@ void loopOpenTRV()
       }
     }
 
-#if defined(USE_MODULE_FHT8VSIMPLE) && defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
+#if defined(ENABLE_FHT8VSIMPLE) && defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
   if(useExtraFHT8VTXSlots)
     {
     // ---------- HALF SECOND #2 -----------
@@ -2061,7 +2078,7 @@ void loopOpenTRV()
   // Generate periodic status reports.
   if(showStatus) { serialStatusReport(); }
 
-#if defined(USE_MODULE_FHT8VSIMPLE) && defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
+#if defined(ENABLE_FHT8VSIMPLE) && defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
   if(useExtraFHT8VTXSlots)
     {
     // ---------- HALF SECOND #3 -----------
@@ -2149,7 +2166,7 @@ void loopOpenTRV()
 //    DEBUG_SERIAL_PRINT(orc);
 //    DEBUG_SERIAL_PRINTLN();
 #endif
-#if defined(USE_MODULE_FHT8VSIMPLE)
+#if defined(ENABLE_FHT8VSIMPLE)
     FHT8V.resyncWithValve(); // Assume that sync with valve may have been lost, so re-sync.
 #endif
     TIME_LSD = OTV0P2BASE::getSecondsLT(); // Prepare to sleep until start of next full minor cycle.
