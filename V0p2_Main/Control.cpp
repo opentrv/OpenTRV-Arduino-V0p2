@@ -31,6 +31,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #include "UI_Minimal.h"
 
 
+// TODO: may want to declare only when used, eg with local valve.
 // Singleton scheduler instance.
 SimpleValveSchedule Scheduler;
 
