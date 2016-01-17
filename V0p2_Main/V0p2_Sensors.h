@@ -414,12 +414,4 @@ void FHT8VLoadHCFromEEPROM();
 #endif // USE_MODULE_FHT8VSIMPLE
 
 
-//#if defined(ENABLE_BOILER_HUB)
-//// Singleton implementation/instance.
-//extern BoilerDriver BoilerControl;
-//#endif
-
-
-
-
 #endif
