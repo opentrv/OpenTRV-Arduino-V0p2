@@ -152,7 +152,6 @@ extern ExtTemperatureDS18B20C16 extDS18B20_0;
 #endif
 
 
-
 // Sense (usually non-linearly) over full likely internal ambient lighting range of a (UK) home,
 // down to levels too dark to be active in (and at which heating could be set back for example).
 // This suggests a full scale of at least 50--100 lux, maybe as high as 300 lux, eg see:
