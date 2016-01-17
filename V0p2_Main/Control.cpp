@@ -28,8 +28,11 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 
 #include "V0p2_Sensors.h"
 #include "Radio.h"
-#include "Schedule.h"
 #include "UI_Minimal.h"
+
+
+// Singleton scheduler instance.
+SimpleValveSchedule Scheduler;
 
 
 #ifdef ENABLE_BOILER_HUB

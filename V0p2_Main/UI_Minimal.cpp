@@ -31,7 +31,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #include "Control.h"
 #include "Messaging.h"
 #include "Radio.h"
-#include "Schedule.h"
 #include "UI_Minimal.h"
 
 

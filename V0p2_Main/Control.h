@@ -117,6 +117,7 @@ void loopOpenTRV();
 
 
 
+
 // Forcing the warm mode to the specified state immediately.
 // Iff forcing to FROST mode then any pending BAKE time is cancelled,
 // else BAKE status is unchanged.
@@ -230,6 +231,35 @@ void setMinBoilerOnMinutes(uint8_t mins);
 // True if in stats hub/listen mode (minimum timeout).
 #define inStatsHubMode() (1 == getMinBoilerOnMinutes())
 #endif
+
+
+// Customised scheduler for the current OpenTRV application.
+class SimpleValveSchedule : public OTV0P2BASE::SimpleValveScheduleBase
+    {
+    public:
+        // Allow scheduled on time to dynamically depend on comfort level.
+        virtual uint8_t onTime()
+            {
+#if LEARNED_ON_PERIOD_M == LEARNED_ON_PERIOD_COMFORT_M
+            // Simplify the logic where no variation in on time is required.
+            return(LEARNED_ON_PERIOD_M);
+#else // LEARNED_ON_PERIOD_M != LEARNED_ON_PERIOD_COMFORT_M
+            // Variable 'on' time depending on how 'eco' the settings are.
+            // Three-way split based on current WARM target temperature,
+            // for a relatively gentle change in behaviour along the valve dial for example.
+            const uint8_t wt = getWARMTargetC();
+            if(isEcoTemperature(wt)) { return(LEARNED_ON_PERIOD_M); }
+            else if(isComfortTemperature(wt)) { return(LEARNED_ON_PERIOD_COMFORT_M); }
+            else { return((LEARNED_ON_PERIOD_M + LEARNED_ON_PERIOD_COMFORT_M) / 2); }
+#endif // LEARNED_ON_PERIOD_M == LEARNED_ON_PERIOD_COMFORT_M
+            }
+    };
+// Singleton scheduler instance.
+extern SimpleValveSchedule Scheduler;
+
+
+
+
 
 
 #if defined(LOCAL_TRV)
