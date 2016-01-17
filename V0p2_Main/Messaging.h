@@ -84,10 +84,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
 // which should cover everything from most external UK temperatures up to very hot DHW.
 
 // Size of trailing minimal stats payload (including check values) on FHT8V frame in bytes.
-#define MESSAGING_TRAILING_MINIMAL_STATS_PAYLOAD_BYTES 3
-#define MESSAGING_TRAILING_MINIMAL_STATS_HEADER_MSBS 0x40
-#define MESSAGING_TRAILING_MINIMAL_STATS_HEADER_MASK 0xe0
-#define MESSAGING_TRAILING_MINIMAL_STATS_TEMP_BIAS (-(20<<4)) // C*16 offset bottom of scale / subtracted from 0C.
+static const uint8_t MESSAGING_TRAILING_MINIMAL_STATS_PAYLOAD_BYTES = 3;
+static const uint8_t MESSAGING_TRAILING_MINIMAL_STATS_HEADER_MSBS = 0x40;
+static const uint8_t MESSAGING_TRAILING_MINIMAL_STATS_HEADER_MASK = 0xe0;
+static const int16_t MESSAGING_TRAILING_MINIMAL_STATS_TEMP_BIAS = (-(20<<4)); // C*16 offset bottom of scale / subtracted from 0C.
 
 // Raw (not-as-transmitted) representation of minimal stats payload header.
 // Should be compact in memory.
@@ -136,11 +136,11 @@ void extractTrailingMinimalStatsPayload(const uint8_t *buf, trailingMinimalStats
 //           BIT  7     6     5     4     3     2     1    0
 // * byte 0 :  | SEC |  1  |  1  |  1  |  R0 | IDP | IDH | 0 |   SECure, header, 1x reserved 0 bit, ID Present, ID High
 // WAS (pre 2015/07/14) * byte 0 :  |  0  |  1  |  1  |  1  |  R0 | IDP | IDH | SEC |   header, 1x reserved 0 bit, ID Present, ID High, SECure
-#define MESSAGING_FULL_STATS_HEADER_MSBS 0x70
-#define MESSAGING_FULL_STATS_HEADER_MASK 0x70
-#define MESSAGING_FULL_STATS_HEADER_BITS_ID_PRESENT 4
-#define MESSAGING_FULL_STATS_HEADER_BITS_ID_HIGH 2
-#define MESSAGING_FULL_STATS_HEADER_BITS_ID_SECURE 0x80
+static const uint8_t MESSAGING_FULL_STATS_HEADER_MSBS = 0x70;
+static const uint8_t MESSAGING_FULL_STATS_HEADER_MASK = 0x70;
+static const uint8_t MESSAGING_FULL_STATS_HEADER_BITS_ID_PRESENT = 4;
+static const uint8_t MESSAGING_FULL_STATS_HEADER_BITS_ID_HIGH = 2;
+static const uint8_t MESSAGING_FULL_STATS_HEADER_BITS_ID_SECURE = 0x80;
 
 // ?ID: node ID if present (IDP==1)
 //             |  0  |            ID0                          |   7 lsbits of first ID byte, unencrypted
@@ -160,10 +160,10 @@ void extractTrailingMinimalStatsPayload(const uint8_t *buf, trailingMinimalStats
 // IF EXT is 1 a further flags byte follows.
 // ALWAYS has to be present and has a distinct header from the preceding temp/power header to allow t/p to be omitted unambiguously.
 // * byte b+2: |  0  |  1  |  1  | EXT | ABML| RH% | OC1 | OC2 |   EXTension-follows flag, plus optional section flags.
-#define MESSAGING_FULL_STATS_FLAGS_HEADER_MSBS 0x60
-#define MESSAGING_FULL_STATS_FLAGS_HEADER_MASK 0xe0
-#define MESSAGING_FULL_STATS_FLAGS_HEADER_AMBL 8
-#define MESSAGING_FULL_STATS_FLAGS_HEADER_RHP 4
+static const uint8_t MESSAGING_FULL_STATS_FLAGS_HEADER_MSBS = 0x60;
+static const uint8_t MESSAGING_FULL_STATS_FLAGS_HEADER_MASK = 0xe0;
+static const uint8_t MESSAGING_FULL_STATS_FLAGS_HEADER_AMBL = 8;
+static const uint8_t MESSAGING_FULL_STATS_FLAGS_HEADER_RHP = 4;
 // If EXT = 1:
 // Call For Heat, RX High (meaning TX hub can probably turn down power), (SenML) ASCII PayLoad
 //   byte b+3: |  0  |  R1 |  R0 |  R0 |  R0 | CFH | RXH | APL |   1x reserved 1 bit, 4x reserved 0 bit, plus optional section flags.
@@ -187,7 +187,7 @@ void extractTrailingMinimalStatsPayload(const uint8_t *buf, trailingMinimalStats
 // SECURITY TRAILER
 // IF SEC BIT IS 1 THEN ZERO OR MORE BYTES INSERTED HERE, TBD.
 
-#define MESSAGING_FULL_STATS_CRC_INIT 0x7f // Initialisation value for CRC.
+static const uint8_t MESSAGING_FULL_STATS_CRC_INIT = 0x7f; // Initialisation value for CRC.
 // *           |  0  |  C6 |  C5 |  C5 |  C3 |  C2 |  C1 |  C0 |    7-bit CRC (crc7_5B_update), unencrypted
 
 // Representation of core/common elements of a 'full' stats message.
@@ -215,9 +215,9 @@ typedef struct FullStatsMessageCore
   } FullStatsMessageCore_t;
 
 // Maximum size on wire including trailing CRC of core of FullStatsMessage.  TX message buffer should be one larger for trailing 0xff.
-#define FullStatsMessageCore_MAX_BYTES_ON_WIRE 8
+static const uint8_t FullStatsMessageCore_MAX_BYTES_ON_WIRE = 8;
 // Minimum size on wire including trailing CRC of core of FullStatsMessage.  TX message buffer should be one larger for trailing 0xff.
-#define FullStatsMessageCore_MIN_BYTES_ON_WIRE 3
+static const uint8_t FullStatsMessageCore_MIN_BYTES_ON_WIRE = 3;
 
 // Clear a FullStatsMessageCore_t, also indicating no optional fields present.
 static inline void clearFullStatsMessageCore(FullStatsMessageCore_t *const p) { memset(p, 0, sizeof(FullStatsMessageCore_t)); }
