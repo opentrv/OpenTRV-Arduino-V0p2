@@ -681,7 +681,7 @@ int ExtTemperatureDS18B20C16::read()
 #endif
 
 #if defined(SENSOR_EXTERNAL_DS18B20_ENABLE_0) // Enable sensor zero.
-extern ExtTemperatureDS18B20C16 extDS18B20_0(0);
+ExtTemperatureDS18B20C16 extDS18B20_0(0);
 #endif
 
 
