@@ -71,12 +71,13 @@ void loopOpenTRV();
 #define BIASECO_WARM 17 // Target WARM temperature for ECO bias; must be in range ]BIASCOM_FROST+1,BIASCOM_WARM[.
 #define BIASCOM_WARM 21 // Target WARM temperature for Comfort bias; must be in range ]BIASECO_WARM,MAX_TARGET_C-BAKE_UPLIFT-1].
 #else // Default settings for DHW control.
-// 55C+ with boost to 60C+ for DHW Legionella control where needed.
-#define BIASECO_WARM 55 // Target WARM temperature for ECO bias; must be in range [MODECOM_WARM,MAX_TARGET_C].
+// 55C+ centre value with boost to 60C+ for DHW Legionella control where needed.
+// Note that the low end (~45C) is safe against scalding but may worry some for storage as a Legionella risk.
+#define BIASECO_WARM 45 // Target WARM temperature for ECO bias; must be in range [MODECOM_WARM,MAX_TARGET_C].
 #define BIASCOM_WARM 65 // Target WARM temperature for Comfort bias; must be in range ]MIN_TARGET_C,MODEECO_WARM].
 #endif
 // Default to a 'safe' temperature.
-#define WARM max(BIASECO_WARM,SAFE_ROOM_TEMPERATURE) 
+#define WARM max(BIASECO_WARM,SAFE_ROOM_TEMPERATURE)
 
 // Scale can run from eco warm -1 to comfort warm + 1, eg: * 16 17 18 >19< 20 21 22 BOOST
 #define TEMP_SCALE_MIN (BIASECO_WARM-1) // Bottom of range for adjustable-base-temperature systems.
@@ -100,7 +101,7 @@ void loopOpenTRV();
 // This must set back to no more than than MIN_TARGET_C to avoid problems with unsigned arithmetic.
 #define SETBACK_FULL 4
 // Prolonged inactivity time deemed to indicate room(s) really unoccupied to trigger full setback (minutes, strictly positive).
-#define SETBACK_FULL_M 50
+#define SETBACK_FULL_M min(60, max(30, OTV0P2BASE::PseudoSensorOccupancyTracker::OCCUPATION_TIMEOUT_M))
 
 //#ifdef LEARN_BUTTON_AVAILABLE
 // Period in minutes for simple learned on-time; strictly positive (and less than 256).
@@ -114,6 +115,7 @@ void loopOpenTRV();
 #define LEARNED_ON_PERIOD_COMFORT_M (min(2*(LEARNED_ON_PERIOD_M),255))
 #endif
 //#endif // LEARN_BUTTON_AVAILABLE
+
 
 
 
@@ -230,6 +232,35 @@ void setMinBoilerOnMinutes(uint8_t mins);
 // True if in stats hub/listen mode (minimum timeout).
 #define inStatsHubMode() (1 == getMinBoilerOnMinutes())
 #endif
+
+
+// Customised scheduler for the current OpenTRV application.
+class SimpleValveSchedule : public OTV0P2BASE::SimpleValveScheduleBase
+    {
+    public:
+        // Allow scheduled on time to dynamically depend on comfort level.
+        virtual uint8_t onTime()
+            {
+#if LEARNED_ON_PERIOD_M == LEARNED_ON_PERIOD_COMFORT_M
+            // Simplify the logic where no variation in on time is required.
+            return(LEARNED_ON_PERIOD_M);
+#else // LEARNED_ON_PERIOD_M != LEARNED_ON_PERIOD_COMFORT_M
+            // Variable 'on' time depending on how 'eco' the settings are.
+            // Three-way split based on current WARM target temperature,
+            // for a relatively gentle change in behaviour along the valve dial for example.
+            const uint8_t wt = getWARMTargetC();
+            if(isEcoTemperature(wt)) { return(LEARNED_ON_PERIOD_M); }
+            else if(isComfortTemperature(wt)) { return(LEARNED_ON_PERIOD_COMFORT_M); }
+            else { return((LEARNED_ON_PERIOD_M + LEARNED_ON_PERIOD_COMFORT_M) / 2); }
+#endif // LEARNED_ON_PERIOD_M == LEARNED_ON_PERIOD_COMFORT_M
+            }
+    };
+// Singleton scheduler instance.
+extern SimpleValveSchedule Scheduler;
+
+
+
+
 
 
 #if defined(LOCAL_TRV)
@@ -416,267 +447,34 @@ class ModelledRadValve : public OTRadValve::AbstractRadValve
 // Singleton implementation for entire node.
 extern ModelledRadValve NominalRadValve;
 #elif defined(SLAVE_TRV)
-// Valve which is put where it is told; no smarts of its own.
-class SimpleSlaveRadValve : public OTRadValve::AbstractRadValve
-  {
-  private:
-    // Ticks left before comms timing out and valve should revert to 'safe' position.
-    // Counts down to zero one tick per minute in the absence of valid calls to set().
-    uint8_t ticksLeft;
-
-  public:
-    // Initial time to wait with valve (almost) closed for initial command from controller.
-    // Helps avoid thrashing around during start-up when no heat may actually be required.
-    // Controller is required to send at least every 15 mins, ie just less than this.
-    static const uint8_t INITIAL_TIMEOUT_MINS = 16;
-
-    // Valid calls to set() must happen at less than this interval (minutes, positive).
-    // If this timeout triggers, a default valve position is used.
-    // Controller is required to send at least every 15 mins, ie at most half this.
-    static const uint8_t TIMEOUT_MINS = 30;
-
-    // Default (safe) valve position in percent.
-    // Similar to, but distinguishable from, eg FHT8V 'lost connection' 30% position.
-    static const uint8_t SAFE_POSITION_PC = 33;
-
-    // Create an instance with valve initially (almost) closed
-    // and a few minutes for controller to be heard before reverting to 'safe' position.
-    // This initial not-fully-closed position should help signal correct setup.
-    SimpleSlaveRadValve() : ticksLeft(INITIAL_TIMEOUT_MINS) { value = 1; }
-
-    // Get estimated minimum percentage open for significant flow for this device; strictly positive in range [1,99].
-    // Set to just above the initial value given. 
-    virtual uint8_t getMinPercentOpen() const { return(2); }
-
-    // Returns true if this sensor/actuator value is potentially valid, eg in-range.
-    virtual bool isValid(const uint8_t value) const { return(value <= 100); }
-
-    // Set new target valve percent open.
-    // Ignores invalid values.
-    virtual bool set(const uint8_t newValue);
-
-    // Do any regular work that needs doing.
-    // Deals with timeout and reversion to 'safe' valve position if the controller goes quiet.
-    // Call at a fixed rate (1/60s).
-    // Potentially expensive/slow.
-    virtual uint8_t read();
-
-    // Returns preferred poll interval (in seconds); non-zero.
-    // Must be polled at near constant rate, about once per minute.
-    virtual uint8_t preferredPollInterval_s() const { return(60); }
-
-    // Returns a suggested (JSON) tag/field/key name including units of get(); NULL means no recommended tag.
-    // The lifetime of the pointed-to text must be at least that of the Sensor instance.
-    virtual const char *tag() const { return("v|%"); }
-
-    // Returns true if (re)calibrating/(re)initialising/(re)syncing.
-    // The target valve position is not lost while this is true.
-    // By default there is no recalibration step.
-    virtual bool isRecalibrating() const;
-  };
 #define ENABLE_NOMINAL_RAD_VALVE
-// Singleton implementation for entire node.
-extern SimpleSlaveRadValve NominalRadValve;
+// Simply alias directly to FHT8V for REV9 slave for example.
+#define NominalRadValve FHT8V
 #endif
-
-
-
-//// Default maximum time to allow the boiler to run on to allow for lost call-for-heat transmissions etc.
-//// Should be (much) greater than the gap between transmissions (eg ~2m for FHT8V/FS20).
-//// Should be greater than the run-on time at the OpenTRV boiler unit and any further pump run-on time.
-//// Valves may have to linger open at minimum of this plus maybe an extra minute or so for timing skew
-//// for systems with poor/absent bypass to avoid overheating.
-//// Having too high a linger time value may cause excessive temperature overshoot.
-//#define DEFAULT_MAX_RUN_ON_TIME_M 5
-
-
 
 
 // IF DEFINED: support for general timed and multi-input occupancy detection / use.
 #ifdef ENABLE_OCCUPANCY_SUPPORT
-
-// Number of minutes that room is regarded as occupied after markAsOccupied(); strictly positive.
-// DHD20130528: no activity for ~30 minutes usually enough to declare room empty in my experience.
-// Should probably be at least as long as, or a little longer than, the BAKE timeout.
-// Should probably be significantly shorter than normal 'learn' on time to allow savings from that in empty rooms.
-#define OCCUPATION_TIMEOUT_M (min(max(SETBACK_FULL_M, 30), 255))
-// Threshold from 'likely' to 'probably'.
-#define OCCUPATION_TIMEOUT_1_M ((OCCUPATION_TIMEOUT_M*2)/3)
-
-// Occupancy measure as a % confidence that the room/area controlled by this unit has active human occupants.
-class OccupancyTracker : public OTV0P2BASE::SimpleTSUint8Sensor
-  {
-  private:
-    // Time until room regarded as unoccupied, in minutes; initially zero (ie treated as unoccupied at power-up).
-    // Marked volatile for thread-safe lock-free non-read-modify-write access to byte-wide value.
-    // Compound operations must block interrupts.
-    volatile uint8_t occupationCountdownM;
-
-    // Non-zero if occupancy system recently notified of activity.
-    // Marked volatile for thread-safe lock-free non-read-modify-write access to byte-wide value.
-    // Compound operations must block interrupts.
-    volatile uint8_t activityCountdownM;
-
-    // Hours and minutes since room became vacant (doesn't roll back to zero from max hours); zero when room occupied.
-    uint8_t vacancyH;
-    uint8_t vacancyM;
-
-  public:
-    OccupancyTracker() : occupationCountdownM(0), activityCountdownM(0), vacancyH(0), vacancyM(0) { }
-
-    // Force a read/poll of the occupancy and return the % likely occupied [0,100].
-    // Potentially expensive/slow.
-    // Not thread-safe nor usable within ISRs (Interrupt Service Routines).
-    // Poll at a fixed rate.
-    virtual uint8_t read();
-
-    // Returns true if this sensor reading value passed is potentially valid, eg in-range.
-    // True if in range [0,100].
-    virtual bool isValid(uint8_t value) const { return(value <= 100); }
-
-    // This routine should be called once per minute.
-    virtual uint8_t preferredPollInterval_s() const { return(60); }
-
-    // Recommended JSON tag for full value; not NULL.
-    virtual const char *tag() const { return("occ|%"); }
-
-    // True if activity/occupancy recently reported (within last couple of minutes).
-    // Includes weak and strong reports.
-    // Thread-safe.
-    bool reportedRecently() { return(0 != activityCountdownM); }
-
-    // Returns true if the room appears to be likely occupied (with active users) now.
-    // Operates on a timeout; calling markAsOccupied() restarts the timer.
-    // Defaults to false (and API still exists) when ENABLE_OCCUPANCY_SUPPORT not defined.
-    // Thread-safe.
-    bool isLikelyOccupied() { return(0 != occupationCountdownM); }
-
-    // Returns true if the room appears to be likely occupied (with active users) recently.
-    // This uses the same timer as isOccupied() (restarted by markAsOccupied())
-    // but returns to false somewhat sooner for example to allow ramping up more costly occupancy detection methods
-    // and to allow some simple graduated occupancy responses.
-    // Thread-safe.
-    bool isLikelyRecentlyOccupied() { return(occupationCountdownM > OCCUPATION_TIMEOUT_1_M); }
-
-    // False if room likely currently unoccupied (no active occupants).
-    // Defaults to false (and API still exists) when ENABLE_OCCUPANCY_SUPPORT not defined.
-    // This may require a substantial time after activity stops to become true.
-    // This and isLikelyOccupied() cannot be true together; it is possible for neither to be true.
-    // Thread-safe.
-    bool isLikelyUnoccupied() { return(!isLikelyOccupied()); }
-
-    // Call when very strong evidence of room occupation has occurred.
-    // Do not call based on internal/synthetic events.
-    // Such evidence may include operation of buttons (etc) on the unit or PIR.
-    // Do not call from (for example) 'on' schedule change.
-    // Makes occupation immediately visible.
-    // Thread-safe and ISR-safe.
-    void markAsOccupied() { value = 100; occupationCountdownM = OCCUPATION_TIMEOUT_M; activityCountdownM = 2; }
-
-    // Call when some/weak evidence of room occupation, such as a light being turned on, or voice heard.
-    // Do not call based on internal/synthetic events.
-    // Doesn't force the room to appear recently occupied.
-    // If the hardware allows this may immediately turn on the main GUI LED until normal GUI reverts it,
-    // at least periodically.
-    // Preferably do not call for manual control operation to avoid interfering with UI operation.
-    // Thread-safe.
-    void markAsPossiblyOccupied();
-
-    // Two-bit occupancy: (00 not disclosed,) 1 not occupied, 2 possibly occupied, 3 probably occupied.
-    // 0 is not returned by this implementation.
-    // Thread-safe.
-    uint8_t twoBitOccupancyValue() { return(isLikelyRecentlyOccupied() ? 3 : (isLikelyOccupied() ? 2 : 1)); }
-
-    // Recommended JSON tag for two-bit occupancy value; not NULL.
-    const char *twoBitTag() { return("O"); }
-
-    // Returns true if it is worth expending extra effort to check for occupancy.
-    // This will happen when confidence in occupancy is not yet zero but is approaching,
-    // so checking more thoroughly now can help maintain non-zero value if someone is present and active.
-    // At other times more relaxed checking (eg lower power) can be used.
-    bool increaseCheckForOccupancy() { return(!isLikelyRecentlyOccupied() && isLikelyOccupied() && !reportedRecently()); }
-
-    // Get number of hours room vacant, zero when room occupied; does not wrap.
-    // If forced to zero as soon as occupancy is detected.
-    uint16_t getVacancyH() { return((value != 0) ? 0 : vacancyH); }
-
-    // Recommended JSON tag for vacancy hours; not NULL.
-    const char *vacHTag() { return("vac|h"); }
-
-    // Threshold hours above which room is considered long vacant.
-    // At least 24h in order to allow once-daily room programmes (including pre-warm) to operate reliably.
-    static const uint8_t longVacantHThrH = 24;
-    // Threshold hours above which room is considered long long vacant.
-    // Longer than longVacantHThrH but much less than 3 days to try to capture some weekend-absence savings.
-    // 8h less than 2d may capture full office savings for the whole day of Sunday
-    // counting from from last occupancy at end of (working) day Friday for example.
-    static const uint8_t longLongVacantHThrH = 39;
-
-    // Returns true if room appears to have been vacant for over a day.
-    // For a home or an office no sign of activity for this long suggests a weekend or a holiday for example.
-    // At least 24h in order to allow once-daily room programmes (including pre-warm) to operate reliably.
-    bool longVacant() { return(getVacancyH() > longVacantHThrH); }
-
-    // Returns true if room appears to have been vacant for much longer than longVacant().
-    // For a home or an office no sign of activity for this long suggests a long weekend or a holiday for example.
-    // Longer than longVacant() but much less than 3 days to try to capture some weekend-absence savings.
-    bool longLongVacant() { return(getVacancyH() > longLongVacantHThrH); }
-
-    // Put directly into energy-conserving 'holiday mode' by making room appear to be 'long vacant'.
-    // Be careful of retriggering presence immediately if this is set locally.
-    // Set apparent vacancy to maximum to make setting obvious and to hide further vacancy from snooping.
-    // Code elsewhere may wish to put the system in FROST mode also.
-    void setHolidayMode() { activityCountdownM = 0; value = 0; occupationCountdownM = 0; vacancyH = 255U; }
-
-#ifdef UNIT_TESTS
-    // If true then mark as occupied else mark as (just) unoccupied.
-    // Hides basic _TEST_set_() which would not behave as expected.
-    virtual void _TEST_set_(const bool occupied)
-      { if(occupied) { markAsOccupied(); } else { activityCountdownM = 0; value = 0; occupationCountdownM = 0; } }
-//    // Set new value(s) for hours of vacancy, or marks as occupied is if zero vacancy.
-//    // If a non-zero value is set it clears the %-occupancy-confidence value for some consistency.
-//    // Makes this more usable as a mock for testing other components.
-//    virtual void _TEST_set_vacH_(const uint8_t newVacH)
-//      { vacancyM = 0; vacancyH = newVacH; if(0 != newVacH) { value = 0; occupationCountdownM = 0; } else { markAsOccupied(); } }
-#endif
-  };
+typedef OTV0P2BASE::PseudoSensorOccupancyTracker OccupancyTracker;
 #else
-// Placeholder namespace with dummy static status methods to reduce code complexity.
-class OccupancyTracker
-  {
-  public:
-    static void markAsOccupied() {} // Defined as NO-OP for convenience when no general occupancy support.
-    static void markAsPossiblyOccupied() {} // Defined as NO-OP for convenience when no general occupancy support.
-    static bool isLikelyRecentlyOccupied() { return(false); } // Always false without ENABLE_OCCUPANCY_SUPPORT
-    static bool isLikelyOccupied() { return(false); } // Always false without ENABLE_OCCUPANCY_SUPPORT
-    static bool isLikelyUnoccupied() { return(false); } // Always false without ENABLE_OCCUPANCY_SUPPORT
-    static uint8_t twoBitOccValue() { return(0); } // Always 0 without ENABLE_OCCUPANCY_SUPPORT.
-    static uint16_t getVacancyH() { return(0); } // Always 0 without ENABLE_OCCUPANCY_SUPPORT.
-    static bool longVacant() { return(false); } // Always false without ENABLE_OCCUPANCY_SUPPORT.
-    static bool longLongVacant() { return(false); } // Always false without ENABLE_OCCUPANCY_SUPPORT.
-  };
+// Placeholder class with dummy static status methods to reduce code complexity.
+typedef OTV0P2BASE::DummySensorOccupancyTracker OccupancyTracker;
 #endif
 // Singleton implementation for entire node.
 extern OccupancyTracker Occupancy;
-
+// Single generic occupancy callback for occupied for this instance.
+void genericMarkAsOccupied();
+// Single generic occupancy callback for 'possibly occupied' for this instance.
+void genericMarkAsPossiblyOccupied();
 
 
 // Sample statistics once per hour as background to simple monitoring and adaptive behaviour.
 // Call this once per hour with fullSample==true, as near the end of the hour as possible;
 // this will update the non-volatile stats record for the current hour.
-// Optionally call this at a small (2--10) even number of evenly-spaced number of other times thoughout the hour
+// Optionally call this at a small (2--10) even number of evenly-spaced number of other times throughout the hour
 // with fullSample=false to sub-sample (and these may receive lower weighting or be ignored).
 // (EEPROM wear should not be an issue at this update rate in normal use.)
 void sampleStats(bool fullSample);
-
-
-#ifdef ENABLE_ANTICIPATION
-// Returns true iff room likely to be occupied and need warming at the specified hour's sample point based on collected stats.
-// Used for predictively warming a room in smart mode and for choosing setback depths.
-// Returns false if no good evidence to warm the room at the given time based on past history over about one week.
-//   * hh hour to check for predictive warming [0,23]
-bool shouldBeWarmedAtHour(const uint_least8_t hh);
-#endif
 
 
 #ifdef UNIT_TESTS
@@ -701,7 +499,7 @@ uint8_t smoothStatsValue(uint8_t oldSmoothed, uint8_t newValue);
 #define COMPRESSION_C16_CEIL_VAL_AFTER (COMPRESSION_C16_HIGH_THR_AFTER + ((COMPRESSION_C16_CEIL_VAL-COMPRESSION_C16_HIGH_THRESHOLD) >> 3)) // Ceiling input value after compression.
 uint8_t compressTempC16(int tempC16);
 // Reverses range compression done by compressTempC16(); results in range [0,100], with varying precision based on original value.
-// 0xff (or other invalid) input results in STATS_UNSET_INT. 
+// 0xff (or other invalid) input results in STATS_UNSET_INT.
 int expandTempC16(uint8_t cTemp);
 
 // Maximum valid encoded/compressed stats values.
@@ -713,7 +511,7 @@ int expandTempC16(uint8_t cTemp);
 // Clear and populate core stats structure with information from this node.
 // Exactly what gets filled in will depend on sensors on the node,
 // and may depend on stats TX security level (if collecting some sensitive items is also expensive).
-void populateCoreStats(FullStatsMessageCore_t *content);
+void populateCoreStats(OTV0P2BASE::FullStatsMessageCore_t *content);
 #endif // ENABLE_FS20_ENCODING_SUPPORT
 
 // Do bare stats transmission.
@@ -738,4 +536,3 @@ void remoteCallForHeatRX(uint16_t id, uint8_t percentOpen);
 
 
 #endif
-

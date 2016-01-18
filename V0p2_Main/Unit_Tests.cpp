@@ -232,7 +232,7 @@ static void testComputeRequiredTRVPercentOpen()
 //  AssertIsEqualWithDelta(step2C16, rs2.getVelocityC16PerTick(), 2);
   // Test that soft setback works as expected to support dark-based quick setback.
   // ENERGY SAVING RULE TEST (TODO-442 2a: "Setback in WARM mode must happen in dark (quick response) or long vacant room.")
-#ifndef OMIT_MODULE_LDROCCUPANCYDETECTION
+#ifdef ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
       //AmbLight._TEST_set_multi_((j != 0) ? 1023 : 0, j != 0);
     // ENERGY SAVING RULE TEST (TODO-442 2a: "Setback in WARM mode must happen in dark (quick response) or long vacant room.")
     ModelledRadValveInputState is3(100<<4);
@@ -514,14 +514,14 @@ static void testTargetComputation()
   for(int i = _TEST_basetemp_override_MAX+1; --i >= 0; )
     {
     _TEST_set_basetemp_override((_TEST_basetemp_override)i);
-#ifndef OMIT_MODULE_LDROCCUPANCYDETECTION
+#ifdef ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
      // Test at high and low light levels; j==0 implies dark (for a little while), j==1 implies light (for a little while).
      for(int j = 2; --j >= 0; )
-#endif
+#endif // ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
       {
-#ifndef OMIT_MODULE_LDROCCUPANCYDETECTION
+#ifdef ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
       AmbLight._TEST_set_multi_((j != 0) ? 1023 : 0, j != 0, 15 + (OTV0P2BASE::randRNG8() & 0x7f));
-#endif
+#endif // ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
       // Systematically work through all schedule states, ending at 0 (no override).
       for(int k = _TEST_schedule_override_MAX+1; --k >= 0; )
         {
@@ -628,7 +628,7 @@ DEBUG_SERIAL_PRINTLN();
 static void testSensorMocking()
   {
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("SensorMocking");
-#ifndef OMIT_MODULE_LDROCCUPANCYDETECTION
+#ifdef ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
   // Ambient light
   for(uint8_t i = 0; i < 2; ++i)
     {
@@ -642,7 +642,7 @@ static void testSensorMocking()
 //    AmbLight._TEST_set_(nal2);
 //    AssertIsEqual(nal2, AmbLight.get());
     }
-#endif
+#endif // ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
 #ifdef ENABLE_OCCUPANCY_SUPPORT
   // Occupancy
 //  const uint8_t vacH = randRNG8() | 1; // Ensure non-zero.
@@ -870,7 +870,7 @@ static void testJSONForTX()
 // Test of FHT8V bitstream encoding and decoding.
 static void testFHTEncoding()
   {
-#ifdef USE_MODULE_FHT8VSIMPLE_RX
+#ifdef ENABLE_FHT8VSIMPLE_RX
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("FHTEncoding");
   
   uint8_t buf[FHT8V_200US_BIT_STREAM_FRAME_BUF_SIZE];
@@ -949,7 +949,7 @@ static void testFHTEncoding()
 // Test of heat and tail of FHT8V bitstream encoding and decoding.
 static void testFHTEncodingHeadAndTail()
   {
-#ifdef USE_MODULE_FHT8VSIMPLE_RX
+#ifdef ENABLE_FHT8VSIMPLE_RX
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("FHTEncodingHeadAndTail");
 
 //// Create FHT8V TRV outgoing valve-setting command frame (terminated with 0xff) at bptr with optional headers and trailers.

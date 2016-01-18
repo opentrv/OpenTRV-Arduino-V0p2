@@ -43,7 +43,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_Trial2013Winter_Round1_NOHUB // REV1 as TX-only leaf node.
 //#define CONFIG_Trial2013Winter_Round2 // REV2 cut4 default config.
 //#define CONFIG_Trial2013Winter_Round2_LVBHSH // REV2 cut4: local valve control, boiler hub, stats hub & TX.
-//#define CONFIG_Trial2013Winter_Round2_LVBH // REV2 cut4 local valve control and boiler hub.
+#define CONFIG_Trial2013Winter_Round2_LVBH // REV2 cut4 local valve control and boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as plain boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
 //#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
@@ -90,7 +90,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // PRE-DEFINED CONFIG_... BUNDLE IMPLEMENTATION/EXPANSION
 // These features can be turned off if not required in particular implementations.
 
-// Defaults for V0.2; have to be undefined if not required.
+// Defaults for V0.2; should be undefined if not required.
+//
 // Use sleep wakeup (2Hz by default) from external 32768Hz xtal and timer 2.
 #define WAKEUP_32768HZ_XTAL
 // IF DEFINED: this unit may run on 2xAA cells, preferably rechargeable eg NiMH, ~2V--2.4V, and should monitor supply voltage.
@@ -127,18 +128,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define ENABLE_RADIO_RX
 // IF DEFINED: (default) forced always-on radio listen/RX, eg not requiring setup to explicitly enable.
 #undef ENABLE_DEFAULT_ALWAYS_RX
-// IF DEFINED: use the temperature-setting potentiometer/dial if present.
-#define ENABLE_TEMP_POT_IF_PRESENT
 // IF DEFINED: use active-low LEARN button(s).  Needs SUPPORT_SINGLETON_SCHEDULE.
 #define LEARN_BUTTON_AVAILABLE // OPTIONAL ON V0.09 PCB1
-// IF DEFINED: support for general timed and multi-input occupancy detection / use.
-#define ENABLE_OCCUPANCY_SUPPORT
-// IF DEFINED: detect occupancy based on ambient light, if available.
-#define ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
-// IF DEFINED: detect occupancy based on relative humidity, if available.
-#define ENABLE_OCCUPANCY_DETECTION_FROM_RH
-// IF DEFINED: detect occupancy based on voice detection, if available. This undefines learn button 2
-#undef ENABLE_OCCUPANCY_DETECTION_FROM_VOICE
 // IF DEFINED: allow periodic machine- and human- readable status report to serial, starting with "="/
 #define ENABLE_SERIAL_STATUS_REPORT
 // IF DEFINED: this unit supports CLI over the USB/serial connection, eg for run-time reconfig.
@@ -169,7 +160,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: enable support for FS20 carrier for RX or TX.
 #define ENABLE_FS20_CARRIER_SUPPORT
 // IF DEFINED: use FHT8V wireless radio module/valve, eg to control FHT8V local valve.
-#define USE_MODULE_FHT8VSIMPLE
+#define ENABLE_FHT8VSIMPLE
 // IF DEFINED: enable support for FS20 carrier for RX of raw FS20 and piggybacked binary (non-JSON) stats.
 #define ENABLE_FS20_NATIVE_AND_BINARY_STATS_RX
 // IF DEFINED: enable support for FS20 encoding/decoding, eg to send to FHT8V.
@@ -180,6 +171,20 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #undef ENABLE_OTSECUREFRAME_INSECURE_RX_PERMITTED
 // IF DEFINED: force all receivers back into RX mode periodically.  BODGE: DISABLED BY DEFAULT.
 #undef CONFIG_FORCE_TO_RX_MODE_REGULARLY
+//// SENSOR OPTIONS
+// IF DEFINED: allow for less light on sideways-pointing ambient light sensor, eg on cut4 2014/03/17 REV2 boards (TODO-209).
+#undef ENABLE_AMBLIGHT_EXTRA_SENSITIVE
+// IF DEFINED: use the temperature-setting potentiometer/dial if present.
+#define ENABLE_TEMP_POT_IF_PRESENT
+//// OCCUPANCY OPTIONS
+// IF DEFINED: support for general timed and multi-input occupancy detection / use.
+#define ENABLE_OCCUPANCY_SUPPORT
+// IF DEFINED: detect occupancy based on ambient light, if available.
+#define ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
+// IF DEFINED: detect occupancy based on relative humidity, if available.
+#define ENABLE_OCCUPANCY_DETECTION_FROM_RH
+// IF DEFINED: detect occupancy based on voice detection, if available. This undefines learn button 2
+#undef ENABLE_OCCUPANCY_DETECTION_FROM_VOICE
 
 
 
@@ -410,7 +415,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: enable support for FS20 carrier for RX or TX.
 #define ENABLE_FS20_CARRIER_SUPPORT
 // IF DEFINED: use FHT8V wireless radio module/valve.
-#undef USE_MODULE_FHT8VSIMPLE
+#undef ENABLE_FHT8VSIMPLE
 //// IF DEFINED: enable support for FS20 carrier for TX specifically (to allow RX-only).
 //#define ENABLE_FS20_CARRIER_SUPPORT_TX
 // IF DEFINED: enable support for FS20 encoding/decoding, eg to send to FHT8V.
@@ -437,7 +442,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: enable support for FS20 carrier for RX or TX.
 #define ENABLE_FS20_CARRIER_SUPPORT
 // IF DEFINED: use FHT8V wireless radio module/valve.
-#undef USE_MODULE_FHT8VSIMPLE
+#undef ENABLE_FHT8VSIMPLE
 //// IF DEFINED: enable support for FS20 carrier for TX specifically (to allow RX-only).
 //#define ENABLE_FS20_CARRIER_SUPPORT_TX
 // IF DEFINED: enable support for FS20 encoding/decoding, eg to send to FHT8V.
@@ -452,7 +457,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // Revision REV2 (cut4+) of V0.2 board.
 #define V0p2_REV 2
 // IF DEFINED: allow for less light on sideways-pointing LDR on cut4 2014/03/17 REV2 boards (TODO-209).
-#define LDR_EXTRA_SENSITIVE
+#define ENABLE_AMBLIGHT_EXTRA_SENSITIVE
 // Use common settings.
 #define COMMON_SETTINGS
 #endif
@@ -583,9 +588,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#undef SETTABLE_TARGET_TEMPERATURES
 // IF DEFINED: use active-low LEARN button(s).  Needs SUPPORT_SINGLETON_SCHEDULE.  ***
 //#undef LEARN_BUTTON_AVAILABLE // OPTIONAL ON V0.09 PCB1  UI_Minimal.cpp:1180:32: error: 'handleLEARN' was not declared in this scope
-#define USE_MODULE_FHT8VSIMPLE //Control.cpp:1322:27: error: 'localFHT8VTRVEnabled' was not declared in this scope
+#define ENABLE_FHT8VSIMPLE //Control.cpp:1322:27: error: 'localFHT8VTRVEnabled' was not declared in this scope
 // If LDR is not to be used then specifically define OMIT_... as below.
-//#define OMIT_MODULE_LDROCCUPANCYDETECTION //  LDR 'occupancy' sensing irrelevant for DHW. Messaging.cpp:232:87: error: 'class AmbientLight' has no member named 'getRaw
+//#undef ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT //  LDR 'occupancy' sensing irrelevant for DHW. Messaging.cpp:232:87: error: 'class AmbientLight' has no member named 'getRaw
 //#undef USE_MODULE_RFM22RADIOSIMPLE
 #endif
 
@@ -645,9 +650,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#undef SETTABLE_TARGET_TEMPERATURES
 // IF DEFINED: use active-low LEARN button(s).  Needs SUPPORT_SINGLETON_SCHEDULE.  ***
 //#undef LEARN_BUTTON_AVAILABLE // OPTIONAL ON V0.09 PCB1  UI_Minimal.cpp:1180:32: error: 'handleLEARN' was not declared in this scope
-#define USE_MODULE_FHT8VSIMPLE //Control.cpp:1322:27: error: 'localFHT8VTRVEnabled' was not declared in this scope
+#define ENABLE_FHT8VSIMPLE //Control.cpp:1322:27: error: 'localFHT8VTRVEnabled' was not declared in this scope
 // If LDR is not to be used then specifically define OMIT_... as below.
-//#define OMIT_MODULE_LDROCCUPANCYDETECTION //  LDR 'occupancy' sensing irrelevant for DHW. Messaging.cpp:232:87: error: 'class AmbientLight' has no member named 'getRaw
+//#undef ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT //  LDR 'occupancy' sensing irrelevant for DHW. Messaging.cpp:232:87: error: 'class AmbientLight' has no member named 'getRaw
 
 //#undef USE_MODULE_RFM22RADIOSIMPLE
 
@@ -988,7 +993,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#undef SETTABLE_TARGET_TEMPERATURES
 // IF DEFINED: use active-low LEARN button(s).  Needs SUPPORT_SINGLETON_SCHEDULE.  ***
 //#undef LEARN_BUTTON_AVAILABLE // OPTIONAL ON V0.09 PCB1  UI_Minimal.cpp:1180:32: error: 'handleLEARN' was not declared in this scope
-//#define USE_MODULE_FHT8VSIMPLE //Control.cpp:1322:27: error: 'localFHT8VTRVEnabled' was not declared in this scope
+//#define ENABLE_FHT8VSIMPLE //Control.cpp:1322:27: error: 'localFHT8VTRVEnabled' was not declared in this scope
 
 #endif // CONFIG_REV10_BUSSHELTER
 
@@ -1154,7 +1159,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: use simple LDR-based detection of room use/occupancy; brings in getRoomInUseFromLDR subroutne.
 #define USE_MODULE_LDROCCUPANCYDETECTION
 // If LDR is not to be used then specifically define OMIT_... as below.
-//#define OMIT_MODULE_LDROCCUPANCYDETECTION //  LDR 'occupancy' sensing irrelevant for DHW.
+//#undef ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT //  LDR 'occupancy' sensing irrelevant for DHW.
 #endif // COMMON_SETTINGS
 
 // If LEARN_BUTTON_AVAILABLE then in the absence of anything better SUPPORT_SINGLETON_SCHEDULE should be supported.
@@ -1184,19 +1189,19 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #endif
 
 // By default, use the RFM22/RFM23 module to talk to an FHT8V wireless radiator valve.
-#ifdef USE_MODULE_FHT8VSIMPLE
+#ifdef ENABLE_FHT8VSIMPLE
 #define USE_MODULE_RFM22RADIOSIMPLE
 #define ENABLE_FS20_CARRIER_SUPPORT
 #define ENABLE_FS20_ENCODING_SUPPORT
 // If this can be a hub, enable extra RX code.
 #if defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX)
-#define USE_MODULE_FHT8VSIMPLE_RX
+#define ENABLE_FHT8VSIMPLE_RX
 #define LISTEN_FOR_FTp2_FS20_native
 #endif // defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX)
 #if defined(ALLOW_STATS_RX)
 #define ENABLE_FS20_NATIVE_AND_BINARY_STATS_RX
 #endif // defined(ALLOW_STATS_RX)
-#endif // USE_MODULE_FHT8VSIMPLE
+#endif // ENABLE_FHT8VSIMPLE
 
 
 #endif

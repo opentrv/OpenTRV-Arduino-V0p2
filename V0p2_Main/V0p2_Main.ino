@@ -52,7 +52,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #include <OTRadValve.h>
 
 #include "V0p2_Sensors.h"
-#include "V0p2_Actuators.h"
 #include "Control.h"
 #include "Radio.h"
 #include "UI_Minimal.h"
@@ -211,7 +210,7 @@ static bool FilterRXISR(const volatile uint8_t *buf, volatile uint8_t &buflen)
     case OTRadioLink::FTp2_JSONRaw:
       {
       // Maxmimum size is 56 including trailing CRC; fall through for possible further zeros trim.
-      buflen = min(initialBuflen, MSG_JSON_ABS_MAX_LENGTH + 1);
+      buflen = min(initialBuflen, OTV0P2BASE::MSG_JSON_ABS_MAX_LENGTH + 1);
       break;
       }
     case OTRadioLink::FTp2_FS20_native:
@@ -576,9 +575,9 @@ void setup()
   // Ensure that the unique node ID is set up (mainly on first use).
   // Have one attempt (don't want to stress an already failing EEPROM) to force-reset if not good, then panic.
   // Needs to have had entropy gathered, etc.
-  if(!ensureIDCreated())
+  if(!OTV0P2BASE::ensureIDCreated())
     {
-    if(!ensureIDCreated(true)) // Force reset.
+    if(!OTV0P2BASE::ensureIDCreated(true)) // Force reset.
       { panic(F("!Bad ID: can't fix")); }
     }
 

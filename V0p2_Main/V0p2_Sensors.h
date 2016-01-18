@@ -30,6 +30,11 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
 
 #include "V0p2_Main.h"
 
+#include <OTRadioLink.h>
+#include <OTRadValve.h>
+
+#include "Messaging.h"
+
 
 // Create very light-weight standard-speed OneWire(TM) support if a pin has been allocated to it.
 // Meant to be similar to use to OneWire library V2.2.
@@ -46,6 +51,22 @@ extern OTV0P2BASE::MinimalOneWire<PIN_OW_DQ_DATA> MinOW;
 // Sensor for supply (eg battery) voltage in millivolts.
 // Singleton implementation/instance.
 extern OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
+
+
+#ifdef ENABLE_TEMP_POT_IF_PRESENT
+#if (V0p2_REV >= 2) && defined(TEMP_POT_AIN) // Only supported in REV2/3/4/7.
+#define TEMP_POT_AVAILABLE
+// Sensor for temperature potentiometer/dial; 0 is coldest, 255 is hottest.
+// Note that if the callbacks are enabled, the following are implemented:
+//   * Any operation of the pot calls the occupancy/"UI used" callback.
+//   * Force FROST mode when dial turned right down to bottom.
+//   * Start BAKE mode when dial turned right up to top.
+//   * Cancel BAKE mode when dial/temperature turned down.
+//   * Force WARM mode when dial/temperature turned up.
+// Singleton implementation/instance.
+extern OTV0P2BASE::SensorTemperaturePot TempPot;
+#endif
+#endif // ENABLE_TEMP_POT_IF_PRESENT
 
 
 #if defined(SENSOR_EXTERNAL_DS18B20_ENABLE) // Needs defined(SUPPORTS_MINIMAL_ONEWIRE)
@@ -131,9 +152,7 @@ extern ExtTemperatureDS18B20C16 extDS18B20_0;
 #endif
 
 
-
-
-// Sense (maybe non-linearly) over full likely internal ambient lighting range of a (UK) home,
+// Sense (usually non-linearly) over full likely internal ambient lighting range of a (UK) home,
 // down to levels too dark to be active in (and at which heating could be set back for example).
 // This suggests a full scale of at least 50--100 lux, maybe as high as 300 lux, eg see:
 // http://home.wlv.ac.uk/~in6840/Lightinglevels.htm
@@ -141,140 +160,14 @@ extern ExtTemperatureDS18B20C16 extDS18B20_0;
 // http://www.pocklington-trust.org.uk/Resources/Thomas%20Pocklington/Documents/PDF/Research%20Publications/GPG5.pdf
 // http://www.vishay.com/docs/84154/appnotesensors.pdf
 
-#ifndef OMIT_MODULE_LDROCCUPANCYDETECTION
+#ifdef ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
 // Sensor for ambient light level; 0 is dark, 255 is bright.
-class AmbientLight : public OTV0P2BASE::SimpleTSUint8Sensor
-  {
-  private:
-    // Raw ambient light value [0,1023] dark--light, possibly companded.
-    uint16_t rawValue;
-
-    // True iff room appears lit well enough for activity.
-    // Marked volatile for ISR-/thread- safe (simple) lock-free access.
-    volatile bool isRoomLitFlag;
-
-    // Number of minutes (read() calls) that the room has been continuously dark for [0,255].
-    // Does not roll over from maximum value.
-    // Reset to zero in light.
-    uint8_t darkTicks;
-
-    // Minimum eg from recent stats, to allow auto adjustment to dark; ~0/0xff means no min available.
-    uint8_t recentMin;
-    // Maximum eg from recent stats, to allow auto adjustment to dark; ~0/0xff means no max available.
-    uint8_t recentMax;
-
-    // Upwards delta used for "lights switched on" occupancy hint; strictly positive.
-    uint8_t upDelta;
-
-    // Dark/light thresholds (on [0,254] scale) incorporating hysteresis.
-    // So lightThreshold is strictly greater than darkThreshold.
-    uint8_t darkThreshold, lightThreshold;
-
-    // Set true if ambient light sensor may be unusable or unreliable.
-    // This will be where (for example) there are historic values
-    // but in a very narrow range which implies a broken sensor or shadowed location.
-    bool unusable;
-
-    // Recomputes thresholds and 'unusable' based on current state.
-    // WARNING: called from (static) constructors so do not attempt (eg) use of Serial.
-    void _recomputeThresholds();
-
-  public:
-    AmbientLight()
-      : rawValue(~0U), // Initial values is distinct.
-        isRoomLitFlag(false), darkTicks(0),
-        recentMin(~0), recentMax(~0),
-        unusable(false)
-      { _recomputeThresholds(); }
-
-    // Force a read/poll of the ambient light level and return the value sensed [0,255] (dark to light).
-    // Potentially expensive/slow.
-    // Not thread-safe nor usable within ISRs (Interrupt Service Routines).
-    // If possible turn off all local light sources (eg UI LEDs) before calling.
-    // If possible turn off all heavy current drains on supply before calling.
-    virtual uint8_t read();
-
-    // Preferred poll interval (in seconds); should be called at constant rate, usually 1/60s.
-    virtual uint8_t preferredPollInterval_s() const { return(60); }
-
-    // Returns a suggested (JSON) tag/field/key name including units of get(); NULL means no recommended tag.
-    // The lifetime of the pointed-to text must be at least that of the Sensor instance.
-    virtual const char *tag() const { return("L"); }
-
-    // Get raw ambient light value in range [0,1023].
-    // Undefined until first read().
-    uint16_t getRaw() const { return(rawValue); }
-
-    // Returns true if this sensor is apparently unusable.
-    virtual bool isUnavailable() const { return(unusable); }
-
-    // Returns true if room is lit enough for someone to be active.
-    // False if unknown.
-    // Thread-safe and usable within ISRs (Interrupt Service Routines).
-    bool isRoomLit() const { return(isRoomLitFlag); }
-
-    // Returns true if room is light enough for someone to be active.
-    // False if unknown or sensor appears unusable,
-    // thus it is possible for both isRoomLit() and isRoomDark() to be false.
-    // Thread-safe and usable within ISRs (Interrupt Service Routines).
-    bool isRoomDark() const { return(!isRoomLitFlag && !unusable); }
-
-    // Get number of minutes (read() calls) that the room has been continuously dark for [0,255].
-    // Does not roll over from maximum value.
-    // Reset to zero in light.
-    // Does not increment if the sensor decides that it is unusable.
-    uint8_t getDarkMinutes() const { return(darkTicks); }
-
-    // Set recent min and max ambient light levels from recent stats, to allow auto adjustment to dark; ~0/0xff means no min/max available.
-    // Short term stats are typically over the last day,
-    // longer term typically over the last week or so (eg rolling exponential decays).
-    // Call regularly, roughly hourly, to drive other internal time-dependent adaptation.
-    void setMinMax(uint8_t recentMinimumOrFF, uint8_t recentMaximumOrFF,
-                   uint8_t longerTermMinimumOrFF = 0xff, uint8_t longerTermMaximumOrFF = 0xff);
-
-#ifdef UNIT_TESTS
-    // Set new value(s) for unit test only.
-    // Makes this more usable as a mock for testing other components.
-    virtual void _TEST_set_multi_(uint16_t newRawValue, bool newRoomLitFlag, uint8_t newDarkTicks)
-      { rawValue = newRawValue; value = newRawValue >> 2; isRoomLitFlag = newRoomLitFlag; darkTicks = newDarkTicks; }
-#endif
-  };
-#else
-// Placeholder namespace with dummy static status methods to reduce code complexity.
-class AmbientLight
-  {
-  public:
-    // Not available, so always returns false.
-    static bool isAvailable() { return(false); }
-
-    // Unknown, so always false.
-    // Thread-safe and usable within ISRs (Interrupt Service Routines).
-    static bool isRoomLit() { return(false); }
-
-    // Unknown, so always false.
-    // Thread-safe and usable within ISRs (Interrupt Service Routines).
-    static bool isRoomDark() { return(false); }
-  };
-#endif
+typedef OTV0P2BASE::SensorAmbientLight AmbientLight;
+#else // !defined(ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT)
+typedef OTV0P2BASE::DummySensorAmbientLight AmbientLight; // Dummy stand-in.
+#endif // ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
 // Singleton implementation/instance.
 extern AmbientLight AmbLight;
-
-
-
-#ifndef OMIT_MODULE_LDROCCUPANCYDETECTION
-// Update with rolling stats to adapt to sensors and local environment.       
-inline void updateAmbLightFromStats()
-  {
-  AmbLight.setMinMax(
-          OTV0P2BASE::getMinByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR),
-          OTV0P2BASE::getMaxByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR),
-          OTV0P2BASE::getMinByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED),
-          OTV0P2BASE::getMaxByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED));
-  }
-#endif // OMIT_MODULE_LDROCCUPANCYDETECTION
-
-
-
 
 
 
@@ -411,47 +304,6 @@ class HumiditySensorSHT21
 extern HumiditySensorSHT21 RelHumidity;
 
 
-
-
-
-#ifdef ENABLE_TEMP_POT_IF_PRESENT
-#if (V0p2_REV >= 2) && defined(TEMP_POT_AIN) // Only supported in REV2/3/4/7.
-#define TEMP_POT_AVAILABLE
-
-// Maximum 'raw' temperature pot/dial value.
-#define TEMP_POT_RAW_MAX 1023 // Max value.
-
-// Sensor for temperature potentiometer/dial; 0 is coldest, 255 is hottest.
-class TemperaturePot : public OTV0P2BASE::SimpleTSUint8Sensor
-  {
-  private:
-    // Raw pot value [0,1023] if extra precision is required.
-    uint16_t raw;
-
-  public:
-    // Initialise to cautious values.
-    TemperaturePot() : raw(0) { }
-
-    // Force a read/poll of the temperature pot and return the value sensed [0,255] (cold to hot).
-    // Potentially expensive/slow.
-    // This value has some hysteresis applied to reduce noise.
-    // Not thread-safe nor usable within ISRs (Interrupt Service Routines).
-    virtual uint8_t read();
-
-    // Return last value fetched by read(); undefined before first read()).
-    // Fast.
-    // Not thread-safe nor usable within ISRs (Interrupt Service Routines).
-    uint16_t getRaw() const { return(raw); }
-  };
-// Singleton implementation/instance.
-extern TemperaturePot TempPot;
-#endif
-#endif // ENABLE_TEMP_POT_IF_PRESENT
-
-
-
-
-
 #ifdef ENABLE_VOICE_SENSOR
 /*
  Voice sensor.
@@ -514,6 +366,51 @@ class VoiceDetection : public OTV0P2BASE::SimpleTSUint8Sensor
 // Singleton implementation/instance.
 extern VoiceDetection Voice;
 #endif
+
+
+////////////////////////// Actuators
+
+
+// DORM1/REV7 direct drive motor actuator.
+#if /* defined(LOCAL_TRV) && */ defined(DIRECT_MOTOR_DRIVE_V1)
+#define HAS_DORM1_VALVE_DRIVE
+// Singleton implementation/instance.
+#ifdef ENABLE_DORM1_MOTOR_REVERSED // Reversed vs sample 2015/12
+extern OTRadValve::ValveMotorDirectV1<MOTOR_DRIVE_ML, MOTOR_DRIVE_MR, MOTOR_DRIVE_MI_AIN, MOTOR_DRIVE_MC_AIN> ValveDirect;
+#else
+extern OTRadValve::ValveMotorDirectV1<MOTOR_DRIVE_MR, MOTOR_DRIVE_ML, MOTOR_DRIVE_MI_AIN, MOTOR_DRIVE_MC_AIN> ValveDirect;
+#endif // HAS_DORM1_MOTOR_REVERSED
+#endif
+
+
+// FHT8V radio-controlled actuator.
+#ifdef ENABLE_FHT8VSIMPLE
+// Singleton FHT8V valve instance (to control remote FHT8V valve by radio).
+static const uint8_t _FHT8V_MAX_EXTRA_TRAILER_BYTES = (1 + max(OTV0P2BASE::MESSAGING_TRAILING_MINIMAL_STATS_PAYLOAD_BYTES, OTV0P2BASE::FullStatsMessageCore_MAX_BYTES_ON_WIRE));
+extern OTRadValve::FHT8VRadValve<_FHT8V_MAX_EXTRA_TRAILER_BYTES, OTRadValve::FHT8VRadValveBase::RFM23_PREAMBLE_BYTES, OTRadValve::FHT8VRadValveBase::RFM23_PREAMBLE_BYTE> FHT8V;
+// This unit may control a local TRV.
+// Returns TRV if valve/radiator is to be controlled by this unit.
+// Usually the case, but may not be for (a) a hub or (b) a not-yet-configured unit.
+// Returns false if house code parts are set to invalid or uninitialised values (>99).
+#if defined(LOCAL_TRV) || defined(SLAVE_TRV)
+inline bool localFHT8VTRVEnabled() { return(!FHT8V.isUnavailable()); }
+#else
+#define localFHT8VTRVEnabled() (false) // Local FHT8V TRV disabled.
+#endif
+// Clear both housecode parts (and thus disable local valve).
+void FHT8VClearHC();
+// Set (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control.
+// Will cache in FHT8V instance for speed.
+void FHT8VSetHC1(uint8_t hc);
+void FHT8VSetHC2(uint8_t hc);
+// Get (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control (will be 0xff until set).
+// Used FHT8V instance as a transparent cache of the values for speed.
+uint8_t FHT8VGetHC1();
+uint8_t FHT8VGetHC2();
+inline uint16_t FHT8VGetHC() { return(FHT8VGetHC2() | (((uint16_t) FHT8VGetHC1()) << 8)); }
+// Load EEPROM house codes into primary FHT8V instance at start-up or once cleared in FHT8V instance.
+void FHT8VLoadHCFromEEPROM();
+#endif // ENABLE_FHT8VSIMPLE
 
 
 #endif

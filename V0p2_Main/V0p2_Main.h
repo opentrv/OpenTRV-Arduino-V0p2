@@ -72,9 +72,9 @@ void panic(const __FlashStringHelper *s);
 // Format: "board VXXXX REVY; code YYYY/Mmm/DD HH:MM:SS".
 void serialPrintlnBuildVersion();
 
-// Templated function versions of min/max that do not evaluate the arguments twice.
-template <class T> const T& fnmin(const T& a, const T& b) { return((a>b)?b:a); }
-template <class T> const T& fnmax(const T& a, const T& b) { return((a<b)?b:a); }
+//// Templated function versions of min/max that do not evaluate the arguments twice.
+//template <class T> const T& fnmin(const T& a, const T& b) { return((a>b)?b:a); }
+//template <class T> const T& fnmax(const T& a, const T& b) { return((a<b)?b:a); }
 
 
 // Call this to do an I/O poll if needed; returns true if something useful happened.

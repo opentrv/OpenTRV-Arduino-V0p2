@@ -38,7 +38,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #if !defined(V0p2_REV)
 #error Board revision not defined.
 #endif
-#if (V0p2_REV < 0) || (V0p2_REV > 11)
+#if (V0p2_REV < 0) || (V0p2_REV > 14)
 #error Board revision not defined correctly (out of range).
 #endif
 
@@ -47,7 +47,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // Force definitions for peripherals that should be present on every V0.09 board
 // (though may be ignored or not added to the board)
 // to enable safe I/O setup and (eg) avoid bus conflicts.
-#define USE_MODULE_RFM22RADIOSIMPLE // Always fitted on V0.2 board.
+//#define USE_MODULE_RFM22RADIOSIMPLE // Always fitted on V0.2 board.
 
 
 // Note 'standard' allocations of (ATmega328P-PU) pins, to be nominally Arduino compatible,
@@ -56,16 +56,16 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // 32768Hz xtal between pins 9 and 10, async timer 2, for accurate timekeeping and low-power sleep.
 //
 // Serial (bootloader/general): RX (dpin 0), TX (dpin 1)
-#define PIN_SERIAL_RX 0 // ATMega328P-PU PDIP pin 2, PD0.
-#define PIN_SERIAL_TX 1 // ATMega328P-PU PDIP pin 2, PD1.
+#define PIN_SERIAL_RX (::OTV0P2BASE::V0p2_PIN_SERIAL_RX) // 0: ATMega328P-PU PDIP pin 2, PD0.
+#define PIN_SERIAL_TX (::OTV0P2BASE::V0p2_PIN_SERIAL_TX) // 1: ATMega328P-PU PDIP pin 2, PD1.
 // SPI: SCK (dpin 13, also LED on Arduino boards that the bootloader may 'flash'), MISO (dpin 12), MOSI (dpin 11), nSS (dpin 10).
 #define PIN_SPI_SCK (::OTV0P2BASE::V0p2_PIN_SPI_SCK) // 13: ATMega328P-PU PDIP pin 19, PB5.
 #define PIN_SPI_MISO (::OTV0P2BASE::V0p2_PIN_SPI_MISO) // 12: ATMega328P-PU PDIP pin 18, PB4.
 #define PIN_SPI_MOSI (::OTV0P2BASE::V0p2_PIN_SPI_MOSI) // 11: ATMega328P-PU PDIP pin 17, PB3.
 #define PIN_SPI_nSS (::OTV0P2BASE::V0p2_PIN_SPI_nSS) // 10: ATMega328P-PU PDIP pin 16, PB2.  Active low enable.
 // I2C/TWI: SDA (ain 4), SCL (ain 5), interrupt (dpin3)
-#define PIN_SDA_AIN 4 (::OTV0P2BASE::V0p2_PIN_SDA_AIN) // ATMega328P-PU PDIP pin 27, PC4.
-#define PIN_SCL_AIN 5 (::OTV0P2BASE::V0p2_PIN_SCL_AIN) // ATMega328P-PU PDIP pin 28, PC5.
+#define PIN_SDA_AIN (::OTV0P2BASE::V0p2_PIN_SDA_AIN) // 4: ATMega328P-PU PDIP pin 27, PC4.
+#define PIN_SCL_AIN (::OTV0P2BASE::V0p2_PIN_SCL_AIN) // 5: ATMega328P-PU PDIP pin 28, PC5.
 
 // OneWire: DQ (dpin2)
 // PWM / general digital I/O: dpin 5, 6, 9, 10
@@ -134,12 +134,12 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define IO_POWER_UP 7 (::OTV0P2BASE::V0p2_PIN_DEFAULT_IO_POWER_UP) // ATMega328P-PU PDIP pin 13, PD7, no usable analogue input.
 
 // Ambient light sensor (eg LDR) analogue input: higher voltage means more light.
-#define LDR_SENSOR_AIN 0 // ATMega328P-PU PDIP pin 23, PC0.
+#define LDR_SENSOR_AIN (::OTV0P2BASE::V0p2_PIN_LDR_SENSOR_AIN) // 0: ATMega328P-PU PDIP pin 23, PC0.
 
 // Temperature potentiometer is present in REV 2/3/4/7.
 #if ((V0p2_REV >= 2) && (V0p2_REV <= 4)) || (V0p2_REV == 7)
 // Analogue input from pot.
-#define TEMP_POT_AIN 1 // ATMega328P-PU PDIP pin 24, PC1.
+#define TEMP_POT_AIN 1 (::OTV0P2BASE::V0p2_PIN_TEMP_POT_AIN) // AI1: ATMega328P-PU PDIP pin 24, PC1.
 // IF DEFINED: reverse the direction of temperature pot polarity.
 #define TEMP_POT_REVERSE
 #endif
@@ -195,7 +195,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 
 
 // Call this ASAP in setup() to configure I/O safely for the board, avoid pins floating, etc.
-static inline void IOSetup()
+inline void IOSetup()
   {
   // Initialise all digital I/O to safe state ASAP and avoid floating lines where possible.
   // In absence of a specific alternative, drive low as an output to minimise consumption (eg from floating input).
