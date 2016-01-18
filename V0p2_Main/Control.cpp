@@ -1056,7 +1056,7 @@ static void updateSensorsFromStats()
 
 
 // 'Elapsed minutes' count of minute/major cycles; cheaper than accessing RTC and not tied to real time.
-// Starts at or near zero.
+// Starts at or just above zero (within the first 4-minute cycle) to help avoid collisions between units after mass power-up.
 // Wraps at its maximum (0xff) value.
 static uint8_t minuteCount;
 
@@ -1207,11 +1207,15 @@ void setupOpenTRV()
 
 #if !defined(DONT_RANDOMISE_MINUTE_CYCLE)
   // Start local counters in randomised positions to help avoid inter-unit collisions,
+  // eg for mains-powered units starting up together after a power cut,
   // but without (eg) breaking any of the logic about what order things will be run first time through.
   // Offsets based on whatever noise is in the simple PRNG plus some from the unique ID.
   const uint8_t ID0 = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_ID);
-  localTicks = (OTV0P2BASE::randRNG8() ^ ID0) & 0x1f; // Start within bottom half of minute (or close to).
-  if(0 != (ID0 & 0x20)) { minuteCount = (OTV0P2BASE::randRNG8() & 1) | 2; } // Start at minute 2 or 3 out of 4 for some units.
+  // Start within bottom half of minute (or close to); sensor readings happen in second half.
+  localTicks = OTV0P2BASE::randRNG8() & 0x1f;
+  // Start anywhere in first 4 minute cycle.
+  minuteCount = (OTV0P2BASE::randRNG8() ^ ID0) & 3;
+//  if(0 != (ID0 & 0x20)) { minuteCount = (OTV0P2BASE::randRNG8() & 1) | 2; } // Start at minute 2 or 3 out of 4 for some units.
 #endif
 
 #if 0 && defined(DEBUG)
@@ -1840,12 +1844,13 @@ void loopOpenTRV()
   // Once-per-minute tasks: all must take << 0.3s.
   // Run tasks spread throughout the minute to be as kind to batteries (etc) as possible.
   // Only when runAll is true run less-critical tasks that be skipped sometimes when particularly conserving energy.
+  // Run all for first full 4-minute cycle, eg because unit may start anywhere in it.
   // TODO: coordinate temperature reading with time when radio and other heat-generating items are off for more accurate readings.
   // TODO: ensure only take ambient light reading at times when all LEDs are off.
-  const bool runAll = (!conserveBattery) || minute0From4ForSensors;
+  const bool runAll = (!conserveBattery) || minute0From4ForSensors || (minuteCount < 4);
 
 #if defined(DONT_RANDOMISE_MINUTE_CYCLE)
-  static uint8_t localTicks = XXX;
+//  static uint8_t localTicks = XXX;
 #if defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
   localTicks += 2;
 #else
