@@ -71,8 +71,9 @@ void loopOpenTRV();
 #define BIASECO_WARM 17 // Target WARM temperature for ECO bias; must be in range ]BIASCOM_FROST+1,BIASCOM_WARM[.
 #define BIASCOM_WARM 21 // Target WARM temperature for Comfort bias; must be in range ]BIASECO_WARM,MAX_TARGET_C-BAKE_UPLIFT-1].
 #else // Default settings for DHW control.
-// 55C+ with boost to 60C+ for DHW Legionella control where needed.
-#define BIASECO_WARM 55 // Target WARM temperature for ECO bias; must be in range [MODECOM_WARM,MAX_TARGET_C].
+// 55C+ centre value with boost to 60C+ for DHW Legionella control where needed.
+// Note that the low end (~45C) is safe against scalding but may worry some for storage as a Legionella risk.
+#define BIASECO_WARM 45 // Target WARM temperature for ECO bias; must be in range [MODECOM_WARM,MAX_TARGET_C].
 #define BIASCOM_WARM 65 // Target WARM temperature for Comfort bias; must be in range ]MIN_TARGET_C,MODEECO_WARM].
 #endif
 // Default to a 'safe' temperature.
