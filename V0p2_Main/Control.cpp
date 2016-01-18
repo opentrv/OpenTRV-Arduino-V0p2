@@ -1330,16 +1330,20 @@ void remoteCallForHeatRX(const uint16_t id, const uint8_t percentOpen)
   const uint8_t minvro = default_minimum;
 #endif
 
-// TODO-553: after 30--45m continuous on time raise threshold to same as if off.
-// Aim is to allow a (combi) boiler to have reached maximum efficiency
-// and made a significant difference to room temperature
-// but now turn off for a while if demand is a little lower
-// to allow it to run a little harder/better when turned on again.
-// Most combis have power far higher than needed to run rads at full blast
-// and have only limited ability to modulate down,
-// so end up cycling anyway while running the circulation pump if left on.
-// Modelled on DHD habit of having many of 15-minute boiler timer segments
-// in 'off' period even during the day for many years!
+  // TODO-553: after getting on for an hour of continuous boiler running
+  // raise the percentage threshold to successfully call for heat (for a while).
+  // The aim is to allow a (combi) boiler to have reached maximum efficiency
+  // and to have potentially made a significant difference to room temperature
+  // but then turn off for a short while if demand is a little lower
+  // to allow it to run a little harder/better when turned on again.
+  // Most combis have power far higher than needed to run rads at full blast
+  // and have only limited ability to modulate down,
+  // so may end up cycling anyway while running the circulation pump if left on.
+  // Modelled on DHD habit of having many 15-minute boiler timer segments
+  // in 'off' period even during the day for many years!
+  //
+  // Note: could also consider pause if mains frequency is low indicating grid stress.
+  const bool considerPause = ((minuteCount & 0x63) <= 0xf);
 
   // TODO-555: apply some basic hysteresis to help reduce boiler short-cycling.
   // Try to force a higher single-valve-%age threshold to start boiler if off,
@@ -1347,7 +1351,7 @@ void remoteCallForHeatRX(const uint16_t id, const uint8_t percentOpen)
   // Selecting "quick heat" at a valve should immediately pass this.
   // (Will not provide hysteresis for very high minimum really-open value.)
   // Be slightly tolerant on 'moderately open' threshold to allow quick start from a range of devices.
-  const uint8_t threshold = isBoilerOn() ?
+  const uint8_t threshold = (!considerPause && isBoilerOn()) ?
       minvro : OTV0P2BASE::fnmax(minvro, (uint8_t) (OTRadValve::DEFAULT_VALVE_PC_MODERATELY_OPEN-1));
 
   if(percentOpen >= threshold)
