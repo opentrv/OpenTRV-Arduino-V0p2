@@ -36,16 +36,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
 #include "UI_Minimal.h"
 
 
-
-
-
-
-// Create bare-bones OneWire(TM) support if a pin has been allocated to it.
-#if defined(SUPPORTS_MINIMAL_ONEWIRE)
-OTV0P2BASE::MinimalOneWire<PIN_OW_DQ_DATA> MinOW;
-#endif
-
-
 // Singleton implementation/instance.
 OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
 
@@ -263,7 +253,7 @@ static int TMP112_readTemperatureC16()
 // Set true once SHT21 has been initialised.
 static volatile bool SHT21_initialised;
 
-// Initialise/configure SHT21, once only generally.
+// Initialise/configure SHT21, usually once only.
 // TWI must already be powered up.
 static void SHT21_init()
   {
@@ -599,13 +589,13 @@ bool ExtTemperatureDS18B20C16::init()
   bool found = false;
 
   // Ensure no bad search state.
-  MinOW.reset_search();
+  OTV0P2BASE::MinOW_DEFAULT_OWDQ.reset_search();
 
   for( ; ; )
     {
-    if(!MinOW.search(address))
+    if(!OTV0P2BASE::MinOW_DEFAULT_OWDQ.search(address))
       {
-      MinOW.reset_search(); // Be kind to any other OW search user.
+      OTV0P2BASE::MinOW_DEFAULT_OWDQ.reset_search(); // Be kind to any other OW search user.
       break;
       }
 
@@ -631,14 +621,14 @@ bool ExtTemperatureDS18B20C16::init()
 #if 0 && defined(DEBUG)
     DEBUG_SERIAL_PRINTLN_FLASHSTRING("Setting precision...");
 #endif
-    MinOW.reset();
+    OTV0P2BASE::MinOW_DEFAULT_OWDQ.reset();
     // Write scratchpad/config
-    MinOW.select(address);
-    MinOW.write(0x4e);
-    MinOW.write(0); // Th: not used.
-    MinOW.write(0); // Tl: not used.
+    OTV0P2BASE::MinOW_DEFAULT_OWDQ.select(address);
+    OTV0P2BASE::MinOW_DEFAULT_OWDQ.write(0x4e);
+    OTV0P2BASE::MinOW_DEFAULT_OWDQ.write(0); // Th: not used.
+    OTV0P2BASE::MinOW_DEFAULT_OWDQ.write(0); // Tl: not used.
 //    MinOW.write(DS1820_PRECISION | 0x1f); // Config register; lsbs all 1.
-    MinOW.write(((precision - 9) << 6) | 0x1f); // Config register; lsbs all 1.
+    OTV0P2BASE::MinOW_DEFAULT_OWDQ.write(((precision - 9) << 6) | 0x1f); // Config register; lsbs all 1.
 
     // Found one and configured it!
     found = true;
@@ -665,22 +655,22 @@ int ExtTemperatureDS18B20C16::read()
   if(0 == address[0]) { value = INVALID_TEMP; return(INVALID_TEMP); }
 
   // Start a temperature reading.
-  MinOW.reset();
-  MinOW.select(address);
-  MinOW.write(0x44); // Start conversion without parasite power.
+  OTV0P2BASE::MinOW_DEFAULT_OWDQ.reset();
+  OTV0P2BASE::MinOW_DEFAULT_OWDQ.select(address);
+  OTV0P2BASE::MinOW_DEFAULT_OWDQ.write(0x44); // Start conversion without parasite power.
   //delay(750); // 750ms should be enough.
   // Poll for conversion complete (bus released)...
-  while(MinOW.read_bit() == 0) { OTV0P2BASE::nap(WDTO_15MS); }
+  while(OTV0P2BASE::MinOW_DEFAULT_OWDQ.read_bit() == 0) { OTV0P2BASE::nap(WDTO_15MS); }
 
   // Fetch temperature (scratchpad read).
-  MinOW.reset();
-  MinOW.select(address);    
-  MinOW.write(0xbe);
+  OTV0P2BASE::MinOW_DEFAULT_OWDQ.reset();
+  OTV0P2BASE::MinOW_DEFAULT_OWDQ.select(address);    
+  OTV0P2BASE::MinOW_DEFAULT_OWDQ.write(0xbe);
   // Read first two bytes of 9 available.  (No CRC config or check.)
-  const uint8_t d0 = MinOW.read();
-  const uint8_t d1 = MinOW.read();
+  const uint8_t d0 = OTV0P2BASE::MinOW_DEFAULT_OWDQ.read();
+  const uint8_t d1 = OTV0P2BASE::MinOW_DEFAULT_OWDQ.read();
   // Terminate read and let DS18B20 go back to sleep.
-  MinOW.reset();
+  OTV0P2BASE::MinOW_DEFAULT_OWDQ.reset();
 
   // Extract raw temperature, masking any undefined lsbit.
   // TODO: mask out undefined LSBs if precision not maximum.

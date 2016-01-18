@@ -66,6 +66,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // I2C/TWI: SDA (ain 4), SCL (ain 5), interrupt (dpin3)
 #define PIN_SDA_AIN (::OTV0P2BASE::V0p2_PIN_SDA_AIN) // 4: ATMega328P-PU PDIP pin 27, PC4.
 #define PIN_SCL_AIN (::OTV0P2BASE::V0p2_PIN_SCL_AIN) // 5: ATMega328P-PU PDIP pin 28, PC5.
+// One-wire (eg DS18B20) DQ/data/pullup line; REV1+.
+#define PIN_OW_DQ_DATA (::OTV0P2BASE::V0p2_PIN_OW_DQ_DATA) // 2: ATMega328P-PU PDIP pin 4, PD2.
 
 // OneWire: DQ (dpin2)
 // PWM / general digital I/O: dpin 5, 6, 9, 10
@@ -143,11 +145,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: reverse the direction of temperature pot polarity.
 #define TEMP_POT_REVERSE
 #endif
-
-//#if V0p2_REV >= 1 // REV0 now means DHD test bench rather than REV0 PCB...
-// One-wire (eg DS18B20) DQ/data/pullup line; REV1+.
-#define PIN_OW_DQ_DATA 2
-//#endif
 
 // RFM23B nIRQ interrupt line; all boards *should* now have it incl REV0 as breadboard; REV0 *PCB* didn't.
 #if (V0p2_REV != 1) // DHD20150825: REV1 board currently under test behaves as if IRQ not fitted.

@@ -36,18 +36,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
 #include "Messaging.h"
 
 
-// Create very light-weight standard-speed OneWire(TM) support if a pin has been allocated to it.
-// Meant to be similar to use to OneWire library V2.2.
-// Supports search but not necessarily CRC.
-// Designed to work with 1MHz/1MIPS CPU clock.
-
-
-#if defined(PIN_OW_DQ_DATA) && defined(SUPPORT_ONEWIRE)
-#define SUPPORTS_MINIMAL_ONEWIRE
-extern OTV0P2BASE::MinimalOneWire<PIN_OW_DQ_DATA> MinOW;
-#endif
-
-
 // Sensor for supply (eg battery) voltage in millivolts.
 // Singleton implementation/instance.
 extern OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
@@ -224,21 +212,21 @@ extern RoomTemperatureC16 TemperatureC16;
 
 // High and low bounds on relative humidity for comfort and (eg) mite/mould growth.
 // See http://www.cdc.gov/niosh/topics/indoorenv/temperature.html: "The EPA recommends maintaining indoor relative humidity between 30 and 60% to reduce mold growth [EPA 2012]."
-#define HUMIDTY_HIGH_RHPC 70
-#define HUMIDTY_LOW_RHPC 30
+static const uint8_t HUMIDTY_HIGH_RHPC = 70;
+static const uint8_t HUMIDTY_LOW_RHPC = 30;
 // Epsilon bounds (absolute % +/- around thresholds) for accuracy and hysteresis.
-#define HUMIDITY_EPSILON_RHPC 5
-#if ((HUMIDTY_HIGH_RHPC + HUMIDITY_EPSILON_RHPC) >= 100)
-#error bad RH constants!
-#endif
-#if ((HUMIDTY_LOW_RHPC - HUMIDITY_EPSILON_RHPC) <= 0)
-#error bad RH constants!
-#endif
+static const uint8_t HUMIDITY_EPSILON_RHPC = 5;
+//#if ((HUMIDTY_HIGH_RHPC + HUMIDITY_EPSILON_RHPC) >= 100)
+//#error bad RH constants!
+//#endif
+//#if ((HUMIDTY_LOW_RHPC - HUMIDITY_EPSILON_RHPC) <= 0)
+//#error bad RH constants!
+//#endif
 
 // If RH% rises by at least this per hour, then it may indicate occupancy.
-#define HUMIDITY_OCCUPANCY_PC_MIN_RISE_PER_H 3
+static const uint8_t HUMIDITY_OCCUPANCY_PC_MIN_RISE_PER_H = 3;
 
-// HUMIDITY_SENSOR_SUPPORT is defined if at least one humdity sensor has support compiled in.
+// HUMIDITY_SENSOR_SUPPORT is defined if at least one humidity sensor has support compiled in.
 // Simple implementations can assume that the sensor will be present if defined;
 // more sophisticated implementations may wish to make run-time checks.
 
