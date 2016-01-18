@@ -131,7 +131,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 
 // Pin to power-up I/O devices only intermittently enabled, when high, digital out.
 // Pref connected via 330R+ current limit and 100nF+ decoupling).
-#define IO_POWER_UP 7 (::OTV0P2BASE::V0p2_PIN_DEFAULT_IO_POWER_UP) // ATMega328P-PU PDIP pin 13, PD7, no usable analogue input.
+#define IO_POWER_UP (::OTV0P2BASE::V0p2_PIN_DEFAULT_IO_POWER_UP) // ATMega328P-PU PDIP pin 13, PD7, no usable analogue input.
 
 // Ambient light sensor (eg LDR) analogue input: higher voltage means more light.
 #define LDR_SENSOR_AIN (::OTV0P2BASE::V0p2_PIN_LDR_SENSOR_AIN) // 0: ATMega328P-PU PDIP pin 23, PC0.
@@ -139,7 +139,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // Temperature potentiometer is present in REV 2/3/4/7.
 #if ((V0p2_REV >= 2) && (V0p2_REV <= 4)) || (V0p2_REV == 7)
 // Analogue input from pot.
-#define TEMP_POT_AIN 1 (::OTV0P2BASE::V0p2_PIN_TEMP_POT_AIN) // AI1: ATMega328P-PU PDIP pin 24, PC1.
+#define TEMP_POT_AIN (::OTV0P2BASE::V0p2_PIN_TEMP_POT_AIN) // AI1: ATMega328P-PU PDIP pin 24, PC1.
 // IF DEFINED: reverse the direction of temperature pot polarity.
 #define TEMP_POT_REVERSE
 #endif
