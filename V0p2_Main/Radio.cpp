@@ -46,8 +46,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //For Flash:
 //- Set the first field of SIM900LinkConfig to false.
 //- The configs are stored as \0 terminated strings.
+// - APNs - concirrus:  "internet.cxn"
+//        - id:         "id"
   static const char SIM900_PIN[5] PROGMEM       = "1111";
-  static const char SIM900_APN[13] PROGMEM      = "internet.cxn";
+  static const char SIM900_APN[] PROGMEM      = "\"everywhere\",\"eesecure\",\"secure\"";
   static const char SIM900_UDP_ADDR[14] PROGMEM = "46.101.64.191";
   static const char SIM900_UDP_PORT[5] PROGMEM = "9999";
   const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config(
