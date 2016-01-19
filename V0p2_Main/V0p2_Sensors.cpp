@@ -35,7 +35,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
 #include "UI_Minimal.h"
 
 #if defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
-OTV0P2BASE::MinimalOneWire<> MinOW_DEFAULT_OWDQ;
+OTV0P2BASE::MinimalOneWire<> MinOW_DEFAULT;
 #endif
 
 // Singleton implementation/instance.
@@ -167,7 +167,7 @@ AmbientLight AmbLight(LDR_THR_HIGH >> shiftRawScaleTo8Bit);
 // The first read will initialise the device as necessary and leave it in a low-power mode afterwards.
 // This will simulate a zero temperature in case of detected error talking to the sensor as fail-safe for this use.
 // Check for errors at certain critical places, not everywhere.
-static int TMP112_readTemperatureC16()
+static int16_t TMP112_readTemperatureC16()
   {
   const bool neededPowerUp = OTV0P2BASE::powerUpTWIIfDisabled();
   
@@ -187,7 +187,7 @@ static int TMP112_readTemperatureC16()
   Wire.write((byte) TMP102_REG_CTRL); // Select control register.
   Wire.write((byte) TMP102_CTRL_B1 | TMP102_CTRL_B1_OS); // Start one-shot conversion.
   //Wire.write((byte) TMP102_CTRL_B2);
-  if(Wire.endTransmission()) { return(0); } // Exit if error.
+  if(Wire.endTransmission()) { return(RoomTemperatureC16::INVALID_TEMP); } // Exit if error.
 
 
   // Wait for temperature measurement/conversion to complete, in low-power sleep mode for the bulk of the time.
@@ -200,7 +200,7 @@ static int TMP112_readTemperatureC16()
   for(int i = 8; --i; ) // 2 orbits should generally be plenty.
     {
     if(i <= 0) { return(0); } // Exit if error.
-    if(Wire.requestFrom(TMP102_I2C_ADDR, 1) != 1) { return(0); } // Exit if error.
+    if(Wire.requestFrom(TMP102_I2C_ADDR, 1) != 1) { return(RoomTemperatureC16::INVALID_TEMP); } // Exit if error.
     const byte b1 = Wire.read();
     if(b1 & TMP102_CTRL_B1_OS) { break; } // Conversion completed.
     ::OTV0P2BASE::nap(WDTO_15MS); // One or two of these naps should allow typical ~26ms conversion to complete...
@@ -212,12 +212,14 @@ static int TMP112_readTemperatureC16()
 #endif
   Wire.beginTransmission(TMP102_I2C_ADDR);
   Wire.write((byte) TMP102_REG_TEMP); // Select temperature register (set ptr to 0).
-  if(Wire.endTransmission()) { return(0); } // Exit if error.
+  if(Wire.endTransmission()) { return(RoomTemperatureC16::INVALID_TEMP); } // Exit if error.
   if(Wire.requestFrom(TMP102_I2C_ADDR, 2) != 2)  { return(0); }
-  if(Wire.endTransmission()) { return(0); } // Exit if error.
+  if(Wire.endTransmission()) { return(RoomTemperatureC16::INVALID_TEMP); } // Exit if error.
 
   const byte b1 = Wire.read(); // MSByte, should be signed whole degrees C.
   const uint8_t b2 = Wire.read(); // Avoid sign extension...
+
+  if(neededPowerUp) { OTV0P2BASE::powerDownTWI(); }
 
   // Builds 12-bit value (assumes not in extended mode) and sign-extends if necessary for sub-zero temps.
   const int t16 = (b1 << 4) | (b2 >> 4) | ((b1 & 0x80) ? 0xf000 : 0);
@@ -229,8 +231,6 @@ static int TMP112_readTemperatureC16()
   DEBUG_SERIAL_PRINT(temp16);
   DEBUG_SERIAL_PRINTLN();
 #endif
-
-  if(neededPowerUp) { OTV0P2BASE::powerDownTWI(); }
 
   return(t16);
   }
@@ -321,7 +321,7 @@ static int Sensor_SHT21_readTemperatureC16()
     // Wait for data, but avoid rolling over the end of a minor cycle...
     if(OTV0P2BASE::getSubCycleTime() >= OTV0P2BASE::GSCT_MAX-2)
       {
-      return(0); // Failure value: may be able to to better.
+      return(RoomTemperatureC16::INVALID_TEMP); // Failure value: may be able to to better.
       }
     }
   uint16_t rawTemp = (Wire.read() << 8);
@@ -427,13 +427,13 @@ static bool Sensor_DS18B10_init()
   bool found = false;
 
   // Ensure no bad search state.
-  MinOW_DEFAULT_OWDQ.reset_search();
+  minOW.reset_search();
 
   for( ; ; )
     {
-    if(!MinOW_DEFAULT_OWDQ.search(first_DS18B20_address))
+    if(!minOW.search(first_DS18B20_address))
       {
-      MinOW_DEFAULT_OWDQ.reset_search(); // Be kind to any other OW search user.
+      minOW.reset_search(); // Be kind to any other OW search user.
       break;
       }
 
@@ -459,13 +459,13 @@ static bool Sensor_DS18B10_init()
 #if 0 && defined(DEBUG)
     DEBUG_SERIAL_PRINTLN_FLASHSTRING("Setting precision...");
 #endif
-    MinOW_DEFAULT_OWDQ.reset();
+    minOW.reset();
     // Write scratchpad/config
-    MinOW_DEFAULT_OWDQ.select(first_DS18B20_address);
-    MinOW_DEFAULT_OWDQ.write(0x4e);
-    MinOW_DEFAULT_OWDQ.write(0); // Th: not used.
-    MinOW_DEFAULT_OWDQ.write(0); // Tl: not used.
-    MinOW_DEFAULT_OWDQ.write(DS1820_PRECISION | 0x1f); // Config register; lsbs all 1.
+    minOW.select(first_DS18B20_address);
+    minOW.write(0x4e);
+    minOW.write(0); // Th: not used.
+    minOW.write(0); // Tl: not used.
+    minOW.write(DS1820_PRECISION | 0x1f); // Config register; lsbs all 1.
 
     // Found one and configured it!
     found = true;
@@ -483,29 +483,29 @@ static bool Sensor_DS18B10_init()
   }
 
 // Returns temperature in C*16.
-// Returns <= 0 for some sorts of error as failsafe (-1 if failed to initialise).
-static int Sensor_DS18B10_readTemperatureC16()
+// Returns <= 0 for some sorts of error as failsafe (RoomTemperatureC16::INVALID_TEMP if failed to initialise).
+static int16_t Sensor_DS18B10_readTemperatureC16()
   {
   if(!sensor_DS18B10_initialised) { Sensor_DS18B10_init(); }
-  if(0 == first_DS18B20_address[0]) { return(-1); }
+  if(0 == first_DS18B20_address[0]) { return(RoomTemperatureC16::INVALID_TEMP); }
 
   // Start a temperature reading.
-  MinOW_DEFAULT_OWDQ.reset();
-  MinOW_DEFAULT_OWDQ.select(first_DS18B20_address);
-  MinOW_DEFAULT_OWDQ.write(0x44); // Start conversion without parasite power.
+  minOW.reset();
+  minOW.select(first_DS18B20_address);
+  minOW.write(0x44); // Start conversion without parasite power.
   //delay(750); // 750ms should be enough.
   // Poll for conversion complete (bus released)...
-  while(MinOW_DEFAULT_OWDQ.read_bit() == 0) { OTV0P2BASE::nap(WDTO_30MS); }
+  while(minOW.read_bit() == 0) { OTV0P2BASE::nap(WDTO_30MS); }
 
   // Fetch temperature (scratchpad read).
-  MinOW_DEFAULT_OWDQ.reset();
-  MinOW_DEFAULT_OWDQ.select(first_DS18B20_address);    
-  MinOW_DEFAULT_OWDQ.write(0xbe);
+  minOW.reset();
+  minOW.select(first_DS18B20_address);    
+  minOW.write(0xbe);
   // Read first two bytes of 9 available.  (No CRC config or check.)
-  const uint8_t d0 = MinOW_DEFAULT_OWDQ.read();
-  const uint8_t d1 = MinOW_DEFAULT_OWDQ.read();
+  const uint8_t d0 = minOW.read();
+  const uint8_t d1 = minOW.read();
   // Terminate read and let DS18B20 go back to sleep.
-  MinOW_DEFAULT_OWDQ.reset();
+  minOW.reset();
 
   // Extract raw temperature, masking any undefined lsbit.
   const int16_t rawC16 = (d1 << 8) | (d0 & ~1);
@@ -564,7 +564,7 @@ static int Sensor_DS18B10_readTemperatureC16()
 RoomTemperatureC16 TemperatureC16;
 
 // Temperature read uses/selects one of the implementations/sensors.
-int RoomTemperatureC16::read()
+int16_t RoomTemperatureC16::read()
   {
 #if defined(SENSOR_DS18B20_ENABLE)
   const int raw = Sensor_DS18B10_readTemperatureC16();
@@ -591,13 +591,13 @@ bool ExtTemperatureDS18B20C16::init()
   bool found = false;
 
   // Ensure no bad search state.
-  MinOW_DEFAULT_OWDQ.reset_search();
+  minOW.reset_search();
 
   for( ; ; )
     {
-    if(!MinOW_DEFAULT_OWDQ.search(address))
+    if(!minOW.search(address))
       {
-      MinOW_DEFAULT_OWDQ.reset_search(); // Be kind to any other OW search user.
+      minOW.reset_search(); // Be kind to any other OW search user.
       break;
       }
 
@@ -623,14 +623,14 @@ bool ExtTemperatureDS18B20C16::init()
 #if 0 && defined(DEBUG)
     DEBUG_SERIAL_PRINTLN_FLASHSTRING("Setting precision...");
 #endif
-    MinOW_DEFAULT_OWDQ.reset();
+    minOW.reset();
     // Write scratchpad/config
-    MinOW_DEFAULT_OWDQ.select(address);
-    MinOW_DEFAULT_OWDQ.write(0x4e);
-    MinOW_DEFAULT_OWDQ.write(0); // Th: not used.
-    MinOW_DEFAULT_OWDQ.write(0); // Tl: not used.
+    minOW.select(address);
+    minOW.write(0x4e);
+    minOW.write(0); // Th: not used.
+    minOW.write(0); // Tl: not used.
 //    MinOW.write(DS1820_PRECISION | 0x1f); // Config register; lsbs all 1.
-    MinOW_DEFAULT_OWDQ.write(((precision - 9) << 6) | 0x1f); // Config register; lsbs all 1.
+    minOW.write(((precision - 9) << 6) | 0x1f); // Config register; lsbs all 1.
 
     // Found one and configured it!
     found = true;
@@ -651,28 +651,28 @@ bool ExtTemperatureDS18B20C16::init()
 // At sub-maximum precision lsbits will be zero or undefined.
 // Expensive/slow.
 // Not thread-safe nor usable within ISRs (Interrupt Service Routines).
-int ExtTemperatureDS18B20C16::read()
+int16_t ExtTemperatureDS18B20C16::read()
   {
   if(!initialised) { init(); }
   if(0 == address[0]) { value = INVALID_TEMP; return(INVALID_TEMP); }
 
   // Start a temperature reading.
-  MinOW_DEFAULT_OWDQ.reset();
-  MinOW_DEFAULT_OWDQ.select(address);
-  MinOW_DEFAULT_OWDQ.write(0x44); // Start conversion without parasite power.
+  minOW.reset();
+  minOW.select(address);
+  minOW.write(0x44); // Start conversion without parasite power.
   //delay(750); // 750ms should be enough.
   // Poll for conversion complete (bus released)...
-  while(MinOW_DEFAULT_OWDQ.read_bit() == 0) { OTV0P2BASE::nap(WDTO_15MS); }
+  while(minOW.read_bit() == 0) { OTV0P2BASE::nap(WDTO_15MS); }
 
   // Fetch temperature (scratchpad read).
-  MinOW_DEFAULT_OWDQ.reset();
-  MinOW_DEFAULT_OWDQ.select(address);    
-  MinOW_DEFAULT_OWDQ.write(0xbe);
+  minOW.reset();
+  minOW.select(address);    
+  minOW.write(0xbe);
   // Read first two bytes of 9 available.  (No CRC config or check.)
-  const uint8_t d0 = MinOW_DEFAULT_OWDQ.read();
-  const uint8_t d1 = MinOW_DEFAULT_OWDQ.read();
+  const uint8_t d0 = minOW.read();
+  const uint8_t d1 = minOW.read();
   // Terminate read and let DS18B20 go back to sleep.
-  MinOW_DEFAULT_OWDQ.reset();
+  minOW.reset();
 
   // Extract raw temperature, masking any undefined lsbit.
   // TODO: mask out undefined LSBs if precision not maximum.
@@ -683,7 +683,7 @@ int ExtTemperatureDS18B20C16::read()
 #endif
 
 #if defined(SENSOR_EXTERNAL_DS18B20_ENABLE_0) // Enable sensor zero.
-ExtTemperatureDS18B20C16 extDS18B20_0(0);
+ExtTemperatureDS18B20C16 extDS18B20_0(MinOW_DEFAULT, 0);
 #endif
 
 

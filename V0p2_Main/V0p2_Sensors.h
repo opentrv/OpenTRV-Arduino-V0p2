@@ -81,16 +81,16 @@ class TemperatureC16Base : public OTV0P2BASE::Sensor<int16_t>
     TemperatureC16Base() { }
 
   public:
-     // Returns true if the given value indicates, or may indicate, an error.
-     virtual bool isErrorValue(uint8_t value) const = 0;
+    // Returns true if the given value indicates, or may indicate, an error.
+    virtual bool isErrorValue(int16_t value) const = 0;
 
-     // Returns number of useful binary digits after the binary point; default is 4.
-     // May be negative if some of the digits BEFORE the binary point are not usable.
-     // Some sensors may dynamically return fewer places.
-     virtual int8_t getBitsAfterPoint() const { return(4); }
+    // Returns number of useful binary digits after the binary point; default is 4.
+    // May be negative if some of the digits BEFORE the binary point are not usable.
+    // Some sensors may dynamically return fewer places.
+    virtual int8_t getBitsAfterPoint() const { return(4); }
 
-     // Returns true if fewer than 4 bits of useful data after the binary point.
-     bool isLowPrecision() const { return(getBitsAfterPoint() < 4); }
+    // Returns true if fewer than 4 bits of useful data after the binary point.
+    bool isLowPrecision() const { return(getBitsAfterPoint() < 4); }
   };
 
 
@@ -112,7 +112,7 @@ class TemperatureC16Base : public OTV0P2BASE::Sensor<int16_t>
 // Provides temperature as a signed int value with 0C == 0 at all precisions.
 //template <template <class = float> class T> struct A 
 //template <template <uint8_t DigitalPin> class MOW, uint8_t bitsAfterPoint = 4, uint8_t busOrder = 0>
-class ExtTemperatureDS18B20C16 : public OTV0P2BASE::Sensor<int>
+class ExtTemperatureDS18B20C16 : public TemperatureC16Base // OTV0P2BASE::Sensor<int>
   {
   private:
     // Ordinal of this DS18B20 on the OW bus.
@@ -129,7 +129,10 @@ class ExtTemperatureDS18B20C16 : public OTV0P2BASE::Sensor<int>
     bool initialised;
 
     // Current value in (shifted) C.      
-    int value;
+    int16_t value;
+
+    // Reference to minimal OneWire support instance for appropriate GPIO.
+    OTV0P2BASE::MinimalOneWireBase &minOW;
 
     // Initialise the device (if any) before first use.
     // Returns true iff successful.
@@ -147,28 +150,37 @@ class ExtTemperatureDS18B20C16 : public OTV0P2BASE::Sensor<int>
 
     // Error value returned if device unavailable or not yet read.
     // Negative and below minimum value that DS18B20 can return legitimately (-55C). 
-    static const int INVALID_TEMP = -128 * 16; // Nominally -128C.
+    static const int16_t INVALID_TEMP = -128 * 16; // Nominally -128C.
+
+    // Returns true if the given value indicates, or may indicate, an error.
+    virtual bool isErrorValue(int16_t value) const { return(INVALID_TEMP == value); }
+    
+    // Returns number of useful binary digits after the binary point.
+    // 8 less than total precision for DS18B20.
+    virtual int8_t getBitsAfterPoint() const { return(precision - 8); }
 
     // Create instance with given bus ordinal and precision.
-    ExtTemperatureDS18B20C16(uint8_t _busOrder = 0, uint8_t _precision = DEFAULT_PRECISION) : busOrder(_busOrder), initialised(false), value(INVALID_TEMP)
+    // Precision defaults to minimim (9 bits, 0.5C resolution) for speed.
+    ExtTemperatureDS18B20C16(OTV0P2BASE::MinimalOneWireBase &ow, uint8_t _busOrder = 0, uint8_t _precision = DEFAULT_PRECISION)
+      : busOrder(_busOrder), initialised(false), value(INVALID_TEMP), minOW(ow)
       {
       // Coerce precision to be valid.
       precision = constrain(_precision, MIN_PRECISION, MAX_PRECISION);
       }
 
     // Get current precision in bits [9,12]; 9 gives 1/2C resolution, 12 gives 1/16C resolution.
-    int getPrecisionBits() { return(precision); }
+    uint8_t getPrecisionBits() { return(precision); }
  
     // Force a read/poll of temperature and return the value sensed in nominal units of 1/16 C.
     // At sub-maximum precision lsbits will be zero or undefined.
     // Expensive/slow.
     // Not thread-safe nor usable within ISRs (Interrupt Service Routines).
-    virtual int read();
+    virtual int16_t read();
 
     // Return last value fetched by read(); undefined before first read().
     // Fast.
     // Not thread-safe nor usable within ISRs (Interrupt Service Routines).
-    virtual int get() const { return(value); }
+    virtual int16_t get() const { return(value); }
   };
 
 #define SENSOR_EXTERNAL_DS18B20_ENABLE_0 // Enable sensor zero.
@@ -200,20 +212,28 @@ extern AmbientLight AmbLight;
 
 // Sensor for ambient/room temperature in 1/16th of one degree Celsius.
 // An error may be indicated by returning a zero or (very) negative value.
-class RoomTemperatureC16 : public OTV0P2BASE::Sensor<int>
+class RoomTemperatureC16 : public TemperatureC16Base // OTV0P2BASE::Sensor<int>
   {
   private:
     // Room temperature in 16*C, eg 1 is 1/16 C, 32 is 2C, -64 is -4C.
-    int value;
+    int16_t value;
 
   public:
-    RoomTemperatureC16() : value(0) { }
+    // Error value returned if device unavailable or not yet read.
+    // Negative and below minimum value that DS18B20 can return legitimately (-55C). 
+    static const int16_t INVALID_TEMP = -128 * 16; // Nominally -128C.
+
+    // Create an instance, starting with and invalid temperature.
+    RoomTemperatureC16() : value(INVALID_TEMP) { }
+
+    // Returns true if the given value indicates, or may indicate, an error.
+    virtual bool isErrorValue(int16_t value) const { return(INVALID_TEMP == value); }
 
     // Force a read/poll of room temperature and return the value sensed in units of 1/16 C.
     // Should be called at regular intervals (1/60s) if isJittery() is true.
     // Expensive/slow.
     // Not thread-safe nor usable within ISRs (Interrupt Service Routines).
-    virtual int read();
+    virtual int16_t read();
 
     // Preferred poll interval (in seconds).
     // This should be called at a regular rate, usually 1/60, so make stats such as velocity measurement easier.
@@ -222,7 +242,7 @@ class RoomTemperatureC16 : public OTV0P2BASE::Sensor<int>
     // Return last value fetched by read(); undefined before first read().
     // Fast.
     // Not thread-safe nor usable within ISRs (Interrupt Service Routines).
-    virtual int get() const { return(value); }
+    virtual int16_t get() const { return(value); }
 
     // Returns a suggested (JSON) tag/field/key name including units of get(); NULL means no recommended tag.
     // The lifetime of the pointed-to text must be at least that of the Sensor instance.
@@ -232,9 +252,9 @@ class RoomTemperatureC16 : public OTV0P2BASE::Sensor<int>
     // If true this implies an actual precision of about 1/8th C.
 #ifdef SENSOR_DS18B20_ENABLE
 #define ROOM_TEMP_REDUCED_PRECISION
-    bool isLowPrecision() const { return(true); } // Requests lower precision from DS18B20 to give an acceptable conversion time.
-#else
-    bool isLowPrecision() const { return(false); }
+    // Returns number of useful binary digits after the binary point; default is 4.
+    virtual int8_t getBitsAfterPoint() const { return(3); }
+//    bool isLowPrecision() const { return(true); } // Requests lower precision from DS18B20 to give an acceptable conversion time.
 #endif
   };
 // Singleton implementation/instance.
