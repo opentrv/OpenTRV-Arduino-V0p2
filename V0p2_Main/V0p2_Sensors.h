@@ -95,96 +95,94 @@ class TemperatureC16Base : public OTV0P2BASE::Sensor<int16_t>
 
 
 #if defined(SENSOR_EXTERNAL_DS18B20_ENABLE) && defined(SUPPORTS_MINIMAL_ONEWIRE)
-// External/off-board DS18B20 temperature sensor in nominal 1/16 C.
-// Requires OneWire support.
-// Will in future be templated on:
-//   * the MinimalOneWire instance to use
-//   * precision (9, 10, 11 or 12 bits, 12 for the full C/16 resolution),
-//     noting that lower precision is faster,
-//     and for example 1C will be 0x1X
-//     with more bits of the final nibble defined for with higher precision
-//   * enumeration order of this device on the OW bus,
-//     with 0 (the default) being the first found by the usual deterministic scan
-//   * whether the CRC should de checked for incoming data
-//     to improve reliability on long connections at a code and CPU cost
-// Multiple DS18B20s can nominally be supported on one or multiple OW buses.
-// Not all template parameter combinations may be supported.
-// Provides temperature as a signed int value with 0C == 0 at all precisions.
-//template <template <class = float> class T> struct A 
-//template <template <uint8_t DigitalPin> class MOW, uint8_t bitsAfterPoint = 4, uint8_t busOrder = 0>
-class ExtTemperatureDS18B20C16 : public TemperatureC16Base // OTV0P2BASE::Sensor<int>
-  {
-  private:
-    // Ordinal of this DS18B20 on the OW bus.
-    // FIXME: not currently used.
-    const uint8_t busOrder;
-
-    // Precision [9,12].
-    uint8_t precision;
-
-    // Address of DS18B20 being used, else [0] == 0 if none found.
-    uint8_t address[8];
-
-    // True once initialised.
-    bool initialised;
-
-    // Current value in (shifted) C.      
-    int16_t value;
-
-    // Reference to minimal OneWire support instance for appropriate GPIO.
-    OTV0P2BASE::MinimalOneWireBase &minOW;
-
-    // Initialise the device (if any) before first use.
-    // Returns true iff successful.
-    // Uses specified order DS18B20 found on bus.
-    // May need to be reinitialised if precision changed.
-    bool init();
-
-  public:
-    // Minimum supported precision, in bits, corresponding to 1/2 C resolution.
-    static const uint8_t MIN_PRECISION = 9;
-    // Maximum supported precision, in bits, corresponding to 1/16 C resolution.
-    static const uint8_t MAX_PRECISION = 12;
-    // Default precision; defaults to minimum for speed.
-    static const uint8_t DEFAULT_PRECISION = MIN_PRECISION;
-
-    // Error value returned if device unavailable or not yet read.
-    // Negative and below minimum value that DS18B20 can return legitimately (-55C). 
-    static const int16_t INVALID_TEMP = -128 * 16; // Nominally -128C.
-
-    // Returns true if the given value indicates, or may indicate, an error.
-    virtual bool isErrorValue(int16_t value) const { return(INVALID_TEMP == value); }
-    
-    // Returns number of useful binary digits after the binary point.
-    // 8 less than total precision for DS18B20.
-    virtual int8_t getBitsAfterPoint() const { return(precision - 8); }
-
-    // Create instance with given bus ordinal and precision.
-    // Precision defaults to minimim (9 bits, 0.5C resolution) for speed.
-    ExtTemperatureDS18B20C16(OTV0P2BASE::MinimalOneWireBase &ow, uint8_t _busOrder = 0, uint8_t _precision = DEFAULT_PRECISION)
-      : busOrder(_busOrder), initialised(false), value(INVALID_TEMP), minOW(ow)
-      {
-      // Coerce precision to be valid.
-      precision = constrain(_precision, MIN_PRECISION, MAX_PRECISION);
-      }
-
-    // Get current precision in bits [9,12]; 9 gives 1/2C resolution, 12 gives 1/16C resolution.
-    uint8_t getPrecisionBits() { return(precision); }
- 
-    // Force a read/poll of temperature and return the value sensed in nominal units of 1/16 C.
-    // At sub-maximum precision lsbits will be zero or undefined.
-    // Expensive/slow.
-    // Not thread-safe nor usable within ISRs (Interrupt Service Routines).
-    virtual int16_t read();
-
-    // Return last value fetched by read(); undefined before first read().
-    // Fast.
-    // Not thread-safe nor usable within ISRs (Interrupt Service Routines).
-    virtual int16_t get() const { return(value); }
-  };
+//// External/off-board DS18B20 temperature sensor in nominal 1/16 C.
+//// Requires OneWire support.
+//// Will in future be templated on:
+////   * the MinimalOneWire instance to use
+////   * precision (9, 10, 11 or 12 bits, 12 for the full C/16 resolution),
+////     noting that lower precision is faster,
+////     and for example 1C will be 0x1X
+////     with more bits of the final nibble defined for with higher precision
+////   * enumeration order of this device on the OW bus,
+////     with 0 (the default) being the first found by the usual deterministic scan
+////   * whether the CRC should de checked for incoming data
+////     to improve reliability on long connections at a code and CPU cost
+//// Multiple DS18B20s can nominally be supported on one or multiple OW buses.
+//// Not all template parameter combinations may be supported.
+//// Provides temperature as a signed int value with 0C == 0 at all precisions.
+//class TemperatureC16_DS18B20 : public TemperatureC16Base
+//  {
+//  private:
+//    // Ordinal of this DS18B20 on the OW bus.
+//    // FIXME: not currently used.
+//    const uint8_t busOrder;
+//
+//    // Precision [9,12].
+//    uint8_t precision;
+//
+//    // Address of DS18B20 being used, else [0] == 0 if none found.
+//    uint8_t address[8];
+//
+//    // True once initialised.
+//    bool initialised;
+//
+//    // Current value in (shifted) C.      
+//    int16_t value;
+//
+//    // Reference to minimal OneWire support instance for appropriate GPIO.
+//    OTV0P2BASE::MinimalOneWireBase &minOW;
+//
+//    // Initialise the device (if any) before first use.
+//    // Returns true iff successful.
+//    // Uses specified order DS18B20 found on bus.
+//    // May need to be reinitialised if precision changed.
+//    bool init();
+//
+//  public:
+//    // Minimum supported precision, in bits, corresponding to 1/2 C resolution.
+//    static const uint8_t MIN_PRECISION = 9;
+//    // Maximum supported precision, in bits, corresponding to 1/16 C resolution.
+//    static const uint8_t MAX_PRECISION = 12;
+//    // Default precision; defaults to minimum for speed.
+//    static const uint8_t DEFAULT_PRECISION = MIN_PRECISION;
+//
+//    // Error value returned if device unavailable or not yet read.
+//    // Negative and below minimum value that DS18B20 can return legitimately (-55C). 
+//    static const int16_t INVALID_TEMP = -128 * 16; // Nominally -128C.
+//
+//    // Returns true if the given value indicates, or may indicate, an error.
+//    virtual bool isErrorValue(int16_t value) const { return(INVALID_TEMP == value); }
+//    
+//    // Returns number of useful binary digits after the binary point.
+//    // 8 less than total precision for DS18B20.
+//    virtual int8_t getBitsAfterPoint() const { return(precision - 8); }
+//
+//    // Create instance with given bus ordinal and precision.
+//    // Precision defaults to minimim (9 bits, 0.5C resolution) for speed.
+//    TemperatureC16_DS18B20(OTV0P2BASE::MinimalOneWireBase &ow, uint8_t _busOrder = 0, uint8_t _precision = DEFAULT_PRECISION)
+//      : busOrder(_busOrder), initialised(false), value(INVALID_TEMP), minOW(ow)
+//      {
+//      // Coerce precision to be valid.
+//      precision = constrain(_precision, MIN_PRECISION, MAX_PRECISION);
+//      }
+//
+//    // Get current precision in bits [9,12]; 9 gives 1/2C resolution, 12 gives 1/16C resolution.
+//    uint8_t getPrecisionBits() { return(precision); }
+// 
+//    // Force a read/poll of temperature and return the value sensed in nominal units of 1/16 C.
+//    // At sub-maximum precision lsbits will be zero or undefined.
+//    // Expensive/slow.
+//    // Not thread-safe nor usable within ISRs (Interrupt Service Routines).
+//    virtual int16_t read();
+//
+//    // Return last value fetched by read(); undefined before first read().
+//    // Fast.
+//    // Not thread-safe nor usable within ISRs (Interrupt Service Routines).
+//    virtual int16_t get() const { return(value); }
+//  };
 
 #define SENSOR_EXTERNAL_DS18B20_ENABLE_0 // Enable sensor zero.
-extern ExtTemperatureDS18B20C16 extDS18B20_0;
+extern TemperatureC16_DS18B20 extDS18B20_0;
 
 #endif
 
