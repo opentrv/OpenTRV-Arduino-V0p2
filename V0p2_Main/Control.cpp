@@ -1213,13 +1213,12 @@ void setupOpenTRV()
   // Start local counters in randomised positions to help avoid inter-unit collisions,
   // eg for mains-powered units starting up together after a power cut,
   // but without (eg) breaking any of the logic about what order things will be run first time through.
-  // Offsets based on whatever noise is in the simple PRNG plus some from the unique ID.
-  const uint8_t ID0 = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_ID);
+  // Uses some decent noise to try to start the units separated.
+  const uint8_t b = OTV0P2BASE::getSecureRandomByte(); // randRNG8();
   // Start within bottom half of minute (or close to); sensor readings happen in second half.
-  localTicks = OTV0P2BASE::randRNG8() & 0x1f;
+  localTicks = (b >> 1) & 0x1e; // Must be even for 2s tick.
   // Start anywhere in first 4 minute cycle.
-  minuteCount = (OTV0P2BASE::randRNG8() ^ ID0) & 3;
-//  if(0 != (ID0 & 0x20)) { minuteCount = (OTV0P2BASE::randRNG8() & 1) | 2; } // Start at minute 2 or 3 out of 4 for some units.
+  minuteCount = b & 3;
 #endif
 
 #if 0 && defined(DEBUG)
