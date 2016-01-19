@@ -125,7 +125,7 @@ uint8_t getFROSTTargetC()
   return(stored);
   }
 #else
-#define getFROSTTargetC() (FROST) // Fixed value.
+#define getFROSTTargetC() ((uint8_t)FROST) // Fixed value.
 #endif
 
 // Get 'WARM' target in C; no lower than getFROSTTargetC() returns, strictly positive, in range [MIN_TARGET_C,MAX_TARGET_C].
@@ -787,10 +787,10 @@ void populateCoreStats(OTV0P2BASE::FullStatsMessageCore_t *const content)
 // Not thread-safe, eg not to be called from within an ISR.
 bool pollIO(const bool force)
   {
+#ifdef ENABLE_RADIO_PRIMARY_MODULE
 //  if(inHubMode())
 //    {
     static volatile uint8_t _pO_lastPoll;
-
     // Poll RX at most about every ~8ms.
     const uint8_t sct = OTV0P2BASE::getSubCycleTime();
     if(force || (sct != _pO_lastPoll))
@@ -799,9 +799,12 @@ bool pollIO(const bool force)
       // Poll for inbound frames.
       // The will generally be little time to do this before getting an overrun or dropped frame.
       PrimaryRadio.poll();
+#ifdef ENABLE_RADIO_SECONDARY_MODULE
       SecondaryRadio.poll();
+#endif
       }
 //    }
+#endif
   return(false);
   }
 

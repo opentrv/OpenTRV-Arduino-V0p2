@@ -34,13 +34,13 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 
 
 
-//#ifdef ENABLE_RADIO_PRIMARY_MODULE
+#ifdef ENABLE_RADIO_PRIMARY_MODULE
 extern OTRadioLink::OTRadioLink &PrimaryRadio;
-//#endif // ENABLE_RADIO_PRIMARY_MODULE
+#endif // ENABLE_RADIO_PRIMARY_MODULE
 
-//#ifdef ENABLE_RADIO_SECONDARY_MODULE
+#ifdef ENABLE_RADIO_SECONDARY_MODULE
 extern OTRadioLink::OTRadioLink &SecondaryRadio;
-//#endif // RADIO_SECONDARY_MODULE_TYPE
+#endif // RADIO_SECONDARY_MODULE_TYPE
 
 
 //#if defined(ENABLE_RADIO_RFM23B) && defined(PIN_RFM_NIRQ) && defined(DEBUG) // Expose for debugging...

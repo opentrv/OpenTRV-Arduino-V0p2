@@ -61,8 +61,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #endif // ENABLE_RADIO_SIM900
 
 
-// TODO ifdef to define when NullRadio needed
+#if defined(ENABLE_RADIO_NULL)
 OTRadioLink::OTNullRadioLink NullRadio;
+#endif
 
 // Brings in necessary radio libs
 #ifdef ENABLE_RADIO_RFM23B
@@ -85,7 +86,8 @@ OTRadioLink::OTRadioLink &PrimaryRadio = SIM900;
 OTRadioLink::OTRadioLink &PrimaryRadio = NullRadio;
 #endif // RADIO_PRIMARY_RFM23B
 
-// Assign radio to SecondaryRadio alias
+// Assign radio to SecondaryRadio alias.
+#ifdef ENABLE_RADIO_SECONDARY_MODULE
 #if defined(RADIO_SECONDARY_RFM23B)
 OTRadioLink::OTRadioLink &SecondaryRadio = RFM23B;
 #elif defined(RADIO_SECONDARY_SIM900)
@@ -93,6 +95,7 @@ OTRadioLink::OTRadioLink &SecondaryRadio = SIM900;
 #else
 OTRadioLink::OTRadioLink &SecondaryRadio = NullRadio;
 #endif // RADIO_SECONDARY_RFM23B
+#endif // ENABLE_RADIO_SECONDARY_MODULE
 
 // RFM22 is apparently SPI mode 0 for Arduino library pov.
 

@@ -36,6 +36,18 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
 #include "Messaging.h"
 
 
+// Create very light-weight standard-speed OneWire(TM) support if a pin has been allocated to it.
+// Meant to be similar to use to OneWire library V2.2.
+// Supports search but not necessarily CRC.
+// Designed to work with 1MHz/1MIPS CPU clock.
+
+
+#if defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
+#define SUPPORTS_MINIMAL_ONEWIRE
+extern OTV0P2BASE::MinimalOneWire<> MinOW_DEFAULT_OWDQ;
+#endif
+
+
 // Sensor for supply (eg battery) voltage in millivolts.
 // Singleton implementation/instance.
 extern OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
@@ -82,7 +94,7 @@ class TemperatureC16Base : public OTV0P2BASE::Sensor<int16_t>
   };
 
 
-#if defined(SENSOR_EXTERNAL_DS18B20_ENABLE) // Needs defined(SUPPORTS_MINIMAL_ONEWIRE)
+#if defined(SENSOR_EXTERNAL_DS18B20_ENABLE) && defined(SUPPORTS_MINIMAL_ONEWIRE)
 // External/off-board DS18B20 temperature sensor in nominal 1/16 C.
 // Requires OneWire support.
 // Will in future be templated on:
