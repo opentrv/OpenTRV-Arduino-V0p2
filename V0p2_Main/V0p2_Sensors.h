@@ -57,6 +57,28 @@ extern OTV0P2BASE::SensorTemperaturePot TempPot;
 #endif // ENABLE_TEMP_POT_IF_PRESENT
 
 
+// Abstract temperature sensor in 1/16th of one degree Celsius.
+// Nominally covers a range from well below 0C to at least 100C
+// for room and DHW temperature monitoring.
+// May cover a wider range for other specialist monitoring.
+// Some devices may indicate an error by returning a zero or (very) negative value.
+class TemperatureC16Base : public OTV0P2BASE::Sensor<int16_t>
+  {
+  protected:
+    // Prevent instantiation of a naked instance.
+    TemperatureC16Base() { }
+
+  public:
+     // Returns true if the given value indicates, or may indicate, an error.
+     virtual bool isErrorValue(uint8_t value) = 0;
+
+     // Returns number of useful binary digits after the binary point; default is 4.
+     // May be negative if some of the digits BEFORE the binary point are not usable.
+     // Some sensors may dynamically return fewer places.
+     virtual int8_t getBitsAfterPoint() { return(4); }
+  };
+
+
 #if defined(SENSOR_EXTERNAL_DS18B20_ENABLE) // Needs defined(SUPPORTS_MINIMAL_ONEWIRE)
 // External/off-board DS18B20 temperature sensor in nominal 1/16 C.
 // Requires OneWire support.
