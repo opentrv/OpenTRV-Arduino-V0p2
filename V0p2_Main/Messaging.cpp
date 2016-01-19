@@ -66,6 +66,10 @@ static void decodeAndHandleFTp2_FS20_native(Print *p, const bool secure, const u
     // but approximation with /256, ie >>8, probably fine.
     // This code ensures that common and semantically-important 0 and 255
     // always (quickly) and definitely map to 0 and 100.
+    // A better approximation from 0--255 => % mapping,
+    // which will help quicker response to valve hitting
+    // OTRadValve::DEFAULT_VALVE_PC_MODERATELY_OPEN for example
+    // since valve will not need to further open to force boiler on.
     // TODO: maybe be careful also with special thresholds
     // OTRadValve::DEFAULT_VALVE_PC_SAFER_OPEN and OTRadValve::DEFAULT_VALVE_PC_MODERATELY_OPEN.
     const uint8_t percentOpen =
