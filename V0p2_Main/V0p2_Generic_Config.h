@@ -1118,8 +1118,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define DHW_TEMPERATURES
 // Must minimise water flow.
 #define TRV_SLEW_GLACIAL
-// Set max percentage open: BH reports 30% to be (near) optimal 2015/03; BH requested 20% at 2015/10/15.
-#define TRV_MAX_PC_OPEN 20
+// Set max percentage open: BH reports 30% to be (near) optimal 2015/03; BH requested 20% at 2015/10/15, 13% at 2016/01/19.
+#define TRV_MAX_PC_OPEN 13
 // IF UNDEFINED: this unit cannot act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
 #undef ENABLE_BOILER_HUB
 // IF UNDEFINED: don't allow RX of stats frames (since there is no easy way to plug in a serial connection to relay them!)
