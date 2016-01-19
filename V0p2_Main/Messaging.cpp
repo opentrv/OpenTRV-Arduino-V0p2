@@ -62,12 +62,17 @@ static void decodeAndHandleFTp2_FS20_native(Print *p, const bool secure, const u
     p->println(command.hc2);
 #endif
     // Process the common 'valve closed' and valve open cases efficiently.
-    // Nominally conversion to % should be (uint8_t) ((command.extension * 100) / 255)
+    // Nominally conversion to % should be (uint8_t) ((command.extension * 100 +127.5) / 255)
     // but approximation with /256, ie >>8, probably fine.
+    // This code ensures that common and semantically-important 0 and 255
+    // always (quickly) and definitely map to 0 and 100.
+    // TODO: maybe be careful also with special thresholds
+    // OTRadValve::DEFAULT_VALVE_PC_SAFER_OPEN and OTRadValve::DEFAULT_VALVE_PC_MODERATELY_OPEN.
     const uint8_t percentOpen =
         (0 == command.extension) ? 0 :
         ((255 == command.extension) ? 100 :
-        ((uint8_t) ((command.extension * (int)100) >> 8)));
+        // Approximation that works at 1 (=>1%) and 254 (=>99%).
+        ((uint8_t) ((command.extension * (int)100 + 199) >> 8)));
     remoteCallForHeatRX(compoundHC, percentOpen);
     }
 #endif
