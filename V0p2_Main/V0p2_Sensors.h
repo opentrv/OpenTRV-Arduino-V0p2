@@ -70,12 +70,15 @@ class TemperatureC16Base : public OTV0P2BASE::Sensor<int16_t>
 
   public:
      // Returns true if the given value indicates, or may indicate, an error.
-     virtual bool isErrorValue(uint8_t value) = 0;
+     virtual bool isErrorValue(uint8_t value) const = 0;
 
      // Returns number of useful binary digits after the binary point; default is 4.
      // May be negative if some of the digits BEFORE the binary point are not usable.
      // Some sensors may dynamically return fewer places.
-     virtual int8_t getBitsAfterPoint() { return(4); }
+     virtual int8_t getBitsAfterPoint() const { return(4); }
+
+     // Returns true if fewer than 4 bits of useful data after the binary point.
+     bool isLowPrecision() const { return(getBitsAfterPoint() < 4); }
   };
 
 
