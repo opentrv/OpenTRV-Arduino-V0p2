@@ -1358,7 +1358,8 @@ void remoteCallForHeatRX(const uint16_t id, const uint8_t percentOpen)
   // at a level where at least a single valve is moderately open.
   // Selecting "quick heat" at a valve should immediately pass this.
   // (Will not provide hysteresis for very high minimum really-open value.)
-  // Be slightly tolerant on 'moderately open' threshold to allow quick start from a range of devices.
+  // Be slightly tolerant on 'moderately open' threshold to allow quick start from a range of devices
+  // and in the face of imperfect rounding/conversion to/from percentages.
   const uint8_t threshold = (!considerPause && isBoilerOn()) ?
       minvro : OTV0P2BASE::fnmax(minvro, (uint8_t) (OTRadValve::DEFAULT_VALVE_PC_MODERATELY_OPEN-1));
 
