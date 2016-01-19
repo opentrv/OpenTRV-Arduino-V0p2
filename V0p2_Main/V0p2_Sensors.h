@@ -69,29 +69,29 @@ extern OTV0P2BASE::SensorTemperaturePot TempPot;
 #endif // ENABLE_TEMP_POT_IF_PRESENT
 
 
-// Abstract temperature sensor in 1/16th of one degree Celsius.
-// Nominally covers a range from well below 0C to at least 100C
-// for room and DHW temperature monitoring.
-// May cover a wider range for other specialist monitoring.
-// Some devices may indicate an error by returning a zero or (very) negative value.
-class TemperatureC16Base : public OTV0P2BASE::Sensor<int16_t>
-  {
-  protected:
-    // Prevent instantiation of a naked instance.
-    TemperatureC16Base() { }
-
-  public:
-    // Returns true if the given value indicates, or may indicate, an error.
-    virtual bool isErrorValue(int16_t value) const = 0;
-
-    // Returns number of useful binary digits after the binary point; default is 4.
-    // May be negative if some of the digits BEFORE the binary point are not usable.
-    // Some sensors may dynamically return fewer places.
-    virtual int8_t getBitsAfterPoint() const { return(4); }
-
-    // Returns true if fewer than 4 bits of useful data after the binary point.
-    bool isLowPrecision() const { return(getBitsAfterPoint() < 4); }
-  };
+//// Abstract temperature sensor in 1/16th of one degree Celsius.
+//// Nominally covers a range from well below 0C to at least 100C
+//// for room and DHW temperature monitoring.
+//// May cover a wider range for other specialist monitoring.
+//// Some devices may indicate an error by returning a zero or (very) negative value.
+//class TemperatureC16Base : public OTV0P2BASE::Sensor<int16_t>
+//  {
+//  protected:
+//    // Prevent instantiation of a naked instance.
+//    TemperatureC16Base() { }
+//
+//  public:
+//    // Returns true if the given value indicates, or may indicate, an error.
+//    virtual bool isErrorValue(int16_t value) const = 0;
+//
+//    // Returns number of useful binary digits after the binary point; default is 4.
+//    // May be negative if some of the digits BEFORE the binary point are not usable.
+//    // Some sensors may dynamically return fewer places.
+//    virtual int8_t getBitsAfterPoint() const { return(4); }
+//
+//    // Returns true if fewer than 4 bits of useful data after the binary point.
+//    bool isLowPrecision() const { return(getBitsAfterPoint() < 4); }
+//  };
 
 
 #if defined(SENSOR_EXTERNAL_DS18B20_ENABLE) && defined(SUPPORTS_MINIMAL_ONEWIRE)
@@ -182,7 +182,7 @@ class TemperatureC16Base : public OTV0P2BASE::Sensor<int16_t>
 //  };
 
 #define SENSOR_EXTERNAL_DS18B20_ENABLE_0 // Enable sensor zero.
-extern TemperatureC16_DS18B20 extDS18B20_0;
+extern OTV0P2BASE::TemperatureC16_DS18B20 extDS18B20_0;
 
 #endif
 
@@ -210,7 +210,7 @@ extern AmbientLight AmbLight;
 
 // Sensor for ambient/room temperature in 1/16th of one degree Celsius.
 // An error may be indicated by returning a zero or (very) negative value.
-class RoomTemperatureC16 : public TemperatureC16Base // OTV0P2BASE::Sensor<int>
+class RoomTemperatureC16 : public OTV0P2BASE::TemperatureC16Base
   {
   private:
     // Room temperature in 16*C, eg 1 is 1/16 C, 32 is 2C, -64 is -4C.
