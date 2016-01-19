@@ -61,7 +61,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_Trial2013Winter_Round2_SECURE_NOHUB // REV2 cut4 leaf (valve/sensor) 2015/12 secure protocol.
 //#define CONFIG_Trial2013Winter_Round2_SECURE_HUB // REV2 cut4 hub (boiler/stats) 2015/12 secure protocol.
 //#define CONFIG_DHD_TESTLAB_REV4 // REV4 cut2.
-//#define CONFIG_DHD_TESTLAB_REV4_NOHUB // REV4 cut2, no hub.
+#define CONFIG_DHD_TESTLAB_REV4_NOHUB // REV4 cut2, no hub.
 //#define CONFIG_BH_DHW // Bo's hot water.
 //#define CONFIG_BH_TESTLAB // Bo's test environment.
 //#define CONFIG_DORM1_SANS32K // REV7 / DORM1 without working 32768Hz clock.
