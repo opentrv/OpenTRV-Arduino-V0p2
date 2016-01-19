@@ -47,7 +47,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as plain boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
 //#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
-#define CONFIG_DORM1 // REV7 / DORM1 Winter 2014/2015 all-in-one valve unit.
+//#define CONFIG_DORM1 // REV7 / DORM1 Winter 2014/2015 all-in-one valve unit.
 //#define CONFIG_DORM1_BOILER // REV8 / DORM1 Winter 2014/2015 boiler-control unit.
 //#define CONFIG_REV11_RAW_JSON // REV11 as raw JSON-only stats/sensor leaf.
 
@@ -61,14 +61,14 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_Trial2013Winter_Round2_SECURE_NOHUB // REV2 cut4 leaf (valve/sensor) 2015/12 secure protocol.
 //#define CONFIG_Trial2013Winter_Round2_SECURE_HUB // REV2 cut4 hub (boiler/stats) 2015/12 secure protocol.
 //#define CONFIG_DHD_TESTLAB_REV4 // REV4 cut2.
-#define CONFIG_DHD_TESTLAB_REV4_NOHUB // REV4 cut2, no hub.
+//#define CONFIG_DHD_TESTLAB_REV4_NOHUB // REV4 cut2, no hub.
 //#define CONFIG_BH_DHW // Bo's hot water.
 //#define CONFIG_BH_TESTLAB // Bo's test environment.
 //#define CONFIG_DORM1_SANS32K // REV7 / DORM1 without working 32768Hz clock.
 //#define CONFIG_DORM1_MUT // REV7 / DORM1 Winter 2014/2015 minimal for unit testing.
 //#define CONFIG_REV7N // REV7 with external "Model N" valve.
 //#define CONFIG_REV7_AS_SENSOR // REV7 as JSON-only stats/sensor leaf.
-//#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
+#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
 //#define CONFIG_REV9_STATS // REV9 as stats node, cut 2 of the board.
 //#define CONFIG_REV9_cut1 // REV9 as CC1 relay, cut1 of board.
 //#define CONFIG_DE_TESTLAB // Deniz's test environment.
@@ -1131,6 +1131,11 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // Override schedule on time to simple fixed value of 2h per BH request 2015/10/15.
 #define LEARNED_ON_PERIOD_M 120 // Must be <= 255.
 #define LEARNED_ON_PERIOD_COMFORT_M LEARNED_ON_PERIOD_M
+// Bo just wants the timing for his DHW; no occupancy sensing.
+// IF DEFINED: support for general timed and multi-input occupancy detection / use.
+#undef ENABLE_OCCUPANCY_SUPPORT
+// IF DEFINED: detect occupancy based on ambient light, if available.
+#undef ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
 // Use common settings.
 #define COMMON_SETTINGS
 #endif
