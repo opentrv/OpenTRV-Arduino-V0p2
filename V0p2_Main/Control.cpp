@@ -27,7 +27,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #include "Control.h"
 
 #include "V0p2_Sensors.h"
-#include "Radio.h"
 #include "UI_Minimal.h"
 
 

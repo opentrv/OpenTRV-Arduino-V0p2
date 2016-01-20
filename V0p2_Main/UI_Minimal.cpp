@@ -30,14 +30,13 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #include "V0p2_Sensors.h"
 #include "Control.h"
 #include "Messaging.h"
-#include "Radio.h"
 #include "UI_Minimal.h"
 
 
 
 // Marked true if the physical UI controls are being used.
 // Cleared at end of tickUI().
-// Marked voilatile for thread-safe lock-free non-read-modify-write access to byte-wide value.
+// Marked volatile for thread-safe lock-free non-read-modify-write access to byte-wide value.
 static volatile bool statusChange;
 
 // If non-zero then UI controls have been recently manually/locally operated; counts down to zero.
@@ -390,7 +389,6 @@ void checkUserSchedule()
 // where EXT is the name of the extension, usually 3 letters.
 
 #include <OTProtocolCC.h>
-#include "Radio.h"
 
 // It is acceptable for extCLIHandler() to alter the buffer passed,
 // eg with strtok_t().
