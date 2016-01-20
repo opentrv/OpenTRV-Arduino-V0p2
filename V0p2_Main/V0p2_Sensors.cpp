@@ -363,121 +363,121 @@ HumiditySensorSHT21 RelHumidity;
 
 
 
-// Functionality and code only enabled if ENABLE_PRIMARY_TEMP_SENSOR_DS18B20 is defined.
-#if defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20)
-
-#define DS1820_PRECISION_MASK 0x60
-#define DS1820_PRECISION_9 0x00
-#define DS1820_PRECISION_10 0x20
-#define DS1820_PRECISION_11 0x40 // 1/8C @ 375ms.
-#define DS1820_PRECISION_12 0x60 // 1/16C @ 750ms.
-
-// Run reduced precision (11 bit, 1/8C) for acceptable conversion time (375ms).
-#define DS1820_PRECISION DS1820_PRECISION_11 // 1/8C @ 375ms.
-
-//// Handle on device.
-//static OneWire ds18b20(DS1820_ONEWIRE_PIN);  
-
-// Set true once DS18B20 has been searched for and initialised.
-static bool sensor_DS18B10_initialised;
-// Address of (first) DS18B20 found, else [0] == 0 if none found.
-static uint8_t first_DS18B20_address[8];
-
-// Initialise the device (if any) before first use.
-// Returns true iff successful.
-// Uses first DS18B20 found on bus.
-static bool Sensor_DS18B10_init()
-  {
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("DS18B20 init...");
-  bool found = false;
-
-  // Ensure no bad search state.
-  MinOW_DEFAULT.reset_search();
-
-  for( ; ; )
-    {
-    if(!MinOW_DEFAULT.search(first_DS18B20_address))
-      {
-      MinOW_DEFAULT.reset_search(); // Be kind to any other OW search user.
-      break;
-      }
-
-#if 0 && defined(DEBUG)
-    // Found a device.
-    DEBUG_SERIAL_PRINT_FLASHSTRING("addr:");
-    for(int i = 0; i < 8; ++i)
-      {
-      DEBUG_SERIAL_PRINT(' ');
-      DEBUG_SERIAL_PRINTFMT(first_DS18B20_address[i], HEX);
-      }
-    DEBUG_SERIAL_PRINTLN();
-#endif
-
-    if(0x28 != first_DS18B20_address[0])
-      {
-#if 0 && defined(DEBUG)
-      DEBUG_SERIAL_PRINTLN_FLASHSTRING("Not a DS18B20, skipping...");
-#endif
-      continue;
-      }
-
-#if 0 && defined(DEBUG)
-    DEBUG_SERIAL_PRINTLN_FLASHSTRING("Setting precision...");
-#endif
-    MinOW_DEFAULT.reset();
-    // Write scratchpad/config
-    MinOW_DEFAULT.select(first_DS18B20_address);
-    MinOW_DEFAULT.write(0x4e);
-    MinOW_DEFAULT.write(0); // Th: not used.
-    MinOW_DEFAULT.write(0); // Tl: not used.
-    MinOW_DEFAULT.write(DS1820_PRECISION | 0x1f); // Config register; lsbs all 1.
-
-    // Found one and configured it!
-    found = true;
-    }
-
-  // Search has been run (whether DS18B20 was found or not).
-  sensor_DS18B10_initialised = true;
-
-  if(!found)
-    {
-    DEBUG_SERIAL_PRINTLN_FLASHSTRING("DS18B20 not found");
-    first_DS18B20_address[0] = 0; // Indicate no DS18B20 found.
-    }
-  return(found);
-  }
-
-// Returns temperature in C*16.
-// Returns <= 0 for some sorts of error as failsafe (RoomTemperatureC16::INVALID_TEMP if failed to initialise).
-static int16_t Sensor_DS18B10_readTemperatureC16()
-  {
-  if(!sensor_DS18B10_initialised) { Sensor_DS18B10_init(); }
-  if(0 == first_DS18B20_address[0]) { return(RoomTemperatureC16::INVALID_TEMP); }
-
-  // Start a temperature reading.
-  MinOW_DEFAULT.reset();
-  MinOW_DEFAULT.select(first_DS18B20_address);
-  MinOW_DEFAULT.write(0x44); // Start conversion without parasite power.
-  //delay(750); // 750ms should be enough.
-  // Poll for conversion complete (bus released)...
-  while(MinOW_DEFAULT.read_bit() == 0) { OTV0P2BASE::nap(WDTO_30MS); }
-
-  // Fetch temperature (scratchpad read).
-  MinOW_DEFAULT.reset();
-  MinOW_DEFAULT.select(first_DS18B20_address);    
-  MinOW_DEFAULT.write(0xbe);
-  // Read first two bytes of 9 available.  (No CRC config or check.)
-  const uint8_t d0 = MinOW_DEFAULT.read();
-  const uint8_t d1 = MinOW_DEFAULT.read();
-  // Terminate read and let DS18B20 go back to sleep.
-  MinOW_DEFAULT.reset();
-
-  // Extract raw temperature, masking any undefined lsbit.
-  const int16_t rawC16 = (d1 << 8) | (d0 & ~1);
-
-  return(rawC16);
-  }
-#endif
+//// Functionality and code only enabled if ENABLE_PRIMARY_TEMP_SENSOR_DS18B20 is defined.
+//#if defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20)
+//
+//#define DS1820_PRECISION_MASK 0x60
+//#define DS1820_PRECISION_9 0x00
+//#define DS1820_PRECISION_10 0x20
+//#define DS1820_PRECISION_11 0x40 // 1/8C @ 375ms.
+//#define DS1820_PRECISION_12 0x60 // 1/16C @ 750ms.
+//
+//// Run reduced precision (11 bit, 1/8C) for acceptable conversion time (375ms).
+//#define DS1820_PRECISION DS1820_PRECISION_11 // 1/8C @ 375ms.
+//
+////// Handle on device.
+////static OneWire ds18b20(DS1820_ONEWIRE_PIN);  
+//
+//// Set true once DS18B20 has been searched for and initialised.
+//static bool sensor_DS18B10_initialised;
+//// Address of (first) DS18B20 found, else [0] == 0 if none found.
+//static uint8_t first_DS18B20_address[8];
+//
+//// Initialise the device (if any) before first use.
+//// Returns true iff successful.
+//// Uses first DS18B20 found on bus.
+//static bool Sensor_DS18B10_init()
+//  {
+//  DEBUG_SERIAL_PRINTLN_FLASHSTRING("DS18B20 init...");
+//  bool found = false;
+//
+//  // Ensure no bad search state.
+//  MinOW_DEFAULT.reset_search();
+//
+//  for( ; ; )
+//    {
+//    if(!MinOW_DEFAULT.search(first_DS18B20_address))
+//      {
+//      MinOW_DEFAULT.reset_search(); // Be kind to any other OW search user.
+//      break;
+//      }
+//
+//#if 0 && defined(DEBUG)
+//    // Found a device.
+//    DEBUG_SERIAL_PRINT_FLASHSTRING("addr:");
+//    for(int i = 0; i < 8; ++i)
+//      {
+//      DEBUG_SERIAL_PRINT(' ');
+//      DEBUG_SERIAL_PRINTFMT(first_DS18B20_address[i], HEX);
+//      }
+//    DEBUG_SERIAL_PRINTLN();
+//#endif
+//
+//    if(0x28 != first_DS18B20_address[0])
+//      {
+//#if 0 && defined(DEBUG)
+//      DEBUG_SERIAL_PRINTLN_FLASHSTRING("Not a DS18B20, skipping...");
+//#endif
+//      continue;
+//      }
+//
+//#if 0 && defined(DEBUG)
+//    DEBUG_SERIAL_PRINTLN_FLASHSTRING("Setting precision...");
+//#endif
+//    MinOW_DEFAULT.reset();
+//    // Write scratchpad/config
+//    MinOW_DEFAULT.select(first_DS18B20_address);
+//    MinOW_DEFAULT.write(0x4e);
+//    MinOW_DEFAULT.write(0); // Th: not used.
+//    MinOW_DEFAULT.write(0); // Tl: not used.
+//    MinOW_DEFAULT.write(DS1820_PRECISION | 0x1f); // Config register; lsbs all 1.
+//
+//    // Found one and configured it!
+//    found = true;
+//    }
+//
+//  // Search has been run (whether DS18B20 was found or not).
+//  sensor_DS18B10_initialised = true;
+//
+//  if(!found)
+//    {
+//    DEBUG_SERIAL_PRINTLN_FLASHSTRING("DS18B20 not found");
+//    first_DS18B20_address[0] = 0; // Indicate no DS18B20 found.
+//    }
+//  return(found);
+//  }
+//
+//// Returns temperature in C*16.
+//// Returns <= 0 for some sorts of error as failsafe (RoomTemperatureC16::INVALID_TEMP if failed to initialise).
+//static int16_t Sensor_DS18B10_readTemperatureC16()
+//  {
+//  if(!sensor_DS18B10_initialised) { Sensor_DS18B10_init(); }
+//  if(0 == first_DS18B20_address[0]) { return(RoomTemperatureC16::INVALID_TEMP); }
+//
+//  // Start a temperature reading.
+//  MinOW_DEFAULT.reset();
+//  MinOW_DEFAULT.select(first_DS18B20_address);
+//  MinOW_DEFAULT.write(0x44); // Start conversion without parasite power.
+//  //delay(750); // 750ms should be enough.
+//  // Poll for conversion complete (bus released)...
+//  while(MinOW_DEFAULT.read_bit() == 0) { OTV0P2BASE::nap(WDTO_30MS); }
+//
+//  // Fetch temperature (scratchpad read).
+//  MinOW_DEFAULT.reset();
+//  MinOW_DEFAULT.select(first_DS18B20_address);    
+//  MinOW_DEFAULT.write(0xbe);
+//  // Read first two bytes of 9 available.  (No CRC config or check.)
+//  const uint8_t d0 = MinOW_DEFAULT.read();
+//  const uint8_t d1 = MinOW_DEFAULT.read();
+//  // Terminate read and let DS18B20 go back to sleep.
+//  MinOW_DEFAULT.reset();
+//
+//  // Extract raw temperature, masking any undefined lsbit.
+//  const int16_t rawC16 = (d1 << 8) | (d0 & ~1);
+//
+//  return(rawC16);
+//  }
+//#endif
 
 
 //// Median filter.
@@ -524,9 +524,7 @@ static int16_t Sensor_DS18B10_readTemperatureC16()
 //  }
 
 
-
-// Singleton implementation/instance.
-RoomTemperatureC16 TemperatureC16;
+#if !defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20)
 
 // Temperature read uses/selects one of the implementations/sensors.
 int16_t RoomTemperatureC16::read()
@@ -538,10 +536,18 @@ int16_t RoomTemperatureC16::read()
 #else
   const int raw = TMP112_readTemperatureC16();
 #endif
-
   value = raw;
   return(value);
   }
+
+// Singleton implementation/instance.
+RoomTemperatureC16 TemperatureC16;
+
+// DSB18B20 temperature impl, with slightly reduced precision to improve speed.
+#elif defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20) && defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
+OTV0P2BASE::TemperatureC16_DS18B20 TemperatureC16(MinOW_DEFAULT, 0, OTV0P2BASE::TemperatureC16_DS18B20::MAX_PRECISION-1);
+
+#endif // defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20)
 
 
 #ifdef ENABLE_VOICE_SENSOR
