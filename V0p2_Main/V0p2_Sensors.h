@@ -27,11 +27,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
 #include <util/atomic.h>
 #include <Arduino.h>
 #include <OTV0p2Base.h>
-
-#include "V0p2_Main.h"
-
 #include <OTRadioLink.h>
 #include <OTRadValve.h>
+
+#include "V0p2_Main.h"
 
 #include "Messaging.h"
 
