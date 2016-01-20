@@ -19,7 +19,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
 */
 
 /*
- V0p2 boards physical sensor support.
+ * Header for common on-board and external sensors and actuators for V0p2 variants.
  */
 #include <stdint.h>
 #include <limits.h>

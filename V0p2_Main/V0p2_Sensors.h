@@ -18,7 +18,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
 */
 
 /*
- * Header for main on-board sensors and actuators for V0p2 variants.
+ * Header for common on-board and external sensors and actuators for V0p2 variants.
  */
 
 #ifndef V0P2_SENSORS_H
