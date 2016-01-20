@@ -1059,16 +1059,6 @@ static void updateSensorsFromStats()
 
 
 
-// 'Elapsed minutes' count of minute/major cycles; cheaper than accessing RTC and not tied to real time.
-// Starts at or just above zero (within the first 4-minute cycle) to help avoid collisions between units after mass power-up.
-// Wraps at its maximum (0xff) value.
-static uint8_t minuteCount;
-
-#if !defined(DONT_RANDOMISE_MINUTE_CYCLE)
-// Local count for seconds-within-minute; not tied to RTC and helps prevent collisions between (eg) TX of different units.
-static uint8_t localTicks;
-#endif
-
 #if defined(ENABLE_BOILER_HUB)
 // Ticks until locally-controlled boiler should be turned off; boiler should be on while this is positive.
 // Ticks are the mail loop time, 1s or 2s.
@@ -1092,6 +1082,11 @@ static uint8_t boilerNoCallM;
 #define TIME_LSD_IS_BINARY // TIME_LSD is in binary (cf BCD).
 #define TIME_CYCLE_S 60 // TIME_LSD ranges from 0 to TIME_CYCLE_S-1, also major cycle length.
 static uint_fast8_t TIME_LSD; // Controller's notion of seconds within major cycle.
+
+// 'Elapsed minutes' count of minute/major cycles; cheaper than accessing RTC and not tied to real time.
+// Starts at or just above zero (within the first 4-minute cycle) to help avoid collisions between units after mass power-up.
+// Wraps at its maximum (0xff) value.
+static uint8_t minuteCount;
 
 // Mask for Port B input change interrupts.
 #define MASK_PB_BASIC 0b00000000 // Nothing.
@@ -1216,7 +1211,7 @@ void setupOpenTRV()
   // Uses some decent noise to try to start the units separated.
   const uint8_t b = OTV0P2BASE::getSecureRandomByte(); // randRNG8();
   // Start within bottom half of minute (or close to); sensor readings happen in second half.
-  localTicks = (b >> 1) & 0x1e; // Must be even for 2s tick.
+  OTV0P2BASE::setSeconds(b >> 2);
   // Start anywhere in first 4 minute cycle.
   minuteCount = b & 3;
 #endif
@@ -1588,14 +1583,6 @@ void loopOpenTRV()
 #endif
 #endif
 
-//#if defined(CONFIG_FORCE_TO_RX_MODE_REGULARLY)
-//  // Force radio off (to be forced on again)
-//  // to try to get into a reasonable state.
-//  // BODGE: should not be necessary.
-//  // May cause incoming frames to be lost.
-//  PrimaryRadio.listen(false);
-//#endif
-
   // Act on eavesdropping need, setting up or clearing down hooks as required.
   PrimaryRadio.listen(needsToEavesdrop);
 //#if defined(ENABLE_FHT8VSIMPLE)
@@ -1644,7 +1631,6 @@ void loopOpenTRV()
   // Periodically (every few hours) force radio off or at least to be not listening.
   if((30 == TIME_LSD) && (128 == minuteCount)) { PrimaryRadio.listen(false); }
 #endif // CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX
-
 
 
   // Set BOILER_OUT as appropriate for calls for heat.
@@ -1853,18 +1839,7 @@ void loopOpenTRV()
   // TODO: ensure only take ambient light reading at times when all LEDs are off.
   const bool runAll = (!conserveBattery) || minute0From4ForSensors || (minuteCount < 4);
 
-#if defined(DONT_RANDOMISE_MINUTE_CYCLE)
-//  static uint8_t localTicks = XXX;
-#if defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
-  localTicks += 2;
-#else
-  localTicks += 1;
-#endif
-  if(localTicks >= 60) { localTicks = 0; }
-  switch(localTicks) // With V0P2BASE_TWO_S_TICK_RTC_SUPPORT only even seconds are available.
-#else
   switch(TIME_LSD) // With V0P2BASE_TWO_S_TICK_RTC_SUPPORT only even seconds are available.
-#endif
     {
     case 0:
       {
