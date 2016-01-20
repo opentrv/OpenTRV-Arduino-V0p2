@@ -39,11 +39,15 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
 // Meant to be similar to use to OneWire library V2.2.
 // Supports search but not necessarily CRC.
 // Designed to work with 1MHz/1MIPS CPU clock.
-
-
 #if defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
 #define SUPPORTS_MINIMAL_ONEWIRE
 extern OTV0P2BASE::MinimalOneWire<> MinOW_DEFAULT_OWDQ;
+#endif
+
+
+#if defined(ENABLE_EXTERNAL_TEMP_SENSOR_DS18B20) && defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
+#define SENSOR_EXTERNAL_DS18B20_ENABLE_0 // Enable sensor zero.
+extern OTV0P2BASE::TemperatureC16_DS18B20 extDS18B20_0;
 #endif
 
 
@@ -66,12 +70,6 @@ extern OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
 extern OTV0P2BASE::SensorTemperaturePot TempPot;
 #endif
 #endif // ENABLE_TEMP_POT_IF_PRESENT
-
-
-#if defined(ENABLE_EXTERNAL_TEMP_SENSOR_DS18B20) && defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
-#define SENSOR_EXTERNAL_DS18B20_ENABLE_0 // Enable sensor zero.
-extern OTV0P2BASE::TemperatureC16_DS18B20 extDS18B20_0;
-#endif
 
 
 // Sense (usually non-linearly) over full likely internal ambient lighting range of a (UK) home,

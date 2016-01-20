@@ -35,6 +35,16 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
 #include "UI_Minimal.h"
 
 
+#if defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
+OTV0P2BASE::MinimalOneWire<> MinOW_DEFAULT;
+#endif
+
+
+#if defined(SENSOR_EXTERNAL_DS18B20_ENABLE_0) // Enable sensor zero.
+OTV0P2BASE::TemperatureC16_DS18B20 extDS18B20_0(MinOW_DEFAULT, 0);
+#endif
+
+
 // Singleton implementation/instance.
 OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
 
@@ -46,11 +56,6 @@ OTV0P2BASE::SensorTemperaturePot TempPot(OTV0P2BASE::SensorTemperaturePot::TEMP_
 #else
 OTV0P2BASE::SensorTemperaturePot TempPot(0, OTV0P2BASE::SensorTemperaturePot::TEMP_POT_RAW_MAX);
 #endif // defined(TEMP_POT_REVERSE)
-#endif
-
-
-#if defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
-OTV0P2BASE::MinimalOneWire<> MinOW_DEFAULT;
 #endif
 
 
@@ -537,11 +542,6 @@ int16_t RoomTemperatureC16::read()
   value = raw;
   return(value);
   }
-
-
-#if defined(SENSOR_EXTERNAL_DS18B20_ENABLE_0) // Enable sensor zero.
-OTV0P2BASE::TemperatureC16_DS18B20 extDS18B20_0(MinOW_DEFAULT, 0);
-#endif
 
 
 #ifdef ENABLE_VOICE_SENSOR
