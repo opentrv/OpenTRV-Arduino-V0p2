@@ -1,0 +1,15 @@
+Acceptance tests after moving hub/relay (REV2/REV9) comms to new channel:
+
+ 1) The REV9 can still control the FHT8V, including initial sync, as commanded by the REV2 remotely
+ 2) The protocol between REV2 and REV9 is working as before (on the new channel)
+ 3) The new and old channels do not interfere
+
+
+What things should look like from the hub (REV2 side):
+
+20150803HubInteraction.txt
+
+What things look like from the REV9 side:
+
+20150806InstallBasics.txt
+ 
