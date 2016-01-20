@@ -34,9 +34,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
 #include "Control.h"
 #include "UI_Minimal.h"
 
-#if defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
-OTV0P2BASE::MinimalOneWire<> MinOW_DEFAULT;
-#endif
 
 // Singleton implementation/instance.
 OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
@@ -52,53 +49,17 @@ OTV0P2BASE::SensorTemperaturePot TempPot(0, OTV0P2BASE::SensorTemperaturePot::TE
 #endif
 
 
-#ifdef ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
+#if defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
+OTV0P2BASE::MinimalOneWire<> MinOW_DEFAULT;
+#endif
+
+
+#ifdef ENABLE_AMBLIGHT_SENSOR
 
 // Normal 2 bit shift between raw and externally-presented values.
 static const uint8_t shiftRawScaleTo8Bit = 2;
 
-//// Note on: phototransistor variant.
-//// Note that if AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400 is defined
-//// This expects a current-response phototransistor in place of the LDR
-//// with roughly full-scale value in full light against internal 1.1V reference
-//// not against supply voltage as usual.
-//
 #ifdef AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
-//#define ALREFERENCE INTERNAL // Internal 1.1V reference.
-//
-//#ifdef AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400_WRONG_WAY // Schematic error in one board!
-//#define ALREFERENCE DEFAULT // Supply voltage as reference for REV9 cut1.  HACK HACK!
-//#endif // AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400_WRONG_WAY
-//
-//// If defined, then allow adaptive compression of top part of range when would otherwise max out.
-//// This may be somewhat supply-voltage dependent, eg capped by the supply voltage.
-//// Supply voltage is expected to be 2--3 times the bandgap reference, typically.
-////#define ADAPTIVE_THRESHOLD 896U // (1024-128) Top ~10%, companding by 8x.
-////#define ADAPTIVE_THRESHOLD 683U // (1024-683) Top ~33%, companding by 4x.
-////static const uint16_t scaleFactor = (extendedScale - ADAPTIVE_THRESHOLD) / (normalScale - ADAPTIVE_THRESHOLD);
-//// Assuming typical V supply of 2--3 times Vbandgap,
-//// compress above threshold to extend top of range by a factor of two.
-//// Ensure that scale stays monotonic in face of calculation lumpiness, etc...
-//// Scale all remaining space above threshold to new top value into remaining space.
-//// Ensure scaleFactor is a power of two for speed.
-//
-//#ifndef ENABLE_AMBLIGHT_EXTRA_SENSITIVE 
-//// Don't extend the dynamic range of this ambient light sensor
-//// if the photosensor is badly located or otherwise needs to be made more sensitive.
-////
-//// IF DEFINED: extend optosensor range as far as possible at the expense of loss of linearity.
-//#define EXTEND_OPTO_SENSOR_RANGE
-//// Switch to measuring against supply voltage to maximise range.
-//// Will be severely non-linear at top end
-//// and will change with battery voltage at bottom end,
-//// but rely on dynamic adaptation to deal with some of that.
-//// Note that with low supply voltage headroom there may not be much linear range if any.
-//#undef ALREFERENCE
-//#define ALREFERENCE DEFAULT
-////static const uint16_t extendedScale = 2048;
-////static const uint8_t shiftExtendedToRawScale = 1;
-//#endif
-//
 // This implementation expects a phototransitor TEPT4400 (50nA dark current, nominal 200uA@100lx@Vce=50V) from IO_POWER_UP to LDR_SENSOR_AIN and 220k to ground.
 // Measurement should be taken wrt to internal fixed 1.1V bandgap reference, since light indication is current flow across a fixed resistor.
 // Aiming for maximum reading at or above 100--300lx, ie decent domestic internal lighting.
@@ -136,10 +97,9 @@ static const int LDR_THR_HIGH = 200U; // Was 35.
 
 #endif // AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 
-
 // Singleton implementation/instance.
 AmbientLight AmbLight(LDR_THR_HIGH >> shiftRawScaleTo8Bit);
-#endif // ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
+#endif // ENABLE_AMBLIGHT_SENSOR
 
 
 
@@ -159,7 +119,7 @@ AmbientLight AmbLight(LDR_THR_HIGH >> shiftRawScaleTo8Bit);
 #define TMP102_CTRL_B1_OS 0x80 // Control register: one-shot flag in byte 1.
 #define TMP102_CTRL_B2 0x0 // Byte 2 for control register: 0.25Hz conversion rate and not extended mode (EM).
 
-#if !defined(ENABLE_SENSOR_SHT21) && !defined(SENSOR_DS18B20_ENABLE) // Don't use TMP112 if SHT21 or DS18B20 are available.
+#if !defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21) && !defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20) // Don't use TMP112 if SHT21 or DS18B20 are available.
 // Measure/store/return the current room ambient temperature in units of 1/16th C.
 // This may contain up to 4 bits of information to the right of the fixed binary point.
 // This may consume significant power and time.
@@ -238,8 +198,8 @@ static int16_t TMP112_readTemperatureC16()
 
 
 
-// Functionality and code only enabled if ENABLE_SENSOR_SHT21 is defined.
-#if defined(ENABLE_SENSOR_SHT21)
+// Functionality and code only enabled if ENABLE_PRIMARY_TEMP_SENSOR_SHT21 is defined.
+#if defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21)
 
 #define SHT21_I2C_ADDR 0x40
 #define SHT21_I2C_CMD_TEMP_HOLD	0xe3
@@ -398,8 +358,8 @@ HumiditySensorSHT21 RelHumidity;
 
 
 
-// Functionality and code only enabled if SENSOR_DS18B20_ENABLE is defined.
-#if defined(SENSOR_DS18B20_ENABLE)
+// Functionality and code only enabled if ENABLE_PRIMARY_TEMP_SENSOR_DS18B20 is defined.
+#if defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20)
 
 #define DS1820_PRECISION_MASK 0x60
 #define DS1820_PRECISION_9 0x00
@@ -566,9 +526,9 @@ RoomTemperatureC16 TemperatureC16;
 // Temperature read uses/selects one of the implementations/sensors.
 int16_t RoomTemperatureC16::read()
   {
-#if defined(SENSOR_DS18B20_ENABLE)
+#if defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20)
   const int raw = Sensor_DS18B10_readTemperatureC16();
-#elif defined(ENABLE_SENSOR_SHT21)
+#elif defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21)
   const int raw = Sensor_SHT21_readTemperatureC16();
 #else
   const int raw = TMP112_readTemperatureC16();

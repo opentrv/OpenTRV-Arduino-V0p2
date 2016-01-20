@@ -69,7 +69,7 @@ extern OTV0P2BASE::SensorTemperaturePot TempPot;
 #endif // ENABLE_TEMP_POT_IF_PRESENT
 
 
-#if defined(SENSOR_EXTERNAL_DS18B20_ENABLE) && defined(SUPPORTS_MINIMAL_ONEWIRE)
+#if defined(ENABLE_EXTERNAL_TEMP_SENSOR_DS18B20) && defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
 #define SENSOR_EXTERNAL_DS18B20_ENABLE_0 // Enable sensor zero.
 extern OTV0P2BASE::TemperatureC16_DS18B20 extDS18B20_0;
 #endif
@@ -83,12 +83,12 @@ extern OTV0P2BASE::TemperatureC16_DS18B20 extDS18B20_0;
 // http://www.pocklington-trust.org.uk/Resources/Thomas%20Pocklington/Documents/PDF/Research%20Publications/GPG5.pdf
 // http://www.vishay.com/docs/84154/appnotesensors.pdf
 
-#ifdef ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
+#ifdef ENABLE_AMBLIGHT_SENSOR
 // Sensor for ambient light level; 0 is dark, 255 is bright.
 typedef OTV0P2BASE::SensorAmbientLight AmbientLight;
-#else // !defined(ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT)
+#else // !defined(ENABLE_AMBLIGHT_SENSOR)
 typedef OTV0P2BASE::DummySensorAmbientLight AmbientLight; // Dummy stand-in.
-#endif // ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
+#endif // ENABLE_AMBLIGHT_SENSOR
 // Singleton implementation/instance.
 extern AmbientLight AmbLight;
 
@@ -136,7 +136,7 @@ class RoomTemperatureC16 : public OTV0P2BASE::TemperatureC16Base
 
     // Returns true if the underlying sensor precision (or accuracy) is coarser than 1/16th C.
     // If true this implies an actual precision of about 1/8th C.
-#ifdef SENSOR_DS18B20_ENABLE
+#ifdef ENABLE_PRIMARY_TEMP_SENSOR_DS18B20
 #define ROOM_TEMP_REDUCED_PRECISION
     // Returns number of useful binary digits after the binary point; default is 4.
     virtual int8_t getBitsAfterPoint() const { return(3); }
@@ -174,13 +174,13 @@ static const uint8_t HUMIDITY_OCCUPANCY_PC_MIN_RISE_PER_H = 3;
 // more sophisticated implementations may wish to make run-time checks.
 
 // If SHT21 support is enabled at compile-time then its humidity sensor may be used at run-time.
-#if defined(ENABLE_SENSOR_SHT21)
+#if defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21)
 #define HUMIDITY_SENSOR_SUPPORT // Humidity sensing available.
 #endif
 
 // If humidity is supported, provide definitions.
-#if defined(ENABLE_SENSOR_SHT21)
-// Functionality and code only enabled if ENABLE_SENSOR_SHT21 is defined.
+#if defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21)
+// Functionality and code only enabled if ENABLE_PRIMARY_TEMP_SENSOR_SHT21 is defined.
 // Sensor for relative humidity percentage; 0 is dry, 100 is condensing humid, 255 for error.
 class HumiditySensorSHT21 : public OTV0P2BASE::SimpleTSUint8Sensor
   {

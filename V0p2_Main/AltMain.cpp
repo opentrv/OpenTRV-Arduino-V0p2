@@ -393,9 +393,9 @@ void loopAlt()
     // This allows the unit to respond consistently to (eg) switching lights on (eg TODO-388).
     case 20: { AmbLight.read(); break; }
 
-#if defined(SENSOR_DS18B20_ENABLE)
+#if defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20)
     case 30: { TemperatureC16.read(); break; }
-#endif // SENSOR_DS18B20_ENABLE
+#endif // ENABLE_PRIMARY_TEMP_SENSOR_DS18B20
 
 #if defined(ENABLE_VOICE_SENSOR)
       // read voice sensor
