@@ -427,13 +427,13 @@ static bool Sensor_DS18B10_init()
   bool found = false;
 
   // Ensure no bad search state.
-  minOW.reset_search();
+  MinOW_DEFAULT.reset_search();
 
   for( ; ; )
     {
-    if(!minOW.search(first_DS18B20_address))
+    if(!MinOW_DEFAULT.search(first_DS18B20_address))
       {
-      minOW.reset_search(); // Be kind to any other OW search user.
+      MinOW_DEFAULT.reset_search(); // Be kind to any other OW search user.
       break;
       }
 
@@ -459,13 +459,13 @@ static bool Sensor_DS18B10_init()
 #if 0 && defined(DEBUG)
     DEBUG_SERIAL_PRINTLN_FLASHSTRING("Setting precision...");
 #endif
-    minOW.reset();
+    MinOW_DEFAULT.reset();
     // Write scratchpad/config
-    minOW.select(first_DS18B20_address);
-    minOW.write(0x4e);
-    minOW.write(0); // Th: not used.
-    minOW.write(0); // Tl: not used.
-    minOW.write(DS1820_PRECISION | 0x1f); // Config register; lsbs all 1.
+    MinOW_DEFAULT.select(first_DS18B20_address);
+    MinOW_DEFAULT.write(0x4e);
+    MinOW_DEFAULT.write(0); // Th: not used.
+    MinOW_DEFAULT.write(0); // Tl: not used.
+    MinOW_DEFAULT.write(DS1820_PRECISION | 0x1f); // Config register; lsbs all 1.
 
     // Found one and configured it!
     found = true;
@@ -490,22 +490,22 @@ static int16_t Sensor_DS18B10_readTemperatureC16()
   if(0 == first_DS18B20_address[0]) { return(RoomTemperatureC16::INVALID_TEMP); }
 
   // Start a temperature reading.
-  minOW.reset();
-  minOW.select(first_DS18B20_address);
-  minOW.write(0x44); // Start conversion without parasite power.
+  MinOW_DEFAULT.reset();
+  MinOW_DEFAULT.select(first_DS18B20_address);
+  MinOW_DEFAULT.write(0x44); // Start conversion without parasite power.
   //delay(750); // 750ms should be enough.
   // Poll for conversion complete (bus released)...
-  while(minOW.read_bit() == 0) { OTV0P2BASE::nap(WDTO_30MS); }
+  while(MinOW_DEFAULT.read_bit() == 0) { OTV0P2BASE::nap(WDTO_30MS); }
 
   // Fetch temperature (scratchpad read).
-  minOW.reset();
-  minOW.select(first_DS18B20_address);    
-  minOW.write(0xbe);
+  MinOW_DEFAULT.reset();
+  MinOW_DEFAULT.select(first_DS18B20_address);    
+  MinOW_DEFAULT.write(0xbe);
   // Read first two bytes of 9 available.  (No CRC config or check.)
-  const uint8_t d0 = minOW.read();
-  const uint8_t d1 = minOW.read();
+  const uint8_t d0 = MinOW_DEFAULT.read();
+  const uint8_t d1 = MinOW_DEFAULT.read();
   // Terminate read and let DS18B20 go back to sleep.
-  minOW.reset();
+  MinOW_DEFAULT.reset();
 
   // Extract raw temperature, masking any undefined lsbit.
   const int16_t rawC16 = (d1 << 8) | (d0 & ~1);
