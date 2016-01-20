@@ -36,7 +36,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 
 // Marked true if the physical UI controls are being used.
 // Cleared at end of tickUI().
-// Marked voilatile for thread-safe lock-free non-read-modify-write access to byte-wide value.
+// Marked volatile for thread-safe lock-free non-read-modify-write access to byte-wide value.
 static volatile bool statusChange;
 
 // If non-zero then UI controls have been recently manually/locally operated; counts down to zero.
