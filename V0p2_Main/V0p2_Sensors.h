@@ -44,8 +44,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
 extern OTV0P2BASE::MinimalOneWire<> MinOW_DEFAULT_OWDQ;
 #endif
 
-
-#if defined(ENABLE_EXTERNAL_TEMP_SENSOR_DS18B20) && defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
+// Cannot have internal and external use of same DS18B20 at same time...
+#if defined(ENABLE_EXTERNAL_TEMP_SENSOR_DS18B20) && !defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20) && defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
 #define SENSOR_EXTERNAL_DS18B20_ENABLE_0 // Enable sensor zero.
 extern OTV0P2BASE::TemperatureC16_DS18B20 extDS18B20_0;
 #endif
@@ -90,7 +90,7 @@ typedef OTV0P2BASE::DummySensorAmbientLight AmbientLight; // Dummy stand-in.
 extern AmbientLight AmbLight;
 
 
-
+#if !defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20)
 // Room/ambient temperature, usually from the on-board sensor.
 
 // Sensor for ambient/room temperature in 1/16th of one degree Celsius.
@@ -134,7 +134,6 @@ class RoomTemperatureC16 : public OTV0P2BASE::TemperatureC16Base
     // Returns true if the underlying sensor precision (or accuracy) is coarser than 1/16th C.
     // If true this implies an actual precision of about 1/8th C.
 #ifdef ENABLE_PRIMARY_TEMP_SENSOR_DS18B20
-#define ROOM_TEMP_REDUCED_PRECISION
     // Returns number of useful binary digits after the binary point; default is 4.
     virtual int8_t getBitsAfterPoint() const { return(3); }
 //    bool isLowPrecision() const { return(true); } // Requests lower precision from DS18B20 to give an acceptable conversion time.
@@ -143,9 +142,10 @@ class RoomTemperatureC16 : public OTV0P2BASE::TemperatureC16Base
 // Singleton implementation/instance.
 extern RoomTemperatureC16 TemperatureC16;
 
-
-
-
+// DSB18B20 temperature impl, with slightly reduced precision to improve speed.
+#elif defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20) && defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
+extern OTV0P2BASE::TemperatureC16_DS18B20 TemperatureC16;
+#endif
 
 
 

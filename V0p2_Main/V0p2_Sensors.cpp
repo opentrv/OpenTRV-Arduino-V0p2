@@ -60,10 +60,8 @@ OTV0P2BASE::SensorTemperaturePot TempPot(0, OTV0P2BASE::SensorTemperaturePot::TE
 
 
 #ifdef ENABLE_AMBLIGHT_SENSOR
-
 // Normal 2 bit shift between raw and externally-presented values.
 static const uint8_t shiftRawScaleTo8Bit = 2;
-
 #ifdef AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // This implementation expects a phototransitor TEPT4400 (50nA dark current, nominal 200uA@100lx@Vce=50V) from IO_POWER_UP to LDR_SENSOR_AIN and 220k to ground.
 // Measurement should be taken wrt to internal fixed 1.1V bandgap reference, since light indication is current flow across a fixed resistor.
@@ -84,14 +82,10 @@ static const int LDR_THR_HIGH = 250U;
 static const int LDR_THR_LOW = 270U;
 static const int LDR_THR_HIGH = 400U;
 #endif
-
 #else // LDR (!defined(AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400))
-
 // This implementation expects an LDR (1M dark resistance) from IO_POWER_UP to LDR_SENSOR_AIN and 100k to ground.
 // Measurement should be taken wrt to supply voltage, since light indication is a fraction of that.
 // Values below from PICAXE V0.09 impl approx multiplied by 4+ to allow for scale change.
-#define ALREFERENCE DEFAULT // Supply voltage as reference.
-
 #ifdef ENABLE_AMBLIGHT_EXTRA_SENSITIVE // Define if LDR not exposed to much light, eg for REV2 cut4 sideways-pointing LDR (TODO-209).
 static const int LDR_THR_LOW = 50U;
 static const int LDR_THR_HIGH = 70U; 
@@ -99,32 +93,22 @@ static const int LDR_THR_HIGH = 70U;
 static const int LDR_THR_LOW = 160U; // Was 30.
 static const int LDR_THR_HIGH = 200U; // Was 35.
 #endif // ENABLE_AMBLIGHT_EXTRA_SENSITIVE
-
 #endif // AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
-
 // Singleton implementation/instance.
 AmbientLight AmbLight(LDR_THR_HIGH >> shiftRawScaleTo8Bit);
 #endif // ENABLE_AMBLIGHT_SENSOR
 
 
-
-
-
-
-
-
-
-
+#if !defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21) && !defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20) // Don't use TMP112 if SHT21 or DS18B20 are available.
 
 // TMP102 and TMP112 should be interchangeable: latter has better guaranteed accuracy.
-#define TMP102_I2C_ADDR 72
-#define TMP102_REG_TEMP 0 // Temperature register.
-#define TMP102_REG_CTRL 1 // Control register.
-#define TMP102_CTRL_B1 0x31 // Byte 1 for control register: 12-bit resolution and shutdown mode (SD).
-#define TMP102_CTRL_B1_OS 0x80 // Control register: one-shot flag in byte 1.
-#define TMP102_CTRL_B2 0x0 // Byte 2 for control register: 0.25Hz conversion rate and not extended mode (EM).
+static const uint8_t TMP102_I2C_ADDR = 72;
+static const uint8_t TMP102_REG_TEMP = 0; // Temperature register.
+static const uint8_t TMP102_REG_CTRL = 1; // Control register.
+static const uint8_t TMP102_CTRL_B1 = 0x31; // Byte 1 for control register: 12-bit resolution and shutdown mode (SD).
+static const uint8_t TMP102_CTRL_B1_OS = 0x80; // Control register: one-shot flag in byte 1.
+static const uint8_t TMP102_CTRL_B2 = 0x0; // Byte 2 for control register: 0.25Hz conversion rate and not extended mode (EM).
 
-#if !defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21) && !defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20) // Don't use TMP112 if SHT21 or DS18B20 are available.
 // Measure/store/return the current room ambient temperature in units of 1/16th C.
 // This may contain up to 4 bits of information to the right of the fixed binary point.
 // This may consume significant power and time.
@@ -161,14 +145,14 @@ static int16_t TMP112_readTemperatureC16()
 #endif
   Wire.beginTransmission(TMP102_I2C_ADDR);
   Wire.write((byte) TMP102_REG_CTRL); // Select control register.
-  if(Wire.endTransmission()) { return(0); } // Exit if error.
+  if(Wire.endTransmission()) { return(RoomTemperatureC16::INVALID_TEMP); } // Exit if error.
   for(int i = 8; --i; ) // 2 orbits should generally be plenty.
     {
-    if(i <= 0) { return(0); } // Exit if error.
-    if(Wire.requestFrom(TMP102_I2C_ADDR, 1) != 1) { return(RoomTemperatureC16::INVALID_TEMP); } // Exit if error.
+    if(i <= 0) { return(RoomTemperatureC16::INVALID_TEMP); } // Exit if error.
+    if(Wire.requestFrom(TMP102_I2C_ADDR, 1U) != 1) { return(RoomTemperatureC16::INVALID_TEMP); } // Exit if error.
     const byte b1 = Wire.read();
     if(b1 & TMP102_CTRL_B1_OS) { break; } // Conversion completed.
-    ::OTV0P2BASE::nap(WDTO_15MS); // One or two of these naps should allow typical ~26ms conversion to complete...
+    OTV0P2BASE::nap(WDTO_15MS); // One or two of these naps should allow typical ~26ms conversion to complete...
     }
 
   // Fetch temperature.
@@ -178,7 +162,7 @@ static int16_t TMP112_readTemperatureC16()
   Wire.beginTransmission(TMP102_I2C_ADDR);
   Wire.write((byte) TMP102_REG_TEMP); // Select temperature register (set ptr to 0).
   if(Wire.endTransmission()) { return(RoomTemperatureC16::INVALID_TEMP); } // Exit if error.
-  if(Wire.requestFrom(TMP102_I2C_ADDR, 2) != 2)  { return(0); }
+  if(Wire.requestFrom(TMP102_I2C_ADDR, 2U) != 2)  { return(RoomTemperatureC16::INVALID_TEMP); }
   if(Wire.endTransmission()) { return(RoomTemperatureC16::INVALID_TEMP); } // Exit if error.
 
   const byte b1 = Wire.read(); // MSByte, should be signed whole degrees C.
@@ -229,7 +213,7 @@ static void SHT21_init()
   Wire.beginTransmission(SHT21_I2C_ADDR);
   Wire.write((byte) SHT21_I2C_CMD_USERREG); // Select control register.
   Wire.endTransmission();
-  Wire.requestFrom(SHT21_I2C_ADDR, 1);
+  Wire.requestFrom(SHT21_I2C_ADDR, 1U);
   while(Wire.available() < 1)
     {
     // Wait for data, but avoid rolling over the end of a minor cycle...
@@ -363,185 +347,25 @@ HumiditySensorSHT21 RelHumidity;
 
 
 
-// Functionality and code only enabled if ENABLE_PRIMARY_TEMP_SENSOR_DS18B20 is defined.
-#if defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20)
-
-#define DS1820_PRECISION_MASK 0x60
-#define DS1820_PRECISION_9 0x00
-#define DS1820_PRECISION_10 0x20
-#define DS1820_PRECISION_11 0x40 // 1/8C @ 375ms.
-#define DS1820_PRECISION_12 0x60 // 1/16C @ 750ms.
-
-// Run reduced precision (11 bit, 1/8C) for acceptable conversion time (375ms).
-#define DS1820_PRECISION DS1820_PRECISION_11 // 1/8C @ 375ms.
-
-//// Handle on device.
-//static OneWire ds18b20(DS1820_ONEWIRE_PIN);  
-
-// Set true once DS18B20 has been searched for and initialised.
-static bool sensor_DS18B10_initialised;
-// Address of (first) DS18B20 found, else [0] == 0 if none found.
-static uint8_t first_DS18B20_address[8];
-
-// Initialise the device (if any) before first use.
-// Returns true iff successful.
-// Uses first DS18B20 found on bus.
-static bool Sensor_DS18B10_init()
-  {
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("DS18B20 init...");
-  bool found = false;
-
-  // Ensure no bad search state.
-  MinOW_DEFAULT.reset_search();
-
-  for( ; ; )
-    {
-    if(!MinOW_DEFAULT.search(first_DS18B20_address))
-      {
-      MinOW_DEFAULT.reset_search(); // Be kind to any other OW search user.
-      break;
-      }
-
-#if 0 && defined(DEBUG)
-    // Found a device.
-    DEBUG_SERIAL_PRINT_FLASHSTRING("addr:");
-    for(int i = 0; i < 8; ++i)
-      {
-      DEBUG_SERIAL_PRINT(' ');
-      DEBUG_SERIAL_PRINTFMT(first_DS18B20_address[i], HEX);
-      }
-    DEBUG_SERIAL_PRINTLN();
-#endif
-
-    if(0x28 != first_DS18B20_address[0])
-      {
-#if 0 && defined(DEBUG)
-      DEBUG_SERIAL_PRINTLN_FLASHSTRING("Not a DS18B20, skipping...");
-#endif
-      continue;
-      }
-
-#if 0 && defined(DEBUG)
-    DEBUG_SERIAL_PRINTLN_FLASHSTRING("Setting precision...");
-#endif
-    MinOW_DEFAULT.reset();
-    // Write scratchpad/config
-    MinOW_DEFAULT.select(first_DS18B20_address);
-    MinOW_DEFAULT.write(0x4e);
-    MinOW_DEFAULT.write(0); // Th: not used.
-    MinOW_DEFAULT.write(0); // Tl: not used.
-    MinOW_DEFAULT.write(DS1820_PRECISION | 0x1f); // Config register; lsbs all 1.
-
-    // Found one and configured it!
-    found = true;
-    }
-
-  // Search has been run (whether DS18B20 was found or not).
-  sensor_DS18B10_initialised = true;
-
-  if(!found)
-    {
-    DEBUG_SERIAL_PRINTLN_FLASHSTRING("DS18B20 not found");
-    first_DS18B20_address[0] = 0; // Indicate no DS18B20 found.
-    }
-  return(found);
-  }
-
-// Returns temperature in C*16.
-// Returns <= 0 for some sorts of error as failsafe (RoomTemperatureC16::INVALID_TEMP if failed to initialise).
-static int16_t Sensor_DS18B10_readTemperatureC16()
-  {
-  if(!sensor_DS18B10_initialised) { Sensor_DS18B10_init(); }
-  if(0 == first_DS18B20_address[0]) { return(RoomTemperatureC16::INVALID_TEMP); }
-
-  // Start a temperature reading.
-  MinOW_DEFAULT.reset();
-  MinOW_DEFAULT.select(first_DS18B20_address);
-  MinOW_DEFAULT.write(0x44); // Start conversion without parasite power.
-  //delay(750); // 750ms should be enough.
-  // Poll for conversion complete (bus released)...
-  while(MinOW_DEFAULT.read_bit() == 0) { OTV0P2BASE::nap(WDTO_30MS); }
-
-  // Fetch temperature (scratchpad read).
-  MinOW_DEFAULT.reset();
-  MinOW_DEFAULT.select(first_DS18B20_address);    
-  MinOW_DEFAULT.write(0xbe);
-  // Read first two bytes of 9 available.  (No CRC config or check.)
-  const uint8_t d0 = MinOW_DEFAULT.read();
-  const uint8_t d1 = MinOW_DEFAULT.read();
-  // Terminate read and let DS18B20 go back to sleep.
-  MinOW_DEFAULT.reset();
-
-  // Extract raw temperature, masking any undefined lsbit.
-  const int16_t rawC16 = (d1 << 8) | (d0 & ~1);
-
-  return(rawC16);
-  }
-#endif
-
-
-//// Median filter.
-//// Find mean of interquatile range of group of ints where sum can be computed in an int without loss.
-//// FIXME: needs a unit test or three.
-//template<uint8_t N> int smallIntIQMean(const int data[N])
-//  {
-//  // Copy array content.
-//  int copy[N];
-//  for(int8_t i = N; --i >= 0; ) { copy[i] = data[i]; }
-//  // Sort in place with a bubble sort (yeuck) assuming the array to be small.
-//  // FIXME: replace with insertion sort for efficiency.
-//  // FIXME: break out sort as separate subroutine.
-//  uint8_t n = N;
-//  do
-//    {
-//    uint8_t newn = 0;
-//    for(uint8_t i = 0; ++i < n; )
-//      {
-//      const int c0 = copy[i-1];
-//      const int c1 = copy[i];
-//      if(c0 > c1)
-//         {
-//         copy[i] = c0;
-//         copy[i-1] = c1;
-//         newn = i;
-//         }
-//      }
-//    n = newn;
-//    } while(0 != n);
-//#if 0 && defined(DEBUG)
-//DEBUG_SERIAL_PRINT_FLASHSTRING("sorted: ");
-//for(uint8_t i = 0; i < N; ++i) { DEBUG_SERIAL_PRINT(copy[i]); DEBUG_SERIAL_PRINT(' '); }
-//DEBUG_SERIAL_PRINTLN();
-//#endif
-//  // Extract mean of interquartile range.
-//  const size_t sampleSize = N/2;
-//  const size_t start = N/4;
-//  // Assume values will be nowhere near the extremes.
-//  int sum = 0;
-//  for(uint8_t i = start; i < start + sampleSize; ++i) { sum += copy[i]; }
-//  // Compute rounded-up mean.
-//  return((sum + sampleSize/2) / sampleSize);
-//  }
-
-
-
-// Singleton implementation/instance.
-RoomTemperatureC16 TemperatureC16;
-
+#if !defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20)
 // Temperature read uses/selects one of the implementations/sensors.
 int16_t RoomTemperatureC16::read()
   {
-#if defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20)
-  const int raw = Sensor_DS18B10_readTemperatureC16();
-#elif defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21)
+#if defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21)
   const int raw = Sensor_SHT21_readTemperatureC16();
 #else
   const int raw = TMP112_readTemperatureC16();
 #endif
-
   value = raw;
   return(value);
   }
+// Singleton implementation/instance.
+RoomTemperatureC16 TemperatureC16;
+// DSB18B20 temperature impl, with slightly reduced precision to improve speed.
+#elif defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20) && defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
+OTV0P2BASE::TemperatureC16_DS18B20 TemperatureC16(MinOW_DEFAULT, 0, OTV0P2BASE::TemperatureC16_DS18B20::MAX_PRECISION-1);
+
+#endif // defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20)
 
 
 #ifdef ENABLE_VOICE_SENSOR
