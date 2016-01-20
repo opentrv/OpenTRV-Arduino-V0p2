@@ -50,7 +50,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //        - id:         "id"
   static const char SIM900_PIN[5] PROGMEM       = "1111";
   static const char SIM900_APN[] PROGMEM      = "\"everywhere\",\"eesecure\",\"secure\"";
-  static const char SIM900_UDP_ADDR[14] PROGMEM = "46.101.64.191";
+  static const char SIM900_UDP_ADDR[14] PROGMEM = "46.101.52.242"; // ORS server
   static const char SIM900_UDP_PORT[5] PROGMEM = "9999";
   const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config(
                                                   false, 
