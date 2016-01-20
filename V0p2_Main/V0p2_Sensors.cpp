@@ -34,9 +34,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
 #include "Control.h"
 #include "UI_Minimal.h"
 
-#if defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
-OTV0P2BASE::MinimalOneWire<> MinOW_DEFAULT;
-#endif
 
 // Singleton implementation/instance.
 OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
@@ -49,6 +46,11 @@ OTV0P2BASE::SensorTemperaturePot TempPot(OTV0P2BASE::SensorTemperaturePot::TEMP_
 #else
 OTV0P2BASE::SensorTemperaturePot TempPot(0, OTV0P2BASE::SensorTemperaturePot::TEMP_POT_RAW_MAX);
 #endif // defined(TEMP_POT_REVERSE)
+#endif
+
+
+#if defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
+OTV0P2BASE::MinimalOneWire<> MinOW_DEFAULT;
 #endif
 
 
@@ -159,7 +161,7 @@ AmbientLight AmbLight(LDR_THR_HIGH >> shiftRawScaleTo8Bit);
 #define TMP102_CTRL_B1_OS 0x80 // Control register: one-shot flag in byte 1.
 #define TMP102_CTRL_B2 0x0 // Byte 2 for control register: 0.25Hz conversion rate and not extended mode (EM).
 
-#if !defined(ENABLE_SENSOR_SHT21) && !defined(SENSOR_DS18B20_ENABLE) // Don't use TMP112 if SHT21 or DS18B20 are available.
+#if !defined(ENABLE_SENSOR_SHT21) && !defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20) // Don't use TMP112 if SHT21 or DS18B20 are available.
 // Measure/store/return the current room ambient temperature in units of 1/16th C.
 // This may contain up to 4 bits of information to the right of the fixed binary point.
 // This may consume significant power and time.
@@ -398,8 +400,8 @@ HumiditySensorSHT21 RelHumidity;
 
 
 
-// Functionality and code only enabled if SENSOR_DS18B20_ENABLE is defined.
-#if defined(SENSOR_DS18B20_ENABLE)
+// Functionality and code only enabled if ENABLE_PRIMARY_TEMP_SENSOR_DS18B20 is defined.
+#if defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20)
 
 #define DS1820_PRECISION_MASK 0x60
 #define DS1820_PRECISION_9 0x00
@@ -566,7 +568,7 @@ RoomTemperatureC16 TemperatureC16;
 // Temperature read uses/selects one of the implementations/sensors.
 int16_t RoomTemperatureC16::read()
   {
-#if defined(SENSOR_DS18B20_ENABLE)
+#if defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20)
   const int raw = Sensor_DS18B10_readTemperatureC16();
 #elif defined(ENABLE_SENSOR_SHT21)
   const int raw = Sensor_SHT21_readTemperatureC16();

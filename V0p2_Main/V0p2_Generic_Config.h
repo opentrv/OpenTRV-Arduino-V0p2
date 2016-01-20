@@ -46,7 +46,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_Trial2013Winter_Round2_LVBH // REV2 cut4 local valve control and boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as plain boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
-//#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
+#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
 //#define CONFIG_DORM1 // REV7 / DORM1 Winter 2014/2015 all-in-one valve unit.
 //#define CONFIG_DORM1_BOILER // REV8 / DORM1 Winter 2014/2015 boiler-control unit.
 //#define CONFIG_REV11_RAW_JSON // REV11 as raw JSON-only stats/sensor leaf.
@@ -68,7 +68,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_DORM1_MUT // REV7 / DORM1 Winter 2014/2015 minimal for unit testing.
 //#define CONFIG_REV7N // REV7 with external "Model N" valve.
 //#define CONFIG_REV7_AS_SENSOR // REV7 as JSON-only stats/sensor leaf.
-#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
+//#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
 //#define CONFIG_REV9_STATS // REV9 as stats node, cut 2 of the board.
 //#define CONFIG_REV9_cut1 // REV9 as CC1 relay, cut1 of board.
 //#define CONFIG_DE_TESTLAB // Deniz's test environment.
@@ -147,7 +147,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: minimise boot effort and energy eg for intermittently-powered energy-harvesting applications.
 #undef MIN_ENERGY_BOOT
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
-#undef ENABLE_SENSOR_SHT21
+#undef ENABLE_PRIMARY_TEMP_SENSOR_SHT21
 // IF DEFINED: enable use of second UI LED if available.
 #define ENABLE_UI_LED_2_IF_AVAILABLE
 // IF DEFINED: enable a primary radio module; without this unit is stand-alone.
@@ -182,6 +182,12 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define ENABLE_TEMP_POT_IF_PRESENT
 // Enable use of OneWire devices.
 #undef ENABLE_MINIMAL_ONEWIRE_SUPPORT
+// IF DEFINED: enable use of on-board SHT21 primary temperature and RH% sensor (in lieu of default TMP112).
+#undef ENABLE_PRIMARY_TEMP_SENSOR_SHT21
+// Enable use of DS18B20 as primary temp sensor.
+#undef ENABLE_PRIMARY_TEMP_SENSOR_DS18B20
+// IF DEFINED: enable use of additional (ie external) DS18B20 temp sensor(s).
+#undef ENABLE_EXTERNAL_TEMP_SENSOR_DS18B20
 //// OCCUPANCY OPTIONS
 // IF DEFINED: support for general timed and multi-input occupancy detection / use.
 #define ENABLE_OCCUPANCY_SUPPORT
@@ -477,7 +483,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: initial direct motor drive design.
 #define DIRECT_MOTOR_DRIVE_V1
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
-#define ENABLE_SENSOR_SHT21
+#define ENABLE_PRIMARY_TEMP_SENSOR_SHT21
 // Using RoHS-compliant phototransistor in place of LDR.
 #define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // IF DEFINED: detect occupancy based on relative humidity, if available.
@@ -530,9 +536,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: minimise boot effort and energy eg for intermittently-powered energy-harvesting applications.
 #define MIN_ENERGY_BOOT
 //// Enable use of DS18B20 temp sensor.
-//#define SENSOR_DS18B20_ENABLE
+//#define ENABLE_PRIMARY_TEMP_SENSOR_DS18B20
 //// IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
-//#define ENABLE_SENSOR_SHT21
+//#define ENABLE_PRIMARY_TEMP_SENSOR_SHT21
 // Using RoHS-compliant phototransistor in place of LDR.
 #define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // Anticipation logic not yet ready for prime-time.
@@ -583,7 +589,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: minimise boot effort and energy eg for intermittently-powered energy-harvesting applications.  ***
 #undef MIN_ENERGY_BOOT
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).   ***
-#undef ENABLE_SENSOR_SHT21
+#undef ENABLE_PRIMARY_TEMP_SENSOR_SHT21
 // IF DEFINED: enable use AVR's 'idle' mode to stop the CPU but leave I/O (eg Serial) running to save power.
 // DHD20150920: CURRENTLY NOT RECOMMENDED AS STILL SEEMS TO CAUSE SOME BOARDS TO CRASH.
 #define ENABLE_USE_OF_AVR_IDLE_MODE
@@ -638,7 +644,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: minimise boot effort and energy eg for intermittently-powered energy-harvesting applications.  ***
 #undef MIN_ENERGY_BOOT
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).   ***
-#undef ENABLE_SENSOR_SHT21
+#undef ENABLE_PRIMARY_TEMP_SENSOR_SHT21
 // IF DEFINED: enable use AVR's 'idle' mode to stop the CPU but leave I/O (eg Serial) running to save power.
 // DHD20150920: CURRENTLY NOT RECOMMENDED AS STILL SEEMS TO CAUSE SOME BOARDS TO CRASH.
 #define ENABLE_USE_OF_AVR_IDLE_MODE
@@ -651,7 +657,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // Enable use of OneWire devices.
 #define ENABLE_MINIMAL_ONEWIRE_SUPPORT
 // Enable use of DS18B20 temp sensor.
-#define SENSOR_DS18B20_ENABLE
+#define ENABLE_PRIMARY_TEMP_SENSOR_DS18B20
 
 // things that break
 // IF DEFINED: basic FROST/WARM temperatures are settable.
@@ -675,7 +681,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: minimise boot effort and energy eg for intermittently-powered energy-harvesting applications.
 #define MIN_ENERGY_BOOT
 //// Enable use of DS18B20 temp sensor.
-//#define SENSOR_DS18B20_ENABLE
+//#define ENABLE_PRIMARY_TEMP_SENSOR_DS18B20
 // Anticipation logic not yet ready for prime-time.
 //#define ENABLE_ANTICIPATION
 //// Enable experimental voice detection.
@@ -704,7 +710,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // Revision of V0.2 board.
 #define V0p2_REV 4 // REV0 covers DHD's breadboard and first V0.2 PCB.
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
-#define ENABLE_SENSOR_SHT21
+#define ENABLE_PRIMARY_TEMP_SENSOR_SHT21
 // Using RoHS-compliant phototransistor in place of LDR.
 #define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // Anticipation logic not yet ready for prime-time.
@@ -725,7 +731,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: initial direct motor drive design.  Doesn't imply it gets used, but I/O can be set up safely.
 #define DIRECT_MOTOR_DRIVE_V1
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
-#define ENABLE_SENSOR_SHT21
+#define ENABLE_PRIMARY_TEMP_SENSOR_SHT21
 // Using RoHS-compliant phototransistor in place of LDR.
 #define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // IF DEFINED: use the temperature-setting potentiometer/dial if present.
@@ -767,7 +773,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: initial direct motor drive design.
 #undef DIRECT_MOTOR_DRIVE_V1
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
-#define ENABLE_SENSOR_SHT21
+#define ENABLE_PRIMARY_TEMP_SENSOR_SHT21
 // Using RoHS-compliant phototransistor in place of LDR.
 #define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // IF UNDEFINED: this unit cannot act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
@@ -800,7 +806,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // BOTH TMP112 AND SHT21 FITTED on REV8.B BOARDS.
 #define V0p2_REV 8
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
-#define ENABLE_SENSOR_SHT21
+#define ENABLE_PRIMARY_TEMP_SENSOR_SHT21
 // Using RoHS-compliant phototransistor in place of LDR.
 //#define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // IF DEFINED: this unit can act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
@@ -828,12 +834,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define V0p2_REV 9
 // Enable use of OneWire devices.
 #define ENABLE_MINIMAL_ONEWIRE_SUPPORT
-//// Enable use of DS18B20 temp sensor (in lieu of on-board TMP112).
-//#define SENSOR_DS18B20_ENABLE
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
-#define ENABLE_SENSOR_SHT21
+#define ENABLE_PRIMARY_TEMP_SENSOR_SHT21
 // IF DEFINED: enable use of additional (eg external) DS18B20 temp sensor(s).
-#define SENSOR_EXTERNAL_DS18B20_ENABLE
+#define ENABLE_EXTERNAL_TEMP_SENSOR_DS18B20
 // Using RoHS-compliant phototransistor in place of LDR.
 #define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // IF UNDEFINED: this unit cannot act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
@@ -877,7 +881,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #ifdef CONFIG_REV9_STATS // REV9 cut2, derived from REV4, as stats node, for testing.
 #define V0p2_REV 9
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
-#define ENABLE_SENSOR_SHT21
+#define ENABLE_PRIMARY_TEMP_SENSOR_SHT21
 // Using RoHS-compliant phototransistor in place of LDR.
 #define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
@@ -928,7 +932,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: minimise boot effort and energy eg for intermittently-powered energy-harvesting applications.  ***
 #undef MIN_ENERGY_BOOT
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).   ***
-#undef ENABLE_SENSOR_SHT21
+#undef ENABLE_PRIMARY_TEMP_SENSOR_SHT21
 // IF DEFINED: enable use AVR's 'idle' mode to stop the CPU but leave I/O (eg Serial) running to save power.
 // DHD20150920: CURRENTLY NOT RECOMMENDED AS STILL SEEMS TO CAUSE SOME BOARDS TO CRASH.
 #define ENABLE_USE_OF_AVR_IDLE_MODE
@@ -969,7 +973,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: minimise boot effort and energy eg for intermittently-powered energy-harvesting applications.  ***
 #undef MIN_ENERGY_BOOT
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).   ***
-#undef ENABLE_SENSOR_SHT21
+#undef ENABLE_PRIMARY_TEMP_SENSOR_SHT21
 // IF DEFINED: enable use AVR's 'idle' mode to stop the CPU but leave I/O (eg Serial) running to save power.
 // DHD20150920: CURRENTLY NOT RECOMMENDED AS STILL SEEMS TO CAUSE SOME BOARDS TO CRASH.
 #define ENABLE_USE_OF_AVR_IDLE_MODE
@@ -990,7 +994,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // Enable use of OneWire devices.
 #define ENABLE_MINIMAL_ONEWIRE_SUPPORT
 // Enable use of DS18B20 temp sensor.
-#define SENSOR_DS18B20_ENABLE
+#define ENABLE_PRIMARY_TEMP_SENSOR_DS18B20
 
 // Define voice module
 #define ENABLE_VOICE_SENSOR
@@ -1059,7 +1063,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // Revision of V0.2 board.
 #define V0p2_REV 11 // REV11 covers first sensor only board.
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
-#define ENABLE_SENSOR_SHT21
+#define ENABLE_PRIMARY_TEMP_SENSOR_SHT21
 // Using RoHS-compliant phototransistor in place of LDR.
 #define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // Anticipation logic not yet ready for prime-time.
@@ -1079,7 +1083,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // Revision of V0.2 board.
 #define V0p2_REV 11 // REV11 covers first sensor only board.
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
-#define ENABLE_SENSOR_SHT21
+#define ENABLE_PRIMARY_TEMP_SENSOR_SHT21
 // Using RoHS-compliant phototransistor in place of LDR.
 #define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // IF DEFINED: basic FROST/WARM temperatures are settable.
@@ -1113,7 +1117,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // Enable use of OneWire devices.
 #define ENABLE_MINIMAL_ONEWIRE_SUPPORT
 // Enable use of DS18B20 temp sensor.
-#define SENSOR_DS18B20_ENABLE
+#define ENABLE_PRIMARY_TEMP_SENSOR_DS18B20
 // Select DHW temperatures by default.
 #define DHW_TEMPERATURES
 // Must minimise water flow.

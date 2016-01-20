@@ -69,7 +69,7 @@ extern OTV0P2BASE::SensorTemperaturePot TempPot;
 #endif // ENABLE_TEMP_POT_IF_PRESENT
 
 
-#if defined(SENSOR_EXTERNAL_DS18B20_ENABLE) && defined(SUPPORTS_MINIMAL_ONEWIRE)
+#if defined(ENABLE_EXTERNAL_TEMP_SENSOR_DS18B20) && defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
 #define SENSOR_EXTERNAL_DS18B20_ENABLE_0 // Enable sensor zero.
 extern OTV0P2BASE::TemperatureC16_DS18B20 extDS18B20_0;
 #endif
@@ -136,7 +136,7 @@ class RoomTemperatureC16 : public OTV0P2BASE::TemperatureC16Base
 
     // Returns true if the underlying sensor precision (or accuracy) is coarser than 1/16th C.
     // If true this implies an actual precision of about 1/8th C.
-#ifdef SENSOR_DS18B20_ENABLE
+#ifdef ENABLE_PRIMARY_TEMP_SENSOR_DS18B20
 #define ROOM_TEMP_REDUCED_PRECISION
     // Returns number of useful binary digits after the binary point; default is 4.
     virtual int8_t getBitsAfterPoint() const { return(3); }
