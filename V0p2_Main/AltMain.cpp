@@ -37,7 +37,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
 #include <OTRadioLink.h>
 
 #include "Control.h"
-#include "Radio.h"
 #include "UI_Minimal.h"
 #include "V0p2_Sensors.h"
 
@@ -355,7 +354,7 @@ void loopAlt()
 
 
 
-//#if defined(USE_MODULE_FHT8VSIMPLE)
+//#if defined(ENABLE_FHT8VSIMPLE)
 //  // Try for double TX for more robust conversation with valve?
 //  const bool doubleTXForFTH8V = false;
 //  // FHT8V is highest priority and runs first.
@@ -413,7 +412,7 @@ PrimaryRadio.poll();
 
 
 
-//#if defined(USE_MODULE_FHT8VSIMPLE)
+//#if defined(ENABLE_FHT8VSIMPLE)
 //  if(useExtraFHT8VTXSlots)
 //    {
 //    // Time for extra TX before other actions, but don't bother if minimising power in frost mode.
@@ -427,7 +426,7 @@ PrimaryRadio.poll();
 
 
 
-//#if defined(USE_MODULE_FHT8VSIMPLE) && defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
+//#if defined(ENABLE_FHT8VSIMPLE) && defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
 //  if(useExtraFHT8VTXSlots)
 //    {
 //    // ---------- HALF SECOND #2 -----------
@@ -440,7 +439,7 @@ PrimaryRadio.poll();
 
 
 
-//#if defined(USE_MODULE_FHT8VSIMPLE) && defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
+//#if defined(ENABLE_FHT8VSIMPLE) && defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
 //  if(useExtraFHT8VTXSlots)
 //    {
 //    // ---------- HALF SECOND #3 -----------

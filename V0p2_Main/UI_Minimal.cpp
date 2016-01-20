@@ -30,15 +30,13 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #include "V0p2_Sensors.h"
 #include "Control.h"
 #include "Messaging.h"
-#include "Radio.h"
-#include "Schedule.h"
 #include "UI_Minimal.h"
 
 
 
 // Marked true if the physical UI controls are being used.
 // Cleared at end of tickUI().
-// Marked voilatile for thread-safe lock-free non-read-modify-write access to byte-wide value.
+// Marked volatile for thread-safe lock-free non-read-modify-write access to byte-wide value.
 static volatile bool statusChange;
 
 // If non-zero then UI controls have been recently manually/locally operated; counts down to zero.
@@ -64,6 +62,7 @@ void resetCLIActiveTimer() { CLITimeoutM = CLI_DEFAULT_TIMEOUT_M; }
 bool isCLIActive() { return(0 != CLITimeoutM); }
 
 // Record local manual operation of a local physical UI control, eg not remote or via CLI.
+// Marks room as occupied amongst other things.
 // To be thread-safe, everything that this touches or calls must be.
 // Thread-safe.
 void markUIControlUsed()
@@ -97,9 +96,9 @@ bool recentUIControlUse() { return(0 != uiTimeoutM); }
 static void handleLEARN(const uint8_t which)
   {
   // Set simple schedule starting every 24h from a little before now and running for an hour or so.  
-  if(inWarmMode()) { setSimpleSchedule(OTV0P2BASE::getMinutesSinceMidnightLT(), which); }
+  if(inWarmMode()) { Scheduler.setSimpleSchedule(OTV0P2BASE::getMinutesSinceMidnightLT(), which); }
   // Clear simple schedule.
-  else { clearSimpleSchedule(which); }
+  else { Scheduler.clearSimpleSchedule(which); }
   }
 #endif // LEARN_BUTTON_AVAILABLE
 
@@ -318,7 +317,7 @@ bool tickUI(const uint_fast8_t sec)
     if(statusChange)
       {
       static bool prevScheduleStatus;
-      const bool currentScheduleStatus = isAnyScheduleOnWARMNow();
+      const bool currentScheduleStatus = Scheduler.isAnyScheduleOnWARMNow();
       if(currentScheduleStatus != prevScheduleStatus)
         {
         prevScheduleStatus = currentScheduleStatus;
@@ -365,16 +364,16 @@ void checkUserSchedule()
 
   // Check all available schedules.
   // FIXME: probably will NOT work as expected for overlapping schedules (ie will got to FROST at end of first one).
-  for(uint8_t which = 0; which < MAX_SIMPLE_SCHEDULES; ++which)
+  for(uint8_t which = 0; which < Scheduler.MAX_SIMPLE_SCHEDULES; ++which)
     {
     // Check if now is the simple scheduled off time, as minutes after midnight [0,1439]; invalid (eg ~0) if none set.
     // Programmed off/frost takes priority over on/warm if same to bias towards energy-saving.
     // Note that in the presence of multiple overlapping schedules only the last 'off' applies however.
-    if(((MAX_SIMPLE_SCHEDULES < 1) || !isAnyScheduleOnWARMNow()) &&
-       (msm == getSimpleScheduleOff(which)))
+    if(((Scheduler.MAX_SIMPLE_SCHEDULES < 1) || !Scheduler.isAnyScheduleOnWARMNow()) &&
+       (msm == Scheduler.getSimpleScheduleOff(which)))
       { setWarmModeDebounced(false); }
     // Check if now is the simple scheduled on time.
-    else if(msm == getSimpleScheduleOn(which))
+    else if(msm == Scheduler.getSimpleScheduleOn(which))
       { setWarmModeDebounced(true); }
     }
   }
@@ -390,7 +389,6 @@ void checkUserSchedule()
 // where EXT is the name of the extension, usually 3 letters.
 
 #include <OTProtocolCC.h>
-#include "Radio.h"
 
 // It is acceptable for extCLIHandler() to alter the buffer passed,
 // eg with strtok_t().
@@ -562,22 +560,22 @@ void serialStatusReport()
   Serial.print(';'); // End previous section.
   Serial.print('T'); Serial.print(hh); Serial_print_space(); Serial.print(mm);
   // Show all schedules set.
-  for(uint8_t scheduleNumber = 0; scheduleNumber < MAX_SIMPLE_SCHEDULES; ++scheduleNumber)
+  for(uint8_t scheduleNumber = 0; scheduleNumber < Scheduler.MAX_SIMPLE_SCHEDULES; ++scheduleNumber)
     {
     Serial_print_space();
-    uint_least16_t startMinutesSinceMidnightLT = getSimpleScheduleOn(scheduleNumber);
+    uint_least16_t startMinutesSinceMidnightLT = Scheduler.getSimpleScheduleOn(scheduleNumber);
     const bool invalidStartTime = startMinutesSinceMidnightLT >= OTV0P2BASE::MINS_PER_DAY;
     const int startH = invalidStartTime ? 255 : (startMinutesSinceMidnightLT / 60);
     const int startM = invalidStartTime ? 0 : (startMinutesSinceMidnightLT % 60);
     Serial.print('W'); Serial.print(startH); Serial_print_space(); Serial.print(startM);
     Serial_print_space();
-    uint_least16_t endMinutesSinceMidnightLT = getSimpleScheduleOff(scheduleNumber);
+    uint_least16_t endMinutesSinceMidnightLT = Scheduler.getSimpleScheduleOff(scheduleNumber);
     const bool invalidEndTime = endMinutesSinceMidnightLT >= OTV0P2BASE::MINS_PER_DAY;
     const int endH = invalidEndTime ? 255 : (endMinutesSinceMidnightLT / 60);
     const int endM = invalidEndTime ? 0 : (endMinutesSinceMidnightLT % 60);
     Serial.print('F'); Serial.print(endH); Serial_print_space(); Serial.print(endM);
     }
-  if(isAnyScheduleOnWARMNow()) { Serial.print('*'); } // Indicate that at least one schedule is active now.
+  if(Scheduler.isAnyScheduleOnWARMNow()) { Serial.print('*'); } // Indicate that at least one schedule is active now.
 #endif
 
   // *S* section: settable target/threshold temperatures, current target, and eco/smart/occupied flags.
@@ -586,22 +584,23 @@ void serialStatusReport()
   Serial.print('S'); // Current settable temperature target, and FROST and WARM settings.
 #ifdef LOCAL_TRV
   Serial.print(NominalRadValve.getTargetTempC());
-#endif
+#endif // LOCAL_TRV
   Serial_print_space();
   Serial.print(getFROSTTargetC());
   Serial_print_space();
-  Serial.print(getWARMTargetC());
-#if 0
+  const uint8_t wt = getWARMTargetC();
+  Serial.print(wt);
+#ifdef ENABLE_FULL_OT_CLI
   // Show bias.
   Serial_print_space();
-  Serial.print(hasEcoBias() ? 'e' : 'c'); // Show eco/comfort bias.
-#endif
-#ifdef ENABLE_ANTICIPATION
-  // Show warming predictions.
-  Serial.print(shouldBeWarmedAtHour(hh) ? 'w' : 'f');
-  Serial.print(shouldBeWarmedAtHour(hh < 23 ? (hh+1) : 0) ? 'w' : 'f');
-#endif
-#endif
+  Serial.print(hasEcoBias() ? (isEcoTemperature(wt) ? 'E' : 'e') : (isComfortTemperature(wt) ? 'C': 'c')); // Show eco/comfort bias.
+#endif // ENABLE_FULL_OT_CLI
+//#ifdef ENABLE_ANTICIPATION
+//  // Show warming predictions.
+//  Serial.print(shouldBeWarmedAtHour(hh) ? 'w' : 'f');
+//  Serial.print(shouldBeWarmedAtHour(hh < 23 ? (hh+1) : 0) ? 'w' : 'f');
+//#endif
+#endif // SETTABLE_TARGET_TEMPERATURES
 
   // *C* section: central hub values.
 #if defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX)
@@ -616,7 +615,7 @@ void serialStatusReport()
 #endif
 
   // *H* section: house codes for local FHT8V valve and if syncing, iff set.
-#if defined(USE_MODULE_FHT8VSIMPLE)
+#if defined(ENABLE_FHT8VSIMPLE)
   // Print optional house code section if codes set.
   const uint8_t hc1 = FHT8VGetHC1();
   if(hc1 != 255)
@@ -642,7 +641,7 @@ void serialStatusReport()
 #if 1 && defined(ALLOW_JSON_OUTPUT)
   Serial.print(';'); // Terminate previous section.
   char buf[80];
-  static SimpleStatsRotation<5> ss1; // Configured for maximum different stats.
+  static OTV0P2BASE::SimpleStatsRotation<5> ss1; // Configured for maximum different stats.
 //  ss1.put(TemperatureC16);
 #if defined(HUMIDITY_SENSOR_SUPPORT)
   ss1.put(RelHumidity);
@@ -712,7 +711,7 @@ static void dumpCLIUsage(const uint8_t stopBy)
   
   // Core CLI features first... (E, [H], I, S V)
   printCLILine(deadline, 'E', F("Exit CLI"));
-#if defined(USE_MODULE_FHT8VSIMPLE) && defined(LOCAL_TRV)
+#if defined(ENABLE_FHT8VSIMPLE) && defined(LOCAL_TRV)
   printCLILine(deadline, F("H H1 H2"), F("set FHT8V House codes 1&2"));
   printCLILine(deadline, 'H', F("clear House codes"));
 #endif
@@ -930,7 +929,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
       // This should be followed by JUST CR ('\r') OR LF ('\n')
       // else the second will wake the CLI up again.
       case 'E': { CLITimeoutM = 0; break; }
-#if defined(USE_MODULE_FHT8VSIMPLE) && (defined(LOCAL_TRV) || defined(SLAVE_TRV))
+#if defined(ENABLE_FHT8VSIMPLE) && (defined(LOCAL_TRV) || defined(SLAVE_TRV))
       // H nn nn
       // Set (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control.
       // Missing values will clear the code entirely (and disable use of the valve).
@@ -999,7 +998,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
       case 'I':
         {
         if((3 == n) && ('*' == buf[2]))
-          { ensureIDCreated(true); } // Force ID change.
+          { OTV0P2BASE::ensureIDCreated(true); } // Force ID change.
         Serial.print(F("ID:"));
         for(uint8_t i = 0; i < V0P2BASE_EE_LEN_ID; ++i)
           {
@@ -1253,7 +1252,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
               }
 //#endif
             // Does not fully validate user inputs (eg for -ve values), but cannot set impossible values.
-            if(!setSimpleSchedule((uint_least16_t) ((60 * hh) + mm), (uint8_t)s)) { InvalidIgnored(); }
+            if(!Scheduler.setSimpleSchedule((uint_least16_t) ((60 * hh) + mm), (uint8_t)s)) { InvalidIgnored(); }
             }
           }
         break;

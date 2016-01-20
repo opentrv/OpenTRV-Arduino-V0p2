@@ -14,7 +14,7 @@ specific language governing permissions and limitations
 under the Licence.
 
 Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
-                           Deniz Erbilgin 2015
+                           Deniz Erbilgin 2015--2016
 */
 
 /*
@@ -46,7 +46,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_Trial2013Winter_Round2_LVBH // REV2 cut4 local valve control and boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as plain boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
-#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
+//#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
 //#define CONFIG_DORM1 // REV7 / DORM1 Winter 2014/2015 all-in-one valve unit.
 //#define CONFIG_DORM1_BOILER // REV8 / DORM1 Winter 2014/2015 boiler-control unit.
 //#define CONFIG_REV11_RAW_JSON // REV11 as raw JSON-only stats/sensor leaf.
@@ -68,7 +68,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_DORM1_MUT // REV7 / DORM1 Winter 2014/2015 minimal for unit testing.
 //#define CONFIG_REV7N // REV7 with external "Model N" valve.
 //#define CONFIG_REV7_AS_SENSOR // REV7 as JSON-only stats/sensor leaf.
-//#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
+#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
 //#define CONFIG_REV9_STATS // REV9 as stats node, cut 2 of the board.
 //#define CONFIG_REV9_cut1 // REV9 as CC1 relay, cut1 of board.
 //#define CONFIG_DE_TESTLAB // Deniz's test environment.
@@ -101,6 +101,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #undef ENABLE_USE_OF_AVR_IDLE_MODE
 // Provide software RTC support by default.
 #define USE_RTC_INTERNAL_SIMPLE
+// IF DEFINED: try to trim memory (primarily RAM, also code/Flash) space used.
+#undef ENABLE_TRIMMED_MEMORY
 // IF DEFINED: basic FROST/WARM temperatures are settable.
 #define SETTABLE_TARGET_TEMPERATURES
 // IF DEFINED: support one on and one off time per day (possibly in conjunction with 'learn' button).
@@ -150,6 +152,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define ENABLE_UI_LED_2_IF_AVAILABLE
 // IF DEFINED: enable a primary radio module; without this unit is stand-alone.
 #define ENABLE_RADIO_PRIMARY_MODULE // TODO currently does nothing
+// IF DEFINED: enable a 'null' radio module; without this unit is stand-alone.
+#undef ENABLE_RADIO_NULL
 // Default primary radio module; RFM23B from REV1 to REV11.
 #define ENABLE_RADIO_RFM23B   // Enable RFM23B by default
 #define RADIO_PRIMARY_RFM23B  // Assign RFM23B to primary radio
@@ -160,7 +164,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: enable support for FS20 carrier for RX or TX.
 #define ENABLE_FS20_CARRIER_SUPPORT
 // IF DEFINED: use FHT8V wireless radio module/valve, eg to control FHT8V local valve.
-#define USE_MODULE_FHT8VSIMPLE
+#define ENABLE_FHT8VSIMPLE
 // IF DEFINED: enable support for FS20 carrier for RX of raw FS20 and piggybacked binary (non-JSON) stats.
 #define ENABLE_FS20_NATIVE_AND_BINARY_STATS_RX
 // IF DEFINED: enable support for FS20 encoding/decoding, eg to send to FHT8V.
@@ -171,11 +175,13 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #undef ENABLE_OTSECUREFRAME_INSECURE_RX_PERMITTED
 // IF DEFINED: force all receivers back into RX mode periodically.  BODGE: DISABLED BY DEFAULT.
 #undef CONFIG_FORCE_TO_RX_MODE_REGULARLY
-//// SENSOR OPTIONS
+//// SENSOR OPTIONS (and support for them)
 // IF DEFINED: allow for less light on sideways-pointing ambient light sensor, eg on cut4 2014/03/17 REV2 boards (TODO-209).
 #undef ENABLE_AMBLIGHT_EXTRA_SENSITIVE
 // IF DEFINED: use the temperature-setting potentiometer/dial if present.
 #define ENABLE_TEMP_POT_IF_PRESENT
+// Enable use of OneWire devices.
+#undef ENABLE_MINIMAL_ONEWIRE_SUPPORT
 //// OCCUPANCY OPTIONS
 // IF DEFINED: support for general timed and multi-input occupancy detection / use.
 #define ENABLE_OCCUPANCY_SUPPORT
@@ -183,7 +189,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
 // IF DEFINED: detect occupancy based on relative humidity, if available.
 #define ENABLE_OCCUPANCY_DETECTION_FROM_RH
-// IF DEFINED: detect occupancy based on voice detection, if available. This undefines learn button 2
+// IF DEFINED: detect occupancy based on voice detection, if available. This undefines learn button 2 to use GPIO as input.
 #undef ENABLE_OCCUPANCY_DETECTION_FROM_VOICE
 
 
@@ -415,7 +421,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: enable support for FS20 carrier for RX or TX.
 #define ENABLE_FS20_CARRIER_SUPPORT
 // IF DEFINED: use FHT8V wireless radio module/valve.
-#undef USE_MODULE_FHT8VSIMPLE
+#undef ENABLE_FHT8VSIMPLE
 //// IF DEFINED: enable support for FS20 carrier for TX specifically (to allow RX-only).
 //#define ENABLE_FS20_CARRIER_SUPPORT_TX
 // IF DEFINED: enable support for FS20 encoding/decoding, eg to send to FHT8V.
@@ -442,7 +448,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: enable support for FS20 carrier for RX or TX.
 #define ENABLE_FS20_CARRIER_SUPPORT
 // IF DEFINED: use FHT8V wireless radio module/valve.
-#undef USE_MODULE_FHT8VSIMPLE
+#undef ENABLE_FHT8VSIMPLE
 //// IF DEFINED: enable support for FS20 carrier for TX specifically (to allow RX-only).
 //#define ENABLE_FS20_CARRIER_SUPPORT_TX
 // IF DEFINED: enable support for FS20 encoding/decoding, eg to send to FHT8V.
@@ -497,12 +503,14 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #undef ENABLE_CLI_HELP
 // IF DEFINED: enable a full OpenTRV CLI.
 #define ENABLE_FULL_OT_CLI
-// IF DEFINED: enable a full OpenTRV UI with normal LEDs etc.
-#define ENABLE_FULL_OT_UI
 // IF DEFINED: enable and extended CLI with a longer input buffer for example.
 #undef ENABLE_EXTENDED_CLI
+// IF DEFINED: enable a full OpenTRV UI with normal LEDs etc.
+#define ENABLE_FULL_OT_UI
 // IF DEFINED: enable use of second UI LED if available.
 #undef ENABLE_UI_LED_2_IF_AVAILABLE
+// IF DEFINED: use the temperature-setting potentiometer/dial if present.
+//#undef ENABLE_TEMP_POT_IF_PRESENT // DHD20160119: was costing ~500 bytes of Flash to define!
 // Use common settings.
 #define COMMON_SETTINGS
 #endif
@@ -588,7 +596,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#undef SETTABLE_TARGET_TEMPERATURES
 // IF DEFINED: use active-low LEARN button(s).  Needs SUPPORT_SINGLETON_SCHEDULE.  ***
 //#undef LEARN_BUTTON_AVAILABLE // OPTIONAL ON V0.09 PCB1  UI_Minimal.cpp:1180:32: error: 'handleLEARN' was not declared in this scope
-#define USE_MODULE_FHT8VSIMPLE //Control.cpp:1322:27: error: 'localFHT8VTRVEnabled' was not declared in this scope
+#define ENABLE_FHT8VSIMPLE //Control.cpp:1322:27: error: 'localFHT8VTRVEnabled' was not declared in this scope
 // If LDR is not to be used then specifically define OMIT_... as below.
 //#undef ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT //  LDR 'occupancy' sensing irrelevant for DHW. Messaging.cpp:232:87: error: 'class AmbientLight' has no member named 'getRaw
 //#undef USE_MODULE_RFM22RADIOSIMPLE
@@ -641,7 +649,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // Define voice module
 #define ENABLE_VOICE_SENSOR
 // Enable use of OneWire devices.
-#define SUPPORT_ONEWIRE
+#define ENABLE_MINIMAL_ONEWIRE_SUPPORT
 // Enable use of DS18B20 temp sensor.
 #define SENSOR_DS18B20_ENABLE
 
@@ -650,7 +658,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#undef SETTABLE_TARGET_TEMPERATURES
 // IF DEFINED: use active-low LEARN button(s).  Needs SUPPORT_SINGLETON_SCHEDULE.  ***
 //#undef LEARN_BUTTON_AVAILABLE // OPTIONAL ON V0.09 PCB1  UI_Minimal.cpp:1180:32: error: 'handleLEARN' was not declared in this scope
-#define USE_MODULE_FHT8VSIMPLE //Control.cpp:1322:27: error: 'localFHT8VTRVEnabled' was not declared in this scope
+#define ENABLE_FHT8VSIMPLE //Control.cpp:1322:27: error: 'localFHT8VTRVEnabled' was not declared in this scope
 // If LDR is not to be used then specifically define OMIT_... as below.
 //#undef ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT //  LDR 'occupancy' sensing irrelevant for DHW. Messaging.cpp:232:87: error: 'class AmbientLight' has no member named 'getRaw
 
@@ -718,10 +726,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define DIRECT_MOTOR_DRIVE_V1
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
 #define ENABLE_SENSOR_SHT21
-// IF DEFINED: use the temperature-setting potentiometer/dial if present.
-#undef ENABLE_TEMP_POT_IF_PRESENT
 // Using RoHS-compliant phototransistor in place of LDR.
 #define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
+// IF DEFINED: use the temperature-setting potentiometer/dial if present.
+#undef ENABLE_TEMP_POT_IF_PRESENT
 // IF DEFINED: basic FROST/WARM temperatures are settable.
 #undef SETTABLE_TARGET_TEMPERATURES
 // IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
@@ -818,16 +826,14 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #ifdef CONFIG_REV9 // REV9 cut2, derived from REV4.
 // Revision of V0.2 board.
 #define V0p2_REV 9
-//// Enable use of OneWire devices.
-//#define SUPPORT_ONEWIRE
+// Enable use of OneWire devices.
+#define ENABLE_MINIMAL_ONEWIRE_SUPPORT
 //// Enable use of DS18B20 temp sensor (in lieu of on-board TMP112).
 //#define SENSOR_DS18B20_ENABLE
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
 #define ENABLE_SENSOR_SHT21
 // IF DEFINED: enable use of additional (eg external) DS18B20 temp sensor(s).
 #define SENSOR_EXTERNAL_DS18B20_ENABLE
-// SENSOR_EXTERNAL_DS18B20_ENABLE requires SUPPORTS_MINIMAL_ONEWIRE.
-#define SUPPORTS_MINIMAL_ONEWIRE
 // Using RoHS-compliant phototransistor in place of LDR.
 #define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // IF UNDEFINED: this unit cannot act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
@@ -968,6 +974,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // DHD20150920: CURRENTLY NOT RECOMMENDED AS STILL SEEMS TO CAUSE SOME BOARDS TO CRASH.
 #define ENABLE_USE_OF_AVR_IDLE_MODE
 
+// IF DEFINED: enable a 'null' radio module; without this unit is stand-alone.
+#define ENABLE_RADIO_NULL
+
 // Secondary radio
 #undef ENABLE_RADIO_RFM23B
 #undef RADIO_PRIMARY_RFM23B
@@ -979,7 +988,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define RADIO_SECONDARY_SIM900  // Assign SIM900
 
 // Enable use of OneWire devices.
-#define SUPPORT_ONEWIRE
+#define ENABLE_MINIMAL_ONEWIRE_SUPPORT
 // Enable use of DS18B20 temp sensor.
 #define SENSOR_DS18B20_ENABLE
 
@@ -993,7 +1002,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#undef SETTABLE_TARGET_TEMPERATURES
 // IF DEFINED: use active-low LEARN button(s).  Needs SUPPORT_SINGLETON_SCHEDULE.  ***
 //#undef LEARN_BUTTON_AVAILABLE // OPTIONAL ON V0.09 PCB1  UI_Minimal.cpp:1180:32: error: 'handleLEARN' was not declared in this scope
-//#define USE_MODULE_FHT8VSIMPLE //Control.cpp:1322:27: error: 'localFHT8VTRVEnabled' was not declared in this scope
+//#define ENABLE_FHT8VSIMPLE //Control.cpp:1322:27: error: 'localFHT8VTRVEnabled' was not declared in this scope
 
 #endif // CONFIG_REV10_BUSSHELTER
 
@@ -1102,15 +1111,15 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // Revision of V0.2 board.
 #define V0p2_REV 1
 // Enable use of OneWire devices.
-#define SUPPORT_ONEWIRE
+#define ENABLE_MINIMAL_ONEWIRE_SUPPORT
 // Enable use of DS18B20 temp sensor.
 #define SENSOR_DS18B20_ENABLE
 // Select DHW temperatures by default.
 #define DHW_TEMPERATURES
 // Must minimise water flow.
 #define TRV_SLEW_GLACIAL
-// Set max percentage open: BH reports 30% to be (near) optimal 2015/03; BH requested 20% at 2015/10/15.
-#define TRV_MAX_PC_OPEN 20
+// Set max percentage open: BH reports 30% to be (near) optimal 2015/03; BH requested 20% at 2015/10/15, 13% at 2016/01/19.
+#define TRV_MAX_PC_OPEN 13
 // IF UNDEFINED: this unit cannot act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
 #undef ENABLE_BOILER_HUB
 // IF UNDEFINED: don't allow RX of stats frames (since there is no easy way to plug in a serial connection to relay them!)
@@ -1122,6 +1131,11 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // Override schedule on time to simple fixed value of 2h per BH request 2015/10/15.
 #define LEARNED_ON_PERIOD_M 120 // Must be <= 255.
 #define LEARNED_ON_PERIOD_COMFORT_M LEARNED_ON_PERIOD_M
+// Bo just wants the timing for his DHW; no occupancy sensing.
+// IF DEFINED: support for general timed and multi-input occupancy detection / use.
+#undef ENABLE_OCCUPANCY_SUPPORT
+// IF DEFINED: detect occupancy based on ambient light, if available.
+#undef ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
 // Use common settings.
 #define COMMON_SETTINGS
 #endif
@@ -1189,19 +1203,19 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #endif
 
 // By default, use the RFM22/RFM23 module to talk to an FHT8V wireless radiator valve.
-#ifdef USE_MODULE_FHT8VSIMPLE
+#ifdef ENABLE_FHT8VSIMPLE
 #define USE_MODULE_RFM22RADIOSIMPLE
 #define ENABLE_FS20_CARRIER_SUPPORT
 #define ENABLE_FS20_ENCODING_SUPPORT
 // If this can be a hub, enable extra RX code.
 #if defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX)
-#define USE_MODULE_FHT8VSIMPLE_RX
+#define ENABLE_FHT8VSIMPLE_RX
 #define LISTEN_FOR_FTp2_FS20_native
 #endif // defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX)
 #if defined(ALLOW_STATS_RX)
 #define ENABLE_FS20_NATIVE_AND_BINARY_STATS_RX
 #endif // defined(ALLOW_STATS_RX)
-#endif // USE_MODULE_FHT8VSIMPLE
+#endif // ENABLE_FHT8VSIMPLE
 
 
 #endif

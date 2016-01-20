@@ -19,7 +19,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
 */
 
 /*
- V0p2 boards physical sensor support.
+ * Header for common on-board and external sensors and actuators for V0p2 variants.
  */
 #include <stdint.h>
 #include <limits.h>
@@ -31,27 +31,25 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
 #include "V0p2_Main.h"
 #include "V0p2_Board_IO_Config.h" // I/O pin allocation: include ahead of I/O module headers.
 #include "V0p2_Sensors.h" // I/O code access.
-
 #include "Control.h"
 #include "UI_Minimal.h"
 
-
-
-
-
-
-// Create bare-bones OneWire(TM) support if a pin has been allocated to it.
-#if defined(SUPPORTS_MINIMAL_ONEWIRE)
-OTV0P2BASE::MinimalOneWire<PIN_OW_DQ_DATA> MinOW;
+#if defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
+OTV0P2BASE::MinimalOneWire<> MinOW_DEFAULT;
 #endif
-
 
 // Singleton implementation/instance.
 OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
 
 
-
-
+#ifdef TEMP_POT_AVAILABLE
+// Singleton implementation/instance.
+#if defined(TEMP_POT_REVERSE)
+OTV0P2BASE::SensorTemperaturePot TempPot(OTV0P2BASE::SensorTemperaturePot::TEMP_POT_RAW_MAX, 0);
+#else
+OTV0P2BASE::SensorTemperaturePot TempPot(0, OTV0P2BASE::SensorTemperaturePot::TEMP_POT_RAW_MAX);
+#endif // defined(TEMP_POT_REVERSE)
+#endif
 
 
 #ifdef ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
@@ -169,7 +167,7 @@ AmbientLight AmbLight(LDR_THR_HIGH >> shiftRawScaleTo8Bit);
 // The first read will initialise the device as necessary and leave it in a low-power mode afterwards.
 // This will simulate a zero temperature in case of detected error talking to the sensor as fail-safe for this use.
 // Check for errors at certain critical places, not everywhere.
-static int TMP112_readTemperatureC16()
+static int16_t TMP112_readTemperatureC16()
   {
   const bool neededPowerUp = OTV0P2BASE::powerUpTWIIfDisabled();
   
@@ -189,7 +187,7 @@ static int TMP112_readTemperatureC16()
   Wire.write((byte) TMP102_REG_CTRL); // Select control register.
   Wire.write((byte) TMP102_CTRL_B1 | TMP102_CTRL_B1_OS); // Start one-shot conversion.
   //Wire.write((byte) TMP102_CTRL_B2);
-  if(Wire.endTransmission()) { return(0); } // Exit if error.
+  if(Wire.endTransmission()) { return(RoomTemperatureC16::INVALID_TEMP); } // Exit if error.
 
 
   // Wait for temperature measurement/conversion to complete, in low-power sleep mode for the bulk of the time.
@@ -202,7 +200,7 @@ static int TMP112_readTemperatureC16()
   for(int i = 8; --i; ) // 2 orbits should generally be plenty.
     {
     if(i <= 0) { return(0); } // Exit if error.
-    if(Wire.requestFrom(TMP102_I2C_ADDR, 1) != 1) { return(0); } // Exit if error.
+    if(Wire.requestFrom(TMP102_I2C_ADDR, 1) != 1) { return(RoomTemperatureC16::INVALID_TEMP); } // Exit if error.
     const byte b1 = Wire.read();
     if(b1 & TMP102_CTRL_B1_OS) { break; } // Conversion completed.
     ::OTV0P2BASE::nap(WDTO_15MS); // One or two of these naps should allow typical ~26ms conversion to complete...
@@ -214,12 +212,14 @@ static int TMP112_readTemperatureC16()
 #endif
   Wire.beginTransmission(TMP102_I2C_ADDR);
   Wire.write((byte) TMP102_REG_TEMP); // Select temperature register (set ptr to 0).
-  if(Wire.endTransmission()) { return(0); } // Exit if error.
+  if(Wire.endTransmission()) { return(RoomTemperatureC16::INVALID_TEMP); } // Exit if error.
   if(Wire.requestFrom(TMP102_I2C_ADDR, 2) != 2)  { return(0); }
-  if(Wire.endTransmission()) { return(0); } // Exit if error.
+  if(Wire.endTransmission()) { return(RoomTemperatureC16::INVALID_TEMP); } // Exit if error.
 
   const byte b1 = Wire.read(); // MSByte, should be signed whole degrees C.
   const uint8_t b2 = Wire.read(); // Avoid sign extension...
+
+  if(neededPowerUp) { OTV0P2BASE::powerDownTWI(); }
 
   // Builds 12-bit value (assumes not in extended mode) and sign-extends if necessary for sub-zero temps.
   const int t16 = (b1 << 4) | (b2 >> 4) | ((b1 & 0x80) ? 0xf000 : 0);
@@ -231,8 +231,6 @@ static int TMP112_readTemperatureC16()
   DEBUG_SERIAL_PRINT(temp16);
   DEBUG_SERIAL_PRINTLN();
 #endif
-
-  if(neededPowerUp) { OTV0P2BASE::powerDownTWI(); }
 
   return(t16);
   }
@@ -257,7 +255,7 @@ static int TMP112_readTemperatureC16()
 // Set true once SHT21 has been initialised.
 static volatile bool SHT21_initialised;
 
-// Initialise/configure SHT21, once only generally.
+// Initialise/configure SHT21, usually once only.
 // TWI must already be powered up.
 static void SHT21_init()
   {
@@ -323,7 +321,7 @@ static int Sensor_SHT21_readTemperatureC16()
     // Wait for data, but avoid rolling over the end of a minor cycle...
     if(OTV0P2BASE::getSubCycleTime() >= OTV0P2BASE::GSCT_MAX-2)
       {
-      return(0); // Failure value: may be able to to better.
+      return(RoomTemperatureC16::INVALID_TEMP); // Failure value: may be able to to better.
       }
     }
   uint16_t rawTemp = (Wire.read() << 8);
@@ -429,13 +427,13 @@ static bool Sensor_DS18B10_init()
   bool found = false;
 
   // Ensure no bad search state.
-  MinOW.reset_search();
+  MinOW_DEFAULT.reset_search();
 
   for( ; ; )
     {
-    if(!MinOW.search(first_DS18B20_address))
+    if(!MinOW_DEFAULT.search(first_DS18B20_address))
       {
-      MinOW.reset_search(); // Be kind to any other OW search user.
+      MinOW_DEFAULT.reset_search(); // Be kind to any other OW search user.
       break;
       }
 
@@ -461,13 +459,13 @@ static bool Sensor_DS18B10_init()
 #if 0 && defined(DEBUG)
     DEBUG_SERIAL_PRINTLN_FLASHSTRING("Setting precision...");
 #endif
-    MinOW.reset();
+    MinOW_DEFAULT.reset();
     // Write scratchpad/config
-    MinOW.select(first_DS18B20_address);
-    MinOW.write(0x4e);
-    MinOW.write(0); // Th: not used.
-    MinOW.write(0); // Tl: not used.
-    MinOW.write(DS1820_PRECISION | 0x1f); // Config register; lsbs all 1.
+    MinOW_DEFAULT.select(first_DS18B20_address);
+    MinOW_DEFAULT.write(0x4e);
+    MinOW_DEFAULT.write(0); // Th: not used.
+    MinOW_DEFAULT.write(0); // Tl: not used.
+    MinOW_DEFAULT.write(DS1820_PRECISION | 0x1f); // Config register; lsbs all 1.
 
     // Found one and configured it!
     found = true;
@@ -485,29 +483,29 @@ static bool Sensor_DS18B10_init()
   }
 
 // Returns temperature in C*16.
-// Returns <= 0 for some sorts of error as failsafe (-1 if failed to initialise).
-static int Sensor_DS18B10_readTemperatureC16()
+// Returns <= 0 for some sorts of error as failsafe (RoomTemperatureC16::INVALID_TEMP if failed to initialise).
+static int16_t Sensor_DS18B10_readTemperatureC16()
   {
   if(!sensor_DS18B10_initialised) { Sensor_DS18B10_init(); }
-  if(0 == first_DS18B20_address[0]) { return(-1); }
+  if(0 == first_DS18B20_address[0]) { return(RoomTemperatureC16::INVALID_TEMP); }
 
   // Start a temperature reading.
-  MinOW.reset();
-  MinOW.select(first_DS18B20_address);
-  MinOW.write(0x44); // Start conversion without parasite power.
+  MinOW_DEFAULT.reset();
+  MinOW_DEFAULT.select(first_DS18B20_address);
+  MinOW_DEFAULT.write(0x44); // Start conversion without parasite power.
   //delay(750); // 750ms should be enough.
   // Poll for conversion complete (bus released)...
-  while(MinOW.read_bit() == 0) { OTV0P2BASE::nap(WDTO_30MS); }
+  while(MinOW_DEFAULT.read_bit() == 0) { OTV0P2BASE::nap(WDTO_30MS); }
 
   // Fetch temperature (scratchpad read).
-  MinOW.reset();
-  MinOW.select(first_DS18B20_address);    
-  MinOW.write(0xbe);
+  MinOW_DEFAULT.reset();
+  MinOW_DEFAULT.select(first_DS18B20_address);    
+  MinOW_DEFAULT.write(0xbe);
   // Read first two bytes of 9 available.  (No CRC config or check.)
-  const uint8_t d0 = MinOW.read();
-  const uint8_t d1 = MinOW.read();
+  const uint8_t d0 = MinOW_DEFAULT.read();
+  const uint8_t d1 = MinOW_DEFAULT.read();
   // Terminate read and let DS18B20 go back to sleep.
-  MinOW.reset();
+  MinOW_DEFAULT.reset();
 
   // Extract raw temperature, masking any undefined lsbit.
   const int16_t rawC16 = (d1 << 8) | (d0 & ~1);
@@ -566,7 +564,7 @@ static int Sensor_DS18B10_readTemperatureC16()
 RoomTemperatureC16 TemperatureC16;
 
 // Temperature read uses/selects one of the implementations/sensors.
-int RoomTemperatureC16::read()
+int16_t RoomTemperatureC16::read()
   {
 #if defined(SENSOR_DS18B20_ENABLE)
   const int raw = Sensor_DS18B10_readTemperatureC16();
@@ -581,207 +579,9 @@ int RoomTemperatureC16::read()
   }
 
 
-
-#if defined(SENSOR_EXTERNAL_DS18B20_ENABLE)
-// Initialise the device (if any) before first use.
-// Returns true iff successful.
-// Uses specified order DS18B20 found on bus.
-// May need to be reinitialised if precision changed.
-bool ExtTemperatureDS18B20C16::init()
-  {
-//  DEBUG_SERIAL_PRINTLN_FLASHSTRING("DS18B20 init...");
-  bool found = false;
-
-  // Ensure no bad search state.
-  MinOW.reset_search();
-
-  for( ; ; )
-    {
-    if(!MinOW.search(address))
-      {
-      MinOW.reset_search(); // Be kind to any other OW search user.
-      break;
-      }
-
-#if 0 && defined(DEBUG)
-    // Found a device.
-    DEBUG_SERIAL_PRINT_FLASHSTRING("addr:");
-    for(int i = 0; i < 8; ++i)
-      {
-      DEBUG_SERIAL_PRINT(' ');
-      DEBUG_SERIAL_PRINTFMT(address[i], HEX);
-      }
-    DEBUG_SERIAL_PRINTLN();
-#endif
-
-    if(0x28 != address[0])
-      {
-#if 0 && defined(DEBUG)
-      DEBUG_SERIAL_PRINTLN_FLASHSTRING("Not a DS18B20, skipping...");
-#endif
-      continue;
-      }
-
-#if 0 && defined(DEBUG)
-    DEBUG_SERIAL_PRINTLN_FLASHSTRING("Setting precision...");
-#endif
-    MinOW.reset();
-    // Write scratchpad/config
-    MinOW.select(address);
-    MinOW.write(0x4e);
-    MinOW.write(0); // Th: not used.
-    MinOW.write(0); // Tl: not used.
-//    MinOW.write(DS1820_PRECISION | 0x1f); // Config register; lsbs all 1.
-    MinOW.write(((precision - 9) << 6) | 0x1f); // Config register; lsbs all 1.
-
-    // Found one and configured it!
-    found = true;
-    }
-
-  // Search has been run (whether DS18B20 was found or not).
-  initialised = true;
-
-  if(!found)
-    {
-    DEBUG_SERIAL_PRINTLN_FLASHSTRING("DS18B20 not found");
-    address[0] = 0; // Indicate that no DS18B20 was found.
-    }
-  return(found);
-  }
-
-// Force a read/poll of temperature and return the value sensed in nominal units of 1/16 C.
-// At sub-maximum precision lsbits will be zero or undefined.
-// Expensive/slow.
-// Not thread-safe nor usable within ISRs (Interrupt Service Routines).
-int ExtTemperatureDS18B20C16::read()
-  {
-  if(!initialised) { init(); }
-  if(0 == address[0]) { value = INVALID_TEMP; return(INVALID_TEMP); }
-
-  // Start a temperature reading.
-  MinOW.reset();
-  MinOW.select(address);
-  MinOW.write(0x44); // Start conversion without parasite power.
-  //delay(750); // 750ms should be enough.
-  // Poll for conversion complete (bus released)...
-  while(MinOW.read_bit() == 0) { OTV0P2BASE::nap(WDTO_15MS); }
-
-  // Fetch temperature (scratchpad read).
-  MinOW.reset();
-  MinOW.select(address);    
-  MinOW.write(0xbe);
-  // Read first two bytes of 9 available.  (No CRC config or check.)
-  const uint8_t d0 = MinOW.read();
-  const uint8_t d1 = MinOW.read();
-  // Terminate read and let DS18B20 go back to sleep.
-  MinOW.reset();
-
-  // Extract raw temperature, masking any undefined lsbit.
-  // TODO: mask out undefined LSBs if precision not maximum.
-  const int16_t rawC16 = (d1 << 8) | (d0);
-
-  return(rawC16);
-  }
-#endif
-
-
 #if defined(SENSOR_EXTERNAL_DS18B20_ENABLE_0) // Enable sensor zero.
-extern ExtTemperatureDS18B20C16 extDS18B20_0(0);
+OTV0P2BASE::TemperatureC16_DS18B20 extDS18B20_0(MinOW_DEFAULT, 0);
 #endif
-
-
-
-
-
-#ifdef TEMP_POT_AVAILABLE
-// Minimum change (hysteresis) enforced in 'reduced noise' version value; must be greater than 1.
-// Aim to provide reasonable noise immunity, even from an ageing carbon-track pot.
-// Allow reasonable remaining granularity of response, at least 10s of distinct positions (>=5 bits).
-#define RN_HYST 8
-
-// Bottom and top parts of reduced noise range reserved for forcing FROST or BOOST.
-// Should be big enough to hit easily (and must be larger than RN_HYST)
-// but not so big as to really constrain the temperature range or cause confusion.
-#define RN_FRBO (max(8, 2*RN_HYST))
-
-// Force a read/poll of the temperature pot and return the value sensed [0,255] (cold to hot).
-// Potentially expensive/slow.
-// This value has some hysteresis applied to reduce noise.
-// Not thread-safe nor usable within ISRs (Interrupt Service Routines).
-uint8_t TemperaturePot::read()
-  {
-  // No need to wait for voltage to stablise as pot top end directly driven by IO_POWER_UP.
-  OTV0P2BASE::power_intermittent_peripherals_enable(false);
-  const uint16_t tpRaw = OTV0P2BASE::analogueNoiseReducedRead(TEMP_POT_AIN, DEFAULT); // Vcc reference.
-  OTV0P2BASE::power_intermittent_peripherals_disable();
-
-#if defined(TEMP_POT_REVERSE)
-  const uint16_t tp = TEMP_POT_RAW_MAX - tpRaw; // Travel is in opposite direction to natural!
-#else
-  const uint16_t tp = tpRaw;
-#endif
-
-  // TODO: capture entropy from changed LS bits esp if reduced-noise version doesn't change.
-
-  // Store new raw value.
-  raw = tp;
-
-  // Capture reduced-noise value with a little hysteresis.
-  const uint8_t oldValue = value;
-  const uint8_t shifted = tp >> 2;
-  if(((shifted > oldValue) && (shifted - oldValue >= RN_HYST)) ||
-     ((shifted < oldValue) && (oldValue - shifted >= RN_HYST)))
-    {
-    const uint8_t rn = (uint8_t) shifted;
-    // Atomically store reduced-noise normalised value.
-    value = rn;
-
-    // Smart responses to adjustment/movement of temperature pot.
-    // Possible to get reasonable functionality without using MODE button.
-    //
-    // NOTE: without ignoredFirst this will also respond to the initial position of the pot
-    //   as the first reading is taken, ie may force to WARM or BAKE.
-    static bool ignoredFirst;
-    if(!ignoredFirst) { ignoredFirst = true; }
-    else
-      {
-      // Force FROST mode when right at bottom of dial.
-      if(rn < RN_FRBO) { setWarmModeDebounced(false); }
-      // Start BAKE mode when dial turned up to top.
-      else if(rn > (255-RN_FRBO)) { startBakeDebounced(); }
-      // Cancel BAKE mode when dial/temperature turned down significantly.
-      else if(rn < oldValue) { cancelBakeDebounced(); }
-      // Force WARM mode when dial/temperature turned up significantly.
-      else if(rn > oldValue) { setWarmModeDebounced(true); }
-
-      // Note user operation of pot.
-      markUIControlUsed(); 
-      }
-    }
-
-#if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("Temp pot: ");
-  DEBUG_SERIAL_PRINT(tp);
-  DEBUG_SERIAL_PRINT_FLASHSTRING(", rn: ");
-  DEBUG_SERIAL_PRINT(tempPotReducedNoise);
-  DEBUG_SERIAL_PRINTLN();
-#endif
-
-  return(value);
-  }
-
-// Singleton implementation/instance.
-TemperaturePot TempPot;
-#endif
-
-
-
-
-
-
-
-
-
 
 
 #ifdef ENABLE_VOICE_SENSOR
@@ -853,13 +653,13 @@ OTRadValve::ValveMotorDirectV1<MOTOR_DRIVE_MR, MOTOR_DRIVE_ML, MOTOR_DRIVE_MI_AI
 
 
 // FHT8V radio-controlled actuator.
-#ifdef USE_MODULE_FHT8VSIMPLE
+#ifdef ENABLE_FHT8VSIMPLE
 // Function to append stats trailer (and 0xff) to FHT8V/FS20 TX buffer.
 // Assume enough space in buffer for largest possible stats message.
 #if defined(ALLOW_STATS_TX)
 uint8_t *appendStatsToTXBufferWithFF(uint8_t *bptr, const uint8_t bufSize)
   {
-  FullStatsMessageCore_t trailer;
+  OTV0P2BASE::FullStatsMessageCore_t trailer;
   populateCoreStats(&trailer);
   // Ensure that no ID is encoded in the message sent on the air since it would be a repeat from the FHT8V frame.
   trailer.containsID = false;
@@ -884,15 +684,15 @@ uint8_t *appendStatsToTXBufferWithFF(uint8_t *bptr, const uint8_t bufSize)
 #else
 #define appendStatsToTXBufferWithFF NULL // Do not append stats.
 #endif
-#endif // USE_MODULE_FHT8VSIMPLE
+#endif // ENABLE_FHT8VSIMPLE
 
-#ifdef USE_MODULE_FHT8VSIMPLE
+#ifdef ENABLE_FHT8VSIMPLE
 OTRadValve::FHT8VRadValve<_FHT8V_MAX_EXTRA_TRAILER_BYTES, OTRadValve::FHT8VRadValveBase::RFM23_PREAMBLE_BYTES, OTRadValve::FHT8VRadValveBase::RFM23_PREAMBLE_BYTE> FHT8V(appendStatsToTXBufferWithFF);
 #endif
 
 // Clear both housecode parts (and thus disable local valve).
 // Does nothing if FHT8V not in use.
-#ifdef USE_MODULE_FHT8VSIMPLE
+#ifdef ENABLE_FHT8VSIMPLE
 void FHT8VClearHC()
   {
   FHT8V.clearHC();
@@ -904,7 +704,7 @@ void FHT8VClearHC()
 // Set (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control.
 // Also set value in FHT8V rad valve model.
 // Does nothing if FHT8V not in use.
-#ifdef USE_MODULE_FHT8VSIMPLE
+#ifdef ENABLE_FHT8VSIMPLE
 void FHT8VSetHC1(uint8_t hc)
   {
   FHT8V.setHC1(hc);
@@ -920,7 +720,7 @@ void FHT8VSetHC2(uint8_t hc)
 // Get (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control (will be 0xff until set).
 // FHT8V instance values are used as a cache.
 // Does nothing if FHT8V not in use.
-#ifdef USE_MODULE_FHT8VSIMPLE
+#ifdef ENABLE_FHT8VSIMPLE
 uint8_t FHT8VGetHC1()
   {
   const uint8_t vv = FHT8V.getHC1();
@@ -945,9 +745,9 @@ uint8_t FHT8VGetHC2()
       { FHT8V.setHC2(ev); }
   return(ev);
   }
-#endif // USE_MODULE_FHT8VSIMPLE
+#endif // ENABLE_FHT8VSIMPLE
 
-#ifdef USE_MODULE_FHT8VSIMPLE
+#ifdef ENABLE_FHT8VSIMPLE
 // Load EEPROM house codes into primary FHT8V instance at start-up or once cleared in FHT8V instance.
 void FHT8VLoadHCFromEEPROM()
   {
@@ -955,7 +755,7 @@ void FHT8VLoadHCFromEEPROM()
   FHT8VGetHC1();
   FHT8VGetHC2();
   }
-#endif // USE_MODULE_FHT8VSIMPLE
+#endif // ENABLE_FHT8VSIMPLE
 
 
 //#if defined(ENABLE_BOILER_HUB)

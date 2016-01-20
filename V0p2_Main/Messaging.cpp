@@ -14,13 +14,17 @@ specific language governing permissions and limitations
 under the Licence.
 
 Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
+                           Gary Gladman 2015
+                           Mike Stirling 2013
 */
 
 /*
- Generic messaging support for OpenTRV.
+ Generic messaging and radio/comms support for OpenTRV.
  */
 
 #include "Messaging.h"
+
+#include "V0p2_Board_IO_Config.h" // I/O pin allocation: include ahead of I/O module headers.
 
 #include <OTRadioLink.h>
 #ifdef ALLOW_CC1_SUPPORT
@@ -30,904 +34,137 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
 #include <util/atomic.h>
 
 #include "Control.h"
-#include "Radio.h"
 #include "UI_Minimal.h"
 
 #include "V0p2_Sensors.h"
 
 
-//// Update 'C2' 8-bit CRC with next byte.
-//// Usually initialised with 0xff.
-//// Should work well from 10--119 bits (2--~14 bytes); best 27-50, 52, 56-119 bits.
-//// See: http://users.ece.cmu.edu/~koopman/roses/dsn04/koopman04_crc_poly_embedded.pdf
-//// Also: http://en.wikipedia.org/wiki/Cyclic_redundancy_check
-//#define C2_POLYNOMIAL 0x97
-//uint8_t crc8_C2_update(uint8_t crc, const uint8_t datum)
-//  {
-//  crc ^= datum;
-//  for(uint8_t i = 0; ++i <= 8; )
-//    {
-//    if(crc & 0x80)
-//      { crc = (crc << 1) ^ C2_POLYNOMIAL; }
-//    else
-//      { crc <<= 1; }
-//    }
-//  return(crc);
-//  }
+#ifdef ENABLE_RADIO_SIM900
+//For EEPROM:
+//- Set the first field of SIM900LinkConfig to true.
+//- The configs are stored as \0 terminated strings starting at 0x300.
+//- You can program the eeprom using ./OTRadioLink/dev/utils/sim900eepromWrite.ino
+//  static const void *SIM900_PIN      = (void *)0x0300; // TODO confirm this address
+//  static const void *SIM900_APN      = (void *)0x0305;
+//  static const void *SIM900_UDP_ADDR = (void *)0x031B;
+//  static const void *SIM900_UDP_PORT = (void *)0x0329;
+//  const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config(
+//                                                  true,
+//                                                  SIM900_PIN,
+//                                                  SIM900_APN,
+//                                                  SIM900_UDP_ADDR,
+//                                                  SIM900_UDP_PORT);
+//For Flash:
+//- Set the first field of SIM900LinkConfig to false.
+//- The configs are stored as \0 terminated strings.
+// - APNs - concirrus:  "internet.cxn"
+//        - id:         "id"
+  static const char SIM900_PIN[5] PROGMEM       = "1111";
+  static const char SIM900_APN[] PROGMEM      = "\"everywhere\",\"eesecure\",\"secure\"";
+  static const char SIM900_UDP_ADDR[14] PROGMEM = "46.101.52.242"; // ORS server
+  static const char SIM900_UDP_PORT[5] PROGMEM = "9999";
+  const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config(
+                                                  false,
+                                                  SIM900_PIN,
+                                                  SIM900_APN,
+                                                  SIM900_UDP_ADDR,
+                                                  SIM900_UDP_PORT);
+#endif // ENABLE_RADIO_SIM900
 
 
-
-
-#ifdef ENABLE_FS20_ENCODING_SUPPORT
-// Return true if header/structure and CRC looks valid for (3-byte) buffered stats payload.
-bool verifyHeaderAndCRCForTrailingMinimalStatsPayload(uint8_t const *const buf)
-  {
-  return((MESSAGING_TRAILING_MINIMAL_STATS_HEADER_MSBS == ((buf[0]) & MESSAGING_TRAILING_MINIMAL_STATS_HEADER_MASK)) && // Plausible header.
-         (0 == (buf[1] & 0x80)) && // Top bit is clear on this byte also.
-         (buf[2] == OTRadioLink::crc7_5B_update(buf[0], buf[1]))); // CRC validates, top bit implicitly zero.
-  }
-#endif // ENABLE_FS20_ENCODING_SUPPORT
-
-#ifdef ENABLE_FS20_ENCODING_SUPPORT
-// Store minimal stats payload into (2-byte) buffer from payload struct (without CRC); values are coerced to fit as necessary..
-//   * payload  must be non-NULL
-// Used for minimal and full packet forms,
-void writeTrailingMinimalStatsPayloadBody(uint8_t *buf, const trailingMinimalStatsPayload_t *payload)
-  {
-#ifdef DEBUG
-  if(NULL == payload) { panic(); }
+#if defined(ENABLE_RADIO_NULL)
+OTRadioLink::OTNullRadioLink NullRadio;
 #endif
-  // Temperatures coerced to fit between MESSAGING_TRAILING_MINIMAL_STATS_TEMP_BIAS (-20C) and 0x7ff_MESSAGING_TRAILING_MINIMAL_STATS_TEMP_BIAS (107Cf).
-#if MESSAGING_TRAILING_MINIMAL_STATS_TEMP_BIAS > 0
-#error MESSAGING_TRAILING_MINIMAL_STATS_TEMP_BIAS must be negative
+
+// Brings in necessary radio libs
+#ifdef ENABLE_RADIO_RFM23B
+#ifdef PIN_RFM_NIRQ
+OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, PIN_RFM_NIRQ> RFM23B;
+#else
+OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, -1> RFM23B;
 #endif
-  const int16_t bitmask = 0x7ff;
-  const int16_t minTempRepresentable = MESSAGING_TRAILING_MINIMAL_STATS_TEMP_BIAS;
-  const int16_t maxTempRepresentable = bitmask + MESSAGING_TRAILING_MINIMAL_STATS_TEMP_BIAS;
+#endif // ENABLE_RADIO_RFM23B
+#ifdef ENABLE_RADIO_SIM900
+OTSIM900Link::OTSIM900Link SIM900(A3, A2, 8, 5);
+#endif
+
+// Assigns radio to PrimaryRadio alias
+#if defined(RADIO_PRIMARY_RFM23B)
+OTRadioLink::OTRadioLink &PrimaryRadio = RFM23B;
+#elif defined(RADIO_PRIMARY_SIM900)
+OTRadioLink::OTRadioLink &PrimaryRadio = SIM900;
+#else
+OTRadioLink::OTRadioLink &PrimaryRadio = NullRadio;
+#endif // RADIO_PRIMARY_RFM23B
+
+// Assign radio to SecondaryRadio alias.
+#ifdef ENABLE_RADIO_SECONDARY_MODULE
+#if defined(RADIO_SECONDARY_RFM23B)
+OTRadioLink::OTRadioLink &SecondaryRadio = RFM23B;
+#elif defined(RADIO_SECONDARY_SIM900)
+OTRadioLink::OTRadioLink &SecondaryRadio = SIM900;
+#else
+OTRadioLink::OTRadioLink &SecondaryRadio = NullRadio;
+#endif // RADIO_SECONDARY_RFM23B
+#endif // ENABLE_RADIO_SECONDARY_MODULE
+
+// RFM22 is apparently SPI mode 0 for Arduino library pov.
+
+// Send the underlying stats binary/text 'whitened' message.
+// This must be terminated with an 0xff (which is not sent),
+// and no longer than STATS_MSG_MAX_LEN bytes long in total (excluding the terminating 0xff).
+// This must not contain any 0xff and should not contain long runs of 0x00 bytes.
+// The message to be sent must be written at an offset of STATS_MSG_START_OFFSET from the start of the buffer.
+// This routine will alter the content of the buffer for transmission,
+// and the buffer should not be re-used as is.
+//   * doubleTX  double TX to increase chance of successful reception
+//   * RFM23BfriendlyPremable  if true then add an extra preamble
+//     to allow RFM23B-based receiver to RX this
+// This will use whichever transmission medium/carrier/etc is available.
+//#define STATS_MSG_START_OFFSET (RFM22_PREAMBLE_BYTES + RFM22_SYNC_MIN_BYTES)
+//#define STATS_MSG_MAX_LEN (64 - STATS_MSG_START_OFFSET)
+void RFM22RawStatsTXFFTerminated(uint8_t * const buf, const bool doubleTX, bool RFM23BFramed)
+  {
+  if(RFM23BFramed) RFM22RXPreambleAdd(buf);     // Only needed for RFM23B. This should be made more clear when refactoring
+  const uint8_t buflen = OTRadioLink::frameLenFFTerminated(buf);
 #if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("payload->tempC16: ");
-  DEBUG_SERIAL_PRINTFMT(payload->tempC16, DEC);
-  DEBUG_SERIAL_PRINT_FLASHSTRING(" min=");
-  DEBUG_SERIAL_PRINTFMT(minTempRepresentable, DEC);
-  DEBUG_SERIAL_PRINT_FLASHSTRING(" max=");
-  DEBUG_SERIAL_PRINTFMT(maxTempRepresentable, DEC);
-  DEBUG_SERIAL_PRINTLN();
-#endif
-  int16_t temp16Cbiased = payload->tempC16;
-  if(temp16Cbiased < minTempRepresentable) { temp16Cbiased = minTempRepresentable; }
-  else if(temp16Cbiased > maxTempRepresentable) { temp16Cbiased = maxTempRepresentable; }
-  temp16Cbiased -= MESSAGING_TRAILING_MINIMAL_STATS_TEMP_BIAS; // Should now be strictly positive.
-#if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("temp16Cbiased: ");
-  DEBUG_SERIAL_PRINTFMT(temp16Cbiased, DEC);
-  DEBUG_SERIAL_PRINTLN();
-#endif
-  const uint8_t byte0 = MESSAGING_TRAILING_MINIMAL_STATS_HEADER_MSBS | (payload->powerLow ? 0x10 : 0) | (temp16Cbiased & 0xf);
-  const uint8_t byte1 = (uint8_t) (temp16Cbiased >> 4);
-  buf[0] = byte0;
-  buf[1] = byte1;
-#if 0 && defined(DEBUG)
-  for(uint8_t i = 0; i < 2; ++i) { if(0 != (buf[i] & 0x80)) { panic(); } } // MSBits should be clear.
-#endif
-  }
-#endif // ENABLE_FS20_ENCODING_SUPPORT
-
-#ifdef ENABLE_FS20_ENCODING_SUPPORT
-// Store minimal stats payload into (3-byte) buffer from payload struct and append CRC; values are coerced to fit as necessary..
-//   * payload  must be non-NULL
-void writeTrailingMinimalStatsPayload(uint8_t *buf, const trailingMinimalStatsPayload_t *payload)
-  {
-  writeTrailingMinimalStatsPayloadBody(buf, payload);
-  buf[2] = OTRadioLink::crc7_5B_update(buf[0], buf[1]);
-#if 0 && defined(DEBUG)
-  for(uint8_t i = 0; i < 3; ++i) { if(0 != (buf[i] & 0x80)) { panic(); } } // MSBits should be clear.
-#endif
-  }
-#endif // ENABLE_FS20_ENCODING_SUPPORT
-
-#ifdef ENABLE_FS20_ENCODING_SUPPORT
-// Extract payload from valid (3-byte) header+payload+CRC into payload struct; only 2 bytes are actually read.
-// Input bytes (eg header and check value) must already have been validated.
-void extractTrailingMinimalStatsPayload(const uint8_t *const buf, trailingMinimalStatsPayload_t *const payload)
-  {
-#ifdef DEBUG
-  if(NULL == payload) { panic(); }
-#endif
-  payload->powerLow = (0 != (buf[0] & 0x10));
-  payload->tempC16 = ((((int16_t) buf[1]) << 4) | (buf[0] & 0xf)) + MESSAGING_TRAILING_MINIMAL_STATS_TEMP_BIAS;
-  }
-#endif // ENABLE_FS20_ENCODING_SUPPORT
-
-
-#if defined(ALLOW_STATS_RX)
-#ifndef getInboundStatsQueueOverrun
-// Count of dropped inbound stats message due to insufficient queue space.
-// Must only be accessed under a lock (ATOMIC_BLOCK).
-static uint16_t inboundStatsQueueOverrun = 0;
-
-// Get count of dropped inbound stats messages due to insufficient queue space.
-uint16_t getInboundStatsQueueOverrun()
-  {
-  ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
-    { return(inboundStatsQueueOverrun); }
-  }
-#endif
-#endif
-
-#ifdef ENABLE_FS20_ENCODING_SUPPORT
-// Send (valid) core binary stats to specified print channel, followed by "\r\n".
-// This does NOT attempt to flush output nor wait after writing.
-// Will only write stats with a source ID.
-void outputCoreStats(Print *p, bool secure, const FullStatsMessageCore_t *stats)
-  {
-  if(stats->containsID)
-    {
-    // Dump (remote) stats field '@<hexnodeID>;TnnCh[P;]'
-    // where the T field shows temperature in C with a hex digit after the binary point indicated by C
-    // and the optional P field indicates low power.
-    p->print((char) OTV0P2BASE::SERLINE_START_CHAR_RSTATS);
-    p->print((((uint16_t)stats->id0) << 8) | stats->id1, HEX);
-    if(stats->containsTempAndPower)
-      {
-      p->print(F(";T"));
-      p->print(stats->tempAndPower.tempC16 >> 4, DEC);
-      p->print('C');
-      p->print(stats->tempAndPower.tempC16 & 0xf, HEX);
-      if(stats->tempAndPower.powerLow) { p->print(F(";P")); } // Insert power-low field if needed.
-      }
-    if(stats->containsAmbL)
-      {
-      p->print(F(";L"));
-      p->print(stats->ambL);
-      }
-    if(0 != stats->occ)
-      {
-      p->print(F(";O"));
-      p->print(stats->occ);
-      }
-    p->println();
-    }
-  }
-#endif // ENABLE_FS20_ENCODING_SUPPORT
-
-#ifdef ENABLE_FS20_ENCODING_SUPPORT
-// Send (valid) minimal binary stats to specified print channel, followed by "\r\n".
-// This does NOT attempt to flush output nor wait after writing.
-void outputMinimalStats(Print *p, bool secure, uint8_t id0, uint8_t id1, const trailingMinimalStatsPayload_t *stats)
-    {
-    // Convert to full stats for output.
-    FullStatsMessageCore_t fullstats;
-    clearFullStatsMessageCore(&fullstats);
-    fullstats.id0 = id0;
-    fullstats.id1 = id1;
-    fullstats.containsID = true;
-    memcpy((void *)&fullstats.tempAndPower, stats, sizeof(fullstats.tempAndPower));
-    fullstats.containsTempAndPower = true;
-    outputCoreStats(p, secure, &fullstats);
-    }
-#endif // ENABLE_FS20_ENCODING_SUPPORT
-
-#if defined(ALLOW_STATS_TX)
-#if !defined(enableTrailingStatsPayload)
-// Returns true if an unencrypted minimal trailing static payload and similar (eg bare stats transmission) is permitted.
-// True if the TX_ENABLE value is no higher than stTXmostUnsec.
-// Some filtering may be required even if this is true.
-// TODO: allow cacheing in RAM for speed.
-bool enableTrailingStatsPayload() { return(OTV0P2BASE::getStatsTXLevel() <= OTV0P2BASE::stTXmostUnsec); }
-#endif
-#endif
-
-
-
-// Coerce any ID bytes to valid values if unset (0xff) or if forced,
-// by filling with valid values (0x80--0xfe) from decent entropy gathered on the fly.
-// Will moan about invalid values and return false but not attempt to reset,
-// eg in case underlying EEPROM cell is worn/failing.
-// Returns true iff all values good.
-bool ensureIDCreated(const bool force)
-  {
-  bool allGood = true;
-  for(uint8_t i = 0; i < V0P2BASE_EE_LEN_ID; ++i)
-    {
-    uint8_t * const loc = i + (uint8_t *)V0P2BASE_EE_START_ID;
-    if(force || (0xff == eeprom_read_byte(loc))) // Byte is unset or change is being forced.
-        {
-        OTV0P2BASE::serialPrintAndFlush(F("Setting ID byte "));
-        OTV0P2BASE::serialPrintAndFlush(i);
-        OTV0P2BASE::serialPrintAndFlush(' ');
-        const uint8_t envNoise = ((i & 1) ? TemperatureC16.get() : ((uint8_t)AmbLight.getRaw()));
-        for( ; ; )
-          {
-          // Try to make decently-randomised 'unique-ish' ID with mixture of sources.
-          // Is not confidential, and will be transmitted in the clear.
-          // System will typically not have been running long when this is invoked.
-          const uint8_t newValue = 0x80 | (OTV0P2BASE::getSecureRandomByte() ^ envNoise);
-          if(0xff == newValue) { continue; } // Reject unusable value.
-          OTV0P2BASE::eeprom_smart_update_byte(loc, newValue);
-          OTV0P2BASE::serialPrintAndFlush(newValue, HEX);
-          break;
-          }
-        OTV0P2BASE::serialPrintlnAndFlush();
-        }
-    // Validate.
-    const uint8_t v2 = eeprom_read_byte(loc);
-    if(!validIDByte(v2))
-        {
-        allGood = false;
-        OTV0P2BASE::serialPrintAndFlush(F("Invalid byte "));
-        OTV0P2BASE::serialPrintAndFlush(i);
-        OTV0P2BASE::serialPrintAndFlush(F(" ... "));
-        OTV0P2BASE::serialPrintAndFlush(v2, HEX);
-        OTV0P2BASE::serialPrintlnAndFlush();
-        }
-     }
-  return(allGood);
-  }
-
-
-#ifdef ENABLE_FS20_ENCODING_SUPPORT
-
-// Send core/common 'full' stats message.
-//   * content contains data to be sent in the message; must be non-NULL
-// Note that up to 7 bytes of payload is optimal for the CRC used.
-// If successful, returns pointer to terminating 0xff at end of message.
-// Returns NULL if failed (eg because of bad inputs or insufficient buffer space);
-// part of the message may have have been written in this case and in particular the previous terminating 0xff may have been overwritten.
-uint8_t *encodeFullStatsMessageCore(uint8_t * const buf, const uint8_t buflen, const OTV0P2BASE::stats_TX_level secLevel, const bool secureChannel,
-    const FullStatsMessageCore_t * const content)
-  {
-  if(NULL == buf) { return(NULL); } // Could be an assert/panic instead at a pinch.
-  if(NULL == content) { return(NULL); } // Could be an assert/panic instead at a pinch.
-  if(secureChannel) { return(NULL); } // TODO: cannot create secure message yet.
-//  if(buflen < FullStatsMessageCore_MIN_BYTES_ON_WIRE+1) { return(NULL); } // Need space for at least the shortest possible message + terminating 0xff.
-//  if(buflen < FullStatsMessageCore_MAX_BYTES_ON_WIRE+1) { return(NULL); } // Need space for longest possible message + terminating 0xff.
-
-  // Compute message payload length (excluding CRC and terminator).
-  // Fail immediately (return NULL) if not enough space for message content.
-  const uint8_t payloadLength =
-      1 + // Initial header.
-      (content->containsID ? 2 : 0) +
-      (content->containsTempAndPower ? 2 : 0) +
-      1 + // Flags header.
-      (content->containsAmbL ? 1 : 0);
-  if(buflen < payloadLength + 2)  { return(NULL); }
-
-  // Validate some more detail.
-  // ID
-  if(content->containsID)
-    {
-    if((content->id0 == (uint8_t)0xff) || (content->id1 == (uint8_t)0xff)) { return(NULL); } // ID bytes cannot be 0xff.
-    if((content->id0 & 0x80) != (content->id1 & 0x80)) { return(NULL); } // ID top bits don't match.
-    }
-  // Ambient light.
-  if(content->containsAmbL)
-    {
-    if((content->ambL == 0) || (content->ambL == (uint8_t)0xff)) { return(NULL); } // Forbidden values.
-    }
-
-  // WRITE THE MESSAGE!
-  // Pointer to next byte to write in message.
-  register uint8_t *b = buf;
-
-  // Construct the header.
-  // * byte 0 :  |  0  |  1  |  1  |  1  |  R0 | IDP | IDH | SEC |   header, 1x reserved 0 bit, ID Present, ID High, SECure
-//#define MESSAGING_FULL_STATS_HEADER_MSBS 0x70
-//#define MESSAGING_FULL_STATS_HEADER_MASK 0xf0
-//#define MESSAGING_FULL_STATS_HEADER_BITS_ID_PRESENT 4
-//#define MESSAGING_FULL_STATS_HEADER_BITS_ID_HIGH 2
-//#define MESSAGING_FULL_STATS_HEADER_BITS_ID_SECURE 1
-  const uint8_t header = MESSAGING_FULL_STATS_HEADER_MSBS |
-      (content->containsID ? MESSAGING_FULL_STATS_HEADER_BITS_ID_PRESENT : 0) |
-      ((content->containsID && (0 != (content->id0 & 0x80))) ? MESSAGING_FULL_STATS_HEADER_BITS_ID_HIGH : 0) |
-      0; // TODO: cannot do secure messages yet.
-  *b++ = header;
- 
-  // Insert ID if requested.
-  if(content->containsID)
-    {
-    *b++ = content->id0 & 0x7f;
-    *b++ = content->id1 & 0x7f;
-    }
-
-  // Insert basic temperature and power status if requested.
-  if(content->containsTempAndPower)
-    {
-    writeTrailingMinimalStatsPayloadBody(b, &(content->tempAndPower));
-    b += 2;
-    }
- 
-  // Always insert flags header , and downstream optional values.
-// Flags indicating which optional elements are present:
-// AMBient Light, Relative Humidity %.
-// OC1/OC2 = Occupancy: 00 not disclosed, 01 probably, 10 possibly, 11 not occupied recently.
-// IF EXT is 1 a futher flags byte follows.
-// * byte b+2: |  0  |  1  |  1  | EXT | ABML| RH% | OC1 | OC2 |   EXTension-follows flag, plus optional section flags.
-//#define MESSAGING_FULL_STATS_FLAGS_HEADER_MSBS 0x60
-//#define MESSAGING_FULL_STATS_FLAGS_HEADER_MASK 0xe0
-//#define MESSAGING_FULL_STATS_FLAGS_HEADER_AMBL 8
-//#define MESSAGING_FULL_STATS_FLAGS_HEADER_RHP 4
-  // Omit occupancy data unless encoding for a secure channel or at a very permissive stats TX security level.
-  const uint8_t flagsHeader = MESSAGING_FULL_STATS_FLAGS_HEADER_MSBS |
-    (content->containsAmbL ? MESSAGING_FULL_STATS_FLAGS_HEADER_AMBL : 0) |
-    ((secureChannel || (secLevel <= OTV0P2BASE::stTXalwaysAll)) ? (content->occ & 3) : 0);
-  *b++ = flagsHeader;
-  // Now insert extra fields as flagged.
-  if(content->containsAmbL)
-    { *b++ = content->ambL; }
-  // TODO: RH% etc
-
-  // Finish off message by computing and appending the CRC and then terminating 0xff (and return pointer to 0xff).
-  // Assumes that b now points just beyond the end of the payload.
-  uint8_t crc = MESSAGING_FULL_STATS_CRC_INIT; // Initialisation.
-  for(const uint8_t *p = buf; p < b; ) { crc = OTRadioLink::crc7_5B_update(crc, *p++); }
-  *b++ = crc;
-  *b = 0xff;
-#if 0 && defined(DEBUG)
-  if(b - buf != payloadLength + 1) { panic(F("msg gen err")); }
-#endif
-  return(b);
-  }
-
-// Decode core/common 'full' stats message.
-// If successful returns pointer to next byte of message, ie just after full stats message decoded.
-// Returns NULL if failed (eg because of corrupt/insufficient message data) and state of 'content' result is undefined.
-// This will avoid copying into the result data (possibly tainted) that has arrived at an inappropriate security level.
-//   * content will contain data decoded from the message; must be non-NULL
-const uint8_t *decodeFullStatsMessageCore(const uint8_t * const buf, const uint8_t buflen, const OTV0P2BASE::stats_TX_level secLevel, const bool secureChannel,
-    FullStatsMessageCore_t * const content)
-  {
-//DEBUG_SERIAL_PRINTLN_FLASHSTRING("dFSMC");
-  if(NULL == buf) { return(NULL); } // Could be an assert/panic instead at a pinch.
-//DEBUG_SERIAL_PRINTLN_FLASHSTRING(" chk c");
-  if(NULL == content) { return(NULL); } // Could be an assert/panic instead at a pinch.
-  if(buflen < FullStatsMessageCore_MIN_BYTES_ON_WIRE)
-    {
-#if 0
-    DEBUG_SERIAL_PRINT_FLASHSTRING("buf too small: ");
+    DEBUG_SERIAL_PRINT_FLASHSTRING("buflen=");
     DEBUG_SERIAL_PRINT(buflen);
     DEBUG_SERIAL_PRINTLN();
-#endif
-    return(NULL); // Not long enough for even a minimal message to be present...
-    }
-
-//DEBUG_SERIAL_PRINTLN_FLASHSTRING(" clr");
-  // Conservatively clear the result completely.
-  clearFullStatsMessageCore(content);
-
-  // READ THE MESSAGE!
-  // Pointer to next byte to read in message.
-  register const uint8_t *b = buf;
-
-  // Validate the message header and start to fill in structure.
-  const uint8_t header = *b++;
-  // Deonstruct the header.
-  // * byte 0 :  |  0  |  1  |  1  |  1  |  R0 | IDP | IDH | SEC |   header, 1x reserved 0 bit, ID Present, ID High, SECure
-//#define MESSAGING_FULL_STATS_HEADER_MSBS 0x70
-//#define MESSAGING_FULL_STATS_HEADER_MASK 0x70
-//#define MESSAGING_FULL_STATS_HEADER_BITS_ID_PRESENT 4
-//#define MESSAGING_FULL_STATS_HEADER_BITS_ID_HIGH 2
-//#define MESSAGING_FULL_STATS_HEADER_BITS_ID_SECURE 0x80
-//DEBUG_SERIAL_PRINTLN_FLASHSTRING(" chk msb");
-  if(MESSAGING_FULL_STATS_HEADER_MSBS != (header & MESSAGING_FULL_STATS_HEADER_MASK)) { return(NULL); } // Bad header.
-//DEBUG_SERIAL_PRINTLN_FLASHSTRING(" chk sec");
-  if(0 != (header & MESSAGING_FULL_STATS_HEADER_BITS_ID_SECURE)) { return(NULL); } // TODO: cannot do secure messages yet.
-  // Extract ID if present.
-//DEBUG_SERIAL_PRINTLN_FLASHSTRING(" chk ID");
-  const bool containsID = (0 != (header & MESSAGING_FULL_STATS_HEADER_BITS_ID_PRESENT));
-  if(containsID)
-    {
-    content->containsID = true;
-//DEBUG_SERIAL_PRINTLN_FLASHSTRING(" containsID");
-    const uint8_t idHigh = ((0 != (header & MESSAGING_FULL_STATS_HEADER_BITS_ID_HIGH)) ? 0x80 : 0);
-    content->id0 = *b++ | idHigh;
-    content->id1 = *b++ | idHigh;
-    }
-
-  // If next header is temp/power then extract it, else must be the flags header.
-  if(b - buf >= buflen) { return(NULL); } // Fail if next byte not available.
-  if(MESSAGING_TRAILING_MINIMAL_STATS_HEADER_MSBS == (*b & MESSAGING_TRAILING_MINIMAL_STATS_HEADER_MASK))
-    {
-//DEBUG_SERIAL_PRINTLN_FLASHSTRING(" chk msh");
-    if(b - buf >= buflen-1) { return(NULL); } // Fail if 2 bytes not available for this section.
-    if(0 != (0x80 & b[1])) { return(NULL); } // Following byte does not have msb correctly cleared.
-    extractTrailingMinimalStatsPayload(b, &(content->tempAndPower));
-    b += 2;
-    content->containsTempAndPower = true;
-    }
-
-  // If next header is flags then extract it.
-  // FIXME: risk of misinterpretting CRC.
-//DEBUG_SERIAL_PRINTLN_FLASHSTRING(" chk flg");
-  if(b - buf >= buflen) { return(NULL); } // Fail if next byte not available.
-  if(MESSAGING_FULL_STATS_FLAGS_HEADER_MSBS != (*b & MESSAGING_FULL_STATS_FLAGS_HEADER_MASK)) { return(NULL); } // Corrupt message.
-  const uint8_t flagsHeader = *b++;
-  content->occ = flagsHeader & 3;
-  const bool containsAmbL = (0 != (flagsHeader & MESSAGING_FULL_STATS_FLAGS_HEADER_AMBL));
-  if(containsAmbL)
-    {
-    if(b - buf >= buflen) { return(NULL); } // Fail if next byte not available.
-    const uint8_t ambL = *b++;
-//DEBUG_SERIAL_PRINTLN_FLASHSTRING(" chk aml");
-    if((0 == ambL) || (ambL == (uint8_t)0xff)) { return(NULL); } // Illegal value.
-    content->ambL = ambL;
-    content->containsAmbL = true;
-    }
-
-  // Finish off by computing and checking the CRC (and return pointer to just after CRC).
-  // Assumes that b now points just beyond the end of the payload.
-  if(b - buf >= buflen) { return(NULL); } // Fail if next byte not available.
-  uint8_t crc = MESSAGING_FULL_STATS_CRC_INIT; // Initialisation.
-  for(const uint8_t *p = buf; p < b; ) { crc = OTRadioLink::crc7_5B_update(crc, *p++); }
-//DEBUG_SERIAL_PRINTLN_FLASHSTRING(" chk CRC");
-  if(crc != *b++) { return(NULL); } // Bad CRC.
-
-  return(b); // Point to just after CRC.
-  }
-
-#endif // ENABLE_FS20_ENCODING_SUPPORT
-
-
-// Returns true unless the buffer clearly does not contain a possible valid raw JSON message.
-// This message is expected to be one object wrapped in '{' and '}'
-// and containing only ASCII printable/non-control characters in the range [32,126].
-// The message must be no longer than MSG_JSON_MAX_LENGTH excluding trailing null.
-// This only does a quick validation for egregious errors.
-bool quickValidateRawSimpleJSONMessage(const char * const buf)
-  {
-  if('{' != buf[0]) { return(false); }
-  // Scan up to maximum length for terminating '}'.
-  const char *p = buf + 1;
-  for(int i = 1; i < MSG_JSON_MAX_LENGTH; ++i)
-    {
-    const char c = *p++;
-    // With a terminating '}' (followed by '\0') the message is superficially valid.
-    if(('}' == c) && ('\0' == *p)) { return(true); }
-    // Non-printable/control character makes the message invalid.
-    if((c < 32) || (c > 126)) { return(false); }
-    // Premature end of message renders it invalid.
-    if('\0' == c) { return(false); }
-    }
-  return(false); // Bad (unterminated) message.
-  }
-
-// Adjusts null-terminated text JSON message up to MSG_JSON_MAX_LENGTH bytes (not counting trailing '\0') for TX.
-// Sets high-bit on final '}' to make it unique, checking that all others are clear.
-// Computes and returns 0x5B 7-bit CRC in range [0,127]
-// or 0xff if the JSON message obviously invalid and should not be TXed.
-// The CRC is initialised with the initial '{' character.
-// NOTE: adjusts content in place.
-#define adjustJSONMsgForTXAndComputeCRC_ERR 0xff // Error return value.
-uint8_t adjustJSONMsgForTXAndComputeCRC(char * const bptr)
-  {
-  // Do initial quick validation before computing CRC, etc,
-  if(!quickValidateRawSimpleJSONMessage(bptr)) { return(adjustJSONMsgForTXAndComputeCRC_ERR); }
-//  if('{' != *bptr) { return(adjustJSONMsgForTXAndComputeCRC_ERR); }
-  bool seenTrailingClosingBrace = false;
-  uint8_t crc = '{';
-  for(char *p = bptr; *++p; ) // Skip first char ('{'); loop until '\0'.
-    {
-    const char c = *p;
-//    if(c & 0x80) { return(adjustJSONMsgForTXAndComputeCRC_ERR); } // No high-bits should be set!
-    if(('}' == c) && ('\0' == *(p+1)))
-      {
-      seenTrailingClosingBrace = true;
-      const char newC = c | 0x80;
-      *p = newC; // Set high bit.
-      crc = OTRadioLink::crc7_5B_update(crc, (uint8_t)newC); // Update CRC.
-      return(crc);
-      }
-    crc = OTRadioLink::crc7_5B_update(crc, (uint8_t)c); // Update CRC.
-    }
-  if(!seenTrailingClosingBrace) { return(adjustJSONMsgForTXAndComputeCRC_ERR); } // Missing ending '}'.
-  return(crc);
-  }
-
-
-// Send (valid) JSON to specified print channel, terminated with "}\0" or '}'|0x80, followed by "\r\n".
-// This does NOT attempt to flush output nor wait after writing.
-void outputJSONStats(Print *p, bool secure, const uint8_t * const json, const uint8_t bufsize)
-  {
-#if 0 && defined(DEBUG)
-  if(NULL == json) { panic(); }
-#endif
-  const uint8_t * const je = json + bufsize;
-  for(const uint8_t *jp = json; ; ++jp)
-    {
-    if(jp >= je) { p->println(F(" ... bad")); return; } // Deliberately don't terminate with '}'...
-    if(('}' | 0x80) == *jp) { break; }
-    if(('}' == *jp) && ('\0' == jp[1])) { break; }
-    p->print((char) *jp);
-    }
-  // Terminate the output.
-  p->println('}');
-  }
-
-// Checks received raw JSON message followed by CRC, up to MSG_JSON_ABS_MAX_LENGTH chars.
-// Returns length including bounding '{' and '}'|0x80 iff message superficially valid
-// (essentially as checked by quickValidateRawSimpleJSONMessage() for an in-memory message)
-// and that the CRC matches as computed by adjustJSONMsgForTXAndComputeCRC(),
-// else returns -1 (accepts 0 or 0x80 where raw CRC is zero).
-// Does not adjust buffer content.
-#define checkJSONMsgRXCRC_ERR -1
-int8_t checkJSONMsgRXCRC(const uint8_t * const bptr, const uint8_t bufLen)
-  {
-  if('{' != *bptr) { return(checkJSONMsgRXCRC_ERR); }
-#if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("checkJSONMsgRXCRC_ERR()... {");
-#endif
-  uint8_t crc = '{';
-  // Scan up to maximum length for terminating '}'-with-high-bit.
-  const uint8_t ml = min(MSG_JSON_ABS_MAX_LENGTH, bufLen);
-  const uint8_t *p = bptr + 1;
-  for(int i = 1; i < ml; ++i)
-    {
-    const char c = *p++;
-    crc = OTRadioLink::crc7_5B_update(crc, (uint8_t)c); // Update CRC.
-#ifdef ALLOW_RAW_JSON_RX
-    if(('}' == c) && ('\0' == *p))
-      {
-      // Return raw message as-is!
-#if 0 && defined(DEBUG)
-      DEBUG_SERIAL_PRINTLN_FLASHSTRING("} OK raw");
-#endif
-      return(i+1);
-      }
-#endif
-    // With a terminating '}' (followed by '\0') the message is superficially valid.
-    if((((char)('}' | 0x80)) == c) && ((crc == *p) || ((0 == crc) && (0x80 == *p))))
-      {
-#if 0 && defined(DEBUG)
-      DEBUG_SERIAL_PRINTLN_FLASHSTRING("} OK with CRC");
-#endif
-      return(i+1);
-      }
-    // Non-printable/control character makes the message invalid.
-    if((c < 32) || (c > 126))
-      {
-#if 0 && defined(DEBUG)
-      DEBUG_SERIAL_PRINT_FLASHSTRING(" bad: char 0x");
-      DEBUG_SERIAL_PRINTFMT(c, HEX);
-      DEBUG_SERIAL_PRINTLN();
-#endif
-      return(checkJSONMsgRXCRC_ERR);
-      }
-#if 0 && defined(DEBUG)
-    DEBUG_SERIAL_PRINT(c);
-#endif
-    }
-#if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING(" bad: unterminated");
-#endif
-  return(checkJSONMsgRXCRC_ERR); // Bad (unterminated) message.
-  }
-
-
-// Print a single char to a bounded buffer; returns 1 if successful, else 0 if full.
-size_t BufPrint::write(const uint8_t c)
-  {
-  if(size < capacity) { b[size++] = c; b[size] = '\0'; return(1); }
-  return(0);
-  }
-
-// Returns true iff if a valid key for our subset of JSON.
-// Rejects keys containing " or \ or any chars outside the range [32,126]
-// to avoid having to escape anything.
-bool isValidKey(const SimpleStatsKey key)
-  {
-  if(NULL == key) { return(false); } 
-  for(const char *s = key; '\0' != *s; ++s)
-    {
-    const char c = *s;
-    if((c < 32) || (c > 126) || ('"' == c) || ('\\' == c)) { return(false); }
-    }
-  return(true);
-  }
-
-// Returns pointer to stats tuple with given (non-NULL) key if present, else NULL.
-// Does a simple linear search.
-SimpleStatsRotationBase::DescValueTuple * SimpleStatsRotationBase::findByKey(const SimpleStatsKey key) const
-  {
-  for(int i = 0; i < nStats; ++i)
-    {
-    DescValueTuple * const p = stats + i;
-    if(0 == strcmp(p->descriptor.key, key)) { return(p); }
-    }
-  return(NULL); // Not found.
-  }
-
-// Remove given stat and properties.
-// True iff the item existed and was removed.
-bool SimpleStatsRotationBase::remove(const SimpleStatsKey key)
-  {
-  DescValueTuple *p = findByKey(key);
-  if(NULL == p) { return(false); }
-  // If it needs to be removed and is not the last item
-  // then move the last item down into its slot.
-  const bool lastItem = ((p - stats) == (nStats - 1));
-  if(!lastItem) { *p = stats[nStats-1]; }
-  // We got rid of one!
-  // TODO: possibly explicitly destroy/overwrite the removed one at the end.
-  --nStats;
-  return(true);
-  }
-
-// Create/update stat/key with specified descriptor/properties.
-// The name is taken from the descriptor.
-bool SimpleStatsRotationBase::putDescriptor(const GenericStatsDescriptor &descriptor)
-  {
-  if(!isValidKey(descriptor.key)) { return(false); }
-  DescValueTuple *p = findByKey(descriptor.key);
-  // If item already exists, update its properties.
-  if(NULL != p) { p->descriptor = descriptor; }
-  // Else if not yet at capacity then add this new item at the end.
-  // Don't mark it as changed since its value may not yet be meaningful
-  else if(nStats < capacity)
-    {
-    p = stats + (nStats++);
-    *p = DescValueTuple();
-    p->descriptor = descriptor;
-    }
-  // Else failed: no space to add a new item.
-  else { return(false); }
-  return(true); // OK
-  }
-    
-// Create/update value for given stat/key.
-// If properties not already set and not supplied then stat will get defaults.
-// If descriptor is supplied then its key must match (and the descriptor will be copied).
-// True if successful, false otherwise (eg capacity already reached).
-bool SimpleStatsRotationBase::put(const SimpleStatsKey key, const int newValue)
-  {
-  if(!isValidKey(key))
+#endif // DEBUG
+  if(!PrimaryRadio.queueToSend(buf, buflen, 0, (doubleTX ? OTRadioLink::OTRadioLink::TXmax : OTRadioLink::OTRadioLink::TXnormal)))
     {
 #if 0 && defined(DEBUG)
-DEBUG_SERIAL_PRINT_FLASHSTRING("Bad JSON key ");
-DEBUG_SERIAL_PRINT(key);
-DEBUG_SERIAL_PRINTLN();
+    DEBUG_SERIAL_PRINTLN_FLASHSTRING("!TX failed");
 #endif
-    return(false);
-    }
-
-  DescValueTuple *p = findByKey(key);
-  // If item already exists, update it.
-  if(NULL != p)
-    {
-    // Update the value and mark as changed if changed.
-    if(p->value != newValue)
-      {
-      p->value = newValue;
-      p->flags.changed = true;
-      }
-    // Update done!
-    return(true);
-    }
-
-  // If not yet at capacity then add this new item at the end.
-  // Mark it as changed to prioritise seeing it in the JSON output.
-  if(nStats < capacity)
-    {
-    p = stats + (nStats++);
-    *p = DescValueTuple();
-    p->value = newValue;
-    p->flags.changed = true;
-    // Copy descriptor .
-    p->descriptor = GenericStatsDescriptor(key);
-    // Addition of new field done!
-    return(true);
-    }
-
-#if 1 && defined(DEBUG)
-DEBUG_SERIAL_PRINT_FLASHSTRING("Too many keys: ");
-DEBUG_SERIAL_PRINT(key);
-DEBUG_SERIAL_PRINTLN();
-#endif
-  return(false); // FAILED: full.
+    } // DEBUG
+  //DEBUG_SERIAL_PRINTLN_FLASHSTRING("RS");
   }
 
-#if defined(ALLOW_JSON_OUTPUT)
-// Print an object field "name":value to the given buffer.
-size_t SimpleStatsRotationBase::print(BufPrint &bp, const SimpleStatsRotationBase::DescValueTuple &s, bool &commaPending) const
+
+#ifdef ALLOW_CC1_SUPPORT_RELAY
+#include <OTProtocolCC.h>
+#include <OTRadValve.h>
+#include "V0p2_Sensors.h"
+// Send a CC1 Alert message with this unit's house code via the RFM23B.
+bool sendCC1AlertByRFM23B()
   {
-  size_t w = 0;
-  if(commaPending) { w += bp.print(','); }
-  w += bp.print('"');
-  w += bp.print(s.descriptor.key); // Assumed not to need escaping in any way.
-  w += bp.print('"');
-  w += bp.print(':');
-  w += bp.print(s.value);
-  commaPending = true;
-  return(w);
-  }
-#endif
-
-
-// True if any changed values are pending (not yet written out).
-bool SimpleStatsRotationBase::changedValue()
-  {
-  DescValueTuple const *p = stats + nStats;
-  for(int8_t i = nStats; --i > 0; )
-    { if((--p)->flags.changed) { return(true); } }
-  return(false);
-  }
-
-#if defined(ALLOW_JSON_OUTPUT)
-// Write stats in JSON format to provided buffer; returns a non-zero value if successful.
-// Output starts with an "@" (ID) string field,
-// then and optional count (if enabled),
-// then the tracked stats as space permits,
-// attempting to give priority to high-priority and changed values,
-// allowing a potentially large set of values to my multiplexed over time
-// into a constrained size/bandwidth message.
-//
-//   * buf  is the byte/char buffer to write the JSON to; never NULL
-//   * bufSize is the capacity of the buffer starting at buf in bytes;
-//       should be two (2) greater than the largest JSON output to be generates
-//       to allow for a trailing null and one extra byte/char to ensure that the message is not over-large
-//   * sensitivity  threshold below which (sensitive) stats will not be included; 0 means include everything
-//   * maximise  if true attempt to maximise the number of stats squeezed into each frame,
-//       potentially at the cost of signficant CPU time
-//   * suppressClearChanged  if true then 'changed' flag for included fields is not cleared by this
-//       allowing them to continue to be treated as higher priority
-uint8_t SimpleStatsRotationBase::writeJSON(uint8_t *const buf, const uint8_t bufSize, const uint8_t sensitivity,
-                                           const bool maximise, const bool suppressClearChanged)
-  {
-#ifdef DEBUG
-  if(NULL == buf) { panic(0); } // Should never happen.
-#endif
-  // Minimum size is for {"@":""} plus null plus extra padding char/byte to check for overrun.
-  if(bufSize < 10) { return(0); } // Failed.
-
-  // Write/print to buffer passed in.
-  BufPrint bp((char *)buf, bufSize);
-  // True if field has been written and will need a ',' if another field is written.
-  bool commaPending = false;
-
-  // Start object.
-  bp.print('{');
-
-  // Write ID first.
-  // If an explicit ID is supplied then use it
-  // else compute it taking the housecode by preference if it is set.
-  bp.print(F("\"@\":\""));
-
-  if(NULL != id) { bp.print(id); } // Value has to be 'safe' (eg no " nor \ in it).
-#ifdef USE_MODULE_FHT8VSIMPLE
-  else if(localFHT8VTRVEnabled())
-      {
-      const uint8_t hc1 = FHT8VGetHC1();
-      const uint8_t hc2 = FHT8VGetHC2();
-      bp.print(hexDigit(hc1 >> 4));
-      bp.print(hexDigit(hc1));
-      bp.print(hexDigit(hc2 >> 4));
-      bp.print(hexDigit(hc2));
-      }
-#endif
-  else
-      {
-      const uint8_t id1 = eeprom_read_byte(0 + (uint8_t *)V0P2BASE_EE_START_ID);
-      const uint8_t id2 = eeprom_read_byte(1 + (uint8_t *)V0P2BASE_EE_START_ID);
-      bp.print(hexDigit(id1 >> 4));
-      bp.print(hexDigit(id1));
-      bp.print(hexDigit(id2 >> 4));
-      bp.print(hexDigit(id2));
-      }
-
-  bp.print('"');
-  commaPending = true;
-
-  // Write count next iff enabled.
-  if(c.enabled)
+  OTProtocolCC::CC1Alert a = OTProtocolCC::CC1Alert::make(FHT8VGetHC1(), FHT8VGetHC2());
+  if(a.isValid()) // Might be invalid if house codes are, eg if house codes not set.
     {
-    if(commaPending) { bp.print(','); commaPending = false; }
-    bp.print(F("\"+\":"));
-    bp.print(c.count);
-    commaPending = true;
-    }
-
-  // Be prepared to rewind back to logical start of buffer.
-  bp.setMark();
-
-  bool gotHiPri = false;
-  uint8_t hiPriIndex = 0;
-  bool gotLoPri = false;
-  uint8_t loPriIndex = 0;
-  if(nStats != 0)
-    {
-    // High-pri/changed stats.
-    // Only do this on a portion of runs to let 'normal' stats get a look-in.
-    // This happens on even-numbered runs (eg including the first, typically).
-    // Write at most one high-priority item.
-    if(0 == (c.count & 1))
-      {
-      uint8_t next = lastTXedHiPri;
-      for(int i = nStats; --i >= 0; )
-        {
-        // Wrap around the end of the stats.
-        if(++next >= nStats) { next = 0; }
-        // Skip stat if too sensitive to include in this output.
-        DescValueTuple &s = stats[next];
-        if(sensitivity > s.descriptor.sensitivity) { continue; }
-        // Skip stat if neither changed nor high-priority.
-        if(!s.descriptor.highPriority && !s.flags.changed) { continue; }
-        // Found suitable stat to include in output.
-        hiPriIndex = next;
-        gotHiPri = true;
-        // Add to JSON output.
-        print(bp, s, commaPending);
-        // If successful, ie still space for the closing "}\0" without running over-length
-        // then mark this as a fall-back, else rewind and discard this item.
-        if(bp.getSize() > bufSize - 3) { bp.rewind(); break; }
-        else
-          {
-          bp.setMark();
-          lastTXed = lastTXedHiPri = hiPriIndex;
-          if(!suppressClearChanged) { stats[hiPriIndex].flags.changed = false; }
-          break;
-          }
-        /* if(!maximise) */ { break; }
-        }
-      }
-
-    // Insert normal-priority stats if space left.
-    // Rotate through all eligible stats round-robin,
-    // adding one to the end of the current message if possible,
-    // checking first the item indexed after the previous one sent.
-//    if(!gotHiPri)
-      {
-      uint8_t next = lastTXedLoPri;
-      for(int i = nStats; --i >= 0; )
-        {
-        // Wrap around the end of the stats.
-        if(++next >= nStats) { next = 0; }
-        // Avoid re-transmitting the very last thing TXed unless there in only one item!
-        if((lastTXed == next) && (nStats > 1)) { continue; }
-        // Avoid transmitting the hi-pri item just sent if any.
-        if(gotHiPri && (hiPriIndex == next)) { continue; }
-        // Skip stat if too sensitive to include in this output.
-        DescValueTuple &s = stats[next];
-        if(sensitivity > s.descriptor.sensitivity) { continue; }
-        // Found suitable stat to include in output.
-        loPriIndex = next;
-        gotLoPri = true;
-        // Add to JSON output.
-        print(bp, s, commaPending);
-        // If successful then mark this as a fall-back, else rewind and discard this item.
-        // If successful, ie still space for the closing "}\0" without running over-length
-        // then mark this as a fall-back, else rewind and discard this item.
-        if(bp.getSize() > bufSize - 3) { bp.rewind(); break; }
-        else
-          {
-          bp.setMark();
-          lastTXed = lastTXedLoPri = loPriIndex;
-          if(!suppressClearChanged) { stats[loPriIndex].flags.changed = false; }
-          }
-        if(!maximise) { break; }
-        }
-      }
-    }
-
-  // TODO: maximise.
-
-  // Terminate object.
-  bp.print('}');
-#if 0
-  DEBUG_SERIAL_PRINT_FLASHSTRING("JSON: ");
-  DEBUG_SERIAL_PRINT((char *)buf);
-  DEBUG_SERIAL_PRINTLN();
+    uint8_t txbuf[STATS_MSG_START_OFFSET + OTProtocolCC::CC1Alert::primary_frame_bytes+1]; // More than large enough for preamble + sync + alert message.
+    uint8_t *const bptr = RFM22RXPreambleAdd(txbuf);
+    const uint8_t bodylen = a.encodeSimple(bptr, sizeof(txbuf) - STATS_MSG_START_OFFSET, true);
+    const uint8_t buflen = STATS_MSG_START_OFFSET + bodylen;
+#if 0 && defined(DEBUG)
+OTRadioLink::printRXMsg(p, txbuf, buflen);
 #endif
-//  if(w >= (size_t)(bufSize-1))
-  if(bp.isFull())
-    {
-    // Overrun, so failed/aborted.
-    // Shouldn't really be possible unless buffer far far too small.
-    *buf = '\0';
-    return(0);
+    // Send loud since the hub may be relatively far away,
+    // there is no 'ACK', and these messages should not be sent very often.
+    // Should be consistent with automatically-generated alerts to help with diagnosis.
+    return(PrimaryRadio.sendRaw(txbuf, buflen, 0, OTRadioLink::OTRadioLink::TXmax));
     }
-
-  // On successfully creating output, update some internal state including success count.
-  ++c.count;
-
-  return(bp.getSize()); // Success!
+  return(false); // Failed.
   }
 #endif
 
@@ -958,12 +195,21 @@ static void decodeAndHandleFTp2_FS20_native(Print *p, const bool secure, const u
     p->println(command.hc2);
 #endif
     // Process the common 'valve closed' and valve open cases efficiently.
-    // Nominally conversion to % should be (uint8_t) ((command.extension * 100) / 255)
+    // Nominally conversion to % should be (uint8_t) ((command.extension * 100 +127.5) / 255)
     // but approximation with /256, ie >>8, probably fine.
+    // This code ensures that common and semantically-important 0 and 255
+    // always (quickly) and definitely map to 0 and 100.
+    // A better approximation from 0--255 => % mapping,
+    // which will help quicker response to valve hitting
+    // OTRadValve::DEFAULT_VALVE_PC_MODERATELY_OPEN for example
+    // since valve will not need to further open to force boiler on.
+    // TODO: maybe be careful also with special thresholds
+    // OTRadValve::DEFAULT_VALVE_PC_SAFER_OPEN and OTRadValve::DEFAULT_VALVE_PC_MODERATELY_OPEN.
     const uint8_t percentOpen =
         (0 == command.extension) ? 0 :
         ((255 == command.extension) ? 100 :
-        ((uint8_t) ((command.extension * (int)100) >> 8)));
+        // Approximation that works at 1 (=>1%) and 254 (=>99%).
+        ((uint8_t) ((command.extension * (int)100 + 199) >> 8)));
     remoteCallForHeatRX(compoundHC, percentOpen);
     }
 #endif
@@ -977,9 +223,9 @@ p->print("FS20 msg HC "); p->print(command.hc1); p->print(' '); p->println(comma
     // If whole FHT8V frame was OK then check if there is a valid stats trailer.
 
     // Check for 'core' stats trailer.
-    if(MESSAGING_FULL_STATS_FLAGS_HEADER_MSBS == (trailer[0] & MESSAGING_FULL_STATS_FLAGS_HEADER_MASK))
+    if(OTV0P2BASE::MESSAGING_FULL_STATS_FLAGS_HEADER_MSBS == (trailer[0] & OTV0P2BASE::MESSAGING_FULL_STATS_FLAGS_HEADER_MASK))
       {
-      FullStatsMessageCore_t content;
+      OTV0P2BASE::FullStatsMessageCore_t content;
       const uint8_t *tail = decodeFullStatsMessageCore(trailer, lastByte-trailer+1, OTV0P2BASE::stTXalwaysAll, false, &content);
       if(NULL != tail)
         {
@@ -1213,9 +459,9 @@ OTRadioLink::printRXMsg(p, txbuf, buflen);
 DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats IDx");
 #endif
       // May be binary stats frame, so attempt to decode...
-      FullStatsMessageCore_t content;
+      OTV0P2BASE::FullStatsMessageCore_t content;
       // (TODO: should reject non-secure messages when expecting secure ones...)
-      const uint8_t *tail = decodeFullStatsMessageCore(msg, msglen, OTV0P2BASE::stTXalwaysAll, false, &content);
+      const uint8_t *tail = OTV0P2BASE::decodeFullStatsMessageCore(msg, msglen, OTV0P2BASE::stTXalwaysAll, false, &content);
       if(NULL != tail)
          {
          if(content.containsID)
@@ -1228,7 +474,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats IDx");
            DEBUG_SERIAL_PRINTLN();
 #endif
 //           recordCoreStats(false, &content);
-           outputCoreStats(&Serial, secure, &content);
+           OTV0P2BASE::outputCoreStats(&Serial, secure, &content);
            }
          }
       return;
@@ -1246,12 +492,12 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats IDx");
 #if defined(ALLOW_STATS_RX) && defined(ENABLE_FS20_ENCODING_SUPPORT)
     case OTRadioLink::FTp2_JSONRaw:
       {
-      if(-1 != checkJSONMsgRXCRC(msg, msglen))
+      if(-1 != OTV0P2BASE::checkJSONMsgRXCRC(msg, msglen))
         {
 #ifdef ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY
         // Initial pass for Brent.
         // Strip trailing high bit and CRC.  Not very nice, but it'll have to do.
-        uint8_t buf[MSG_JSON_ABS_MAX_LENGTH + 1];
+        uint8_t buf[OTV0P2BASE::MSG_JSON_ABS_MAX_LENGTH + 1];
         uint8_t buflen = 0;
         while(buflen < sizeof(buf))
           {
@@ -1264,7 +510,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats IDx");
         SecondaryRadio.queueToSend(buf, buflen); 
 #else // Don't write to console/Serial also if relayed.
         // Write out the JSON message.
-        outputJSONStats(&Serial, secure, msg, msglen);
+        OTV0P2BASE::outputJSONStats(&Serial, secure, msg, msglen);
         // Attempt to ensure that trailing characters are pushed out fully.
         OTV0P2BASE::flushSerialProductive();
 #endif // ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY
