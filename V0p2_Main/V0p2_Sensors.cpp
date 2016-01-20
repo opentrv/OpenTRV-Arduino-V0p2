@@ -346,8 +346,8 @@ HumiditySensorSHT21 RelHumidity;
 
 
 
-
 #if !defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20)
+
 // Temperature read uses/selects one of the implementations/sensors.
 int16_t RoomTemperatureC16::read()
   {
