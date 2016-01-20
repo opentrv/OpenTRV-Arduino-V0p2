@@ -35,16 +35,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
 #include "UI_Minimal.h"
 
 
-#if defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
-OTV0P2BASE::MinimalOneWire<> MinOW_DEFAULT;
-#endif
-
-
-#if defined(SENSOR_EXTERNAL_DS18B20_ENABLE_0) // Enable sensor zero.
-OTV0P2BASE::TemperatureC16_DS18B20 extDS18B20_0(MinOW_DEFAULT, 0);
-#endif
-
-
+// Sensor for supply (eg battery) voltage in millivolts.
 // Singleton implementation/instance.
 OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
 
@@ -72,7 +63,6 @@ static const uint8_t shiftRawScaleTo8Bit = 2;
 // http://www.engineeringtoolbox.com/light-level-rooms-d_708.html
 // http://www.pocklington-trust.org.uk/Resources/Thomas%20Pocklington/Documents/PDF/Research%20Publications/GPG5.pdf
 // http://www.vishay.com/docs/84154/appnotesensors.pdf
-//
 #if (7 == V0p2_REV) // REV7 initial board run especially uses different phototransistor (not TEPT4400).
 // Note that some REV7s from initial batch were fitted with wrong device entirely,
 // an IR device, with very low effective sensitivity (FSD ~ 20 rather than 1023).
@@ -97,6 +87,16 @@ static const int LDR_THR_HIGH = 200U; // Was 35.
 // Singleton implementation/instance.
 AmbientLight AmbLight(LDR_THR_HIGH >> shiftRawScaleTo8Bit);
 #endif // ENABLE_AMBLIGHT_SENSOR
+
+
+#if defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
+OTV0P2BASE::MinimalOneWire<> MinOW_DEFAULT;
+#endif
+
+
+#if defined(SENSOR_EXTERNAL_DS18B20_ENABLE_0) // Enable sensor zero.
+OTV0P2BASE::TemperatureC16_DS18B20 extDS18B20_0(MinOW_DEFAULT, 0);
+#endif
 
 
 #if !defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21) && !defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20) // Don't use TMP112 if SHT21 or DS18B20 are available.
@@ -346,8 +346,8 @@ HumiditySensorSHT21 RelHumidity;
 
 
 
-
 #if !defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20)
+
 // Temperature read uses/selects one of the implementations/sensors.
 int16_t RoomTemperatureC16::read()
   {

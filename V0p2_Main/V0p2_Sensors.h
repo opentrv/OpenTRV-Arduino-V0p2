@@ -35,22 +35,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
 #include "Messaging.h"
 
 
-// Create very light-weight standard-speed OneWire(TM) support if a pin has been allocated to it.
-// Meant to be similar to use to OneWire library V2.2.
-// Supports search but not necessarily CRC.
-// Designed to work with 1MHz/1MIPS CPU clock.
-#if defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
-#define SUPPORTS_MINIMAL_ONEWIRE
-extern OTV0P2BASE::MinimalOneWire<> MinOW_DEFAULT_OWDQ;
-#endif
-
-// Cannot have internal and external use of same DS18B20 at same time...
-#if defined(ENABLE_EXTERNAL_TEMP_SENSOR_DS18B20) && !defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20) && defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
-#define SENSOR_EXTERNAL_DS18B20_ENABLE_0 // Enable sensor zero.
-extern OTV0P2BASE::TemperatureC16_DS18B20 extDS18B20_0;
-#endif
-
-
 // Sensor for supply (eg battery) voltage in millivolts.
 // Singleton implementation/instance.
 extern OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
@@ -79,7 +63,6 @@ extern OTV0P2BASE::SensorTemperaturePot TempPot;
 // http://www.engineeringtoolbox.com/light-level-rooms-d_708.html
 // http://www.pocklington-trust.org.uk/Resources/Thomas%20Pocklington/Documents/PDF/Research%20Publications/GPG5.pdf
 // http://www.vishay.com/docs/84154/appnotesensors.pdf
-
 #ifdef ENABLE_AMBLIGHT_SENSOR
 // Sensor for ambient light level; 0 is dark, 255 is bright.
 typedef OTV0P2BASE::SensorAmbientLight AmbientLight;
@@ -88,6 +71,22 @@ typedef OTV0P2BASE::DummySensorAmbientLight AmbientLight; // Dummy stand-in.
 #endif // ENABLE_AMBLIGHT_SENSOR
 // Singleton implementation/instance.
 extern AmbientLight AmbLight;
+
+
+// Create very light-weight standard-speed OneWire(TM) support if a pin has been allocated to it.
+// Meant to be similar to use to OneWire library V2.2.
+// Supports search but not necessarily CRC.
+// Designed to work with 1MHz/1MIPS CPU clock.
+#if defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
+#define SUPPORTS_MINIMAL_ONEWIRE
+extern OTV0P2BASE::MinimalOneWire<> MinOW_DEFAULT_OWDQ;
+#endif
+
+// Cannot have internal and external use of same DS18B20 at same time...
+#if defined(ENABLE_EXTERNAL_TEMP_SENSOR_DS18B20) && !defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20) && defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
+#define SENSOR_EXTERNAL_DS18B20_ENABLE_0 // Enable sensor zero.
+extern OTV0P2BASE::TemperatureC16_DS18B20 extDS18B20_0;
+#endif
 
 
 #if !defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20)
