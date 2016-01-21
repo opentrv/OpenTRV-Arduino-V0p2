@@ -88,11 +88,6 @@ extern OTV0P2BASE::MinimalOneWire<> MinOW_DEFAULT_OWDQ;
 extern OTV0P2BASE::TemperatureC16_DS18B20 extDS18B20_0;
 #endif
 
-
-// TMP112 sensor for ambient/room temperature in 1/16th of one degree Celsius.
-class RoomTemperatureC16_TMP112 : public OTV0P2BASE::TemperatureC16Base
-  { public: virtual int16_t read(); };
-
 // SHT21 sensor for ambient/room temperature in 1/16th of one degree Celsius.
 class RoomTemperatureC16_SHT21 : public OTV0P2BASE::TemperatureC16Base
   { public: virtual int16_t read(); };
@@ -106,7 +101,7 @@ extern RoomTemperatureC16_SHT21 TemperatureC16; // SHT21 impl.
 extern OTV0P2BASE::TemperatureC16_DS18B20 TemperatureC16;
   #endif // defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
 #else // Don't use TMP112 if SHT21 or DS18B20 have been selected.
-extern RoomTemperatureC16_TMP112 TemperatureC16;
+extern OTV0P2BASE::RoomTemperatureC16_TMP112 TemperatureC16;
 #endif
 
 
