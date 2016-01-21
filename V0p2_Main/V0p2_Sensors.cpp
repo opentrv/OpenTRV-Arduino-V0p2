@@ -99,7 +99,7 @@ OTV0P2BASE::TemperatureC16_DS18B20 extDS18B20_0(MinOW_DEFAULT, 0);
 #endif
 
 
-// TMP102 and TMP112 should be interchangeable: latter has better guaranteed accuracy.
+// TMP112 and TMP112 should be interchangeable: latter has better guaranteed accuracy.
 static const uint8_t TMP102_I2C_ADDR = 72;
 static const uint8_t TMP102_REG_TEMP = 0; // Temperature register.
 static const uint8_t TMP102_REG_CTRL = 1; // Control register.
@@ -119,7 +119,7 @@ int16_t RoomTemperatureC16_TMP112::read()
   const bool neededPowerUp = OTV0P2BASE::powerUpTWIIfDisabled();
   
 #if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("TMP102 needed power-up: ");
+  DEBUG_SERIAL_PRINT_FLASHSTRING("TMP112 needed power-up: ");
   DEBUG_SERIAL_PRINT(neededPowerUp);
   DEBUG_SERIAL_PRINTLN();
 #endif
@@ -139,7 +139,7 @@ int16_t RoomTemperatureC16_TMP112::read()
 
   // Wait for temperature measurement/conversion to complete, in low-power sleep mode for the bulk of the time.
 #if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("TMP102 waiting for conversion...");
+  DEBUG_SERIAL_PRINTLN_FLASHSTRING("TMP112 waiting for conversion...");
 #endif
   Wire.beginTransmission(TMP102_I2C_ADDR);
   Wire.write((byte) TMP102_REG_CTRL); // Select control register.
@@ -155,7 +155,7 @@ int16_t RoomTemperatureC16_TMP112::read()
 
   // Fetch temperature.
 #if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("TMP102 fetching temperature...");
+  DEBUG_SERIAL_PRINTLN_FLASHSTRING("TMP112 fetching temperature...");
 #endif
   Wire.beginTransmission(TMP102_I2C_ADDR);
   Wire.write((byte) TMP102_REG_TEMP); // Select temperature register (set ptr to 0).
@@ -172,7 +172,7 @@ int16_t RoomTemperatureC16_TMP112::read()
   const int t16 = (b1 << 4) | (b2 >> 4) | ((b1 & 0x80) ? 0xf000 : 0);
 
 #if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("TMP102 temp: ");
+  DEBUG_SERIAL_PRINT_FLASHSTRING("TMP112 temp: ");
   DEBUG_SERIAL_PRINT(b1);
   DEBUG_SERIAL_PRINT_FLASHSTRING("C / ");
   DEBUG_SERIAL_PRINT(temp16);
