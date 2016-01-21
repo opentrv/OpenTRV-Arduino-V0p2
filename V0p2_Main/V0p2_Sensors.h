@@ -89,81 +89,29 @@ extern OTV0P2BASE::TemperatureC16_DS18B20 extDS18B20_0;
 #endif
 
 
-#if !defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20)
-// Room/ambient temperature, usually from the on-board sensor.
+// TMP112 sensor for ambient/room temperature in 1/16th of one degree Celsius.
+class RoomTemperatureC16_TMP112 : public OTV0P2BASE::TemperatureC16Base
+  { public: virtual int16_t read(); };
 
-// Sensor for ambient/room temperature in 1/16th of one degree Celsius.
-// An error may be indicated by returning a zero or (very) negative value.
-class RoomTemperatureC16 : public OTV0P2BASE::TemperatureC16Base
-  {
-  private:
-    // Room temperature in 16*C, eg 1 is 1/16 C, 32 is 2C, -64 is -4C.
-    int16_t value;
+// SHT21 sensor for ambient/room temperature in 1/16th of one degree Celsius.
+class RoomTemperatureC16_SHT21 : public OTV0P2BASE::TemperatureC16Base
+  { public: virtual int16_t read(); };
 
-  public:
-    // Error value returned if device unavailable or not yet read.
-    // Negative and below minimum value that DS18B20 can return legitimately (-55C). 
-    static const int16_t INVALID_TEMP = -128 * 16; // Nominally -128C.
-
-    // Create an instance, starting with and invalid temperature.
-    RoomTemperatureC16() : value(INVALID_TEMP) { }
-
-    // Returns true if the given value indicates, or may indicate, an error.
-    virtual bool isErrorValue(int16_t value) const { return(INVALID_TEMP == value); }
-
-    // Force a read/poll of room temperature and return the value sensed in units of 1/16 C.
-    // Should be called at regular intervals (1/60s) if isJittery() is true.
-    // Expensive/slow.
-    // Not thread-safe nor usable within ISRs (Interrupt Service Routines).
-    virtual int16_t read();
-
-    // Preferred poll interval (in seconds).
-    // This should be called at a regular rate, usually 1/60, so make stats such as velocity measurement easier.
-    virtual uint8_t preferredPollInterval_s() const { return(60); }
-
-    // Return last value fetched by read(); undefined before first read().
-    // Fast.
-    // Not thread-safe nor usable within ISRs (Interrupt Service Routines).
-    virtual int16_t get() const { return(value); }
-
-    // Returns a suggested (JSON) tag/field/key name including units of get(); NULL means no recommended tag.
-    // The lifetime of the pointed-to text must be at least that of the Sensor instance.
-    virtual const char *tag() const { return("T|C16"); }
-
-    // Returns true if the underlying sensor precision (or accuracy) is coarser than 1/16th C.
-    // If true this implies an actual precision of about 1/8th C.
-#ifdef ENABLE_PRIMARY_TEMP_SENSOR_DS18B20
-    // Returns number of useful binary digits after the binary point; default is 4.
-    virtual int8_t getBitsAfterPoint() const { return(3); }
-//    bool isLowPrecision() const { return(true); } // Requests lower precision from DS18B20 to give an acceptable conversion time.
-#endif
-  };
-// Singleton implementation/instance.
-extern RoomTemperatureC16 TemperatureC16;
-
+// Ambient/room temperature sensor, usually on main board.
+#if defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21)
+extern RoomTemperatureC16_SHT21 TemperatureC16; // SHT21 impl.
+#elif defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20)
+  #if defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
 // DSB18B20 temperature impl, with slightly reduced precision to improve speed.
-#elif defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20) && defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
 extern OTV0P2BASE::TemperatureC16_DS18B20 TemperatureC16;
+  #endif // defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
+#else // Don't use TMP112 if SHT21 or DS18B20 have been selected.
+extern RoomTemperatureC16_TMP112 TemperatureC16;
 #endif
 
 
 
 
-// High and low bounds on relative humidity for comfort and (eg) mite/mould growth.
-// See http://www.cdc.gov/niosh/topics/indoorenv/temperature.html: "The EPA recommends maintaining indoor relative humidity between 30 and 60% to reduce mold growth [EPA 2012]."
-static const uint8_t HUMIDTY_HIGH_RHPC = 70;
-static const uint8_t HUMIDTY_LOW_RHPC = 30;
-// Epsilon bounds (absolute % +/- around thresholds) for accuracy and hysteresis.
-static const uint8_t HUMIDITY_EPSILON_RHPC = 5;
-//#if ((HUMIDTY_HIGH_RHPC + HUMIDITY_EPSILON_RHPC) >= 100)
-//#error bad RH constants!
-//#endif
-//#if ((HUMIDTY_LOW_RHPC - HUMIDITY_EPSILON_RHPC) <= 0)
-//#error bad RH constants!
-//#endif
-
-// If RH% rises by at least this per hour, then it may indicate occupancy.
-static const uint8_t HUMIDITY_OCCUPANCY_PC_MIN_RISE_PER_H = 3;
 
 // HUMIDITY_SENSOR_SUPPORT is defined if at least one humidity sensor has support compiled in.
 // Simple implementations can assume that the sensor will be present if defined;
@@ -174,12 +122,27 @@ static const uint8_t HUMIDITY_OCCUPANCY_PC_MIN_RISE_PER_H = 3;
 #define HUMIDITY_SENSOR_SUPPORT // Humidity sensing available.
 #endif
 
-// If humidity is supported, provide definitions.
-#if defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21)
 // Functionality and code only enabled if ENABLE_PRIMARY_TEMP_SENSOR_SHT21 is defined.
 // Sensor for relative humidity percentage; 0 is dry, 100 is condensing humid, 255 for error.
 class HumiditySensorSHT21 : public OTV0P2BASE::SimpleTSUint8Sensor
   {
+  public:
+    // High and low bounds on relative humidity for comfort and (eg) mite/mould growth.
+    // See http://www.cdc.gov/niosh/topics/indoorenv/temperature.html: "The EPA recommends maintaining indoor relative humidity between 30 and 60% to reduce mold growth [EPA 2012]."
+    static const uint8_t HUMIDTY_HIGH_RHPC = 70;
+    static const uint8_t HUMIDTY_LOW_RHPC = 30;
+    // Epsilon bounds (absolute % +/- around thresholds) for accuracy and hysteresis.
+    static const uint8_t HUMIDITY_EPSILON_RHPC = 5;
+    //#if ((HUMIDTY_HIGH_RHPC + HUMIDITY_EPSILON_RHPC) >= 100)
+    //#error bad RH constants!
+    //#endif
+    //#if ((HUMIDTY_LOW_RHPC - HUMIDITY_EPSILON_RHPC) <= 0)
+    //#error bad RH constants!
+    //#endif
+
+    // If RH% rises by at least this per hour, then it may indicate occupancy.
+    static const uint8_t HUMIDITY_OCCUPANCY_PC_MIN_RISE_PER_H = 3;
+
   private:
     // True if RH% is high, with hysteresis.
     // Marked volatile for thread-safe lock-free access.
@@ -209,9 +172,9 @@ class HumiditySensorSHT21 : public OTV0P2BASE::SimpleTSUint8Sensor
     // Thread-safe and usable within ISRs (Interrupt Service Routines).
     bool isRHHighWithHyst() { return(highWithHyst); }
   };
-#else
+
 // Placeholder namespace with dummy static status methods to reduce code complexity.
-class HumiditySensorSHT21
+class DummyHumiditySensorSHT21
   {
   public:
     // Not available, so always returns false.
@@ -226,9 +189,14 @@ class HumiditySensorSHT21
     // Thread-safe and usable within ISRs (Interrupt Service Routines).
     static bool isRHHighWithHyst() { return(false); }
   };
-#endif
+
+#if defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21)
 // Singleton implementation/instance.
 extern HumiditySensorSHT21 RelHumidity;
+#else
+// Singleton implementation/instance.
+extern DummyHumiditySensorSHT21 RelHumidity;
+#endif
 
 
 #ifdef ENABLE_VOICE_SENSOR

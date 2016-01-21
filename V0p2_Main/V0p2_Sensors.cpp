@@ -99,8 +99,6 @@ OTV0P2BASE::TemperatureC16_DS18B20 extDS18B20_0(MinOW_DEFAULT, 0);
 #endif
 
 
-#if !defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21) && !defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20) // Don't use TMP112 if SHT21 or DS18B20 are available.
-
 // TMP102 and TMP112 should be interchangeable: latter has better guaranteed accuracy.
 static const uint8_t TMP102_I2C_ADDR = 72;
 static const uint8_t TMP102_REG_TEMP = 0; // Temperature register.
@@ -116,7 +114,7 @@ static const uint8_t TMP102_CTRL_B2 = 0x0; // Byte 2 for control register: 0.25H
 // The first read will initialise the device as necessary and leave it in a low-power mode afterwards.
 // This will simulate a zero temperature in case of detected error talking to the sensor as fail-safe for this use.
 // Check for errors at certain critical places, not everywhere.
-static int16_t TMP112_readTemperatureC16()
+int16_t RoomTemperatureC16_TMP112::read()
   {
   const bool neededPowerUp = OTV0P2BASE::powerUpTWIIfDisabled();
   
@@ -136,7 +134,7 @@ static int16_t TMP112_readTemperatureC16()
   Wire.write((byte) TMP102_REG_CTRL); // Select control register.
   Wire.write((byte) TMP102_CTRL_B1 | TMP102_CTRL_B1_OS); // Start one-shot conversion.
   //Wire.write((byte) TMP102_CTRL_B2);
-  if(Wire.endTransmission()) { return(RoomTemperatureC16::INVALID_TEMP); } // Exit if error.
+  if(Wire.endTransmission()) { return(DEFAULT_INVALID_TEMP); } // Exit if error.
 
 
   // Wait for temperature measurement/conversion to complete, in low-power sleep mode for the bulk of the time.
@@ -145,11 +143,11 @@ static int16_t TMP112_readTemperatureC16()
 #endif
   Wire.beginTransmission(TMP102_I2C_ADDR);
   Wire.write((byte) TMP102_REG_CTRL); // Select control register.
-  if(Wire.endTransmission()) { return(RoomTemperatureC16::INVALID_TEMP); } // Exit if error.
+  if(Wire.endTransmission()) { return(DEFAULT_INVALID_TEMP); } // Exit if error.
   for(int i = 8; --i; ) // 2 orbits should generally be plenty.
     {
-    if(i <= 0) { return(RoomTemperatureC16::INVALID_TEMP); } // Exit if error.
-    if(Wire.requestFrom(TMP102_I2C_ADDR, 1U) != 1) { return(RoomTemperatureC16::INVALID_TEMP); } // Exit if error.
+    if(i <= 0) { return(DEFAULT_INVALID_TEMP); } // Exit if error.
+    if(Wire.requestFrom(TMP102_I2C_ADDR, 1U) != 1) { return(DEFAULT_INVALID_TEMP); } // Exit if error.
     const byte b1 = Wire.read();
     if(b1 & TMP102_CTRL_B1_OS) { break; } // Conversion completed.
     OTV0P2BASE::nap(WDTO_15MS); // One or two of these naps should allow typical ~26ms conversion to complete...
@@ -161,9 +159,9 @@ static int16_t TMP112_readTemperatureC16()
 #endif
   Wire.beginTransmission(TMP102_I2C_ADDR);
   Wire.write((byte) TMP102_REG_TEMP); // Select temperature register (set ptr to 0).
-  if(Wire.endTransmission()) { return(RoomTemperatureC16::INVALID_TEMP); } // Exit if error.
-  if(Wire.requestFrom(TMP102_I2C_ADDR, 2U) != 2)  { return(RoomTemperatureC16::INVALID_TEMP); }
-  if(Wire.endTransmission()) { return(RoomTemperatureC16::INVALID_TEMP); } // Exit if error.
+  if(Wire.endTransmission()) { return(DEFAULT_INVALID_TEMP); } // Exit if error.
+  if(Wire.requestFrom(TMP102_I2C_ADDR, 2U) != 2)  { return(DEFAULT_INVALID_TEMP); }
+  if(Wire.endTransmission()) { return(DEFAULT_INVALID_TEMP); } // Exit if error.
 
   const byte b1 = Wire.read(); // MSByte, should be signed whole degrees C.
   const uint8_t b2 = Wire.read(); // Avoid sign extension...
@@ -183,23 +181,18 @@ static int16_t TMP112_readTemperatureC16()
 
   return(t16);
   }
-#endif
 
 
-
-// Functionality and code only enabled if ENABLE_PRIMARY_TEMP_SENSOR_SHT21 is defined.
-#if defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21)
-
-#define SHT21_I2C_ADDR 0x40
-#define SHT21_I2C_CMD_TEMP_HOLD	0xe3
-#define SHT21_I2C_CMD_TEMP_NOHOLD 0xf3
-#define SHT21_I2C_CMD_RH_HOLD	0xe5
-#define SHT21_I2C_CMD_RH_NOHOLD 0xf5
-#define SHT21_I2C_CMD_USERREG 0xe7 // User register...
+static const uint8_t SHT21_I2C_ADDR = 0x40;
+static const uint8_t SHT21_I2C_CMD_TEMP_HOLD	 = 0xe3;
+static const uint8_t SHT21_I2C_CMD_TEMP_NOHOLD = 0xf3;
+static const uint8_t SHT21_I2C_CMD_RH_HOLD	   = 0xe5;
+static const uint8_t SHT21_I2C_CMD_RH_NOHOLD   = 0xf5;
+static const uint8_t SHT21_I2C_CMD_USERREG     = 0xe7; // User register...
 
 // If defined, sample 8-bit RH (for for 1%) and 12-bit temp (for 1/16C).
 // This should save time and energy.
-#define SHT21_USE_REDUCED_PRECISION 1
+static const bool SHT21_USE_REDUCED_PRECISION = true;
 
 // Set true once SHT21 has been initialised.
 static volatile bool SHT21_initialised;
@@ -208,33 +201,33 @@ static volatile bool SHT21_initialised;
 // TWI must already be powered up.
 static void SHT21_init()
   {
-#if defined(SHT21_USE_REDUCED_PRECISION)
-  // Soft reset in order to sample at reduced precision.
-  Wire.beginTransmission(SHT21_I2C_ADDR);
-  Wire.write((byte) SHT21_I2C_CMD_USERREG); // Select control register.
-  Wire.endTransmission();
-  Wire.requestFrom(SHT21_I2C_ADDR, 1U);
-  while(Wire.available() < 1)
+  if(SHT21_USE_REDUCED_PRECISION)
     {
-    // Wait for data, but avoid rolling over the end of a minor cycle...
-    if(OTV0P2BASE::getSubCycleTime() >= OTV0P2BASE::GSCT_MAX-2)
+    // Soft reset in order to sample at reduced precision.
+    Wire.beginTransmission(SHT21_I2C_ADDR);
+    Wire.write((byte) SHT21_I2C_CMD_USERREG); // Select control register.
+    Wire.endTransmission();
+    Wire.requestFrom(SHT21_I2C_ADDR, 1U);
+    while(Wire.available() < 1)
       {
-      return; // Failed, and not initialised.
+      // Wait for data, but avoid rolling over the end of a minor cycle...
+      if(OTV0P2BASE::getSubCycleTime() >= OTV0P2BASE::GSCT_MAX-2)
+        {
+        return; // Failed, and not initialised.
+        }
       }
+    const uint8_t curUR = Wire.read();
+  //  DEBUG_SERIAL_PRINT_FLASHSTRING("UR: ");
+  //  DEBUG_SERIAL_PRINTFMT(curUR, HEX);
+  //  DEBUG_SERIAL_PRINTLN();
+  
+    // Preserve reserved bits (3, 4, 5) and sample 8-bit RH (for for 1%) and 12-bit temp (for 1/16C).
+    const uint8_t newUR = (curUR & 0x38) | 3;
+    Wire.beginTransmission(SHT21_I2C_ADDR);
+    Wire.write((byte) SHT21_I2C_CMD_USERREG); // Select control register.
+    Wire.write((byte) newUR);
+    Wire.endTransmission();
     }
-  const uint8_t curUR = Wire.read();
-//  DEBUG_SERIAL_PRINT_FLASHSTRING("UR: ");
-//  DEBUG_SERIAL_PRINTFMT(curUR, HEX);
-//  DEBUG_SERIAL_PRINTLN();
-
-  // Preserve reserved bits (3, 4, 5) and sample 8-bit RH (for for 1%) and 12-bit temp (for 1/16C).
-  const uint8_t newUR = (curUR & 0x38) | 3;
-  Wire.beginTransmission(SHT21_I2C_ADDR);
-  Wire.write((byte) SHT21_I2C_CMD_USERREG); // Select control register.
-  Wire.write((byte) newUR);
-  Wire.endTransmission();
-
-#endif
   SHT21_initialised = true;
   }
 
@@ -243,7 +236,7 @@ static void SHT21_init()
 // This may consume significant power and time.
 // Probably no need to do this more than (say) once per minute.
 // The first read will initialise the device as necessary and leave it in a low-power mode afterwards.
-static int Sensor_SHT21_readTemperatureC16()
+int RoomTemperatureC16_SHT21::read()
   {
   const bool neededPowerUp = OTV0P2BASE::powerUpTWIIfDisabled();
 
@@ -264,13 +257,13 @@ static int Sensor_SHT21_readTemperatureC16()
 #endif
   //delay(100);
   Wire.endTransmission();
-  Wire.requestFrom(SHT21_I2C_ADDR, 3);
+  Wire.requestFrom(SHT21_I2C_ADDR, 3U);
   while(Wire.available() < 3)
     {
     // Wait for data, but avoid rolling over the end of a minor cycle...
     if(OTV0P2BASE::getSubCycleTime() >= OTV0P2BASE::GSCT_MAX-2)
       {
-      return(RoomTemperatureC16::INVALID_TEMP); // Failure value: may be able to to better.
+      return(DEFAULT_INVALID_TEMP); // Failure value: may be able to to better.
       }
     }
   uint16_t rawTemp = (Wire.read() << 8);
@@ -312,7 +305,7 @@ uint8_t HumiditySensorSHT21::read()
   OTV0P2BASE::nap(WDTO_30MS); // Should cover even 12-bit conversion (29ms).
 #endif
   Wire.endTransmission();
-  Wire.requestFrom(SHT21_I2C_ADDR, 3);
+  Wire.requestFrom(SHT21_I2C_ADDR, 3U);
   while(Wire.available() < 3)
     {
     // Wait for data, but avoid rolling over the end of a minor cycle...
@@ -340,32 +333,26 @@ uint8_t HumiditySensorSHT21::read()
   else if(result < (HUMIDTY_HIGH_RHPC-HUMIDITY_EPSILON_RHPC)) { highWithHyst = false; }
   return(result);
   }
+
+#if defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21)
 // Singleton implementation/instance.
 HumiditySensorSHT21 RelHumidity;
-#endif
-
-
-
-#if !defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20)
-
-// Temperature read uses/selects one of the implementations/sensors.
-int16_t RoomTemperatureC16::read()
-  {
-#if defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21)
-  const int raw = Sensor_SHT21_readTemperatureC16();
 #else
-  const int raw = TMP112_readTemperatureC16();
+DummyHumiditySensorSHT21 RelHumidity;
 #endif
-  value = raw;
-  return(value);
-  }
-// Singleton implementation/instance.
-RoomTemperatureC16 TemperatureC16;
-// DSB18B20 temperature impl, with slightly reduced precision to improve speed.
-#elif defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20) && defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
-OTV0P2BASE::TemperatureC16_DS18B20 TemperatureC16(MinOW_DEFAULT, 0, OTV0P2BASE::TemperatureC16_DS18B20::MAX_PRECISION-1);
 
-#endif // defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20)
+
+// Ambient/room temperature sensor, usually on main board.
+#if defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21)
+RoomTemperatureC16_SHT21 TemperatureC16; // SHT21 impl.
+#elif defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20)
+  #if defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
+// DSB18B20 temperature impl, with slightly reduced precision to improve speed.
+OTV0P2BASE::TemperatureC16_DS18B20 TemperatureC16(MinOW_DEFAULT, 0, OTV0P2BASE::TemperatureC16_DS18B20::MAX_PRECISION-1);
+  #endif
+#else // Don't use TMP112 if SHT21 or DS18B20 are selected.
+RoomTemperatureC16_TMP112 TemperatureC16;
+#endif
 
 
 #ifdef ENABLE_VOICE_SENSOR
