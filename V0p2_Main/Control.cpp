@@ -1065,15 +1065,15 @@ static void updateSensorsFromStats()
 static uint16_t boilerCountdownTicks;
 // True if boiler should be on.
 static bool isBoilerOn() { return(0 != boilerCountdownTicks); }
-// Minutes since boiler last on as result of remote call for heat.
+// Minutes that the boiler has been off for, allowing minimum off time to be enforced.
+// Does not roll once at its maximum value (255).
+static uint8_t boilerNoCallM;
 // Reducing listening if quiet for a while helps reduce self-heating temperature error
 // (~2C as of 2013/12/24 at 100% RX, ~100mW heat dissipation in V0.2 REV1 box) and saves some energy.
 // Time thresholds could be affected by eco/comfort switch.
-#define RX_REDUCE_MIN_M 20 // Minimum minutes quiet before considering reducing RX duty cycle listening for call for heat; [1--255], 10--60 typical.
+//#define RX_REDUCE_MIN_M 20 // Minimum minutes quiet before considering reducing RX duty cycle listening for call for heat; [1--255], 10--60 typical.
 // IF DEFINED then give backoff threshold to minimise duty cycle.
-// #define RX_REDUCE_MAX_M 240 // Minutes quiet before considering maximally reducing RX duty cycle; ]RX_REDUCE_MIN_M--255], 30--240 typical.
-// Minutes that the boiler has been off for, allowing minimum off time to be enforced.
-static uint8_t boilerNoCallM;
+//#define RX_REDUCE_MAX_M 240 // Minutes quiet before considering maximally reducing RX duty cycle; ]RX_REDUCE_MIN_M--255], 30--240 typical.
 #endif
 
 
