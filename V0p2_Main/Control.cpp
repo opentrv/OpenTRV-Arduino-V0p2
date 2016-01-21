@@ -1966,7 +1966,7 @@ void loopOpenTRV()
           {
           const uint8_t lastRH = OTV0P2BASE::getByHourStat(OTV0P2BASE::getPrevHourLT(), V0P2BASE_EE_STATS_SET_RHPC_BY_HOUR);
           if((OTV0P2BASE::STATS_UNSET_BYTE != lastRH) &&
-             (RelHumidity.get() >= lastRH + HUMIDITY_OCCUPANCY_PC_MIN_RISE_PER_H))
+             (RelHumidity.get() >= lastRH + HumiditySensorSHT21::HUMIDITY_OCCUPANCY_PC_MIN_RISE_PER_H))
             { Occupancy.markAsPossiblyOccupied(); }
           }
         }
