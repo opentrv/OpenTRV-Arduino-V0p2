@@ -1072,6 +1072,7 @@ static bool isBoilerOn() { return(0 != boilerCountdownTicks); }
 #define RX_REDUCE_MIN_M 20 // Minimum minutes quiet before considering reducing RX duty cycle listening for call for heat; [1--255], 10--60 typical.
 // IF DEFINED then give backoff threshold to minimise duty cycle.
 // #define RX_REDUCE_MAX_M 240 // Minutes quiet before considering maximally reducing RX duty cycle; ]RX_REDUCE_MIN_M--255], 30--240 typical.
+// Time boiler has been off for, allowing minimum off time to be enforced, minutes.
 static uint8_t boilerNoCallM;
 #endif
 
