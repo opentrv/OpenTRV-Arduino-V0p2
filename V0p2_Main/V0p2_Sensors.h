@@ -96,50 +96,16 @@ extern OTV0P2BASE::TemperatureC16_DS18B20 extDS18B20_0;
 // An error may be indicated by returning a zero or (very) negative value.
 class RoomTemperatureC16 : public OTV0P2BASE::TemperatureC16Base
   {
-  private:
-    // Room temperature in 16*C, eg 1 is 1/16 C, 32 is 2C, -64 is -4C.
-    int16_t value;
-
   public:
-    // Error value returned if device unavailable or not yet read.
-    // Negative and below minimum value that DS18B20 can return legitimately (-55C). 
-    static const int16_t INVALID_TEMP = -128 * 16; // Nominally -128C.
-
-    // Create an instance, starting with and invalid temperature.
-    RoomTemperatureC16() : value(INVALID_TEMP) { }
-
-    // Returns true if the given value indicates, or may indicate, an error.
-    virtual bool isErrorValue(int16_t value) const { return(INVALID_TEMP == value); }
-
     // Force a read/poll of room temperature and return the value sensed in units of 1/16 C.
     // Should be called at regular intervals (1/60s) if isJittery() is true.
     // Expensive/slow.
     // Not thread-safe nor usable within ISRs (Interrupt Service Routines).
     virtual int16_t read();
-
-    // Preferred poll interval (in seconds).
-    // This should be called at a regular rate, usually 1/60, so make stats such as velocity measurement easier.
-    virtual uint8_t preferredPollInterval_s() const { return(60); }
-
-    // Return last value fetched by read(); undefined before first read().
-    // Fast.
-    // Not thread-safe nor usable within ISRs (Interrupt Service Routines).
-    virtual int16_t get() const { return(value); }
-
-    // Returns a suggested (JSON) tag/field/key name including units of get(); NULL means no recommended tag.
-    // The lifetime of the pointed-to text must be at least that of the Sensor instance.
-    virtual const char *tag() const { return("T|C16"); }
-
-    // Returns true if the underlying sensor precision (or accuracy) is coarser than 1/16th C.
-    // If true this implies an actual precision of about 1/8th C.
-#ifdef ENABLE_PRIMARY_TEMP_SENSOR_DS18B20
-    // Returns number of useful binary digits after the binary point; default is 4.
-    virtual int8_t getBitsAfterPoint() const { return(3); }
-//    bool isLowPrecision() const { return(true); } // Requests lower precision from DS18B20 to give an acceptable conversion time.
-#endif
   };
 // Singleton implementation/instance.
 extern RoomTemperatureC16 TemperatureC16;
+
 
 // DSB18B20 temperature impl, with slightly reduced precision to improve speed.
 #elif defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20) && defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)

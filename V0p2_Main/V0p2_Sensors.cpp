@@ -136,7 +136,7 @@ static int16_t TMP112_readTemperatureC16()
   Wire.write((byte) TMP102_REG_CTRL); // Select control register.
   Wire.write((byte) TMP102_CTRL_B1 | TMP102_CTRL_B1_OS); // Start one-shot conversion.
   //Wire.write((byte) TMP102_CTRL_B2);
-  if(Wire.endTransmission()) { return(RoomTemperatureC16::INVALID_TEMP); } // Exit if error.
+  if(Wire.endTransmission()) { return(RoomTemperatureC16::DEFAULT_INVALID_TEMP); } // Exit if error.
 
 
   // Wait for temperature measurement/conversion to complete, in low-power sleep mode for the bulk of the time.
@@ -145,11 +145,11 @@ static int16_t TMP112_readTemperatureC16()
 #endif
   Wire.beginTransmission(TMP102_I2C_ADDR);
   Wire.write((byte) TMP102_REG_CTRL); // Select control register.
-  if(Wire.endTransmission()) { return(RoomTemperatureC16::INVALID_TEMP); } // Exit if error.
+  if(Wire.endTransmission()) { return(RoomTemperatureC16::DEFAULT_INVALID_TEMP); } // Exit if error.
   for(int i = 8; --i; ) // 2 orbits should generally be plenty.
     {
-    if(i <= 0) { return(RoomTemperatureC16::INVALID_TEMP); } // Exit if error.
-    if(Wire.requestFrom(TMP102_I2C_ADDR, 1U) != 1) { return(RoomTemperatureC16::INVALID_TEMP); } // Exit if error.
+    if(i <= 0) { return(RoomTemperatureC16::DEFAULT_INVALID_TEMP); } // Exit if error.
+    if(Wire.requestFrom(TMP102_I2C_ADDR, 1U) != 1) { return(RoomTemperatureC16::DEFAULT_INVALID_TEMP); } // Exit if error.
     const byte b1 = Wire.read();
     if(b1 & TMP102_CTRL_B1_OS) { break; } // Conversion completed.
     OTV0P2BASE::nap(WDTO_15MS); // One or two of these naps should allow typical ~26ms conversion to complete...
@@ -161,9 +161,9 @@ static int16_t TMP112_readTemperatureC16()
 #endif
   Wire.beginTransmission(TMP102_I2C_ADDR);
   Wire.write((byte) TMP102_REG_TEMP); // Select temperature register (set ptr to 0).
-  if(Wire.endTransmission()) { return(RoomTemperatureC16::INVALID_TEMP); } // Exit if error.
-  if(Wire.requestFrom(TMP102_I2C_ADDR, 2U) != 2)  { return(RoomTemperatureC16::INVALID_TEMP); }
-  if(Wire.endTransmission()) { return(RoomTemperatureC16::INVALID_TEMP); } // Exit if error.
+  if(Wire.endTransmission()) { return(RoomTemperatureC16::DEFAULT_INVALID_TEMP); } // Exit if error.
+  if(Wire.requestFrom(TMP102_I2C_ADDR, 2U) != 2)  { return(RoomTemperatureC16::DEFAULT_INVALID_TEMP); }
+  if(Wire.endTransmission()) { return(RoomTemperatureC16::DEFAULT_INVALID_TEMP); } // Exit if error.
 
   const byte b1 = Wire.read(); // MSByte, should be signed whole degrees C.
   const uint8_t b2 = Wire.read(); // Avoid sign extension...
@@ -270,7 +270,7 @@ static int Sensor_SHT21_readTemperatureC16()
     // Wait for data, but avoid rolling over the end of a minor cycle...
     if(OTV0P2BASE::getSubCycleTime() >= OTV0P2BASE::GSCT_MAX-2)
       {
-      return(RoomTemperatureC16::INVALID_TEMP); // Failure value: may be able to to better.
+      return(RoomTemperatureC16::DEFAULT_INVALID_TEMP); // Failure value: may be able to to better.
       }
     }
   uint16_t rawTemp = (Wire.read() << 8);
