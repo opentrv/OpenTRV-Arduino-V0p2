@@ -78,7 +78,7 @@ static const int LDR_THR_HIGH = 400U;
 // Values below from PICAXE V0.09 impl approx multiplied by 4+ to allow for scale change.
 #ifdef ENABLE_AMBLIGHT_EXTRA_SENSITIVE // Define if LDR not exposed to much light, eg for REV2 cut4 sideways-pointing LDR (TODO-209).
 static const int LDR_THR_LOW = 50U;
-static const int LDR_THR_HIGH = 70U; 
+static const int LDR_THR_HIGH = 70U;
 #else // Normal settings.
 static const int LDR_THR_LOW = 160U; // Was 30.
 static const int LDR_THR_HIGH = 200U; // Was 35.
@@ -116,36 +116,36 @@ static volatile bool SHT21_initialised;
 // Initialise/configure SHT21, usually once only.
 // TWI must already be powered up.
 static void SHT21_init()
+{
+  if (SHT21_USE_REDUCED_PRECISION)
   {
-  if(SHT21_USE_REDUCED_PRECISION)
-    {
     // Soft reset in order to sample at reduced precision.
     Wire.beginTransmission(SHT21_I2C_ADDR);
     Wire.write((byte) SHT21_I2C_CMD_USERREG); // Select control register.
     Wire.endTransmission();
     Wire.requestFrom(SHT21_I2C_ADDR, 1U);
-    while(Wire.available() < 1)
-      {
+    while (Wire.available() < 1)
+    {
       // Wait for data, but avoid rolling over the end of a minor cycle...
-      if(OTV0P2BASE::getSubCycleTime() >= OTV0P2BASE::GSCT_MAX-2)
-        {
-        return; // Failed, and not initialised.
-        }
+      if (OTV0P2BASE::getSubCycleTime() >= OTV0P2BASE::GSCT_MAX - 2)
+      {
+        return;  // Failed, and not initialised.
       }
+    }
     const uint8_t curUR = Wire.read();
-  //  DEBUG_SERIAL_PRINT_FLASHSTRING("UR: ");
-  //  DEBUG_SERIAL_PRINTFMT(curUR, HEX);
-  //  DEBUG_SERIAL_PRINTLN();
-  
+    //  DEBUG_SERIAL_PRINT_FLASHSTRING("UR: ");
+    //  DEBUG_SERIAL_PRINTFMT(curUR, HEX);
+    //  DEBUG_SERIAL_PRINTLN();
+
     // Preserve reserved bits (3, 4, 5) and sample 8-bit RH (for for 1%) and 12-bit temp (for 1/16C).
     const uint8_t newUR = (curUR & 0x38) | 3;
     Wire.beginTransmission(SHT21_I2C_ADDR);
     Wire.write((byte) SHT21_I2C_CMD_USERREG); // Select control register.
     Wire.write((byte) newUR);
     Wire.endTransmission();
-    }
-  SHT21_initialised = true;
   }
+  SHT21_initialised = true;
+}
 
 // Measure and return the current ambient temperature in units of 1/16th C.
 // This may contain up to 4 bits of information to the right of the fixed binary point.
@@ -153,11 +153,13 @@ static void SHT21_init()
 // Probably no need to do this more than (say) once per minute.
 // The first read will initialise the device as necessary and leave it in a low-power mode afterwards.
 int RoomTemperatureC16_SHT21::read()
-  {
+{
   const bool neededPowerUp = OTV0P2BASE::powerUpTWIIfDisabled();
 
   // Initialise/config if necessary.
-  if(!SHT21_initialised) { SHT21_init(); }
+  if (!SHT21_initialised) {
+    SHT21_init();
+  }
 
   // Max RH measurement time:
   //   * 14-bit: 85ms
@@ -174,27 +176,30 @@ int RoomTemperatureC16_SHT21::read()
   //delay(100);
   Wire.endTransmission();
   Wire.requestFrom(SHT21_I2C_ADDR, 3U);
-  while(Wire.available() < 3)
-    {
+  while (Wire.available() < 3)
+  {
     // Wait for data, but avoid rolling over the end of a minor cycle...
-    if(OTV0P2BASE::getSubCycleTime() >= OTV0P2BASE::GSCT_MAX-2)
-      {
-      return(DEFAULT_INVALID_TEMP); // Failure value: may be able to to better.
-      }
+    if (OTV0P2BASE::getSubCycleTime() >= OTV0P2BASE::GSCT_MAX - 2)
+    {
+      return (DEFAULT_INVALID_TEMP); // Failure value: may be able to to better.
     }
+  }
   uint16_t rawTemp = (Wire.read() << 8);
   rawTemp |= (Wire.read() & 0xfc); // Clear status ls bits.
 
   // Power down TWI ASAP.
-  if(neededPowerUp) { OTV0P2BASE::powerDownTWI(); }
+  if (neededPowerUp) {
+    OTV0P2BASE::powerDownTWI();
+  }
 
   // TODO: capture entropy if (transformed) value has changed.
 
   // Nominal formula: C = -46.85 + ((175.72*raw) / (1L << 16));
   const int c16 = -750 + ((5623L * rawTemp) >> 17); // FIXME: find a faster approximation...
 
-  return(c16);
-  }
+  value = c16;
+  return (c16);
+}
 
 // Measure and return the current relative humidity in %; range [0,100] and 255 for error.
 // This may consume significant power and time.
@@ -202,11 +207,13 @@ int RoomTemperatureC16_SHT21::read()
 // The first read will initialise the device as necessary and leave it in a low-power mode afterwards.
 // Returns 255 (~0) in case of error.
 uint8_t HumiditySensorSHT21::read()
-  {
+{
   const bool neededPowerUp = OTV0P2BASE::powerUpTWIIfDisabled();
 
   // Initialise/config if necessary.
-  if(!SHT21_initialised) { SHT21_init(); }
+  if (!SHT21_initialised) {
+    SHT21_init();
+  }
 
   // Get RH%...
   // Max RH measurement time:
@@ -222,33 +229,41 @@ uint8_t HumiditySensorSHT21::read()
 #endif
   Wire.endTransmission();
   Wire.requestFrom(SHT21_I2C_ADDR, 3U);
-  while(Wire.available() < 3)
-    {
+  while (Wire.available() < 3)
+  {
     // Wait for data, but avoid rolling over the end of a minor cycle...
-    if(OTV0P2BASE::getSubCycleTime() >= OTV0P2BASE::GSCT_MAX)
-      {
-//      DEBUG_SERIAL_PRINTLN_FLASHSTRING("giving up");
-      return(~0);
-      }
+    if (OTV0P2BASE::getSubCycleTime() >= OTV0P2BASE::GSCT_MAX)
+    {
+      //      DEBUG_SERIAL_PRINTLN_FLASHSTRING("giving up");
+      return (~0);
     }
+  }
   const uint8_t rawRH = Wire.read();
   const uint8_t rawRL = Wire.read();
 
   // Power down TWI ASAP.
-  if(neededPowerUp) { OTV0P2BASE::powerDownTWI(); }
+  if (neededPowerUp) {
+    OTV0P2BASE::powerDownTWI();
+  }
 
   const uint16_t raw = (((uint16_t)rawRH) << 8) | (rawRL & 0xfc); // Clear status ls bits.
   const uint8_t result = -6 + ((125L * raw) >> 16);
 
   // Capture entropy from raw status bits
   // iff (transformed) reading has changed.
-  if(value != result) { OTV0P2BASE::addEntropyToPool(rawRL ^ rawRH, 1); }
+  if (value != result) {
+    OTV0P2BASE::addEntropyToPool(rawRL ^ rawRH, 1);
+  }
 
   value = result;
-  if(result > (HUMIDTY_HIGH_RHPC+HUMIDITY_EPSILON_RHPC)) { highWithHyst = true; }
-  else if(result < (HUMIDTY_HIGH_RHPC-HUMIDITY_EPSILON_RHPC)) { highWithHyst = false; }
-  return(result);
+  if (result > (HUMIDTY_HIGH_RHPC + HUMIDITY_EPSILON_RHPC)) {
+    highWithHyst = true;
   }
+  else if (result < (HUMIDTY_HIGH_RHPC - HUMIDITY_EPSILON_RHPC)) {
+    highWithHyst = false;
+  }
+  return(result);
+}
 
 #if defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21)
 // Singleton implementation/instance.
@@ -262,10 +277,10 @@ DummyHumiditySensorSHT21 RelHumidity;
 #if defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21)
 RoomTemperatureC16_SHT21 TemperatureC16; // SHT21 impl.
 #elif defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20)
-  #if defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
+#if defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
 // DSB18B20 temperature impl, with slightly reduced precision to improve speed.
-OTV0P2BASE::TemperatureC16_DS18B20 TemperatureC16(MinOW_DEFAULT, 0, OTV0P2BASE::TemperatureC16_DS18B20::MAX_PRECISION-1);
-  #endif
+OTV0P2BASE::TemperatureC16_DS18B20 TemperatureC16(MinOW_DEFAULT, 0, OTV0P2BASE::TemperatureC16_DS18B20::MAX_PRECISION - 1);
+#endif
 #else // Don't use TMP112 if SHT21 or DS18B20 are selected.
 OTV0P2BASE::RoomTemperatureC16_TMP112 TemperatureC16;
 #endif
@@ -281,16 +296,16 @@ OTV0P2BASE::RoomTemperatureC16_TMP112 TemperatureC16;
 // Force a read/poll of the voice level and return the value sensed.
 // Thread-safe and ISR-safe.
 uint8_t VoiceDetection::read()
-  {
+{
   ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
-    {
-	  isDetected = ((value = count) >= VOICE_DETECTION_THRESHOLD);
-	  // clear count and detection flag
-//	  isTriggered = false;
-      count = 0;
-    }
-  return(value);
+  {
+    isDetected = ((value = count) >= VOICE_DETECTION_THRESHOLD);
+    // clear count and detection flag
+    //	  isTriggered = false;
+    count = 0;
   }
+  return(value);
+}
 
 // Handle simple interrupt.
 // Fast and ISR (Interrupt Service Routines) safe.
@@ -298,26 +313,26 @@ uint8_t VoiceDetection::read()
 // else another interrupt handler in the chain may be called
 // to attempt to clear the interrupt.
 bool VoiceDetection::handleInterruptSimple()
-  {
+{
   ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
-    {
+  {
     // Count of voice activations since last poll, avoiding overflow.
-    if((count < 255) && (++count >= VOICE_DETECTION_THRESHOLD))
-      {
+    if ((count < 255) && (++count >= VOICE_DETECTION_THRESHOLD))
+    {
       // Act as soon as voice is detected.
       isDetected = true;
       // Don't regard this as a very strong indication,
       // as it could be a TV or radio on in the room.
       Occupancy.markAsPossiblyOccupied();
-      }
     }
-
-//    // Flag that interrupt has occurred
-//    endOfLocking = OTV0P2BASE::getMinutesSinceMidnightLT() + lockingPeriod;
-//    isTriggered = true;
-    // No further work to be done to 'clear' interrupt.
-    return(true);
   }
+
+  //    // Flag that interrupt has occurred
+  //    endOfLocking = OTV0P2BASE::getMinutesSinceMidnightLT() + lockingPeriod;
+  //    isTriggered = true;
+  // No further work to be done to 'clear' interrupt.
+  return (true);
+}
 
 // Singleton implementation/instance.
 VoiceDetection Voice;
@@ -345,7 +360,7 @@ OTRadValve::ValveMotorDirectV1<MOTOR_DRIVE_MR, MOTOR_DRIVE_ML, MOTOR_DRIVE_MI_AI
 // Assume enough space in buffer for largest possible stats message.
 #if defined(ALLOW_STATS_TX)
 uint8_t *appendStatsToTXBufferWithFF(uint8_t *bptr, const uint8_t bufSize)
-  {
+{
   OTV0P2BASE::FullStatsMessageCore_t trailer;
   populateCoreStats(&trailer);
   // Ensure that no ID is encoded in the message sent on the air since it would be a repeat from the FHT8V frame.
@@ -353,21 +368,21 @@ uint8_t *appendStatsToTXBufferWithFF(uint8_t *bptr, const uint8_t bufSize)
 
 #if defined(ENABLE_MINIMAL_STATS_TXRX)
   // As bandwidth optimisation just write minimal trailer if only temp&power available.
-  if(trailer.containsTempAndPower &&
-     !trailer.containsID && !trailer.containsAmbL)
-    {
+  if (trailer.containsTempAndPower &&
+      !trailer.containsID && !trailer.containsAmbL)
+  {
     writeTrailingMinimalStatsPayload(bptr, &(trailer.tempAndPower));
     bptr += 3;
     *bptr = (uint8_t)0xff; // Terminate TX bytes.
-    }
+  }
   else
 #endif
-    {
+  {
     // Assume enough space in buffer for largest possible stats message.
     bptr = encodeFullStatsMessageCore(bptr, bufSize, OTV0P2BASE::getStatsTXLevel(), false, &trailer);
-    }
-  return(bptr);
   }
+  return (bptr);
+}
 #else
 #define appendStatsToTXBufferWithFF NULL // Do not append stats.
 #endif
@@ -381,11 +396,11 @@ OTRadValve::FHT8VRadValve<_FHT8V_MAX_EXTRA_TRAILER_BYTES, OTRadValve::FHT8VRadVa
 // Does nothing if FHT8V not in use.
 #ifdef ENABLE_FHT8VSIMPLE
 void FHT8VClearHC()
-  {
+{
   FHT8V.clearHC();
   OTV0P2BASE::eeprom_smart_erase_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC1);
   OTV0P2BASE::eeprom_smart_erase_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC2);
-  }
+}
 #endif
 
 // Set (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control.
@@ -393,15 +408,15 @@ void FHT8VClearHC()
 // Does nothing if FHT8V not in use.
 #ifdef ENABLE_FHT8VSIMPLE
 void FHT8VSetHC1(uint8_t hc)
-  {
+{
   FHT8V.setHC1(hc);
   OTV0P2BASE::eeprom_smart_update_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC1, hc);
-  }
+}
 void FHT8VSetHC2(uint8_t hc)
-  {
+{
   FHT8V.setHC2(hc);
   OTV0P2BASE::eeprom_smart_update_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC2, hc);
-  }
+}
 #endif
 
 // Get (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control (will be 0xff until set).
@@ -409,44 +424,45 @@ void FHT8VSetHC2(uint8_t hc)
 // Does nothing if FHT8V not in use.
 #ifdef ENABLE_FHT8VSIMPLE
 uint8_t FHT8VGetHC1()
-  {
+{
   const uint8_t vv = FHT8V.getHC1();
   // If cached value in FHT8V instance is valid, return it.
-  if(OTRadValve::FHT8VRadValveBase::isValidFHTV8HouseCode(vv))
-    { return(vv); }
+  if (OTRadValve::FHT8VRadValveBase::isValidFHTV8HouseCode(vv))
+  {
+    return (vv);
+  }
   // Else if EEPROM value is valid, then cache it in the FHT8V instance and return it.
   const uint8_t ev = eeprom_read_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC1);
-  if(OTRadValve::FHT8VRadValveBase::isValidFHTV8HouseCode(ev))
-      { FHT8V.setHC1(ev); }
-  return(ev);
-  }
-uint8_t FHT8VGetHC2()
+  if (OTRadValve::FHT8VRadValveBase::isValidFHTV8HouseCode(ev))
   {
+    FHT8V.setHC1(ev);
+  }
+  return (ev);
+}
+uint8_t FHT8VGetHC2()
+{
   const uint8_t vv = FHT8V.getHC2();
   // If cached value in FHT8V instance is valid, return it.
-  if(OTRadValve::FHT8VRadValveBase::isValidFHTV8HouseCode(vv))
-    { return(vv); }
+  if (OTRadValve::FHT8VRadValveBase::isValidFHTV8HouseCode(vv))
+  {
+    return (vv);
+  }
   // Else if EEPROM value is valid, then cache it in the FHT8V instance and return it.
   const uint8_t ev = eeprom_read_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC2);
-  if(OTRadValve::FHT8VRadValveBase::isValidFHTV8HouseCode(ev))
-      { FHT8V.setHC2(ev); }
-  return(ev);
+  if (OTRadValve::FHT8VRadValveBase::isValidFHTV8HouseCode(ev))
+  {
+    FHT8V.setHC2(ev);
   }
+  return (ev);
+}
 #endif // ENABLE_FHT8VSIMPLE
 
 #ifdef ENABLE_FHT8VSIMPLE
 // Load EEPROM house codes into primary FHT8V instance at start-up or once cleared in FHT8V instance.
 void FHT8VLoadHCFromEEPROM()
-  {
+{
   // Uses side-effect to cache/save in FHT8V instance.
   FHT8VGetHC1();
   FHT8VGetHC2();
-  }
+}
 #endif // ENABLE_FHT8VSIMPLE
-
-
-//#if defined(ENABLE_BOILER_HUB)
-//// Boiler output control.
-//// Singleton implementation/instance.
-//extern BoilerDriver BoilerControl;
-//#endif

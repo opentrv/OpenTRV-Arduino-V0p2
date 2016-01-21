@@ -105,9 +105,6 @@ extern OTV0P2BASE::RoomTemperatureC16_TMP112 TemperatureC16;
 #endif
 
 
-
-
-
 // HUMIDITY_SENSOR_SUPPORT is defined if at least one humidity sensor has support compiled in.
 // Simple implementations can assume that the sensor will be present if defined;
 // more sophisticated implementations may wish to make run-time checks.
