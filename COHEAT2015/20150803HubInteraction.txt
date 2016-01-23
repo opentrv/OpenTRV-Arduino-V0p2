@@ -44,7 +44,7 @@ Example:
 Poll response from relay with house code 98 98 reporting:
   * 64% relative humidity
   * 21C ext/pipe
-  * 19.5C on the board
+  * 19.5C at the board
   * ambient light of '14'
   * switch '1'
   * window open
