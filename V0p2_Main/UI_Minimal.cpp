@@ -642,19 +642,21 @@ void serialStatusReport()
   Serial.print(';'); // Terminate previous section.
   char buf[80];
   static OTV0P2BASE::SimpleStatsRotation<5> ss1; // Configured for maximum different stats.
-//  ss1.put(TemperatureC16);
+//  ss1.put(TemperatureC16); // Already at start of = stats line.
 #if defined(HUMIDITY_SENSOR_SUPPORT)
   ss1.put(RelHumidity);
-#endif
+#endif // defined(HUMIDITY_SENSOR_SUPPORT)
+#if defined(ENABLE_AMBLIGHT_SENSOR)
   ss1.put(AmbLight);
+#endif // ENABLE_AMBLIGHT_SENSOR
   ss1.put(Supply_cV);
 #if defined(ENABLE_OCCUPANCY_SUPPORT)
   ss1.put(Occupancy);
 //  ss1.put(Occupancy.vacHTag(), Occupancy.getVacancyH()); // EXPERIMENTAL
-#endif
-#ifdef ENABLE_MODELLED_RAD_VALVE
+#endif // defined(ENABLE_OCCUPANCY_SUPPORT)
+#if defined(ENABLE_MODELLED_RAD_VALVE)
     ss1.put(NominalRadValve.tagCMPC(), NominalRadValve.getCumulativeMovementPC()); // EXPERIMENTAL
-#endif
+#endif // ENABLE_MODELLED_RAD_VALVE
   const uint8_t wrote = ss1.writeJSON((uint8_t *)buf, sizeof(buf), 0, true);
   if(0 != wrote) { Serial.print(buf); }
 #endif

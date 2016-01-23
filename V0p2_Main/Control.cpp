@@ -911,32 +911,31 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
     ss1.put(TemperatureC16);
 #if defined(HUMIDITY_SENSOR_SUPPORT)
     ss1.put(RelHumidity);
-#endif
+#endif // defined(HUMIDITY_SENSOR_SUPPORT)
 #if defined(ENABLE_OCCUPANCY_SUPPORT)
     ss1.put(Occupancy.twoBitTag(), Occupancy.twoBitOccupancyValue()); // Reduce spurious TX cf percentage.
     ss1.put(Occupancy.vacHTag(), Occupancy.getVacancyH()); // EXPERIMENTAL
-#endif
+#endif // defined(ENABLE_OCCUPANCY_SUPPORT)
     // OPTIONAL items
     // Only TX supply voltage for units apparently not mains powered.
     if(!Supply_cV.isMains()) { ss1.put(Supply_cV); } else { ss1.remove(Supply_cV.tag()); }
 #ifdef ENABLE_BOILER_HUB
     // Show boiler state for boiler hubs.
     ss1.put("b", (int) isBoilerOn());
-#endif
+#endif // ENABLE_BOILER_HUB
+#ifdef ENABLE_AMBLIGHT_SENSOR
     ss1.put(AmbLight); // Always send ambient light level (assuming sensor is present).
+#endif // ENABLE_AMBLIGHT_SENSOR
 #ifdef ENABLE_VOICE_STATS
     ss1.put(Voice);	// FIXME voice stats
-#endif
-#if !defined(LOCAL_TRV) // Deploying as sensor unit, not TRV controller, so show all sensors and no TRV stuff.
-//    // Only show raw ambient light levels for non-TRV pure-sensor units.
-//    ss1.put(AmbLight);
-#else
+#endif // ENABLE_VOICE_STATS
+#if defined(LOCAL_TRV) // Deploying as sensor unit, not TRV controller, so show all sensors and no TRV stuff.
     ss1.put(NominalRadValve);
     ss1.put(NominalRadValve.tagTTC(), NominalRadValve.getTargetTempC());
 #if 1
     ss1.put(NominalRadValve.tagCMPC(), NominalRadValve.getCumulativeMovementPC()); // EXPERIMENTAL
 #endif
-#endif
+#endif // defined(LOCAL_TRV)
 
     // If not doing a doubleTX then consider sometimes suppressing the change-flag clearing for this send
     // to reduce the chance of important changes being missed by the receiver.
