@@ -185,7 +185,7 @@ static void decodeAndHandleFTp2_FS20_native(Print *p, const bool secure, const u
   // Potentially accept as call for heat only if command is 0x26 (38).
   // Later filter on the valve being open enough for some water flow to be likely
   // (for individual valves, and in aggregate)
-  // and the housecode being accepted.
+  // and for the housecode being accepted.
   if(0x26 == command.command)
     {
     const uint16_t compoundHC = (((uint16_t)command.hc1) << 8) | command.hc2;
@@ -194,22 +194,7 @@ static void decodeAndHandleFTp2_FS20_native(Print *p, const bool secure, const u
     p->print(command.hc1); p->print(' ');
     p->println(command.hc2);
 #endif
-    // Process the common 'valve closed' and valve open cases efficiently.
-    // Nominally conversion to % should be (uint8_t) ((command.extension * 100 +127.5) / 255)
-    // but approximation with /256, ie >>8, probably fine.
-    // This code ensures that common and semantically-important 0 and 255
-    // always (quickly) and definitely map to 0 and 100.
-    // A better approximation from 0--255 => % mapping,
-    // which will help quicker response to valve hitting
-    // OTRadValve::DEFAULT_VALVE_PC_MODERATELY_OPEN for example
-    // since valve will not need to further open to force boiler on.
-    // TODO: maybe be careful also with special thresholds
-    // OTRadValve::DEFAULT_VALVE_PC_SAFER_OPEN and OTRadValve::DEFAULT_VALVE_PC_MODERATELY_OPEN.
     const uint8_t percentOpen = OTRadValve::FHT8VRadValveBase::convert255ScaleToPercent(command.extension);
-//        (0 == command.extension) ? 0 :
-//        ((255 == command.extension) ? 100 :
-//        // Approximation that works at 1 (=>1%) and 254 (=>99%).
-//        ((uint8_t) ((command.extension * (int)100 + 199) >> 8)));
     remoteCallForHeatRX(compoundHC, percentOpen);
     }
 #endif
@@ -250,7 +235,6 @@ p->print("FS20 msg HC "); p->print(command.hc1); p->print(' '); p->println(comma
 /*if(allGood)*/ { p->println("FS20 ts"); }
 #endif
         // If frame looks good then capture it.
-//        if(allGood) { recordCoreStats(false, &content); }
         if(allGood) { outputCoreStats(p, false, &content); }
 //            else { setLastRXErr(FHT8VRXErr_BAD_RX_SUBFRAME); }
         // TODO: record error with mismatched ID.
@@ -268,7 +252,6 @@ p->print("FS20 msg HC "); p->print(command.hc1); p->print(' '); p->println(comma
 #endif
         trailingMinimalStatsPayload_t payload;
         extractTrailingMinimalStatsPayload(trailer, &payload);
-        // FIMXE // recordMinimalStats(true, command.hc1, command.hc2, &payload); // Record stats; local loopback is secure.
         }
       }
 #endif
