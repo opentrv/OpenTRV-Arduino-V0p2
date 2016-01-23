@@ -1173,15 +1173,13 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
       // With F! force to frost and holiday (long-vacant) mode.  Useful for testing and for remote CLI use.
       case 'F':
         {
-        if(n == 2)
-          {
-          if('!' == buf[1]) { Serial.println(F("hols")); }
 #ifdef ENABLE_OCCUPANCY_SUPPORT
+        if((n == 2) && ('!' == buf[1]))
+          {
+          Serial.println(F("hols"));
           Occupancy.setHolidayMode();
-#endif
-          setWarmModeDebounced(false);
-          break;
           }
+#endif
 #if defined(SETTABLE_TARGET_TEMPERATURES)
         char *last; // Used by strtok_r().
         char *tok1;
