@@ -1357,9 +1357,11 @@ void remoteCallForHeatRX(const uint16_t id, const uint8_t percentOpen)
   // TODO-555: apply some basic hysteresis to help reduce boiler short-cycling.
   // Try to force a higher single-valve-%age threshold to start boiler if off,
   // at a level where at least a single valve is moderately open.
-  // Selecting "quick heat" at a valve should immediately pass this.
-  // (Will not provide hysteresis for very high minimum really-open value.)
-  // Be slightly tolerant on 'moderately open' threshold to allow quick start from a range of devices (TODO-593)
+  // Selecting "quick heat" at a valve should immediately pass this,
+  // as should normal warm in cold but newly-occupied room (TODO-593).
+  // (This will not provide hysteresis for very high minimum really-open valve values.)
+  // Be slightly tolerant with the 'moderately open' threshold
+  // to allow quick start from a range of devices (TODO-593)
   // and in the face of imperfect rounding/conversion to/from percentages over the air.
   const uint8_t threshold = (!considerPause && (encourageOn || isBoilerOn())) ?
       minvro : OTV0P2BASE::fnmax(minvro, (uint8_t) (OTRadValve::DEFAULT_VALVE_PC_MODERATELY_OPEN-1));
