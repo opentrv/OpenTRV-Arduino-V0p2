@@ -1345,7 +1345,14 @@ void remoteCallForHeatRX(const uint16_t id, const uint8_t percentOpen)
   // in 'off' period even during the day for many years!
   //
   // Note: could also consider pause if mains frequency is low indicating grid stress.
-  const bool considerPause = ((minuteCount & 0x63) <= 0xf);
+  const uint8_t boilerCycleWindowMask = 0x3f;
+  const uint8_t boilerCycleWindow = (minuteCount & boilerCycleWindowMask);
+  const bool considerPause = (boilerCycleWindow < (boilerCycleWindowMask >> 2));
+
+  // Equally the threshold could be lowered in the period after a possible pause (TODO-593, TODO-553)
+  // to encourage the boiler to start and run harder
+  // and to get a little closer to target tempertures.
+  const bool encourageOn = !considerPause && (boilerCycleWindow < (boilerCycleWindowMask >> 1));
 
   // TODO-555: apply some basic hysteresis to help reduce boiler short-cycling.
   // Try to force a higher single-valve-%age threshold to start boiler if off,
@@ -1354,7 +1361,7 @@ void remoteCallForHeatRX(const uint16_t id, const uint8_t percentOpen)
   // (Will not provide hysteresis for very high minimum really-open value.)
   // Be slightly tolerant on 'moderately open' threshold to allow quick start from a range of devices
   // and in the face of imperfect rounding/conversion to/from percentages.
-  const uint8_t threshold = (!considerPause && isBoilerOn()) ?
+  const uint8_t threshold = (!considerPause && (encourageOn || isBoilerOn())) ?
       minvro : OTV0P2BASE::fnmax(minvro, (uint8_t) (OTRadValve::DEFAULT_VALVE_PC_MODERATELY_OPEN-1));
 
   if(percentOpen >= threshold)
