@@ -22,3 +22,20 @@ Reason for patch: window sensor in one state was causing POST to panic(); for RE
 Code path: COHEAT2015/20150805-JV2-patch-20150916-window-switch
 Should be built against 20150805-JV2 of OTRadioLink and and OTProtocolCC on Arduino IDE 1.0.5 or 1.6.5.
 Adjust config flags in V0p2_Generic_Config.h to switch between hub (CONFIG_Trial2013Winter_Round2_CC1HUB) and relay (CONFIG_REV9) boards.
+
+20160123-COHEAT-REV2-REV9-functional: (early test release)
+Date: 2016/01/23:
+JIRA/ID for patch issue: COH-72 (early test release)
+Reason for patch: early test release for move to main line with improved radio and other code
+Code path: COHEAT2015/20160123-snapshot
+Should be built against 20160123-COHEAT-REV2-REV9-functional of OTRadioLink and and OTProtocolCC on Arduino IDE 1.6.5.
+Adjust config flags in V0p2_Generic_Config.h to switch between hub (CONFIG_Trial2013Winter_Round2_CC1HUB) and relay (CONFIG_REV9) boards.
+Notes:
+    Contains snapshot of the mainline code to compile,
+    and the ZIPs of the two libraries OTRadioLink and OTProtocolCC
+    to install into your IDE (1.6.5 please, 1.6.6 has at least one significant bug) after removing the old ones.
+    The two configs relevant in in V0p2_Generic_Config.h are:
+    //#define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
+    and:
+    //#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
+    exactly one of which should be uncommented.
