@@ -8,3 +8,7 @@ REV8 is the boiler unit, possibly configured not to drive a local valve and poss
 but in any case containing the boiler relay and not containing the REV7 motor H-bridge.
 
 ALL FILES IN THIS AREA COVERED BY USUAL OPENTRV APACHE LICENCE CONDITIONS/GRANT.
+
+
+Some testing notes:
+http://www.earth.org.uk/OpenTRV/test/201601-REV7-REV10-REV11-HardwareTesting-DE.pdf

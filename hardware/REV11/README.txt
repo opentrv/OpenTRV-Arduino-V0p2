@@ -16,4 +16,8 @@ though ITEADstudio would probably be happy for you to use their service like we 
 
 
 
+Some testing notes:
+http://www.earth.org.uk/OpenTRV/test/201601-REV7-REV10-REV11-HardwareTesting-DE.pdf
+
+
 Component-ordering document: https://docs.google.com/spreadsheets/d/1gsCwtDZDTSBvkgDIGdEZPMJ3iMatSaSa38pdLNWTiDY/edit#gid=0
