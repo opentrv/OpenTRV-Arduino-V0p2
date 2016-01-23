@@ -205,11 +205,11 @@ static void decodeAndHandleFTp2_FS20_native(Print *p, const bool secure, const u
     // since valve will not need to further open to force boiler on.
     // TODO: maybe be careful also with special thresholds
     // OTRadValve::DEFAULT_VALVE_PC_SAFER_OPEN and OTRadValve::DEFAULT_VALVE_PC_MODERATELY_OPEN.
-    const uint8_t percentOpen =
-        (0 == command.extension) ? 0 :
-        ((255 == command.extension) ? 100 :
-        // Approximation that works at 1 (=>1%) and 254 (=>99%).
-        ((uint8_t) ((command.extension * (int)100 + 199) >> 8)));
+    const uint8_t percentOpen = OTRadValve::FHT8VRadValveBase::convert255ScaleToPercent(command.extension);
+//        (0 == command.extension) ? 0 :
+//        ((255 == command.extension) ? 100 :
+//        // Approximation that works at 1 (=>1%) and 254 (=>99%).
+//        ((uint8_t) ((command.extension * (int)100 + 199) >> 8)));
     remoteCallForHeatRX(compoundHC, percentOpen);
     }
 #endif
