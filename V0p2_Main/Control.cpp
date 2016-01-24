@@ -1059,13 +1059,14 @@ static void updateSensorsFromStats()
 
 #if defined(ENABLE_BOILER_HUB)
 // Ticks until locally-controlled boiler should be turned off; boiler should be on while this is positive.
-// Ticks are the mail loop time, 1s or 2s.
+// Ticks are of the main loop, ie 2s (almost always).
 // Used in hub mode only.
 static uint16_t boilerCountdownTicks;
 // True if boiler should be on.
 static bool isBoilerOn() { return(0 != boilerCountdownTicks); }
 // Minutes that the boiler has been off for, allowing minimum off time to be enforced.
 // Does not roll once at its maximum value (255).
+// DHD20160124: starting at zero forces at least for off time after power-up before firing up boiler (good after power-cut).
 static uint8_t boilerNoCallM;
 // Reducing listening if quiet for a while helps reduce self-heating temperature error
 // (~2C as of 2013/12/24 at 100% RX, ~100mW heat dissipation in V0.2 REV1 box) and saves some energy.
