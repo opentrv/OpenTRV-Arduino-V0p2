@@ -1508,6 +1508,7 @@ void loopOpenTRV()
         // forcing a time longer than the specified minimum,
         // regardless of when second0 happens to be.
         // (The min(254, ...) is to ensure that the boiler can come on even if minOnMins == 255.)
+        // TODO: randomly extend the off-time a little (eg during grid stress) partly to randmonise whole cycle length.
         if(boilerNoCallM <= min(254, minOnMins)) { ignoreRCfH = true; }
         if(OTV0P2BASE::getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
         else if(ignoreRCfH) { OTV0P2BASE::serialPrintlnAndFlush(F("RCfH-")); } // Remote call for heat ignored.
@@ -1515,7 +1516,7 @@ void loopOpenTRV()
         }
       if(!ignoreRCfH)
         {
-        const uint8_t onTimeTicks = minOnMins * (60 / OTV0P2BASE::MAIN_TICK_S);
+        const uint16_t onTimeTicks = minOnMins * (uint16_t) (60U / OTV0P2BASE::MAIN_TICK_S);
         // Restart count-down time (keeping boiler on) with new call for heat.
         boilerCountdownTicks = onTimeTicks;
         boilerNoCallM = 0; // No time has passed since the last call.
