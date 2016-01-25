@@ -1081,7 +1081,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
 //          {
 //          const uint8_t setN = (uint8_t) atoi(tok1);
 //          for(uint8_t hh = 0; hh < 24; ++hh)
-//            { Serial.print(getByHourStat(hh, setN)); Serial_print_space(); }
+//            { Serial.print(getByHourStat(setN, hh)); Serial_print_space(); }
 //          Serial.println();
 //          }
 //        break;
@@ -1138,7 +1138,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
           // Now print values.
           for(uint8_t hh = 0; hh < 24; ++hh)
             {
-            const uint8_t statRaw = OTV0P2BASE::getByHourStat(hh, setN);
+            const uint8_t statRaw = OTV0P2BASE::getByHourStat(setN, hh);
             // For unset stat show '-'...
             if(OTV0P2BASE::STATS_UNSET_BYTE == statRaw) { Serial.print('-'); }
             // ...else print more human-friendly version of stat.
@@ -1157,6 +1157,11 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
                 { Serial.print(statRaw, HEX); break; }
 #endif
               }
+#if 1 && defined(DEBUG)
+            Serial.print('(');
+            Serial.print(OTV0P2BASE::countStatSamplesBelow(setN, statRaw));
+            Serial.print(')');
+#endif
             if(hh == thisHH) { Serial.print('<'); } // Highlight current stat in this set.
 #if 0 && defined(DEBUG)
             if(inOutlierQuartile(false, setN, hh)) { Serial.print('B'); } // In bottom quartile.
