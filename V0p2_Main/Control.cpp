@@ -356,7 +356,12 @@ void ModelledRadValve::recalibrate()
 // even if the device is left in WARM mode all the time,
 // using occupancy/light/etc to determine when temperature can be set back
 // without annoying users.
-// TODO: unit tests confirming that it is possible to reach all setback levels.
+//
+// Attempts in WARM mode to make the deepest reasonable cuts to maximise savings
+// when the room is vacant and not likely to become occupied again soon,
+// ie this looks ahead to give the room time to recover to target before occupancy.
+//
+// TODO: unit tests confirming that it is possible to reach all setback levels other than at highest comfort settings.
 uint8_t ModelledRadValve::computeTargetTemp()
   {
   // In FROST mode.
