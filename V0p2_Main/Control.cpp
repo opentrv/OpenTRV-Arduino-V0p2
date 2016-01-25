@@ -412,8 +412,9 @@ uint8_t ModelledRadValve::computeTargetTemp()
         (Occupancy.isLikelyUnoccupied() &&
          OTV0P2BASE::inOutlierQuartile(false, V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED) &&
          OTV0P2BASE::inOutlierQuartile(false, V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::inOutlierQuartile_NEXT_HOUR));
+    const uint8_t minLightsOffForSetbackMins = 10;
     if(longVacant ||
-       ((notLikelyOccupiedSoon || (AmbLight.getDarkMinutes() > 10)) && !Scheduler.isAnyScheduleOnWARMNow() && !recentUIControlUse()))
+       ((notLikelyOccupiedSoon || (AmbLight.getDarkMinutes() > minLightsOffForSetbackMins)) && !Scheduler.isAnyScheduleOnWARMNow() && !recentUIControlUse()))
       {
       // Use a default minimal non-annoying setback if:
       //   in upper part of comfort range
@@ -422,16 +423,23 @@ uint8_t ModelledRadValve::computeTargetTemp()
       //   or if the room is commonly occupied at this time and hasn't been vacant for a very long time
       //   or if a scheduled WARM period is due soon and the room hasn't been vacant for a moderately long time,
       // else usually use a somewhat bigger 'eco' setback
-      // else use an even bigger 'full' setback if in the eco region and
+      // else use an even bigger 'full' setback for maximum savings if in the eco region and
       //   the room has been vacant for a very long time
-      //   or is unlikely to be unoccupied at this time of day and in the lower part of the 'eco' range.
+      //   or is unlikely to be unoccupied at this time of day and
+      //     has been vacant and dark for a while or is in the lower part of the 'eco' range.
+      // This final dark/vacant timeout to enter FULL fallback while in mild eco mode
+      // should probably be longer than required to watch a decent movie for example,
+      // but short enough to take effect overnight.
+      const uint8_t minVacancyAndDarkForFULLSetbackH = 3; // Strictly positive; typically 1--4.
       const uint8_t setback = (isComfortTemperature(wt) ||
                                Occupancy.isLikelyOccupied() ||
                                (!longLongVacant && !AmbLight.isRoomDark()) ||
                                (!longLongVacant && OTV0P2BASE::inOutlierQuartile(true, V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED)) ||
                                (!longVacant && Scheduler.isAnyScheduleOnWARMSoon())) ?
               SETBACK_DEFAULT :
-          ((hasEcoBias() && (longLongVacant || (notLikelyOccupiedSoon && isEcoTemperature(wt)))) ?
+          ((hasEcoBias() && (longLongVacant ||
+              (notLikelyOccupiedSoon && (isEcoTemperature(wt) ||
+                  ((AmbLight.getDarkMinutes() >= (uint8_t)min(255, 60*minVacancyAndDarkForFULLSetbackH)) && (Occupancy.getVacancyH() >= minVacancyAndDarkForFULLSetbackH)))))) ?
               SETBACK_FULL : SETBACK_ECO);
 
       return(OTV0P2BASE::fnmax((uint8_t)(wt - setback), getFROSTTargetC())); // Target must never be set low enough to create a frost/freeze hazard.
