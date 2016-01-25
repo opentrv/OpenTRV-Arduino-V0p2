@@ -1366,7 +1366,7 @@ void remoteCallForHeatRX(const uint16_t id, const uint8_t percentOpen)
 
   // Equally the threshold could be lowered in the period after a possible pause (TODO-593, TODO-553)
   // to encourage the boiler to start and run harder
-  // and to get a little closer to target tempertures.
+  // and to get a little closer to target temperatures.
   const bool encourageOn = !considerPause && (boilerCycleWindow < (boilerCycleWindowMask >> 1));
 
   // TODO-555: apply some basic hysteresis to help reduce boiler short-cycling.
