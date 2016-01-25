@@ -1157,7 +1157,8 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
                 { Serial.print(statRaw, HEX); break; }
 #endif
               }
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
+            // Show how many values are lower than the current one.
             Serial.print('(');
             Serial.print(OTV0P2BASE::countStatSamplesBelow(setN, statRaw));
             Serial.print(')');
