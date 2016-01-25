@@ -370,14 +370,14 @@ uint8_t ModelledRadValve::computeTargetTemp()
     // Don't do this if there has been recent manual intervention, eg to allow manual 'cancellation' of pre-heat (TODO-464).
     // Only do this if the target WARM temperature is NOT an 'eco' temperature (ie very near the bottom of the scale).
     // If well into the 'eco' zone go for a larger-than-usual setback, else go for usual small setback.
-    // Note: when pre-warm and warm time for schedule is ~1h, and default setback 1C,
-    // this is assuming that the room temperature can be raised by at least 1C/h.
+    // Note: when pre-warm and warm time for schedule is ~1.5h, and default setback 1C,
+    // this is assuming that the room temperature can be raised by ~1C/h.
     // See the effect of going from 2C to 1C setback: http://www.earth.org.uk/img/20160110-vat-b.png
     // (A very long pre-warm time may confuse or distress users, eg waking them in the morning.)
     if(!Occupancy.longVacant() && Scheduler.isAnyScheduleOnWARMSoon() && !recentUIControlUse())
       {
       const uint8_t warmTarget = getWARMTargetC();
-      // Compute putative pre-warm temperature, usually only just below WARM target,
+      // Compute putative pre-warm temperature, usually only just below WARM target.
       const uint8_t preWarmTempC = OTV0P2BASE::fnmax((uint8_t)(warmTarget - (isEcoTemperature(warmTarget) ? SETBACK_ECO : SETBACK_DEFAULT)), frostC);
       if(frostC < preWarmTempC) // && (!isEcoTemperature(warmTarget)))
         { return(preWarmTempC); }
@@ -431,7 +431,7 @@ uint8_t ModelledRadValve::computeTargetTemp()
       // This final dark/vacant timeout to enter FULL fallback while in mild eco mode
       // should probably be longer than required to watch a decent movie or go to sleep for example,
       // but short enough to take effect overnight.
-      const uint8_t minVacancyAndDarkForFULLSetbackH = 3; // Strictly positive; typically 1--4.
+      const uint8_t minVacancyAndDarkForFULLSetbackH = 3; // Hours; strictly positive, typically 1--4.
       const uint8_t setback = (isComfortTemperature(wt) ||
                                Occupancy.isLikelyOccupied() ||
                                (!longLongVacant && !AmbLight.isRoomDark()) ||
@@ -440,7 +440,7 @@ uint8_t ModelledRadValve::computeTargetTemp()
               SETBACK_DEFAULT :
           ((hasEcoBias() && (longLongVacant ||
               (notLikelyOccupiedSoon && (isEcoTemperature(wt) ||
-                  ((AmbLight.getDarkMinutes() >= (uint8_t)min(255, 60*minVacancyAndDarkForFULLSetbackH)) && (Occupancy.getVacancyH() >= minVacancyAndDarkForFULLSetbackH)))))) ?
+                  ((AmbLight.getDarkMinutes() > (uint8_t)min(254, 60*minVacancyAndDarkForFULLSetbackH)) && (Occupancy.getVacancyH() >= minVacancyAndDarkForFULLSetbackH)))))) ?
               SETBACK_FULL : SETBACK_ECO);
 
       return(OTV0P2BASE::fnmax((uint8_t)(wt - setback), getFROSTTargetC())); // Target must never be set low enough to create a frost/freeze hazard.
