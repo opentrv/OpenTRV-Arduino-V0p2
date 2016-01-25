@@ -401,7 +401,7 @@ uint8_t ModelledRadValve::computeTargetTemp()
     //   AND no WARM schedule is active now (TODO-111)
     //   AND no recent manual interaction with the unit's local UI (TODO-464) indicating local settings override.
     // The notion of "not likely occupied" is "not now"
-    // AND less likely than not at this hour of the day AND an hour ahead.
+    // AND less likely than not at this hour of the day AND an hour ahead (TODO-753).
     // Note that this mainly has to work in domestic settings in winter (with ~8h of daylight)
     // but should ideally also work in artificially-lit offices (maybe ~12h continuous lighting).
     // No 'lights-on' signal for a whole day is a fairly strong indication that the heat can be turned down.
@@ -413,10 +413,10 @@ uint8_t ModelledRadValve::computeTargetTemp()
     const bool longVacant = longLongVacant || Occupancy.longVacant();
     const bool notLikelyOccupiedSoon = longLongVacant ||
         (Occupancy.isLikelyUnoccupied() &&
-        // About half the hours to be more occupied than this hour to be considered not likely.
-        (12 > OTV0P2BASE::countStatSamplesBelow(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::getByHourStat(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::STATS_SPECIAL_HOUR_CURRENT_HOUR))) &&
-        // A little more than half the hours to be more occupied than the next hour to be considered not likely.
-        (11 > OTV0P2BASE::countStatSamplesBelow(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::getByHourStat(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::STATS_SPECIAL_HOUR_NEXT_HOUR))));
+        // A little more than half the hours to be more occupied than this hour to be considered not likely.
+        (11 > OTV0P2BASE::countStatSamplesBelow(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::getByHourStat(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::STATS_SPECIAL_HOUR_CURRENT_HOUR))) &&
+        // A half the hours to be more occupied than the next hour to be considered not likely.
+        (12 > OTV0P2BASE::countStatSamplesBelow(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::getByHourStat(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::STATS_SPECIAL_HOUR_NEXT_HOUR))));
 //         OTV0P2BASE::inOutlierQuartile(false, V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED) &&
 //         OTV0P2BASE::inOutlierQuartile(false, V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::STATS_SPECIAL_HOUR_NEXT_HOUR));
     const uint8_t minLightsOffForSetbackMins = 10;
