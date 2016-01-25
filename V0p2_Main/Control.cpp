@@ -356,6 +356,7 @@ void ModelledRadValve::recalibrate()
 // even if the device is left in WARM mode all the time,
 // using occupancy/light/etc to determine when temperature can be set back
 // without annoying users.
+// TODO: unit tests confirming that it is possible to reach all setback levels.
 uint8_t ModelledRadValve::computeTargetTemp()
   {
   // In FROST mode.
@@ -428,7 +429,7 @@ uint8_t ModelledRadValve::computeTargetTemp()
       //   or is unlikely to be unoccupied at this time of day and
       //     has been vacant and dark for a while or is in the lower part of the 'eco' range.
       // This final dark/vacant timeout to enter FULL fallback while in mild eco mode
-      // should probably be longer than required to watch a decent movie for example,
+      // should probably be longer than required to watch a decent movie or go to sleep for example,
       // but short enough to take effect overnight.
       const uint8_t minVacancyAndDarkForFULLSetbackH = 3; // Strictly positive; typically 1--4.
       const uint8_t setback = (isComfortTemperature(wt) ||
