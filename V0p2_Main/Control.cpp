@@ -421,7 +421,7 @@ uint8_t ModelledRadValve::computeTargetTemp()
       //   in upper part of comfort range
       //   or if the room is likely occupied now
       //   or if the room is not known to be dark and hasn't been vacant for a very long time (TODO-107)
-      //   or if the room is commonly occupied at this time and hasn't been vacant for a very long time
+      //   or if the room is in the upper quartile of occupancy for this time and hasn't been vacant for a very long time
       //   or if a scheduled WARM period is due soon and the room hasn't been vacant for a moderately long time,
       // else usually use a somewhat bigger 'eco' setback
       // else use an even bigger 'full' setback for maximum savings if in the eco region and
