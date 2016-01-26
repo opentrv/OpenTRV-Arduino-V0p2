@@ -418,10 +418,10 @@ uint8_t ModelledRadValve::computeTargetTemp()
     const bool longVacant = longLongVacant || Occupancy.longVacant();
     const bool notLikelyOccupiedSoon = longLongVacant ||
         (Occupancy.isLikelyUnoccupied() &&
-        // A little more than half the hours to be more occupied than this hour to be considered not likely.
-        (11 > OTV0P2BASE::countStatSamplesBelow(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::getByHourStat(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::STATS_SPECIAL_HOUR_CURRENT_HOUR))) &&
-        // About half the hours to be more occupied than the next hour to be considered not likely.
-        (12 > OTV0P2BASE::countStatSamplesBelow(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::getByHourStat(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::STATS_SPECIAL_HOUR_NEXT_HOUR))));
+        // No more than half the hours to be less occupied than this hour to be considered unlikely to be occupied.
+        (13 > OTV0P2BASE::countStatSamplesBelow(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::getByHourStat(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::STATS_SPECIAL_HOUR_CURRENT_HOUR))) &&
+        // No more than a little over half the hours to be less occupied than the next hour to be considered unlikely to be occupied.
+        (14 > OTV0P2BASE::countStatSamplesBelow(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::getByHourStat(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::STATS_SPECIAL_HOUR_NEXT_HOUR))));
 //         OTV0P2BASE::inOutlierQuartile(false, V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED) &&
 //         OTV0P2BASE::inOutlierQuartile(false, V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::STATS_SPECIAL_HOUR_NEXT_HOUR));
     const uint8_t minLightsOffForSetbackMins = 10;
@@ -431,7 +431,7 @@ uint8_t ModelledRadValve::computeTargetTemp()
       // Use a default minimal non-annoying setback if:
       //   in upper part of comfort range
       //   or if the room is likely occupied now
-      //   or if the room is not known to be dark and hasn't been vacant for a very long time (TODO-107)
+      //   or if the room is not known to be dark and hasn't been vacant for a long time ~1d (TODO-107, TODO-758)
       //      TODO POSSIBLY: limit to (say) 3--4h light time for when someone out but room daylit, but note that detecting occupancy will be harder too in daylight.
       //      TODO POSSIBLY: after 3h vacancy AND apparent smoothed occupancy no-zero (soe some can be detected) AND ambient light in top quartile or in middle of typical bright part of cycle (assume peak of daylight) then being lit is not enough to prevent a deeper setback.
       //   or if the room is in the upper quartile of occupancy for this time and hasn't been vacant for a very long time
@@ -442,12 +442,12 @@ uint8_t ModelledRadValve::computeTargetTemp()
       //   or is unlikely to be unoccupied at this time of day and
       //     has been vacant and dark for a while or is in the lower part of the 'eco' range.
       // This final dark/vacant timeout to enter FULL fallback while in mild eco mode
-      // should probably be longer than required to watch a decent movie or go to sleep for example,
-      // but short enough to take effect overnight.
-      const uint8_t minVacancyAndDarkForFULLSetbackH = 3; // Hours; strictly positive, typically 1--4.
+      // should probably be longer than required to watch a decent movie or go to sleep (~2h) for example,
+      // but short enough to take effect overnight and to be in effect a reasonable fraction of (~8h) night.
+      const uint8_t minVacancyAndDarkForFULLSetbackH = 2; // Hours; strictly positive, typically 1--4.
       const uint8_t setback = (isComfortTemperature(wt) ||
                                Occupancy.isLikelyOccupied() ||
-                               (!longLongVacant && !AmbLight.isRoomDark()) ||
+                               (!longVacant && !AmbLight.isRoomDark()) ||
                                (!longLongVacant && OTV0P2BASE::inOutlierQuartile(true, V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED)) ||
                                (!longVacant && Scheduler.isAnyScheduleOnWARMSoon())) ?
               SETBACK_DEFAULT :
