@@ -431,9 +431,9 @@ uint8_t ModelledRadValve::computeTargetTemp()
       // Use a default minimal non-annoying setback if:
       //   in upper part of comfort range
       //   or if the room is likely occupied now
-      //   or if the room is not known to be dark and hasn't been vacant for a long time ~1d (TODO-107, TODO-758)
+      //   or if the room is not known to be dark and hasn't been vacant for a long time ie ~1d (TODO-107, TODO-758)
       //      TODO POSSIBLY: limit to (say) 3--4h light time for when someone out but room daylit, but note that detecting occupancy will be harder too in daylight.
-      //      TODO POSSIBLY: after 3h vacancy AND apparent smoothed occupancy no-zero (soe some can be detected) AND ambient light in top quartile or in middle of typical bright part of cycle (assume peak of daylight) then being lit is not enough to prevent a deeper setback.
+      //      TODO POSSIBLY: after 3h vacancy AND apparent smoothed occupancy no-zero (so some can be detected) AND ambient light in top quartile or in middle of typical bright part of cycle (assume peak of daylight) then being lit is not enough to prevent a deeper setback.
       //   or if the room is in the upper quartile of occupancy for this time and hasn't been vacant for a very long time
       //   or if a scheduled WARM period is due soon and the room hasn't been vacant for a moderately long time,
       // else usually use a somewhat bigger 'eco' setback
