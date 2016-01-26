@@ -1889,8 +1889,11 @@ void loopOpenTRV()
     case 4: { if(runAll) { Supply_cV.read(); } break; }
 
 #ifdef ALLOW_STATS_TX
-    // Regular transmission of stats if NOT driving a local valve (else stats can be piggybacked onto that).
-    case 10:
+    // Periodic transmission of stats if NOT driving a local valve (else stats can be piggybacked onto that).
+    // Randomised somewhat between slots and also within the slot to help avoid collisions.
+    static uint8_t txTick;
+    case 6: { txTick = OTV0P2BASE::randRNG8() & 3; break; } // Pick which of the 4 slots to use.
+    case 8: case 10: case 12: case 14: if(0 != txTick--) { break; } // Only the slot where onSec is zero is used.
       {
       if(!enableTrailingStatsPayload()) { break; } // Not allowed to send stuff like this.
 #if defined(ENABLE_FHT8VSIMPLE)
@@ -1899,14 +1902,12 @@ void loopOpenTRV()
       if(localFHT8VTRVEnabled() && useExtraFHT8VTXSlots) { break; }
 #endif
 
-      // Generally only attempt stats TX in the minute after all sensors should have been polled (so that readings are fresh).
-      if(minute1From4AfterSensors ||
-        (!batteryLow && (0 == (0x24 & OTV0P2BASE::randRNG8())))) // Occasional additional TX when not conserving power.
+      // Stats TX in the minute after all sensors should have been polled (so that readings are fresh).
+      if(minute1From4AfterSensors)
         {
         pollIO(); // Deal with any pending I/O.
         // Sleep randomly up to 128ms to spread transmissions and thus help avoid collisions.
         OTV0P2BASE::sleepLowPowerLessThanMs(1 + (OTV0P2BASE::randRNG8() & 0x7f));
-//        nap(randRNG8NextBoolean() ? WDTO_60MS : WDTO_120MS); // FIXME: need a different random interval generator!
         handleQueuedMessages(&Serial, true, &PrimaryRadio); // Deal with any pending I/O.
         // Send it!
         // Try for double TX for extra robustness unless:
