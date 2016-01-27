@@ -451,15 +451,13 @@ static bool extCLIHandler(Print *const p, char *const buf, const uint8_t n)
             atoi(tok6));
         if(q.isValid())
           {
-          uint8_t txbuf[STATS_MSG_START_OFFSET + OTProtocolCC::CC1PollAndCommand::primary_frame_bytes+1]; // More than large enough for preamble + sync + alert message.
-          uint8_t *const bptr = RFM22RXPreambleAdd(txbuf);
-          const uint8_t bodylen = q.encodeSimple(bptr, sizeof(txbuf) - STATS_MSG_START_OFFSET, true);
-          const uint8_t buflen = STATS_MSG_START_OFFSET + bodylen;
+          uint8_t txbuf[OTProtocolCC::CC1PollAndCommand::primary_frame_bytes+1]; // More than large enough for preamble + sync + alert message.
+          const uint8_t bodylen = q.encodeSimple(txbuf, sizeof(txbuf), true);
 #if 0 && defined(DEBUG)
-    OTRadioLink::printRXMsg(p, txbuf, buflen);
+    OTRadioLink::printRXMsg(p, txbuf, bodylen);
 #endif
           // TX at normal volume since ACKed and can be repeated if necessary.
-          if(PrimaryRadio.sendRaw(txbuf, buflen))
+          if(PrimaryRadio.sendRaw(txbuf, bodylen))
             { return(true); } // Done it!
           }
         }

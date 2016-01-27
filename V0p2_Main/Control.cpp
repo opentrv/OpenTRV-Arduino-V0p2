@@ -1033,6 +1033,7 @@ static void wireComponentsTogether()
 #ifdef ENABLE_FHT8VSIMPLE
   // Set up radio.
   FHT8V.setRadio(&PrimaryRadio);
+  FHT8V.setChannelTX(1); 
   // Load EEPROM house codes into primary FHT8V instance at start.
   FHT8VLoadHCFromEEPROM();
 #endif // ENABLE_FHT8VSIMPLE
