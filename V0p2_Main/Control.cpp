@@ -1046,7 +1046,7 @@ static void wireComponentsTogether()
   // Mark UI as used and indirectly mark occupancy when control is used.
   TempPot.setOccCallback(markUIControlUsed);
   // Callbacks to set various mode combinations.
-  // Typically at most one call would be made on any approriate pot adjustment. 
+  // Typically at most one call would be made on any appropriate pot adjustment.
   TempPot.setWFBCallbacks(setWarmModeDebounced, setBakeModeDebounced);
 #endif // TEMP_POT_AVAILABLE
 
@@ -1354,7 +1354,7 @@ void remoteCallForHeatRX(const uint16_t id, const uint8_t percentOpen)
   const uint8_t minvro = default_minimum;
 #endif
 
-  // TODO-553: after getting on for an hour of continuous boiler running
+  // TODO-553: after over an hour of continuous boiler running
   // raise the percentage threshold to successfully call for heat (for a while).
   // The aim is to allow a (combi) boiler to have reached maximum efficiency
   // and to have potentially made a significant difference to room temperature
@@ -1364,7 +1364,7 @@ void remoteCallForHeatRX(const uint16_t id, const uint8_t percentOpen)
   // and have only limited ability to modulate down,
   // so may end up cycling anyway while running the circulation pump if left on.
   // Modelled on DHD habit of having many 15-minute boiler timer segments
-  // in 'off' period even during the day for many years!
+  // in 'off' period even during the day for many many years!
   //
   // Note: could also consider pause if mains frequency is low indicating grid stress.
   const uint8_t boilerCycleWindowMask = 0x3f;
