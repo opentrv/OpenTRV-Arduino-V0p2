@@ -10,3 +10,4 @@ but possibly also deployed into 25mm-high metal tray in a plastic bag.
 
 Component-ordering document:
  https://docs.google.com/spreadsheets/d/1KSQF95-1IZD231Q_ZY74bsbxNXk4-pXb1_RjvOdOWBc/edit#gid=0
+(Plus .CSV/.ODS BOM copies.)
