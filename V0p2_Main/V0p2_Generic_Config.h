@@ -103,6 +103,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define USE_RTC_INTERNAL_SIMPLE
 // IF DEFINED: try to trim memory (primarily RAM, also code/Flash) space used.
 #undef ENABLE_TRIMMED_MEMORY
+// IF DEFINED: try to trim bandwidth as may be especially expensive/scarce.
+#undef ENABLE_TRIMMED_BANDWIDTH
 // IF DEFINED: basic FROST/WARM temperatures are settable.
 #define SETTABLE_TARGET_TEMPERATURES
 // IF DEFINED: support one on and one off time per day (possibly in conjunction with 'learn' button).

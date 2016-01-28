@@ -936,7 +936,9 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 #endif // defined(HUMIDITY_SENSOR_SUPPORT)
 #if defined(ENABLE_OCCUPANCY_SUPPORT)
     ss1.put(Occupancy.twoBitTag(), Occupancy.twoBitOccupancyValue()); // Reduce spurious TX cf percentage.
+#if !defined(ENABLE_TRIMMED_BANDWIDTH)
     ss1.put(Occupancy.vacHTag(), Occupancy.getVacancyH()); // EXPERIMENTAL
+#endif // !defined(ENABLE_TRIMMED_BANDWIDTH)
 #endif // defined(ENABLE_OCCUPANCY_SUPPORT)
     // OPTIONAL items
     // Only TX supply voltage for units apparently not mains powered.
@@ -954,9 +956,9 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 #if defined(LOCAL_TRV) // Deploying as sensor unit, not TRV controller, so show all sensors and no TRV stuff.
     ss1.put(NominalRadValve);
     ss1.put(NominalRadValve.tagTTC(), NominalRadValve.getTargetTempC());
-#if 1
+#if !defined(ENABLE_TRIMMED_BANDWIDTH)
     ss1.put(NominalRadValve.tagCMPC(), NominalRadValve.getCumulativeMovementPC()); // EXPERIMENTAL
-#endif
+#endif // !defined(ENABLE_TRIMMED_BANDWIDTH)
 #endif // defined(LOCAL_TRV)
 
     // If not doing a doubleTX then consider sometimes suppressing the change-flag clearing for this send
