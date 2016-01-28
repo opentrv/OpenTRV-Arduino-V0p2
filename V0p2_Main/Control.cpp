@@ -1033,6 +1033,7 @@ static void wireComponentsTogether()
 #ifdef ENABLE_FHT8VSIMPLE
   // Set up radio.
   FHT8V.setRadio(&PrimaryRadio);
+  FHT8V.setChannelTX(0);        // Ch0=OOK, kept for clarity
   // Load EEPROM house codes into primary FHT8V instance at start.
   FHT8VLoadHCFromEEPROM();
 #endif // ENABLE_FHT8VSIMPLE
@@ -1616,7 +1617,7 @@ void loopOpenTRV()
 #endif
 
   // Act on eavesdropping need, setting up or clearing down hooks as required.
-  PrimaryRadio.listen(needsToEavesdrop);
+  PrimaryRadio.listen(needsToEavesdrop,1);  // GFSK listen on Ch1
 //#if defined(ENABLE_FHT8VSIMPLE)
   if(needsToEavesdrop)
     {
