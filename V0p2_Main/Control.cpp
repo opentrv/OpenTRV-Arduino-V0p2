@@ -940,7 +940,6 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 #endif // defined(ENABLE_OCCUPANCY_SUPPORT)
     // OPTIONAL items
     // Only TX supply voltage for units apparently not mains powered.
-    if(!Supply_cV.isMains()) { ss1.put(Supply_cV); } else { ss1.remove(Supply_cV.tag()); }
 #ifdef ENABLE_BOILER_HUB
     // Show boiler state for boiler hubs.
     ss1.put("b", (int) isBoilerOn());
@@ -949,7 +948,6 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
     ss1.put(AmbLight); // Always send ambient light level (assuming sensor is present).
 #endif // ENABLE_AMBLIGHT_SENSOR
 #ifdef ENABLE_VOICE_STATS
-OTV0P2BASE::serialPrintAndFlush(F("VOICE"));
     ss1.put(Voice);	// FIXME voice stats
 #endif // ENABLE_VOICE_STATS
 #if defined(LOCAL_TRV) // Deploying as sensor unit, not TRV controller, so show all sensors and no TRV stuff.

@@ -134,6 +134,14 @@ static void posPOST(const uint8_t position, const __FlashStringHelper *s)
   OTV0P2BASE::sleepLowPowerMs(PP_OFF_MS); // TODO: use this time to gather entropy.
   LED_HEATCALL_ON();
   OTV0P2BASE::sleepLowPowerMs(1000); // TODO: use this time to gather entropy.
+
+  // TODO temp code
+  pinMode(6, INPUT); // force QM-1 on
+  fastDigitalWrite(6, HIGH);
+  pinMode(A2, INPUT); // set up RN2483 reset (currently shorting to ground)
+  fastDigitalWrite(A2, LOW);
+  pinMode(A3, OUTPUT); // force QM-1 on
+  fastDigitalWrite(A3, HIGH);
   }
 #endif // ALT_MAIN_LOOP
 
