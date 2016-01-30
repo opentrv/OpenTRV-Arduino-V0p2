@@ -152,12 +152,10 @@ bool sendCC1AlertByRFM23B()
   OTProtocolCC::CC1Alert a = OTProtocolCC::CC1Alert::make(FHT8VGetHC1(), FHT8VGetHC2());
   if(a.isValid()) // Might be invalid if house codes are, eg if house codes not set.
     {
-    uint8_t txbuf[STATS_MSG_START_OFFSET + OTProtocolCC::CC1Alert::primary_frame_bytes+1]; // More than large enough for preamble + sync + alert message.
-    uint8_t *const bptr = RFM22RXPreambleAdd(txbuf);
-    const uint8_t bodylen = a.encodeSimple(bptr, sizeof(txbuf) - STATS_MSG_START_OFFSET, true);
-    const uint8_t buflen = STATS_MSG_START_OFFSET + bodylen;
+    uint8_t txbuf[OTProtocolCC::CC1Alert::primary_frame_bytes+1]; // More than large enough for preamble + sync + alert message.
+    const uint8_t bodylen = a.encodeSimple(txbuf, sizeof(txbuf), true);
 #if 0 && defined(DEBUG)
-OTRadioLink::printRXMsg(p, txbuf, buflen);
+OTRadioLink::printRXMsg(p, txbuf, bodylen);
 #endif
     // Send loud since the hub may be relatively far away,
     // there is no 'ACK', and these messages should not be sent very often.
@@ -415,12 +413,10 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uin
           // Send message back to hub.
           // Hub can poll again if it does not see the response.
           // TODO: may need to insert a delay to allow hub to be ready if use of read() above is not enough.
-          uint8_t txbuf[STATS_MSG_START_OFFSET + OTProtocolCC::CC1PollResponse::primary_frame_bytes+1]; // More than large enough for preamble + sync + alert message.
-          uint8_t *const bptr = RFM22RXPreambleAdd(txbuf);
-          const uint8_t bodylen = r.encodeSimple(bptr, sizeof(txbuf) - STATS_MSG_START_OFFSET, true);
-          const uint8_t buflen = STATS_MSG_START_OFFSET + bodylen;
+          uint8_t txbuf[OTProtocolCC::CC1PollResponse::primary_frame_bytes+1]; // More than large enough for preamble + sync + alert message.
+          const uint8_t bodylen = r.encodeSimple(txbuf, sizeof(txbuf), true);
 #if 0 && defined(DEBUG)
-OTRadioLink::printRXMsg(p, txbuf, buflen);
+OTRadioLink::printRXMsg(p, txbuf, bodylen);
 #endif
           if(PrimaryRadio.sendRaw(txbuf, buflen)) // Send at default volume...  One going missing won't hurt that much.
             {
