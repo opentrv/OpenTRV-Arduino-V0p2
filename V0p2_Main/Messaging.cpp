@@ -418,7 +418,7 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uin
 #if 0 && defined(DEBUG)
 OTRadioLink::printRXMsg(p, txbuf, bodylen);
 #endif
-          if(PrimaryRadio.sendRaw(txbuf, buflen)) // Send at default volume...  One going missing won't hurt that much.
+          if(PrimaryRadio.sendRaw(txbuf, bodylen)) // Send at default volume...  One going missing won't hurt that much.
             {
 #if 1 && defined(DEBUG)
             p->println(F("polled")); // Done it!
