@@ -936,7 +936,9 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 #endif // defined(HUMIDITY_SENSOR_SUPPORT)
 #if defined(ENABLE_OCCUPANCY_SUPPORT)
     ss1.put(Occupancy.twoBitTag(), Occupancy.twoBitOccupancyValue()); // Reduce spurious TX cf percentage.
+#if !defined(ENABLE_TRIMMED_BANDWIDTH)
     ss1.put(Occupancy.vacHTag(), Occupancy.getVacancyH()); // EXPERIMENTAL
+#endif // !defined(ENABLE_TRIMMED_BANDWIDTH)
 #endif // defined(ENABLE_OCCUPANCY_SUPPORT)
     // OPTIONAL items
     // Only TX supply voltage for units apparently not mains powered.
@@ -954,9 +956,9 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 #if defined(LOCAL_TRV) // Deploying as sensor unit, not TRV controller, so show all sensors and no TRV stuff.
     ss1.put(NominalRadValve);
     ss1.put(NominalRadValve.tagTTC(), NominalRadValve.getTargetTempC());
-#if 1
+#if !defined(ENABLE_TRIMMED_BANDWIDTH)
     ss1.put(NominalRadValve.tagCMPC(), NominalRadValve.getCumulativeMovementPC()); // EXPERIMENTAL
-#endif
+#endif // !defined(ENABLE_TRIMMED_BANDWIDTH)
 #endif // defined(LOCAL_TRV)
 
     // If not doing a doubleTX then consider sometimes suppressing the change-flag clearing for this send
@@ -1033,7 +1035,9 @@ static void wireComponentsTogether()
 #ifdef ENABLE_FHT8VSIMPLE
   // Set up radio.
   FHT8V.setRadio(&PrimaryRadio);
-  FHT8V.setChannelTX(0);        // Ch0=OOK, kept for clarity
+#ifdef ALLOW_CC1_SUPPORT
+  FHT8V.setChannelTX(1);        // Ch0=OOK, kept for clarity
+#endif // ALLOW_CC1_SUPPORT
   // Load EEPROM house codes into primary FHT8V instance at start.
   FHT8VLoadHCFromEEPROM();
 #endif // ENABLE_FHT8VSIMPLE
@@ -1047,7 +1051,7 @@ static void wireComponentsTogether()
   // Mark UI as used and indirectly mark occupancy when control is used.
   TempPot.setOccCallback(markUIControlUsed);
   // Callbacks to set various mode combinations.
-  // Typically at most one call would be made on any approriate pot adjustment. 
+  // Typically at most one call would be made on any appropriate pot adjustment.
   TempPot.setWFBCallbacks(setWarmModeDebounced, setBakeModeDebounced);
 #endif // TEMP_POT_AVAILABLE
 
@@ -1355,7 +1359,7 @@ void remoteCallForHeatRX(const uint16_t id, const uint8_t percentOpen)
   const uint8_t minvro = default_minimum;
 #endif
 
-  // TODO-553: after getting on for an hour of continuous boiler running
+  // TODO-553: after over an hour of continuous boiler running
   // raise the percentage threshold to successfully call for heat (for a while).
   // The aim is to allow a (combi) boiler to have reached maximum efficiency
   // and to have potentially made a significant difference to room temperature
@@ -1365,7 +1369,7 @@ void remoteCallForHeatRX(const uint16_t id, const uint8_t percentOpen)
   // and have only limited ability to modulate down,
   // so may end up cycling anyway while running the circulation pump if left on.
   // Modelled on DHD habit of having many 15-minute boiler timer segments
-  // in 'off' period even during the day for many years!
+  // in 'off' period even during the day for many many years!
   //
   // Note: could also consider pause if mains frequency is low indicating grid stress.
   const uint8_t boilerCycleWindowMask = 0x3f;
@@ -1617,7 +1621,7 @@ void loopOpenTRV()
 #endif
 
   // Act on eavesdropping need, setting up or clearing down hooks as required.
-  PrimaryRadio.listen(needsToEavesdrop,1);  // GFSK listen on Ch1
+  PrimaryRadio.listen(needsToEavesdrop);
 //#if defined(ENABLE_FHT8VSIMPLE)
   if(needsToEavesdrop)
     {
