@@ -161,12 +161,21 @@ void serialPrintlnBuildVersion()
 
 // FIXME Temporary fix
 #ifdef ALLOW_CC1_SUPPORT
-// FIXME: put in dual-channel config for COHEAT.
-static const unit8_t nPrimaryRadioChannels = 2;
+static const uint8_t nPrimaryRadioChannels = 2;
+static const OTRadioLink::OTRadioChannelConfig RFMConfigs[nPrimaryRadioChannels] =
+  {
+  // GFSK channel 0.
+  OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::OTRFM23BLinkBase::StandardRegSettingsGFSK, true, true, true),
+  // FS20/FHT8V compatible channel 1.
+  OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::OTRFM23BLinkBase::StandardRegSettingsOOK, true, true, true),
+  };
 #else
 static const uint8_t nPrimaryRadioChannels = 1;
 static const OTRadioLink::OTRadioChannelConfig RFMConfigs[nPrimaryRadioChannels] =
-  { OTRadioLink::OTRadioChannelConfig(OTRadValve::FHT8VRadValveBase::FHT8V_RFM23_Reg_Values, true, true, true) };
+  {
+  // FS20/FHT8V compatible channel 0.
+  OTRadioLink::OTRadioChannelConfig(OTRadValve::FHT8VRadValveBase::FHT8V_RFM23_Reg_Values, true, true, true)
+  };
 #endif
 
 #ifdef RADIO_SECONDARY_SIM900
