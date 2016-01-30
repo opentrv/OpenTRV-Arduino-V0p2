@@ -160,7 +160,24 @@ void serialPrintlnBuildVersion()
   }
 
 // FIXME Temporary fix
-static const OTRadioLink::OTRadioChannelConfig RFMConfig(OTRadValve::FHT8VRadValveBase::FHT8V_RFM23_Reg_Values, true, true, true);
+#ifdef ALLOW_CC1_SUPPORT
+static const uint8_t nPrimaryRadioChannels = 2;
+static const OTRadioLink::OTRadioChannelConfig RFMConfigs[nPrimaryRadioChannels] =
+  {
+  // GFSK channel 0.
+  OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::OTRFM23BLinkBase::StandardRegSettingsGFSK, true, true, true),
+  // FS20/FHT8V compatible channel 1.
+  OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::OTRFM23BLinkBase::StandardRegSettingsOOK, true, true, true),
+  };
+#else
+static const uint8_t nPrimaryRadioChannels = 1;
+static const OTRadioLink::OTRadioChannelConfig RFMConfigs[nPrimaryRadioChannels] =
+  {
+  // FS20/FHT8V compatible channel 0.
+  OTRadioLink::OTRadioChannelConfig(OTRadValve::FHT8VRadValveBase::FHT8V_RFM23_Reg_Values, true, true, true)
+  };
+#endif
+
 #ifdef RADIO_SECONDARY_SIM900
 static const OTRadioLink::OTRadioChannelConfig SecondaryRadioConfig(&SIM900Config, true, true, true);
 #else
@@ -256,7 +273,7 @@ void optionalPOST()
   // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
   PrimaryRadio.preinit(NULL);
   // Check that the radio is correctly connected; panic if not...
-  if(!PrimaryRadio.configure(1, &RFMConfig) || !PrimaryRadio.begin()) { panic(); }
+  if(!PrimaryRadio.configure(nPrimaryRadioChannels, RFMConfigs) || !PrimaryRadio.begin()) { panic(); }
   // Apply filtering, if any, while we're having fun...
   PrimaryRadio.setFilterRXISR(FilterRXISR);
 //  if(neededToWakeSPI) { OTV0P2BASE::powerDownSPI(); }
