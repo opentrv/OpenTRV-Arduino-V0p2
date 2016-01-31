@@ -159,7 +159,6 @@ void serialPrintlnBuildVersion()
   OTV0P2BASE::serialPrintlnAndFlush();
   }
 
-// FIXME Temporary fix
 #ifdef ALLOW_CC1_SUPPORT
 static const uint8_t nPrimaryRadioChannels = 2;
 static const OTRadioLink::OTRadioChannelConfig RFMConfigs[nPrimaryRadioChannels] =
@@ -273,7 +272,7 @@ void optionalPOST()
   // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
   PrimaryRadio.preinit(NULL);
   // Check that the radio is correctly connected; panic if not...
-  if(!PrimaryRadio.configure(nPrimaryRadioChannels, RFMConfigs) || !PrimaryRadio.begin()) { panic(); }
+  if(!PrimaryRadio.configure(nPrimaryRadioChannels, RFMConfigs) || !PrimaryRadio.begin()) { panic(F("r1")); }
   // Apply filtering, if any, while we're having fun...
   PrimaryRadio.setFilterRXISR(FilterRXISR);
 //  if(neededToWakeSPI) { OTV0P2BASE::powerDownSPI(); }
@@ -288,7 +287,7 @@ pinMode(A3, OUTPUT);
 // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
   SecondaryRadio.preinit(NULL);
   // Check that the radio is correctly connected; panic if not...
-  if(!SecondaryRadio.configure(1, &SecondaryRadioConfig) || !SecondaryRadio.begin()) { panic(); }
+  if(!SecondaryRadio.configure(1, &SecondaryRadioConfig) || !SecondaryRadio.begin()) { panic(F("r2")); }
   // Apply filtering, if any, while we're having fun...
 //  SecondaryRadio.setFilterRXISR(FilterRXISR); // Assume no RX on secondary radio.
 #endif // ENABLE_RADIO_SECONDARY_MODULE
