@@ -593,11 +593,6 @@ void serialStatusReport()
   Serial_print_space();
   Serial.print(hasEcoBias() ? (isEcoTemperature(wt) ? 'E' : 'e') : (isComfortTemperature(wt) ? 'C': 'c')); // Show eco/comfort bias.
 #endif // ENABLE_FULL_OT_CLI
-//#ifdef ENABLE_ANTICIPATION
-//  // Show warming predictions.
-//  Serial.print(shouldBeWarmedAtHour(hh) ? 'w' : 'f');
-//  Serial.print(shouldBeWarmedAtHour(hh < 23 ? (hh+1) : 0) ? 'w' : 'f');
-//#endif
 #endif // SETTABLE_TARGET_TEMPERATURES
 
   // *C* section: central hub values.
@@ -636,10 +631,11 @@ void serialStatusReport()
   if(OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN != minValvePcOpen) { Serial.print(F(";M")); Serial.print(minValvePcOpen); }
 #endif
 
-#if 1 && defined(ALLOW_JSON_OUTPUT)
+#if 1 && defined(ALLOW_JSON_OUTPUT) && !defined(ENABLE_TRIMMED_MEMORY)
   Serial.print(';'); // Terminate previous section.
   char buf[80];
-  static OTV0P2BASE::SimpleStatsRotation<5> ss1; // Configured for maximum different stats.
+  static const uint8_t maxStatsLineValues = 5;
+  static OTV0P2BASE::SimpleStatsRotation<maxStatsLineValues> ss1; // Configured for maximum different stats.
 //  ss1.put(TemperatureC16); // Already at start of = stats line.
 #if defined(HUMIDITY_SENSOR_SUPPORT)
   ss1.put(RelHumidity);
@@ -652,12 +648,12 @@ void serialStatusReport()
   ss1.put(Occupancy);
 //  ss1.put(Occupancy.vacHTag(), Occupancy.getVacancyH()); // EXPERIMENTAL
 #endif // defined(ENABLE_OCCUPANCY_SUPPORT)
-#if defined(ENABLE_MODELLED_RAD_VALVE)
+#if defined(ENABLE_MODELLED_RAD_VALVE) && !defined(ENABLE_TRIMMED_MEMORY) && !defined(ENABLE_TRIMMED_BANDWIDTH)
     ss1.put(NominalRadValve.tagCMPC(), NominalRadValve.getCumulativeMovementPC()); // EXPERIMENTAL
 #endif // ENABLE_MODELLED_RAD_VALVE
   const uint8_t wrote = ss1.writeJSON((uint8_t *)buf, sizeof(buf), 0, true);
   if(0 != wrote) { Serial.print(buf); }
-#endif
+#endif // defined(ALLOW_JSON_OUTPUT) && !defined(ENABLE_TRIMMED_MEMORY)
 
   // Terminate line.
   Serial.println();
