@@ -104,7 +104,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 
 // Digital output for radiator node to call for heat by wire and/or for boiler node to activate boiler.
 // NOT AVAILABLE FOR REV9 (used to drive secondary/green LED).
-#if (V0p2_REV != 9)
+#if (V0p2_REV != 9) || (V0p2_REV != 14)
 #define OUT_HEATCALL 6  // ATMega328P-PU PDIP pin 12, PD6, no usable analogue input.
 #define OUT_GPIO_1 OUT_HEATCALL // Alias for GPIO pin.
 #endif
@@ -112,8 +112,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // UI main 'mode' button (active/pulled low by button, pref using weak internal pull-up), digital in.
 // Should always be available where a local TRV is being controlled.
 // NOT AVAILABLE FOR REV10 (used for GSM module TX pin).
-#if (V0p2_REV == 10)	// FIXME might be better to define pins by peripheral
-#define SIM900_TX_PIN 5
+#if (V0p2_REV == 10) || (V0p2_REV == 14)	// FIXME might be better to define pins by peripheral
+#define SOFTSERIAL_RX_PIN 8
+#define SOFTSERIAL_TX_PIN 5
 #else
 #define BUTTON_MODE_L 5 // ATMega328P-PU PDIP pin 11, PD5, PCINT21, no analogue input.
 #endif
@@ -130,8 +131,12 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // Setup voice NIRQ line
 // TODO add check for if BUTTON_LEARN2_L also defined? 
 #ifdef ENABLE_VOICE_SENSOR
+#if (V0p2_REV == 10)
 // Voice detect on falling edge.
 #define VOICE_NIRQ 3 // ATMega328P-PU PDIP pin 5, PD3, PCINT19, no analogue input.
+#elif (V0p2_REV == 14)
+#define VOICE_NIRQ 6 //todo fill this bit in
+#endif // V0p2_REV
 #endif // ENABLE_VOICE_SENSOR
 
 // Pin to power-up I/O devices only intermittently enabled, when high, digital out.
@@ -241,8 +246,11 @@ inline void IOSetup()
 #ifdef BUTTON_MODE_L
       case BUTTON_MODE_L: // Mode button is (usually!) mandatory, at least where a local TRV is being controlled.
 #endif
-#ifdef SIM900_TX_PIN
-      case SIM900_TX_PIN: // When driving SIM900 this pin has external pull-up so should start high.
+#ifdef SOFTSERIAL_TX_PIN
+      case SOFTSERIAL_TX_PIN: // When driving SIM900 this pin has external pull-up so should start high.
+#endif
+#ifdef SOFTSERIAL_RX_PIN
+      case SOFTSERIAL_RX_PIN: // When driving SIM900 this pin has external pull-up so should start high.
 #endif
 #ifdef BUTTON_LEARN_L
       case BUTTON_LEARN_L: // Learn button is optional.
