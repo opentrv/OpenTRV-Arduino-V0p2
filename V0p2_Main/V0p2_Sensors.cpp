@@ -126,7 +126,8 @@ OTV0P2BASE::RoomTemperatureC16_TMP112 TemperatureC16;
 // the room is deemed to be occupied.
 // Strictly positive.
 // DHD20151119: even now it seems a threshold of >= 2 is needed to avoid false positives.
-#define VOICE_DETECTION_THRESHOLD 4
+// DE20160101:  Lowered detection threshold as new boards have lower sensitivity
+#define VOICE_DETECTION_THRESHOLD 2
 
 // Force a read/poll of the voice level and return the value sensed.
 // Thread-safe and ISR-safe.
