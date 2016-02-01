@@ -844,7 +844,6 @@ static OTV0P2BASE::SimpleStatsRotation<10> ss1; // Configured for maximum differ
 void bareStatsTX(const bool allowDoubleTX, const bool doBinary, const bool RFM23BFramed)
   {
   const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled<V0P2_UART_BAUD>(); // FIXME
-
 #if (FullStatsMessageCore_MAX_BYTES_ON_WIRE > STATS_MSG_MAX_LEN)
 #error FullStatsMessageCore_MAX_BYTES_ON_WIRE too big
 #endif // FullStatsMessageCore_MAX_BYTES_ON_WIRE > STATS_MSG_MAX_LEN
@@ -877,7 +876,7 @@ void bareStatsTX(const bool allowDoubleTX, const bool doBinary, const bool RFM23
     const uint8_t *msg1 = encodeFullStatsMessageCore(buf + STATS_MSG_START_OFFSET, sizeof(buf) - STATS_MSG_START_OFFSET, OTV0P2BASE::getStatsTXLevel(), false, &content);
     if(NULL == msg1)
       {
-#if 0 // FIXME should this be testing something?
+#if 0
 DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 #endif
       return;
@@ -977,7 +976,10 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
 #ifdef ENABLE_RADIO_SECONDARY_MODULE
 // FIXME secondary send assumes SIM900.
 // FIXME cannot use strlen for binary frames
-//    NullRadio.queueToSend(buf + STATS_MSG_START_OFFSET, strlen((const char*)buf+STATS_MSG_START_OFFSET));
+#if 0 && defined(DEBUG)
+    OTV0P2BASE::serialPrintAndFlush(F("full: "));
+    PrimaryRadio.queueToSend(buf, 64); // debug
+#endif // 0
     SecondaryRadio.queueToSend(buf + STATS_MSG_START_OFFSET, strlen((const char*)buf+STATS_MSG_START_OFFSET));
 #endif // ENABLE_RADIO_SECONDARY_MODULE
 
