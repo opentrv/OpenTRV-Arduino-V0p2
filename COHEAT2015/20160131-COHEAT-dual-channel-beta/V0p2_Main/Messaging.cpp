@@ -160,7 +160,7 @@ OTRadioLink::printRXMsg(p, txbuf, bodylen);
     // Send loud since the hub may be relatively far away,
     // there is no 'ACK', and these messages should not be sent very often.
     // Should be consistent with automatically-generated alerts to help with diagnosis.
-    return(PrimaryRadio.sendRaw(txbuf, buflen, 0, OTRadioLink::OTRadioLink::TXmax));
+    return(PrimaryRadio.sendRaw(txbuf, bodylen, 0, OTRadioLink::OTRadioLink::TXmax));
     }
   return(false); // Failed.
   }

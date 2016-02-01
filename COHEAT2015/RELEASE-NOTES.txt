@@ -40,17 +40,14 @@ Notes:
     //#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
     exactly one of which should be uncommented.
 
-20160131-COHEAT-dual-channel-beta: (beta release)
-Date: 2016/01/23
-JIRA/ID for patch issue: COH-72 (beta release)
+20160131-COHEAT-dual-channel-beta and 20160131-COHEAT-dual-channel-beta2: (beta release)
+Date: 2016/02/01:
+JIRA/ID for patch issue: COH-72, COH-73, TODO-775 (beta release)
 Reason for patch: beta release for move to latest main line with improved radio, etc
 Code path: COHEAT2015/20160131-COHEAT-dual-channel-beta
-Should be built against 20160131-COHEAT-dual-channel-beta of OTRadioLink and and OTProtocolCC on Arduino IDE 1.6.5.
+Should be built against 20160131-COHEAT-dual-channel-beta2 of OTRadioLink and and OTProtocolCC on Arduino IDE 1.6.5.
 Adjust config flags in V0p2_Generic_Config.h to switch between hub (CONFIG_Trial2013Winter_Round2_CC1HUB) and relay (CONFIG_REV9) boards.
 Notes:
-  * Work for COH-72, COH-73, TODO-775.
-  * Has minor updates in the COHEAT2015/20160131-COHEAT-dual-channel-beta
-    subsequent to the 20160131-COHEAT-dual-channel-beta tag working towards a beta2 tag...
   * OTProtocolCC has not changed since 20160123-COHEAT-REV2-REV9-functional.
   * Contains snapshot of the mainline code to compile,
     and the ZIPs of the two libraries OTRadioLink and OTProtocolCC
