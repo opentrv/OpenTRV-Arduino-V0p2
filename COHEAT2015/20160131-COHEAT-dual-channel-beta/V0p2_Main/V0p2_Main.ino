@@ -49,7 +49,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #include <OTRadioLink.h>
 //#include <OTNullRadioLink.h> // as in separate library to OTRadioLink
 #include <OTSIM900Link.h>
-#include <OTRN2483Link.h>
 #include <OTRadValve.h>
 
 #include "V0p2_Sensors.h"
@@ -134,7 +133,6 @@ static void posPOST(const uint8_t position, const __FlashStringHelper *s)
   OTV0P2BASE::sleepLowPowerMs(PP_OFF_MS); // TODO: use this time to gather entropy.
   LED_HEATCALL_ON();
   OTV0P2BASE::sleepLowPowerMs(1000); // TODO: use this time to gather entropy.
-
   }
 #endif // ALT_MAIN_LOOP
 

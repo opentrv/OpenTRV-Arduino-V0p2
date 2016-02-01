@@ -85,11 +85,8 @@ OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, -1> RFM23B;
 #endif
 #endif // ENABLE_RADIO_RFM23B
 #ifdef ENABLE_RADIO_SIM900
-OTSIM900Link::OTSIM900Link SIM900(A3, A2, SOFTSERIAL_RX_PIN, SOFTSERIAL_TX_PIN);
+OTSIM900Link::OTSIM900Link SIM900(A3, A2, 8, 5);
 #endif
-#ifdef ENABLE_RADIO_RN2483
-OTRN2483Link::OTRN2483Link RN2483( A2, SOFTSERIAL_RX_PIN, SOFTSERIAL_TX_PIN);
-#endif // ENABLE_RADIO_RN2483
 
 // Assigns radio to PrimaryRadio alias
 #if defined(RADIO_PRIMARY_RFM23B)
@@ -106,8 +103,6 @@ OTRadioLink::OTRadioLink &PrimaryRadio = NullRadio;
 OTRadioLink::OTRadioLink &SecondaryRadio = RFM23B;
 #elif defined(RADIO_SECONDARY_SIM900)
 OTRadioLink::OTRadioLink &SecondaryRadio = SIM900;
-#elif defined(RADIO_SECONDARY_RN2483)
-OTRadioLink::OTRadioLink &SecondaryRadio = RN2483;
 #else
 OTRadioLink::OTRadioLink &SecondaryRadio = NullRadio;
 #endif // RADIO_SECONDARY_RFM23B
