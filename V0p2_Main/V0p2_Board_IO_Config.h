@@ -124,12 +124,15 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #ifndef ENABLE_VOICE_SENSOR // From REV2 onwards.
 // OPTIONAL SECOND UI 'learn' button  (active/pulled low by button, pref using weak internal pull-up), digital in.
 #define BUTTON_LEARN2_L 3 // ATMega328P-PU PDIP pin 5, PD3, PCINT19, no analogue input.
-#else // ENABLE_OCCUPANCY_DETECTION_FROM_VOICE
-// Voice detect on falling edge.
-#define VOICE_NIRQ 3 // ATMega328P-PU PDIP pin 5, PD3, PCINT19, no analogue input.
-#endif // ENABLE_OCCUPANCY_DETECTION_FROM_VOICE
+#endif // ENABLE_VOICE_SENSOR
 #endif
 
+// Setup voice NIRQ line
+// TODO add check for if BUTTON_LEARN2_L also defined? 
+#ifdef ENABLE_VOICE_SENSOR
+// Voice detect on falling edge.
+#define VOICE_NIRQ 3 // ATMega328P-PU PDIP pin 5, PD3, PCINT19, no analogue input.
+#endif // ENABLE_VOICE_SENSOR
 
 // Pin to power-up I/O devices only intermittently enabled, when high, digital out.
 // Pref connected via 330R+ current limit and 100nF+ decoupling).
