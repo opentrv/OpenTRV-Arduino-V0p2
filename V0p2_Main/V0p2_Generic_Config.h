@@ -68,16 +68,16 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_DORM1_MUT // REV7 / DORM1 Winter 2014/2015 minimal for unit testing.
 //#define CONFIG_REV7N // REV7 with external "Model N" valve.
 //#define CONFIG_REV7_AS_SENSOR // REV7 as JSON-only stats/sensor leaf.
-#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
+//#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
 //#define CONFIG_REV9_STATS // REV9 as stats node, cut 2 of the board.
 //#define CONFIG_REV9_cut1 // REV9 as CC1 relay, cut1 of board.
 //#define CONFIG_DE_TESTLAB // Deniz's test environment.
-#define CONFIG_REV10_STRIPBOARD // REV10-based stripboard precursor for bus shelters
+//#define CONFIG_REV10_STRIPBOARD // REV10-based stripboard precursor for bus shelters
 //#define CONFIG_REV10 // Generic REV10 config
 //#define CONFIG_REV10_BHR // REV10: boiler hub and stats relay.
 // TODO //#define CONFIG_REV10_SECURE_BOILERHUB_GSM_SECURE // REV10 PCB boiler hub, relay to GSM, 2015/12 secure protocol.
 //#define CONFIG_REV11_RFM23BTEST // Basic test to see if stats send
-//#define CONFIG_REV14_PROTO  // Prototype REV14 w/ LoRa, TMP, SHT and QM-1
+#define CONFIG_REV14_PROTO  // Prototype REV14 w/ LoRa, TMP, SHT and QM-1
 //#define CONFIG_BAREBONES // No peripherals / on breadboard.
 
 
@@ -1135,6 +1135,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define ALLOW_STATS_TX
 // IF DEFINED: allow minimal binary format in addition to more generic one: ~400 bytes code cost.
 #undef ENABLE_MINIMAL_STATS_TXRX
+// IF DEFINED: allow binary stats to be TXed.
+#undef ALLOW_BINARY_STATS_TX
+// IF DEFINED: enable support for FS20 carrier for RX of raw FS20 and piggybacked binary (non-JSON) stats.
+#undef ENABLE_FS20_NATIVE_AND_BINARY_STATS_RX
 // IF DEFINED: this unit supports CLI over the USB/serial connection, eg for run-time reconfig.
 #define SUPPORT_CLI
 // IF DEFINED: enable a full OpenTRV CLI.
@@ -1162,6 +1166,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: enable a secondary (typically WAN-relay) radio module.
 #define ENABLE_RADIO_SECONDARY_MODULE
 #define ENABLE_RADIO_RN2483   // Enable RN2483
+//#define RADIO_PRIMARY_RN2483 // Must be secondary to avoid sending preamble etc
 #define RADIO_SECONDARY_RN2483
 
 // Define voice module
