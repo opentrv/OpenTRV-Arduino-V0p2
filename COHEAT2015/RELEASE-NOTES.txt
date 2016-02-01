@@ -31,7 +31,7 @@ Code path: COHEAT2015/20160123-snapshot
 Should be built against 20160123-COHEAT-REV2-REV9-functional of OTRadioLink and and OTProtocolCC on Arduino IDE 1.6.5.
 Adjust config flags in V0p2_Generic_Config.h to switch between hub (CONFIG_Trial2013Winter_Round2_CC1HUB) and relay (CONFIG_REV9) boards.
 Notes:
-    Contains snapshot of the mainline code to compile,
+  * Contains snapshot of the mainline code to compile,
     and the ZIPs of the two libraries OTRadioLink and OTProtocolCC
     to install into your IDE (1.6.5 please, 1.6.6 has at least one significant bug) after removing the old ones.
     The two configs relevant in in V0p2_Generic_Config.h are:
@@ -43,13 +43,16 @@ Notes:
 20160131-COHEAT-dual-channel-beta: (beta release)
 Date: 2016/01/23
 JIRA/ID for patch issue: COH-72 (beta release)
-Reason for patch: beta  release for move to latest main line with improved radio, etc
+Reason for patch: beta release for move to latest main line with improved radio, etc
 Code path: COHEAT2015/20160131-COHEAT-dual-channel-beta
 Should be built against 20160131-COHEAT-dual-channel-beta of OTRadioLink and and OTProtocolCC on Arduino IDE 1.6.5.
 Adjust config flags in V0p2_Generic_Config.h to switch between hub (CONFIG_Trial2013Winter_Round2_CC1HUB) and relay (CONFIG_REV9) boards.
 Notes:
-    (OTProtocolCC has not changed since 20160123-COHEAT-REV2-REV9-functional.)
-    Contains snapshot of the mainline code to compile,
+  * Work for COH-72, COH-73, TODO-775.
+  * Has minor updates in the COHEAT2015/20160131-COHEAT-dual-channel-beta
+    subsequent to the 20160131-COHEAT-dual-channel-beta tag working towards a beta2 tag...
+  * OTProtocolCC has not changed since 20160123-COHEAT-REV2-REV9-functional.
+  * Contains snapshot of the mainline code to compile,
     and the ZIPs of the two libraries OTRadioLink and OTProtocolCC
     to install into your IDE (1.6.5 please, 1.6.6 has at least one significant bug) after removing the old ones.
     The two configs relevant in in V0p2_Generic_Config.h are:

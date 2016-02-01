@@ -4,9 +4,11 @@ DHD20160201
 ***** DO NOT USE YET *****
 STILL BEING CREATED/TESTED
 
+(Updated OTRadioLink.zip, eg with improved internal release notes.)
+
 Snapshot of OpenTRV and OTRadioLink and OTProtocolCC (re)tagged with:
 
-    20160131-COHEAT-dual-channel-beta.
+    20160131-COHEAT-dual-channel-beta
 
 New feature:
 
