@@ -40,7 +40,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_Trial2013Winter_Round1 // REV1 default config.
 //#define CONFIG_Trial2013Winter_Round1_LVBHSH // REV1: local valve control, boiler hub, stats hub & TX.
 //#define CONFIG_Trial2013Winter_Round1_BOILERHUB // REV1 as plain boiler node.
-//#define CONFIG_Trial2013Winter_Round1_NOHUB // REV1 as TX-only leaf node.
+#define CONFIG_Trial2013Winter_Round1_NOHUB // REV1 as TX-only leaf node.
 //#define CONFIG_Trial2013Winter_Round2 // REV2 cut4 default config.
 //#define CONFIG_Trial2013Winter_Round2_LVBHSH // REV2 cut4: local valve control, boiler hub, stats hub & TX.
 //#define CONFIG_Trial2013Winter_Round2_LVBH // REV2 cut4 local valve control and boiler hub.
@@ -77,7 +77,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_REV10_BHR // REV10: boiler hub and stats relay.
 // TODO //#define CONFIG_REV10_SECURE_BOILERHUB_GSM_SECURE // REV10 PCB boiler hub, relay to GSM, 2015/12 secure protocol.
 //#define CONFIG_REV11_RFM23BTEST // Basic test to see if stats send
-#define CONFIG_REV14_PROTO  // Prototype REV14 w/ LoRa, TMP, SHT and QM-1
+//#define CONFIG_REV14_PROTO  // Prototype REV14 w/ LoRa, TMP, SHT and QM-1
 //#define CONFIG_BAREBONES // No peripherals / on breadboard.
 
 
