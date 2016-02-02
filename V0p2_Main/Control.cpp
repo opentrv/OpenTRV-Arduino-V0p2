@@ -1055,7 +1055,10 @@ static void wireComponentsTogether()
   // Typically at most one call would be made on any appropriate pot adjustment.
   TempPot.setWFBCallbacks(setWarmModeDebounced, setBakeModeDebounced);
 #endif // TEMP_POT_AVAILABLE
-
+#if V0p2_REV == 14
+  pinMode(A3, OUTPUT);
+  fastDigitalWrite(A3, HIGH);
+#endif
   // TODO
   }
 
