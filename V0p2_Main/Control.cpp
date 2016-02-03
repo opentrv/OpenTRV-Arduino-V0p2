@@ -1056,8 +1056,8 @@ static void wireComponentsTogether()
   TempPot.setWFBCallbacks(setWarmModeDebounced, setBakeModeDebounced);
 #endif // TEMP_POT_AVAILABLE
 #if V0p2_REV == 14
-  pinMode(A3, OUTPUT);
-  fastDigitalWrite(A3, HIGH);
+  pinMode(REGULATOR_POWERUP, OUTPUT);
+  fastDigitalWrite(REGULATOR_POWERUP, HIGH);
 #endif
   // TODO
   }

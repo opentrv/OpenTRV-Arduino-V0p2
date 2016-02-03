@@ -115,6 +115,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #if (V0p2_REV == 10) || (V0p2_REV == 14)	// FIXME might be better to define pins by peripheral
 #define SOFTSERIAL_RX_PIN 8
 #define SOFTSERIAL_TX_PIN 5
+#define RADIO_POWER_PIN   A2
+#define REGULATOR_POWERUP A3
 #else
 #define BUTTON_MODE_L 5 // ATMega328P-PU PDIP pin 11, PD5, PCINT21, no analogue input.
 #endif
