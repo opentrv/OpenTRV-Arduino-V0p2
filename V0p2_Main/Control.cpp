@@ -403,6 +403,7 @@ uint8_t ModelledRadValve::computeTargetTemp()
 
     // Set back target the temperature a little if the room seems to have been vacant for a long time (TODO-107)
     // or it is too dark for anyone to be active or the room is not likely occupied at this time
+    // or the room was apparently not occupied at thus time yesterday (and is not now).
     //   AND no WARM schedule is active now (TODO-111)
     //   AND no recent manual interaction with the unit's local UI (TODO-464) indicating local settings override.
     // The notion of "not likely occupied" is "not now"
@@ -416,19 +417,21 @@ uint8_t ModelledRadValve::computeTargetTemp()
     // Note that deeper setbacks likely offer more savings than faster (but shallower) setbacks.
     const bool longLongVacant = Occupancy.longLongVacant();
     const bool longVacant = longLongVacant || Occupancy.longVacant();
+    const bool likelyVacantNow = longVacant || Occupancy.isLikelyUnoccupied();
     const bool ecoBias = hasEcoBias();
     // Be more ready to decide room not likely occupied soon if eco-biased.
     const uint8_t thisHourNLOThreshold = ecoBias ? 15 : 12;
     const uint8_t hoursLessOccupiedThanThis = OTV0P2BASE::countStatSamplesBelow(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::getByHourStat(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::STATS_SPECIAL_HOUR_CURRENT_HOUR));
     const bool notLikelyOccupiedSoon = longLongVacant ||
-        (Occupancy.isLikelyUnoccupied() &&
+        (likelyVacantNow &&
         // No more than about half the hours to be less occupied than this hour to be considered unlikely to be occupied.
         (hoursLessOccupiedThanThis < thisHourNLOThreshold) &&
         // Allow to be a little bit more occupied for the next hour than the current hour.
         (OTV0P2BASE::countStatSamplesBelow(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::getByHourStat(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::STATS_SPECIAL_HOUR_NEXT_HOUR)) < (thisHourNLOThreshold+1)));
     const uint8_t minLightsOffForSetbackMins = 10;
     if(longVacant ||
-       ((notLikelyOccupiedSoon || (AmbLight.getDarkMinutes() > minLightsOffForSetbackMins)) && !Scheduler.isAnyScheduleOnWARMNow() && !recentUIControlUse()))
+       ((notLikelyOccupiedSoon || (AmbLight.getDarkMinutes() > minLightsOffForSetbackMins) || (0 == OTV0P2BASE::getByHourStat(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR, OTV0P2BASE::STATS_SPECIAL_HOUR_CURRENT_HOUR))) &&
+           likelyVacantNow && !Scheduler.isAnyScheduleOnWARMNow() && !recentUIControlUse()))
       {
       // Use a default minimal non-annoying setback if:
       //   in upper part of comfort range
