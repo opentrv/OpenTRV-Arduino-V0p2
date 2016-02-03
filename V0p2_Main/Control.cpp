@@ -428,9 +428,9 @@ uint8_t ModelledRadValve::computeTargetTemp()
         (hoursLessOccupiedThanThis < thisHourNLOThreshold) &&
         // Allow to be a little bit more occupied for the next hour than the current hour.
         (OTV0P2BASE::countStatSamplesBelow(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::getByHourStat(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::STATS_SPECIAL_HOUR_NEXT_HOUR)) < (thisHourNLOThreshold+1)));
-    const uint8_t minLightsOffForSetbackMins = 10;
+    const uint8_t minLightsOffForSetbackMins = ecoBias ? 10 : 20;
     if(longVacant ||
-       ((notLikelyOccupiedSoon || (AmbLight.getDarkMinutes() > minLightsOffForSetbackMins) || (0 == OTV0P2BASE::getByHourStat(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR, OTV0P2BASE::STATS_SPECIAL_HOUR_CURRENT_HOUR))) &&
+       ((notLikelyOccupiedSoon || (AmbLight.getDarkMinutes() > minLightsOffForSetbackMins) || (ecoBias && (0 == OTV0P2BASE::getByHourStat(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR, OTV0P2BASE::STATS_SPECIAL_HOUR_CURRENT_HOUR)))) &&
            likelyVacantNow && !Scheduler.isAnyScheduleOnWARMNow() && !recentUIControlUse()))
       {
       // Use a default minimal non-annoying setback if:
