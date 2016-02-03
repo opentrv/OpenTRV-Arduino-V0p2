@@ -3,9 +3,9 @@ DHD20160123
 
 I have tested the current COHEAT functionality on the main line:
 
-    FHT8V control by REV9
-    alert/poll/response radio traffic
-    UI button & LEDS on REV9
+  * FHT8V control by REV9
+  * alert/poll/response radio traffic
+  * UI button & LEDS on REV9
 
 and they seem to be fine.
 

@@ -49,7 +49,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #include <OTRadioLink.h>
 //#include <OTNullRadioLink.h> // as in separate library to OTRadioLink
 #include <OTSIM900Link.h>
-#include <OTRN2483Link.h>
 #include <OTRadValve.h>
 
 #include "V0p2_Sensors.h"
@@ -103,20 +102,17 @@ void panic(const __FlashStringHelper *s)
 //   * The LED should then go off except for optional faint flickers as the radio is being driven if set up to do so.
 #ifndef ALT_MAIN_LOOP
 #define PP_OFF_MS 250
-static void posPOST(const uint8_t position, const __FlashStringHelper *s = NULL)
+static void posPOST(const uint8_t position, const __FlashStringHelper *s)
   {
   OTV0P2BASE::sleepLowPowerMs(1000);
-#if 0 && defined(DEBUG)
+#ifdef DEBUG
   DEBUG_SERIAL_PRINT_FLASHSTRING("posPOST: "); // Can only be used once serial is set up.
   DEBUG_SERIAL_PRINT(position);
-  if(NULL != s)
-    {
-    DEBUG_SERIAL_PRINT_FLASHSTRING(": ");
-    DEBUG_SERIAL_PRINT(s);
-    }
+  DEBUG_SERIAL_PRINT_FLASHSTRING(": ");
+  DEBUG_SERIAL_PRINT(s);
   DEBUG_SERIAL_PRINTLN();
-//#else
-//  OTV0P2BASE::serialPrintlnAndFlush(s);
+#else
+  OTV0P2BASE::serialPrintlnAndFlush(s);
 #endif
 //  pinMode(LED_HEATCALL, OUTPUT);
   LED_HEATCALL_OFF();
@@ -163,6 +159,7 @@ void serialPrintlnBuildVersion()
   OTV0P2BASE::serialPrintlnAndFlush();
   }
 
+// FIXME Temporary fix
 #ifdef ALLOW_CC1_SUPPORT
 static const uint8_t nPrimaryRadioChannels = 2;
 static const OTRadioLink::OTRadioChannelConfig RFMConfigs[nPrimaryRadioChannels] =
@@ -251,7 +248,6 @@ static bool FilterRXISR(const volatile uint8_t *buf, volatile uint8_t &buflen)
 #define FilterRXISR (OTRadioLink::frameFilterTrailingZeros)
 #else
 // NO RADIO RX FILTERING BY DEFAULT
-#define NO_RX_FILTER
 #define FilterRXISR NULL
 #endif
 
@@ -277,11 +273,10 @@ void optionalPOST()
   // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
   PrimaryRadio.preinit(NULL);
   // Check that the radio is correctly connected; panic if not...
-  if(!PrimaryRadio.configure(nPrimaryRadioChannels, RFMConfigs) || !PrimaryRadio.begin()) { panic(F("r1")); }
+  if(!PrimaryRadio.configure(nPrimaryRadioChannels, RFMConfigs) || !PrimaryRadio.begin()) { panic(); }
   // Apply filtering, if any, while we're having fun...
-#ifndef NO_RX_FILTER
   PrimaryRadio.setFilterRXISR(FilterRXISR);
-#endif // NO_RX_FILTER
+//  if(neededToWakeSPI) { OTV0P2BASE::powerDownSPI(); }
 #endif // USE_MODULE_RFM22RADIOSIMPLE
 
 #ifdef ENABLE_RADIO_SECONDARY_MODULE
@@ -294,7 +289,8 @@ pinMode(A3, OUTPUT);
   SecondaryRadio.preinit(NULL);
   // Check that the radio is correctly connected; panic if not...
   if(!SecondaryRadio.configure(1, &SecondaryRadioConfig) || !SecondaryRadio.begin()) { panic(); }
-  // Assume no RX nor filtering on secondary radio.
+  // Apply filtering, if any, while we're having fun...
+//  SecondaryRadio.setFilterRXISR(FilterRXISR); // Assume no RX on secondary radio.
 #endif // ENABLE_RADIO_SECONDARY_MODULE
 
 
@@ -346,7 +342,7 @@ pinMode(A3, OUTPUT);
 #if 0 && defined(DEBUG)
       DEBUG_SERIAL_PRINTLN_FLASHSTRING("32768Hz clock may not be running!");
 #endif
-      panic(F("Xtal?")); // Async clock not running.
+      panic(F("Xtal dead")); // Async clock not running.
       }
     }
 //  posPOST(2, F("slow RTC clock OK"));
@@ -355,11 +351,11 @@ pinMode(A3, OUTPUT);
 #endif
 
   // Single POST checkpoint for speed.
-//#if defined(WAKEUP_32768HZ_XTAL)
-  posPOST(0 /* , F("POST OK") */ );
-//#else
-//  posPOST(0, F("Radio, buttons OK"));
-//#endif
+#if defined(WAKEUP_32768HZ_XTAL)
+  posPOST(0, F("Radio, xtal, buttons OK"));
+#else
+  posPOST(0, F("Radio, buttons OK"));
+#endif
   }
 
 
@@ -606,7 +602,7 @@ void setup()
 //  pinMode(LED_HEATCALL, OUTPUT);
   LED_HEATCALL_OFF();
 
-#if defined(SUPPORT_CLI) && !defined(ALT_MAIN_LOOP) && !defined(UNIT_TESTS) && !defined(ENABLE_TRIMMED_MEMORY)
+#if defined(SUPPORT_CLI) && !defined(ALT_MAIN_LOOP) && !defined(UNIT_TESTS)
   // Help user get to CLI.
   OTV0P2BASE::serialPrintlnAndFlush(F("At CLI > prompt enter ? for help"));
 #endif

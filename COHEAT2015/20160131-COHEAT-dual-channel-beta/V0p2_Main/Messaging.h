@@ -40,7 +40,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
 #include <OTRFM23BLink.h>
 //#include <OTNullRadioLink.h>
 #include <OTSIM900Link.h>
-#include <OTRN2483Link.h>
 
 
 
@@ -65,6 +64,7 @@ extern OTRadioLink::OTRadioLink &SecondaryRadio;
 
 extern const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config;
 #endif // ENABLE_RADIO_SIM900
+
 
 
 #define RFM22_PREAMBLE_BYTE 0xaa // Preamble byte for RFM22/23 reception.

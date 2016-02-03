@@ -403,11 +403,10 @@ uint8_t ModelledRadValve::computeTargetTemp()
 
     // Set back target the temperature a little if the room seems to have been vacant for a long time (TODO-107)
     // or it is too dark for anyone to be active or the room is not likely occupied at this time
-    // or the room was apparently not occupied at thus time yesterday (and is not now).
     //   AND no WARM schedule is active now (TODO-111)
     //   AND no recent manual interaction with the unit's local UI (TODO-464) indicating local settings override.
     // The notion of "not likely occupied" is "not now"
-    // AND less likely than not at this hour of the day AND an hour ahead (TODO-758).
+    // AND less likely than not at this hour of the day AND an hour ahead (TODO-753).
     // Note that this mainly has to work in domestic settings in winter (with ~8h of daylight)
     // but should ideally also work in artificially-lit offices (maybe ~12h continuous lighting).
     // No 'lights-on' signal for a whole day is a fairly strong indication that the heat can be turned down.
@@ -417,28 +416,25 @@ uint8_t ModelledRadValve::computeTargetTemp()
     // Note that deeper setbacks likely offer more savings than faster (but shallower) setbacks.
     const bool longLongVacant = Occupancy.longLongVacant();
     const bool longVacant = longLongVacant || Occupancy.longVacant();
-    const bool likelyVacantNow = longVacant || Occupancy.isLikelyUnoccupied();
-    const bool ecoBias = hasEcoBias();
-    // Be more ready to decide room not likely occupied soon if eco-biased.
-    const uint8_t thisHourNLOThreshold = ecoBias ? 15 : 12;
-    const uint8_t hoursLessOccupiedThanThis = OTV0P2BASE::countStatSamplesBelow(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::getByHourStat(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::STATS_SPECIAL_HOUR_CURRENT_HOUR));
     const bool notLikelyOccupiedSoon = longLongVacant ||
-        (likelyVacantNow &&
-        // No more than about half the hours to be less occupied than this hour to be considered unlikely to be occupied.
-        (hoursLessOccupiedThanThis < thisHourNLOThreshold) &&
-        // Allow to be a little bit more occupied for the next hour than the current hour.
-        (OTV0P2BASE::countStatSamplesBelow(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::getByHourStat(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::STATS_SPECIAL_HOUR_NEXT_HOUR)) < (thisHourNLOThreshold+1)));
-    const uint8_t minLightsOffForSetbackMins = ecoBias ? 10 : 20;
+        (Occupancy.isLikelyUnoccupied() &&
+        // No more than half the hours to be less occupied than this hour to be considered unlikely to be occupied.
+        (13 > OTV0P2BASE::countStatSamplesBelow(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::getByHourStat(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::STATS_SPECIAL_HOUR_CURRENT_HOUR))) &&
+        // No more than a little over half the hours to be less occupied than the next hour to be considered unlikely to be occupied.
+        (14 > OTV0P2BASE::countStatSamplesBelow(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::getByHourStat(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::STATS_SPECIAL_HOUR_NEXT_HOUR))));
+//         OTV0P2BASE::inOutlierQuartile(false, V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED) &&
+//         OTV0P2BASE::inOutlierQuartile(false, V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::STATS_SPECIAL_HOUR_NEXT_HOUR));
+    const uint8_t minLightsOffForSetbackMins = 10;
     if(longVacant ||
-       ((notLikelyOccupiedSoon || (AmbLight.getDarkMinutes() > minLightsOffForSetbackMins) || (ecoBias && (0 == OTV0P2BASE::getByHourStat(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR, OTV0P2BASE::STATS_SPECIAL_HOUR_CURRENT_HOUR)))) &&
-           likelyVacantNow && !Scheduler.isAnyScheduleOnWARMNow() && !recentUIControlUse()))
+       ((notLikelyOccupiedSoon || (AmbLight.getDarkMinutes() > minLightsOffForSetbackMins)) && !Scheduler.isAnyScheduleOnWARMNow() && !recentUIControlUse()))
       {
       // Use a default minimal non-annoying setback if:
       //   in upper part of comfort range
       //   or if the room is likely occupied now
-      //   or if the room is not known to be dark and hasn't been vacant for a long time ie ~1d and not in the very bottom range occupancy (TODO-107, TODO-758)
+      //   or if the room is not known to be dark and hasn't been vacant for a long time ie ~1d (TODO-107, TODO-758)
       //      TODO POSSIBLY: limit to (say) 3--4h light time for when someone out but room daylit, but note that detecting occupancy will be harder too in daylight.
-      //      TODO POSSIBLY: after ~3h vacancy AND apparent smoothed occupancy non-zero (so some can be detected) AND ambient light in top quartile or in middle of typical bright part of cycle (assume peak of daylight) then being lit is not enough to prevent a deeper setback.
+      //      TODO POSSIBLY: after 3h vacancy AND apparent smoothed occupancy no-zero (so some can be detected) AND ambient light in top quartile or in middle of typical bright part of cycle (assume peak of daylight) then being lit is not enough to prevent a deeper setback.
+      //   or if the room is in the upper quartile of occupancy for this time and hasn't been vacant for a very long time
       //   or if a scheduled WARM period is due soon and the room hasn't been vacant for a moderately long time,
       // else usually use a somewhat bigger 'eco' setback
       // else use an even bigger 'full' setback for maximum savings if in the eco region and
@@ -446,16 +442,16 @@ uint8_t ModelledRadValve::computeTargetTemp()
       //   or is unlikely to be unoccupied at this time of day and
       //     has been vacant and dark for a while or is in the lower part of the 'eco' range.
       // This final dark/vacant timeout to enter FULL fallback while in mild eco mode
-      // should probably be longer than required to watch a typical movie or go to sleep (~2h) for example,
-      // but short enough to take effect overnight and to be in effect a reasonable fraction of a (~8h) night.
+      // should probably be longer than required to watch a decent movie or go to sleep (~2h) for example,
+      // but short enough to take effect overnight and to be in effect a reasonable fraction of (~8h) night.
       const uint8_t minVacancyAndDarkForFULLSetbackH = 2; // Hours; strictly positive, typically 1--4.
       const uint8_t setback = (isComfortTemperature(wt) ||
                                Occupancy.isLikelyOccupied() ||
-                               (!longVacant && !AmbLight.isRoomDark() && (hoursLessOccupiedThanThis > 4)) ||
-//                               (!longLongVacant && OTV0P2BASE::inOutlierQuartile(true, V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED)) || // if the room is in the upper quartile of occupancy for this time and hasn't been vacant for a very long time
+                               (!longVacant && !AmbLight.isRoomDark()) ||
+                               (!longLongVacant && OTV0P2BASE::inOutlierQuartile(true, V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED)) ||
                                (!longVacant && Scheduler.isAnyScheduleOnWARMSoon())) ?
               SETBACK_DEFAULT :
-          ((ecoBias && (longLongVacant ||
+          ((hasEcoBias() && (longLongVacant ||
               (notLikelyOccupiedSoon && (isEcoTemperature(wt) ||
                   ((AmbLight.getDarkMinutes() > (uint8_t)min(254, 60*minVacancyAndDarkForFULLSetbackH)) && (Occupancy.getVacancyH() >= minVacancyAndDarkForFULLSetbackH)))))) ?
               SETBACK_FULL : SETBACK_ECO);
@@ -493,15 +489,8 @@ void ModelledRadValve::computeTargetTemperature()
   // With a wider deadband may also simply suppress any movement/noise on some/most minutes while close to target temperature.
   // For responsiveness, don't widen the deadband immediately after manual controls have been used (TODO-593).
   // Note: use !AmbLight.isRoomLight() in case unit is getting poor ambient light readings to keep noise and battery use down.
-  //
-  // Minimum number of hours vacant to force wider deadband in ECO mode, else a full day ('long vacant') is the threshold.
-  // May still have to back off this if only automatic occupancy input is ambient light and day >> 6h, ie other than deep winter.
-  const uint8_t minVacancyHoursForWideningECO = 3;
   inputState.widenDeadband = (!veryRecentUIUse) &&
-      (retainedState.isFiltering ||
-      (!inWarmMode()) ||
-      (!AmbLight.isRoomLit() && !AmbLight.isUnavailable()) ||
-      Occupancy.longVacant() || (hasEcoBias() && (Occupancy.getVacancyH() >= minVacancyHoursForWideningECO)));
+      (retainedState.isFiltering || (!AmbLight.isRoomLit() && !AmbLight.isUnavailable()) || Occupancy.longVacant() || (!inWarmMode()));
   // Capture adjusted reference/room temperatures
   // and set callingForHeat flag also using same outline logic as computeRequiredTRVPercentOpen() will use.
   inputState.setReferenceTemperatures(TemperatureC16.get());
@@ -855,6 +844,7 @@ static OTV0P2BASE::SimpleStatsRotation<10> ss1; // Configured for maximum differ
 void bareStatsTX(const bool allowDoubleTX, const bool doBinary, const bool RFM23BFramed)
   {
   const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled<V0P2_UART_BAUD>(); // FIXME
+
 #if (FullStatsMessageCore_MAX_BYTES_ON_WIRE > STATS_MSG_MAX_LEN)
 #error FullStatsMessageCore_MAX_BYTES_ON_WIRE too big
 #endif // FullStatsMessageCore_MAX_BYTES_ON_WIRE > STATS_MSG_MAX_LEN
@@ -887,7 +877,7 @@ void bareStatsTX(const bool allowDoubleTX, const bool doBinary, const bool RFM23
     const uint8_t *msg1 = encodeFullStatsMessageCore(buf + STATS_MSG_START_OFFSET, sizeof(buf) - STATS_MSG_START_OFFSET, OTV0P2BASE::getStatsTXLevel(), false, &content);
     if(NULL == msg1)
       {
-#if 0
+#if 0 // FIXME should this be testing something?
 DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 #endif
       return;
@@ -952,6 +942,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 #endif // defined(ENABLE_OCCUPANCY_SUPPORT)
     // OPTIONAL items
     // Only TX supply voltage for units apparently not mains powered.
+    if(!Supply_cV.isMains()) { ss1.put(Supply_cV); } else { ss1.remove(Supply_cV.tag()); }
 #ifdef ENABLE_BOILER_HUB
     // Show boiler state for boiler hubs.
     ss1.put("b", (int) isBoilerOn());
@@ -987,10 +978,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
 #ifdef ENABLE_RADIO_SECONDARY_MODULE
 // FIXME secondary send assumes SIM900.
 // FIXME cannot use strlen for binary frames
-#if 0 && defined(DEBUG)
-    OTV0P2BASE::serialPrintAndFlush(F("full: "));
-    PrimaryRadio.queueToSend(buf, 64); // debug
-#endif // 0
+//    NullRadio.queueToSend(buf + STATS_MSG_START_OFFSET, strlen((const char*)buf+STATS_MSG_START_OFFSET));
     SecondaryRadio.queueToSend(buf + STATS_MSG_START_OFFSET, strlen((const char*)buf+STATS_MSG_START_OFFSET));
 #endif // ENABLE_RADIO_SECONDARY_MODULE
 
@@ -1066,10 +1054,7 @@ static void wireComponentsTogether()
   // Typically at most one call would be made on any appropriate pot adjustment.
   TempPot.setWFBCallbacks(setWarmModeDebounced, setBakeModeDebounced);
 #endif // TEMP_POT_AVAILABLE
-#if V0p2_REV == 14
-  pinMode(A3, OUTPUT);
-  fastDigitalWrite(A3, HIGH);
-#endif
+
   // TODO
   }
 
