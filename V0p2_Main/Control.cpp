@@ -490,11 +490,15 @@ void ModelledRadValve::computeTargetTemperature()
   // With a wider deadband may also simply suppress any movement/noise on some/most minutes while close to target temperature.
   // For responsiveness, don't widen the deadband immediately after manual controls have been used (TODO-593).
   // Note: use !AmbLight.isRoomLight() in case unit is getting poor ambient light readings to keep noise and battery use down.
+  //
+  // Minimum number of hours vacant to force wider deadband in ECO mode, else a full day ('long vacant') is the threshold.
+  // May still have to back off this if only automatic occupancy input is ambient light and day >> 6h, ie other than deep winter.
+  const uint8_t minVacancyHoursForWideningECO = 3;
   inputState.widenDeadband = (!veryRecentUIUse) &&
       (retainedState.isFiltering ||
       (!inWarmMode()) ||
       (!AmbLight.isRoomLit() && !AmbLight.isUnavailable()) ||
-      Occupancy.longVacant() /* || (hasEcoBias && Occupancy.isLikelyUnoccupied()) */ );
+      Occupancy.longVacant() || (hasEcoBias() && (Occupancy.getVacancyH() >= minVacancyHoursForWideningECO)));
   // Capture adjusted reference/room temperatures
   // and set callingForHeat flag also using same outline logic as computeRequiredTRVPercentOpen() will use.
   inputState.setReferenceTemperatures(TemperatureC16.get());
