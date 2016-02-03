@@ -231,7 +231,10 @@ inline void IOSetup()
 #ifdef LED_UI2_L
       case LED_UI2_L: { pinMode(LED_UI2_L, OUTPUT); digitalWrite(LED_UI2_L, HIGH); break; }
 #endif // LED_UI2_L
-
+#ifdef VOICE_NIRQ
+      // Weak pull-up for external activation by pull-down.
+      case VOICE_NIRQ: { pinMode(VOICE_NIRQ, INPUT); break; }
+#endif
 #ifdef PIN_RFM_NIRQ 
       // Set as input to avoid contention current.
       case PIN_RFM_NIRQ: { pinMode(PIN_RFM_NIRQ, INPUT); break; }
@@ -240,7 +243,6 @@ inline void IOSetup()
       // Set as input to avoid contention current or float.
       case PIN_RFM_NIRQ_DUMMY: { pinMode(PIN_RFM_NIRQ_DUMMY, INPUT_PULLUP); break; }
 #endif // PIN_RFM_NIRQ_DUMMY
-
       // Make button pins (and others) inputs with internal weak pull-ups
       // (saving an external resistor in each case if aggressively reducing BOM costs).
 #ifdef BUTTON_MODE_L
@@ -269,10 +271,6 @@ inline void IOSetup()
 #ifdef PIN_OW_DQ_DATA
       // Weak pull-up to avoid leakage current.
       case PIN_OW_DQ_DATA:
-#endif
-#ifdef VOICE_NIRQ 
-      // Weak pull-up for external activation by pull-down.
-      case VOICE_NIRQ:
 #endif
 #ifdef PIN_SERIAL_RX
       // Weak TX and RX pull-up empirically found to produce lowest leakage current
