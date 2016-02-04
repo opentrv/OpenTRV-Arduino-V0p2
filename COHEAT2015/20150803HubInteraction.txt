@@ -61,9 +61,12 @@ Parameters mean:
   * light-on-time        [1,15] (0 not allowed) 30-450s in units of 30s (lt)
   * light-flash          [1,3] (0 not allowed) 1==single 2==double 3==on (lf)
 
-Example:
+Examples:
 
   +CC1 ? 98 98 50 2 1 3
+
+  +CC1 ? 34 62 45 2 2 2
+
 
 Poll relay with house code 98 98, commanding to move valve to 50%, LED on green on 30s.
 
