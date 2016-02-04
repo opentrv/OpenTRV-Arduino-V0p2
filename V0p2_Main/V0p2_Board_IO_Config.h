@@ -119,7 +119,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define BUTTON_MODE_L 5 // ATMega328P-PU PDIP pin 11, PD5, PCINT21, no analogue input.
 #endif
 
-#ifdef LEARN_BUTTON_AVAILABLE
+#ifdef ENABLE_LEARN_BUTTON
 // OPTIONAL UI 'learn' button  (active/pulled low by button, pref using weak internal pull-up), digital in.
 #define BUTTON_LEARN_L 8 // ATMega328P-PU PDIP pin 14, PB0, PCINT0, no analogue input.
 #ifndef ENABLE_VOICE_SENSOR // From REV2 onwards.

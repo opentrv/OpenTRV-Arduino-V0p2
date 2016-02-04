@@ -75,7 +75,7 @@ The OpenTRV project licenses this file to you
 // NOTE: since this is on the minimum idle-loop code path, minimise CPU cycles, esp in frost mode.
 // Also re-activates CLI on main button push.
 //
-#if !defined(BUTTON_MODE_L) || (!defined(LOCAL_TRV) && !defined(SLAVE_TRV))
+#if !defined(BUTTON_MODE_L) || (!defined(ENABLE_LOCAL_TRV) && !defined(ENABLE_SLAVE_TRV))
 // If the appropriate button input is not available
 // or this is not driving a local TRV (eg because this is a sensor module)
 // then disable the usual interactive UI entirely

@@ -713,7 +713,7 @@ static void testModeControls()
 // Test handling of JSON stats.
 static void testJSONStats()
   {
-#if defined(ALLOW_JSON_OUTPUT)
+#if defined(ENABLE_JSON_OUTPUT)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSONStats");
   SimpleStatsRotation<2> ss1;
   ss1.setID("1234");
@@ -760,7 +760,7 @@ static void testJSONStats()
 // Includes bit-twiddling, CRC computation, and other error checking.
 static void testJSONForTX()
   {
-#if defined(ALLOW_JSON_OUTPUT)
+#if defined(ENABLE_JSON_OUTPUT)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSONForTX");
   char buf[MSG_JSON_MAX_LENGTH + 2]; // Allow for trailing '\0' or CRC + 0xff terminator.
   // Clear the buffer.
@@ -1241,7 +1241,7 @@ static void testFullStatsMessageCoreEncDec()
 // Test sleepUntilSubCycleTime() routine.
 void testSleepUntilSubCycleTime()
   {
-#ifdef WAKEUP_32768HZ_XTAL
+#ifdef ENABLE_WAKEUP_32768HZ_XTAL
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("SleepUntilSubCycleTime");
 
   const uint8_t start = OTV0P2BASE::getSubCycleTime();

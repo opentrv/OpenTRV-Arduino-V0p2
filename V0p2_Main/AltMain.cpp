@@ -294,7 +294,7 @@ void loopAlt()
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("*E"); // End-of-cycle sleep.
 #endif
 
-#if !defined(MIN_ENERGY_BOOT)
+#if !defined(ENABLE_MIN_ENERGY_BOOT)
   OTV0P2BASE::powerDownSerial(); // Ensure that serial I/O is off.
   // Power down most stuff (except radio for hub RX).
   minimisePowerWithoutSleep();
@@ -367,7 +367,7 @@ void loopAlt()
 
   switch(TIME_LSD)
     {
-#ifdef ALLOW_STATS_TX
+#ifdef ENABLE_STATS_TX
     // Regular transmission of stats if NOT driving a local valve (else stats can be piggybacked onto that).
     case 10:
       {
