@@ -40,7 +40,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_Trial2013Winter_Round1 // REV1 default config.
 //#define CONFIG_Trial2013Winter_Round1_LVBHSH // REV1: local valve control, boiler hub, stats hub & TX.
 //#define CONFIG_Trial2013Winter_Round1_BOILERHUB // REV1 as plain boiler node.
-#define CONFIG_Trial2013Winter_Round1_NOHUB // REV1 as TX-only leaf node.
+//#define CONFIG_Trial2013Winter_Round1_NOHUB // REV1 as TX-only leaf node.
 //#define CONFIG_Trial2013Winter_Round2 // REV2 cut4 default config.
 //#define CONFIG_Trial2013Winter_Round2_LVBHSH // REV2 cut4: local valve control, boiler hub, stats hub & TX.
 //#define CONFIG_Trial2013Winter_Round2_LVBH // REV2 cut4 local valve control and boiler hub.
@@ -56,7 +56,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_DHD_TESTLAB_REV0 // REV0 / breadboard.
 //#define CONFIG_DHD_TESTLAB_REV1 // REV1.
 //#define CONFIG_Trial2013Winter_Round1_STATSHUB // REV1 as stats hub.
-//#define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
+#define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
 //#define CONFIG_Trial2013Winter_Round2_BHR // REV2 cut4: boiler hub and stats relay.
 //#define CONFIG_Trial2013Winter_Round2_SECURE_NOHUB // REV2 cut4 leaf (valve/sensor) 2015/12 secure protocol.
 //#define CONFIG_Trial2013Winter_Round2_SECURE_HUB // REV2 cut4 hub (boiler/stats) 2015/12 secure protocol.
@@ -68,7 +68,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_DORM1_MUT // REV7 / DORM1 Winter 2014/2015 minimal for unit testing.
 //#define CONFIG_REV7N // REV7 with external "Model N" valve.
 //#define CONFIG_REV7_AS_SENSOR // REV7 as JSON-only stats/sensor leaf.
-#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
+//#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
 //#define CONFIG_REV9_STATS // REV9 as stats node, cut 2 of the board.
 //#define CONFIG_REV9_cut1 // REV9 as CC1 relay, cut1 of board.
 //#define CONFIG_DE_TESTLAB // Deniz's test environment.
@@ -176,8 +176,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
 // IF DEFINED: allow non-secure OpenTRV secure frame RX (as of 2015/12): DISABLED BY DEFAULT.
 #undef ENABLE_OTSECUREFRAME_INSECURE_RX_PERMITTED
-// IF DEFINED: force all receivers back into RX mode periodically.  BODGE: DISABLED BY DEFAULT.
-#undef CONFIG_FORCE_TO_RX_MODE_REGULARLY
 //// SENSOR OPTIONS (and support for them)
 // IF DEFINED: allow use of ambient light sensor.
 #define ENABLE_AMBLIGHT_SENSOR
@@ -357,6 +355,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #undef ALLOW_STATS_RX // Not needed for CC1 frames.
 // IF DEFINED: allow TX of stats frames.
 #undef ALLOW_STATS_TX
+// IF DEFINED: enable support for FS20 carrier for RX of raw FS20 and piggybacked binary (non-JSON) stats.
+#undef ENABLE_FS20_NATIVE_AND_BINARY_STATS_RX
+// IF DEFINED: enable support for FS20 encoding/decoding, eg to send to FHT8V.
+#undef ENABLE_FS20_ENCODING_SUPPORT
 // IF DEFINED: (default) forced always-on radio listen/RX, eg not requiring setup to explicitly enable.
 #define ENABLE_DEFAULT_ALWAYS_RX
 // IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
@@ -412,7 +414,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define RADIO_SECONDARY_NULL
 // IF DEFINED: allow periodic machine- and human- readable status report to serial, starting with "="/
 //#undef ENABLE_SERIAL_STATUS_REPORT
-#undef CONFIG_FORCE_TO_RX_MODE_REGULARLY // FIXME
 // Use common settings.
 #define COMMON_SETTINGS
 #endif
@@ -1052,7 +1053,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // SIM900 relay.
 #define ENABLE_RADIO_SIM900   // Enable SIM900
 #define RADIO_SECONDARY_SIM900  // Assign SIM900
-#undef CONFIG_FORCE_TO_RX_MODE_REGULARLY // FIXME
 // Use common settings.
 #define COMMON_SETTINGS
 #endif
