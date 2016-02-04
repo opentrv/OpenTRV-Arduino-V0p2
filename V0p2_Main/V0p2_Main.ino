@@ -152,34 +152,33 @@ static const char _YYYYMmmDD[] =
   '\0'
   };
 // Version (code/board) information printed as one line to serial (with line-end, and flushed); machine- and human- parseable.
-// Format: "board VXXXX REVY; code YYYY/Mmm/DD HH:MM:SS".
+// Format: "board VXXXX REVY; YYYY/Mmm/DD HH:MM:SS".
 void serialPrintlnBuildVersion()
   {
   OTV0P2BASE::serialPrintAndFlush(F("board V0.2 REV"));
   OTV0P2BASE::serialPrintAndFlush(V0p2_REV);
   OTV0P2BASE::serialPrintAndFlush(F(" "));
   OTV0P2BASE::serialPrintAndFlush(_YYYYMmmDD);
-  OTV0P2BASE::serialPrintAndFlush(F(" " __TIME__));
-  OTV0P2BASE::serialPrintlnAndFlush();
+  OTV0P2BASE::serialPrintlnAndFlush(F(" " __TIME__));
   }
 
-#ifdef ALLOW_CC1_SUPPORT
+#if defined(ALLOW_CC1_SUPPORT)
 static const uint8_t nPrimaryRadioChannels = 2;
 static const OTRadioLink::OTRadioChannelConfig RFMConfigs[nPrimaryRadioChannels] =
   {
   // GFSK channel 0.
-  OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::OTRFM23BLinkBase::StandardRegSettingsGFSK, true, true, true),
+  OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsGFSK57600, true, true, true),
   // FS20/FHT8V compatible channel 1.
-  OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::OTRFM23BLinkBase::StandardRegSettingsOOK, true, true, true),
+  OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsOOK5000, true, true, true),
   };
-#else
+#else // !defined(ALLOW_CC1_SUPPORT)
 static const uint8_t nPrimaryRadioChannels = 1;
 static const OTRadioLink::OTRadioChannelConfig RFMConfigs[nPrimaryRadioChannels] =
   {
   // FS20/FHT8V compatible channel 0.
-  OTRadioLink::OTRadioChannelConfig(OTRadValve::FHT8VRadValveBase::FHT8V_RFM23_Reg_Values, true, true, true)
+  OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::FHT8V_RFM23_Reg_Values, false, true, true)
   };
-#endif
+#endif // defined(ALLOW_CC1_SUPPORT)
 
 #ifdef RADIO_SECONDARY_SIM900
 static const OTRadioLink::OTRadioChannelConfig SecondaryRadioConfig(&SIM900Config, true, true, true);
@@ -459,8 +458,6 @@ void setup()
   DEBUG_SERIAL_PRINT(light);
   DEBUG_SERIAL_PRINTLN();
 #endif
-//  // Assume 0 or full-scale values unlikely.
-//  if((0 == light) || (light >= 1023)) { panic(F("LDR fault")); }
   const int heat = TemperatureC16.read();
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINT_FLASHSTRING("T: ");
@@ -538,7 +535,6 @@ void setup()
 #endif
   // TODO: seed other/better PRNGs.
   // Feed in mainly persistent/nonvolatile state explicitly.
-  OTV0P2BASE::addEntropyToPool(oldResetCount ^ eeseed, 0);
   OTV0P2BASE::addEntropyToPool((uint8_t)(eeseed >> 8) + nar1, 0);
   OTV0P2BASE::addEntropyToPool((uint8_t)s16 ^ (uint8_t)(s16 >> 8), 0);
   for(uint8_t i = 0; i < V0P2BASE_EE_LEN_SEED; ++i)
