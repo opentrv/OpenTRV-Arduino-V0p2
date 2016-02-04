@@ -163,23 +163,23 @@ void serialPrintlnBuildVersion()
   OTV0P2BASE::serialPrintlnAndFlush();
   }
 
-#ifdef ALLOW_CC1_SUPPORT
+#if defined(ALLOW_CC1_SUPPORT)
 static const uint8_t nPrimaryRadioChannels = 2;
 static const OTRadioLink::OTRadioChannelConfig RFMConfigs[nPrimaryRadioChannels] =
   {
   // GFSK channel 0.
-  OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::OTRFM23BLinkBase::StandardRegSettingsGFSK, true, true, true),
+  OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsGFSK57600, true, true, true),
   // FS20/FHT8V compatible channel 1.
-  OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::OTRFM23BLinkBase::StandardRegSettingsOOK, true, true, true),
+  OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsOOK5000, true, true, true),
   };
-#else
+#else // !defined(ALLOW_CC1_SUPPORT)
 static const uint8_t nPrimaryRadioChannels = 1;
 static const OTRadioLink::OTRadioChannelConfig RFMConfigs[nPrimaryRadioChannels] =
   {
   // FS20/FHT8V compatible channel 0.
-  OTRadioLink::OTRadioChannelConfig(OTRadValve::FHT8VRadValveBase::FHT8V_RFM23_Reg_Values, true, true, true)
+  OTRadioLink::OTRadioChannelConfig(OTRadValve::FHT8VRadValveBase::FHT8V_RFM23_Reg_Values, false, true, true)
   };
-#endif
+#endif // defined(ALLOW_CC1_SUPPORT)
 
 #ifdef RADIO_SECONDARY_SIM900
 static const OTRadioLink::OTRadioChannelConfig SecondaryRadioConfig(&SIM900Config, true, true, true);
