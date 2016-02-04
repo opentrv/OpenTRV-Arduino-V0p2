@@ -1,16 +1,17 @@
-SNAPSHOT of COHEAT functionality 2016/02/041.
-DHD20160204
+SNAPSHOT of COHEAT functionality 2016/01/31.
+DHD20160201
 
 (Updated OTRadioLink.zip, eg with improved internal release notes.)
 
 Snapshot of OpenTRV and OTRadioLink and OTProtocolCC (re)tagged with:
 
-    20160131-COHEAT-dual-channel-beta3
+    20160131-COHEAT-dual-channel-beta
+and then:
+    20160131-COHEAT-dual-channel-beta2
 
 New feature:
 
   * REV2<->REV9 channel uses new 57600bps GFSK channel; 5kbps OOK channel used only for FS20/FHT8V.
-  * Beta 3 fixes wrong (new) channel requency.
 
 
 I have tested the current COHEAT functionality:
