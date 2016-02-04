@@ -18,8 +18,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 */
 
 /*
- TRV (and boiler-node) global configuration parameters for V0.2 PCB hardware.
- The top part should contain one #define CONFIG_... and nothing else (uncommented).
+ Global configuration parameters for V0.2 PCB hardware.
+ The top part should contain one #define CONFIG_XXX and nothing else (uncommented).
+ Below a set of ENABLE_XXX flags should be defined or undefined as a result.
  */
 
 #ifndef V0P2_GENERIC_CONFIG_H
@@ -90,6 +91,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // ------------------------------------------------------
 // PRE-DEFINED CONFIG_... BUNDLE IMPLEMENTATION/EXPANSION
 // These features can be turned off if not required in particular implementations.
+// These flag names are all of the form ENABLE_XXX.
 
 // Defaults for V0.2; should be '#undef'ined if not required.
 //
