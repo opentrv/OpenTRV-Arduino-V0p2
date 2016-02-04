@@ -441,8 +441,8 @@ uint8_t ModelledRadValve::computeTargetTemp()
       //   or if the room is not known to be dark and hasn't been vacant for a long time ie ~1d and not in the very bottom range occupancy (TODO-107, TODO-758)
       //      TODO POSSIBLY: limit to (say) 3--4h light time for when someone out but room daylit, but note that detecting occupancy will be harder too in daylight.
       //      TODO POSSIBLY: after ~3h vacancy AND apparent smoothed occupancy non-zero (so some can be detected) AND ambient light in top quartile or in middle of typical bright part of cycle (assume peak of daylight) then being lit is not enough to prevent a deeper setback.
-      //   or is fairly likely to be occupied in the next hour
-      //   or if a scheduled WARM period is due soon and the room hasn't been vacant for a moderately long time,
+      //   or is fairly likely to be occupied in the next hour (to pre-warm) and the room hasn't been vacant for a long time
+      //   or if a scheduled WARM period is due soon and the room hasn't been vacant for a long time,
       // else usually use a somewhat bigger 'eco' setback
       // else use an even bigger 'full' setback for maximum savings if in the eco region and
       //   the room has been vacant for a very long time
