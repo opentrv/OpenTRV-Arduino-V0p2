@@ -186,7 +186,7 @@ extern VoiceDetection Voice;
 
 
 // DORM1/REV7 direct drive motor actuator.
-#if /* defined(LOCAL_TRV) && */ defined(DIRECT_MOTOR_DRIVE_V1)
+#if /* defined(ENABLE_LOCAL_TRV) && */ defined(DIRECT_MOTOR_DRIVE_V1)
 #define HAS_DORM1_VALVE_DRIVE
 // Singleton implementation/instance.
 #ifdef ENABLE_DORM1_MOTOR_REVERSED // Reversed vs sample 2015/12
@@ -206,7 +206,7 @@ extern OTRadValve::FHT8VRadValve<_FHT8V_MAX_EXTRA_TRAILER_BYTES, OTRadValve::FHT
 // Returns TRV if valve/radiator is to be controlled by this unit.
 // Usually the case, but may not be for (a) a hub or (b) a not-yet-configured unit.
 // Returns false if house code parts are set to invalid or uninitialised values (>99).
-#if defined(LOCAL_TRV) || defined(SLAVE_TRV)
+#if defined(ENABLE_LOCAL_TRV) || defined(ENABLE_SLAVE_TRV)
 inline bool localFHT8VTRVEnabled() { return(!FHT8V.isUnavailable()); }
 #else
 #define localFHT8VTRVEnabled() (false) // Local FHT8V TRV disabled.

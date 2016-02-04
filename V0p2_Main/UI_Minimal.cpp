@@ -88,7 +88,7 @@ bool recentUIControlUse() { return(0 != uiTimeoutM); }
 
 
 
-#ifdef LEARN_BUTTON_AVAILABLE
+#ifdef ENABLE_LEARN_BUTTON
 // Handle learn button(s).
 // First/primary button is 0, second is 1, etc.
 // In simple mode: if in frost mode clear simple schedule else set repeat for every 24h from now.
@@ -100,7 +100,7 @@ static void handleLEARN(const uint8_t which)
   // Clear simple schedule.
   else { Scheduler.clearSimpleSchedule(which); }
   }
-#endif // LEARN_BUTTON_AVAILABLE
+#endif // ENABLE_LEARN_BUTTON
 
 
 // Pause between flashes to allow them to be distinguished (>100ms); was mediumPause() for PICAXE V0.09 impl.
@@ -243,7 +243,7 @@ bool tickUI(const uint_fast8_t sec)
       // this is to conserve batteries for those people who leave the valves in WARM mode all the time.
       if(justTouched ||
          ((forthTick
-#if defined(ENABLE_NOMINAL_RAD_VALVE) && defined(LOCAL_TRV)
+#if defined(ENABLE_NOMINAL_RAD_VALVE) && defined(ENABLE_LOCAL_TRV)
              || NominalRadValve.isCallingForHeat()
 #endif
              || inBakeMode()) && AmbLight.isRoomLit()))
@@ -259,7 +259,7 @@ bool tickUI(const uint_fast8_t sec)
         else if(!isComfortTemperature(wt)) { tinyPause(); }
         else { mediumPause(); }
 
-#if defined(ENABLE_NOMINAL_RAD_VALVE) && defined(LOCAL_TRV)
+#if defined(ENABLE_NOMINAL_RAD_VALVE) && defined(ENABLE_LOCAL_TRV)
         // Second flash to indicate actually calling for heat,
         // or likely to be calling for heat while interacting with the controls, to give fast user feedback (TODO-695).
         if((enhancedUIFeedback && NominalRadValve.isUnderTarget()) ||
@@ -291,7 +291,7 @@ bool tickUI(const uint_fast8_t sec)
         }
       }
  
-#if defined(ENABLE_NOMINAL_RAD_VALVE) && defined(LOCAL_TRV)
+#if defined(ENABLE_NOMINAL_RAD_VALVE) && defined(ENABLE_LOCAL_TRV)
     // Even in FROST mode, and if actually calling for heat (eg opening the rad valve significantly, etc)
     // then emit a tiny double flash on every 4th tick.
     // This call for heat may be frost protection or pre-warming / anticipating demand.
@@ -329,7 +329,7 @@ bool tickUI(const uint_fast8_t sec)
   // Ensure LED forced off unconditionally at least once each cycle.
   LED_HEATCALL_OFF();
 
-#ifdef LEARN_BUTTON_AVAILABLE
+#ifdef ENABLE_LEARN_BUTTON
   // Handle learn button if supported and if is currently pressed.
   if(fastDigitalRead(BUTTON_LEARN_L) == LOW)
     {
@@ -577,12 +577,12 @@ void serialStatusReport()
 #endif
 
   // *S* section: settable target/threshold temperatures, current target, and eco/smart/occupied flags.
-#ifdef SETTABLE_TARGET_TEMPERATURES // Show thresholds and current target since no longer so easily deduced.
+#ifdef ENABLE_SETTABLE_TARGET_TEMPERATURES // Show thresholds and current target since no longer so easily deduced.
   Serial.print(';'); // Terminate previous section.
   Serial.print('S'); // Current settable temperature target, and FROST and WARM settings.
-#ifdef LOCAL_TRV
+#ifdef ENABLE_LOCAL_TRV
   Serial.print(NominalRadValve.getTargetTempC());
-#endif // LOCAL_TRV
+#endif // ENABLE_LOCAL_TRV
   Serial_print_space();
   Serial.print(getFROSTTargetC());
   Serial_print_space();
@@ -593,10 +593,10 @@ void serialStatusReport()
   Serial_print_space();
   Serial.print(hasEcoBias() ? (isEcoTemperature(wt) ? 'E' : 'e') : (isComfortTemperature(wt) ? 'C': 'c')); // Show eco/comfort bias.
 #endif // ENABLE_FULL_OT_CLI
-#endif // SETTABLE_TARGET_TEMPERATURES
+#endif // ENABLE_SETTABLE_TARGET_TEMPERATURES
 
   // *C* section: central hub values.
-#if defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX)
+#if defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)
   // Print optional hub boiler-on-time section if apparently set (non-zero) and thus in hub mode.
   const uint8_t boilerOnMinutes = getMinBoilerOnMinutes();
   if(boilerOnMinutes != 0)
@@ -625,13 +625,13 @@ void serialStatusReport()
     }
 #endif
 
-#ifdef LOCAL_TRV
+#ifdef ENABLE_LOCAL_TRV
   // *M* section: min-valve-percentage open section, iff not at default value.
   const uint8_t minValvePcOpen = NominalRadValve.getMinValvePcReallyOpen();
   if(OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN != minValvePcOpen) { Serial.print(F(";M")); Serial.print(minValvePcOpen); }
 #endif
 
-#if 1 && defined(ALLOW_JSON_OUTPUT) && !defined(ENABLE_TRIMMED_MEMORY)
+#if 1 && defined(ENABLE_JSON_OUTPUT) && !defined(ENABLE_TRIMMED_MEMORY)
   Serial.print(';'); // Terminate previous section.
   char buf[80];
   static const uint8_t maxStatsLineValues = 5;
@@ -653,7 +653,7 @@ void serialStatusReport()
 #endif // ENABLE_MODELLED_RAD_VALVE
   const uint8_t wrote = ss1.writeJSON((uint8_t *)buf, sizeof(buf), 0, true);
   if(0 != wrote) { Serial.print(buf); }
-#endif // defined(ALLOW_JSON_OUTPUT) && !defined(ENABLE_TRIMMED_MEMORY)
+#endif // defined(ENABLE_JSON_OUTPUT) && !defined(ENABLE_TRIMMED_MEMORY)
 
   // Terminate line.
   Serial.println();
@@ -707,7 +707,7 @@ static void dumpCLIUsage(const uint8_t stopBy)
   
   // Core CLI features first... (E, [H], I, S V)
   printCLILine(deadline, 'E', F("Exit CLI"));
-#if defined(ENABLE_FHT8VSIMPLE) && defined(LOCAL_TRV)
+#if defined(ENABLE_FHT8VSIMPLE) && defined(ENABLE_LOCAL_TRV)
   printCLILine(deadline, F("H H1 H2"), F("set FHT8V House codes 1&2"));
   printCLILine(deadline, 'H', F("clear House codes"));
 #endif
@@ -718,17 +718,17 @@ static void dumpCLIUsage(const uint8_t stopBy)
 #ifdef ENABLE_FULL_OT_CLI
   // Optional CLI features...
   Serial.println(F("-"));
-#if defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX)
+#if defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)
   printCLILine(deadline, F("C M"), F("Central hub >=M mins on, 0 off"));
 #endif
   printCLILine(deadline, F("D N"), F("Dump stats set N"));
   printCLILine(deadline, 'F', F("Frost"));
-#if defined(SETTABLE_TARGET_TEMPERATURES) && !defined(TEMP_POT_AVAILABLE)
+#if defined(ENABLE_SETTABLE_TARGET_TEMPERATURES) && !defined(TEMP_POT_AVAILABLE)
   printCLILine(deadline, F("F CC"), F("set Frost/setback temp CC"));
 #endif
 
   //printCLILine(deadline, 'L', F("Learn to warm every 24h from now, clear if in frost mode, schedule 0"));
-#ifdef LEARN_BUTTON_AVAILABLE
+#ifdef ENABLE_LEARN_BUTTON
   printCLILine(deadline, F("L S"), F("Learn daily warm now, clear if in frost mode, schedule S"));
   //printCLILine(deadline, F("P HH MM"), F("Program: warm daily starting at HH MM schedule 0"));
   printCLILine(deadline, F("P HH MM S"), F("Program: warm daily starting at HH MM schedule S"));
@@ -742,7 +742,7 @@ static void dumpCLIUsage(const uint8_t stopBy)
 
   printCLILine(deadline, F("T HH MM"), F("set 24h Time"));
   printCLILine(deadline, 'W', F("Warm"));
-#if defined(SETTABLE_TARGET_TEMPERATURES) && !defined(TEMP_POT_AVAILABLE)
+#if defined(ENABLE_SETTABLE_TARGET_TEMPERATURES) && !defined(TEMP_POT_AVAILABLE)
   printCLILine(deadline, F("W CC"), F("set Warm temp CC"));
 #endif
   printCLILine(deadline, 'X', F("Xmit security level; 0 always, 255 never"));
@@ -925,7 +925,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
       // This should be followed by JUST CR ('\r') OR LF ('\n')
       // else the second will wake the CLI up again.
       case 'E': { CLITimeoutM = 0; break; }
-#if defined(ENABLE_FHT8VSIMPLE) && (defined(LOCAL_TRV) || defined(SLAVE_TRV))
+#if defined(ENABLE_FHT8VSIMPLE) && (defined(ENABLE_LOCAL_TRV) || defined(ENABLE_SLAVE_TRV))
       // H nn nn
       // Set (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control.
       // Missing values will clear the code entirely (and disable use of the valve).
@@ -1047,7 +1047,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
 
 #ifdef ENABLE_FULL_OT_CLI // NON-CORE CLI FEATURES
 
-#if defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX)
+#if defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)
       // C M
       // Set central-hub boiler minimum on (and off) time; 0 to disable.
       case 'C':
@@ -1182,7 +1182,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
           Occupancy.setHolidayMode();
           }
 #endif
-#if defined(SETTABLE_TARGET_TEMPERATURES)
+#if defined(ENABLE_SETTABLE_TARGET_TEMPERATURES)
         char *last; // Used by strtok_r().
         char *tok1;
         if((n >= 3) && (NULL != (tok1 = strtok_r(buf+2, " ", &last))))
@@ -1196,7 +1196,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         break;
         }
 
-#ifdef LEARN_BUTTON_AVAILABLE
+#ifdef ENABLE_LEARN_BUTTON
       // Learn current settings, just as if primary/specified LEARN button had been pressed.
       case 'L':
         {
@@ -1213,7 +1213,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         handleLEARN((uint8_t) s); break;
         break;
         }
-#endif // LEARN_BUTTON_AVAILABLE
+#endif // ENABLE_LEARN_BUTTON
 
 #if defined(ENABLE_NOMINAL_RAD_VALVE)
       // Set/clear min-valve-open-% threshold override.
@@ -1229,7 +1229,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         }
 #endif
 
-#ifdef LEARN_BUTTON_AVAILABLE
+#ifdef ENABLE_LEARN_BUTTON
       // Program simple schedule HH MM [N].
       case 'P':
         {
@@ -1257,7 +1257,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
           }
         break;
         }
-#endif // LEARN_BUTTON_AVAILABLE
+#endif // ENABLE_LEARN_BUTTON
 
       // Switch to (or restart) BAKE (Quick Heat) mode: Q
       case 'Q': { startBakeDebounced(); break; }
@@ -1285,7 +1285,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
       // Switch to WARM (not BAKE) mode OR set WARM temperature.
       case 'W':
         {
-#if defined(SETTABLE_TARGET_TEMPERATURES) && !defined(TEMP_POT_AVAILABLE)
+#if defined(ENABLE_SETTABLE_TARGET_TEMPERATURES) && !defined(TEMP_POT_AVAILABLE)
         char *last; // Used by strtok_r().
         char *tok1;
         if((n >= 3) && (NULL != (tok1 = strtok_r(buf+2, " ", &last))))

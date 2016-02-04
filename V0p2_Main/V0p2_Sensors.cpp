@@ -194,7 +194,7 @@ OTRadValve::ValveMotorDirectV1<MOTOR_DRIVE_MR, MOTOR_DRIVE_ML, MOTOR_DRIVE_MI_AI
 #ifdef ENABLE_FHT8VSIMPLE
 // Function to append stats trailer (and 0xff) to FHT8V/FS20 TX buffer.
 // Assume enough space in buffer for largest possible stats message.
-#if defined(ALLOW_STATS_TX)
+#if defined(ENABLE_STATS_TX)
 uint8_t *appendStatsToTXBufferWithFF(uint8_t *bptr, const uint8_t bufSize)
 {
   OTV0P2BASE::FullStatsMessageCore_t trailer;

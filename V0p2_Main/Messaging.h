@@ -114,13 +114,13 @@ bool sendCC1AlertByRFM23B();
 // Returns true if an unencrypted trailing static payload and similar (eg bare stats transmission) is permitted.
 // True if the TX_ENABLE value is no higher than stTXmostUnsec.
 // Some filtering may be required even if this is true.
-#if defined(ALLOW_STATS_TX)
-#if !defined(CONFIG_ALWAYS_TX_ALL_STATS)
+#if defined(ENABLE_STATS_TX)
+#if !defined(ENABLE_ALWAYS_TX_ALL_STATS)
 // TODO: allow cacheing in RAM for speed.
 inline bool enableTrailingStatsPayload() { return(OTV0P2BASE::getStatsTXLevel() <= OTV0P2BASE::stTXmostUnsec); }
 #else
 #define enableTrailingStatsPayload() (true) // Always allow at least some stats to be TXed.
-#endif // !defined(CONFIG_ALWAYS_TX_ALL_STATS)
+#endif // !defined(ENABLE_ALWAYS_TX_ALL_STATS)
 #else
 #define enableTrailingStatsPayload() (false)
 #endif
