@@ -123,7 +123,7 @@ OTV0P2BASE::RoomTemperatureC16_TMP112 TemperatureC16;
 
 #ifdef ENABLE_VOICE_SENSOR
 // TODO
-//OTV0P2BASE::VoiceDetectionQM1 Voice;
+OTV0P2BASE::VoiceDetectionQM1 Voice;
 #endif
 
 
