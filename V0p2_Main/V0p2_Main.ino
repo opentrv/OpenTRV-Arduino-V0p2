@@ -162,29 +162,42 @@ void serialPrintlnBuildVersion()
   OTV0P2BASE::serialPrintlnAndFlush(F(" " __TIME__));
   }
 
+
+// Pick an appropriate radio config for RFM23 (if it is the primary radio).
+#ifdef ENABLE_RADIO_PRIMARY_RFM23B
 #if defined(ALLOW_CC1_SUPPORT)
 static const uint8_t nPrimaryRadioChannels = 2;
-static const OTRadioLink::OTRadioChannelConfig RFMConfigs[nPrimaryRadioChannels] =
+static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChannels] =
   {
   // GFSK channel 0.
   OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsGFSK57600, true, true, true),
   // FS20/FHT8V compatible channel 1.
   OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsOOK5000, true, true, true),
   };
-#else // !defined(ALLOW_CC1_SUPPORT)
+#elif defined(ENABLE_FAST_FRAMED_CARRIER_SUPPORT)
 static const uint8_t nPrimaryRadioChannels = 1;
-static const OTRadioLink::OTRadioChannelConfig RFMConfigs[nPrimaryRadioChannels] =
+static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChannels] =
+  {
+  // GFSK channel 0.
+  OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsGFSK57600, true, true, true),
+  };
+#else // !defined(ALLOW_CC1_SUPPORT) && !defined(ENABLE_FAST_FRAMED_CARRIER_SUPPORT)
+static const uint8_t nPrimaryRadioChannels = 1;
+static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChannels] =
   {
   // FS20/FHT8V compatible channel 0.
   OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::FHT8V_RFM23_Reg_Values, false, true, true)
   };
-#endif // defined(ALLOW_CC1_SUPPORT)
+#endif
+#endif // ENABLE_RADIO_PRIMARY_RFM23B
+
 
 #ifdef RADIO_SECONDARY_SIM900
 static const OTRadioLink::OTRadioChannelConfig SecondaryRadioConfig(&SIM900Config, true, true, true);
 #else
 static const OTRadioLink::OTRadioChannelConfig SecondaryRadioConfig(NULL, true, true, true);
 #endif // RADIO_SECONDARY_SIM900
+
 
 #if defined(ALLOW_CC1_SUPPORT_RELAY)
 // For a CC1 relay, ignore everything except FTp2_CC1PollAndCmd messages.
@@ -276,7 +289,7 @@ void optionalPOST()
   // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
   PrimaryRadio.preinit(NULL);
   // Check that the radio is correctly connected; panic if not...
-  if(!PrimaryRadio.configure(nPrimaryRadioChannels, RFMConfigs) || !PrimaryRadio.begin()) { panic(F("r1")); }
+  if(!PrimaryRadio.configure(nPrimaryRadioChannels, RFM23BConfigs) || !PrimaryRadio.begin()) { panic(F("r1")); }
   // Apply filtering, if any, while we're having fun...
 #ifndef NO_RX_FILTER
   PrimaryRadio.setFilterRXISR(FilterRXISR);

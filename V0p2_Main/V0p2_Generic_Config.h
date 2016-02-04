@@ -44,7 +44,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_Trial2013Winter_Round1_NOHUB // REV1 as TX-only leaf node.
 //#define CONFIG_Trial2013Winter_Round2 // REV2 cut4 default config.
 //#define CONFIG_Trial2013Winter_Round2_LVBHSH // REV2 cut4: local valve control, boiler hub, stats hub & TX.
-#define CONFIG_Trial2013Winter_Round2_LVBH // REV2 cut4 local valve control and boiler hub.
+//#define CONFIG_Trial2013Winter_Round2_LVBH // REV2 cut4 local valve control and boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as plain boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
 //#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
@@ -179,6 +179,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #undef ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY
 // IF DEFINED: enable periodic secure beacon broadcast.
 #undef ENABLE_SECURE_RADIO_BEACON
+// IF DEFINED: enable support for fast (>50kbps) packet-handling carrier (leading length byte).
+#undef ENABLE_FAST_FRAMED_CARRIER_SUPPORT
 // IF DEFINED: enable support for FS20 carrier for RX or TX.
 #define ENABLE_FS20_CARRIER_SUPPORT
 // IF DEFINED: use FHT8V wireless radio module/valve, eg to control FHT8V local valve.
@@ -437,17 +439,19 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: allow binary stats to be TXed.
 #undef ENABLE_BINARY_STATS_TX
 // IF DEFINED: enable support for FS20 carrier for RX or TX.
-#define ENABLE_FS20_CARRIER_SUPPORT
+#undef ENABLE_FS20_CARRIER_SUPPORT
 // IF DEFINED: use FHT8V wireless radio module/valve.
 #undef ENABLE_FHT8VSIMPLE
-//// IF DEFINED: enable support for FS20 carrier for TX specifically (to allow RX-only).
-//#define ENABLE_FS20_CARRIER_SUPPORT_TX
+// IF DEFINED: enable support for fast (>50kbps) packet-handling carrier (leading length byte).
+#define ENABLE_FAST_FRAMED_CARRIER_SUPPORT
+// IF DEFINED: enable support for FS20 carrier for TX specifically (to allow RX-only).
+#undef ENABLE_FS20_CARRIER_SUPPORT_TX
 // IF DEFINED: enable support for FS20 encoding/decoding, eg to send to FHT8V.
 #undef ENABLE_FS20_ENCODING_SUPPORT
 // IF DEFINED: enable OpenTRV secure frame encoding/decoding (as of 2015/12).
 #define ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
 // IF DEFINED: allow non-secure OpenTRV secure frame RX (as of 2015/12): DISABLED BY DEFAULT.
-#define ENABLE_OTSECUREFRAME_INSECURE_RX_PERMITTED
+#undef ENABLE_OTSECUREFRAME_INSECURE_RX_PERMITTED
 #endif
 
 
@@ -465,6 +469,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #undef ENABLE_SECURE_RADIO_BEACON
 // IF DEFINED: allow binary stats to be TXed.
 #undef ENABLE_BINARY_STATS_TX
+// IF DEFINED: enable support for fast (>50kbps) packet-handling carrier (leading length byte).
+#define ENABLE_FAST_FRAMED_CARRIER_SUPPORT
 // IF DEFINED: enable support for FS20 carrier for RX or TX.
 #undef ENABLE_FS20_CARRIER_SUPPORT
 // IF DEFINED: use FHT8V wireless radio module/valve.
