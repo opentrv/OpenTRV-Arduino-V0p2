@@ -1058,6 +1058,10 @@ static void wireComponentsTogether()
   AmbLight.setPossOccCallback(genericMarkAsPossiblyOccupied);
 #endif // ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
 
+#if defined(ENABLE_OCCUPANCY_SUPPORT) && defined(ENABLE_OCCUPANCY_DETECTION_FROM_VOICE)
+  Voice.setPossOccCallback(genericMarkAsPossiblyOccupied); // TODO make sure this is the correct way
+#endif // ENABLE_OCCUPANCY_DETECTION_FROM_VOICE
+
 #if defined(TEMP_POT_AVAILABLE)
 //  TempPot.setOccCallback(genericMarkAsOccupied); // markUIControlUsed
   // Mark UI as used and indirectly mark occupancy when control is used.
