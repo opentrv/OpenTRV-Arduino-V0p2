@@ -206,7 +206,7 @@ static bool FilterRXISR(const volatile uint8_t *buf, volatile uint8_t &buflen)
   buflen = 8; // Truncate message to correct size for efficiency.
   return(true); // Accept message.
   }
-#elif defined(ENABLE_STATS_RX) && defined(ENABLE_FS20_ENCODING_SUPPORT)
+#elif defined(ALLOW_STATS_RX) && defined(ENABLE_FS20_ENCODING_SUPPORT)
 // If using FS20-based non-secured messaging...
 // If a stats hub then be prepared to accept a wide variety of binary and JSON message types.
 // It may yet be good to trim the smaller message types down to size in particular to help queueing.
@@ -270,9 +270,9 @@ void optionalPOST()
 //  const bool neededToWakeSPI = OTV0P2BASE::powerUpSPIIfDisabled();
 //  DEBUG_SERIAL_PRINT(neededToWakeSPI);
 //  DEBUG_SERIAL_PRINTLN();
-#if !defined(RFM22_IS_ACTUALLY_RFM23) && defined(DEBUG) && !defined(ENABLE_MIN_ENERGY_BOOT)
+#if !defined(RFM22_IS_ACTUALLY_RFM23) && defined(DEBUG) && !defined(MIN_ENERGY_BOOT)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("(Using RFM22.)");
-#endif // !defined(RFM22_IS_ACTUALLY_RFM23) && defined(DEBUG) && !defined(ENABLE_MIN_ENERGY_BOOT)
+#endif // !defined(RFM22_IS_ACTUALLY_RFM23) && defined(DEBUG) && !defined(MIN_ENERGY_BOOT)
 
   // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
   PrimaryRadio.preinit(NULL);
@@ -320,12 +320,12 @@ pinMode(A3, OUTPUT);
 #endif
 #endif // select user-facing boards.
 
-#if defined(ENABLE_WAKEUP_32768HZ_XTAL)
+#if defined(WAKEUP_32768HZ_XTAL)
   // Check that the 32768Hz async clock is actually running having done significant CPU-intensive work.
   const uint8_t laterSCT = OTV0P2BASE::getSubCycleTime();
   if(laterSCT == earlySCT)
     {
-#if defined(ENABLE_WAKEUP_32768HZ_XTAL)
+#if defined(WAKEUP_32768HZ_XTAL)
     // Allow extra time for 32768Hz crystal to start reliably, see: http://www.atmel.com/Images/doc1259.pdf
 #if 0 && defined(DEBUG)
     DEBUG_SERIAL_PRINTLN_FLASHSTRING("Sleeping to let 32768Hz clock start...");
@@ -355,7 +355,7 @@ pinMode(A3, OUTPUT);
 #endif
 
   // Single POST checkpoint for speed.
-//#if defined(ENABLE_WAKEUP_32768HZ_XTAL)
+//#if defined(WAKEUP_32768HZ_XTAL)
   posPOST(0 /* , F("POST OK") */ );
 //#else
 //  posPOST(0, F("Radio, buttons OK"));
@@ -370,24 +370,24 @@ void setup()
   // Set appropriate low-power states, interrupts, etc, ASAP.
   OTV0P2BASE::powerSetup();
 
-#if defined(ENABLE_MIN_ENERGY_BOOT)
+#if defined(MIN_ENERGY_BOOT)
   nap(WDTO_120MS); // Sleep to let power supply recover a little.
 #endif
 
   // IO setup for safety, and to avoid pins floating.
   IOSetup();
 
-#if defined(ENABLE_MIN_ENERGY_BOOT)
+#if defined(MIN_ENERGY_BOOT)
   nap(WDTO_120MS); // Sleep to let power supply recover a little.
 #endif
 
-#if !defined(ENABLE_MIN_ENERGY_BOOT)
+#if !defined(MIN_ENERGY_BOOT)
   // Restore previous RTC state if available.
   OTV0P2BASE::restoreRTC();
   // TODO: consider code to calibrate the internal RC oscillator against the xtal, eg to keep serial comms happy, eg http://www.avrfreaks.net/index.php?name=PNphpBB2&file=printview&t=36237&start=0
 #endif
 
-#if !defined(ENABLE_MIN_ENERGY_BOOT)
+#if !defined(MIN_ENERGY_BOOT)
 #if defined(LED_UI2_EXISTS) && defined(ENABLE_UI_LED_2_IF_AVAILABLE)
   LED_UI2_ON();
 #endif
@@ -399,17 +399,17 @@ void setup()
 #endif
 #endif
 
-#if !defined(ENABLE_MIN_ENERGY_BOOT)
+#if !defined(MIN_ENERGY_BOOT)
   // Count resets to detect unexpected crashes/restarts.
   const uint8_t oldResetCount = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_RESET_COUNT);
   eeprom_write_byte((uint8_t *)V0P2BASE_EE_START_RESET_COUNT, 1 + oldResetCount);
 #endif
 
-#if defined(DEBUG) && !defined(ENABLE_MIN_ENERGY_BOOT)
+#if defined(DEBUG) && !defined(MIN_ENERGY_BOOT)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("DEBUG");
 #endif
 
-#if defined(DEBUG) && !defined(ENABLE_MIN_ENERGY_BOOT)
+#if defined(DEBUG) && !defined(MIN_ENERGY_BOOT)
   DEBUG_SERIAL_PRINT_FLASHSTRING("Resets: ");
   DEBUG_SERIAL_PRINT(oldResetCount);
   DEBUG_SERIAL_PRINTLN();
@@ -504,7 +504,7 @@ void setup()
   DEBUG_SERIAL_PRINTLN();
 #endif
 
-#if !defined(ENABLE_MIN_ENERGY_BOOT)
+#if !defined(MIN_ENERGY_BOOT)
   // Seed PRNG(s) with available environmental values and clock time/jitter for some entropy.
   // Also sweeps over SRAM and EEPROM (see RAMEND and E2END), especially for non-volatile state and uninitialised areas of SRAM.
   // TODO: add better PRNG with entropy pool (eg for crypto).
@@ -606,7 +606,7 @@ void setup()
 //  pinMode(LED_HEATCALL, OUTPUT);
   LED_HEATCALL_OFF();
 
-#if defined(ENABLE_CLI) && !defined(ALT_MAIN_LOOP) && !defined(UNIT_TESTS) && !defined(ENABLE_TRIMMED_MEMORY)
+#if defined(SUPPORT_CLI) && !defined(ALT_MAIN_LOOP) && !defined(UNIT_TESTS) && !defined(ENABLE_TRIMMED_MEMORY)
   // Help user get to CLI.
   OTV0P2BASE::serialPrintlnAndFlush(F("At CLI > prompt enter ? for help"));
 #endif

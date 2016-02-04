@@ -103,7 +103,7 @@ void loopOpenTRV();
 // Prolonged inactivity time deemed to indicate room(s) really unoccupied to trigger full setback (minutes, strictly positive).
 #define SETBACK_FULL_M min(60, max(30, OTV0P2BASE::PseudoSensorOccupancyTracker::OCCUPATION_TIMEOUT_M))
 
-//#ifdef ENABLE_LEARN_BUTTON
+//#ifdef LEARN_BUTTON_AVAILABLE
 // Period in minutes for simple learned on-time; strictly positive (and less than 256).
 #ifndef LEARNED_ON_PERIOD_M
 #define LEARNED_ON_PERIOD_M 60
@@ -114,7 +114,7 @@ void loopOpenTRV();
 #ifndef LEARNED_ON_PERIOD_COMFORT_M
 #define LEARNED_ON_PERIOD_COMFORT_M (min(2*(LEARNED_ON_PERIOD_M),255))
 #endif
-//#endif // ENABLE_LEARN_BUTTON
+//#endif // LEARN_BUTTON_AVAILABLE
 
 
 
@@ -175,7 +175,7 @@ void _TEST_set_basetemp_override(_TEST_basetemp_override override);
 bool hasEcoBias();
 
 // Get (possibly dynamically-set) thresholds/parameters.
-//#if defined(ENABLE_SETTABLE_TARGET_TEMPERATURES) || defined(TEMP_POT_AVAILABLE)
+//#if defined(SETTABLE_TARGET_TEMPERATURES) || defined(TEMP_POT_AVAILABLE)
 // Get 'FROST' protection target in C; no higher than getWARMTargetC() returns, strictly positive, in range [MIN_TARGET_C,MAX_TARGET_C].
 // Depends dynamically on current (last-read) temp-pot setting.
 uint8_t getFROSTTargetC();
@@ -192,13 +192,13 @@ uint8_t computeWARMTargetC(const uint8_t pot);
 #endif
 
 
-#if defined(ENABLE_SETTABLE_TARGET_TEMPERATURES)
+#if defined(SETTABLE_TARGET_TEMPERATURES)
 // Set (non-volatile) 'FROST' protection target in C; no higher than getWARMTargetC() returns, strictly positive, in range [MIN_TARGET_C,MAX_TARGET_C].
 // Can also be used, even when a temperature pot is present, to set a floor setback temperature.
 // Returns false if not set, eg because outside range [MIN_TARGET_C,MAX_TARGET_C], else returns true.
 bool setFROSTTargetC(uint8_t tempC);
 #endif
-#if defined(ENABLE_SETTABLE_TARGET_TEMPERATURES) && !defined(TEMP_POT_AVAILABLE)
+#if defined(SETTABLE_TARGET_TEMPERATURES) && !defined(TEMP_POT_AVAILABLE)
 // Set 'WARM' target in C; no lower than getFROSTTargetC() returns, strictly positive, in range [MIN_TARGET_C,MAX_TARGET_C].
 // Returns false if not set, eg because below FROST setting or outside range [MIN_TARGET_C,MAX_TARGET_C], else returns true.
 bool setWARMTargetC(uint8_t tempC);
@@ -210,7 +210,7 @@ bool setWARMTargetC(uint8_t tempC);
 #define isComfortTemperature(tempC) ((tempC) >= BIASCOM_WARM)
 
 
-#if defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX) || defined(ENABLE_DEFAULT_ALWAYS_RX)
+#if defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX) || defined(ENABLE_DEFAULT_ALWAYS_RX)
 // Get minimum on (and off) time for pointer (minutes); zero if not in hub mode.
 uint8_t getMinBoilerOnMinutes();
 // Set minimum on (and off) time for pointer (minutes); zero to disable hub mode.
@@ -263,7 +263,7 @@ extern SimpleValveSchedule Scheduler;
 
 
 
-#if defined(ENABLE_LOCAL_TRV)
+#if defined(LOCAL_TRV)
 #define ENABLE_MODELLED_RAD_VALVE
 // Internal model of radiator valve position, embodying control logic.
 class ModelledRadValve : public OTRadValve::AbstractRadValve
@@ -446,7 +446,7 @@ class ModelledRadValve : public OTRadValve::AbstractRadValve
 #define ENABLE_NOMINAL_RAD_VALVE
 // Singleton implementation for entire node.
 extern ModelledRadValve NominalRadValve;
-#elif defined(ENABLE_SLAVE_TRV)
+#elif defined(SLAVE_TRV)
 #define ENABLE_NOMINAL_RAD_VALVE
 // Simply alias directly to FHT8V for REV9 slave for example.
 #define NominalRadValve FHT8V

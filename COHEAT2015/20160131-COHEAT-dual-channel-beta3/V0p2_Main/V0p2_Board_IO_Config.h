@@ -115,13 +115,11 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #if (V0p2_REV == 10) || (V0p2_REV == 14)	// FIXME might be better to define pins by peripheral
 #define SOFTSERIAL_RX_PIN 8
 #define SOFTSERIAL_TX_PIN 5
-#define RADIO_POWER_PIN   A2
-#define REGULATOR_POWERUP A3
 #else
 #define BUTTON_MODE_L 5 // ATMega328P-PU PDIP pin 11, PD5, PCINT21, no analogue input.
 #endif
 
-#ifdef ENABLE_LEARN_BUTTON
+#ifdef LEARN_BUTTON_AVAILABLE
 // OPTIONAL UI 'learn' button  (active/pulled low by button, pref using weak internal pull-up), digital in.
 #define BUTTON_LEARN_L 8 // ATMega328P-PU PDIP pin 14, PB0, PCINT0, no analogue input.
 #ifndef ENABLE_VOICE_SENSOR // From REV2 onwards.
@@ -233,10 +231,7 @@ inline void IOSetup()
 #ifdef LED_UI2_L
       case LED_UI2_L: { pinMode(LED_UI2_L, OUTPUT); digitalWrite(LED_UI2_L, HIGH); break; }
 #endif // LED_UI2_L
-#ifdef VOICE_NIRQ
-      // Weak pull-up for external activation by pull-down.
-      case VOICE_NIRQ: { pinMode(VOICE_NIRQ, INPUT); break; }
-#endif
+
 #ifdef PIN_RFM_NIRQ 
       // Set as input to avoid contention current.
       case PIN_RFM_NIRQ: { pinMode(PIN_RFM_NIRQ, INPUT); break; }
@@ -245,6 +240,7 @@ inline void IOSetup()
       // Set as input to avoid contention current or float.
       case PIN_RFM_NIRQ_DUMMY: { pinMode(PIN_RFM_NIRQ_DUMMY, INPUT_PULLUP); break; }
 #endif // PIN_RFM_NIRQ_DUMMY
+
       // Make button pins (and others) inputs with internal weak pull-ups
       // (saving an external resistor in each case if aggressively reducing BOM costs).
 #ifdef BUTTON_MODE_L
@@ -273,6 +269,10 @@ inline void IOSetup()
 #ifdef PIN_OW_DQ_DATA
       // Weak pull-up to avoid leakage current.
       case PIN_OW_DQ_DATA:
+#endif
+#ifdef VOICE_NIRQ 
+      // Weak pull-up for external activation by pull-down.
+      case VOICE_NIRQ:
 #endif
 #ifdef PIN_SERIAL_RX
       // Weak TX and RX pull-up empirically found to produce lowest leakage current

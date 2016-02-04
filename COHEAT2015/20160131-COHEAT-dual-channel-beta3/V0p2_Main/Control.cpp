@@ -104,14 +104,14 @@ uint8_t getFROSTTargetC()
   {
   // Prevent falling to lowest frost temperature if relative humidity is high (eg to avoid mould).
   const uint8_t result = (!hasEcoBias() || (RelHumidity.isAvailable() && RelHumidity.isRHHighWithHyst())) ? BIASCOM_FROST : BIASECO_FROST;
-#if defined(ENABLE_SETTABLE_TARGET_TEMPERATURES)
+#if defined(SETTABLE_TARGET_TEMPERATURES)
   const uint8_t stored = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_FROST_C);
   // If stored value is set and in bounds and higher than computed value then use stored value instead.
   if((stored >= MIN_TARGET_C) && (stored <= MAX_TARGET_C) && (stored > result)) { return(stored); }
 #endif
   return(result);
   }
-#elif defined(ENABLE_SETTABLE_TARGET_TEMPERATURES)
+#elif defined(SETTABLE_TARGET_TEMPERATURES)
 // Note that this value is non-volatile (stored in EEPROM).
 uint8_t getFROSTTargetC()
   {
@@ -193,7 +193,7 @@ uint8_t getWARMTargetC()
   // Return cached result.
   return(resultLast);
   }
-#elif defined(ENABLE_SETTABLE_TARGET_TEMPERATURES)
+#elif defined(SETTABLE_TARGET_TEMPERATURES)
 // Note that this value is non-volatile (stored in EEPROM).
 uint8_t getWARMTargetC()
   {
@@ -218,7 +218,7 @@ uint8_t getWARMTargetC()
 uint8_t getWARMTargetC() { return((uint8_t) (WARM)); } // Fixed value.
 #endif
 
-#if defined(ENABLE_SETTABLE_TARGET_TEMPERATURES)
+#if defined(SETTABLE_TARGET_TEMPERATURES)
 // Set (non-volatile) 'FROST' protection target in C; no higher than getWARMTargetC() returns, strictly positive, in range [MIN_TARGET_C,MAX_TARGET_C].
 // Can also be used, even when a temperature pot is present, to set a floor setback temperature.
 // Returns false if not set, eg because outside range [MIN_TARGET_C,MAX_TARGET_C], else returns true.
@@ -230,7 +230,7 @@ bool setFROSTTargetC(uint8_t tempC)
   return(true); // Assume value correctly written.
   }
 #endif
-#if defined(ENABLE_SETTABLE_TARGET_TEMPERATURES) && !defined(TEMP_POT_AVAILABLE)
+#if defined(SETTABLE_TARGET_TEMPERATURES) && !defined(TEMP_POT_AVAILABLE)
 // Set 'WARM' target in C; no lower than getFROSTTargetC() returns, strictly positive, in range [MIN_TARGET_C,MAX_TARGET_C].
 // Returns false if not set, eg because below FROST setting or outside range [MIN_TARGET_C,MAX_TARGET_C], else returns true.
 bool setWARMTargetC(uint8_t tempC)
@@ -840,11 +840,11 @@ bool pollIO(const bool force)
   return(false);
   }
 
-#ifdef ENABLE_STATS_TX
-#if defined(ENABLE_JSON_OUTPUT)
+#ifdef ALLOW_STATS_TX
+#if defined(ALLOW_JSON_OUTPUT)
 // Managed JSON stats.
 static OTV0P2BASE::SimpleStatsRotation<10> ss1; // Configured for maximum different stats.	// FIXME increased for voice
-#endif // ENABLE_STATS_TX
+#endif // ALLOW_STATS_TX
 // Do bare stats transmission.
 // Output should be filtered for items appropriate
 // to current channel security and sensitivity level.
@@ -875,11 +875,11 @@ void bareStatsTX(const bool allowDoubleTX, const bool doBinary, const bool RFM23
   memset(buf, 0, sizeof(buf));
 #endif // 0
 
-#if defined(ENABLE_JSON_OUTPUT)
+#if defined(ALLOW_JSON_OUTPUT)
   if(doBinary)
-#endif // ENABLE_JSON_OUTPUT
+#endif // ALLOW_JSON_OUTPUT
     {
-#if defined(ENABLE_BINARY_STATS_TX) && defined(ENABLE_FS20_ENCODING_SUPPORT)
+#if defined(ALLOW_BINARY_STATS_TX) && defined(ENABLE_FS20_ENCODING_SUPPORT)
     // Send binary message first (insecure, FS20-piggyback format).
     // Gather core stats.
     OTV0P2BASE::FullStatsMessageCore_t content;
@@ -898,10 +898,10 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 //    recordCoreStats(true, &content);
     outputCoreStats(&Serial, true, &content);
     handleQueuedMessages(&Serial, false, &PrimaryRadio); // Serial must already be running!
-#endif // ENABLE_BINARY_STATS_TX
+#endif // ALLOW_BINARY_STATS_TX
     }
 
-#if defined(ENABLE_JSON_OUTPUT)
+#if defined(ALLOW_JSON_OUTPUT)
   else // Send binary *or* JSON on each attempt so as not to overwhelm the receiver.
     {
     // Send JSON message.
@@ -962,13 +962,13 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 #ifdef ENABLE_VOICE_STATS
     ss1.put(Voice);	// FIXME voice stats
 #endif // ENABLE_VOICE_STATS
-#if defined(ENABLE_LOCAL_TRV) // Deploying as sensor unit, not TRV controller, so show all sensors and no TRV stuff.
+#if defined(LOCAL_TRV) // Deploying as sensor unit, not TRV controller, so show all sensors and no TRV stuff.
     ss1.put(NominalRadValve);
     ss1.put(NominalRadValve.tagTTC(), NominalRadValve.getTargetTempC());
 #if !defined(ENABLE_TRIMMED_BANDWIDTH)
     ss1.put(NominalRadValve.tagCMPC(), NominalRadValve.getCumulativeMovementPC()); // EXPERIMENTAL
 #endif // !defined(ENABLE_TRIMMED_BANDWIDTH)
-#endif // defined(ENABLE_LOCAL_TRV)
+#endif // defined(LOCAL_TRV)
 
     // If not doing a doubleTX then consider sometimes suppressing the change-flag clearing for this send
     // to reduce the chance of important changes being missed by the receiver.
@@ -1029,12 +1029,12 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
     // Send it!
     RFM22RawStatsTXFFTerminated(buf, allowDoubleTX, RFM23BFramed);
     }
-#endif // defined(ENABLE_JSON_OUTPUT)
+#endif // defined(ALLOW_JSON_OUTPUT)
 
 //DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats TX");
   if(neededWaking) { OTV0P2BASE::flushSerialProductive(); OTV0P2BASE::powerDownSerial(); }
   }
-#endif // defined(ENABLE_STATS_TX)
+#endif // defined(ALLOW_STATS_TX)
 
 
 
@@ -1067,8 +1067,8 @@ static void wireComponentsTogether()
   TempPot.setWFBCallbacks(setWarmModeDebounced, setBakeModeDebounced);
 #endif // TEMP_POT_AVAILABLE
 #if V0p2_REV == 14
-  pinMode(REGULATOR_POWERUP, OUTPUT);
-  fastDigitalWrite(REGULATOR_POWERUP, HIGH);
+  pinMode(A3, OUTPUT);
+  fastDigitalWrite(A3, HIGH);
 #endif
   // TODO
   }
@@ -1211,7 +1211,7 @@ void setupOpenTRV()
   // Initialise sensors with stats info where needed.
   updateSensorsFromStats();
 
-#ifdef ENABLE_STATS_TX
+#ifdef ALLOW_STATS_TX
   // Do early 'wake-up' stats transmission if possible
   // when everything else is set up and ready and allowed (TODO-636)
   // including all set-up and inter-wiring of sensors/actuators.
@@ -1241,7 +1241,7 @@ void setupOpenTRV()
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("setup stats sent");
 #endif
 
-//#if defined(ENABLE_LOCAL_TRV) && defined(DIRECT_MOTOR_DRIVE_V1)
+//#if defined(LOCAL_TRV) && defined(DIRECT_MOTOR_DRIVE_V1)
 //  // Signal some sort of life on waking up...
 //  ValveDirect.wiggle();
 //#endif
@@ -1606,7 +1606,7 @@ void loopOpenTRV()
 //       (!minute0From4ForSensors) &&
 //       (boilerCountdownTicks <= (RX_REDUCE_MIN_M*(60 / OTV0P2BASE::MAIN_TICK_S)))) // Listen eagerly for fresh calls for heat for last few minutes before turning boiler off.
 //      {
-//#if defined(RX_REDUCE_MAX_M) && defined(ENABLE_LOCAL_TRV)
+//#if defined(RX_REDUCE_MAX_M) && defined(LOCAL_TRV)
 //      // Skip the minute before the 'quiet' minute also in very quiet mode to improve local temp measurement.
 //      // (Should still catch at least one TX per 4 minutes at worst.)
 //      needsToEavesdrop =
@@ -1908,7 +1908,7 @@ void loopOpenTRV()
     // Force read of supply/battery voltage; measure and recompute status (etc) less often when already thought to be low, eg when conserving.
     case 4: { if(runAll) { Supply_cV.read(); } break; }
 
-#ifdef ENABLE_STATS_TX
+#ifdef ALLOW_STATS_TX
     // Periodic transmission of stats if NOT driving a local valve (else stats can be piggybacked onto that).
     // Randomised somewhat between slots and also within the slot to help avoid collisions.
     static uint8_t txTick;
@@ -1938,7 +1938,7 @@ void loopOpenTRV()
         // if this is controlling a local FHT8V on which the binary stats can be piggybacked.
         // Ie, if doesn't have a local TRV then it must send binary some of the time.
         // Any recently-changed stats value is a hint that a strong transmission might be a good idea.
-#if defined(ENABLE_BINARY_STATS_TX) && defined(ENABLE_FS20_ENCODING_SUPPORT)
+#if defined(ALLOW_BINARY_STATS_TX) && defined(ENABLE_FS20_ENCODING_SUPPORT)
         const bool doBinary = !localFHT8VTRVEnabled() && OTV0P2BASE::randRNG8NextBoolean();
 #else
         const bool doBinary = false;
@@ -2036,7 +2036,7 @@ void loopOpenTRV()
       NominalRadValve.read();
 #endif
 
-#if defined(ENABLE_FHT8VSIMPLE) && defined(ENABLE_LOCAL_TRV) // Only regen when needed.
+#if defined(ENABLE_FHT8VSIMPLE) && defined(LOCAL_TRV) // Only regen when needed.
       // If there was a change in target valve position,
       // or periodically in the minute after all sensors should have been read,
       // precompute some or all of any outgoing frame/stats/etc ready for the next transmission.
@@ -2051,7 +2051,7 @@ void loopOpenTRV()
       // (Does not arrive with the normal FHT8V timing of 2-minute gaps so boiler may turn off out of sync.)
       if(FHT8V.isControlledValveReallyOpen()) { remoteCallForHeatRX(FHT8VGetHC(), FHT8V.get()); }
 #endif // defined(ENABLE_BOILER_HUB)
-#elif defined(ENABLE_NOMINAL_RAD_VALVE) && defined(ENABLE_LOCAL_TRV) // Other local valve types, simulate a remote call for heat with a fake ID.
+#elif defined(ENABLE_NOMINAL_RAD_VALVE) && defined(LOCAL_TRV) // Other local valve types, simulate a remote call for heat with a fake ID.
 #if defined(ENABLE_BOILER_HUB)
       // Feed in the local valve position when calling for heat just as if over the air.
       if(NominalRadValve.isControlledValveReallyOpen()) { remoteCallForHeatRX(~0, NominalRadValve.get()); }
@@ -2131,7 +2131,7 @@ void loopOpenTRV()
 #endif
 
 
-#if defined(HAS_DORM1_VALVE_DRIVE) && defined(ENABLE_LOCAL_TRV)
+#if defined(HAS_DORM1_VALVE_DRIVE) && defined(LOCAL_TRV)
   // Handle local direct-drive valve, eg DORM1.
 #ifdef ENABLE_NOMINAL_RAD_VALVE
   // Get current modelled valve position into abstract driver.
@@ -2168,7 +2168,7 @@ void loopOpenTRV()
   // then poll/prompt the user for input
   // using a timeout which should safely avoid overrun, ie missing the next basic tick,
   // and which should also allow some energy-saving sleep.
-#if 1 && defined(ENABLE_CLI)
+#if 1 && defined(SUPPORT_CLI)
   const bool humanCLIUse = isCLIActive(); // Keeping CLI active for human interaction rather than for automated interaction.
   if(showStatus || humanCLIUse)
     {

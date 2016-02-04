@@ -85,20 +85,20 @@ OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, -1> RFM23B;
 #endif
 #endif // ENABLE_RADIO_RFM23B
 #ifdef ENABLE_RADIO_SIM900
-OTSIM900Link::OTSIM900Link SIM900(REGULATOR_POWERUP, RADIO_POWER_PIN, SOFTSERIAL_RX_PIN, SOFTSERIAL_TX_PIN);
+OTSIM900Link::OTSIM900Link SIM900(A3, A2, SOFTSERIAL_RX_PIN, SOFTSERIAL_TX_PIN);
 #endif
 #ifdef ENABLE_RADIO_RN2483
-OTRN2483Link::OTRN2483Link RN2483( RADIO_POWER_PIN, SOFTSERIAL_RX_PIN, SOFTSERIAL_TX_PIN);
+OTRN2483Link::OTRN2483Link RN2483( A2, SOFTSERIAL_RX_PIN, SOFTSERIAL_TX_PIN);
 #endif // ENABLE_RADIO_RN2483
 
 // Assigns radio to PrimaryRadio alias
-#if defined(ENABLE_RADIO_PRIMARY_RFM23B)
+#if defined(RADIO_PRIMARY_RFM23B)
 OTRadioLink::OTRadioLink &PrimaryRadio = RFM23B;
 #elif defined(RADIO_PRIMARY_SIM900)
 OTRadioLink::OTRadioLink &PrimaryRadio = SIM900;
 #else
 OTRadioLink::OTRadioLink &PrimaryRadio = NullRadio;
-#endif // ENABLE_RADIO_PRIMARY_RFM23B
+#endif // RADIO_PRIMARY_RFM23B
 
 // Assign radio to SecondaryRadio alias.
 #ifdef ENABLE_RADIO_SECONDARY_MODULE
@@ -172,7 +172,7 @@ OTRadioLink::printRXMsg(p, txbuf, bodylen);
 #endif
 
 
-#if defined(LISTEN_FOR_FTp2_FS20_native) // defined(ENABLE_RADIO_RX) && (defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)) && defined(ENABLE_FS20_NATIVE_AND_BINARY_STATS_RX) // Listen for calls for heat from remote valves...
+#if defined(LISTEN_FOR_FTp2_FS20_native) // defined(ENABLE_RADIO_RX) && (defined(ENABLE_BOILER_HUB) || defined(ALLOW_STATS_RX)) && defined(ENABLE_FS20_NATIVE_AND_BINARY_STATS_RX) // Listen for calls for heat from remote valves...
 static void decodeAndHandleFTp2_FS20_native(Print *p, const bool secure, const uint8_t * const msg, const uint8_t msglen)
 {
 #if 0 && defined(DEBUG)
@@ -207,7 +207,7 @@ static void decodeAndHandleFTp2_FS20_native(Print *p, const bool secure, const u
 #if 0 && defined(DEBUG)
 p->print("FS20 msg HC "); p->print(command.hc1); p->print(' '); p->println(command.hc2);
 #endif
-#if defined(ENABLE_STATS_RX) // Only look for the trailer if supported.
+#if defined(ALLOW_STATS_RX) // Only look for the trailer if supported.
     // If whole FHT8V frame was OK then check if there is a valid stats trailer.
 
     // Check for 'core' stats trailer.
@@ -435,7 +435,7 @@ OTRadioLink::printRXMsg(p, txbuf, bodylen);
       }
 #endif
 
-#if defined(ENABLE_STATS_RX) && defined(ENABLE_FS20_ENCODING_SUPPORT) && defined(ENABLE_FS20_NATIVE_AND_BINARY_STATS_RX)
+#if defined(ALLOW_STATS_RX) && defined(ENABLE_FS20_ENCODING_SUPPORT) && defined(ENABLE_FS20_NATIVE_AND_BINARY_STATS_RX)
     // Stand-alone stats message.
     case OTRadioLink::FTp2_FullStatsIDL: case OTRadioLink::FTp2_FullStatsIDH:
       {
@@ -465,7 +465,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats IDx");
       }
 #endif
 
-#if defined(LISTEN_FOR_FTp2_FS20_native) // defined(ENABLE_STATS_RX) && defined(ENABLE_FS20_NATIVE_AND_BINARY_STATS_RX) && defined(ENABLE_FS20_ENCODING_SUPPORT) // Listen for calls for heat from remote valves...
+#if defined(LISTEN_FOR_FTp2_FS20_native) // defined(ALLOW_STATS_RX) && defined(ENABLE_FS20_NATIVE_AND_BINARY_STATS_RX) && defined(ENABLE_FS20_ENCODING_SUPPORT) // Listen for calls for heat from remote valves...
     case OTRadioLink::FTp2_FS20_native:
       {
       decodeAndHandleFTp2_FS20_native(p, secure, msg, msglen);
@@ -473,7 +473,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats IDx");
       }
 #endif
 
-#if defined(ENABLE_STATS_RX) && defined(ENABLE_FS20_ENCODING_SUPPORT)
+#if defined(ALLOW_STATS_RX) && defined(ENABLE_FS20_ENCODING_SUPPORT)
     case OTRadioLink::FTp2_JSONRaw:
       {
       if(-1 != OTV0P2BASE::checkJSONMsgRXCRC(msg, msglen))
