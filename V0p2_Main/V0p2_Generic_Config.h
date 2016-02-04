@@ -91,7 +91,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // PRE-DEFINED CONFIG_... BUNDLE IMPLEMENTATION/EXPANSION
 // These features can be turned off if not required in particular implementations.
 
-// Defaults for V0.2; should be undefined if not required.
+// Defaults for V0.2; should be '#undef'ined if not required.
 //
 // Use sleep wakeup (2Hz by default) from external 32768Hz xtal and timer 2.
 #define ENABLE_WAKEUP_32768HZ_XTAL
@@ -106,6 +106,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #undef ENABLE_TRIMMED_MEMORY
 // IF DEFINED: try to trim bandwidth as may be especially expensive/scarce.
 #undef ENABLE_TRIMMED_BANDWIDTH
+// IF DEFINED: minimise boot effort and energy eg for intermittently-powered energy-harvesting applications.
+#undef ENABLE_MIN_ENERGY_BOOT
 // IF DEFINED: basic FROST/WARM temperatures are settable.
 #define ENABLE_SETTABLE_TARGET_TEMPERATURES
 // IF DEFINED: support one on and one off time per day (possibly in conjunction with 'learn' button).
@@ -116,23 +118,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #undef ENABLE_SLAVE_TRV
 // IF DEFINED: this unit *can* act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
 #define ENABLE_BOILER_HUB
-// IF DEFINED: allow RX of stats frames.
-#define ENABLE_STATS_RX
-// IF DEFINED: allow TX of stats frames.
-#define ENABLE_STATS_TX
-// IF DEFINED: always allow some kind of stats TX, whatever the privacy settings.
-// HAS HUGE PRIVACY IMPLICATIONS: DO NOT ENABLE UNNECESSARILY!
-#undef ENABLE_ALWAYS_TX_ALL_STATS
-// IF DEFINED: allow minimal binary format in addition to more generic one: ~400 bytes code cost.
-#undef ENABLE_MINIMAL_STATS_TXRX
 // IF DEFINED: allow JSON stats frames alongside binary ones.
 #define ENABLE_JSON_OUTPUT
-// IF DEFINED: allow binary stats to be TXed.
-#define ENABLE_BINARY_STATS_TX
-// IF DEFINED: allow radio listen/RX.
-#define ENABLE_RADIO_RX
-// IF DEFINED: (default) forced always-on radio listen/RX, eg not requiring setup to explicitly enable.
-#undef ENABLE_DEFAULT_ALWAYS_RX
 // IF DEFINED: use active-low LEARN button(s).  Needs ENABLE_SINGLETON_SCHEDULE.
 #define ENABLE_LEARN_BUTTON // OPTIONAL ON V0.09 PCB1
 // IF DEFINED: allow periodic machine- and human- readable status report to serial, starting with "="/
@@ -147,12 +134,35 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define ENABLE_FULL_OT_UI
 // IF DEFINED: enable and extended CLI with a longer input buffer for example.
 #undef ENABLE_EXTENDED_CLI
-// IF DEFINED: minimise boot effort and energy eg for intermittently-powered energy-harvesting applications.
-#undef ENABLE_MIN_ENERGY_BOOT
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
 #undef ENABLE_PRIMARY_TEMP_SENSOR_SHT21
 // IF DEFINED: enable use of second UI LED if available.
 #define ENABLE_UI_LED_2_IF_AVAILABLE
+//// SENSOR OPTIONS (and support for them)
+// IF DEFINED: allow use of ambient light sensor.
+#define ENABLE_AMBLIGHT_SENSOR
+// IF DEFINED: allow for less light on sideways-pointing ambient light sensor, eg on cut4 2014/03/17 REV2 boards (TODO-209).
+#undef ENABLE_AMBLIGHT_EXTRA_SENSITIVE
+// IF DEFINED: use the temperature-setting potentiometer/dial if present.
+#define ENABLE_TEMP_POT_IF_PRESENT
+// Enable use of OneWire devices.
+#undef ENABLE_MINIMAL_ONEWIRE_SUPPORT
+// IF DEFINED: enable use of on-board SHT21 primary temperature and RH% sensor (in lieu of default TMP112).
+#undef ENABLE_PRIMARY_TEMP_SENSOR_SHT21
+// Enable use of DS18B20 as primary temp sensor.
+#undef ENABLE_PRIMARY_TEMP_SENSOR_DS18B20
+// IF DEFINED: enable use of additional (ie external) DS18B20 temp sensor(s).
+#undef ENABLE_EXTERNAL_TEMP_SENSOR_DS18B20
+//// OCCUPANCY OPTIONS
+// IF DEFINED: support for general timed and multi-input occupancy detection / use.
+#define ENABLE_OCCUPANCY_SUPPORT
+// IF DEFINED: detect occupancy based on ambient light, if available.
+#define ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
+// IF DEFINED: detect occupancy based on relative humidity, if available.
+#define ENABLE_OCCUPANCY_DETECTION_FROM_RH
+// IF DEFINED: detect occupancy based on voice detection, if available. This undefines learn button 2 to use GPIO as input.
+#undef ENABLE_OCCUPANCY_DETECTION_FROM_VOICE
+//// RADIO OPTIONS
 // IF DEFINED: enable a primary radio module; without this unit is stand-alone.
 #define ENABLE_RADIO_PRIMARY_MODULE // TODO currently does nothing
 // IF DEFINED: enable a 'null' radio module; without this unit is stand-alone.
@@ -179,30 +189,21 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
 // IF DEFINED: allow non-secure OpenTRV secure frame RX (as of 2015/12): DISABLED BY DEFAULT.
 #undef ENABLE_OTSECUREFRAME_INSECURE_RX_PERMITTED
-//// SENSOR OPTIONS (and support for them)
-// IF DEFINED: allow use of ambient light sensor.
-#define ENABLE_AMBLIGHT_SENSOR
-// IF DEFINED: allow for less light on sideways-pointing ambient light sensor, eg on cut4 2014/03/17 REV2 boards (TODO-209).
-#undef ENABLE_AMBLIGHT_EXTRA_SENSITIVE
-// IF DEFINED: use the temperature-setting potentiometer/dial if present.
-#define ENABLE_TEMP_POT_IF_PRESENT
-// Enable use of OneWire devices.
-#undef ENABLE_MINIMAL_ONEWIRE_SUPPORT
-// IF DEFINED: enable use of on-board SHT21 primary temperature and RH% sensor (in lieu of default TMP112).
-#undef ENABLE_PRIMARY_TEMP_SENSOR_SHT21
-// Enable use of DS18B20 as primary temp sensor.
-#undef ENABLE_PRIMARY_TEMP_SENSOR_DS18B20
-// IF DEFINED: enable use of additional (ie external) DS18B20 temp sensor(s).
-#undef ENABLE_EXTERNAL_TEMP_SENSOR_DS18B20
-//// OCCUPANCY OPTIONS
-// IF DEFINED: support for general timed and multi-input occupancy detection / use.
-#define ENABLE_OCCUPANCY_SUPPORT
-// IF DEFINED: detect occupancy based on ambient light, if available.
-#define ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
-// IF DEFINED: detect occupancy based on relative humidity, if available.
-#define ENABLE_OCCUPANCY_DETECTION_FROM_RH
-// IF DEFINED: detect occupancy based on voice detection, if available. This undefines learn button 2 to use GPIO as input.
-#undef ENABLE_OCCUPANCY_DETECTION_FROM_VOICE
+// IF DEFINED: allow RX of stats frames.
+#define ENABLE_STATS_RX
+// IF DEFINED: allow TX of stats frames.
+#define ENABLE_STATS_TX
+// IF DEFINED: always allow some kind of stats TX, whatever the privacy settings.
+// HAS HUGE PRIVACY IMPLICATIONS: DO NOT ENABLE UNNECESSARILY!
+#undef ENABLE_ALWAYS_TX_ALL_STATS
+// IF DEFINED: allow minimal binary format in addition to more generic one: ~400 bytes code cost.
+#undef ENABLE_MINIMAL_STATS_TXRX
+// IF DEFINED: allow binary stats to be TXed.
+#define ENABLE_BINARY_STATS_TX
+// IF DEFINED: allow radio listen/RX.
+#define ENABLE_RADIO_RX
+// IF DEFINED: (default) forced always-on radio listen/RX, eg not requiring setup to explicitly enable.
+#undef ENABLE_DEFAULT_ALWAYS_RX
 
 
 
