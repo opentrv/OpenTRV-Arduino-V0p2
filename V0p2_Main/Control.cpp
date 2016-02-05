@@ -1059,7 +1059,7 @@ static void wireComponentsTogether()
 #endif // ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
 
 #if defined(ENABLE_OCCUPANCY_SUPPORT) && defined(ENABLE_OCCUPANCY_DETECTION_FROM_VOICE)
-  Voice.setPossOccCallback(genericMarkAsPossiblyOccupied); // TODO make sure this is the correct way
+  Voice.setPossOccCallback(genericMarkAsPossiblyOccupied);
 #endif // ENABLE_OCCUPANCY_DETECTION_FROM_VOICE
 
 #if defined(TEMP_POT_AVAILABLE)
