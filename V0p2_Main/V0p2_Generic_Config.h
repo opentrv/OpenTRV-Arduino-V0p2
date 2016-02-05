@@ -18,8 +18,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 */
 
 /*
- TRV (and boiler-node) global configuration parameters for V0.2 PCB hardware.
- The top part should contain one #define CONFIG_... and nothing else (uncommented).
+ Global configuration parameters for V0.2 PCB hardware.
+ The top part should contain one #define CONFIG_XXX and nothing else (uncommented).
+ Below a set of ENABLE_XXX flags should be defined or undefined as a result.
  */
 
 #ifndef V0P2_GENERIC_CONFIG_H
@@ -40,7 +41,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_Trial2013Winter_Round1 // REV1 default config.
 //#define CONFIG_Trial2013Winter_Round1_LVBHSH // REV1: local valve control, boiler hub, stats hub & TX.
 //#define CONFIG_Trial2013Winter_Round1_BOILERHUB // REV1 as plain boiler node.
-//#define CONFIG_Trial2013Winter_Round1_NOHUB // REV1 as TX-only leaf node.
+#define CONFIG_Trial2013Winter_Round1_NOHUB // REV1 as TX-only leaf node.
 //#define CONFIG_Trial2013Winter_Round2 // REV2 cut4 default config.
 //#define CONFIG_Trial2013Winter_Round2_LVBHSH // REV2 cut4: local valve control, boiler hub, stats hub & TX.
 //#define CONFIG_Trial2013Winter_Round2_LVBH // REV2 cut4 local valve control and boiler hub.
@@ -91,8 +92,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // ------------------------------------------------------
 // PRE-DEFINED CONFIG_... BUNDLE IMPLEMENTATION/EXPANSION
 // These features can be turned off if not required in particular implementations.
+// These flag names are all of the form ENABLE_XXX.
 
-// Defaults for V0.2; should be undefined if not required.
+// Defaults for V0.2; should be '#undef'ined if not required.
 //
 // Use sleep wakeup (2Hz by default) from external 32768Hz xtal and timer 2.
 #define ENABLE_WAKEUP_32768HZ_XTAL
@@ -107,6 +109,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #undef ENABLE_TRIMMED_MEMORY
 // IF DEFINED: try to trim bandwidth as may be especially expensive/scarce.
 #undef ENABLE_TRIMMED_BANDWIDTH
+// IF DEFINED: minimise boot effort and energy eg for intermittently-powered energy-harvesting applications.
+#undef ENABLE_MIN_ENERGY_BOOT
 // IF DEFINED: basic FROST/WARM temperatures are settable.
 #define ENABLE_SETTABLE_TARGET_TEMPERATURES
 // IF DEFINED: support one on and one off time per day (possibly in conjunction with 'learn' button).
@@ -117,23 +121,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #undef ENABLE_SLAVE_TRV
 // IF DEFINED: this unit *can* act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
 #define ENABLE_BOILER_HUB
-// IF DEFINED: allow RX of stats frames.
-#define ENABLE_STATS_RX
-// IF DEFINED: allow TX of stats frames.
-#define ENABLE_STATS_TX
-// IF DEFINED: always allow some kind of stats TX, whatever the privacy settings.
-// HAS HUGE PRIVACY IMPLICATIONS: DO NOT ENABLE UNNECESSARILY!
-#undef ENABLE_ALWAYS_TX_ALL_STATS
-// IF DEFINED: allow minimal binary format in addition to more generic one: ~400 bytes code cost.
-#undef ENABLE_MINIMAL_STATS_TXRX
 // IF DEFINED: allow JSON stats frames alongside binary ones.
 #define ENABLE_JSON_OUTPUT
-// IF DEFINED: allow binary stats to be TXed.
-#define ENABLE_BINARY_STATS_TX
-// IF DEFINED: allow radio listen/RX.
-#define ENABLE_RADIO_RX
-// IF DEFINED: (default) forced always-on radio listen/RX, eg not requiring setup to explicitly enable.
-#undef ENABLE_DEFAULT_ALWAYS_RX
 // IF DEFINED: use active-low LEARN button(s).  Needs ENABLE_SINGLETON_SCHEDULE.
 #define ENABLE_LEARN_BUTTON // OPTIONAL ON V0.09 PCB1
 // IF DEFINED: allow periodic machine- and human- readable status report to serial, starting with "="/
@@ -148,38 +137,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define ENABLE_FULL_OT_UI
 // IF DEFINED: enable and extended CLI with a longer input buffer for example.
 #undef ENABLE_EXTENDED_CLI
-// IF DEFINED: minimise boot effort and energy eg for intermittently-powered energy-harvesting applications.
-#undef ENABLE_MIN_ENERGY_BOOT
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
 #undef ENABLE_PRIMARY_TEMP_SENSOR_SHT21
 // IF DEFINED: enable use of second UI LED if available.
 #define ENABLE_UI_LED_2_IF_AVAILABLE
-// IF DEFINED: enable a primary radio module; without this unit is stand-alone.
-#define ENABLE_RADIO_PRIMARY_MODULE // TODO currently does nothing
-// IF DEFINED: enable a 'null' radio module; without this unit is stand-alone.
-#undef ENABLE_RADIO_NULL
-// Default primary radio module; RFM23B from REV1 to REV11.
-#define ENABLE_RADIO_RFM23B   // Enable RFM23B by default
-// IF DEFINED: make RFM23B the primary radio.
-#define ENABLE_RADIO_PRIMARY_RFM23B
-// IF DEFINED: enable a secondary (typically WAN-relay) radio module.
-#undef ENABLE_RADIO_SECONDARY_MODULE
-// IF DEFINED: enable a WAN-relay radio module, primarily to relay stats outbound.
-#undef ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY
-// IF DEFINED: enable periodic secure beacon broadcast.
-#define ENABLE_SECURE_RADIO_BEACON
-// IF DEFINED: enable support for FS20 carrier for RX or TX.
-#define ENABLE_FS20_CARRIER_SUPPORT
-// IF DEFINED: use FHT8V wireless radio module/valve, eg to control FHT8V local valve.
-#define ENABLE_FHT8VSIMPLE
-// IF DEFINED: enable support for FS20 carrier for RX of raw FS20 and piggybacked binary (non-JSON) stats.
-#define ENABLE_FS20_NATIVE_AND_BINARY_STATS_RX
-// IF DEFINED: enable support for FS20 encoding/decoding, eg to send to FHT8V.
-#define ENABLE_FS20_ENCODING_SUPPORT
-// IF DEFINED: enable OpenTRV secure frame encoding/decoding (as of 2015/12).
-#define ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
-// IF DEFINED: allow non-secure OpenTRV secure frame RX (as of 2015/12): DISABLED BY DEFAULT.
-#undef ENABLE_OTSECUREFRAME_INSECURE_RX_PERMITTED
 //// SENSOR OPTIONS (and support for them)
 // IF DEFINED: allow use of ambient light sensor.
 #define ENABLE_AMBLIGHT_SENSOR
@@ -204,6 +165,48 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define ENABLE_OCCUPANCY_DETECTION_FROM_RH
 // IF DEFINED: detect occupancy based on voice detection, if available. This undefines learn button 2 to use GPIO as input.
 #undef ENABLE_OCCUPANCY_DETECTION_FROM_VOICE
+//// RADIO OPTIONS
+// IF DEFINED: enable a primary radio module; without this unit is stand-alone.
+#define ENABLE_RADIO_PRIMARY_MODULE // TODO currently does nothing
+// IF DEFINED: enable a 'null' radio module; without this unit is stand-alone.
+#undef ENABLE_RADIO_NULL
+// Default primary radio module; RFM23B from REV1 to REV11.
+#define ENABLE_RADIO_RFM23B   // Enable RFM23B by default
+// IF DEFINED: make RFM23B the primary radio.
+#define ENABLE_RADIO_PRIMARY_RFM23B
+// IF DEFINED: enable a secondary (typically WAN-relay) radio module.
+#undef ENABLE_RADIO_SECONDARY_MODULE
+// IF DEFINED: enable a WAN-relay radio module, primarily to relay stats outbound.
+#undef ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY
+// IF DEFINED: enable periodic secure beacon broadcast.
+#undef ENABLE_SECURE_RADIO_BEACON
+// IF DEFINED: enable support for FS20 carrier for RX or TX.
+#define ENABLE_FS20_CARRIER_SUPPORT
+// IF DEFINED: use FHT8V wireless radio module/valve, eg to control FHT8V local valve.
+#define ENABLE_FHT8VSIMPLE
+// IF DEFINED: enable support for FS20 carrier for RX of raw FS20 and piggybacked binary (non-JSON) stats.
+#define ENABLE_FS20_NATIVE_AND_BINARY_STATS_RX
+// IF DEFINED: enable support for FS20 encoding/decoding, eg to send to FHT8V.
+#define ENABLE_FS20_ENCODING_SUPPORT
+// IF DEFINED: enable OpenTRV secure frame encoding/decoding (as of 2015/12).
+#define ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
+// IF DEFINED: allow non-secure OpenTRV secure frame RX (as of 2015/12): DISABLED BY DEFAULT.
+#undef ENABLE_OTSECUREFRAME_INSECURE_RX_PERMITTED
+// IF DEFINED: allow RX of stats frames.
+#define ENABLE_STATS_RX
+// IF DEFINED: allow TX of stats frames.
+#define ENABLE_STATS_TX
+// IF DEFINED: always allow some kind of stats TX, whatever the privacy settings.
+// HAS HUGE PRIVACY IMPLICATIONS: DO NOT ENABLE UNNECESSARILY!
+#undef ENABLE_ALWAYS_TX_ALL_STATS
+// IF DEFINED: allow minimal binary format in addition to more generic one: ~400 bytes code cost.
+#undef ENABLE_MINIMAL_STATS_TXRX
+// IF DEFINED: allow binary stats to be TXed.
+#define ENABLE_BINARY_STATS_TX
+// IF DEFINED: allow radio listen/RX.
+#define ENABLE_RADIO_RX
+// IF DEFINED: (default) forced always-on radio listen/RX, eg not requiring setup to explicitly enable.
+#undef ENABLE_DEFAULT_ALWAYS_RX
 
 
 

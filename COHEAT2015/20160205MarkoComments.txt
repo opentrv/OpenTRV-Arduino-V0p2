@@ -1,0 +1,164 @@
+Date: Fri, 5 Feb 2016 12:34:26 +0000
+Subject: Re: COH-76 REV9 not timing out when comms from REV2 fails.
+From: Marko Cosic
+To: Damon Hart-Davis
+
+
+FTDI tip: 
+
+The f*ckup isn't an El Capitan thing: it affects ALL versions of OS X if you're unlucky enough that your machine dials into the internet and pulls the latest driver when you first plug in an FTDI device, as experienced when I tried a virgin Yosemitie machine to do these REV9s and REV2s.
+
+
+A solution that worked for me is to disable Apple drivers and revert to FTDI drivers:
+
+https://forum.arduino.cc/index.php?topic=198539.0
+
+"Type the following commands into the terminal:
+    cd /System/Library/Extensions/IOUSBFamily.kext/Contents/PlugIns 
+    sudo mv AppleUSBFTDI.kext AppleUSBFTDI.disabled 
+    sudo touch /System/Library/Extensions
+
+Restart your computer
+
+Install the original FTDI Virtual Com Port drivers found here: http://www.ftdichip.com/Drivers/VCP.htm
+
+Start Arduino and program as you always have."
+
+
+
+Else, some of the setup notes could do with being cleaned up. 
+
+This is for Arduino IDE 1.0.5 but is the first thing that shows up in Google:
+
+http://sourceforge.net/p/opentrv/wiki/Arduino/
+
+When adding the board to Arduino IDE 1.6.5 the Github setup notes:
+
+https://github.com/DamonHD/OpenTRV/tree/master/Arduino/setup/ATMEGA368P8MHzBreadboard1V8BODSketch
+
+Say the following, which also only works for Arduino IDE 1.0.x because it doesn't say to use avrdude
+
+**********
+
+# C/o tim7: http://arduino.cc/forum/index.php/topic,160647.msg1204176.html#
+
+atmega328_1mhz_4800baud.name=Optiboot 5 for bare 328P, 1MHz internal clock, fast start, 1.8V BOD, 4800baud upload, c/o tim7 20130416
+atmega328_1mhz_4800baud.upload.protocol=arduino
+atmega328_1mhz_4800baud.upload.maximum_size=32256
+atmega328_1mhz_4800baud.upload.speed=4800
+#atmega328_1mhz_4800baud.bootloader.low_fuses=0xff
+atmega328_1mhz_4800baud.bootloader.low_fuses=0x42
+atmega328_1mhz_4800baud.bootloader.high_fuses=0xde
+#atmega328_1mhz_4800baud.bootloader.extended_fuses=0x05
+atmega328_1mhz_4800baud.bootloader.extended_fuses=0x06
+#atmega328_1mhz_4800baud.bootloader.path=optiboot_v50
+atmega328_1mhz_4800baud.bootloader.path=atmega
+atmega328_1mhz_4800baud.bootloader.file=atmega328_1b.hex
+atmega328_1mhz_4800baud.bootloader.unlock_bits=0x3F
+atmega328_1mhz_4800baud.bootloader.lock_bits=0x2F
+atmega328_1mhz_4800baud.build.mcu=atmega328p
+atmega328_1mhz_4800baud.build.f_cpu=1000000L
+atmega328_1mhz_4800baud.build.core=arduino
+atmega328_1mhz_4800baud.build.variant=standard
+
+**********
+
+My old machine was set thus:
+
+**********
+
+# To add to 1.6.x Arduino IDE boards.txt c/o Deniz Erbilgin 20150826.
+
+atmega328_1mhz_4800baud.upload.tool=avrdude
+atmega328_1mhz_4800baud.upload.protocol=arduino
+atmega328_1mhz_4800baud.upload.maximum_size=32256
+atmega328_1mhz_4800baud.upload.maximum_data_size=2048
+atmega328_1mhz_4800baud.upload.speed=4800
+
+atmega328_1mhz_4800baud.name=Optiboot 5 for bare 328P, 1MHz internal clock,
+fast start, 1.8V BOD, 4800baud upload, c/o tim7 20130416
+
+atmega328_1mhz_4800baud.bootloader.tool=avrdude
+atmega328_1mhz_4800baud.bootloader.low_fuses=0x42
+atmega328_1mhz_4800baud.bootloader.high_fuses=0xde
+atmega328_1mhz_4800baud.bootloader.extended_fuses=0x06
+atmega328_1mhz_4800baud.bootloader.unlock_bits=0x3F
+atmega328_1mhz_4800baud.bootloader.lock_bits=0x2F
+atmega328_1mhz_4800baud.bootloader.file=opentrv/atmega328_1b.hex
+
+atmega328_1mhz_4800baud.build.mcu=atmega328p
+atmega328_1mhz_4800baud.build.f_cpu=1000000L
+atmega328_1mhz_4800baud.build.board=OPENTRV_V0P2 
+atmega328_1mhz_4800baud.build.core=arduino
+atmega328_1mhz_4800baud.build.variant=standard
+
+**********
+
+You dated this August 26th, uploaded it to the address below, and emailed it to James on September 16th. It probably wants to be in the OpenTRV github setup guide in a more obvious location. :-)
+
+http://www.earth.org.uk/OpenTRV/Arduino/misc/20150826-IDE-1.6.x-add-to-boards.txt
+
+
+
+Marko's OpenTRV setup notes for a new machine:
+
+
+Unbreak the Apple FTDI drivers
+
+Type the following commands into the terminal:
+    cd /System/Library/Extensions/IOUSBFamily.kext/Contents/PlugIns 
+    sudo mv AppleUSBFTDI.kext AppleUSBFTDI.disabled 
+    sudo touch /System/Library/Extensions
+
+Restart your computer
+
+Install the original v2.3 FTDI Virtual Com Port drivers found here: http://www.ftdichip.com/Drivers/VCP.htm 
+
+
+Install and configure Arduino IDE 1.6.5
+
+Open preferences, turn on verbose compiler and upload outputs, and turn off all automatic updates. If Arduino IDE updates itself it will break. If it updates the boards using boards manager it will break too. (v1.6.9 on Arduino 1.6.5 DEFINITELY fails spectacularly) Tell it to leave everything alone.
+
+Now right click on the app package in finder, hit "show package contents" and navigate to /Contents/Java/hardware/arduino/avr/
+
+
+Configure the Optiboot5 board by appending the following text to the boards.txt file:
+
+##############################################################
+
+# To add to 1.6.x Arduino IDE boards.txt c/o Deniz Erbilgin 20150826.
+
+atmega328_1mhz_4800baud.upload.tool=avrdude
+atmega328_1mhz_4800baud.upload.protocol=arduino
+atmega328_1mhz_4800baud.upload.maximum_size=32256
+atmega328_1mhz_4800baud.upload.maximum_data_size=2048
+atmega328_1mhz_4800baud.upload.speed=4800
+
+atmega328_1mhz_4800baud.name=Optiboot 5 for bare 328P, 1MHz internal clock,
+fast start, 1.8V BOD, 4800baud upload, c/o tim7 20130416
+
+atmega328_1mhz_4800baud.bootloader.tool=avrdude
+atmega328_1mhz_4800baud.bootloader.low_fuses=0x42
+atmega328_1mhz_4800baud.bootloader.high_fuses=0xde
+atmega328_1mhz_4800baud.bootloader.extended_fuses=0x06
+atmega328_1mhz_4800baud.bootloader.unlock_bits=0x3F
+atmega328_1mhz_4800baud.bootloader.lock_bits=0x2F
+atmega328_1mhz_4800baud.bootloader.file=opentrv/atmega328_1b.hex
+
+atmega328_1mhz_4800baud.build.mcu=atmega328p
+atmega328_1mhz_4800baud.build.f_cpu=1000000L
+atmega328_1mhz_4800baud.build.board=OPENTRV_V0P2 
+atmega328_1mhz_4800baud.build.core=arduino
+atmega328_1mhz_4800baud.build.variant=standard
+
+#ENDS#
+
+
+(Optionally) add the bootloader to Arduino IDE by right clicking on the app package in finder, hit "show package contents" and navigate to /Contents/Java/hardware/arduino/avr/bootloaders/atmega/
+
+Now copy in this file:
+
+http://www.earth.org.uk/OpenTRV/Arduino/bootloader/ATmega328P-1MHz/atmega328_1b.hex
+
+
+Plug in the FTDI lead before opening Arduino IDE. Ensure that you select the correct FTDI lead and board before programming. Enjoy. :-)

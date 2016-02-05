@@ -420,14 +420,16 @@ uint8_t ModelledRadValve::computeTargetTemp()
     const bool likelyVacantNow = longVacant || Occupancy.isLikelyUnoccupied();
     const bool ecoBias = hasEcoBias();
     // Be more ready to decide room not likely occupied soon if eco-biased.
+    // Note that this value is likely to be used +/- 1 so must be in range [1,23].
     const uint8_t thisHourNLOThreshold = ecoBias ? 15 : 12;
     const uint8_t hoursLessOccupiedThanThis = OTV0P2BASE::countStatSamplesBelow(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::getByHourStat(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::STATS_SPECIAL_HOUR_CURRENT_HOUR));
+    const uint8_t hoursLessOccupiedThanNext = OTV0P2BASE::countStatSamplesBelow(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::getByHourStat(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::STATS_SPECIAL_HOUR_NEXT_HOUR));
     const bool notLikelyOccupiedSoon = longLongVacant ||
         (likelyVacantNow &&
         // No more than about half the hours to be less occupied than this hour to be considered unlikely to be occupied.
         (hoursLessOccupiedThanThis < thisHourNLOThreshold) &&
         // Allow to be a little bit more occupied for the next hour than the current hour.
-        (OTV0P2BASE::countStatSamplesBelow(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::getByHourStat(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::STATS_SPECIAL_HOUR_NEXT_HOUR)) < (thisHourNLOThreshold+1)));
+        (hoursLessOccupiedThanNext < (thisHourNLOThreshold+1)));
     const uint8_t minLightsOffForSetbackMins = ecoBias ? 10 : 20;
     if(longVacant ||
        ((notLikelyOccupiedSoon || (AmbLight.getDarkMinutes() > minLightsOffForSetbackMins) || (ecoBias && (Occupancy.getVacancyH() > 0) && (0 == OTV0P2BASE::getByHourStat(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR, OTV0P2BASE::STATS_SPECIAL_HOUR_CURRENT_HOUR)))) &&
@@ -439,7 +441,8 @@ uint8_t ModelledRadValve::computeTargetTemp()
       //   or if the room is not known to be dark and hasn't been vacant for a long time ie ~1d and not in the very bottom range occupancy (TODO-107, TODO-758)
       //      TODO POSSIBLY: limit to (say) 3--4h light time for when someone out but room daylit, but note that detecting occupancy will be harder too in daylight.
       //      TODO POSSIBLY: after ~3h vacancy AND apparent smoothed occupancy non-zero (so some can be detected) AND ambient light in top quartile or in middle of typical bright part of cycle (assume peak of daylight) then being lit is not enough to prevent a deeper setback.
-      //   or if a scheduled WARM period is due soon and the room hasn't been vacant for a moderately long time,
+      //   or is fairly likely to be occupied in the next hour (to pre-warm) and the room hasn't been vacant for a long time
+      //   or if a scheduled WARM period is due soon and the room hasn't been vacant for a long time,
       // else usually use a somewhat bigger 'eco' setback
       // else use an even bigger 'full' setback for maximum savings if in the eco region and
       //   the room has been vacant for a very long time
@@ -452,6 +455,7 @@ uint8_t ModelledRadValve::computeTargetTemp()
       const uint8_t setback = (isComfortTemperature(wt) ||
                                Occupancy.isLikelyOccupied() ||
                                (!longVacant && !AmbLight.isRoomDark() && (hoursLessOccupiedThanThis > 4)) ||
+                               (!longVacant && (hoursLessOccupiedThanNext >= thisHourNLOThreshold-1)) ||
 //                               (!longLongVacant && OTV0P2BASE::inOutlierQuartile(true, V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED)) || // if the room is in the upper quartile of occupancy for this time and hasn't been vacant for a very long time
                                (!longVacant && Scheduler.isAnyScheduleOnWARMSoon())) ?
               SETBACK_DEFAULT :
