@@ -166,6 +166,7 @@ void serialPrintlnBuildVersion()
 // Pick an appropriate radio config for RFM23 (if it is the primary radio).
 #ifdef ENABLE_RADIO_PRIMARY_RFM23B
 #if defined(ALLOW_CC1_SUPPORT)
+// COHEAT: REV2/REV9 talking on fast GFSK channel 0, REV9 TX to FHT8V on slow OOK.
 static const uint8_t nPrimaryRadioChannels = 2;
 static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChannels] =
   {
@@ -175,6 +176,7 @@ static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChanne
   OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsOOK5000, true, true, true),
   };
 #elif defined(ENABLE_FAST_FRAMED_CARRIER_SUPPORT)
+// Nodes talking on fast GFSK channel 0.
 static const uint8_t nPrimaryRadioChannels = 1;
 static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChannels] =
   {
@@ -182,10 +184,11 @@ static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChanne
   OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsGFSK57600, true, true, true),
   };
 #else // !defined(ALLOW_CC1_SUPPORT) && !defined(ENABLE_FAST_FRAMED_CARRIER_SUPPORT)
+// Nodes talking (including to to FHT8V) on slow OOK.
 static const uint8_t nPrimaryRadioChannels = 1;
 static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChannels] =
   {
-  // FS20/FHT8V compatible channel 0.
+  // FS20/FHT8V compatible channel 0; martial/minimal single-channel register config.
   OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::FHT8V_RFM23_Reg_Values, false, true, true)
   };
 #endif
