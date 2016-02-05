@@ -285,7 +285,7 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uin
   const uint8_t firstByte = msg[0];
 
    // Length-first OpenTRV secureable-frame format...
-#ifdef ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
+#if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) // && defined(ENABLE_FAST_FRAMED_CARRIER_SUPPORT)
   // Don't try to parse any apparently-truncated message.
   // (It might be in a different format for example.)
   if(firstByte <= msglen)
@@ -316,8 +316,8 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uin
 #ifdef ENABLE_FS20_ENCODING_SUPPORT
   switch(firstByte)
     {
-    default:
-    case OTRadioLink::FTp2_NONE: // Also zero-length with leading length byte.
+    default: // Reject unrecognised leading type byte.
+    case OTRadioLink::FTp2_NONE: // Reject zero-length with leading length byte.
       break;
 
 #ifdef ALLOW_CC1_SUPPORT_HUB

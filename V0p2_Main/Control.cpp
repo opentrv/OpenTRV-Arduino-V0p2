@@ -1662,7 +1662,7 @@ void loopOpenTRV()
       }
 #endif
 #if 0 && defined(DEBUG)
-    // Filtered out messages are not any sort of error.
+    // Filtered out messages are not an error.
     const uint8_t filtered = PrimaryRadio.getRXMsgsFilteredRecent();
     static uint8_t oldFiltered;
     if(filtered != oldFiltered)
@@ -1694,16 +1694,6 @@ void loopOpenTRV()
 #if defined(ENABLE_BOILER_HUB)
   fastDigitalWrite(OUT_HEATCALL, (isBoilerOn() ? HIGH : LOW));
 #endif
-//  // FIXME: local valve-driven boiler on does not obey normal on/off run-time rules.
-//#if defined(ENABLE_BOILER_HUB)
-//  fastDigitalWrite(OUT_HEATCALL, ((isBoilerOn()
-//    #ifdef ENABLE_NOMINAL_RAD_VALVE
-//      || NominalRadValve.isControlledValveReallyOpen()
-//    #endif
-//      ) ? HIGH : LOW));
-//#elif defined(OUT_HEATCALL) && defined(ENABLE_NOMINAL_RAD_VALVE) // May not be available on all boards.
-//  fastDigitalWrite(OUT_HEATCALL, NominalRadValve.isControlledValveReallyOpen() ? HIGH : LOW);
-//#endif
 
 
   // Sleep in low-power mode (waiting for interrupts) until seconds roll.
@@ -1949,6 +1939,14 @@ void loopOpenTRV()
 #endif
         bareStatsTX(!batteryLow && !hubMode && ss1.changedValue(), doBinary);
         }
+      break;
+      }
+#endif
+
+#if defined(ENABLE_SECURE_RADIO_BEACON)
+    // Send a secure simple small radio beacon message regularly.
+    case 16:
+      {
       break;
       }
 #endif
