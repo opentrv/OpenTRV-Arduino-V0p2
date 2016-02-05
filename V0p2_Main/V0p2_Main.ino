@@ -33,6 +33,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #ifdef ALLOW_CC1_SUPPORT
 #include <OTProtocolCC.h>
 #endif
+#if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) || defined(ENABLE_SECURE_RADIO_BEACON)
+#include <OTAESGCM.h>
+#endif
 
 #include <util/crc16.h>
 #include <avr/eeprom.h>
