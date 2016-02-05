@@ -956,6 +956,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 #endif // defined(ENABLE_OCCUPANCY_SUPPORT)
     // OPTIONAL items
     // Only TX supply voltage for units apparently not mains powered.
+    if(!Supply_cV.isMains()) { ss1.put(Supply_cV); } else { ss1.remove(Supply_cV.tag()); }
 #ifdef ENABLE_BOILER_HUB
     // Show boiler state for boiler hubs.
     ss1.put("b", (int) isBoilerOn());
@@ -976,8 +977,12 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 
     // If not doing a doubleTX then consider sometimes suppressing the change-flag clearing for this send
     // to reduce the chance of important changes being missed by the receiver.
-//    wrote = ss1.writeJSON(bptr, sizeof(buf) - (bptr-buf), getStatsTXLevel(), maximise); //!allowDoubleTX && randRNG8NextBoolean());
-    wrote = ss1.writeJSON(bptr, sizeof(buf) - (bptr-buf), false , maximise); // false means lowest level of security FOR DEBUG
+#if defined(ENABLE_ALWAYS_TX_ALL_STATS)
+    const uint8_t privacyLevel = OTV0P2BASE::stTXmostUnsec;
+#else
+    const uint8_t privacyLevel = OTV0P2BASE::getStatsTXLevel();
+#endif
+    wrote = ss1.writeJSON(bptr, sizeof(buf) - (bptr-buf), privacyLevel, maximise); //!allowDoubleTX && randRNG8NextBoolean());
 
     if(0 == wrote)
       {
