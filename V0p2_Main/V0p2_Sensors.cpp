@@ -122,56 +122,8 @@ OTV0P2BASE::RoomTemperatureC16_TMP112 TemperatureC16;
 
 
 #ifdef ENABLE_VOICE_SENSOR
-// If count meets or exceeds this threshold in one poll period then
-// the room is deemed to be occupied.
-// Strictly positive.
-// DHD20151119: even now it seems a threshold of >= 2 is needed to avoid false positives.
-// DE20160101:  Lowered detection threshold as new boards have lower sensitivity
-#define VOICE_DETECTION_THRESHOLD 2
-
-// Force a read/poll of the voice level and return the value sensed.
-// Thread-safe and ISR-safe.
-uint8_t VoiceDetection::read()
-{
-  ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
-  {
-    isDetected = ((value = count) >= VOICE_DETECTION_THRESHOLD);
-    // clear count and detection flag
-    // isTriggered = false;
-    count = 0;
-  }
-  return(value);
-}
-
-// Handle simple interrupt.
-// Fast and ISR (Interrupt Service Routines) safe.
-// Returns true if interrupt was successfully handled and cleared
-// else another interrupt handler in the chain may be called
-// to attempt to clear the interrupt.
-bool VoiceDetection::handleInterruptSimple()
-{
-  ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
-  {
-    // Count of voice activations since last poll, avoiding overflow.
-    if ((count < 255) && (++count >= VOICE_DETECTION_THRESHOLD))
-    {
-      // Act as soon as voice is detected.
-      isDetected = true;
-      // Don't regard this as a very strong indication,
-      // as it could be a TV or radio on in the room.
-      Occupancy.markAsPossiblyOccupied();
-    }
-  }
-
-  //    // Flag that interrupt has occurred
-  //    endOfLocking = OTV0P2BASE::getMinutesSinceMidnightLT() + lockingPeriod;
-  //    isTriggered = true;
-  // No further work to be done to 'clear' interrupt.
-  return (true);
-}
-
-// Singleton implementation/instance.
-VoiceDetection Voice;
+// TODO
+OTV0P2BASE::VoiceDetectionQM1 Voice;
 #endif
 
 

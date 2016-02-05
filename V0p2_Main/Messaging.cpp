@@ -40,11 +40,11 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
 
 
 #ifdef ENABLE_RADIO_SIM900
-//For EEPROM:
+//For EEPROM: TODO make a spec for how config should be stored in EEPROM to make changing them easy
 //- Set the first field of SIM900LinkConfig to true.
 //- The configs are stored as \0 terminated strings starting at 0x300.
 //- You can program the eeprom using ./OTRadioLink/dev/utils/sim900eepromWrite.ino
-//  static const void *SIM900_PIN      = (void *)0x0300; // TODO confirm this address
+//  static const void *SIM900_PIN      = (void *)0x0300;
 //  static const void *SIM900_APN      = (void *)0x0305;
 //  static const void *SIM900_UDP_ADDR = (void *)0x031B;
 //  static const void *SIM900_UDP_PORT = (void *)0x0329;
@@ -57,12 +57,17 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
 //For Flash:
 //- Set the first field of SIM900LinkConfig to false.
 //- The configs are stored as \0 terminated strings.
-// - APNs - concirrus:  "internet.cxn"
-//        - id:         "id"
+//- Where multiple options are available, uncomment whichever you want
   static const char SIM900_PIN[5] PROGMEM       = "1111";
-  static const char SIM900_APN[] PROGMEM      = "\"everywhere\",\"eesecure\",\"secure\"";
-  static const char SIM900_UDP_ADDR[14] PROGMEM = "46.101.52.242"; // ORS server
-  static const char SIM900_UDP_PORT[5] PROGMEM = "9999";
+
+// APN Configs - Uncomment based on what SIM you are using
+//  static const char SIM900_APN[] PROGMEM      = "\"everywhere\",\"eesecure\",\"secure\""; // EE
+  static const char SIM900_APN[] PROGMEM      = "\"arkessa.net\",\"arkessa\",\"arkessa\""; // Arkessa
+
+// UDP Configs - Uncomment based on which server you want to send to
+//  static const char SIM900_UDP_ADDR[14] PROGMEM = "46.101.52.242"; // ORS server
+  static const char SIM900_UDP_ADDR[14] PROGMEM = "46.101.64.191";   // Brent server
+  static const char SIM900_UDP_PORT[5] PROGMEM = "9999";             // Standard port for OpenTRV servers
   const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config(
                                                   false,
                                                   SIM900_PIN,
@@ -85,10 +90,10 @@ OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, -1> RFM23B;
 #endif
 #endif // ENABLE_RADIO_RFM23B
 #ifdef ENABLE_RADIO_SIM900
-OTSIM900Link::OTSIM900Link SIM900(A3, A2, SOFTSERIAL_RX_PIN, SOFTSERIAL_TX_PIN);
+OTSIM900Link::OTSIM900Link SIM900(REGULATOR_POWERUP, RADIO_POWER_PIN, SOFTSERIAL_RX_PIN, SOFTSERIAL_TX_PIN);
 #endif
 #ifdef ENABLE_RADIO_RN2483
-OTRN2483Link::OTRN2483Link RN2483( A2, SOFTSERIAL_RX_PIN, SOFTSERIAL_TX_PIN);
+OTRN2483Link::OTRN2483Link RN2483( RADIO_POWER_PIN, SOFTSERIAL_RX_PIN, SOFTSERIAL_TX_PIN);
 #endif // ENABLE_RADIO_RN2483
 
 // Assigns radio to PrimaryRadio alias

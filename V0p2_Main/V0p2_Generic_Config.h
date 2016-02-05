@@ -75,6 +75,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_DE_TESTLAB // Deniz's test environment.
 //#define CONFIG_REV10_STRIPBOARD // REV10-based stripboard precursor for bus shelters
 //#define CONFIG_REV10 // Generic REV10 config
+//#define CONFIG_REV10_ASRELAY // REV10: stats relay only.
 //#define CONFIG_REV10_BHR // REV10: boiler hub and stats relay.
 // TODO //#define CONFIG_REV10_SECURE_BOILERHUB_GSM_SECURE // REV10 PCB boiler hub, relay to GSM, 2015/12 secure protocol.
 //#define CONFIG_REV11_RFM23BTEST // Basic test to see if stats send
@@ -997,6 +998,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: enable use AVR's 'idle' mode to stop the CPU but leave I/O (eg Serial) running to save power.
 // DHD20150920: CURRENTLY NOT RECOMMENDED AS STILL SEEMS TO CAUSE SOME BOARDS TO CRASH.
 #define ENABLE_USE_OF_AVR_IDLE_MODE
+// IF DEFINED: support for general timed and multi-input occupancy detection / use.
+#define ENABLE_OCCUPANCY_SUPPORT
 
 // IF DEFINED: enable a 'null' radio module; without this unit is stand-alone.
 #define ENABLE_RADIO_NULL
@@ -1029,7 +1032,44 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #endif // CONFIG_REV10_BUSSHELTER
 
 
-
+#ifdef CONFIG_REV10_ASRELAY // REV10: stats relay.
+#define V0p2_REV 10
+// Using RoHS-compliant phototransistor in place of LDR.
+#define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
+// IF DEFINED: basic FROST/WARM temperatures are settable.
+#undef ENABLE_SETTABLE_TARGET_TEMPERATURES
+// IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
+#undef ENABLE_LOCAL_TRV
+// IF DEFINED: this unit controls a valve, but provides slave valve control only.
+#undef ENABLE_SLAVE_TRV
+// IF DEFINED: (default) forced always-on radio listen/RX, eg not requiring setup to explicitly enable.
+#define ENABLE_DEFAULT_ALWAYS_RX
+// IF DEFINED: this unit can act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
+#undef ENABLE_BOILER_HUB
+// IF DEFINED: allow binary stats to be TXed.
+#undef ENABLE_BINARY_STATS_TX
+// IF DEFINED: enable support for FS20 carrier for RX of raw FS20 and piggybacked binary (non-JSON) stats.
+#undef ENABLE_FS20_NATIVE_AND_BINARY_STATS_RX
+// IF DEFINED: allow RX of stats frames.
+#define ENABLE_STATS_RX
+// IF DEFINED: allow TX of stats frames.
+#define ENABLE_STATS_TX
+// IF DEFINED: use active-low LEARN button(s).  Needs ENABLE_SINGLETON_SCHEDULE.
+#undef ENABLE_LEARN_BUTTON // OPTIONAL ON V0.09 PCB1
+// IF DEFINED: this unit supports CLI over the USB/serial connection, eg for run-time reconfig.
+#define ENABLE_CLI
+// IF DEFINED: support for general timed and multi-input occupancy detection / use.
+#undef ENABLE_OCCUPANCY_SUPPORT
+// IF DEFINED: enable a secondary (typically WAN-relay) radio module.
+#define ENABLE_RADIO_SECONDARY_MODULE
+// IF DEFINED: enable a WAN-relay radio module, primarily to relay stats outbound.
+#define ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY
+// SIM900 relay.
+#define ENABLE_RADIO_SIM900   // Enable SIM900
+#define RADIO_SECONDARY_SIM900  // Assign SIM900
+// Use common settings.
+#define COMMON_SETTINGS
+#endif // REV10_ASRELAY
 
 
 #ifdef CONFIG_REV10_BHR // REV10: boiler hub and stats relay.

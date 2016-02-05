@@ -119,66 +119,8 @@ extern OTV0P2BASE::DummyHumiditySensorSHT21 RelHumidity;
 
 
 #ifdef ENABLE_VOICE_SENSOR
-/*
- Voice sensor.
-
- EXPERIMENTAL
-
- Functionality and code only enabled if ENABLE_VOICE_SENSOR is defined.
- */
-// Sensor for supply (eg battery) voltage in millivolts.
-class VoiceDetection : public OTV0P2BASE::SimpleTSUint8Sensor
-  {
-  private:
-    // Activity count.
-    // Marked volatile for thread-safe (simple) lock-free access.
-    volatile uint8_t count;
-    // True if voice is detected.
-    // Marked volatile for thread-safe lock-free access.
-    volatile bool isDetected;
-    // Last time sensor was polled
-    // Marked volatile for thread-safe (simple) lock-free access.
-//    volatile uint16_t endOfLocking;
-//    // True if there is new data to poll
-//    // Marked volatile for thread-safe (simple) lock-free access.
-//    volatile bool isTriggered;
-//    // Lock out time after interrupt
-//    // only needs to be > 10secs, but go for between 2 mins to make sure (we have a 4 min cycle anyway)
-//    static const uint8_t lockingPeriod = 2;
-
- 
-  public:
-    // Initialise to cautious values.
-    VoiceDetection() : count(0), isDetected(false) { }
-
-    // Force a read/poll of the voice level and return the value sensed.
-    // Potentially expensive/slow.
-    // Thread-safe and usable within ISRs (Interrupt Service Routines), though not recommended.
-    virtual uint8_t read();
-
-    // Returns preferred poll interval (in seconds); non-zero.
-    virtual uint8_t preferredPollInterval_s() const { return(60); }
-
-    // Handle simple interrupt.
-    // Fast and ISR (Interrupt Service Routines) safe.
-    // Returns true if interrupt was successfully handled and cleared
-    // else another interrupt handler in the chain may be called
-    // to attempt to clear the interrupt.
-    virtual bool handleInterruptSimple();
-
-    // Returns true if voice has been detected in this or previous poll period.
-    bool isVoiceDetected() { return(isDetected); }
-
-    // Returns true if more than a minute has passed since last interrupt and sensor has not been polled.
-//    bool isVoiceReady() { return (isTriggered && (OTV0P2BASE::getMinutesSinceMidnightLT() >= endOfLocking)); }
-
-    // Returns a suggested (JSON) tag/field/key name including units of get(); NULL means no recommended tag.
-    // The lifetime of the pointed-to text must be at least that of the Sensor instance.
-    virtual const char *tag() const { return("av"); }
-
-  };
-// Singleton implementation/instance.
-extern VoiceDetection Voice;
+// TODO
+extern OTV0P2BASE::VoiceDetectionQM1 Voice;
 #endif
 
 
