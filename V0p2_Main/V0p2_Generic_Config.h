@@ -41,7 +41,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_Trial2013Winter_Round1 // REV1 default config.
 //#define CONFIG_Trial2013Winter_Round1_LVBHSH // REV1: local valve control, boiler hub, stats hub & TX.
 //#define CONFIG_Trial2013Winter_Round1_BOILERHUB // REV1 as plain boiler node.
-#define CONFIG_Trial2013Winter_Round1_NOHUB // REV1 as TX-only leaf node.
+//#define CONFIG_Trial2013Winter_Round1_NOHUB // REV1 as TX-only leaf node.
 //#define CONFIG_Trial2013Winter_Round2 // REV2 cut4 default config.
 //#define CONFIG_Trial2013Winter_Round2_LVBHSH // REV2 cut4: local valve control, boiler hub, stats hub & TX.
 //#define CONFIG_Trial2013Winter_Round2_LVBH // REV2 cut4 local valve control and boiler hub.
@@ -1282,12 +1282,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX false
 #endif
 
-// If in stats or boiler hub mode, and assuming OOK carrier, then apply trailing-zeros RX filter.
-#if defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)
-#define CONFIG_TRAILING_ZEROS_FILTER_RX
-#endif
-
-// By default, use the RFM22/RFM23 module to talk to an FHT8V wireless radiator valve.
+// By default (up to 2015), use the RFM22/RFM23 module to talk to an FHT8V wireless radiator valve.
 #ifdef ENABLE_FHT8VSIMPLE
 #define USE_MODULE_RFM22RADIOSIMPLE
 #define ENABLE_FS20_CARRIER_SUPPORT
@@ -1301,6 +1296,11 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define ENABLE_FS20_NATIVE_AND_BINARY_STATS_RX
 #endif // defined(ENABLE_STATS_RX)
 #endif // ENABLE_FHT8VSIMPLE
+
+// If in stats or boiler hub mode, and with an FS20 OOK carrier, then apply a trailing-zeros RX filter.
+#if (defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)) && defined(LISTEN_FOR_FTp2_FS20_native)
+#define CONFIG_TRAILING_ZEROS_FILTER_RX
+#endif
 
 
 #endif
