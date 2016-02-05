@@ -975,8 +975,6 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 #endif // !defined(ENABLE_TRIMMED_BANDWIDTH)
 #endif // defined(ENABLE_LOCAL_TRV)
 
-    // If not doing a doubleTX then consider sometimes suppressing the change-flag clearing for this send
-    // to reduce the chance of important changes being missed by the receiver.
 #if defined(ENABLE_ALWAYS_TX_ALL_STATS)
     const uint8_t privacyLevel = OTV0P2BASE::stTXmostUnsec;
 #else
