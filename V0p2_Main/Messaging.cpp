@@ -286,10 +286,14 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uin
 
    // Length-first OpenTRV secureable-frame format...
 #if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) // && defined(ENABLE_FAST_FRAMED_CARRIER_SUPPORT)
+#if 0
+  // Validate as a secureable (secure) frame first.
+  // This will check structural parameters such as min and max length.
+
   // Don't try to parse any apparently-truncated message.
   // (It might be in a different format for example.)
   if(firstByte <= msglen)
-    {  
+    {
     switch(msg[1]) // Switch on type.
       {
 #ifdef ENABLE_OTSECUREFRAME_INSECURE_RX_PERMITTED // Allow parsing of insecure frame version...
@@ -310,7 +314,8 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uin
       // Reject unrecognised type, though potentially fall through to recognise other encodings.
       default: break;
       }
-  }
+    }
+#endif
 #endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
 
 #ifdef ENABLE_FS20_ENCODING_SUPPORT
@@ -505,8 +510,9 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats IDx");
     }
 #endif // ENABLE_FS20_ENCODING_SUPPORT
 
-  // Unparseable frame: drop it.
-#if 0 && defined(DEBUG)
+  // Unparseable frame: drop it; possibly log it as an error.
+//#if 0 && defined(DEBUG)
+#if 1 && defined(DEBUG) && defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) // && defined(ENABLE_FAST_FRAMED_CARRIER_SUPPORT)
   p->print(F("!RX bad msg prefix ")); OTRadioLink::printRXMsg(p, msg, min(msglen, 8));
 #endif
   return;
