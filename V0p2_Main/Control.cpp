@@ -1951,14 +1951,14 @@ void loopOpenTRV()
 #endif // defined(ENABLE_STATS_TX)
 
 #if defined(ENABLE_SECURE_RADIO_BEACON)
-    // Send a secure simple small radio beacon message regularly.
+    // Send a small radio beacon "I'm alive!" message regularly.
     case 16:
       {
       static uint8_t beaconSeqNo;
       uint8_t buf[OTRadioLink::generateInsecureBeaconMaxBufSize];
       // Generate standard-length-ID beacon.
       const uint8_t bodylen = OTRadioLink::generateInsecureBeacon(buf, sizeof(buf), beaconSeqNo++, NULL, 2);
-      // ASSUME FRAMED CHANNEL (but could check with config isUnframed flag)
+      // ASSUME FRAMED CHANNEL 0 (but could check with config isUnframed flag)
       // When sending on a channel with framing, do not explicitly send the frame length byte.
       const bool success = (bodylen > 1) && PrimaryRadio.sendRaw(buf+1, bodylen-1);
 #if 1 && defined(DEBUG)

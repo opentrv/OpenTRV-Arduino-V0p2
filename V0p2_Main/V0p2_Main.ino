@@ -184,7 +184,7 @@ static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChanne
 static const uint8_t nPrimaryRadioChannels = 1;
 static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChannels] =
   {
-  // GFSK channel 0, RX/TX, not in itself secure.
+  // GFSK channel 0 full config, RX/TX, not in itself secure.
   OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsGFSK57600, true),
   };
 #else // !defined(ALLOW_CC1_SUPPORT) && !defined(ENABLE_FAST_FRAMED_CARRIER_SUPPORT)
@@ -200,9 +200,9 @@ static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChanne
 
 
 #ifdef RADIO_SECONDARY_SIM900
-static const OTRadioLink::OTRadioChannelConfig SecondaryRadioConfig(&SIM900Config, true, true, true);
+static const OTRadioLink::OTRadioChannelConfig SecondaryRadioConfig(&SIM900Config, true);
 #else
-static const OTRadioLink::OTRadioChannelConfig SecondaryRadioConfig(NULL, true, true, true);
+static const OTRadioLink::OTRadioChannelConfig SecondaryRadioConfig(NULL, true);
 #endif // RADIO_SECONDARY_SIM900
 
 
