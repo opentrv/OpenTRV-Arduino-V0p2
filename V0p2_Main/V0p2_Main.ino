@@ -184,15 +184,15 @@ static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChanne
   // FS20/FHT8V compatible channel 1 full config, used for TX only, not secure, unframed.
   OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsOOK5000, true, false, true, false, false, true),
   };
-//#elif defined(ENABLE_FAST_FRAMED_CARRIER_SUPPORT)
-//#define RADIO_CONFIG_NAME "GFSK ONLY"
-//// Nodes talking on fast GFSK channel 0.
-//static const uint8_t nPrimaryRadioChannels = 1;
-//static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChannels] =
-//  {
-//  // GFSK channel 0 full config, RX/TX, not in itself secure.
-//  OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsGFSK57600, true),
-//  };
+#elif defined(ENABLE_FAST_FRAMED_CARRIER_SUPPORT)
+#define RADIO_CONFIG_NAME "GFSK ONLY"
+// Nodes talking on fast GFSK channel 0.
+static const uint8_t nPrimaryRadioChannels = 1;
+static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChannels] =
+  {
+  // GFSK channel 0 full config, RX/TX, not in itself secure.
+  OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsGFSK57600, true),
+  };
 #else // !defined(ALLOW_CC1_SUPPORT) && !defined(ENABLE_FAST_FRAMED_CARRIER_SUPPORT)
 #define RADIO_CONFIG_NAME "OOK"
 // Nodes talking (including to to FHT8V) on slow OOK.
