@@ -293,36 +293,33 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uin
 
    // Length-first OpenTRV secureable-frame format...
 #if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) // && defined(ENABLE_FAST_FRAMED_CARRIER_SUPPORT)
-#if 0
   // Validate as a secureable (secure) frame first.
   // This will check structural parameters such as min and max length.
 
-  // Don't try to parse any apparently-truncated message.
-  // (It might be in a different format for example.)
-  if(firstByte <= msglen)
+  OTRadioLink::SecurableFrameHeader sfh;
+  const uint8_t l = sfh.checkAndDecodeSmallFrameHeader(msg-1, msglen+1);
+  // TODO: validate entire message, eg including auth, or CRC if insecure msg rcvd&allowed.
+  if(l > 0)
     {
-    switch(msg[1]) // Switch on type.
+    switch(firstByte) // Switch on type.
       {
-#ifdef ENABLE_OTSECUREFRAME_INSECURE_RX_PERMITTED // Allow parsing of insecure frame version...
-      case 'O': // Non-secure basic OpenTRV secureable frame...
-          {
-          // Do some simple validation of structure and number ranges.
-          const uint8_t fl = firstByte + 1; // (Full) frame length, including the length byte itself.
-          if(fl < 8) { break; } // Too short to be valid.
-          const uint8_t il = msg[2] & 0xf;
-          if(0 == il) { break; } // Anonymous sender (zero-length ID) not (yet) permitted.
-          //
-          // TODO
-          //
-          break;
-          }
-#endif // ENABLE_OTSECUREFRAME_INSECURE_RX_PERMITTED
+      case OTRadioLink::FTS_ALIVE:
+        {
+#if 1 && defined(DEBUG)
+DEBUG_SERIAL_PRINTLN_FLASHSTRING("Beacon RX (unverified)...");
+#endif
+        return;
+        }
+
+//      case 'O': // Basic OpenTRV secureable frame...
+//          {
+//          return;
+//          }
 
       // Reject unrecognised type, though potentially fall through to recognise other encodings.
       default: break;
       }
     }
-#endif
 #endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
 
 #ifdef ENABLE_FS20_ENCODING_SUPPORT
@@ -518,8 +515,8 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats IDx");
 #endif // ENABLE_FS20_ENCODING_SUPPORT
 
   // Unparseable frame: drop it; possibly log it as an error.
-#if 0 && defined(DEBUG) && !defined(ENABLE_TRIMMED_MEMORY)
-  p->print(F("!RX bad msg prefix ")); OTRadioLink::printRXMsg(p, msg, min(msglen, 8));
+#if 1 && defined(DEBUG) && !defined(ENABLE_TRIMMED_MEMORY)
+  p->print(F("!RX bad msg, prefix: ")); OTRadioLink::printRXMsg(p, msg, min(msglen, 8));
 #endif
   return;
   }
