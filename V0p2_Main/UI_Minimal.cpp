@@ -459,6 +459,9 @@ static bool extCLIHandler(Print *const p, char *const buf, const uint8_t n)
           // TX at normal volume since ACKed and can be repeated if necessary.
           if(PrimaryRadio.sendRaw(txbuf, bodylen))
             { return(true); } // Done it!
+#if 1 && defined(DEBUG)
+          else { DEBUG_SERIAL_PRINT_FLASHSTRING("!TX failed"); } 
+#endif
           }
         }
       }

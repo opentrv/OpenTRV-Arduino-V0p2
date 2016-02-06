@@ -462,6 +462,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #undef ENABLE_LOCAL_TRV
 // IF DEFINED: this unit controls a valve, but provides slave valve control only.
 #undef ENABLE_SLAVE_TRV
+// IF DEFINED: (default) forced always-on radio listen/RX, eg not requiring setup to explicitly enable.
+#define ENABLE_DEFAULT_ALWAYS_RX
 // IF DEFINED: this unit can act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
 #define ENABLE_BOILER_HUB
 // IF DEFINED: allow RX of stats frames.
