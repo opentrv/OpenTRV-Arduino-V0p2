@@ -1515,7 +1515,7 @@ static bool setUpContinuousRX(const bool second0)
 
 // Process calls for heat, ie turn boiler on and off as appropriate.
 // Has control of OUT_HEATCALL if defined(ENABLE_BOILER_HUB).
-static void processCallsForHeat()
+static void processCallsForHeat(const bool second0)
   {
 #if defined(ENABLE_BOILER_HUB)
   if(inHubMode())
@@ -1568,8 +1568,9 @@ static void processCallsForHeat()
         // (The min(254, ...) is to ensure that the boiler can come on even if minOnMins == 255.)
         // TODO: randomly extend the off-time a little (eg during grid stress) partly to randmonise whole cycle length.
         if(boilerNoCallM <= min(254, minOnMins)) { ignoreRCfH = true; }
-        if(OTV0P2BASE::getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
-        else if(ignoreRCfH) { OTV0P2BASE::serialPrintlnAndFlush(F("RCfH-")); } // Remote call for heat ignored.
+//        if(OTV0P2BASE::getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
+//        else
+          if(ignoreRCfH) { OTV0P2BASE::serialPrintlnAndFlush(F("RCfH-")); } // Remote call for heat ignored.
         else { OTV0P2BASE::serialPrintlnAndFlush(F("RCfH1")); } // Remote call for heat on.
         }
       if(!ignoreRCfH)
@@ -1587,8 +1588,9 @@ static void processCallsForHeat()
       if(0 == --boilerCountdownTicks)
         {
         // Boiler should now be switched off.
-        if(OTV0P2BASE::getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
-        else { OTV0P2BASE::serialPrintlnAndFlush(F("RCfH0")); } // Remote call for heat off
+//        if(OTV0P2BASE::getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
+//        else 
+          { OTV0P2BASE::serialPrintlnAndFlush(F("RCfH0")); } // Remote call for heat off
         }
       }
     // Else boiler is off so count up quiet minutes until at max...
@@ -1666,7 +1668,7 @@ void loopOpenTRV()
 
 #if defined(ENABLE_BOILER_HUB)
   // Set BOILER_OUT as appropriate for calls for heat.
-  processCallsForHeat();
+  processCallsForHeat(second0);
 #endif
 
 
