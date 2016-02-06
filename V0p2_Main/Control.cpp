@@ -1909,7 +1909,7 @@ void loopOpenTRV()
     // Force read of supply/battery voltage; measure and recompute status (etc) less often when already thought to be low, eg when conserving.
     case 4: { if(runAll) { Supply_cV.read(); } break; }
 
-#ifdef ENABLE_STATS_TX
+#if defined(ENABLE_STATS_TX)
     // Periodic transmission of stats if NOT driving a local valve (else stats can be piggybacked onto that).
     // Randomised somewhat between slots and also within the slot to help avoid collisions.
     static uint8_t txTick;
@@ -1948,7 +1948,7 @@ void loopOpenTRV()
         }
       break;
       }
-#endif
+#endif // defined(ENABLE_STATS_TX)
 
 #if defined(ENABLE_SECURE_RADIO_BEACON)
     // Send a secure simple small radio beacon message regularly.
@@ -1960,13 +1960,15 @@ void loopOpenTRV()
       const uint8_t bodylen = OTRadioLink::generateInsecureBeacon(buf, sizeof(buf), beaconSeqNo++, NULL, 2);
       const bool success = PrimaryRadio.sendRaw(buf, bodylen);
 #if 1 && defined(DEBUG)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("Beacon TX ");
-  DEBUG_SERIAL_PRINT(success);
-  DEBUG_SERIAL_PRINTLN();
+      DEBUG_SERIAL_PRINT_FLASHSTRING("Beacon TX ");
+      DEBUG_SERIAL_PRINT(bodylen);
+      DEBUG_SERIAL_PRINT(' ');
+      DEBUG_SERIAL_PRINT(success);
+      DEBUG_SERIAL_PRINTLN();
 #endif
       break;
       }
-#endif
+#endif // defined(ENABLE_SECURE_RADIO_BEACON)
 
 // SENSOR READ AND STATS
 //
