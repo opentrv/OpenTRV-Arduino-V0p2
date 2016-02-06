@@ -168,31 +168,32 @@ void serialPrintlnBuildVersion()
 
 // Pick an appropriate radio config for RFM23 (if it is the primary radio).
 #ifdef ENABLE_RADIO_PRIMARY_RFM23B
+// OTRadioChannelConfig(const void *_config, bool _isFull, bool _isRX, bool _isTX, bool _isAuth = false, bool _isEnc = false, bool _isUnframed = false)
 #if defined(ALLOW_CC1_SUPPORT)
 // COHEAT: REV2/REV9 talking on fast GFSK channel 0, REV9 TX to FHT8V on slow OOK.
 static const uint8_t nPrimaryRadioChannels = 2;
 static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChannels] =
   {
-  // GFSK channel 0.
-  OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsGFSK57600, true, true, true),
-  // FS20/FHT8V compatible channel 1.
-  OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsOOK5000, true, true, true),
+  // GFSK channel 0 full config, RX/TX, not in itself secure.
+  OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsGFSK57600, true),
+  // FS20/FHT8V compatible channel 1 full config, used for TX only, not secure, unframed.
+  OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsOOK5000, true, false, true, false, false, true),
   };
 #elif defined(ENABLE_FAST_FRAMED_CARRIER_SUPPORT)
 // Nodes talking on fast GFSK channel 0.
 static const uint8_t nPrimaryRadioChannels = 1;
 static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChannels] =
   {
-  // GFSK channel 0.
-  OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsGFSK57600, true, true, true),
+  // GFSK channel 0, RX/TX, not in itself secure.
+  OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsGFSK57600, true),
   };
 #else // !defined(ALLOW_CC1_SUPPORT) && !defined(ENABLE_FAST_FRAMED_CARRIER_SUPPORT)
 // Nodes talking (including to to FHT8V) on slow OOK.
 static const uint8_t nPrimaryRadioChannels = 1;
 static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChannels] =
   {
-  // FS20/FHT8V compatible channel 0; martial/minimal single-channel register config.
-  OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::FHT8V_RFM23_Reg_Values, false, true, true)
+  // FS20/FHT8V compatible channel 0 partial/minimal single-channel register config; RX/TX, not secure, unframed.
+  OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::FHT8V_RFM23_Reg_Values, false, true, true, false, false, true)
   };
 #endif
 #endif // ENABLE_RADIO_PRIMARY_RFM23B
