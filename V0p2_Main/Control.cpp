@@ -1023,7 +1023,6 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
     }
     *bptr = 0xff; // Terminate message for TX.
 
-
 #if 0 && defined(DEBUG)
     if(bptr - buf >= 64)
       {
