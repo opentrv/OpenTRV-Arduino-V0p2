@@ -46,7 +46,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_Trial2013Winter_Round2_LVBHSH // REV2 cut4: local valve control, boiler hub, stats hub & TX.
 //#define CONFIG_Trial2013Winter_Round2_LVBH // REV2 cut4 local valve control and boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as plain boiler hub.
-//#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
+#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
 //#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
 //#define CONFIG_DORM1 // REV7 / DORM1 Winter 2014/2015 all-in-one valve unit.
 //#define CONFIG_DORM1_BOILER // REV8 / DORM1 Winter 2014/2015 boiler-control unit.
@@ -60,7 +60,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
 //#define CONFIG_Trial2013Winter_Round2_BHR // REV2 cut4: boiler hub and stats relay.
 //#define CONFIG_Trial2013Winter_Round2_SECURE_NOHUB // REV2 cut4 leaf (valve/sensor) 2015/12 secure protocol.
-#define CONFIG_Trial2013Winter_Round2_SECURE_HUB // REV2 cut4 hub (boiler/stats) 2015/12 secure protocol.
+//#define CONFIG_Trial2013Winter_Round2_SECURE_HUB // REV2 cut4 hub (boiler/stats) 2015/12 secure protocol.
 //#define CONFIG_DHD_TESTLAB_REV4 // REV4 cut2.
 //#define CONFIG_DHD_TESTLAB_REV4_NOHUB // REV4 cut2, no hub.
 //#define CONFIG_BH_DHW // Bo's hot water.
@@ -141,7 +141,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #undef ENABLE_PRIMARY_TEMP_SENSOR_SHT21
 // IF DEFINED: enable use of second UI LED if available.
 #define ENABLE_UI_LED_2_IF_AVAILABLE
-//// SENSOR OPTIONS (and support for them)
+//////////////////////////////////////// SENSOR OPTIONS (and support for them)
 // IF DEFINED: allow use of ambient light sensor.
 #define ENABLE_AMBLIGHT_SENSOR
 // IF DEFINED: allow for less light on sideways-pointing ambient light sensor, eg on cut4 2014/03/17 REV2 boards (TODO-209).
@@ -156,7 +156,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #undef ENABLE_PRIMARY_TEMP_SENSOR_DS18B20
 // IF DEFINED: enable use of additional (ie external) DS18B20 temp sensor(s).
 #undef ENABLE_EXTERNAL_TEMP_SENSOR_DS18B20
-//// OCCUPANCY OPTIONS
+//////////////////////////////////////// OCCUPANCY OPTIONS
 // IF DEFINED: support for general timed and multi-input occupancy detection / use.
 #define ENABLE_OCCUPANCY_SUPPORT
 // IF DEFINED: detect occupancy based on ambient light, if available.
@@ -165,13 +165,13 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define ENABLE_OCCUPANCY_DETECTION_FROM_RH
 // IF DEFINED: detect occupancy based on voice detection, if available. This undefines learn button 2 to use GPIO as input.
 #undef ENABLE_OCCUPANCY_DETECTION_FROM_VOICE
-//// RADIO OPTIONS
-// IF DEFINED: enable a primary radio module; without this unit is stand-alone.
-#define ENABLE_RADIO_PRIMARY_MODULE // TODO currently does nothing
-// IF DEFINED: enable a 'null' radio module; without this unit is stand-alone.
+//////////////////////////////////////// RADIO OPTIONS
+// IF DEFINED: enable (at least) a primary radio module; without, this unit has no radio comms.
+#define ENABLE_RADIO_PRIMARY_MODULE
+// IF DEFINED: enable a 'null' radio module; can be used to simplify code for a radio-less unit.
 #undef ENABLE_RADIO_NULL
-// Default primary radio module; RFM23B from REV1 to REV11.
-#define ENABLE_RADIO_RFM23B   // Enable RFM23B by default
+// IF DEFINED: had RFM23B as the primary radio module: default from REV1 to REV11.
+#define ENABLE_RADIO_RFM23B
 // IF DEFINED: make RFM23B the primary radio.
 #define ENABLE_RADIO_PRIMARY_RFM23B
 // IF DEFINED: enable a secondary (typically WAN-relay) radio module.
@@ -1321,11 +1321,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define ENABLE_JSON_OUTPUT
 #endif
 
-// If (potentially) needing to run in some sort of continuous RX mode, define a flag true (else false).
+// If (potentially) needing to run in some sort of continuous RX mode, define a flag.
 #if defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX) || defined(ENABLE_DEFAULT_ALWAYS_RX)
-#define CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX true
-#else
-#define CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX false
+#define ENABLE_CONTINUOUS_RX // was #define CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX true
 #endif
 
 // By default (up to 2015), use the RFM22/RFM23 module to talk to an FHT8V wireless radiator valve.

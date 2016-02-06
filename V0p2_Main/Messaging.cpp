@@ -282,7 +282,7 @@ p->print("FS20 msg HC "); p->print(command.hc1); p->print(' '); p->println(comma
 static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uint8_t * const msg, const uint8_t msglen)
   {
   // TODO: consider extracting hash of all message data (good/bad) and injecting into entropy pool.
-#if 0 && defined(DEBUG)
+#if 1 && defined(DEBUG)
   OTRadioLink::printRXMsg(p, msg, msglen);
 #endif
   if(msglen < 2) { return; } // Too short to be useful, so ignore.
@@ -517,7 +517,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats IDx");
 
   // Unparseable frame: drop it; possibly log it as an error.
 //#if 0 && defined(DEBUG)
-#if 1 && defined(DEBUG) && defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) // && defined(ENABLE_FAST_FRAMED_CARRIER_SUPPORT)
+#if 1 && defined(DEBUG) // && defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) // && defined(ENABLE_FAST_FRAMED_CARRIER_SUPPORT)
   p->print(F("!RX bad msg prefix ")); OTRadioLink::printRXMsg(p, msg, min(msglen, 8));
 #endif
   return;

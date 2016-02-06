@@ -179,14 +179,14 @@ static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChanne
   // FS20/FHT8V compatible channel 1 full config, used for TX only, not secure, unframed.
   OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsOOK5000, true, false, true, false, false, true),
   };
-#elif defined(ENABLE_FAST_FRAMED_CARRIER_SUPPORT)
-// Nodes talking on fast GFSK channel 0.
-static const uint8_t nPrimaryRadioChannels = 1;
-static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChannels] =
-  {
-  // GFSK channel 0 full config, RX/TX, not in itself secure.
-  OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsGFSK57600, true),
-  };
+//#elif defined(ENABLE_FAST_FRAMED_CARRIER_SUPPORT)
+//// Nodes talking on fast GFSK channel 0.
+//static const uint8_t nPrimaryRadioChannels = 1;
+//static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChannels] =
+//  {
+//  // GFSK channel 0 full config, RX/TX, not in itself secure.
+//  OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsGFSK57600, true),
+//  };
 #else // !defined(ALLOW_CC1_SUPPORT) && !defined(ENABLE_FAST_FRAMED_CARRIER_SUPPORT)
 // Nodes talking (including to to FHT8V) on slow OOK.
 static const uint8_t nPrimaryRadioChannels = 1;
@@ -295,6 +295,12 @@ void optionalPOST()
 
   // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
   PrimaryRadio.preinit(NULL);
+#if 1 && defined(DEBUG)
+  // Print out some info on the radio config.
+  DEBUG_SERIAL_PRINT_FLASHSTRING("R1 config: #chan ");
+  DEBUG_SERIAL_PRINT(nPrimaryRadioChannels);
+  DEBUG_SERIAL_PRINTLN();
+#endif
   // Check that the radio is correctly connected; panic if not...
   if(!PrimaryRadio.configure(nPrimaryRadioChannels, RFM23BConfigs) || !PrimaryRadio.begin()) { panic(F("r1")); }
   // Apply filtering, if any, while we're having fun...

@@ -1429,6 +1429,180 @@ void remoteCallForHeatRX(const uint16_t id, const uint8_t percentOpen)
 
 
 
+// Returns true if continuous background RX has been set up.
+static bool setUpContinuousRX(const bool second0)
+  {
+  // Possible paranoia...
+  // Periodically (every few hours) force radio off or at least to be not listening.
+  if((30 == TIME_LSD) && (128 == minuteCount)) { PrimaryRadio.listen(false); }
+
+#if defined(ENABLE_CONTINUOUS_RX)
+  // IF IN CENTRAL HUB MODE: listen out for OpenTRV units calling for heat.
+  // Power optimisation 1: when >> 1 TX cycle (of ~2mins) need not listen, ie can avoid enabling receiver.
+  // Power optimisation 2: TODO: when (say) >>30m since last call for heat then only sample listen for (say) 3 minute in 10 (not at a TX cycle multiple).
+  // TODO: These optimisation are more important when hub unit is running a local valve
+  // to avoid temperature over-estimates from self-heating,
+  // and could be disabled if no local valve is being run to provide better response to remote nodes.
+#ifdef ENABLE_DEFAULT_ALWAYS_RX
+  const bool needsToListen = true; // By default listen if always doing RX.
+#else
+  bool needsToListen = inHubMode(); // By default assume no need to listen unless in hub mode.
+#endif
+
+#if 0 && defined(DEBUG) && defined(ENABLE_DEFAULT_ALWAYS_RX)
+  const int8_t listenChannel = PrimaryRadio.getListenChannel();
+ if(listenChannel < 0)
+    {
+    DEBUG_SERIAL_PRINT_FLASHSTRING("LISTEN CHANNEL ");
+    DEBUG_SERIAL_PRINT(listenChannel);
+    DEBUG_SERIAL_PRINTLN();
+    }
+#if 0 && defined(ENABLE_RADIO_RFM23B) // ONLY IF PrimaryRadio really is RFM23B!
+    const uint8_t rmode = RFM23B.getMode();
+    DEBUG_SERIAL_PRINT_FLASHSTRING("RFM23B mode ");
+    DEBUG_SERIAL_PRINT(rmode);
+    DEBUG_SERIAL_PRINTLN();
+#endif
+#endif
+
+  // Act on eavesdropping need, setting up or clearing down hooks as required.
+  PrimaryRadio.listen(needsToListen);
+
+  if(needsToListen)
+    {
+#if 1 && defined(DEBUG) && !defined(ENABLE_TRIMMED_MEMORY)
+    for(uint8_t lastErr; 0 != (lastErr = PrimaryRadio.getRXErr()); )
+      {
+      DEBUG_SERIAL_PRINT_FLASHSTRING("!RX err ");
+      DEBUG_SERIAL_PRINT(lastErr);
+      DEBUG_SERIAL_PRINTLN();
+      }
+    const uint8_t dropped = PrimaryRadio.getRXMsgsDroppedRecent();
+    static uint8_t oldDropped;
+    if(dropped != oldDropped)
+      {
+      DEBUG_SERIAL_PRINT_FLASHSTRING("!RX DROP ");
+      DEBUG_SERIAL_PRINT(dropped);
+      DEBUG_SERIAL_PRINTLN();
+      oldDropped = dropped;
+      }
+#endif
+#if 0 && defined(DEBUG) && !defined(ENABLE_TRIMMED_MEMORY)
+    // Filtered out messages are not an error.
+    const uint8_t filtered = PrimaryRadio.getRXMsgsFilteredRecent();
+    static uint8_t oldFiltered;
+    if(filtered != oldFiltered)
+      {
+      DEBUG_SERIAL_PRINT_FLASHSTRING("RX filtered ");
+      DEBUG_SERIAL_PRINT(filtered);
+      DEBUG_SERIAL_PRINTLN();
+      oldFiltered = filtered;
+      }
+#endif
+#if 0 && defined(DEBUG)
+    DEBUG_SERIAL_PRINT_FLASHSTRING("hub listen, on/cd ");
+    DEBUG_SERIAL_PRINT(boilerCountdownTicks);
+    DEBUG_SERIAL_PRINT_FLASHSTRING("t quiet ");
+    DEBUG_SERIAL_PRINT(boilerNoCallM);
+    DEBUG_SERIAL_PRINTLN_FLASHSTRING("m");
+#endif
+    }
+  return(needsToListen);
+#else
+  return(false);
+#endif // defined(ENABLE_CONTINUOUS_RX)
+  }
+
+// Process calls for heat, ie turn boiler on and off as appropriate.
+// Has control of OUT_HEATCALL if defined(ENABLE_BOILER_HUB).
+static void processCallsForHeat()
+  {
+#if defined(ENABLE_BOILER_HUB)
+  if(inHubMode())
+    {
+    // Check if call-for-heat has been received, and clear the flag.
+    bool _h;
+    uint16_t _hID; // Only valid if _h is true.
+    ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
+      {
+      _h = receivedCallForHeat;
+      if(_h)
+        {
+        _hID = receivedCallForHeatID;
+        receivedCallForHeat = false;
+        }
+      }
+    const bool heardIt = _h;
+    const uint16_t hcRequest = heardIt ? _hID : 0; // Only valid if heardIt is true.
+    
+//    // Don't log call for hear if near overrun,
+//    // and leave any error queued for next time.
+//    if(OTV0P2BASE::getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
+//    else
+      {
+      if(heardIt)
+        {
+//        DEBUG_SERIAL_TIMESTAMP();
+//        DEBUG_SERIAL_PRINT(' ');
+        OTV0P2BASE::serialPrintAndFlush(F("CfH ")); // Call for heat from
+        OTV0P2BASE::serialPrintAndFlush((hcRequest >> 8) & 0xff);
+        OTV0P2BASE::serialPrintAndFlush(' ');
+        OTV0P2BASE::serialPrintAndFlush(hcRequest & 0xff);
+        OTV0P2BASE::serialPrintlnAndFlush();
+        }
+      }
+
+    // Record call for heat, both to start boiler-on cycle and possibly to defer need to listen again.
+    // Ignore new calls for heat until minimum off/quiet period has been reached.
+    // Possible optimisation: may be able to stop RX if boiler is on for local demand (can measure local temp better: less self-heating) and not collecting stats.
+    if(heardIt)
+      {
+      const uint8_t minOnMins = getMinBoilerOnMinutes();
+      bool ignoreRCfH = false;
+      if(!isBoilerOn())
+        {
+        // Boiler was off.
+        // Ignore new call for heat if boiler has not been off long enough,
+        // forcing a time longer than the specified minimum,
+        // regardless of when second0 happens to be.
+        // (The min(254, ...) is to ensure that the boiler can come on even if minOnMins == 255.)
+        // TODO: randomly extend the off-time a little (eg during grid stress) partly to randmonise whole cycle length.
+        if(boilerNoCallM <= min(254, minOnMins)) { ignoreRCfH = true; }
+        if(OTV0P2BASE::getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
+        else if(ignoreRCfH) { OTV0P2BASE::serialPrintlnAndFlush(F("RCfH-")); } // Remote call for heat ignored.
+        else { OTV0P2BASE::serialPrintlnAndFlush(F("RCfH1")); } // Remote call for heat on.
+        }
+      if(!ignoreRCfH)
+        {
+        const uint16_t onTimeTicks = minOnMins * (uint16_t) (60U / OTV0P2BASE::MAIN_TICK_S);
+        // Restart count-down time (keeping boiler on) with new call for heat.
+        boilerCountdownTicks = onTimeTicks;
+        boilerNoCallM = 0; // No time has passed since the last call.
+        }
+      }
+
+    // If boiler is on, then count down towards boiler off.
+    if(isBoilerOn())
+      {
+      if(0 == --boilerCountdownTicks)
+        {
+        // Boiler should now be switched off.
+        if(OTV0P2BASE::getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
+        else { OTV0P2BASE::serialPrintlnAndFlush(F("RCfH0")); } // Remote call for heat off
+        }
+      }
+    // Else boiler is off so count up quiet minutes until at max...
+    else if(second0 && (boilerNoCallM < 255))
+        { ++boilerNoCallM; }
+
+    // Set BOILER_OUT as appropriate for calls for heat.
+    // Local calls for heat come via the same route (TODO-607).
+    fastDigitalWrite(OUT_HEATCALL, (isBoilerOn() ? HIGH : LOW));
+    }
+  // Force boiler off when not in hub mode.
+  else { fastDigitalWrite(OUT_HEATCALL, LOW); }
+#endif // defined(ENABLE_BOILER_HUB)
+  }
 
 
 
@@ -1484,221 +1658,15 @@ void loopOpenTRV()
   const uint8_t nearOverrunThreshold = OTV0P2BASE::GSCT_MAX - 8; // ~64ms/~32 serial TX chars of grace time...
 //  bool tooNearOverrun = false; // Set flag that can be checked later.
 
-  // Is this unit currently in central hub listener mode?
-  const bool hubMode = inHubMode();
-
 //  if(getSubCycleTime() >= nearOverrunThreshold) { tooNearOverrun = true; }
 
-#if CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX
-  // IF IN CENTRAL HUB MODE: listen out for OpenTRV units calling for heat.
-  // Power optimisation 1: when >> 1 TX cycle (of ~2mins) need not listen, ie can avoid enabling receiver.
-  // Power optimisation 2: TODO: when (say) >>30m since last call for heat then only sample listen for (say) 3 minute in 10 (not at a TX cycle multiple).
-  // TODO: These optimisation are more important when hub unit is running a local valve
-  // to avoid temperature over-estimates from self-heating,
-  // and could be disabled if no local valve is being run to provide better response to remote nodes.
-//  bool hubModeBoilerOn = false; // If true then remote call for heat is in progress.
-//#if defined(ENABLE_FHT8VSIMPLE)
-#ifdef ENABLE_DEFAULT_ALWAYS_RX
-  const bool needsToEavesdrop = true; // By default listen.
-#else
-  bool needsToEavesdrop = false; // By default assume no need to eavesdrop.
-#endif
-//#endif
-  if(hubMode)
-    {
-#ifndef ENABLE_DEFAULT_ALWAYS_RX
-    needsToEavesdrop = true; // If not already set as const above...
+#if defined(ENABLE_CONTINUOUS_RX)
+  const bool needsToListen = setUpContinuousRX(second0);
 #endif
 
-#if defined(ENABLE_BOILER_HUB) // && defined(ENABLE_FHT8VSIMPLE)   // ***** FIXME *******
-    // Final poll to to cover up to end of previous minor loop.
-    // Keep time from here to following SetupToEavesdropOnFHT8V() as short as possible to avoid missing remote calls.
-
-    // Check if call-for-heat has been received, and clear the flag.
-    bool _h;
-    uint16_t _hID; // Only valid if _h is true.
-    ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
-      {
-      _h = receivedCallForHeat;
-      if(_h)
-        {
-        _hID = receivedCallForHeatID;
-        receivedCallForHeat = false;
-        }
-      }
-    const bool heardIt = _h;
-    const uint16_t hcRequest = heardIt ? _hID : 0; // Only valid if heardIt is true.
-
-//    // Fetch and clear current pending sample house code calling for heat.
-    // Don't log call for hear if near overrun,
-    // and leave any error queued for next time.
-    if(OTV0P2BASE::getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
-    else
-      {
-      if(heardIt)
-        {
-//        DEBUG_SERIAL_TIMESTAMP();
-//        DEBUG_SERIAL_PRINT(' ');
-        OTV0P2BASE::serialPrintAndFlush(F("CfH ")); // Call for heat from
-        OTV0P2BASE::serialPrintAndFlush((hcRequest >> 8) & 0xff);
-        OTV0P2BASE::serialPrintAndFlush(' ');
-        OTV0P2BASE::serialPrintAndFlush(hcRequest & 0xff);
-        OTV0P2BASE::serialPrintlnAndFlush();
-        }
-      }
-
-    // Record call for heat, both to start boiler-on cycle and to defer need to listen again.
-    // Ignore new calls for heat until minimum off/quiet period has been reached.
-    // Possible optimisation: may be able to stop RX if boiler is on for local demand (can measure local temp better: less self-heating) and not collecting stats.
-    if(heardIt)
-      {
-      const uint8_t minOnMins = getMinBoilerOnMinutes();
-      bool ignoreRCfH = false;
-      if(!isBoilerOn())
-        {
-        // Boiler was off.
-        // Ignore new call for heat if boiler has not been off long enough,
-        // forcing a time longer than the specified minimum,
-        // regardless of when second0 happens to be.
-        // (The min(254, ...) is to ensure that the boiler can come on even if minOnMins == 255.)
-        // TODO: randomly extend the off-time a little (eg during grid stress) partly to randmonise whole cycle length.
-        if(boilerNoCallM <= min(254, minOnMins)) { ignoreRCfH = true; }
-        if(OTV0P2BASE::getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
-        else if(ignoreRCfH) { OTV0P2BASE::serialPrintlnAndFlush(F("RCfH-")); } // Remote call for heat ignored.
-        else { OTV0P2BASE::serialPrintlnAndFlush(F("RCfH1")); } // Remote call for heat on.
-        }
-      if(!ignoreRCfH)
-        {
-        const uint16_t onTimeTicks = minOnMins * (uint16_t) (60U / OTV0P2BASE::MAIN_TICK_S);
-        // Restart count-down time (keeping boiler on) with new call for heat.
-        boilerCountdownTicks = onTimeTicks;
-        boilerNoCallM = 0; // No time has passed since the last call.
-        }
-      }
-
-    // If boiler is on, then count down towards boiler off.
-    if(isBoilerOn())
-      {
-      if(0 == --boilerCountdownTicks)
-        {
-        // Boiler should now be switched off.
-        if(OTV0P2BASE::getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
-        else { OTV0P2BASE::serialPrintlnAndFlush(F("RCfH0")); } // Remote call for heat off
-        }
-      }
-    // Else boiler is off so count up quiet minutes until at max...
-    else if(second0 && (boilerNoCallM < 255))
-        { ++boilerNoCallM; }
-
-//    // Turn boiler output on or off in response to calls for heat.
-//    hubModeBoilerOn = isBoilerOn();
-
-//    // In hub/listen/RX mode of some sort...
-//    //
-//    // If in stats hub mode then always listen; don't attempt to save power.
-//    if(inStatsHubMode())
-//      { needsToEavesdrop = true; }
-//    // If not running a local TRV, and thus without local temperature measurement problems from self-heating,
-//    // then just listen all the time for maximum simplicity and responsiveness at some cost in extra power consumption.
-//    // (At least as long as power is not running low for some reason.)
-//    else if(!localFHT8VTRVEnabled() && !batteryLow)
-//      { needsToEavesdrop = true; }
-//    // Try to avoid listening in the 'quiet' sensor minute in order to minimise noise and power consumption and self-heating.
-//    // Optimisation: if just heard a call need not listen on this next cycle.
-//    // Optimisation: if boiler timeout is a long time away (>> one FHT8V TX cycle, ~2 minutes excl quiet minute), then can avoid listening for now.
-//    //    Longish period without any RX listening may allow hub unit to cool and get better sample of local temperature if marginal.
-//    // Aim to listen in one stretch for greater than full FHT8V TX cycle of ~2m to avoid missing a call for heat.
-//    // MUST listen for all of final 2 mins of boiler-on to avoid missing TX (without forcing boiler over-run).
-//    else if((boilerCountdownTicks <= ((OTRadValve::FHT8VRadValveBase::MAX_FHT8V_TX_CYCLE_HS+1)/(2 * OTV0P2BASE::MAIN_TICK_S))) && // Don't miss a final TX that would keep the boiler on...
-//       (boilerCountdownTicks != 0)) // But don't force unit to listen/RX all the time if no recent call for heat.
-//      { needsToEavesdrop = true; }
-//    else if((!heardIt) &&
-//       (!minute0From4ForSensors) &&
-//       (boilerCountdownTicks <= (RX_REDUCE_MIN_M*(60 / OTV0P2BASE::MAIN_TICK_S)))) // Listen eagerly for fresh calls for heat for last few minutes before turning boiler off.
-//      {
-//#if defined(RX_REDUCE_MAX_M) && defined(ENABLE_LOCAL_TRV)
-//      // Skip the minute before the 'quiet' minute also in very quiet mode to improve local temp measurement.
-//      // (Should still catch at least one TX per 4 minutes at worst.)
-//      needsToEavesdrop =
-//          ((boilerNoCallM <= RX_REDUCE_MAX_M) || (3 != (minuteCount & 3)));
-//#else
-//      needsToEavesdrop = true;
-//#endif
-//      }
-
-#endif // defined(ENABLE_BOILER_HUB)
-    }
-
-#if 0 && defined(DEBUG) && defined(ENABLE_DEFAULT_ALWAYS_RX)
-  const int8_t listenChannel = PrimaryRadio.getListenChannel();
- if(listenChannel < 0)
-    {
-    DEBUG_SERIAL_PRINT_FLASHSTRING("LISTEN CHANNEL ");
-    DEBUG_SERIAL_PRINT(listenChannel);
-    DEBUG_SERIAL_PRINTLN();
-    }
-#if 0 && defined(ENABLE_RADIO_RFM23B) // ONLY IF PrimaryRadio really is RFM23B!
-    const uint8_t rmode = RFM23B.getMode();
-    DEBUG_SERIAL_PRINT_FLASHSTRING("RFM23B mode ");
-    DEBUG_SERIAL_PRINT(rmode);
-    DEBUG_SERIAL_PRINTLN();
-#endif
-#endif
-
-  // Act on eavesdropping need, setting up or clearing down hooks as required.
-  PrimaryRadio.listen(needsToEavesdrop);
-//#if defined(ENABLE_FHT8VSIMPLE)
-  if(needsToEavesdrop)
-    {
-#if 1 && defined(DEBUG)
-    for(uint8_t lastErr; 0 != (lastErr = PrimaryRadio.getRXErr()); )
-      {
-      DEBUG_SERIAL_PRINT_FLASHSTRING("!RX err ");
-      DEBUG_SERIAL_PRINT(lastErr);
-      DEBUG_SERIAL_PRINTLN();
-      }
-    const uint8_t dropped = PrimaryRadio.getRXMsgsDroppedRecent();
-    static uint8_t oldDropped;
-    if(dropped != oldDropped)
-      {
-      DEBUG_SERIAL_PRINT_FLASHSTRING("!RX DROP ");
-      DEBUG_SERIAL_PRINT(dropped);
-      DEBUG_SERIAL_PRINTLN();
-      oldDropped = dropped;
-      }
-#endif
-#if 0 && defined(DEBUG)
-    // Filtered out messages are not an error.
-    const uint8_t filtered = PrimaryRadio.getRXMsgsFilteredRecent();
-    static uint8_t oldFiltered;
-    if(filtered != oldFiltered)
-      {
-      DEBUG_SERIAL_PRINT_FLASHSTRING("RX filtered ");
-      DEBUG_SERIAL_PRINT(filtered);
-      DEBUG_SERIAL_PRINTLN();
-      oldFiltered = filtered;
-      }
-#endif
-#if 0 && defined(DEBUG)
-    DEBUG_SERIAL_PRINT_FLASHSTRING("hub listen, on/cd ");
-    DEBUG_SERIAL_PRINT(boilerCountdownTicks);
-    DEBUG_SERIAL_PRINT_FLASHSTRING("t quiet ");
-    DEBUG_SERIAL_PRINT(boilerNoCallM);
-    DEBUG_SERIAL_PRINTLN_FLASHSTRING("m");
-#endif
-    }
-//#endif
-#else // !CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX
-  // Possible paranoia...
-  // Periodically (every few hours) force radio off or at least to be not listening.
-  if((30 == TIME_LSD) && (128 == minuteCount)) { PrimaryRadio.listen(false); }
-#endif // CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX
-
-
-  // Set BOILER_OUT as appropriate for calls for heat.
-  // Local calls for heat come via the same route (TODO-607).
 #if defined(ENABLE_BOILER_HUB)
-  fastDigitalWrite(OUT_HEATCALL, (isBoilerOn() ? HIGH : LOW));
+  // Set BOILER_OUT as appropriate for calls for heat.
+  processCallsForHeat();
 #endif
 
 
@@ -1709,7 +1677,7 @@ void loopOpenTRV()
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("*E"); // End-of-cycle sleep.
 #endif
 //  // Ensure that serial I/O is off while sleeping, unless listening with radio.
-//  if(!needsToEavesdrop) { powerDownSerial(); } else { powerUpSerialIfDisabled<V0P2_UART_BAUD>(); }
+//  if(!needsToListen) { powerDownSerial(); } else { powerUpSerialIfDisabled<V0P2_UART_BAUD>(); }
   // Ensure that serial I/O is off while sleeping.
   OTV0P2BASE::powerDownSerial();
   // Power down most stuff (except radio for hub RX).
@@ -1734,11 +1702,9 @@ void loopOpenTRV()
 
 // If missing h/w interrupts for anything that needs rapid response
 // then AVOID the lowest-power long sleep.
-#if CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX && !defined(PIN_RFM_NIRQ)
-#define MUST_POLL_FREQUENTLY true
-    if(MUST_POLL_FREQUENTLY && needsToEavesdrop)
+#if defined(ENABLE_CONTINUOUS_RX) && !defined(PIN_RFM_NIRQ)
+    if(needsToListen)
 #else
-#define MUST_POLL_FREQUENTLY false
     if(false)
 #endif
       {
@@ -1763,7 +1729,7 @@ void loopOpenTRV()
 
 //#if defined(ENABLE_BOILER_HUB) && defined(ENABLE_FHT8VSIMPLE) // Deal with FHT8V eavesdropping if needed.
 //  // Check RSSI...
-//  if(needsToEavesdrop)
+//  if(needsToListen)
 //    {
 //    const uint8_t rssi = RFM23.getRSSI();
 //    static uint8_t lastRSSI;
@@ -1813,7 +1779,7 @@ void loopOpenTRV()
   //   * this is a hub and has to listen as much as possible
   // to conserve battery and bandwidth.
   #ifdef ENABLE_NOMINAL_RAD_VALVE
-  const bool doubleTXForFTH8V = !conserveBattery && !hubMode && (NominalRadValve.get() >= 50);
+  const bool doubleTXForFTH8V = !conserveBattery && !inHubMode() && (NominalRadValve.get() >= 50);
   #else
   const bool doubleTXForFTH8V = false;
   #endif
@@ -1943,7 +1909,7 @@ void loopOpenTRV()
 #else
         const bool doBinary = false;
 #endif
-        bareStatsTX(!batteryLow && !hubMode && ss1.changedValue(), doBinary);
+        bareStatsTX(!batteryLow && !inHubMode() && ss1.changedValue(), doBinary);
         }
       break;
       }
@@ -2082,7 +2048,7 @@ void loopOpenTRV()
 
 #if defined(ENABLE_BOILER_HUB)
       // Track how long since remote call for heat last heard.
-      if(hubMode)
+      if(inHubMode())
         {
         if(isBoilerOn())
           {

@@ -312,7 +312,7 @@ void loopAlt()
 
 // If missing h/w interrupts for anything that needs rapid response
 // then AVOID the lowest-power long sleep.
-#if CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX && !defined(PIN_RFM_NIRQ)
+#if defined(ENABLE_CONTINUOUS_RX) && !defined(PIN_RFM_NIRQ)
 #define MUST_POLL_FREQUENTLY true
 #else
 #define MUST_POLL_FREQUENTLY false
