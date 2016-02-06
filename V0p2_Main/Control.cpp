@@ -1954,6 +1954,11 @@ void loopOpenTRV()
     // Send a secure simple small radio beacon message regularly.
     case 16:
       {
+      static uint8_t beaconSeqNo;
+      uint8_t buf[OTRadioLink::generateInsecureBeaconMaxBufSize];
+      // Generate standard-length-ID beacon.
+      const uint8_t bodylen = OTRadioLink::generateInsecureBeacon(buf, sizeof(buf), beaconSeqNo++, NULL, 2);
+      PrimaryRadio.sendRaw(buf, bodylen);
       break;
       }
 #endif
