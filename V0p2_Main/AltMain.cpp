@@ -136,11 +136,11 @@ void POSTalt()
   fastDigitalWrite(A3, LOW);  // This turns power to the shield on
   pinMode(A3, OUTPUT);
   
-#elif defined(USE_MODULE_RFM22RADIOSIMPLE)
+#elif defined(ENABLE_RADIO_PRIMARY_RFM23B)
   static const OTRadioLink::OTRadioChannelConfig RFMConfig(NULL, true, true, true);
 #endif // USE_MODULE_SIM900
 
-#if defined(USE_MODULE_RFM22RADIOSIMPLE) 
+#if defined(ENABLE_RADIO_PRIMARY_RFM23B)
   // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
   PrimaryRadio.preinit(NULL);
   // Check that the radio is correctly connected; panic if not...

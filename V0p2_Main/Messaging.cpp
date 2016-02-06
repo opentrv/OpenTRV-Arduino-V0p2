@@ -282,7 +282,7 @@ p->print("FS20 msg HC "); p->print(command.hc1); p->print(' '); p->println(comma
 static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uint8_t * const msg, const uint8_t msglen)
   {
   // TODO: consider extracting hash of all message data (good/bad) and injecting into entropy pool.
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
   OTRadioLink::printRXMsg(p, msg, msglen);
 #endif
   if(msglen < 2) { return; } // Too short to be useful, so ignore.

@@ -66,9 +66,13 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // Tries not to use lots of energy so as to keep distress beacon running for a while.
 void panic()
   {
-#ifdef USE_MODULE_RFM22RADIOSIMPLE
+#ifdef ENABLE_RADIO_PRIMARY_MODULE
   // Reset radio and go into low-power mode.
   PrimaryRadio.panicShutdown();
+#endif
+#ifdef ENABLE_RADIO_SECONDARY_MODULE
+  // Reset radio and go into low-power mode.
+  SecondaryRadio.panicShutdown();
 #endif
   // Power down almost everything else...
   OTV0P2BASE::minimisePowerWithoutSleep();
@@ -287,7 +291,7 @@ void optionalPOST()
 //  posPOST(1, F("about to test radio module"));
 
 // FIXME  This section needs refactoring
-#ifdef USE_MODULE_RFM22RADIOSIMPLE
+#ifdef ENABLE_RADIO_PRIMARY_RFM23B
 // TODO-547: why does nested SPI enable break things?
 //  const bool neededToWakeSPI = OTV0P2BASE::powerUpSPIIfDisabled();
 //  DEBUG_SERIAL_PRINT(neededToWakeSPI);
@@ -298,7 +302,7 @@ void optionalPOST()
 
   // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
   PrimaryRadio.preinit(NULL);
-#if 1 && defined(DEBUG)
+#if 1 && defined(DEBUG) && !defined(ENABLE_TRIMMED_MEMORY)
   // Print out some info on the radio config.
   DEBUG_SERIAL_PRINT_FLASHSTRING("R1 #chan=");
   DEBUG_SERIAL_PRINT(nPrimaryRadioChannels);
@@ -311,7 +315,7 @@ void optionalPOST()
 #ifndef NO_RX_FILTER
   PrimaryRadio.setFilterRXISR(FilterRXISR);
 #endif // NO_RX_FILTER
-#endif // USE_MODULE_RFM22RADIOSIMPLE
+#endif // ENABLE_RADIO_PRIMARY_RFM23B
 
 #ifdef ENABLE_RADIO_SECONDARY_MODULE
 #ifdef ENABLE_RADIO_SIM900

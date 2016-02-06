@@ -1697,10 +1697,6 @@ void loopOpenTRV()
     if(handleQueuedMessages(&Serial, true, &PrimaryRadio)) { continue; }
 #endif
 
-//#if defined(USE_MODULE_RFM22RADIOSIMPLE) // Force radio to power-saving standby state if appropriate.
-//    // Force radio to known-low-power state from time to time (not every time to avoid unnecessary SPI work, LED flicker, etc.)
-//    if(batteryLow || second0) { RFM22ModeStandbyAndClearState(); } // FIXME: old world
-//#endif
 
 // If missing h/w interrupts for anything that needs rapid response
 // then AVOID the lowest-power long sleep.

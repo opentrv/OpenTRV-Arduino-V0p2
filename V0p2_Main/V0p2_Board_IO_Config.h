@@ -47,7 +47,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // Force definitions for peripherals that should be present on every V0.09 board
 // (though may be ignored or not added to the board)
 // to enable safe I/O setup and (eg) avoid bus conflicts.
-//#define USE_MODULE_RFM22RADIOSIMPLE // Always fitted on V0.2 board.
 
 
 // Note 'standard' allocations of (ATmega328P-PU) pins, to be nominally Arduino compatible,

@@ -207,7 +207,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define ENABLE_BINARY_STATS_TX
 // IF DEFINED: allow radio listen/RX.
 #define ENABLE_RADIO_RX
-// IF DEFINED: (default) forced always-on radio listen/RX, eg not requiring setup to explicitly enable.
+// IF DEFINED: forced always-on radio listen/RX, eg not requiring setup to explicitly enable.
 #undef ENABLE_DEFAULT_ALWAYS_RX
 
 
@@ -632,7 +632,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define ENABLE_FHT8VSIMPLE //Control.cpp:1322:27: error: 'localFHT8VTRVEnabled' was not declared in this scope
 // If LDR is not to be used then specifically define OMIT_... as below.
 //#undef ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT //  LDR 'occupancy' sensing irrelevant for DHW. Messaging.cpp:232:87: error: 'class AmbientLight' has no member named 'getRaw
-//#undef USE_MODULE_RFM22RADIOSIMPLE
 #endif
 
 
@@ -694,8 +693,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define ENABLE_FHT8VSIMPLE //Control.cpp:1322:27: error: 'localFHT8VTRVEnabled' was not declared in this scope
 // If LDR is not to be used then specifically define OMIT_... as below.
 //#undef ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT //  LDR 'occupancy' sensing irrelevant for DHW. Messaging.cpp:232:87: error: 'class AmbientLight' has no member named 'getRaw
-
-//#undef USE_MODULE_RFM22RADIOSIMPLE
 
 #endif // CONFIG_DE_TESTLAB
 
@@ -1318,7 +1315,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 
 // By default (up to 2015), use the RFM22/RFM23 module to talk to an FHT8V wireless radiator valve.
 #ifdef ENABLE_FHT8VSIMPLE
-#define USE_MODULE_RFM22RADIOSIMPLE
+#define ENABLE_RADIO_RFM23B
 #define ENABLE_FS20_CARRIER_SUPPORT
 #define ENABLE_FS20_ENCODING_SUPPORT
 // If this can be a hub, enable extra RX code.
