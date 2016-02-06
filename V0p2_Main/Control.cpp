@@ -1951,7 +1951,7 @@ void loopOpenTRV()
 #endif // defined(ENABLE_STATS_TX)
 
 #if defined(ENABLE_SECURE_RADIO_BEACON)
-    // Send a secure simple small radio beacon message regularly.
+    // Send a small radio beacon "I'm alive!" message regularly.
     case 16:
       {
       static uint8_t beaconSeqNo;
