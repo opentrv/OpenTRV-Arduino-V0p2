@@ -279,10 +279,8 @@ p->print("FS20 msg HC "); p->print(command.hc1); p->print(' '); p->println(comma
 // This will write any output to the supplied Print object,
 // typically the Serial output (which must be running if so).
 // This routine is NOT allowed to alter the contents of the buffer passed.
-static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uint8_t * const msg)
+static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uint8_t * const msg, const uint8_t msglen)
   {
-  const uint8_t msglen = msg[-1];
-
   // TODO: consider extracting hash of all message data (good/bad) and injecting into entropy pool.
 #if 0 && defined(DEBUG)
   OTRadioLink::printRXMsg(p, msg, msglen);
@@ -544,13 +542,14 @@ bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadi
 
   // Check for activity on the radio link.
   rl->poll();
+  uint8_t msglen;
   const volatile uint8_t *pb;
-  if(NULL != (pb = rl->peekRXMsg()))
+  if(NULL != (pb = rl->peekRXMsg(msglen)))
     {
     if(!neededWaking && wakeSerialIfNeeded && OTV0P2BASE::powerUpSerialIfDisabled<V0P2_UART_BAUD>()) { neededWaking = true; } // FIXME
     // Don't currently regard anything arriving over the air as 'secure'.
     // FIXME: cast away volatile to process the message content.
-    decodeAndHandleRawRXedMessage(p, false, (const uint8_t *)pb);
+    decodeAndHandleRawRXedMessage(p, false, (const uint8_t *)pb, msglen);
     rl->removeRXMsg();
     // Note that some work has been done.
     workDone = true;
