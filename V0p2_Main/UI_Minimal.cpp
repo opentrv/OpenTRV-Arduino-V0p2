@@ -379,9 +379,6 @@ void checkUserSchedule()
   }
 
 
-
-
-
 #ifdef ENABLE_EXTENDED_CLI
 // Handle CLI extension commands.
 // Commands of form:
@@ -668,7 +665,8 @@ void serialStatusReport()
   }
 #endif // defined(ENABLE_SERIAL_STATUS_REPORT) && !defined(serialStatusReport)
 
-#ifdef ENABLE_CLI_HELP
+#if defined(ENABLE_CLI_HELP) && !defined(ENABLE_TRIMMED_MEMORY)
+#define _CLI_HELP_
 #define SYNTAX_COL_WIDTH 10 // Width of 'syntax' column; strictly positive.
 // Estimated maximum overhead in sub-cycle ticks to print full line and all trailing CLI summary info.
 #define CLI_PRINT_OH_SCT ((uint8_t)(OTV0P2BASE::GSCT_MAX/4))
@@ -694,14 +692,14 @@ static void printCLILine(const uint8_t deadline, const char syntax, __FlashStrin
   for(int8_t padding = SYNTAX_COL_WIDTH - 1; --padding >= 0; ) { Serial_print_space(); }
   Serial.println(description);
   }
-#endif // ENABLE_CLI_HELP
+#endif // defined(ENABLE_CLI_HELP) && !defined(ENABLE_TRIMMED_MEMORY)
 
 // Dump some brief CLI usage instructions to serial TX, which must be up and running.
 // If this gets too big there is a risk of overrunning and missing the next tick...
 static void dumpCLIUsage(const uint8_t stopBy)
   {
-#ifndef ENABLE_CLI_HELP
-  Serial.println(F("No CLI help")); // Minimal placeholder.
+#ifndef _CLI_HELP_
+  Serial.println(F("No help")); // Minimal placeholder.
 #else
   const uint8_t deadline = OTV0P2BASE::fnmin((uint8_t)(stopBy - OTV0P2BASE::fnmin(stopBy,CLI_PRINT_OH_SCT)), STOP_PRINTING_DESCRIPTION_AT);
   Serial.println();

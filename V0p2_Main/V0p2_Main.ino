@@ -306,6 +306,9 @@ void optionalPOST()
   // Print out some info on the radio config.
   DEBUG_SERIAL_PRINT_FLASHSTRING("R1 #chan=");
   DEBUG_SERIAL_PRINT(nPrimaryRadioChannels);
+  #if defined(ENABLE_CONTINUOUS_RX)
+  DEBUG_SERIAL_PRINT_FLASHSTRING(" contRX"); // Show that continuous RX is enabled (eg battery draining for non-hub nodes).
+  #endif
   DEBUG_SERIAL_PRINT_FLASHSTRING(" name=");
   DEBUG_SERIAL_PRINTLN_FLASHSTRING(RADIO_CONFIG_NAME);
 #endif

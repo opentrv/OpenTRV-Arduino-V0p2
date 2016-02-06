@@ -263,7 +263,7 @@ p->print("FS20 msg HC "); p->print(command.hc1); p->print(' '); p->println(comma
         }
       }
 #endif
-#endif
+#endif // defined(ENABLE_STATS_RX)
     }
   return;
   }
@@ -516,8 +516,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats IDx");
 #endif // ENABLE_FS20_ENCODING_SUPPORT
 
   // Unparseable frame: drop it; possibly log it as an error.
-//#if 0 && defined(DEBUG)
-#if 1 && defined(DEBUG) // && defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) // && defined(ENABLE_FAST_FRAMED_CARRIER_SUPPORT)
+#if 0 && defined(DEBUG) && !defined(ENABLE_TRIMMED_MEMORY)
   p->print(F("!RX bad msg prefix ")); OTRadioLink::printRXMsg(p, msg, min(msglen, 8));
 #endif
   return;
