@@ -45,7 +45,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_Trial2013Winter_Round2 // REV2 cut4 default config.
 //#define CONFIG_Trial2013Winter_Round2_LVBHSH // REV2 cut4: local valve control, boiler hub, stats hub & TX.
 //#define CONFIG_Trial2013Winter_Round2_LVBH // REV2 cut4 local valve control and boiler hub.
-#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as plain boiler hub.
+//#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as plain boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
 //#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
 //#define CONFIG_DORM1 // REV7 / DORM1 Winter 2014/2015 all-in-one valve unit.
@@ -60,7 +60,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
 //#define CONFIG_Trial2013Winter_Round2_BHR // REV2 cut4: boiler hub and stats relay.
 //#define CONFIG_Trial2013Winter_Round2_SECURE_NOHUB // REV2 cut4 leaf (valve/sensor) 2015/12 secure protocol.
-//#define CONFIG_Trial2013Winter_Round2_SECURE_HUB // REV2 cut4 hub (boiler/stats) 2015/12 secure protocol.
+#define CONFIG_Trial2013Winter_Round2_SECURE_HUB // REV2 cut4 hub (boiler/stats) 2015/12 secure protocol.
 //#define CONFIG_DHD_TESTLAB_REV4 // REV4 cut2.
 //#define CONFIG_DHD_TESTLAB_REV4_NOHUB // REV4 cut2, no hub.
 //#define CONFIG_BH_DHW // Bo's hot water.
@@ -1295,16 +1295,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: RFM23 is in use in place of RFM22.
 #define RFM22_IS_ACTUALLY_RFM23 // Note: RFM23 used on V0.2 PCB.
 #endif // V0p2_REV >= 1
-#ifdef RFM22_IS_ACTUALLY_RFM23 // Note: All RFM23s on PCBs with good ground place.
-// IF DEFINED: good RF environment means that TX power level can be reduced.
-#define RFM22_GOOD_RF_ENV // Good ground-plane and antenna on V0.2 PCB: drop TX level.
-#endif // RFM22_IS_ACTUALLY_RFM23
-// Anticipation logic not yet ready for prime-time.
-//#define ENABLE_ANTICIPATION
-// IF DEFINED: use simple LDR-based detection of room use/occupancy; brings in getRoomInUseFromLDR subroutne.
-#define USE_MODULE_LDROCCUPANCYDETECTION
-// If LDR is not to be used then specifically define OMIT_... as below.
-//#undef ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT //  LDR 'occupancy' sensing irrelevant for DHW.
 #endif // COMMON_SETTINGS
 
 // If ENABLE_LEARN_BUTTON then in the absence of anything better ENABLE_SINGLETON_SCHEDULE should be supported.

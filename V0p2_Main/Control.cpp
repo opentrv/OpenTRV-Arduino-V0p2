@@ -1053,11 +1053,11 @@ static void wireComponentsTogether()
 #ifdef ENABLE_FHT8VSIMPLE
   // Set up radio.
   FHT8V.setRadio(&PrimaryRadio);
+  // Load EEPROM house codes into primary FHT8V instance at start.
+  FHT8VLoadHCFromEEPROM();
 #ifdef ALLOW_CC1_SUPPORT
   FHT8V.setChannelTX(1);        // Ch0=OOK, kept for clarity
 #endif // ALLOW_CC1_SUPPORT
-  // Load EEPROM house codes into primary FHT8V instance at start.
-  FHT8VLoadHCFromEEPROM();
 #endif // ENABLE_FHT8VSIMPLE
 
 #if defined(ENABLE_OCCUPANCY_SUPPORT) && defined(ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT)
@@ -1771,9 +1771,6 @@ void loopOpenTRV()
 #endif
 
 
-
-
-
 #if defined(ENABLE_FHT8VSIMPLE)
   // Try for double TX for more robust conversation with valve unless:
   //   * battery is low
@@ -1845,8 +1842,6 @@ void loopOpenTRV()
     handleQueuedMessages(&Serial, true, &PrimaryRadio); // Deal with any pending I/O.
     }
 #endif
-
-
 
 
   // DO SCHEDULING
@@ -2048,18 +2043,13 @@ void loopOpenTRV()
 #endif // defined(ENABLE_BOILER_HUB)
 #endif
 
-#if defined(ENABLE_BOILER_HUB)
+#if 1 && defined(DEBUG) && defined(ENABLE_BOILER_HUB) && !defined(ENABLE_TRIMMED_MEMORY)
       // Track how long since remote call for heat last heard.
-      if(inHubMode())
+      if(isBoilerOn())
         {
-        if(isBoilerOn())
-          {
-#if 1 && defined(DEBUG)
-          DEBUG_SERIAL_PRINT_FLASHSTRING("Boiler on, s: ");
-          DEBUG_SERIAL_PRINT(boilerCountdownTicks * OTV0P2BASE::MAIN_TICK_S);
-          DEBUG_SERIAL_PRINTLN();
-#endif
-          }
+        DEBUG_SERIAL_PRINT_FLASHSTRING("Boiler on, s: ");
+        DEBUG_SERIAL_PRINT(boilerCountdownTicks * OTV0P2BASE::MAIN_TICK_S);
+        DEBUG_SERIAL_PRINTLN();
         }
 #endif
 

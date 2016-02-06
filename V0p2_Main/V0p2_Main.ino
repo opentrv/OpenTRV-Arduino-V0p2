@@ -171,6 +171,7 @@ void serialPrintlnBuildVersion()
 // OTRadioChannelConfig(const void *_config, bool _isFull, bool _isRX, bool _isTX, bool _isAuth = false, bool _isEnc = false, bool _isUnframed = false)
 #if defined(ALLOW_CC1_SUPPORT)
 // COHEAT: REV2/REV9 talking on fast GFSK channel 0, REV9 TX to FHT8V on slow OOK.
+#define RADIO_CONFIG_NAME "COHEAT DUAL CHANNEL"
 static const uint8_t nPrimaryRadioChannels = 2;
 static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChannels] =
   {
@@ -179,15 +180,17 @@ static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChanne
   // FS20/FHT8V compatible channel 1 full config, used for TX only, not secure, unframed.
   OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsOOK5000, true, false, true, false, false, true),
   };
-#elif defined(ENABLE_FAST_FRAMED_CARRIER_SUPPORT)
-// Nodes talking on fast GFSK channel 0.
-static const uint8_t nPrimaryRadioChannels = 1;
-static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChannels] =
-  {
-  // GFSK channel 0 full config, RX/TX, not in itself secure.
-  OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsGFSK57600, true),
-  };
+//#elif defined(ENABLE_FAST_FRAMED_CARRIER_SUPPORT)
+//#define RADIO_CONFIG_NAME "GFSK ONLY"
+//// Nodes talking on fast GFSK channel 0.
+//static const uint8_t nPrimaryRadioChannels = 1;
+//static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChannels] =
+//  {
+//  // GFSK channel 0 full config, RX/TX, not in itself secure.
+//  OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsGFSK57600, true),
+//  };
 #else // !defined(ALLOW_CC1_SUPPORT) && !defined(ENABLE_FAST_FRAMED_CARRIER_SUPPORT)
+#define RADIO_CONFIG_NAME "OOK"
 // Nodes talking (including to to FHT8V) on slow OOK.
 static const uint8_t nPrimaryRadioChannels = 1;
 static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChannels] =
@@ -297,9 +300,10 @@ void optionalPOST()
   PrimaryRadio.preinit(NULL);
 #if 1 && defined(DEBUG)
   // Print out some info on the radio config.
-  DEBUG_SERIAL_PRINT_FLASHSTRING("R1 config: #chan ");
+  DEBUG_SERIAL_PRINT_FLASHSTRING("R1 #chan=");
   DEBUG_SERIAL_PRINT(nPrimaryRadioChannels);
-  DEBUG_SERIAL_PRINTLN();
+  DEBUG_SERIAL_PRINT_FLASHSTRING(" name=");
+  DEBUG_SERIAL_PRINTLN_FLASHSTRING(RADIO_CONFIG_NAME);
 #endif
   // Check that the radio is correctly connected; panic if not...
   if(!PrimaryRadio.configure(nPrimaryRadioChannels, RFM23BConfigs) || !PrimaryRadio.begin()) { panic(F("r1")); }
