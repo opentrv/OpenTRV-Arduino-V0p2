@@ -303,25 +303,29 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uin
     const bool secure = sfh.isSecure();
     // TODO: validate entire message, eg including auth, or CRC if insecure msg rcvd&allowed.
 #if defined(ENABLE_OTSECUREFRAME_INSECURE_RX_PERMITTED) // Allow insecure.
+#else
+    if(secure) // Only allow secure frames unless insecure is permitted.
 #endif
 
-    switch(firstByte) // Switch on type.
       {
-      case OTRadioLink::FTS_ALIVE:
+      switch(firstByte) // Switch on type.
         {
-#if 1 && defined(DEBUG)
-DEBUG_SERIAL_PRINTLN_FLASHSTRING("Beacon RX (unverified)...");
-#endif
-        return;
+        case OTRadioLink::FTS_ALIVE:
+          {
+    #if 1 && defined(DEBUG)
+    DEBUG_SERIAL_PRINTLN_FLASHSTRING("Beacon RX (unverified)...");
+    #endif
+          return;
+          }
+
+    //      case 'O': // Basic OpenTRV secureable frame...
+    //          {
+    //          return;
+    //          }
+
+        // Reject unrecognised type, though potentially fall through to recognise other encodings.
+        default: break;
         }
-
-//      case 'O': // Basic OpenTRV secureable frame...
-//          {
-//          return;
-//          }
-
-      // Reject unrecognised type, though potentially fall through to recognise other encodings.
-      default: break;
       }
     }
 #endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
