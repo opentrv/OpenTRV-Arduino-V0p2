@@ -325,7 +325,7 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uin
     // Validate (authenticate) and decrypt body of secure frames.
     if(secure)
       {
-      isOK = false; // FIXME: cannot validate secure frames yet.
+//      isOK = false; // FIXME: cannot validate secure frames yet.
       }
     }
 
@@ -552,7 +552,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats IDx");
 
   // Unparseable frame: drop it; possibly log it as an error.
 #if 1 && defined(DEBUG) && !defined(ENABLE_TRIMMED_MEMORY)
-  p->print(F("!RX bad msg, prefix: ")); OTRadioLink::printRXMsg(p, msg, min(msglen, 8));
+  p->print(F("!RX bad msg, len+prefix: ")); OTRadioLink::printRXMsg(p, msg-1, min(msglen+1, 8));
 #endif
   return;
   }
