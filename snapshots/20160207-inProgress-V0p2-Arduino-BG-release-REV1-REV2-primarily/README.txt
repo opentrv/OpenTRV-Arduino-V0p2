@@ -1,7 +1,9 @@
 Primarily for BG to install on his home REV1 and REV2 nodes.
 DHD20160207
 
-Take the OTRadioLink.ZIP from the snapshot, or download the latest from the master (as of 20160207 19:20 UTC), or download that in the 20160207-BG-alpha tag.
+To go with the source in this snapshot,
+take the OTRadioLink.ZIP from the snapshot, or download the latest from the master (as of 20160207 19:20 UTC), or download that in the 20160207-BG-alpha tag.
+
 
 Configurations of interest are:
 
@@ -12,8 +14,6 @@ and:
 #define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
 
 Exactly one CONFIG_XXX should be uncommented at a time.
-
-
 
 
 Q: How do I upgrade the OTRadioLink library?
