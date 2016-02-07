@@ -29,6 +29,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #include "V0p2_Sensors.h"
 #include "UI_Minimal.h"
 
+#if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) || defined(ENABLE_SECURE_RADIO_BEACON)
+#include <OTAESGCM.h>
+#endif
 
 // TODO: may want to declare only when used, eg with local valve.
 // Singleton scheduler instance.
@@ -1102,33 +1105,6 @@ static void updateSensorsFromStats()
   }
 
 
-
-
-
-
-
-
-
-#if defined(ENABLE_BOILER_HUB)
-// Ticks until locally-controlled boiler should be turned off; boiler should be on while this is positive.
-// Ticks are of the main loop, ie 2s (almost always).
-// Used in hub mode only.
-static uint16_t boilerCountdownTicks;
-// True if boiler should be on.
-static bool isBoilerOn() { return(0 != boilerCountdownTicks); }
-// Minutes that the boiler has been off for, allowing minimum off time to be enforced.
-// Does not roll once at its maximum value (255).
-// DHD20160124: starting at zero forces at least for off time after power-up before firing up boiler (good after power-cut).
-static uint8_t boilerNoCallM;
-// Reducing listening if quiet for a while helps reduce self-heating temperature error
-// (~2C as of 2013/12/24 at 100% RX, ~100mW heat dissipation in V0.2 REV1 box) and saves some energy.
-// Time thresholds could be affected by eco/comfort switch.
-//#define RX_REDUCE_MIN_M 20 // Minimum minutes quiet before considering reducing RX duty cycle listening for call for heat; [1--255], 10--60 typical.
-// IF DEFINED then give backoff threshold to minimise duty cycle.
-//#define RX_REDUCE_MAX_M 240 // Minutes quiet before considering maximally reducing RX duty cycle; ]RX_REDUCE_MIN_M--255], 30--240 typical.
-#endif
-
-
 // Controller's view of Least Significiant Digits of the current (local) time, in this case whole seconds.
 // See PICAXE V0.1/V0.09/DHD201302L0 code.
 #define TIME_LSD_IS_BINARY // TIME_LSD is in binary (cf BCD).
@@ -1351,7 +1327,24 @@ ISR(PCINT2_vect)
 #endif // !defined(ALT_MAIN_LOOP) // Do not define handlers here when alt main is in use.
 
 
-#ifdef ENABLE_BOILER_HUB
+#if defined(ENABLE_BOILER_HUB)
+// Ticks until locally-controlled boiler should be turned off; boiler should be on while this is positive.
+// Ticks are of the main loop, ie 2s (almost always).
+// Used in hub mode only.
+static uint16_t boilerCountdownTicks;
+// True if boiler should be on.
+static bool isBoilerOn() { return(0 != boilerCountdownTicks); }
+// Minutes that the boiler has been off for, allowing minimum off time to be enforced.
+// Does not roll once at its maximum value (255).
+// DHD20160124: starting at zero forces at least for off time after power-up before firing up boiler (good after power-cut).
+static uint8_t boilerNoCallM;
+// Reducing listening if quiet for a while helps reduce self-heating temperature error
+// (~2C as of 2013/12/24 at 100% RX, ~100mW heat dissipation in V0.2 REV1 box) and saves some energy.
+// Time thresholds could be affected by eco/comfort switch.
+//#define RX_REDUCE_MIN_M 20 // Minimum minutes quiet before considering reducing RX duty cycle listening for call for heat; [1--255], 10--60 typical.
+// IF DEFINED then give backoff threshold to minimise duty cycle.
+//#define RX_REDUCE_MAX_M 240 // Minutes quiet before considering maximally reducing RX duty cycle; ]RX_REDUCE_MIN_M--255], 30--240 typical.
+
 // Set true on receipt of plausible call for heat,
 // to be polled, evaluated and cleared by the main control routine.
 // Marked volatile to allow thread-safe lock-free access.
@@ -1912,10 +1905,16 @@ void loopOpenTRV()
     // Send a small radio beacon "I'm alive!" message regularly.
     case 16:
       {
-      static uint8_t beaconSeqNo;
-      uint8_t buf[OTRadioLink::generateInsecureBeaconMaxBufSize];
+//      static uint8_t beaconSeqNo;
+//      const uint8_t bodylen = OTRadioLink::generateInsecureBeacon(buf, sizeof(buf), beaconSeqNo++, NULL, 2);
+      uint8_t buf[OTRadioLink::generateSecureBeaconMaxBufSize];
       // Generate standard-length-ID beacon.
-      const uint8_t bodylen = OTRadioLink::generateInsecureBeacon(buf, sizeof(buf), beaconSeqNo++, NULL, 2);
+      const uint8_t txIDLen = 2;
+      static const uint8_t key[16] = { }; // FIXME
+      static uint8_t iv[12] = { }; ++iv[11]; // FIXME
+      const OTRadioLink::fixed32BTextSize12BNonce16BTagSimpleEnc_ptr_t e = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_STATELESS;
+      const uint8_t bodylen = OTRadioLink::generateSecureBeaconRaw(buf, sizeof(buf), NULL, txIDLen, iv, e, NULL, key);
+  
       // ASSUME FRAMED CHANNEL 0 (but could check with config isUnframed flag)
       // When sending on a channel with framing, do not explicitly send the frame length byte.
       const bool success = (bodylen > 1) && PrimaryRadio.sendRaw(buf+1, bodylen-1);
