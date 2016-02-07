@@ -26,10 +26,13 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #ifndef V0P2_GENERIC_CONFIG_H
 #define V0P2_GENERIC_CONFIG_H
 
-// Define/uncomment exactly one of the CONFIG_XXX flags to enable a configuration set below.
+// Define/uncomment exactly one of the CONFIG_XXX flags below
+// to enable a standard configuration set.
 // Some can be specific to particular locations and boards,
 // others can be vanilla ready to be configured by the end-user one way or another.
-// As far as possible the configs should #define/#undef a set of ENABLE_XXX flags.
+// As far as possible the configs should simply #define/#undef a set of ENABLE_XXX flags.
+// There is a set of 'default' ENABLE_XXX flags which will evolve over time,
+// requiring alterations to them to be tracked in individual configs.
 
 //#define CONFIG_GENERIC_ROOM_NODE
 //#define CONFIG_GENERIC_BOILER_NODE
