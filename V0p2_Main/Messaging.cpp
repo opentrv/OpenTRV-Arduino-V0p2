@@ -293,35 +293,61 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uin
 
    // Length-first OpenTRV secureable-frame format...
 #if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) // && defined(ENABLE_FAST_FRAMED_CARRIER_SUPPORT)
-  // Validate as a secureable (secure) frame first.
-  // This will check structural parameters such as min and max length.
-
+  // Validate structure as a secureable (secure) frame first.
+  // This is quick and checks for insane/dangerous values throughout.
   OTRadioLink::SecurableFrameHeader sfh;
   const uint8_t l = sfh.checkAndDecodeSmallFrameHeader(msg-1, msglen+1);
   if(l > 0)
     {
     const bool secure = sfh.isSecure();
+    bool isOK = true; // If OK to process the message, eg not failed security checks.
+    uint8_t receivedBodyLength; // Body length after any decryption, etc.
+    //uint8_t *const decryptedBodyOut, const uint8_t decryptedBodyOutBuflen, uint8_t &decryptedBodyOutSize
     // TODO: validate entire message, eg including auth, or CRC if insecure msg rcvd&allowed.
 #if defined(ENABLE_OTSECUREFRAME_INSECURE_RX_PERMITTED) // Allow insecure.
-#endif
-
-    switch(firstByte) // Switch on type.
+    // Only bother to check insecure form (and link code to do so) if insecure RX is allowed.
+    if(!secure)
       {
-      case OTRadioLink::FTS_ALIVE:
-        {
-#if 1 && defined(DEBUG)
-DEBUG_SERIAL_PRINTLN_FLASHSTRING("Beacon RX (unverified)...");
+      // Reject if CRC fails.
+      if(0 == decodeNonsecureSmallFrameRaw(&sfh, msg-1, msglen+1))
+        { isOK = false; }
+      else
+        { receivedBodyLength = sfh.bl; }
+      }
+#else
+    // Only allow secure frames by default.
+    if(!secure) { isOK = false; }
 #endif
-        return;
-        }
+    // Validate and decode secure frames.
+    if(secure)
+      {
+      isOK = false; // FIXME: cannot validate yet.
+      }
+
+    if(isOK)
+      {
+      switch(firstByte) // Switch on type.
+        {
+        // Beacon / Alive frame.
+        case OTRadioLink::FTS_ALIVE:
+          {
+#if 1 && defined(DEBUG)
+DEBUG_SERIAL_PRINT_FLASHSTRING("Beacon RX");
+if(secure) { DEBUG_SERIAL_PRINT_FLASHSTRING(" (secure)"); } // Implies auth & enc.
+DEBUG_SERIAL_PRINTLN();
+#endif
+          // Ignores any body data.
+          return;
+          }
 
 //      case 'O': // Basic OpenTRV secureable frame...
 //          {
 //          return;
 //          }
 
-      // Reject unrecognised type, though potentially fall through to recognise other encodings.
-      default: break;
+        // Reject unrecognised type, though potentially fall through to recognise other encodings.
+        default: break;
+        }
       }
     }
 #endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
