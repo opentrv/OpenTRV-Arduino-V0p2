@@ -1,7 +1,9 @@
 Primarily for BG to install on his home REV1 and REV2 nodes.
 DHD20160207
 
-Configs of interest are:
+Take the OTRadioLink.ZIP from the snapshot, or download the latest from the master (as of 20160207 19:20 UTC), or download that in the 20160207-BG-alpha tag.
+
+Configurations of interest are:
 
 #define CONFIG_Trial2013Winter_Round1_NOHUB // REV1 as TX-only leaf node.
 
