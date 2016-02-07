@@ -39,3 +39,10 @@ To install the new one reopen the IDE and:
 Sketch -> Include Library -> Add .ZIP Library
 
 and browse to your chosen OTRadioLink.zip to install it.
+
+
+Summary of upgrades with this code 20160207:
+Bedroom 1, bedroom 2, lounge (REV1): upgraded fine.
+Office (REV1): upgraded fine but lost link to Conrad valve; Conrad valve's button no longer working so can't do the sync dance to re-sync the device with the valve.
+Outdoor stats (REV1 on battery): device seems dead, programmer can't talk to it.
+Stats hub (REV2 connected to RPi): upgraded fine.
