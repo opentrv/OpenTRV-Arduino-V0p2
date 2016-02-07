@@ -1,7 +1,7 @@
 Primarily for BG to install on his home REV1 and REV2 nodes.
 DHD20160207
 
-Configs of interest are:
+Configurations of interest are:
 
 #define CONFIG_Trial2013Winter_Round1_NOHUB // REV1 as TX-only leaf node.
 
