@@ -194,7 +194,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: enable support for FS20 encoding/decoding, eg to send to FHT8V.
 #define ENABLE_FS20_ENCODING_SUPPORT
 // IF DEFINED: enable OpenTRV secure frame encoding/decoding (as of 2015/12).
-#define ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
+#undef ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
 // IF DEFINED: allow non-secure OpenTRV secure frame RX (as of 2015/12): DISABLED BY DEFAULT.
 #undef ENABLE_OTSECUREFRAME_INSECURE_RX_PERMITTED
 // IF DEFINED: allow RX of stats frames.
