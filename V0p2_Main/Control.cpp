@@ -1907,14 +1907,14 @@ void loopOpenTRV()
       {
 //      static uint8_t beaconSeqNo;
 //      const uint8_t bodylen = OTRadioLink::generateInsecureBeacon(buf, sizeof(buf), beaconSeqNo++, NULL, 2);
-      uint8_t buf[OTRadioLink::generateSecureBeaconMaxBufSize];
-      // Generate standard-length-ID beacon.
-      const uint8_t txIDLen = 2;
+      static const uint8_t id[8] = { }; // FIXME
       static const uint8_t key[16] = { }; // FIXME
       static uint8_t iv[12] = { }; ++iv[11]; // FIXME
       const OTRadioLink::fixed32BTextSize12BNonce16BTagSimpleEnc_ptr_t e = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_STATELESS;
-      const uint8_t bodylen = OTRadioLink::generateSecureBeaconRaw(buf, sizeof(buf), NULL, txIDLen, iv, e, NULL, key);
-  
+      // Generate standard-length-ID beacon.
+      const uint8_t txIDLen = 2;
+      uint8_t buf[OTRadioLink::generateSecureBeaconMaxBufSize];
+      const uint8_t bodylen = OTRadioLink::generateSecureBeaconRaw(buf, sizeof(buf), id, txIDLen, iv, e, NULL, key);
       // ASSUME FRAMED CHANNEL 0 (but could check with config isUnframed flag)
       // When sending on a channel with framing, do not explicitly send the frame length byte.
       const bool success = (bodylen > 1) && PrimaryRadio.sendRaw(buf+1, bodylen-1);

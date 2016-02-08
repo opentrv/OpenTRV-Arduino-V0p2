@@ -26,6 +26,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
 
 #include "V0p2_Board_IO_Config.h" // I/O pin allocation: include ahead of I/O module headers.
 
+#if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) || defined(ENABLE_SECURE_RADIO_BEACON)
+#include <OTAESGCM.h>
+#endif
+
 #include <OTRadioLink.h>
 #ifdef ALLOW_CC1_SUPPORT
 #include <OTProtocolCC.h>
@@ -328,7 +332,15 @@ if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("Beacon RX failed at header decode"
     // Validate (authenticate) and decrypt body of secure frames.
     if(secure)
       {
-//      isOK = false; // FIXME: cannot validate secure frames yet.
+      static const uint8_t id[8] = { }; // FIXME
+      static const uint8_t key[16] = { }; // FIXME
+      uint8_t decryptedBodyOutSize;
+      const uint8_t dl = OTRadioLink::decodeSecureSmallFrameFromID(&sfh, msg-1, msglen+1,
+                                OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_STATELESS,
+                                id, sizeof(id),
+                                NULL, key,
+                                NULL, 0, decryptedBodyOutSize);
+      if(0 == dl) { isOK = false; } // Failed auth/decrypt.
       }
     }
 
@@ -567,7 +579,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats IDx");
 #endif // ENABLE_FS20_ENCODING_SUPPORT
 
   // Unparseable frame: drop it; possibly log it as an error.
-#if 0 && defined(DEBUG) && !defined(ENABLE_TRIMMED_MEMORY)
+#if 1 && defined(DEBUG) && !defined(ENABLE_TRIMMED_MEMORY)
   p->print(F("!RX bad msg, len+prefix: ")); OTRadioLink::printRXMsg(p, msg-1, min(msglen+1, 8));
 #endif
   return;
