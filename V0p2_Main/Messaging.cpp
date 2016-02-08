@@ -271,14 +271,14 @@ p->print("FS20 msg HC "); p->print(command.hc1); p->print(' '); p->println(comma
 
 
 #ifdef ENABLE_RADIO_RX
-// Decode and handle inbound raw message.
+// Decode and handle inbound raw message (msg[-1] contains the count of bytes received).
 // A message may contain trailing garbage at the end; the decoder/router should cope.
 // The buffer may be reused when this returns,
 // so a copy should be taken of anything that needs to be retained.
-// If secure is true then this message arrived over a secure channel.
+// If secure is true then this message arrived over an inherently secure channel.
 // This will write any output to the supplied Print object,
 // typically the Serial output (which must be running if so).
-// This routine is NOT allowed to alter the contents of the buffer passed.
+// This routine is NOT allowed to alter in any way the content of the buffer passed.
 static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uint8_t * const msg)
   {
   const uint8_t msglen = msg[-1];
@@ -583,6 +583,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats IDx");
 // typically the Serial output (which must be running if so).
 // This will attempt to process messages in such a way
 // as to avoid internal overflows or other resource exhaustion.
+// The Print object pointer must not be NULL.
 bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadioLink *rl)
   {
   bool workDone = false;
