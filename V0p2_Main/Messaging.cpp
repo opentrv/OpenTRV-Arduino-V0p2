@@ -300,6 +300,9 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uin
   const uint8_t l = sfh.checkAndDecodeSmallFrameHeader(msg-1, msglen+1);
   // If isOK flag is set false for any reason, frame is broken/unsafe/unauth.
   bool isOK = (l > 0);
+#if 0 && defined(DEBUG)
+if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("Beacon RX failed at header decode"); }
+#endif
 
   // Validate integrity of frame (CRC for non-secure, auth for secure).
   if(isOK)
@@ -334,13 +337,26 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uin
     {
     switch(firstByte) // Switch on type.
       {
+#if defined(ENABLE_OTSECUREFRAME_INSECURE_RX_PERMITTED) // Allow insecure.
       // Beacon / Alive frame.
       case OTRadioLink::FTS_ALIVE:
         {
 #if 1 && defined(DEBUG)
 DEBUG_SERIAL_PRINT_FLASHSTRING("Beacon RX seq#");
 DEBUG_SERIAL_PRINT(sfh.getSeq());
-if(secure) { DEBUG_SERIAL_PRINT_FLASHSTRING(" (secure)"); } // Implies auth & enc.
+DEBUG_SERIAL_PRINTLN();
+#endif
+        // Ignores any body data.
+        return;
+        }
+#endif
+
+      // Beacon / Alive frame.
+      case OTRadioLink::FTS_ALIVE | 0x80:
+        {
+#if 1 && defined(DEBUG)
+DEBUG_SERIAL_PRINT_FLASHSTRING("Beacon secure RX seq#");
+DEBUG_SERIAL_PRINT(sfh.getSeq());
 DEBUG_SERIAL_PRINTLN();
 #endif
         // Ignores any body data.
@@ -352,7 +368,7 @@ DEBUG_SERIAL_PRINTLN();
 //          return;
 //          }
 
-      // Reject unrecognised type, though potentially fall through to recognise other encodings.
+      // Reject unrecognised type, though fall through potentially to recognise other encodings.
       default: break;
       }
     }
