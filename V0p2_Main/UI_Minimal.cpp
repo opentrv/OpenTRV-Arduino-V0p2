@@ -1014,38 +1014,43 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
       // Set primary key:
       case 'K':
         {
-        	Serial.println(n); // FIXME delete!
-        if((5 >= n) && ('B' == buf[2]))
+        	
+        if((n >= 5) && ('B' == buf[2]))
           {
+            Serial.println(n); // FIXME delete!
           if('*' == buf[4])
             {
             OTV0P2BASE::setPrimaryBuilding16ByteSecretKey(NULL);
             Serial.println(F("Building Key cleared"));
             }
-          else /*if(36 == n)*/ // Length of set secret key message TODO check this value
+          else if(36 == n) // Length of set secret key message TODO check this value
             {
-        	if (OTV0P2BASE::setPrimaryBuilding16ByteSecretKey((const uint8_t *)buf[5]))
-        	        Serial.println(F("Building Key set"));
-        	else InvalidIgnored();
+        	  if (OTV0P2BASE::setPrimaryBuilding16ByteSecretKey((const uint8_t *) (buf+5)))
+        	      Serial.println(F("Building Key set"));
+        	  else InvalidIgnored();
             }
-//          else InvalidIgnored();
+          else InvalidIgnored();
           }
         break;
         }
         // Set paired devices
       case 'A':
         {
-        if(3 >= n)
+        if(n >= 3)
           {
           if ('*' == buf[2])
             {
-            OTV0P2BASE::setPrimaryBuilding16ByteSecretKey(NULL); // TODO change this to correct function
+            // function call to clear noeds
             Serial.println(F("Node IDs cleared"));
             }
-          else
+          else if (n == 18) // "A" + sizeof(nodeID)
             {
             // rest of code
+//            if (node is set)
+                Serial.println(F("Node set")); // TODO print number of nodes stored
+//            else InvalidIgnored();
             }
+          else InvalidIgnored();
           }
         break;
         }
