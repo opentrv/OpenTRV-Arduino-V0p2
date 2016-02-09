@@ -1902,26 +1902,22 @@ void loopOpenTRV()
 #endif // defined(ENABLE_STATS_TX)
 
 #if defined(ENABLE_SECURE_RADIO_BEACON)
-    // Send a small radio beacon "I'm alive!" message regularly.
+    // Send a small secure radio beacon "I'm alive!" message regularly.
     case 16:
       {
-//      static uint8_t beaconSeqNo;
-//      const uint8_t bodylen = OTRadioLink::generateInsecureBeacon(buf, sizeof(buf), beaconSeqNo++, NULL, 2);
-      uint8_t buf[OTRadioLink::generateSecureBeaconMaxBufSize];
+      static const uint8_t key[16] = { }; // FIXME
+      const OTRadioLink::fixed32BTextSize12BNonce16BTagSimpleEnc_ptr_t e = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_STATELESS;
       // Generate standard-length-ID beacon.
       const uint8_t txIDLen = 2;
-      static const uint8_t key[16] = { }; // FIXME
-      static uint8_t iv[12] = { }; ++iv[11]; // FIXME
-      const OTRadioLink::fixed32BTextSize12BNonce16BTagSimpleEnc_ptr_t e = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_STATELESS;
-      const uint8_t bodylen = OTRadioLink::generateSecureBeaconRaw(buf, sizeof(buf), NULL, txIDLen, iv, e, NULL, key);
-  
-      // ASSUME FRAMED CHANNEL 0 (but could check with config isUnframed flag)
+      uint8_t buf[OTRadioLink::generateSecureBeaconMaxBufSize];
+      const uint8_t bodylen = OTRadioLink::generateSecureBeaconRawForTX(buf, sizeof(buf), txIDLen, e, NULL, key);
+      // ASSUME FRAMED CHANNEL 0 (but could check with config isUnframed flag).
       // When sending on a channel with framing, do not explicitly send the frame length byte.
-      const bool success = (bodylen > 1) && PrimaryRadio.sendRaw(buf+1, bodylen-1);
+      // DO NOT attempt to send if construction of a secure frame failed;
+      // doing so may reuse IVs and destroy the cipher security.
+      const bool success = (0 != bodylen) && PrimaryRadio.sendRaw(buf+1, bodylen-1);
 #if 1 && defined(DEBUG)
       DEBUG_SERIAL_PRINT_FLASHSTRING("Beacon TX ");
-      DEBUG_SERIAL_PRINT(bodylen);
-      DEBUG_SERIAL_PRINT(' ');
       DEBUG_SERIAL_PRINT(success);
       DEBUG_SERIAL_PRINTLN();
 #endif
@@ -1933,7 +1929,7 @@ void loopOpenTRV()
 //
 // All external sensor reads should be in the second half of the minute (>32) if possible.
 // This is to have them as close to stats collection at the end of the minute as possible,
-// and to allow randmisation of the start-up cycle position in the first 32s to help avoid inter-unit collisions.
+// and to allow randomisation of the start-up cycle position in the first 32s to help avoid inter-unit collisions.
 // Also all sources of noise, self-heating, etc, may be turned off for the 'sensor read minute'
 // and thus will have diminished by this point.
 
