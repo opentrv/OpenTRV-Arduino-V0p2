@@ -1005,6 +1005,25 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         Serial.println();
         break;
         }
+      // Set primary key:
+      case 'K':
+        {
+        if((5 >= n) && ('B' == buf[2]))
+          {
+          if('*' == buf[4])
+            {
+            OTV0P2BASE::setPrimaryBuilding16ByteSecretKey(NULL);
+            Serial.println(F("Building Key cleared"));
+            }
+          else if(n == 20) // TODO check this value
+            {
+        	if (OTV0P2BASE::setPrimaryBuilding16ByteSecretKey(buf[5]))
+        	        Serial.println(F("Building Key set"));
+        	else InvalidIgnored();
+            }
+          }
+        break;
+        }
       // Status line and optional smart/scheduled warming prediction request.
       case 'S':
         {
