@@ -492,7 +492,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: enable OpenTRV secure frame encoding/decoding (as of 2015/12).
 #define ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
 // IF DEFINED: allow non-secure OpenTRV secure frame RX (as of 2015/12): DISABLED BY DEFAULT.
-#define ENABLE_OTSECUREFRAME_INSECURE_RX_PERMITTED
+#undef ENABLE_OTSECUREFRAME_INSECURE_RX_PERMITTED
 #endif
 
 #ifdef CONFIG_Trial2013Winter_Round2 // For trial over winter of 2013--4, second round (REV2).
