@@ -1908,7 +1908,15 @@ void loopOpenTRV()
 #if 1 && defined(DEBUG)
       DEBUG_SERIAL_PRINT_FLASHSTRING("Beacon TX... ");
 #endif
-      static const uint8_t key[16] = { }; // FIXME
+      // Get the 'building' key for boradcast.
+      uint8_t key[16];
+      if(!OTV0P2BASE::getPrimaryBuilding16ByteSecretKey(key))
+        {
+#if 1 && defined(DEBUG)
+      DEBUG_SERIAL_PRINTLN_FLASHSTRING("failed (no key)");
+#endif
+        break; 
+        }
       const OTRadioLink::fixed32BTextSize12BNonce16BTagSimpleEnc_ptr_t e = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_STATELESS;
       // Generate standard-length-ID beacon.
       const uint8_t txIDLen = 2;
