@@ -50,7 +50,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #include <SPI.h>
 #include <Wire.h>
 #include <OTRadioLink.h>
-//#include <OTNullRadioLink.h> // as in separate library to OTRadioLink
 #include <OTSIM900Link.h>
 #include <OTRN2483Link.h>
 #include <OTRadValve.h>
