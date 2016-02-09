@@ -136,6 +136,7 @@ inline bool enableTrailingStatsPayload() { return(OTV0P2BASE::getStatsTXLevel() 
 // typically the Serial output (which must be running if so).
 // This will attempt to process messages in such a way
 // as to avoid internal overflows or other resource exhaustion.
+// The Print object pointer must not be NULL.
 bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadioLink *rl);
 #else
 #define handleQueuedMessages(p, wakeSerialIfNeeded, rl)
