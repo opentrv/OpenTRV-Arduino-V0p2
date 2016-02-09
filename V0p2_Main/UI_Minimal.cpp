@@ -1014,6 +1014,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
       // Set primary key:
       case 'K':
         {
+        	Serial.println(n); // FIXME delete!
         if((5 >= n) && ('B' == buf[2]))
           {
           if('*' == buf[4])
@@ -1021,20 +1022,33 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
             OTV0P2BASE::setPrimaryBuilding16ByteSecretKey(NULL);
             Serial.println(F("Building Key cleared"));
             }
-          else if(36 == n) // Length of set secret key message TODO check this value
+          else /*if(36 == n)*/ // Length of set secret key message TODO check this value
             {
-        	if (OTV0P2BASE::setPrimaryBuilding16ByteSecretKey(buf[5]))
+        	if (OTV0P2BASE::setPrimaryBuilding16ByteSecretKey((const uint8_t *)buf[5]))
         	        Serial.println(F("Building Key set"));
         	else InvalidIgnored();
             }
+//          else InvalidIgnored();
           }
         break;
         }
         // Set paired devices
       case 'A':
-      {
-    	  break;
-      }
+        {
+        if(3 >= n)
+          {
+          if ('*' == buf[2])
+            {
+            OTV0P2BASE::setPrimaryBuilding16ByteSecretKey(NULL); // TODO change this to correct function
+            Serial.println(F("Node IDs cleared"));
+            }
+          else
+            {
+            // rest of code
+            }
+          }
+        break;
+        }
 #endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
       // Status line and optional smart/scheduled warming prediction request.
       case 'S':
