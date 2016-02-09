@@ -1905,6 +1905,9 @@ void loopOpenTRV()
     // Send a small secure radio beacon "I'm alive!" message regularly.
     case 16:
       {
+#if 1 && defined(DEBUG)
+      DEBUG_SERIAL_PRINT_FLASHSTRING("Beacon TX... ");
+#endif
       static const uint8_t key[16] = { }; // FIXME
       const OTRadioLink::fixed32BTextSize12BNonce16BTagSimpleEnc_ptr_t e = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_STATELESS;
       // Generate standard-length-ID beacon.
@@ -1913,11 +1916,10 @@ void loopOpenTRV()
       const uint8_t bodylen = OTRadioLink::generateSecureBeaconRawForTX(buf, sizeof(buf), txIDLen, e, NULL, key);
       // ASSUME FRAMED CHANNEL 0 (but could check with config isUnframed flag).
       // When sending on a channel with framing, do not explicitly send the frame length byte.
-      // DO NOT attempt to send if construction of a secure frame failed;
+      // DO NOT attempt to send if construction of the secure frame failed;
       // doing so may reuse IVs and destroy the cipher security.
       const bool success = (0 != bodylen) && PrimaryRadio.sendRaw(buf+1, bodylen-1);
 #if 1 && defined(DEBUG)
-      DEBUG_SERIAL_PRINT_FLASHSTRING("Beacon TX ");
       DEBUG_SERIAL_PRINT(success);
       DEBUG_SERIAL_PRINTLN();
 #endif

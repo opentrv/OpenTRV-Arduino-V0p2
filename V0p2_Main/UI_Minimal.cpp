@@ -1010,11 +1010,11 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         Serial.println();
         break;
         }
+
 #ifdef ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
       // Set primary key:
       case 'K':
         {
-        	
         if((n >= 5) && ('B' == buf[2]))
           {
           if('*' == buf[4])
@@ -1024,11 +1024,11 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
             }
           else if(36 == n) // Length of set secret key message TODO check this value
             {
-        	  if (OTV0P2BASE::setPrimaryBuilding16ByteSecretKey((const uint8_t *) (buf+5)))
-        	      Serial.println(F("Building Key set"));
-        	  else InvalidIgnored();
+            if (OTV0P2BASE::setPrimaryBuilding16ByteSecretKey((const uint8_t *) (buf+5)))
+                { Serial.println(F("Building Key set")); }
+            else { InvalidIgnored(); }
             }
-          else InvalidIgnored();
+          else { InvalidIgnored(); }
           }
         break;
         }
