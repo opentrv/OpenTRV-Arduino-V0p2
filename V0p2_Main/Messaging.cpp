@@ -330,14 +330,24 @@ if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("Beacon RX failed at header decode"
     if(!secure) { isOK = false; }
 #endif
     // Validate (authenticate) and decrypt body of secure frames.
-    if(secure)
+    uint8_t key[16];
+    if(secure && isOK)
       {
-      static const uint8_t id[8] = { }; // FIXME
-      static const uint8_t key[16] = { }; // FIXME
+      // Get the 'building' key.
+      if(!OTV0P2BASE::getPrimaryBuilding16ByteSecretKey(key))
+        {
+        isOK = false;
+#if 1 && defined(DEBUG)
+        DEBUG_SERIAL_PRINTLN_FLASHSTRING("Failed (no key)");
+#endif
+        }
+      }
+    if(secure && isOK)
+      {
       uint8_t decryptedBodyOutSize;
       const uint8_t dl = OTRadioLink::decodeSecureSmallFrameFromID(&sfh, msg-1, msglen+1,
                                 OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_STATELESS,
-                                id, sizeof(id),
+                                sfh.id, sfh.getIl(), // FIXME needs lookup and possible munging! // id, sizeof(id),
                                 NULL, key,
                                 NULL, 0, decryptedBodyOutSize);
       if(0 == dl) { isOK = false; } // Failed auth/decrypt.
@@ -353,7 +363,7 @@ if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("Beacon RX failed at header decode"
     switch(firstByte) // Switch on type.
       {
 #if defined(ENABLE_OTSECUREFRAME_INSECURE_RX_PERMITTED) // Allow insecure.
-      // Beacon / Alive frame.
+      // Beacon / Alive frame, non-secure.
       case OTRadioLink::FTS_ALIVE:
         {
 #if 1 && defined(DEBUG)
@@ -366,7 +376,7 @@ DEBUG_SERIAL_PRINTLN();
         }
 #endif
 
-      // Beacon / Alive frame.
+      // Beacon / Alive frame, secure.
       case OTRadioLink::FTS_ALIVE | 0x80:
         {
 #if 1 && defined(DEBUG)

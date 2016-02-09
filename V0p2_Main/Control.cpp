@@ -1908,18 +1908,18 @@ void loopOpenTRV()
 #if 1 && defined(DEBUG)
       DEBUG_SERIAL_PRINT_FLASHSTRING("Beacon TX... ");
 #endif
-      // Get the 'building' key for boradcast.
+      // Get the 'building' key for braadcast.
       uint8_t key[16];
       if(!OTV0P2BASE::getPrimaryBuilding16ByteSecretKey(key))
         {
 #if 1 && defined(DEBUG)
-      DEBUG_SERIAL_PRINTLN_FLASHSTRING("failed (no key)");
+        DEBUG_SERIAL_PRINTLN_FLASHSTRING("failed (no key)");
 #endif
         break; 
         }
       const OTRadioLink::fixed32BTextSize12BNonce16BTagSimpleEnc_ptr_t e = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_STATELESS;
-      // Generate standard-length-ID beacon.
-      const uint8_t txIDLen = 2;
+      // Generate beacon with ID long enough to used directly in the IV.
+      const uint8_t txIDLen = 6;
       uint8_t buf[OTRadioLink::generateSecureBeaconMaxBufSize];
       const uint8_t bodylen = OTRadioLink::generateSecureBeaconRawForTX(buf, sizeof(buf), txIDLen, e, NULL, key);
       // ASSUME FRAMED CHANNEL 0 (but could check with config isUnframed flag).
