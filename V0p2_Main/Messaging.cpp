@@ -341,6 +341,9 @@ if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("Beacon RX failed at header decode"
                                 NULL, key,
                                 NULL, 0, decryptedBodyOutSize);
       if(0 == dl) { isOK = false; } // Failed auth/decrypt.
+#if 1 && defined(DEBUG)
+      if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("Beacon RX auth failed"); }
+#endif
       }
     }
 
