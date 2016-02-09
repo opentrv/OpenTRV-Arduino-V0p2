@@ -1918,7 +1918,7 @@ void loopOpenTRV()
         break; 
         }
       const OTRadioLink::fixed32BTextSize12BNonce16BTagSimpleEnc_ptr_t e = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_STATELESS;
-      // Generate beacon with ID long enough to used directly in the IV.
+      // Generate beacon with ID long enough to used directly in the IV with no lookup.
       const uint8_t txIDLen = 6;
       uint8_t buf[OTRadioLink::generateSecureBeaconMaxBufSize];
       const uint8_t bodylen = OTRadioLink::generateSecureBeaconRawForTX(buf, sizeof(buf), txIDLen, e, NULL, key);
