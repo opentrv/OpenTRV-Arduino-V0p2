@@ -761,7 +761,12 @@ static void InvalidIgnored() { Serial.println(F("Invalid, ignored.")); }
 // If INTERACTIVE_ECHO defined then immediately echo received characters, not at end of line.
 #define CLI_INTERACTIVE_ECHO
 
+// TODO better way of handling this?
+#ifdef ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
+#define MAXIMUM_CLI_OT_RESPONSE_CHARS 37 // 37 = 4("K B ") + 32(AES key) + 1('\r' | 'n')
+#else
 #define MAXIMUM_CLI_OT_RESPONSE_CHARS 9 // Just enough for any valid core/OT command expected not including trailing LF.  (Note that Serial RX buffer is 64 bytes.)
+#endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
 #ifdef ENABLE_EXTENDED_CLI // Allow for much longer input commands.
 #define MAXIMUM_CLI_RESPONSE_CHARS (max(64, MAXIMUM_CLI_OT_RESPONSE_CHARS))
 #else
@@ -1005,6 +1010,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         Serial.println();
         break;
         }
+#ifdef ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
       // Set primary key:
       case 'K':
         {
@@ -1015,7 +1021,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
             OTV0P2BASE::setPrimaryBuilding16ByteSecretKey(NULL);
             Serial.println(F("Building Key cleared"));
             }
-          else if(n == 20) // TODO check this value
+          else if(36 == n) // Length of set secret key message TODO check this value
             {
         	if (OTV0P2BASE::setPrimaryBuilding16ByteSecretKey(buf[5]))
         	        Serial.println(F("Building Key set"));
@@ -1024,6 +1030,12 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
           }
         break;
         }
+        // Set paired devices
+      case 'A':
+      {
+    	  break;
+      }
+#endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
       // Status line and optional smart/scheduled warming prediction request.
       case 'S':
         {
