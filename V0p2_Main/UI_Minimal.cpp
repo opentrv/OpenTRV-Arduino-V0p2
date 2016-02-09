@@ -1017,7 +1017,6 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         	
         if((n >= 5) && ('B' == buf[2]))
           {
-            Serial.println(n); // FIXME delete!
           if('*' == buf[4])
             {
             OTV0P2BASE::setPrimaryBuilding16ByteSecretKey(NULL);
@@ -1033,7 +1032,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
           }
         break;
         }
-        // Set paired devices
+      // Set new node
       case 'A':
         {
         if(n >= 3)
