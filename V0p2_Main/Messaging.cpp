@@ -182,7 +182,9 @@ OTRadioLink::printRXMsg(p, txbuf, bodylen);
 
 
 #if defined(LISTEN_FOR_FTp2_FS20_native) // defined(ENABLE_RADIO_RX) && (defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)) && defined(ENABLE_FS20_NATIVE_AND_BINARY_STATS_RX) // Listen for calls for heat from remote valves...
-static void decodeAndHandleFTp2_FS20_native(Print *p, const bool secure, const uint8_t * const msg, const uint8_t msglen)
+// Handle FS20/FHT8V traffic including binary stats.
+// Returns true on success, false otherwise.
+static bool decodeAndHandleFTp2_FS20_native(Print *p, const bool secure, const uint8_t * const msg, const uint8_t msglen)
 {
 #if 0 && defined(DEBUG)
   OTRadioLink::printRXMsg(p, msg, msglen);
@@ -269,36 +271,20 @@ p->print("FS20 msg HC "); p->print(command.hc1); p->print(' '); p->println(comma
 #endif
 #endif // defined(ENABLE_STATS_RX)
     }
-  return;
+  return(true);
   }
 #endif
 
 
-#ifdef ENABLE_RADIO_RX
-// Decode and handle inbound raw message (msg[-1] contains the count of bytes received).
-// A message may contain trailing garbage at the end; the decoder/router should cope.
-// The buffer may be reused when this returns,
-// so a copy should be taken of anything that needs to be retained.
-// If secure is true then this message arrived over an inherently secure channel.
-// This will write any output to the supplied Print object,
-// typically the Serial output (which must be running if so).
-// This routine is NOT allowed to alter in any way the content of the buffer passed.
-static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uint8_t * const msg)
+#if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) // && defined(ENABLE_FAST_FRAMED_CARRIER_SUPPORT)
+// Handle FS20/FHT8V traffic including binary stats.
+// Returns true on successful frame type match, false if no suitable frame was found/decoded and another parser should be tried.
+static bool decodeAndHandleOTSecureableFrame(Print *p, const bool secure, const uint8_t * const msg)
   {
   const uint8_t msglen = msg[-1];
-
-  // TODO: consider extracting hash of all message data (good/bad) and injecting into entropy pool.
-#if 0 && defined(DEBUG)
-  OTRadioLink::printRXMsg(p, msg, msglen);
-#endif
-  if(msglen < 2) { return; } // Too short to be useful, so ignore.
-
   const uint8_t firstByte = msg[0];
 
-   // Length-first OpenTRV secureable-frame format...
-#if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) // && defined(ENABLE_FAST_FRAMED_CARRIER_SUPPORT)
-
-  // Validate structure of frame first.
+  // Validate structure of header/frame first.
   // This is quick and checks for insane/dangerous values throughout.
   OTRadioLink::SecurableFrameHeader sfh;
   const uint8_t l = sfh.checkAndDecodeSmallFrameHeader(msg-1, msglen+1);
@@ -376,7 +362,7 @@ DEBUG_SERIAL_PRINTLN();
 DEBUG_SERIAL_PRINTLN_FLASHSTRING("Beacon nonsecure");
 #endif
         // Ignores any body data.
-        return;
+        return(true);
         }
 #endif
 
@@ -387,22 +373,54 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Beacon nonsecure");
 DEBUG_SERIAL_PRINTLN_FLASHSTRING("Beacon");
 #endif
         // Ignores any body data.
-        return;
+        return(true);
         }
 
       case 'O' | 0x80: // Basic OpenTRV secure frame...
-          {
+        {
 #if 1 && defined(DEBUG)
 DEBUG_SERIAL_PRINTLN_FLASHSTRING("'O'");
 #endif
-          return;
-          }
+        return(true);
+        }
 
       // Reject unrecognised type, though fall through potentially to recognise other encodings.
       default: break;
       }
     }
+
+  // Failed to match type; let another handler try.
+  return(false);
+  }
+#endif // defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) 
+
+
+#ifdef ENABLE_RADIO_RX
+// Decode and handle inbound raw message (msg[-1] contains the count of bytes received).
+// A message may contain trailing garbage at the end; the decoder/router should cope.
+// The buffer may be reused when this returns,
+// so a copy should be taken of anything that needs to be retained.
+// If secure is true then this message arrived over an inherently secure channel.
+// This will write any output to the supplied Print object,
+// typically the Serial output (which must be running if so).
+// This routine is NOT allowed to alter in any way the content of the buffer passed.
+static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uint8_t * const msg)
+  {
+  const uint8_t msglen = msg[-1];
+
+  // TODO: consider extracting hash of all message data (good/bad) and injecting into entropy pool.
+#if 0 && defined(DEBUG)
+  OTRadioLink::printRXMsg(p, msg, msglen);
+#endif
+  if(msglen < 2) { return; } // Too short to be useful, so ignore.
+
+   // Length-first OpenTRV secureable-frame format...
+#if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) // && defined(ENABLE_FAST_FRAMED_CARRIER_SUPPORT)
+  if(decodeAndHandleOTSecureableFrame(p, secure, msg))
+    { return; }
 #endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
+
+  const uint8_t firstByte = msg[0];
 
 #ifdef ENABLE_FS20_ENCODING_SUPPORT
   switch(firstByte)
