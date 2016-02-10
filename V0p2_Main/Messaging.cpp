@@ -293,54 +293,57 @@ static bool decodeAndHandleOTSecureableFrame(Print *p, const bool secure, const 
 #if 0 && defined(DEBUG)
 if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("Beacon RX failed at header decode"); }
 #endif
+  // If failed this early and this badly, let someone else try parsing the message buffer...
+  if(!isOK) { return(false); }
+
+  // Buffer for receiving secure frame body.
+  // (Non-secure frame bodies should be read directly from the frame buffer.)
+  uint8_t secBodyBuf[OTRadioLink::ENC_BODY_SMALL_FIXED_PTEXT_MAX_SIZE];
 
   // Validate integrity of frame (CRC for non-secure, auth for secure).
-  if(isOK)
-    {
-    const bool secure = sfh.isSecure();
-    uint8_t receivedBodyLength; // Body length after any decryption, etc.
-    //uint8_t *const decryptedBodyOut, const uint8_t decryptedBodyOutBuflen, uint8_t &decryptedBodyOutSize
-    // TODO: validate entire message, eg including auth, or CRC if insecure msg rcvd&allowed.
+  const bool secure = sfh.isSecure();
+  uint8_t receivedBodyLength; // Body length after any decryption, etc.
+  //uint8_t *const decryptedBodyOut, const uint8_t decryptedBodyOutBuflen, uint8_t &decryptedBodyOutSize
+  // TODO: validate entire message, eg including auth, or CRC if insecure msg rcvd&allowed.
 #if defined(ENABLE_OTSECUREFRAME_INSECURE_RX_PERMITTED) // Allow insecure.
-    // Only bother to check insecure form (and link code to do so) if insecure RX is allowed.
-    if(!secure)
-      {
-      // Reject if CRC fails.
-      if(0 == decodeNonsecureSmallFrameRaw(&sfh, msg-1, msglen+1))
-        { isOK = false; }
-      else
-        { receivedBodyLength = sfh.bl; }
-      }
+  // Only bother to check insecure form (and link code to do so) if insecure RX is allowed.
+  if(!secure)
+    {
+    // Reject if CRC fails.
+    if(0 == decodeNonsecureSmallFrameRaw(&sfh, msg-1, msglen+1))
+      { isOK = false; }
+    else
+      { receivedBodyLength = sfh.bl; }
+    }
 #else
-    // Only allow secure frames by default.
-    if(!secure) { isOK = false; }
+  // Only allow secure frames by default.
+  if(!secure) { isOK = false; }
 #endif
-    // Validate (authenticate) and decrypt body of secure frames.
-    uint8_t key[16];
-    if(secure && isOK)
+  // Validate (authenticate) and decrypt body of secure frames.
+  uint8_t key[16];
+  if(secure && isOK)
+    {
+    // Get the 'building' key.
+    if(!OTV0P2BASE::getPrimaryBuilding16ByteSecretKey(key))
       {
-      // Get the 'building' key.
-      if(!OTV0P2BASE::getPrimaryBuilding16ByteSecretKey(key))
-        {
-        isOK = false;
+      isOK = false;
 #if 1 && defined(DEBUG)
-        DEBUG_SERIAL_PRINTLN_FLASHSTRING("Failed (no key)");
-#endif
-        }
-      }
-    if(secure && isOK)
-      {
-      uint8_t decryptedBodyOutSize;
-      const uint8_t dl = OTRadioLink::decodeSecureSmallFrameFromID(&sfh, msg-1, msglen+1,
-                                OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_STATELESS,
-                                sfh.id, sfh.getIl(), // FIXME needs lookup and possible munging! // id, sizeof(id),
-                                NULL, key,
-                                NULL, 0, decryptedBodyOutSize);
-      if(0 == dl) { isOK = false; } // Failed auth/decrypt.
-#if 1 && defined(DEBUG)
-      if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("RX auth failed"); }
+      DEBUG_SERIAL_PRINTLN_FLASHSTRING("Failed (no key)");
 #endif
       }
+    }
+  if(secure && isOK)
+    {
+    uint8_t decryptedBodyOutSize = 0;
+    const uint8_t dl = OTRadioLink::decodeSecureSmallFrameFromID(&sfh, msg-1, msglen+1,
+                              OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_STATELESS,
+                              sfh.id, sfh.getIl(), // FIXME needs lookup and possible munging! // id, sizeof(id),
+                              NULL, key,
+                              secBodyBuf, sizeof(secBodyBuf), decryptedBodyOutSize);
+    if(0 == dl) { isOK = false; } // Failed auth/decrypt.
+#if 1 && defined(DEBUG)
+    if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("RX auth failed"); }
+#endif
     }
 
   // If frame still OK to process then switch on frame type.
@@ -354,6 +357,7 @@ DEBUG_SERIAL_PRINTLN();
 
     switch(firstByte) // Switch on type.
       {
+#if defined(ENABLE_SECURE_RADIO_BEACON)
 #if defined(ENABLE_OTSECUREFRAME_INSECURE_RX_PERMITTED) // Allow insecure.
       // Beacon / Alive frame, non-secure.
       case OTRadioLink::FTS_ALIVE:
@@ -364,40 +368,58 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Beacon nonsecure");
         // Ignores any body data.
         return(true);
         }
-#endif
-
+#endif // defined(ENABLE_OTSECUREFRAME_INSECURE_RX_PERMITTED)
       // Beacon / Alive frame, secure.
       case OTRadioLink::FTS_ALIVE | 0x80:
         {
 #if 1 && defined(DEBUG)
 DEBUG_SERIAL_PRINTLN_FLASHSTRING("Beacon");
 #endif
-        // Ignores any body data.
+        // Does not expect any body data.
+        if(decryptedBodyOutSize != 0)
+          {
+#if 1 && defined(DEBUG)
+DEBUG_SERIAL_PRINTLN_FLASHSTRING("!Beacon data");
+#endif
+          break;
+          }
         return(true);
         }
+#endif // defined(ENABLE_SECURE_RADIO_BEACON)
 
       case 'O' | 0x80: // Basic OpenTRV secure frame...
         {
 #if 1 && defined(DEBUG)
 DEBUG_SERIAL_PRINTLN_FLASHSTRING("'O'");
 #endif
-//#ifdef ENABLE_BOILER_HUB
-//        // If acting as a boiler hub
-//        // then extract the valve %age and pass to boiler controller
-//        // but use only if valid.
-//        // Ignore explicit call-for-heat flag for now.
-//        const uint8_t percentOpen = XXX;
-//        if(percentOpen <= 100) { remoteCallForHeatRX(0, percentOpen); }
-//#endif
+        if(decryptedBodyOutSize < 2)
+          {
+#if 1 && defined(DEBUG)
+DEBUG_SERIAL_PRINTLN_FLASHSTRING("!O frame short");
+#endif
+          break;
+          }
+#ifdef ENABLE_BOILER_HUB
+        // If acting as a boiler hub
+        // then extract the valve %age and pass to boiler controller
+        // but use only if valid.
+        // Ignore explicit call-for-heat flag for now.
+        const uint8_t percentOpen = secBodyBuf[0];
+        if(percentOpen <= 100) { remoteCallForHeatRX(0, percentOpen); }
+#endif
 #ifdef ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY
         // Forward secure frame as-is across the secondary link to the server.
-        SecondaryRadio.queueToSend(msg, msglen); 
+        // Only do this if if contains (JSON) stats.
+        if((decryptedBodyOutSize > 3) && ('{' == secBodyBuf[2]))
+          {
+          SecondaryRadio.queueToSend(msg, msglen); 
 #else // Don't write to console/Serial also if relayed.
 //        // Write out the JSON message.
 //        OTV0P2BASE::outputJSONStats(&Serial, secure, msg, msglen);
 //        // Attempt to ensure that trailing characters are pushed out fully.
 //        OTV0P2BASE::flushSerialProductive();
 #endif // ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY
+          }
         return(true);
         }
 
@@ -433,8 +455,7 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uin
 
    // Length-first OpenTRV secureable-frame format...
 #if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) // && defined(ENABLE_FAST_FRAMED_CARRIER_SUPPORT)
-  if(decodeAndHandleOTSecureableFrame(p, secure, msg))
-    { return; }
+  if(decodeAndHandleOTSecureableFrame(p, secure, msg)) { return; }
 #endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
 
   const uint8_t firstByte = msg[0];
