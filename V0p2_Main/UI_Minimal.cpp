@@ -1012,28 +1012,29 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         }
 
 #ifdef ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
-      // Set primary key:
-      case 'K':
-        {
-        char *last; // Used by strtok_r().
-        char *tok1;
-        // Minimum 5 character sequence makes sense and is safe to tokenise, eg "K B *".
-        if((n >= 5) && (NULL != (tok1 = strtok_r(buf+2, " ", &last))))
-          {
-          if (tok1 == 'B') {
-        	  char *tok2 = strtok_r(NULL, " ", &last);
-        	  if (NULL != tok2) {
-        		  if (*tok2 == '*') {
-        			  setPrimaryBuilding16ByteSecretKey(NULL);
-        			  Serial.println(F("Building Key cleared"));
-        		  } else if (n == 36) {
-        			  // tokenise, create buffer, fill with parsed tokens and pass to setPrima...()
-        		  } else InvalidIgnored();
-        	  }
-          }
-
-        break;
-        }
+// Commented out because braces not balanced and breaking compile of entire function!
+//      // Set primary key:
+//      case 'K':
+//        {
+//        char *last; // Used by strtok_r().
+//        char *tok1;
+//        // Minimum 5 character sequence makes sense and is safe to tokenise, eg "K B *".
+//        if((n >= 5) && (NULL != (tok1 = strtok_r(buf+2, " ", &last))))
+//          {
+//          if ('B' == *tok1) {
+//        	  char *tok2 = strtok_r(NULL, " ", &last);
+//        	  if (NULL != tok2) {
+//        		  if (*tok2 == '*') {
+//        			  OTV0P2BASE::setPrimaryBuilding16ByteSecretKey(NULL);
+//        			  Serial.println(F("Building Key cleared"));
+//        		  } else if (n == 36) {
+//        			  // tokenise, create buffer, fill with parsed tokens and pass to setPrima...()
+//        		  } else InvalidIgnored();
+//        	  }
+//          }
+//
+//        break;
+//        }
       // Set new node
       case 'A':
         {
@@ -1041,7 +1042,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         char *tok1;
         // Minimum 3 character sequence makes sense and is safe to tokenise, eg "A *".
         if((n >= 3) && (NULL != (tok1 = strtok_r(buf+2, " ", &last)))) {
-          if (tok1 == '*') {
+          if ('*' == *tok1) {
             // function call to clear noeds
         	// TODO above function
             Serial.println(F("Node IDs cleared"));

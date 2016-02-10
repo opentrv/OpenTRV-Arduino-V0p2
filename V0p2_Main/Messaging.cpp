@@ -90,7 +90,7 @@ OTRadioLink::OTNullRadioLink NullRadio;
 #if defined(ENABLE_TRIMMED_MEMORY) || !defined(ENABLE_CONTINUOUS_RX)
 static const uint8_t RFM23B_RX_QUEUE_SIZE = 1;
 #else
-static const uint8_t RFM23B_RX_QUEUE_SIZE = DEFAULT_RFM23B_RX_QUEUE_CAPACITY;
+static const uint8_t RFM23B_RX_QUEUE_SIZE = OTRFM23BLink::DEFAULT_RFM23B_RX_QUEUE_CAPACITY;
 #endif
 #if defined(PIN_RFM_NIRQ)
 static const int8_t RFM23B_IRQ_PIN = PIN_RFM_NIRQ;
