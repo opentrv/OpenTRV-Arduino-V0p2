@@ -85,13 +85,19 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
 OTRadioLink::OTNullRadioLink NullRadio;
 #endif
 
-// Brings in necessary radio libs
+// Brings in necessary radio libs.
 #ifdef ENABLE_RADIO_RFM23B
-#ifdef PIN_RFM_NIRQ
-OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, PIN_RFM_NIRQ> RFM23B;
+#if defined(ENABLE_TRIMMED_MEMORY) || !defined(ENABLE_CONTINUOUS_RX)
+static const uint8_t RFM23B_RX_QUEUE_SIZE = 1;
 #else
-OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, -1> RFM23B;
+static const uint8_t RFM23B_RX_QUEUE_SIZE = DEFAULT_RFM23B_RX_QUEUE_CAPACITY;
 #endif
+#if defined(PIN_RFM_NIRQ)
+static const int8_t RFM23B_IRQ_PIN = PIN_RFM_NIRQ;
+#else
+static const int8_t RFM23B_IRQ_PIN = -1;
+#endif
+OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, RFM23B_IRQ_PIN, RFM23B_RX_QUEUE_SIZE> RFM23B;
 #endif // ENABLE_RADIO_RFM23B
 #ifdef ENABLE_RADIO_SIM900
 OTSIM900Link::OTSIM900Link SIM900(REGULATOR_POWERUP, RADIO_POWER_PIN, SOFTSERIAL_RX_PIN, SOFTSERIAL_TX_PIN);
