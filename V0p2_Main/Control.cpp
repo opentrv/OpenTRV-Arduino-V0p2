@@ -1915,7 +1915,7 @@ void loopOpenTRV()
 #if 1 && defined(DEBUG)
         DEBUG_SERIAL_PRINTLN_FLASHSTRING("failed (no key)");
 #endif
-        break; 
+        break;
         }
       const OTRadioLink::fixed32BTextSize12BNonce16BTagSimpleEnc_ptr_t e = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_STATELESS;
       // Generate beacon with ID long enough to used directly in the IV with no lookup.
