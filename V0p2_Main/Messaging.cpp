@@ -381,6 +381,23 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Beacon");
 #if 1 && defined(DEBUG)
 DEBUG_SERIAL_PRINTLN_FLASHSTRING("'O'");
 #endif
+//#ifdef ENABLE_BOILER_HUB
+//        // If acting as a boiler hub
+//        // then extract the valve %age and pass to boiler controller
+//        // but use only if valid.
+//        // Ignore explicit call-for-heat flag for now.
+//        const uint8_t percentOpen = XXX;
+//        if(percentOpen <= 100) { remoteCallForHeatRX(0, percentOpen); }
+//#endif
+#ifdef ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY
+        // Forward secure frame as-is across the secondary link to the server.
+        SecondaryRadio.queueToSend(msg, msglen); 
+#else // Don't write to console/Serial also if relayed.
+//        // Write out the JSON message.
+//        OTV0P2BASE::outputJSONStats(&Serial, secure, msg, msglen);
+//        // Attempt to ensure that trailing characters are pushed out fully.
+//        OTV0P2BASE::flushSerialProductive();
+#endif // ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY
         return(true);
         }
 
