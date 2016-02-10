@@ -1015,42 +1015,46 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
       // Set primary key:
       case 'K':
         {
-        if((n >= 5) && ('B' == buf[2]))
+        char *last; // Used by strtok_r().
+        char *tok1;
+        // Minimum 5 character sequence makes sense and is safe to tokenise, eg "K B *".
+        if((n >= 5) && (NULL != (tok1 = strtok_r(buf+2, " ", &last))))
           {
-          if('*' == buf[4])
-            {
-            OTV0P2BASE::setPrimaryBuilding16ByteSecretKey(NULL);
-            Serial.println(F("Building Key cleared"));
-            }
-          else if(36 == n) // Length of set secret key message TODO check this value
-            {
-            if (OTV0P2BASE::setPrimaryBuilding16ByteSecretKey((const uint8_t *) (buf+5)))
-                { Serial.println(F("Building Key set")); }
-            else { InvalidIgnored(); }
-            }
-          else { InvalidIgnored(); }
+          if (tok1 == 'B') {
+        	  char *tok2 = strtok_r(NULL, " ", &last);
+        	  if (NULL != tok2) {
+        		  if (*tok2 == '*') {
+        			  setPrimaryBuilding16ByteSecretKey(NULL);
+        			  Serial.println(F("Building Key cleared"));
+        		  } else if (n == 36) {
+        			  // tokenise, create buffer, fill with parsed tokens and pass to setPrima...()
+        		  } else InvalidIgnored();
+        	  }
           }
+
         break;
         }
       // Set new node
       case 'A':
         {
-        if(n >= 3)
-          {
-          if ('*' == buf[2])
-            {
+        char *last; // Used by strtok_r().
+        char *tok1;
+        // Minimum 3 character sequence makes sense and is safe to tokenise, eg "A *".
+        if((n >= 3) && (NULL != (tok1 = strtok_r(buf+2, " ", &last)))) {
+          if (tok1 == '*') {
             // function call to clear noeds
+        	// TODO above function
             Serial.println(F("Node IDs cleared"));
-            }
-          else if (n == 18) // "A" + sizeof(nodeID)
-            {
-            // rest of code
-//            if (node is set)
-                Serial.println(F("Node set")); // TODO print number of nodes stored
-//            else InvalidIgnored();
-            }
-          else InvalidIgnored();
+          } else if(n == 18) {
+        	  char *tok2 = strtok_r(NULL, " ", &last);
+        	  if (NULL != tok2) {
+        		  if (n == 18) {
+        			  // tokenise, create buffer, fill with parsed tokens and pass to relevant function
+
+        		  } else InvalidIgnored();
+        	  }
           }
+        }
         break;
         }
 #endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
