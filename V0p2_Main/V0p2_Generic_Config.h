@@ -51,7 +51,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as plain boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
 //#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
-//#define CONFIG_DORM1 // REV7 / DORM1 Winter 2014/2015 all-in-one valve unit.
+#define CONFIG_DORM1 // REV7 / DORM1 all-in-one valve unit.
 //#define CONFIG_DORM1_BOILER // REV8 / DORM1 Winter 2014/2015 boiler-control unit.
 //#define CONFIG_REV11_RAW_JSON // REV11 as raw JSON-only stats/sensor leaf.
 
@@ -63,7 +63,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
 //#define CONFIG_Trial2013Winter_Round2_BHR // REV2 cut4: boiler hub and stats relay.
 //#define CONFIG_Trial2013Winter_Round2_SECURE_NOHUB // REV2 cut4 leaf (valve/sensor) 2015/12 secure protocol.
-#define CONFIG_Trial2013Winter_Round2_SECURE_HUB // REV2 cut4 hub (boiler/stats) 2015/12 secure protocol.
+//#define CONFIG_Trial2013Winter_Round2_SECURE_HUB // REV2 cut4 hub (boiler/stats) 2015/12 secure protocol.
 //#define CONFIG_DHD_TESTLAB_REV4 // REV4 cut2.
 //#define CONFIG_DHD_TESTLAB_REV4_NOHUB // REV4 cut2, no hub.
 //#define CONFIG_BH_DHW // Bo's hot water.
@@ -116,8 +116,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #undef ENABLE_MIN_ENERGY_BOOT
 // IF DEFINED: basic FROST/WARM temperatures are settable.
 #define ENABLE_SETTABLE_TARGET_TEMPERATURES
-// IF DEFINED: support one on and one off time per day (possibly in conjunction with 'learn' button).
-#define ENABLE_SINGLETON_SCHEDULE
 // IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
 #define ENABLE_LOCAL_TRV
 // IF DEFINED: this unit controls a valve, but provides slave valve control only.
@@ -126,9 +124,11 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define ENABLE_BOILER_HUB
 // IF DEFINED: allow JSON stats frames alongside binary ones.
 #define ENABLE_JSON_OUTPUT
+// IF DEFINED: support one on and one off time per day (possibly in conjunction with 'learn' button).
+#define ENABLE_SINGLETON_SCHEDULE
 // IF DEFINED: use active-low LEARN button(s).  Needs ENABLE_SINGLETON_SCHEDULE.
 #define ENABLE_LEARN_BUTTON // OPTIONAL ON V0.09 PCB1
-// IF DEFINED: allow periodic machine- and human- readable status report to serial, starting with "="/
+// IF DEFINED: allow periodic machine- and human- readable status report to serial, starting with "=".
 #define ENABLE_SERIAL_STATUS_REPORT
 // IF DEFINED: this unit supports CLI over the USB/serial connection, eg for run-time reconfig.
 #define ENABLE_CLI
@@ -506,10 +506,15 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 
 // ------------------------- REV7
 
-#ifdef CONFIG_DORM1 // For trial over winter of 2014--5, all-in-one (REV7).
+#ifdef CONFIG_DORM1 // All-in-one (REV7).
 // Revision REV7 of V0.2 board, all-in-one valve unit with local motor drive.
 // Does not ever need to act as a boiler hub nor to receive stats.
+// Although LERAN buttons are provided, by default they are disabled as is the scheduler.
 #define V0p2_REV 7
+// IF DEFINED: support one on and one off time per day (possibly in conjunction with 'learn' button).
+#undef ENABLE_SINGLETON_SCHEDULE
+// IF DEFINED: use active-low LEARN button(s).  Needs ENABLE_SINGLETON_SCHEDULE.
+#undef ENABLE_LEARN_BUTTON // OPTIONAL ON V0.09 PCB1
 // IF DEFINED: try to trim memory (primarily RAM, also code/Flash) space used.
 #define ENABLE_TRIMMED_MEMORY
 // IF DEFINED: initial direct motor drive design.
