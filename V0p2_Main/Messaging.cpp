@@ -352,7 +352,7 @@ if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("Beacon RX failed at header decode"
                                 NULL, 0, decryptedBodyOutSize);
       if(0 == dl) { isOK = false; } // Failed auth/decrypt.
 #if 1 && defined(DEBUG)
-      if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("Beacon RX auth failed"); }
+      if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("RX auth failed"); }
 #endif
       }
     }
@@ -360,6 +360,12 @@ if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("Beacon RX failed at header decode"
   // If frame still OK to process then switch on frame type.
   if(isOK)
     {
+#if 1 && defined(DEBUG)
+DEBUG_SERIAL_PRINT_FLASHSTRING("RX seq#");
+DEBUG_SERIAL_PRINT(sfh.getSeq());
+DEBUG_SERIAL_PRINTLN();
+#endif
+
     switch(firstByte) // Switch on type.
       {
 #if defined(ENABLE_OTSECUREFRAME_INSECURE_RX_PERMITTED) // Allow insecure.
@@ -367,9 +373,7 @@ if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("Beacon RX failed at header decode"
       case OTRadioLink::FTS_ALIVE:
         {
 #if 1 && defined(DEBUG)
-DEBUG_SERIAL_PRINT_FLASHSTRING("Beacon RX seq#");
-DEBUG_SERIAL_PRINT(sfh.getSeq());
-DEBUG_SERIAL_PRINTLN();
+DEBUG_SERIAL_PRINTLN_FLASHSTRING("Beacon nonsecure");
 #endif
         // Ignores any body data.
         return;
@@ -380,18 +384,19 @@ DEBUG_SERIAL_PRINTLN();
       case OTRadioLink::FTS_ALIVE | 0x80:
         {
 #if 1 && defined(DEBUG)
-DEBUG_SERIAL_PRINT_FLASHSTRING("Beacon secure RX seq#");
-DEBUG_SERIAL_PRINT(sfh.getSeq());
-DEBUG_SERIAL_PRINTLN();
+DEBUG_SERIAL_PRINTLN_FLASHSTRING("Beacon");
 #endif
         // Ignores any body data.
         return;
         }
 
-//      case 'O': // Basic OpenTRV secureable frame...
-//          {
-//          return;
-//          }
+      case 'O' | 0x80: // Basic OpenTRV secure frame...
+          {
+#if 1 && defined(DEBUG)
+DEBUG_SERIAL_PRINTLN_FLASHSTRING("'O'");
+#endif
+          return;
+          }
 
       // Reject unrecognised type, though fall through potentially to recognise other encodings.
       default: break;

@@ -510,6 +510,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // Revision REV7 of V0.2 board, all-in-one valve unit with local motor drive.
 // Does not ever need to act as a boiler hub nor to receive stats.
 #define V0p2_REV 7
+// IF DEFINED: try to trim memory (primarily RAM, also code/Flash) space used.
+#define ENABLE_TRIMMED_MEMORY
 // IF DEFINED: initial direct motor drive design.
 #define DIRECT_MOTOR_DRIVE_V1
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
