@@ -69,8 +69,10 @@ void markUIControlUsed()
   {
   statusChange = true; // Note user interaction with the system.
   uiTimeoutM = UI_DEFAULT_RECENT_USE_TIMEOUT_M; // Ensure that UI controls are kept 'warm' for a little while.
+#if defined(ENABLE_UI_WAKES_CLI)
   // Make CLI active for a while (at some slight possibly-significant energy cost).
   resetCLIActiveTimer(); // Thread-safe.
+#endif
   // User operation of controls locally is strong indication of presence.
   Occupancy.markAsOccupied(); // Thread-safe.
   }

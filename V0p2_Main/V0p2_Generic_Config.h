@@ -135,6 +135,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define ENABLE_FULL_OT_UI
 // IF DEFINED: enable and extended CLI with a longer input buffer for example.
 #undef ENABLE_EXTENDED_CLI
+// IF DEFINED: physical UI use wakes CLI (not needed if can auto-wake from serial).
+#undef ENABLE_UI_WAKES_CLI
 //////////////////////////////////////// DEVICE UI OPTIONS (and support for them)
 // IF DEFINED: basic FROST/WARM temperatures are settable.
 #define ENABLE_SETTABLE_TARGET_TEMPERATURES
