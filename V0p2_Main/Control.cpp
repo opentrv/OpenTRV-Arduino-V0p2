@@ -1837,12 +1837,12 @@ void loopOpenTRV()
 
   // DO SCHEDULING
 
-  // Once-per-minute tasks: all must take << 0.3s.
+  // Once-per-minute tasks: all must take << 0.3s unless particular care is taken.
   // Run tasks spread throughout the minute to be as kind to batteries (etc) as possible.
   // Only when runAll is true run less-critical tasks that be skipped sometimes when particularly conserving energy.
   // Run all for first full 4-minute cycle, eg because unit may start anywhere in it.
+  // Note: ensure only take ambient light reading at times when all LEDs are off (or turn them off).
   // TODO: coordinate temperature reading with time when radio and other heat-generating items are off for more accurate readings.
-  // TODO: ensure only take ambient light reading at times when all LEDs are off.
   const bool runAll = (!conserveBattery) || minute0From4ForSensors || (minuteCount < 4);
 
   switch(TIME_LSD) // With V0P2BASE_TWO_S_TICK_RTC_SUPPORT only even seconds are available.
