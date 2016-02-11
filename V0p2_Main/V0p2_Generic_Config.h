@@ -511,7 +511,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #ifdef CONFIG_DORM1 // All-in-one (REV7).
 // Revision REV7 of V0.2 board, all-in-one valve unit with local motor drive.
 // Does not ever need to act as a boiler hub nor to receive stats.
-// Although LERAN buttons are provided, by default they are disabled as is the scheduler.
+// Although LEARN buttons are provided, by default they are disabled as is the scheduler.
 #define V0p2_REV 7
 // IF DEFINED: support one on and one off time per day (possibly in conjunction with 'learn' button).
 #undef ENABLE_SINGLETON_SCHEDULE
