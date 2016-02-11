@@ -1137,15 +1137,15 @@ static uint8_t minuteCount;
 #define MASK_PC_BASIC 0b00000000 // Nothing.
 
 // Mask for Port D input change interrupts.
-#define MASK_PD_BASIC 0b00000001 // Just RX.
+#define MASK_PD_BASIC 0b00000001 // Serial RX by default.
 #if defined(ENABLE_VOICE_SENSOR)
-#if VOICE_NIRQ > 7
-#error voice interrupt on wrong port
-#endif
-#define VOICE_INT_MASK (1 << (VOICE_NIRQ&7))
-#define MASK_PD (MASK_PD_BASIC | VOICE_INT_MASK)
+  #if VOICE_NIRQ > 7
+    #error VOICE_NIRQ expected to be on port D
+  #endif
+  #define VOICE_INT_MASK (1 << (VOICE_NIRQ&7))
+  #define MASK_PD (MASK_PD_BASIC | VOICE_INT_MASK)
 #else
-#define MASK_PD MASK_PD_BASIC // Just RX.
+  #define MASK_PD MASK_PD_BASIC // Just serial RX.
 #endif
 
 void setupOpenTRV()
@@ -1165,9 +1165,9 @@ void setupOpenTRV()
   // Set up async edge interrupts.
   ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
     {
-   //PCMSK0 = PB; PCINT  0--7    (LEARN1 and Radio)
+    //PCMSK0 = PB; PCINT  0--7    (LEARN1 and Radio)
     //PCMSK1 = PC; PCINT  8--15
-    //PCMSK2 = PD; PCINT 16--24   (LEARN2 and MODE, RX)
+    //PCMSK2 = PD; PCINT 16--24   (Serial RX and LEARN2 and MODE and Voice)
 
     PCICR =
 #if defined(MASK_PB) && (MASK_PB != 0) // If PB interrupts required.
