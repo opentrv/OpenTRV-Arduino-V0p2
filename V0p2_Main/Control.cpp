@@ -77,13 +77,22 @@ void cancelBakeDebounced() { bakeCountdownM = 0; }
 // Should ideally be only be called once 'debounced' if coming from a button press for example.
 // Is thread-/ISR- safe.
 void startBake() { isWarmMode = true; bakeCountdownM = BAKE_MAX_M; }
-
 // Start/cancel BAKE mode in one call.
 void setBakeModeDebounced(const bool start)
   {
   if(start) { startBake(); }
   else { cancelBakeDebounced(); }
   }
+#if defined(ENABLE_SIMPLIFIED_MODE_BAKE)
+// Start BAKE from interrupt; marks UI as used also.
+// Is thread-/ISR- safe.
+static void startBakeFromInt()
+  {
+  startBake();
+  markUIControlUsed();
+  }
+#endif // defined(ENABLE_SIMPLIFIED_MODE_BAKE)
+
 
 
 #if defined(UNIT_TESTS)
@@ -1143,9 +1152,18 @@ static uint8_t minuteCount;
     #error VOICE_NIRQ expected to be on port D
   #endif
   #define VOICE_INT_MASK (1 << (VOICE_NIRQ&7))
-  #define MASK_PD (MASK_PD_BASIC | VOICE_INT_MASK)
+  #define MASK_PD1 (MASK_PD_BASIC | VOICE_INT_MASK)
 #else
-  #define MASK_PD MASK_PD_BASIC // Just serial RX.
+  #define MASK_PD1 MASK_PD_BASIC // Just serial RX, no voice.
+#endif
+#if defined(ENABLE_SIMPLIFIED_MODE_BAKE)
+#if BUTTON_MODE_L > 7
+  #error BUTTON_MODE_L expected to be on port D
+#endif
+  #define MODE_INT_MASK (1 << (BUTTON_MODE_L&7))
+  #define MASK_PD (MASK_PD1 | MODE_INT_MASK) // MODE button interrupt (et al).
+#else
+  #define MASK_PD MASK_PD1 // No MODE button interrupt.
 #endif
 
 void setupOpenTRV()
@@ -1306,6 +1324,12 @@ ISR(PCINT2_vect)
   const uint8_t changes = pins ^ prevStatePD;
   prevStatePD = pins;
 
+#if defined(ENABLE_SIMPLIFIED_MODE_BAKE)
+  // Mode button detection is on the falling edge (button pressed).
+  if((changes & MODE_INT_MASK) && (pins & MODE_INT_MASK))
+    { startBakeFromInt(); }
+#endif // defined(ENABLE_SIMPLIFIED_MODE_BAKE)
+
 #if defined(ENABLE_VOICE_SENSOR)
 //  // Voice detection is a falling edge.
 //  // Handler routine not required/expected to 'clear' this interrupt.
@@ -1316,7 +1340,7 @@ ISR(PCINT2_vect)
   // FIXME: ensure that Voice.handleInterruptSimple() is inlineable to minimise ISR prologue/epilogue time and space.
   if((changes & VOICE_INT_MASK) && (pins & VOICE_INT_MASK))
     { Voice.handleInterruptSimple(); }
-#endif
+#endif // defined(ENABLE_VOICE_SENSOR)
 
   // TODO: MODE button and other things...
 
