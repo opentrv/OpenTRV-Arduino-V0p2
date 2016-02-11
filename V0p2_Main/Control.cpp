@@ -1229,11 +1229,6 @@ void setupOpenTRV()
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("setup stats sent");
 #endif
 
-//#if defined(ENABLE_LOCAL_TRV) && defined(DIRECT_MOTOR_DRIVE_V1)
-//  // Signal some sort of life on waking up...
-//  ValveDirect.wiggle();
-//#endif
-
 #if !defined(DONT_RANDOMISE_MINUTE_CYCLE)
   // Start local counters in randomised positions to help avoid inter-unit collisions,
   // eg for mains-powered units starting up together after a power cut,
@@ -1249,6 +1244,9 @@ void setupOpenTRV()
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("Finishing setup...");
 #endif
+
+  // Provide feedback to user that UI is coming to life (if any).
+  userOpFeedback();
 
   // Set appropriate loop() values just before entering it.
   TIME_LSD = OTV0P2BASE::getSecondsLT();
@@ -2197,7 +2195,7 @@ void loopOpenTRV()
     const uint8_t orc = 1 + ~eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_OVERRUN_COUNTER);
     OTV0P2BASE::eeprom_smart_update_byte((uint8_t *)V0P2BASE_EE_START_OVERRUN_COUNTER, ~orc);
 #if 1 && defined(DEBUG)
-    DEBUG_SERIAL_PRINT_FLASHSTRING("!loop overrun");
+    DEBUG_SERIAL_PRINT_FLASHSTRING("!loop overrun ");
     DEBUG_SERIAL_PRINT(TIME_LSD);
     DEBUG_SERIAL_PRINTLN();
 #endif

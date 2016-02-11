@@ -86,6 +86,29 @@ bool veryRecentUIControlUse() { return(uiTimeoutM >= (UI_DEFAULT_RECENT_USE_TIME
 // Thread-safe....
 bool recentUIControlUse() { return(0 != uiTimeoutM); }
 
+// UI feedback.
+// Provide low-key visual / audio / tactile feedback on a significant user action.
+// May take hundreds of milliseconds and noticeable energy.
+// By default includes visual feedback,
+// but that can be prevented if other visual feedback already in progress.
+// Marks the UI as used.
+// Not thread-/ISR- safe.
+void userOpFeedback(bool includeVisual)
+  {
+  if(includeVisual) { LED_HEATCALL_ON(); }
+  markUIControlUsed();
+#if defined(ENABLE_LOCAL_TRV) && defined(DIRECT_MOTOR_DRIVE_V1)
+  // Sound and tactile feedback with local valve, like mobile phone vibrate mode.
+  // Only do this if in a normal state, eg not calibrating nor in error.
+  if(ValveDirect.isInNormalRunState()) { ValveDirect.wiggle(); }
+    else
+#else
+  // In absence of being all-in-one, or as else where valve cannot be used...
+  // pause briefly to let LED on be seen.
+    { if(includeVisual) { smallPause(); } }
+#endif
+  if(includeVisual) { LED_HEATCALL_OFF(); }
+  }
 
 
 #ifdef ENABLE_LEARN_BUTTON
@@ -179,8 +202,9 @@ bool tickUI(const uint_fast8_t sec)
       }
 
     // User is pressing the mode button: cycle through FROST | WARM [ | BAKE ].
-    // Mark controls used and room as currently occupied given button press.
-    markUIControlUsed();
+    // Mark controls used and room as currently occupied given button press,
+    // and provide extra (non-visual) feedback.
+    userOpFeedback(false); //markUIControlUsed();
     // LED on...
     LED_HEATCALL_ON();
     tinyPause(); // Leading tiny pause...
@@ -334,7 +358,7 @@ bool tickUI(const uint_fast8_t sec)
   if(fastDigitalRead(BUTTON_LEARN_L) == LOW)
     {
     handleLEARN(0);
-    markUIControlUsed(); // Mark controls used and room as currently occupied given button press.
+    userOpFeedback(false); // Mark controls used and room as currently occupied given button press.
     LED_HEATCALL_ON(); // Leave heatcall LED on while learn button held down.
     }
 
@@ -343,7 +367,7 @@ bool tickUI(const uint_fast8_t sec)
   else if(fastDigitalRead(BUTTON_LEARN2_L) == LOW)
     {
     handleLEARN(1);
-    markUIControlUsed(); // Mark controls used and room as currently occupied given button press.
+    userOpFeedback(false); // Mark controls used and room as currently occupied given button press.
     LED_HEATCALL_ON(); // Leave heatcall LED on while learn button held down.
     }
 #endif
