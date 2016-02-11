@@ -416,7 +416,8 @@ uint8_t ModelledRadValve::computeTargetTemp()
     // No 'lights-on' signal for a whole day is a fairly strong indication that the heat can be turned down.
     // TODO-451: TODO-453: ignore a short lights-off, eg from someone briefly leaving room or a transient shadow.
     // TODO: consider bottom quartile of ambient light as alternative setback trigger for near-continuously-lit spaces (aiming to spot daylight signature).
-    // Look ahead to next time period (as well as current) to determine notLikelyOccupiedSoon.
+    // Look ahead to next time period (as well as current) to determine notLikelyOccupiedSoon
+    // but suppress lookahead of occupancy when its been dark for many hours (eg overnight) to avoid disturbing/waking.  (TODO-792)
     // Note that deeper setbacks likely offer more savings than faster (but shallower) setbacks.
     const bool longLongVacant = Occupancy.longLongVacant();
     const bool longVacant = longLongVacant || Occupancy.longVacant();
@@ -432,7 +433,8 @@ uint8_t ModelledRadValve::computeTargetTemp()
         // No more than about half the hours to be less occupied than this hour to be considered unlikely to be occupied.
         (hoursLessOccupiedThanThis < thisHourNLOThreshold) &&
         // Allow to be a little bit more occupied for the next hour than the current hour.
-        (hoursLessOccupiedThanNext < (thisHourNLOThreshold+1)));
+        // Suppress occupancy lookahead if room has been dark for several hours, eg overnight.  (TODO-792)
+        ((AmbLight.getDarkMinutes() > 240) || (hoursLessOccupiedThanNext < (thisHourNLOThreshold+1))));
     const uint8_t minLightsOffForSetbackMins = ecoBias ? 10 : 20;
     if(longVacant ||
        ((notLikelyOccupiedSoon || (AmbLight.getDarkMinutes() > minLightsOffForSetbackMins) || (ecoBias && (Occupancy.getVacancyH() > 0) && (0 == OTV0P2BASE::getByHourStat(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR, OTV0P2BASE::STATS_SPECIAL_HOUR_CURRENT_HOUR)))) &&
