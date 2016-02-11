@@ -63,7 +63,7 @@ bool isCLIActive() { return(0 != CLITimeoutM); }
 
 // Record local manual operation of a local physical UI control, eg not remote or via CLI.
 // Marks room as occupied amongst other things.
-// To be thread-safe, everything that this touches or calls must be.
+// To be thread-/ISR- safe, everything that this touches or calls must be.
 // Thread-safe.
 void markUIControlUsed()
   {
@@ -184,6 +184,11 @@ bool tickUI(const uint_fast8_t sec)
     }
 #endif
 
+#if !defined(ENABLE_SIMPLIFIED_MODE_BAKE)
+  // Full MODE button behaviour:
+  //   * cycle through FROST/WARM/BAKE while held down
+  //   * switch to selected mode on release
+  //
   // If true then is in WARM (or BAKE) mode; defaults to (starts as) false/FROST.
   // Should be only be set when 'debounced'.
   // Defaults to (starts as) false/FROST.
@@ -239,7 +244,9 @@ bool tickUI(const uint_fast8_t sec)
       }
     }
   else
+#endif // !defined(ENABLE_SIMPLIFIED_MODE_BAKE)
     {
+#if !defined(ENABLE_SIMPLIFIED_MODE_BAKE)
     // Update real control variables for mode when button is released.
     if(modeButtonWasPressed)
       {
@@ -247,13 +254,14 @@ bool tickUI(const uint_fast8_t sec)
       // Will also capture programmatic changes to isWarmMode, eg from schedules.
       const bool isWarmModeDebounced = isWarmModePutative;
       setWarmModeDebounced(isWarmModeDebounced);
-      if(isBakeModePutative) { startBakeDebounced(); } else { cancelBakeDebounced(); }
+      if(isBakeModePutative) { startBake(); } else { cancelBakeDebounced(); }
 
       markUIControlUsed(); // Note activity on release of MODE button...
       modeButtonWasPressed = false;
       }
+#endif // !defined(ENABLE_SIMPLIFIED_MODE_BAKE)
 
-    // Keep reporting UI status if the user has just touched the unit in some way or UI is enhanced
+    // Keep reporting UI status if the user has just touched the unit in some way or UI feedback is enhanced.
     const bool justTouched = statusChange || enhancedUIFeedback;
 
     // Mode button not pressed: indicate current mode with flash(es); more flashes if actually calling for heat.
@@ -1339,7 +1347,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
 #endif // ENABLE_LEARN_BUTTON
 
       // Switch to (or restart) BAKE (Quick Heat) mode: Q
-      case 'Q': { startBakeDebounced(); break; }
+      case 'Q': { startBake(); break; }
 
       // Time set T HH MM.
       case 'T':

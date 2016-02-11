@@ -130,28 +130,18 @@ void setWarmModeDebounced(const bool warm);
 // This is a 'debounced' value to reduce accidental triggering.
 bool inWarmMode();
 
-//#ifdef SUPPORT_BAKE // IF DEFINED: this unit supports BAKE mode.
 // Force to BAKE mode;
 // Should be only be called once 'debounced' if coming from a button press for example.
 // Is safe to call repeatedly from test routines, eg does not cause EEPROM wear.
-void startBakeDebounced();
-//// If true then the unit is in 'bake' mode, a subset of 'warm' mode which boosts the temperature target temporarily.
-//bool inBakeMode();
+// Should ideally be only be called once 'debounced' if coming from a button press for example.
+// Is thread-/ISR- safe.
+void startBake();
 // If true then the unit is in 'bake' mode, a subset of 'warm' mode which boosts the temperature target temporarily.
 // This is a 'debounced' value to reduce accidental triggering.
 bool inBakeMode();
 // Should be only be called once 'debounced' if coming from a button press for example.
 // Cancel 'bake' mode if active; does not force to FROST mode.
 void cancelBakeDebounced();
-//#else
-//#define startBakeDebounced() {}
-//// NO-OP versions if BAKE mode not supported.
-////#define inBakeMode() (false)
-//#define inBakeModeDebounced() (false)
-//#define cancelBakeDebounced() {}
-//#endif
-
-
 
 
 #if defined(UNIT_TESTS)

@@ -140,12 +140,12 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define ENABLE_SETTABLE_TARGET_TEMPERATURES
 // IF DEFINED: support one on and one off time per day (possibly in conjunction with 'learn' button).
 #define ENABLE_SINGLETON_SCHEDULE
-// IF DEFINED: simplified mode button behaviour: tapping button invokes BAKE, not mode cycling.
-#undef ENABLE_SIMPLIFIED_MODE_BAKE 
 // IF DEFINED: use active-low LEARN button(s).  Needs ENABLE_SINGLETON_SCHEDULE.
 #define ENABLE_LEARN_BUTTON // OPTIONAL ON V0.09 PCB1
 // IF DEFINED: enable use of second UI LED if available.
 #define ENABLE_UI_LED_2_IF_AVAILABLE
+// IF DEFINED: simplified mode button behaviour: tapping button invokes BAKE, not mode cycling.
+#undef ENABLE_SIMPLIFIED_MODE_BAKE 
 //////////////////////////////////////// SENSOR OPTIONS (and support for them)
 // IF DEFINED: allow use of ambient light sensor.
 #define ENABLE_AMBLIGHT_SENSOR

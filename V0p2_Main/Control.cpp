@@ -46,7 +46,8 @@ static bool isBoilerOn();
 // If true then is in WARM (or BAKE) mode; defaults to (starts as) false/FROST.
 // Should be only be set when 'debounced'.
 // Defaults to (starts as) false/FROST.
-static bool isWarmMode;
+// Marked volatile to allow atomic access from ISR without a lock.
+static volatile bool isWarmMode;
 // If true then the unit is in 'warm' (heating) mode, else 'frost' protection mode.
 bool inWarmMode() { return(isWarmMode); }
 // Has the effect of forcing the warm mode to the specified state immediately.
@@ -65,20 +66,22 @@ void setWarmModeDebounced(const bool warm)
   }
 
 // Only relevant if isWarmMode is true.
-static uint_least8_t bakeCountdownM;
+// Marked volatile to allow atomic access from ISR without a lock; decrements should lock out interrupts.
+static volatile uint_least8_t bakeCountdownM;
 // If true then the unit is in 'BAKE' mode, a subset of 'WARM' mode which boosts the temperature target temporarily.
 bool inBakeMode() { return(isWarmMode && (0 != bakeCountdownM)); }
 // Should be only be called once 'debounced' if coming from a button press for example.
 // Cancel 'bake' mode if active; does not force to FROST mode.
 void cancelBakeDebounced() { bakeCountdownM = 0; }
 // Start/restart 'BAKE' mode and timeout.
-// Should be only be called once 'debounced' if coming from a button press for example.
-void startBakeDebounced() { isWarmMode = true; bakeCountdownM = BAKE_MAX_M; }
+// Should ideally be only be called once 'debounced' if coming from a button press for example.
+// Is thread-/ISR- safe.
+void startBake() { isWarmMode = true; bakeCountdownM = BAKE_MAX_M; }
 
 // Start/cancel BAKE mode in one call.
 void setBakeModeDebounced(const bool start)
   {
-  if(start) { startBakeDebounced(); }
+  if(start) { startBake(); }
   else { cancelBakeDebounced(); }
   }
 
