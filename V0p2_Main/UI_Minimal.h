@@ -106,6 +106,12 @@ bool recentUIControlUse();
 // Check/apply the user's schedule, at least once each minute, and act on any timed events.
 void checkUserSchedule();
 
+// UI feedback.
+// Provide low-key visual / audio / tactile feedback on a significant user action.
+// May take hundreds of milliseconds and noticeable energy.
+// Not thread-/ISR- safe.
+void userOpFeedback();
+
 
 // Sends a short 1-line CRLF-terminated status report on the serial connection (at 'standard' baud).
 // Should be similar to PICAXE V0.1 output to allow the same parser to handle either.
