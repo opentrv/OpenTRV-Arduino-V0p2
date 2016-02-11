@@ -2186,9 +2186,9 @@ void loopOpenTRV()
     const uint8_t orc = 1 + ~eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_OVERRUN_COUNTER);
     OTV0P2BASE::eeprom_smart_update_byte((uint8_t *)V0P2BASE_EE_START_OVERRUN_COUNTER, ~orc);
 #if 1 && defined(DEBUG)
-    DEBUG_SERIAL_PRINTLN_FLASHSTRING("!loop overrun");
-//    DEBUG_SERIAL_PRINT(orc);
-//    DEBUG_SERIAL_PRINTLN();
+    DEBUG_SERIAL_PRINT_FLASHSTRING("!loop overrun");
+    DEBUG_SERIAL_PRINT(TIME_LSD);
+    DEBUG_SERIAL_PRINTLN();
 #endif
 #if defined(ENABLE_FHT8VSIMPLE)
     FHT8V.resyncWithValve(); // Assume that sync with valve may have been lost, so re-sync.
