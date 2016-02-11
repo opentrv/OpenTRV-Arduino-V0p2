@@ -690,7 +690,7 @@ void serialStatusReport()
 
 #if 1 && defined(ENABLE_JSON_OUTPUT) && !defined(ENABLE_TRIMMED_MEMORY)
   Serial.print(';'); // Terminate previous section.
-  char buf[80];
+  char buf[40];
   static const uint8_t maxStatsLineValues = 5;
   static OTV0P2BASE::SimpleStatsRotation<maxStatsLineValues> ss1; // Configured for maximum different stats.
 //  ss1.put(TemperatureC16); // Already at start of = stats line.

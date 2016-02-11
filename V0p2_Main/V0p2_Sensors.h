@@ -93,8 +93,8 @@ extern OTV0P2BASE::TemperatureC16_DS18B20 extDS18B20_0;
 extern OTV0P2BASE::RoomTemperatureC16_SHT21 TemperatureC16; // SHT21 impl.
 #elif defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20)
   #if defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
-// DSB18B20 temperature impl, with slightly reduced precision to improve speed.
-extern OTV0P2BASE::TemperatureC16_DS18B20 TemperatureC16;
+  // DSB18B20 temperature impl, with slightly reduced precision to improve speed.
+  extern OTV0P2BASE::TemperatureC16_DS18B20 TemperatureC16;
   #endif // defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
 #else // Don't use TMP112 if SHT21 or DS18B20 have been selected.
 extern OTV0P2BASE::RoomTemperatureC16_TMP112 TemperatureC16;
