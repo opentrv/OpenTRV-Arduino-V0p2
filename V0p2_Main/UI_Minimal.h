@@ -92,6 +92,13 @@ bool tickUI(uint_fast8_t sec);
 // Thread-safe.
 void markUIControlUsed();
 
+// Record significany local manual operation of a local physical UI control, eg not remote or via CLI.
+// Marks room as occupied amongst other things.
+// As markUIControlUsed() but likely to generate some feedback to the user, ASAP.
+// Thread-safe.
+void markUIControlUsedSignificant();
+
+
 // True if a manual UI control has been very recently (minutes ago) operated.
 // The user may still be interacting with the control and the UI etc should probably be extra responsive.
 // Thread-safe.

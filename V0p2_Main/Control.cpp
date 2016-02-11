@@ -78,19 +78,20 @@ void cancelBakeDebounced() { bakeCountdownM = 0; }
 // Is thread-/ISR- safe.
 void startBake() { isWarmMode = true; bakeCountdownM = BAKE_MAX_M; }
 #if defined(ENABLE_SIMPLIFIED_MODE_BAKE)
-// Start BAKE from interrupt; marks UI as used also.
+// Start BAKE from manual UI interrupt; marks UI as used also.
 // Is thread-/ISR- safe.
 static void startBakeFromInt()
   {
   startBake();
-  markUIControlUsed();
+  markUIControlUsedSignificant();
   }
 #endif // defined(ENABLE_SIMPLIFIED_MODE_BAKE)
-// Start/cancel BAKE mode in one call.
-void setBakeModeDebounced(const bool start)
+// Start/cancel BAKE mode in one call, driven by manual UI input.
+void setBakeModeFromManualUI(const bool start)
   {
   if(start) { startBake(); }
   else { cancelBakeDebounced(); }
+  markUIControlUsedSignificant();
   }
 
 
@@ -1073,7 +1074,7 @@ static void wireComponentsTogether()
   // Load EEPROM house codes into primary FHT8V instance at start.
   FHT8VLoadHCFromEEPROM();
 #ifdef ALLOW_CC1_SUPPORT
-  FHT8V.setChannelTX(1);        // Ch0=OOK, kept for clarity
+  FHT8V.setChannelTX(1);
 #endif // ALLOW_CC1_SUPPORT
 #endif // ENABLE_FHT8VSIMPLE
 
@@ -1091,13 +1092,12 @@ static void wireComponentsTogether()
   TempPot.setOccCallback(markUIControlUsed);
   // Callbacks to set various mode combinations.
   // Typically at most one call would be made on any appropriate pot adjustment.
-  TempPot.setWFBCallbacks(setWarmModeDebounced, setBakeModeDebounced);
+  TempPot.setWFBCallbacks(setWarmModeDebounced, setBakeModeFromManualUI);
 #endif // TEMP_POT_AVAILABLE
 #if V0p2_REV == 14
   pinMode(REGULATOR_POWERUP, OUTPUT);
   fastDigitalWrite(REGULATOR_POWERUP, HIGH);
 #endif
-  // TODO
   }
 
 
