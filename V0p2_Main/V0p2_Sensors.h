@@ -128,10 +128,10 @@ extern OTV0P2BASE::VoiceDetectionQM1 Voice;
 
 
 // DORM1/REV7 direct drive motor actuator.
-#if /* defined(ENABLE_LOCAL_TRV) && */ defined(DIRECT_MOTOR_DRIVE_V1)
+#if /* defined(ENABLE_LOCAL_TRV) && */ defined(ENABLE_V1_DIRECT_MOTOR_DRIVE)
 #define HAS_DORM1_VALVE_DRIVE
 // Singleton implementation/instance.
-#ifdef ENABLE_DORM1_MOTOR_REVERSED // Reversed vs sample 2015/12
+#ifdef ENABLE_DORM1_MOTOR_REVERSED // Reversed vs sample 2015/12.
 extern OTRadValve::ValveMotorDirectV1<MOTOR_DRIVE_ML, MOTOR_DRIVE_MR, MOTOR_DRIVE_MI_AIN, MOTOR_DRIVE_MC_AIN> ValveDirect;
 #else
 extern OTRadValve::ValveMotorDirectV1<MOTOR_DRIVE_MR, MOTOR_DRIVE_ML, MOTOR_DRIVE_MI_AIN, MOTOR_DRIVE_MC_AIN> ValveDirect;

@@ -524,7 +524,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: try to trim memory (primarily RAM, also code/Flash) space used.
 #undef ENABLE_TRIMMED_MEMORY
 // IF DEFINED: initial direct motor drive design.
-#define DIRECT_MOTOR_DRIVE_V1
+#define ENABLE_V1_DIRECT_MOTOR_DRIVE
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
 #define ENABLE_PRIMARY_TEMP_SENSOR_SHT21
 // Using RoHS-compliant phototransistor in place of LDR.
@@ -558,6 +558,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define ENABLE_FULL_OT_UI
 // IF DEFINED: enable use of second UI LED if available.
 #undef ENABLE_UI_LED_2_IF_AVAILABLE
+// IF DEFINED: reverse DORM1 motor with respect to very first samples.
+#define ENABLE_DORM1_MOTOR_REVERSED
 // Use common settings.
 #define COMMON_SETTINGS
 #endif
@@ -591,7 +593,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF UNDEFINED: don't allow RX of stats frames (since there is no easy way to plug in a serial connection to relay them!)
 #undef ENABLE_STATS_RX
 // IF DEFINED: initial direct motor drive design.
-//#define DIRECT_MOTOR_DRIVE_V1
+//#define ENABLE_V1_DIRECT_MOTOR_DRIVE
 // Use common settings.
 #define COMMON_SETTINGS
 #endif
@@ -729,7 +731,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF UNDEFINED: don't allow RX of stats frames (since there is no easy way to plug in a serial connection to relay them!)
 #undef ENABLE_STATS_RX
 // IF DEFINED: initial direct motor drive design.
-//#define DIRECT_MOTOR_DRIVE_V1
+//#define ENABLE_V1_DIRECT_MOTOR_DRIVE
 // Use common settings.
 #define COMMON_SETTINGS
 #endif
@@ -767,7 +769,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // In this off-label mode being used as stats gatherers or simple hubs.
 #define V0p2_REV 7
 // IF DEFINED: initial direct motor drive design.  Doesn't imply it gets used, but I/O can be set up safely.
-#define DIRECT_MOTOR_DRIVE_V1
+#define ENABLE_V1_DIRECT_MOTOR_DRIVE
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
 #define ENABLE_PRIMARY_TEMP_SENSOR_SHT21
 // Using RoHS-compliant phototransistor in place of LDR.
@@ -809,7 +811,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // Does not ever need to act as a boiler hub nor to receive stats.
 #define V0p2_REV 7
 // IF DEFINED: initial direct motor drive design.
-#undef DIRECT_MOTOR_DRIVE_V1
+#undef ENABLE_V1_DIRECT_MOTOR_DRIVE
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
 #define ENABLE_PRIMARY_TEMP_SENSOR_SHT21
 // Using RoHS-compliant phototransistor in place of LDR.

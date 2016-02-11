@@ -97,7 +97,7 @@ void userOpFeedback(bool includeVisual)
   {
   if(includeVisual) { LED_HEATCALL_ON(); }
   markUIControlUsed();
-#if defined(ENABLE_LOCAL_TRV) && defined(DIRECT_MOTOR_DRIVE_V1)
+#if defined(ENABLE_LOCAL_TRV) && defined(ENABLE_V1_DIRECT_MOTOR_DRIVE)
   // Sound and tactile feedback with local valve, like mobile phone vibrate mode.
   // Only do this if in a normal state, eg not calibrating nor in error.
   if(ValveDirect.isInNormalRunState()) { ValveDirect.wiggle(); }
