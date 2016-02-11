@@ -55,20 +55,23 @@ bool inWarmMode() { return(isWarmMode); }
 // If forcing to FROST mode then any pending BAKE time is cancelled.
 void setWarmModeDebounced(const bool warm)
   {
-#if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("Call to setWarmModeDebounced(");
-  DEBUG_SERIAL_PRINT(warm);
-  DEBUG_SERIAL_PRINT_FLASHSTRING(")");
-  DEBUG_SERIAL_PRINTLN();
-#endif
   isWarmMode = warm;
   if(!warm) { cancelBakeDebounced(); }
+  }
+// Start/cancel WARM mode in one call, driven by manual UI input.
+static void setWarmModeFromManualUI(const bool warm)
+  {
+  // Give feedback when changing WARM mode.
+  if(inWarmMode() != warm) { markUIControlUsedSignificant(); }
+  // Now set/cancel WARM.
+  setWarmModeDebounced(warm);
   }
 
 // Only relevant if isWarmMode is true.
 // Marked volatile to allow atomic access from ISR without a lock; decrements should lock out interrupts.
 static volatile uint_least8_t bakeCountdownM;
 // If true then the unit is in 'BAKE' mode, a subset of 'WARM' mode which boosts the temperature target temporarily.
+// ISR-safe.
 bool inBakeMode() { return(isWarmMode && (0 != bakeCountdownM)); }
 // Should be only be called once 'debounced' if coming from a button press for example.
 // Cancel 'bake' mode if active; does not force to FROST mode.
@@ -89,9 +92,10 @@ static void startBakeFromInt()
 // Start/cancel BAKE mode in one call, driven by manual UI input.
 void setBakeModeFromManualUI(const bool start)
   {
-  if(start) { startBake(); }
-  else { cancelBakeDebounced(); }
-  markUIControlUsedSignificant();
+  // Give feedback when changing BAKE mode.
+  if(inBakeMode() != start) { markUIControlUsedSignificant(); }
+  // Now set/cancel BAKE.
+  if(start) { startBake(); } else { cancelBakeDebounced(); }
   }
 
 
@@ -1092,7 +1096,7 @@ static void wireComponentsTogether()
   TempPot.setOccCallback(markUIControlUsed);
   // Callbacks to set various mode combinations.
   // Typically at most one call would be made on any appropriate pot adjustment.
-  TempPot.setWFBCallbacks(setWarmModeDebounced, setBakeModeFromManualUI);
+  TempPot.setWFBCallbacks(setWarmModeFromManualUI, setBakeModeFromManualUI);
 #endif // TEMP_POT_AVAILABLE
 #if V0p2_REV == 14
   pinMode(REGULATOR_POWERUP, OUTPUT);
