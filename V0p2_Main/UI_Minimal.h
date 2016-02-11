@@ -87,12 +87,12 @@ inline bool tickUI(uint_fast8_t) { LED_HEATCALL_OFF(); return(false); } // Alway
 bool tickUI(uint_fast8_t sec);
 #endif
 
-// Record local manual operation of a local physical UI control, eg not remote or via CLI.
+// Record local manual operation of a physical UI control, eg not remote or via CLI.
 // Marks room as occupied amongst other things.
 // Thread-safe.
 void markUIControlUsed();
 
-// Record significany local manual operation of a local physical UI control, eg not remote or via CLI.
+// Record significant local manual operation of a physical UI control, eg not remote or via CLI.
 // Marks room as occupied amongst other things.
 // As markUIControlUsed() but likely to generate some feedback to the user, ASAP.
 // Thread-safe.

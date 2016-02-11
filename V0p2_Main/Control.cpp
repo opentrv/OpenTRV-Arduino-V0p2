@@ -835,7 +835,7 @@ void populateCoreStats(OTV0P2BASE::FullStatsMessageCore_t *const content)
 // Call this to do an I/O poll if needed; returns true if something useful happened.
 // This call should typically take << 1ms at 1MHz CPU.
 // Does not change CPU clock speeds, mess with interrupts (other than possible brief blocking), or sleep.
-// Should also does nothing that interacts with Serial.
+// Should also do nothing that interacts with Serial.
 // Limits actual poll rate to something like once every 8ms, unless force is true.
 //   * force if true then force full poll on every call (ie do not internally rate-limit)
 // Not thread-safe, eg not to be called from within an ISR.
