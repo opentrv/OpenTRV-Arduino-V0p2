@@ -1245,8 +1245,10 @@ void setupOpenTRV()
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("Finishing setup...");
 #endif
 
+#if 0
   // Provide feedback to user that UI is coming to life (if any).
   userOpFeedback();
+#endif
 
   // Set appropriate loop() values just before entering it.
   TIME_LSD = OTV0P2BASE::getSecondsLT();
