@@ -47,11 +47,11 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_Trial2013Winter_Round1_NOHUB // REV1 as TX-only leaf node.
 //#define CONFIG_Trial2013Winter_Round2 // REV2 cut4 default config.
 //#define CONFIG_Trial2013Winter_Round2_LVBHSH // REV2 cut4: local valve control, boiler hub, stats hub & TX.
-#define CONFIG_Trial2013Winter_Round2_LVBH // REV2 cut4 local valve control and boiler hub.
+//#define CONFIG_Trial2013Winter_Round2_LVBH // REV2 cut4 local valve control and boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as plain boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
 //#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
-//#define CONFIG_DORM1 // REV7 / DORM1 all-in-one valve unit.
+#define CONFIG_DORM1 // REV7 / DORM1 all-in-one valve unit.
 //#define CONFIG_DORM1_BOILER // REV8 / DORM1 Winter 2014/2015 boiler-control unit.
 //#define CONFIG_REV11_RAW_JSON // REV11 as raw JSON-only stats/sensor leaf.
 
@@ -518,7 +518,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: use active-low LEARN button(s).  Needs ENABLE_SINGLETON_SCHEDULE.
 #undef ENABLE_LEARN_BUTTON // OPTIONAL ON V0.09 PCB1
 // IF DEFINED: try to trim memory (primarily RAM, also code/Flash) space used.
-#define ENABLE_TRIMMED_MEMORY
+#undef ENABLE_TRIMMED_MEMORY
 // IF DEFINED: initial direct motor drive design.
 #define DIRECT_MOTOR_DRIVE_V1
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
@@ -554,8 +554,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define ENABLE_FULL_OT_UI
 // IF DEFINED: enable use of second UI LED if available.
 #undef ENABLE_UI_LED_2_IF_AVAILABLE
-// IF DEFINED: use the temperature-setting potentiometer/dial if present.
-//#undef ENABLE_TEMP_POT_IF_PRESENT // DHD20160119: was costing ~500 bytes of Flash to define!
 // Use common settings.
 #define COMMON_SETTINGS
 #endif
