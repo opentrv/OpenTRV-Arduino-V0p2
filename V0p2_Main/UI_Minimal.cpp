@@ -61,7 +61,7 @@ void resetCLIActiveTimer() { CLITimeoutM = CLI_DEFAULT_TIMEOUT_M; }
 // Thread-safe.
 bool isCLIActive() { return(0 != CLITimeoutM); }
 
-// Record local manual operation of a local physical UI control, eg not remote or via CLI.
+// Record local manual operation of a physical UI control, eg not remote or via CLI.
 // Marks room as occupied amongst other things.
 // To be thread-/ISR- safe, everything that this touches or calls must be.
 // Thread-safe.
@@ -75,12 +75,21 @@ void markUIControlUsed()
   Occupancy.markAsOccupied(); // Thread-safe.
   }
 
-// Record significany local manual operation of a local physical UI control, eg not remote or via CLI.
+// Set true on significant local UI operation.
+// Should be cleared when feedback has been given.
+// Marked volatile for thread-safe lockless access;
+static volatile bool significantUIOp;
+// Record significant local manual operation of a physical UI control, eg not remote or via CLI.
 // Marks room as occupied amongst other things.
 // As markUIControlUsed() but likely to generate some feedback to the user, ASAP.
 // Thread-safe.
 void markUIControlUsedSignificant()
   {
+  // Provide some instant visual feedback if possible.
+  LED_HEATCALL_ON_ISR_SAFE();
+  // Flag up need for feedback.
+  significantUIOp = true;
+  // Do main UI-touched work.
   markUIControlUsed();
   }
 
@@ -117,6 +126,8 @@ void userOpFeedback(bool includeVisual)
     { if(includeVisual) { smallPause(); } }
 #endif
   if(includeVisual) { LED_HEATCALL_OFF(); }
+  // Note that feedback for significant UI action has been given.
+  significantUIOp = false;
   }
 
 
@@ -193,6 +204,12 @@ bool tickUI(const uint_fast8_t sec)
     }
 #endif
 
+  // Provide feedback of significant UI activity...
+  if(significantUIOp)
+    {
+    userOpFeedback();
+    }
+
 #if !defined(ENABLE_SIMPLIFIED_MODE_BAKE)
   // Full MODE button behaviour:
   //   * cycle through FROST/WARM/BAKE while held down
@@ -216,9 +233,8 @@ bool tickUI(const uint_fast8_t sec)
       }
 
     // User is pressing the mode button: cycle through FROST | WARM [ | BAKE ].
-    // Mark controls used and room as currently occupied given button press,
-    // and provide extra (non-visual) feedback.
-    userOpFeedback(false);
+    // Mark controls used and room as currently occupied given button press.
+    markUIControlUsed();
     // LED on...
     LED_HEATCALL_ON();
     tinyPause(); // Leading tiny pause...
