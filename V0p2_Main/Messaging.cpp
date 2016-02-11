@@ -187,7 +187,7 @@ OTRadioLink::printRXMsg(p, txbuf, bodylen);
 #endif
 
 
-#if defined(LISTEN_FOR_FTp2_FS20_native) // defined(ENABLE_RADIO_RX) && (defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)) && defined(ENABLE_FS20_NATIVE_AND_BINARY_STATS_RX) // Listen for calls for heat from remote valves...
+#if defined(ENABLE_RADIO_RX) && defined(LISTEN_FOR_FTp2_FS20_native) // (defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)) && defined(ENABLE_FS20_NATIVE_AND_BINARY_STATS_RX) // Listen for calls for heat from remote valves...
 static void decodeAndHandleFTp2_FS20_native(Print *p, const bool secure, const uint8_t * const msg, const uint8_t msglen)
 {
 #if 0 && defined(DEBUG)

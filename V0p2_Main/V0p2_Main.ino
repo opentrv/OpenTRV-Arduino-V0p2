@@ -184,7 +184,7 @@ static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChanne
   OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsOOK5000, true, false, true, false, false, true),
   };
 #elif defined(ENABLE_FAST_FRAMED_CARRIER_SUPPORT)
-#define RADIO_CONFIG_NAME "GFSK ONLY"
+#define RADIO_CONFIG_NAME "GFSK"
 // Nodes talking on fast GFSK channel 0.
 static const uint8_t nPrimaryRadioChannels = 1;
 static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChannels] =
