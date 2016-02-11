@@ -1640,7 +1640,6 @@ void loopOpenTRV()
   DEBUG_SERIAL_PRINTLN();
 #endif
 
-
   // Set up some variables before sleeping to minimise delay/jitter after the RTC tick.
   bool showStatus = false; // Show status at end of loop?
 
@@ -2195,11 +2194,12 @@ void loopOpenTRV()
     {
     const uint8_t sct = OTV0P2BASE::getSubCycleTime();
     const uint8_t listenTime = max(OTV0P2BASE::GSCT_MAX/16, CLI_POLL_MIN_SCT);
-    if(sct < (OTV0P2BASE::GSCT_MAX - 1 - 2*listenTime))
+    const uint8_t stopBy = nearOverrunThreshold - 1 - listenTime;
+    if(sct < (stopBy - 1 - listenTime))
       // Don't listen beyond the last 16th of the cycle,
       // or a minimal time if only prodding for interaction with automated front-end,
       // as listening for UART RX uses lots of power.
-      { pollCLI(humanCLIUse ? (OTV0P2BASE::GSCT_MAX-listenTime) : (sct+CLI_POLL_MIN_SCT), 0 == TIME_LSD); }
+      { pollCLI(humanCLIUse ? stopBy : (sct+CLI_POLL_MIN_SCT), 0 == TIME_LSD); }
     }
 #endif
 
