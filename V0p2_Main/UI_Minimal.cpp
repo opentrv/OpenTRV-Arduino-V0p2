@@ -204,7 +204,7 @@ bool tickUI(const uint_fast8_t sec)
     // User is pressing the mode button: cycle through FROST | WARM [ | BAKE ].
     // Mark controls used and room as currently occupied given button press,
     // and provide extra (non-visual) feedback.
-    userOpFeedback(false); //markUIControlUsed();
+    userOpFeedback(false);
     // LED on...
     LED_HEATCALL_ON();
     tinyPause(); // Leading tiny pause...
