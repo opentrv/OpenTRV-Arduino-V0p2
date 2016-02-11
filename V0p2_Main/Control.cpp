@@ -1783,7 +1783,7 @@ void loopOpenTRV()
   // High-priority UI handing, every other/even second.
   // Show status if the user changed something significant.
   // Must take ~300ms or less so as not to run over into next half second if two TXs are done.
-  bool recompute = false; // Set true an extra recompute of target temperature should be done.
+  bool recompute = false; // Set true if an extra recompute of target temperature should be done.
 #if !defined(V0P2BASE_TWO_S_TICK_RTC_SUPPORT)
   if(0 == (TIME_LSD & 1))
 #endif
@@ -2139,7 +2139,7 @@ void loopOpenTRV()
   // Only calling this after most other heavy-lifting work is likely done.
   // Note that FHT8V sync will take up at least the first 1s of a 2s subcycle.
   if(!showStatus &&
-     (ValveDirect.isInNormalRunState() || (0 == (3 & TIME_LSD))) &&
+     // (ValveDirect.isInNormalRunState() || (0 == (3 & TIME_LSD))) &&
      (OTV0P2BASE::getSubCycleTime() < ((OTV0P2BASE::GSCT_MAX/4)*3)))
     { ValveDirect.read(); }
 #endif
