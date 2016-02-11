@@ -77,12 +77,6 @@ void cancelBakeDebounced() { bakeCountdownM = 0; }
 // Should ideally be only be called once 'debounced' if coming from a button press for example.
 // Is thread-/ISR- safe.
 void startBake() { isWarmMode = true; bakeCountdownM = BAKE_MAX_M; }
-// Start/cancel BAKE mode in one call.
-void setBakeModeDebounced(const bool start)
-  {
-  if(start) { startBake(); }
-  else { cancelBakeDebounced(); }
-  }
 #if defined(ENABLE_SIMPLIFIED_MODE_BAKE)
 // Start BAKE from interrupt; marks UI as used also.
 // Is thread-/ISR- safe.
@@ -92,6 +86,12 @@ static void startBakeFromInt()
   markUIControlUsed();
   }
 #endif // defined(ENABLE_SIMPLIFIED_MODE_BAKE)
+// Start/cancel BAKE mode in one call.
+void setBakeModeDebounced(const bool start)
+  {
+  if(start) { startBake(); }
+  else { cancelBakeDebounced(); }
+  }
 
 
 
