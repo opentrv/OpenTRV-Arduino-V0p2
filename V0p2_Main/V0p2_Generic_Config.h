@@ -51,7 +51,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as plain boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
 //#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
-#define CONFIG_DORM1 // REV7 / DORM1 all-in-one valve unit.
+//#define CONFIG_DORM1 // REV7 / DORM1 all-in-one valve unit.
 //#define CONFIG_DORM1_BOILER // REV8 / DORM1 boiler-control unit.
 //#define CONFIG_REV11_RAW_JSON // REV11 as raw JSON-only stats/sensor leaf.
 
@@ -65,7 +65,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_Trial2013Winter_Round2_SECURE_NOHUB // REV2 cut4 leaf (valve/sensor) 2015/12 secure protocol.
 //#define CONFIG_Trial2013Winter_Round2_SECURE_HUB // REV2 cut4 hub (boiler/stats) 2015/12 secure protocol.
 //#define CONFIG_DHD_TESTLAB_REV4 // REV4 cut2.
-//#define CONFIG_DHD_TESTLAB_REV4_NOHUB // REV4 cut2, no hub.
+#define CONFIG_DHD_TESTLAB_REV4_NOHUB // REV4 cut2, no hub.
 //#define CONFIG_BH_DHW // Bo's hot water.
 //#define CONFIG_BH_TESTLAB // Bo's test environment.
 //#define CONFIG_DORM1_SANS32K // REV7 / DORM1 without working 32768Hz clock.
@@ -135,7 +135,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define ENABLE_FULL_OT_UI
 // IF DEFINED: enable and extended CLI with a longer input buffer for example.
 #undef ENABLE_EXTENDED_CLI
-// IF DEFINED: physical UI use wakes CLI (not needed if can auto-wake from serial).
+// IF DEFINED: physical UI use wakes CLI (not needed when CLI can auto-wake from serial).
 #undef ENABLE_UI_WAKES_CLI
 //////////////////////////////////////// DEVICE UI OPTIONS (and support for them)
 // IF DEFINED: basic FROST/WARM temperatures are settable.
