@@ -1105,15 +1105,15 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
 //        if((n >= 5) && (NULL != (tok1 = strtok_r(buf+2, " ", &last))))
 //          {
 //          if ('B' == *tok1) {
-//        	  char *tok2 = strtok_r(NULL, " ", &last);
-//        	  if (NULL != tok2) {
-//        		  if (*tok2 == '*') {
-//        			  OTV0P2BASE::setPrimaryBuilding16ByteSecretKey(NULL);
-//        			  Serial.println(F("Building Key cleared"));
-//        		  } else if (n == 36) {
-//        			  // tokenise, create buffer, fill with parsed tokens and pass to setPrima...()
-//        		  } else InvalidIgnored();
-//        	  }
+//                  char *tok2 = strtok_r(NULL, " ", &last);
+//                  if (NULL != tok2) {
+//                          if (*tok2 == '*') {
+//                                  OTV0P2BASE::setPrimaryBuilding16ByteSecretKey(NULL);
+//                                  Serial.println(F("Building Key cleared"));
+//                          } else if (n == 36) {
+//                                  // tokenise, create buffer, fill with parsed tokens and pass to setPrima...()
+//                          } else InvalidIgnored();
+//                  }
 //          }
 //
 //        break;
@@ -1134,28 +1134,28 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         if((n >= 3) && (NULL != (tok1 = strtok_r(buf+2, " ", &last)))) {
           if ('*' == *tok1) {
             // function call to clear noeds
-        	  OTV0P2BASE::clearAllNodeIDs();
+                  OTV0P2BASE::clearAllNodeIDs();
             Serial.println(F("Nodes cleared"));
           } else if(n >= 25) {  // corresponds to "A " followed by 8 space-separated tokens
               // Note: As there is no variable for the number of nodes stored, will pass pointer to
               //       addNodeID which will return a value based on how many spaces there are left
 
-        	  uint8_t nodeID[8]; // Buffer to store node ID// TODO replace with settable node size constant
-        	  uint8_t nodesSet = 0; // stores the number of nodes set
-        	  // Loop through tokens setting nodeID	// TODO Should this check for invalid ID bytes? (i.e. containing 0xFF)
-        	  for(uint8_t i = 0; i < sizeof(nodeID); i++) {
-        		  char *thisTok = strtok_r(NULL, " ", &last);	// Extract token
-        		  // if token is valid, parse hex to binary
-        		  if(NULL != thisTok) {
-        			  nodeID[i] = OTV0P2BASE::parseHex((uint8_t *)thisTok);
-        		  }
-        	  }
-        	  // Write this to EEPROM
-        	  nodesSet = OTV0P2BASE::addNodeID(nodeID); // TODO write function
-        	  // Report outcome
-        	  if (nodesSet <= 16) {
-        		  Serial.print(nodesSet);
-        	      Serial.println(F(" nodes stored"));
+                  uint8_t nodeID[8]; // Buffer to store node ID// TODO replace with settable node size constant
+                  uint8_t nodesSet = 0; // stores the number of nodes set
+                  // Loop through tokens setting nodeID        // TODO Should this check for invalid ID bytes? (i.e. containing 0xFF)
+                  for(uint8_t i = 0; i < sizeof(nodeID); i++) {
+                          char *thisTok = strtok_r(NULL, " ", &last);        // Extract token
+                          // if token is valid, parse hex to binary
+                          if(NULL != thisTok) {
+                                  nodeID[i] = OTV0P2BASE::parseHex((uint8_t *)thisTok);
+                          }
+                  }
+                  // Write this to EEPROM
+                  nodesSet = OTV0P2BASE::addNodeID(nodeID); // TODO write function
+                  // Report outcome
+                  if (nodesSet <= 16) {
+                          Serial.print(nodesSet);
+                      Serial.println(F(" nodes stored"));
               } else Serial.println(F("Could not add node"));
           }
 #if 0 && defined(DEBUG)
