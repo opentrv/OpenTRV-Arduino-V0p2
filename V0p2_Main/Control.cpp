@@ -441,7 +441,7 @@ uint8_t ModelledRadValve::computeTargetTemp()
     const bool likelyVacantNow = longVacant || Occupancy.isLikelyUnoccupied();
     const bool ecoBias = hasEcoBias();
     // True if the room has been dark long enough to indicate night.  (TODO-792)
-    const bool darkForHours = AmbLight.getDarkMinutes() > 240;
+    const bool darkForHours = AmbLight.getDarkMinutes() > 245; // A little over 4h, not quite max 255.
     // Be more ready to decide room not likely occupied soon if eco-biased.
     // Note that this value is likely to be used +/- 1 so must be in range [1,23].
     const uint8_t thisHourNLOThreshold = ecoBias ? 15 : 12;
