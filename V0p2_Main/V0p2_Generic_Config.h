@@ -140,6 +140,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //////////////////////////////////////// DEVICE UI OPTIONS (and support for them)
 // IF DEFINED: basic FROST/WARM temperatures are settable.
 #define ENABLE_SETTABLE_TARGET_TEMPERATURES
+// IF DEFINED: fast temp pot/dial sampling to partly compensate for less good mechanics (at some energy cost).
+#undef ENABLE_FAST_TEMP_POT_SAMPLING
 // IF DEFINED: support one on and one off time per day (possibly in conjunction with 'learn' button).
 #define ENABLE_SINGLETON_SCHEDULE
 // IF DEFINED: use active-low LEARN button(s).  Needs ENABLE_SINGLETON_SCHEDULE.
@@ -519,6 +521,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define V0p2_REV 7
 // IF DEFINED: simplified mode button behaviour: tapping button invokes BAKE, not mode cycling.
 #define ENABLE_SIMPLIFIED_MODE_BAKE 
+// IF DEFINED: fast temp pot/dial sampling to partly compensate for less good mechanics (at some energy cost).
+#define ENABLE_FAST_TEMP_POT_SAMPLING
 // IF DEFINED: support one on and one off time per day (possibly in conjunction with 'learn' button).
 #undef ENABLE_SINGLETON_SCHEDULE
 // IF DEFINED: use active-low LEARN button(s).  Needs ENABLE_SINGLETON_SCHEDULE.

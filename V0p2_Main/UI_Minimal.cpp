@@ -201,7 +201,11 @@ bool tickUI(const uint_fast8_t sec)
 #ifdef TEMP_POT_AVAILABLE
   // Force relatively-frequent re-read of temp pot UI device
   // if recent UI maunal activity, and periodically.
-  if(enhancedUIFeedback || forthTick) 
+#if !defined(ENABLE_FAST_TEMP_POT_SAMPLING)
+  if(enhancedUIFeedback || forthTick)
+#else
+  if(enhancedUIFeedback || forthTick || recentUIControlUse() || Occupancy.isLikelyOccupied())
+#endif
     {
     TempPot.read();
 #if 0 && defined(DEBUG)
