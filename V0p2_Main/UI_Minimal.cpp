@@ -1158,6 +1158,26 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         	      Serial.println(F(" nodes stored"));
               } else Serial.println(F("Could not add node"));
           }
+#if 0 && defined(DEBUG)
+          else if( (n >= 7) && ('?' == *tok1) ) {
+            uint8_t prefix[2];
+            uint8_t nodeID[8];
+            for(uint8_t i = 0; i < sizeof(prefix); i++) {
+              char *thisTok = strtok_r(NULL, " ", &last); // Extract token
+              // if token is valid, parse hex to binary
+              if(NULL != thisTok) {
+                prefix[i] = OTV0P2BASE::parseHex((uint8_t *)thisTok);
+              }
+            }
+            Serial.print(OTV0P2BASE::getNextMatchingNodeID(10, prefix, sizeof(prefix), nodeID));
+            Serial.print(" - ");
+            for(uint8_t i = 0; i < sizeof(nodeID); i++) {
+                Serial.print(nodeID[i], HEX);
+                Serial.print(" ");
+            }
+            Serial.println();
+          }
+#endif  // 1 && DEBUG
         }
         break;
         }
