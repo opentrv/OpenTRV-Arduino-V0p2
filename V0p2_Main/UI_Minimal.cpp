@@ -1005,14 +1005,6 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
       // Avoid showing status as may already be rather a lot of output.
       default: case '?': { dumpCLIUsage(maxSCT); showStatus = false; break; }
 
-#if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
-        // Set new node association (nodes to accept frames from).
-        case 'A': { showStatus = OTV0P2BASE::CLI::SetNodeAssoc().doCommand(buf, n); break; }
-#endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
-
-      // CORE CLI FEATURES: keep small and low-impact.
-      //     E, [H], I, S V
-      // ---
       // Exit/deactivate CLI immediately.
       // This should be followed by JUST CR ('\r') OR LF ('\n')
       // else the second will wake the CLI up again.
@@ -1094,7 +1086,12 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         }
 #endif 
 
-#ifdef ENABLE_FULL_OT_CLI // NON-CORE CLI FEATURES
+#ifdef ENABLE_FULL_OT_CLI // *******  NON-CORE CLI FEATURES
+
+#if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
+        // Set new node association (nodes to accept frames from).
+        case 'A': { showStatus = OTV0P2BASE::CLI::SetNodeAssoc().doCommand(buf, n); break; }
+#endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
 
 #if defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)
       // C M
