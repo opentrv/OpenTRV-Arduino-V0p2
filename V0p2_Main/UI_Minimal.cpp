@@ -850,7 +850,7 @@ static void InvalidIgnored() { Serial.println(F("Invalid, ignored.")); }
 
 // TODO better way of handling this?
 #ifdef ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
-#define MAXIMUM_CLI_OT_RESPONSE_CHARS 37 // 37 = 4("K B ") + 32(AES key) + 1('\r' | 'n')
+#define MAXIMUM_CLI_OT_RESPONSE_CHARS 52 // 52 = 4("K B") + 16x(AES key token) + 1('\r' | 'n')
 #else
 #define MAXIMUM_CLI_OT_RESPONSE_CHARS 9 // Just enough for any valid core/OT command expected not including trailing LF.  (Note that Serial RX buffer is 64 bytes.)
 #endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
@@ -1098,30 +1098,81 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         break;
         }
 
-#ifdef ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
-// Commented out because braces not balanced and breaking compile of entire function!
-//      // Set primary key:
-//      case 'K':
-//        {
-//        char *last; // Used by strtok_r().
-//        char *tok1;
-//        // Minimum 5 character sequence makes sense and is safe to tokenise, eg "K B *".
-//        if((n >= 5) && (NULL != (tok1 = strtok_r(buf+2, " ", &last))))
-//          {
-//          if ('B' == *tok1) {
-//                  char *tok2 = strtok_r(NULL, " ", &last);
-//                  if (NULL != tok2) {
-//                          if (*tok2 == '*') {
-//                                  OTV0P2BASE::setPrimaryBuilding16ByteSecretKey(NULL);
-//                                  Serial.println(F("Building Key cleared"));
-//                          } else if (n == 36) {
-//                                  // tokenise, create buffer, fill with parsed tokens and pass to setPrima...()
-//                          } else InvalidIgnored();
-//                  }
-//          }
-//
-//        break;
-//        }
+#if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
+        // Set primary key:
+        case 'K':
+            {
+            char *last; // Used by strtok_r().
+            char *tok1;
+            // Minimum 5 character sequence makes sense and is safe to tokenise, eg "K B *".
+            if ((n >= 5) && (NULL != (tok1 = strtok_r(buf + 2, " ", &last))))
+                {
+                if ('B' == *tok1)
+                    { // Check first token is a 'B'
+                    char *tok2 = strtok_r(NULL, " ", &last);
+                    // if second token is '*' clears eeprom. Otherwise, test to see if
+                    // a valid key has been entered
+                    if (NULL != tok2)
+                        {
+                        if (*tok2 == '*')
+                            {
+                            OTV0P2BASE::setPrimaryBuilding16ByteSecretKey (NULL);
+                            Serial.println(F("Building Key cleared"));
+#if 0 && defined(DEBUG)
+                            uint8_t keyTest[16];
+                            OTV0P2BASE::getPrimaryBuilding16ByteSecretKey(keyTest);
+                            for(uint8_t i = 0; i < sizeof(keyTest); i++)
+                                {
+                                Serial.print(keyTest[i], HEX);
+                                Serial.print(" ");
+                                }
+                            Serial.println();
+#endif
+                            }
+                        else if (n == 51)
+                            { // "K B" + 16x " hh" tokens.
+                            // 0 array to store new key
+                            uint8_t newKey[OTV0P2BASE::VOP2BASE_EE_LEN_16BYTE_PRIMARY_BUILDING_KEY];
+                            uint8_t *eepromPtr =
+                                    (uint8_t *) OTV0P2BASE::VOP2BASE_EE_START_16BYTE_PRIMARY_BUILDING_KEY;
+                            // parse and set first token, which has already been recovered
+                            newKey[0] = OTV0P2BASE::parseHex((uint8_t *) tok2);
+                            // loop through rest of secret key
+                            for (uint8_t i = 1;
+                                    i
+                                            < OTV0P2BASE::VOP2BASE_EE_LEN_16BYTE_PRIMARY_BUILDING_KEY;
+                                    i++)
+                                {
+                                char *thisTok = strtok_r(NULL, " ", &last);
+                                newKey[i] = OTV0P2BASE::parseHex(
+                                        (uint8_t *) thisTok);
+                                }
+                            OTV0P2BASE::setPrimaryBuilding16ByteSecretKey(
+                                    newKey);
+                            Serial.println(F("Building Key set"));
+
+#if 0 && defined(DEBUG)
+                            uint8_t keyTest[16];
+                            OTV0P2BASE::getPrimaryBuilding16ByteSecretKey(keyTest);
+                            for(uint8_t i = 0; i < sizeof(keyTest); i++)
+                                {
+                                Serial.print(keyTest[i], HEX);
+                                Serial.print(" ");
+                                }
+                            Serial.println();
+#endif
+
+                            }
+                        else
+                            InvalidIgnored();
+                        }
+                    }
+                }
+            break;
+            }
+#endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
+
+#if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
       // Set new node
 //        To add a new node: "A hh hh hh hh hh hh hh hh"
 //        - Reads first two bytes of each token in hex and ignores the rest.
@@ -1130,62 +1181,77 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
 //        - No error checking yet.
 //        - Only accepts upper case for hex values.
 //        To clear all nodes: "A *"
-      case 'A':
-        {
-        char *last; // Used by strtok_r().
-        char *tok1;
-        // Minimum 3 character sequence makes sense and is safe to tokenise, eg "A *".
-        if((n >= 3) && (NULL != (tok1 = strtok_r(buf+2, " ", &last)))) {
-          if ('*' == *tok1) {
-            // function call to clear noeds
-                  OTV0P2BASE::clearAllNodeIDs();
-            Serial.println(F("Nodes cleared"));
-          } else if(n >= 25) {  // corresponds to "A " followed by 8 space-separated tokens
-              // Note: As there is no variable for the number of nodes stored, will pass pointer to
-              //       addNodeID which will return a value based on how many spaces there are left
+        case 'A':
+            {
+            char *last; // Used by strtok_r().
+            char *tok1;
+            // Minimum 3 character sequence makes sense and is safe to tokenise, eg "A *".
+            if ((n >= 3) && (NULL != (tok1 = strtok_r(buf + 2, " ", &last))))
+                {
+                if ('*' == *tok1)
+                    {
+                    // function call to clear noeds
+                    OTV0P2BASE::clearAllNodeIDs();
+                    Serial.println(F("Nodes cleared"));
+                    }
+                else if (n >= 25)
+                    { // corresponds to "A " followed by 8 space-separated tokens
+                    // Note: As there is no variable for the number of nodes stored, will pass pointer to
+                    //       addNodeID which will return a value based on how many spaces there are left
 
-                  uint8_t nodeID[8]; // Buffer to store node ID// TODO replace with settable node size constant
-                  uint8_t nodesSet = 0; // stores the number of nodes set
-                  // Loop through tokens setting nodeID        // TODO Should this check for invalid ID bytes? (i.e. containing 0xFF)
-                  for(uint8_t i = 0; i < sizeof(nodeID); i++) {
-                          char *thisTok = strtok_r(NULL, " ", &last);        // Extract token
-                          // if token is valid, parse hex to binary
-                          if(NULL != thisTok) {
-                                  nodeID[i] = OTV0P2BASE::parseHex((uint8_t *)thisTok);
-                          }
-                  }
-                  // Write this to EEPROM
-                  nodesSet = OTV0P2BASE::addNodeID(nodeID); // TODO write function
-                  // Report outcome
-                  if (nodesSet <= 16) {
-                          Serial.print(nodesSet);
-                      Serial.println(F(" nodes stored"));
-              } else Serial.println(F("Could not add node"));
-          }
+                    uint8_t nodeID[8]; // Buffer to store node ID// TODO replace with settable node size constant
+                    uint8_t nodesSet = 0; // stores the number of nodes set
+                    // Loop through tokens setting nodeID        // TODO Should this check for invalid ID bytes? (i.e. containing 0xFF)
+                    for (uint8_t i = 0; i < sizeof(nodeID); i++)
+                        {
+                        char *thisTok = strtok_r(NULL, " ", &last); // Extract token
+                        // if token is valid, parse hex to binary
+                        if (NULL != thisTok)
+                            {
+                            nodeID[i] = OTV0P2BASE::parseHex(
+                                    (uint8_t *) thisTok);
+                            }
+                        }
+                    // Write this to EEPROM
+                    nodesSet = OTV0P2BASE::addNodeID(nodeID); // TODO write function
+                    // Report outcome
+                    if (nodesSet <= 16)
+                        {
+                        Serial.print(nodesSet);
+                        Serial.println(F(" nodes stored"));
+                        }
+                    else
+                        Serial.println(F("Could not add node"));
+                    }
 #if 0 && defined(DEBUG)
-          else if( (n >= 7) && ('?' == *tok1) ) {
-            uint8_t prefix[2];
-            uint8_t nodeID[8];
-            for(uint8_t i = 0; i < sizeof(prefix); i++) {
-              char *thisTok = strtok_r(NULL, " ", &last); // Extract token
-              // if token is valid, parse hex to binary
-              if(NULL != thisTok) {
-                prefix[i] = OTV0P2BASE::parseHex((uint8_t *)thisTok);
-              }
-            }
-            Serial.print(OTV0P2BASE::getNextMatchingNodeID(10, prefix, sizeof(prefix), nodeID));
-            Serial.print(" - ");
-            for(uint8_t i = 0; i < sizeof(nodeID); i++) {
-                Serial.print(nodeID[i], HEX);
-                Serial.print(" ");
-            }
-            Serial.println();
-          }
+                else if( (n >= 7) && ('?' == *tok1) )
+                    {
+                    uint8_t prefix[2];
+                    uint8_t nodeID[8];
+                    for(uint8_t i = 0; i < sizeof(prefix); i++)
+                        {
+                        char *thisTok = strtok_r(NULL, " ", &last); // Extract token
+                        // if token is valid, parse hex to binary
+                        if(NULL != thisTok)
+                            {
+                            prefix[i] = OTV0P2BASE::parseHex((uint8_t *)thisTok);
+                            }
+                        }
+                    Serial.print(OTV0P2BASE::getNextMatchingNodeID(10, prefix, sizeof(prefix), nodeID));
+                    Serial.print(" - ");
+                    for(uint8_t i = 0; i < sizeof(nodeID); i++)
+                        {
+                        Serial.print(nodeID[i], HEX);
+                        Serial.print(" ");
+                        }
+                    Serial.println();
+                    }
 #endif  // 1 && DEBUG
-        }
-        break;
-        }
+                }
+            break;
+            }
 #endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
+
       // Status line and optional smart/scheduled warming prediction request.
       case 'S':
         {
@@ -1199,6 +1265,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         Serial.println();
         break; // Note that status is by default printed after processing input line.
         }
+
       // Version information printed as one line to serial, machine- and human- parseable.
       case 'V':
         {
