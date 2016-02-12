@@ -82,9 +82,15 @@ void cancelBakeDebounced() { bakeCountdownM = 0; }
 void startBake() { isWarmMode = true; bakeCountdownM = BAKE_MAX_M; }
 #if defined(ENABLE_SIMPLIFIED_MODE_BAKE)
 // Start BAKE from manual UI interrupt; marks UI as used also.
+// Vetos switch to BAKE mode if a temp pot/dial is present and at the low end stop, ie in FROST position.
 // Is thread-/ISR- safe.
 static void startBakeFromInt()
   {
+#ifdef TEMP_POT_AVAILABLE
+  // Veto if dial is at FROST position.
+  const bool isLo = TempPot.isAtLoEndStop(); // ISR-safe.
+  if(isLo) { markUIControlUsed(); return; }
+#endif
   startBake();
   markUIControlUsedSignificant();
   }
