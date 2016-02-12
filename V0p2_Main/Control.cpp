@@ -82,9 +82,15 @@ void cancelBakeDebounced() { bakeCountdownM = 0; }
 void startBake() { isWarmMode = true; bakeCountdownM = BAKE_MAX_M; }
 #if defined(ENABLE_SIMPLIFIED_MODE_BAKE)
 // Start BAKE from manual UI interrupt; marks UI as used also.
+// Vetos switch to BAKE mode if a temp pot/dial is present and at the low end stop, ie in FROST position.
 // Is thread-/ISR- safe.
 static void startBakeFromInt()
   {
+#ifdef TEMP_POT_AVAILABLE
+  // Veto if dial is at FROST position.
+  const bool isLo = TempPot.isAtLoEndStop(); // ISR-safe.
+  if(isLo) { markUIControlUsed(); return; }
+#endif
   startBake();
   markUIControlUsedSignificant();
   }
@@ -151,32 +157,72 @@ uint8_t getFROSTTargetC()
 #if defined(TEMP_POT_AVAILABLE)
 // Derived from temperature pot position, 0 for coldest (most eco), 255 for hottest (comfort).
 // Temp ranges from eco-1C to comfort+1C levels across full (reduced jitter) [0,255] pot range.
+// Everything beyond the lo/hi end-stop thresholds is forced to the appropriate end temperature.
 // May be fastest computing values at the extreme ends of the range.
 // Exposed for unit testing.
-uint8_t computeWARMTargetC(const uint8_t pot)
+uint8_t computeWARMTargetC(const uint8_t pot, const uint8_t loEndStop, const uint8_t hiEndStop)
   {
 #if defined(V0p2_REV)
-#if 7 == V0p2_REV // Must match DORM1 scale 7 position scale 16|17|18|19|20|21|22 with frost/boost at extremes.
+#if 7 == V0p2_REV // Must match DORM1 scale 1+7+1 position scale FROST|16|17|18|19|20|21|22|BOOST.
 #if (16 != TEMP_SCALE_MIN) || (22 != TEMP_SCALE_MAX)
 #error Temperature scale must run from 16 to 22 inclusive for REV7 / DORM1 unit.
 #endif
 #endif
 #endif
-  const uint8_t range = TEMP_SCALE_MAX - TEMP_SCALE_MIN + 1;
-  const uint8_t band = 256 / range; // Width of band for each degree C...
+
+  // Everything in the end-stop regions is assigned to the appropriate end temperature.
+  if(pot < loEndStop) { return(TEMP_SCALE_MIN); } // At/near bottom...
+  if(pot > hiEndStop) { return(TEMP_SCALE_MAX); } // At/near top...
+
+  // Allow actual full temp range between low and high end points,
+  // plus possibly a little more wiggle-room / manufacturing tolerance.
+  // Range is number of actual distinct temperatures on scale between end-stop regions.
+  const uint8_t usefulScale = hiEndStop - loEndStop + 1;
+#define DIAL_TEMPS (TEMP_SCALE_MAX - TEMP_SCALE_MIN + 1)
+  const uint8_t range = DIAL_TEMPS;
+#if 7 == DIAL_TEMPS
+  // REV7 case.
+#define DIAL_TEMPS_SHIM
+  const uint8_t rangeUsed = 8;
+  const uint8_t band = usefulScale >> 3; // Width of band for each degree C...
+#else
+  // General case.
+  const uint8_t rangeUsed = range;
+  const uint8_t band = usefulScale / rangeUsed; // Width of band for each degree C...
+#endif
+
+#if 1 && defined(DEBUG)
+  DEBUG_SERIAL_PRINT_FLASHSTRING("cWT(): ");
+  DEBUG_SERIAL_PRINT(usefulScale);
+  DEBUG_SERIAL_PRINTLN();
+#endif
+
+  // Adjust for actual bottom of useful range...
+  const uint8_t ppotBasic = pot - loEndStop;
+#ifndef DIAL_TEMPS_SHIM
+  const uint8_t ppot = ppotBasic;
+#else
+  const uint8_t shim = (band >> 1);
+  if(ppotBasic <= shim) { return(TEMP_SCALE_MIN); }
+  const uint8_t ppot = ppotBasic - shim; // Shift up by half a slot... (using n temps in space for n+1)
+#endif
 
   // If there are is relatively small number of distinct temperature values
-  // then compute result iteratively...
-  if(pot >= 256 - band) { return(TEMP_SCALE_MAX); } // At top... (optimisation / robustness)
-  if(pot < band) { return(TEMP_SCALE_MIN); } // At bottom... (optimisation / robustness)
-  if(range < 10)
+  // then compute the result iteratively...
+#if DIAL_TEMPS < 10
     {
-    uint8_t result = TEMP_SCALE_MIN+1;
-    for(uint8_t ppot = band<<1; ppot < pot; ++result) { ppot += band; }
+    uint8_t result = TEMP_SCALE_MIN;
+    uint8_t bottomOfNextBand = band;
+    while((ppot >= bottomOfNextBand) && (result < TEMP_SCALE_MAX))
+      {
+      ++result;
+      bottomOfNextBand += band;
+      }
     return(result);
     }
-  // ...else do it in one step with a division.
-  return((pot / band) + TEMP_SCALE_MIN); // Intermediate (requires expensive run-time division).
+#else  // ...else do it in one step with a division.
+  return((ppot / band) + TEMP_SCALE_MIN); // Intermediate (requires expensive run-time division).
+#endif
   }
 
 // Exposed implementation.
@@ -203,7 +249,7 @@ uint8_t getWARMTargetC()
   // or apparently no calc done yet (unlikely/impossible zero cached result).
   if((potLast != pot) || (0 == resultLast))
     {
-    const uint8_t result = computeWARMTargetC(pot);
+    const uint8_t result = computeWARMTargetC(pot, TempPot.loEndStop, TempPot.hiEndStop);
     // Cache input/result.
     resultLast = result;
     potLast = pot;

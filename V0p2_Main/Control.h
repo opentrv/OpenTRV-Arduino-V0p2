@@ -177,7 +177,8 @@ uint8_t getWARMTargetC();
 // Expose internal calculation of WARM target based on user physical control for unit testing.
 // Derived from temperature pot position, 0 for coldest (most eco), 255 for hotest (comfort).
 // Temp ranges from eco-1C to comfort+1C levels across full (reduced jitter) [0,255] pot range.
-uint8_t computeWARMTargetC(const uint8_t pot);
+// Everything beyond the lo/hi end-stop thresholds is forced to the appropriate end temperature.
+uint8_t computeWARMTargetC(uint8_t pot, uint8_t loEndStop, uint8_t hiEndStop);
 #endif
 
 

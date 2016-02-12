@@ -524,7 +524,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: use active-low LEARN button(s).  Needs ENABLE_SINGLETON_SCHEDULE.
 #undef ENABLE_LEARN_BUTTON // OPTIONAL ON V0.09 PCB1
 // IF DEFINED: try to trim memory (primarily RAM, also code/Flash) space used.
-#undef ENABLE_TRIMMED_MEMORY
+#define ENABLE_TRIMMED_MEMORY
 // IF DEFINED: initial direct motor drive design.
 #define ENABLE_V1_DIRECT_MOTOR_DRIVE
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
