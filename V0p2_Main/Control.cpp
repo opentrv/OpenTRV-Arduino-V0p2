@@ -171,8 +171,9 @@ uint8_t computeWARMTargetC(const uint8_t pot, const uint8_t loEndStop, const uin
 #endif
 
   // Everything in the end-stop regions is assigned to the appropriate end temperature.
-  if(pot < loEndStop) { return(TEMP_SCALE_MIN); } // At/near bottom...
-  if(pot > hiEndStop) { return(TEMP_SCALE_MAX); } // At/near top...
+  // As a tiny optimisation we note that the end scale points must be the end temperatures also.
+  if(pot <= loEndStop) { return(TEMP_SCALE_MIN); } // At/near bottom...
+  if(pot >= hiEndStop) { return(TEMP_SCALE_MAX); } // At/near top...
 
   // Allow actual full temp range between low and high end points,
   // plus possibly a little more wiggle-room / manufacturing tolerance.
@@ -184,16 +185,16 @@ uint8_t computeWARMTargetC(const uint8_t pot, const uint8_t loEndStop, const uin
   // REV7 case.
 #define DIAL_TEMPS_SHIM
   const uint8_t rangeUsed = 8;
-  const uint8_t band = usefulScale >> 3; // Width of band for each degree C...
+  const uint8_t band = (usefulScale+4) >> 3; // Width of band for each degree C...
 #else
   // General case.
   const uint8_t rangeUsed = range;
-  const uint8_t band = usefulScale / rangeUsed; // Width of band for each degree C...
+  const uint8_t band = (usefulScale+(rangeUsed/2)) / rangeUsed; // Width of band for each degree C...
 #endif
 
 #if 1 && defined(DEBUG)
   DEBUG_SERIAL_PRINT_FLASHSTRING("cWT(): ");
-  DEBUG_SERIAL_PRINT(usefulScale);
+  DEBUG_SERIAL_PRINT(pot);
   DEBUG_SERIAL_PRINTLN();
 #endif
 
