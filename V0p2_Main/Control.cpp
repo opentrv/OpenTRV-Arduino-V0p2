@@ -730,7 +730,7 @@ void sampleStats(const bool fullSample)
   if(inWarmMode()) { ++warmCount; } else { --warmCount; }
 #endif
   // Ambient light.
-  const uint16_t ambLight = OTV0P2BASE::fnmin(AmbLight.get(), (uint8_t)MAX_STATS_AMBLIGHT); // Constrain value at top end to avoid 'not set' value.
+  const uint16_t ambLight = OTV0P2BASE::fnmin(AmbLight.get(), OTV0P2BASE::MAX_STATS_AMBLIGHT); // Constrain value at top end to avoid 'not set' value.
   static uint16_t ambLightTotal;
   ambLightTotal = firstSample ? ambLight : (ambLightTotal + ambLight);
   const int tempC16 = TemperatureC16.get();
@@ -765,7 +765,7 @@ void sampleStats(const bool fullSample)
                          ((2==sc)?((tempC16Total+1)>>1):
                                   ((tempC16Total + (sc>>1)) / sc));
 #endif
-  const uint8_t temp = compressTempC16(tempCTotal);
+  const uint8_t temp = OTV0P2BASE::compressTempC16(tempCTotal);
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINT_FLASHSTRING("SU tempC16Total=");
   DEBUG_SERIAL_PRINT(tempC16Total);
@@ -815,42 +815,6 @@ void sampleStats(const bool fullSample)
 #endif
 
   // TODO: other stats measures...
-  }
-
-
-// Range-compress an signed int 16ths-Celsius temperature to a unsigned single-byte value < 0xff.
-// This preserves at least the first bit after the binary point for all values,
-// and three bits after binary point for values in the most interesting mid range around normal room temperatures,
-// with transitions at whole degrees Celsius.
-// Input values below 0C are treated as 0C, and above 100C as 100C, thus allowing air and DHW temperature values.
-#define COMPRESSION_C16_FLOOR_VAL 0 // Floor input value to compression.
-#define COMPRESSION_C16_LOW_THRESHOLD (16<<4) // Values in range [COMPRESSION_LOW_THRESHOLD_C16,COMPRESSION_HIGH_THRESHOLD_C16[ have maximum precision.
-#define COMPRESSION_C16_LOW_THR_AFTER (COMPRESSION_C16_LOW_THRESHOLD>>3) // Low threshold after compression.
-#define COMPRESSION_C16_HIGH_THRESHOLD (24<<4)
-#define COMPRESSION_C16_HIGH_THR_AFTER (COMPRESSION_C16_LOW_THR_AFTER + ((COMPRESSION_C16_HIGH_THRESHOLD-COMPRESSION_C16_LOW_THRESHOLD)>>1)) // High threshold after compression.
-#define COMPRESSION_C16_CEIL_VAL (100<<4) // Ceiling input value to compression.
-#define COMPRESSION_C16_CEIL_VAL_AFTER (COMPRESSION_C16_HIGH_THR_AFTER + ((COMPRESSION_C16_CEIL_VAL-COMPRESSION_C16_HIGH_THRESHOLD) >> 3)) // Ceiling input value after compression.
-uint8_t compressTempC16(int tempC16)
-  {
-  if(tempC16 <= 0) { return(0); } // Clamp negative values to zero.
-  if(tempC16 < COMPRESSION_C16_LOW_THRESHOLD) { return(tempC16 >> 3); } // Preserve 1 bit after the binary point (0.5C precision).
-  if(tempC16 < COMPRESSION_C16_HIGH_THRESHOLD)
-    { return(((tempC16 - COMPRESSION_C16_LOW_THRESHOLD) >> 1) + COMPRESSION_C16_LOW_THR_AFTER); }
-  if(tempC16 < COMPRESSION_C16_CEIL_VAL)
-    { return(((tempC16 - COMPRESSION_C16_HIGH_THRESHOLD) >> 3) + COMPRESSION_C16_HIGH_THR_AFTER); }
-  return(COMPRESSION_C16_CEIL_VAL_AFTER);
-  }
-
-// Reverses range compression done by compressTempC16(); results in range [0,100], with varying precision based on original value.
-// 0xff (or other invalid) input results in STATS_UNSET_INT. 
-int expandTempC16(uint8_t cTemp)
-  {
-  if(cTemp < COMPRESSION_C16_LOW_THR_AFTER) { return(cTemp << 3); }
-  if(cTemp < COMPRESSION_C16_HIGH_THR_AFTER)
-    { return(((cTemp - COMPRESSION_C16_LOW_THR_AFTER) << 1) + COMPRESSION_C16_LOW_THRESHOLD); }
-  if(cTemp <= COMPRESSION_C16_CEIL_VAL_AFTER)
-    { return(((cTemp - COMPRESSION_C16_HIGH_THR_AFTER) << 3) + COMPRESSION_C16_HIGH_THRESHOLD); }
-  return(OTV0P2BASE::STATS_UNSET_INT); // Invalid/unset input.
   }
 
 

@@ -840,11 +840,6 @@ static void dumpCLIUsage(const uint8_t stopBy)
   Serial.println();
   }
 
-
-// Prints warning to serial (that must be up and running) that invalid (CLI) input has been ignored.
-// Probably should not be inlined, to avoid creating duplicate strings in Flash.
-static void InvalidIgnored() { Serial.println(F("Invalid, ignored.")); }
-
 // If INTERACTIVE_ECHO defined then immediately echo received characters, not at end of line.
 #define CLI_INTERACTIVE_ECHO
 
@@ -1018,6 +1013,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
       // This should be followed by JUST CR ('\r') OR LF ('\n')
       // else the second will wake the CLI up again.
       case 'E': { CLITimeoutM = 0; break; }
+
 #if defined(ENABLE_FHT8VSIMPLE) && (defined(ENABLE_LOCAL_TRV) || defined(ENABLE_SLAVE_TRV))
       // H nn nn
       // Set (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control.
@@ -1034,7 +1030,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
             {
             const int hc1 = atoi(tok1);
             const int hc2 = atoi(tok2);
-            if((hc1 < 0) || (hc1 > 99) || (hc2 < 0) || (hc2 > 99)) { InvalidIgnored(); }
+            if((hc1 < 0) || (hc1 > 99) || (hc2 < 0) || (hc2 > 99)) { OTV0P2BASE::CLI::InvalidIgnored(); }
             else
               {
               // Set house codes and force resync if changed.
@@ -1050,53 +1046,9 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         break;
         }
 #endif
+
       // Set or display new random ID.
-      // Set only if the command line is (nearly) exactly "I *" to avoid accidental reset.
-      // In either cas display the current one.
-      // Should possibly restart the system afterwards.
-      //
-      // Example use:
-      //
-      //>I
-      //ID: 98 A4 F5 99 E3 94 A8 C2
-      //=F0%@18C6;X0;T15 38 W255 0 F255 0 W255 0 F255 0;S6 6 16;{"@":"98a4","L":146,"B|cV":333,"occ|%":0,"vC|%":0}
-      //
-      //>I
-      //ID: 98 A4 F5 99 E3 94 A8 C2
-      //=F0%@18C6;X0;T15 38 W255 0 F255 0 W255 0 F255 0;S6 6 16;{"@":"98a4","L":146,"B|cV":333,"occ|%":0,"vC|%":0}
-      //
-      //>
-      //
-      //>
-      //
-      //>
-      //
-      //>I *
-      //Setting ID byte 0 9F
-      //Setting ID byte 1 9C
-      //Setting ID byte 2 8B
-      //Setting ID byte 3 B2
-      //Setting ID byte 4 A0
-      //Setting ID byte 5 E2
-      //Setting ID byte 6 E2
-      //Setting ID byte 7 AF
-      //ID: 9F 9C 8B B2 A0 E2 E2 AF
-      //=F0%@18C6;X0;T15 38 W255 0 F255 0 W255 0 F255 0;S6 6 16;{"@":"9f9c","L":146,"B|cV":333,"occ|%":0,"vC|%":0}
-      //
-      //>
-      case 'I':
-        {
-        if((3 == n) && ('*' == buf[2]))
-          { OTV0P2BASE::ensureIDCreated(true); } // Force ID change.
-        Serial.print(F("ID:"));
-        for(uint8_t i = 0; i < V0P2BASE_EE_LEN_ID; ++i)
-          {
-          Serial.print(' ');
-          Serial.print(eeprom_read_byte((uint8_t *)(V0P2BASE_EE_START_ID + i)), HEX);
-          }
-        Serial.println();
-        break;
-        }
+      case 'I': { showStatus = OTV0P2BASE::CLI::NodeID().doCommand(buf, n); break; }
 
 #if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
         // Set primary key:
@@ -1276,7 +1228,6 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         break;
         }
 
-
 #ifdef ENABLE_EXTENDED_CLI
       // Handle CLI extension commands.
       // Command of form:
@@ -1331,94 +1282,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
 //        }
 
       // Dump (human-friendly) stats: D N
-      // DEBUG only: "D?" to force partial stats sample and "D!" to force an immediate full stats sample; use with care.
-      // Avoid showing status afterwards as may already be rather a lot of output.
-      case 'D':
-        {
-#if 0 && defined(DEBUG)
-        if(n == 2) // Sneaky way of forcing stats samples.
-          {
-          if('?' == buf[1]) { sampleStats(false); Serial.println(F("Part sample")); }
-          else if('!' == buf[1]) { sampleStats(true); Serial.println(F("Full sample")); }
-          break;
-          }
-#endif
-        char *last; // Used by strtok_r().
-        char *tok1;
-        // Minimum 3 character sequence makes sense and is safe to tokenise, eg "D 0".
-        if((n >= 3) && (NULL != (tok1 = strtok_r(buf+2, " ", &last))))
-          {
-          const uint8_t setN = (uint8_t) atoi(tok1);
-          const uint8_t thisHH = OTV0P2BASE::getHoursLT();
-//          const uint8_t lastHH = (thisHH > 0) ? (thisHH-1) : 23;
-          // Print label.
-          switch(setN)
-            {
-            default: { Serial.print('?'); break; }
-            case V0P2BASE_EE_STATS_SET_TEMP_BY_HOUR:
-            case V0P2BASE_EE_STATS_SET_TEMP_BY_HOUR_SMOOTHED:
-                { Serial.print('C'); break; }
-            case V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR:
-            case V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED:
-                { Serial.print(F("ambl")); break; }
-            case V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR:
-            case V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED:
-                { Serial.print(F("occ%")); break; }
-            case V0P2BASE_EE_STATS_SET_RHPC_BY_HOUR:
-            case V0P2BASE_EE_STATS_SET_RHPC_BY_HOUR_SMOOTHED:
-                { Serial.print(F("RH%")); break; }
-            case V0P2BASE_EE_STATS_SET_USER1_BY_HOUR:
-            case V0P2BASE_EE_STATS_SET_USER1_BY_HOUR_SMOOTHED:
-                { Serial.print('u'); break; }
-#if defined(V0P2BASE_EE_STATS_SET_WARMMODE_BY_HOUR_OF_WK)
-            case V0P2BASE_EE_STATS_SET_WARMMODE_BY_HOUR_OF_WK:
-                { Serial.print('W'); break; }
-#endif
-            }
-          Serial_print_space();
-          if(setN & 1) { Serial.print(F("smoothed")); } else { Serial.print(F("last")); }
-          Serial_print_space();
-          // Now print values.
-          for(uint8_t hh = 0; hh < 24; ++hh)
-            {
-            const uint8_t statRaw = OTV0P2BASE::getByHourStat(setN, hh);
-            // For unset stat show '-'...
-            if(OTV0P2BASE::STATS_UNSET_BYTE == statRaw) { Serial.print('-'); }
-            // ...else print more human-friendly version of stat.
-            else switch(setN)
-              {
-              default: { Serial.print(statRaw); break; } // Generic decimal stats.
-
-              // Special formatting cases.
-              case V0P2BASE_EE_STATS_SET_TEMP_BY_HOUR:
-              case V0P2BASE_EE_STATS_SET_TEMP_BY_HOUR_SMOOTHED:
-                // Uncompanded temperature, rounded.
-                { Serial.print((expandTempC16(statRaw)+8) >> 4); break; }
-#if defined(V0P2BASE_EE_STATS_SET_WARMMODE_BY_HOUR_OF_WK)
-              case V0P2BASE_EE_STATS_SET_WARMMODE_BY_HOUR_OF_WK:
-                // Warm mode usage bitmap by hour over week.
-                { Serial.print(statRaw, HEX); break; }
-#endif
-              }
-#if 0 && defined(DEBUG)
-            // Show how many values are lower than the current one.
-            Serial.print('(');
-            Serial.print(OTV0P2BASE::countStatSamplesBelow(setN, statRaw));
-            Serial.print(')');
-#endif
-            if(hh == thisHH) { Serial.print('<'); } // Highlight current stat in this set.
-#if 0 && defined(DEBUG)
-            if(inOutlierQuartile(false, setN, hh)) { Serial.print('B'); } // In bottom quartile.
-            if(inOutlierQuartile(true, setN, hh)) { Serial.print('T'); } // In top quartile.
-#endif
-            Serial_print_space();
-            }
-          Serial.println();
-          }
-
-        showStatus = false;
-        break;
-        }
+      case 'D': { showStatus = OTV0P2BASE::CLI::DumpStats().doCommand(buf, n); break; }
 
       // Switch to FROST mode OR set FROST/setback temperature (even with temp pot available).
       // With F! force to frost and holiday (long-vacant) mode.  Useful for testing and for remote CLI use.
@@ -1437,7 +1301,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         if((n >= 3) && (NULL != (tok1 = strtok_r(buf+2, " ", &last))))
           {
           const uint8_t tempC = (uint8_t) atoi(tok1);
-          if(!setFROSTTargetC(tempC)) { InvalidIgnored(); }
+          if(!setFROSTTargetC(tempC)) { OTV0P2BASE::CLI::InvalidIgnored(); }
           }
         else
 #endif
@@ -1501,7 +1365,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
               }
 //#endif
             // Does not fully validate user inputs (eg for -ve values), but cannot set impossible values.
-            if(!Scheduler.setSimpleSchedule((uint_least16_t) ((60 * hh) + mm), (uint8_t)s)) { InvalidIgnored(); }
+            if(!Scheduler.setSimpleSchedule((uint_least16_t) ((60 * hh) + mm), (uint8_t)s)) { OTV0P2BASE::CLI::InvalidIgnored(); }
             }
           }
         break;
@@ -1512,24 +1376,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
       case 'Q': { startBake(); break; }
 
       // Time set T HH MM.
-      case 'T':
-        {
-        char *last; // Used by strtok_r().
-        char *tok1;
-        // Minimum 5 character sequence makes sense and is safe to tokenise, eg "T 1 2".
-        if((n >= 5) && (NULL != (tok1 = strtok_r(buf+2, " ", &last))))
-          {
-          char *tok2 = strtok_r(NULL, " ", &last);
-          if(NULL != tok2)
-            {
-            const int hh = atoi(tok1);
-            const int mm = atoi(tok2);
-            // TODO: zap collected stats if time change too large (eg >> 1h).
-            if(!OTV0P2BASE::setHoursMinutesLT(hh, mm)) { InvalidIgnored(); }
-            }
-          }
-        break;
-        }
+      case 'T': { showStatus = OTV0P2BASE::CLI::SetTime().doCommand(buf, n); break; }
 
       // Switch to WARM (not BAKE) mode OR set WARM temperature.
       case 'W':
@@ -1553,30 +1400,10 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
 
       // tX security level: X NN
       // Avoid showing status afterwards as may already be rather a lot of output.
-      case 'X':
-        {
-        char *last; // Used by strtok_r().
-        char *tok1;
-        // Minimum 3 character sequence makes sense and is safe to tokenise, eg "X 0".
-        if((n >= 3) && (NULL != (tok1 = strtok_r(buf+2, " ", &last))))
-          {
-          const uint8_t nn = (uint8_t) atoi(tok1);
-          OTV0P2BASE::eeprom_smart_update_byte((uint8_t *)V0P2BASE_EE_START_STATS_TX_ENABLE, nn);
-          }
-        break;
-        }
+      case 'X': { showStatus = OTV0P2BASE::CLI::SetTXPrivacy().doCommand(buf, n); break; }
 
       // Zap/erase learned statistics.
-      case 'Z':
-        {
-        // Try to avoid causing an overrun if near the end of the minor cycle (even allowing for the warning message if unfinished!).
-        if(OTV0P2BASE::zapStats((uint16_t) OTV0P2BASE::fnmax(1, ((int)OTV0P2BASE::msRemainingThisBasicCycle()/2) - 20)))
-          { Serial.println(F("Zapped.")); }
-        else
-          { Serial.println(F("Not finished.")); }
-        showStatus = false; // May be slow; avoid showing stats line which will in any case be unchanged.
-        break;
-        }
+      case 'Z': { showStatus = OTV0P2BASE::CLI::ZapStats().doCommand(buf, n); break; }
 #endif // ENABLE_FULL_OT_CLI // NON-CORE FEATURES
       }
 

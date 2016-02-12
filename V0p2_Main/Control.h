@@ -475,28 +475,6 @@ void sampleStats(bool fullSample);
 uint8_t smoothStatsValue(uint8_t oldSmoothed, uint8_t newValue);
 #endif
 
-// Range-compress an signed int 16ths-Celsius temperature to a unsigned single-byte value < 0xff.
-// This preserves at least the first bit after the binary point for all values,
-// and three bits after binary point for values in the most interesting mid range around normal room temperatures,
-// with transitions at whole degrees Celsius.
-// Input values below 0C are treated as 0C, and above 100C as 100C, thus allowing air and DHW temperature values.
-#define COMPRESSION_C16_FLOOR_VAL 0 // Floor input value to compression.
-#define COMPRESSION_C16_LOW_THRESHOLD (16<<4) // Values in range [COMPRESSION_LOW_THRESHOLD_C16,COMPRESSION_HIGH_THRESHOLD_C16[ have maximum precision.
-#define COMPRESSION_C16_LOW_THR_AFTER (COMPRESSION_C16_LOW_THRESHOLD>>3) // Low threshold after compression.
-#define COMPRESSION_C16_HIGH_THRESHOLD (24<<4)
-#define COMPRESSION_C16_HIGH_THR_AFTER (COMPRESSION_C16_LOW_THR_AFTER + ((COMPRESSION_C16_HIGH_THRESHOLD-COMPRESSION_C16_LOW_THRESHOLD)>>1)) // High threshold after compression.
-#define COMPRESSION_C16_CEIL_VAL (100<<4) // Ceiling input value to compression.
-#define COMPRESSION_C16_CEIL_VAL_AFTER (COMPRESSION_C16_HIGH_THR_AFTER + ((COMPRESSION_C16_CEIL_VAL-COMPRESSION_C16_HIGH_THRESHOLD) >> 3)) // Ceiling input value after compression.
-uint8_t compressTempC16(int tempC16);
-// Reverses range compression done by compressTempC16(); results in range [0,100], with varying precision based on original value.
-// 0xff (or other invalid) input results in STATS_UNSET_INT.
-int expandTempC16(uint8_t cTemp);
-
-// Maximum valid encoded/compressed stats values.
-#define MAX_STATS_TEMP COMPRESSION_C16_CEIL_VAL_AFTER // Maximum valid compressed temperature value in stats.
-#define MAX_STATS_AMBLIGHT 254 // Maximum valid ambient light value in stats (very top of range is compressed).
-
-
 #ifdef ENABLE_FS20_ENCODING_SUPPORT
 // Clear and populate core stats structure with information from this node.
 // Exactly what gets filled in will depend on sensors on the node,
