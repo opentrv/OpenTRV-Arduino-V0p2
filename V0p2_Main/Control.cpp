@@ -1332,7 +1332,7 @@ ISR(PCINT2_vect)
 
 #if defined(ENABLE_SIMPLIFIED_MODE_BAKE)
   // Mode button detection is on the falling edge (button pressed).
-  if((changes & MODE_INT_MASK) && (pins & MODE_INT_MASK))
+  if((changes & MODE_INT_MASK) && !(pins & MODE_INT_MASK))
     { startBakeFromInt(); }
 #endif // defined(ENABLE_SIMPLIFIED_MODE_BAKE)
 

@@ -199,13 +199,33 @@ bool tickUI(const uint_fast8_t sec)
   const bool enhancedUIFeedback = veryRecentUIControlUse();
 
 #ifdef TEMP_POT_AVAILABLE
-  if(enhancedUIFeedback || forthTick) // If recent UI activity, and periodically.
+  // Force relatively-frequent re-read of temp pot UI device
+  // if recent UI maunal activity, and periodically.
+  if(enhancedUIFeedback || forthTick) 
     {
-    // Force relatively-frequent re-read of temp pot UI device.
     TempPot.read();
+    // Force to FROST mode (and cancel any erroneous BAKE, etc) when at FROST end of dial.
+    const bool isLo = TempPot.isAtLoEndStop();
+    if(isLo) { setWarmModeDebounced(false); }  
+    // Feed back significant change in pot position, ie at temperature boundaries.
+    // Synthesise a 'warm' target temp that distinguishes end stops...
+    const uint8_t nominalWarmTarget = isLo ? 1 :
+        (TempPot.isAtHiEndStop() ? 99 :
+        getWARMTargetC());
+    // Record of 'last' nominalWarmTarget; initially 0.
+    static uint8_t lastNominalWarmTarget;
+    if(nominalWarmTarget != lastNominalWarmTarget)
+      {
+      // Note if a boundary was crossed, ignoring any false 'start-up' transient.
+      if(0 != lastNominalWarmTarget) { significantUIOp = true; }
+#if 1 && defined(DEBUG)
+      DEBUG_SERIAL_PRINT_FLASHSTRING("Warm target now: ");
+      DEBUG_SERIAL_PRINT(nominalWarmTarget);
+      DEBUG_SERIAL_PRINTLN();
+#endif
+      lastNominalWarmTarget = nominalWarmTarget;
+      }
     }
-  // Force to FROST mode (and cancel any erroneous BAKE, etc) when at FROST end of dial.
-  if(TempPot.isAtLoEndStop()) { setWarmModeDebounced(false); }  
 #endif
 
   // Provide extra user feedback for significant UI actions...
