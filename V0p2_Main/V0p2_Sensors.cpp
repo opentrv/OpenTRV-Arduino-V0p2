@@ -48,10 +48,11 @@ OTV0P2BASE::SensorTemperaturePot TempPot(OTV0P2BASE::SensorTemperaturePot::TEMP_
 #if (V0p2_REV != 7) // For DORM1/REV7 natural direction for temp dial pot is correct.
 OTV0P2BASE::SensorTemperaturePot TempPot(0, OTV0P2BASE::SensorTemperaturePot::TEMP_POT_RAW_MAX);
 #else
-// DORM1 / REV7 initial unit range ~[45,293] DHD20160211.
-// Thus could be ~27 points per item on scale: * 16 17 18 >19< 20 21 22 BOOST
-static const uint16_t REV7_pot_low = 45;
-static const uint16_t REV7_pot_high = 293;
+// DORM1 / REV7 initial unit range ~[45,293] DHD20160211 (seen <45 to >325).
+// Thus could be ~30 points per item on scale: * 16 17 18 >19< 20 21 22 BOOST
+// Actual precision/reproducability of pot is circa +/- 4.
+static const uint16_t REV7_pot_low = 48;
+static const uint16_t REV7_pot_high = 296;
 OTV0P2BASE::SensorTemperaturePot TempPot(REV7_pot_low, REV7_pot_high);
 #endif // (V0p2_REV != 7)
 #endif // defined(TEMP_POT_REVERSE)

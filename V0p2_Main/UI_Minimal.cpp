@@ -204,6 +204,11 @@ bool tickUI(const uint_fast8_t sec)
   if(enhancedUIFeedback || forthTick) 
     {
     TempPot.read();
+#if 0 && defined(DEBUG)
+      DEBUG_SERIAL_PRINT_FLASHSTRING("TP");
+      DEBUG_SERIAL_PRINT(TempPot.getRaw());
+      DEBUG_SERIAL_PRINTLN();
+#endif   
     // Force to FROST mode (and cancel any erroneous BAKE, etc) when at FROST end of dial.
     const bool isLo = TempPot.isAtLoEndStop();
     if(isLo) { setWarmModeDebounced(false); }  

@@ -170,8 +170,14 @@ uint8_t computeWARMTargetC(const uint8_t pot, const uint8_t loEndStop, const uin
 #endif
 #endif
 
+#if 0 && defined(DEBUG)
+  DEBUG_SERIAL_PRINT_FLASHSTRING("cWT(): ");
+  DEBUG_SERIAL_PRINT(pot);
+  DEBUG_SERIAL_PRINTLN();
+#endif
+
   // Everything in the end-stop regions is assigned to the appropriate end temperature.
-  // As a tiny optimisation we note that the end scale points must be the end temperatures also.
+  // As a tiny optimisation we note that the in-scale end points must be the end temperatures also.
   if(pot <= loEndStop) { return(TEMP_SCALE_MIN); } // At/near bottom...
   if(pot >= hiEndStop) { return(TEMP_SCALE_MAX); } // At/near top...
 
@@ -182,7 +188,7 @@ uint8_t computeWARMTargetC(const uint8_t pot, const uint8_t loEndStop, const uin
 #define DIAL_TEMPS (TEMP_SCALE_MAX - TEMP_SCALE_MIN + 1)
   const uint8_t range = DIAL_TEMPS;
 #if 7 == DIAL_TEMPS
-  // REV7 case.
+  // REV7 / DORM1 case, with usefulScale ~ 47 as of 20160212 on first sample unit.
 #define DIAL_TEMPS_SHIM
   const uint8_t rangeUsed = 8;
   const uint8_t band = (usefulScale+4) >> 3; // Width of band for each degree C...
@@ -192,9 +198,13 @@ uint8_t computeWARMTargetC(const uint8_t pot, const uint8_t loEndStop, const uin
   const uint8_t band = (usefulScale+(rangeUsed/2)) / rangeUsed; // Width of band for each degree C...
 #endif
 
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINT_FLASHSTRING("cWT(): ");
   DEBUG_SERIAL_PRINT(pot);
+  DEBUG_SERIAL_PRINT(' ');
+  DEBUG_SERIAL_PRINT(loEndStop);
+  DEBUG_SERIAL_PRINT(' ');
+  DEBUG_SERIAL_PRINT(hiEndStop);
   DEBUG_SERIAL_PRINTLN();
 #endif
 
