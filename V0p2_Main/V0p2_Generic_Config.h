@@ -978,18 +978,14 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: enable use AVR's 'idle' mode to stop the CPU but leave I/O (eg Serial) running to save power.
 // DHD20150920: CURRENTLY NOT RECOMMENDED AS STILL SEEMS TO CAUSE SOME BOARDS TO CRASH.
 #define ENABLE_USE_OF_AVR_IDLE_MODE
-
 // Secondary radio
 // IF DEFINED: enable a secondary (typically WAN-relay) radio module.
 #define ENABLE_RADIO_SECONDARY_MODULE
 #define ENABLE_RADIO_SIM900   // Enable SIM900
 #define RADIO_SECONDARY_SIM900  // Assign SIM900
-
 #endif // CONFIG_REV10
 
-
 #ifdef CONFIG_REV10_STRIPBOARD // REV10-based stripboard precursor for bus shelters
-
 #define V0p2_REV 10
 #define COMMON_SETTINGS
 // IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
@@ -1021,35 +1017,27 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define ENABLE_USE_OF_AVR_IDLE_MODE
 // IF DEFINED: support for general timed and multi-input occupancy detection / use.
 #define ENABLE_OCCUPANCY_SUPPORT
-
 // IF DEFINED: enable a 'null' radio module; without this unit is stand-alone.
 #define ENABLE_RADIO_NULL
-
 // Secondary radio
 #undef ENABLE_RADIO_RFM23B
 #undef ENABLE_RADIO_PRIMARY_RFM23B
-
 // IF DEFINED: enable a secondary (typically WAN-relay) radio module.
 #define ENABLE_RADIO_SECONDARY_MODULE
 #define ENABLE_RADIO_SIM900   // Enable SIM900
 //#define RADIO_PRIMARY_SIM900  // Assign SIM900
 #define RADIO_SECONDARY_SIM900  // Assign SIM900
-
 // Enable use of OneWire devices.
 #define ENABLE_MINIMAL_ONEWIRE_SUPPORT
 // Enable use of DS18B20 temp sensor.
 #define ENABLE_PRIMARY_TEMP_SENSOR_DS18B20
-
 // Define voice module
 #define ENABLE_VOICE_SENSOR
 #define ENABLE_OCCUPANCY_DETECTION_FROM_VOICE
 #define ENABLE_VOICE_STATS
-
 // IF DEFINED: use active-low LEARN button(s).  Needs ENABLE_SINGLETON_SCHEDULE.  ***
 #undef ENABLE_LEARN_BUTTON // OPTIONAL ON V0.09 PCB1  UI_Minimal.cpp:1180:32: error: 'handleLEARN' was not declared in this scope
 #undef ENABLE_SETTABLE_TARGET_TEMPERATURES
-
-
 #endif // CONFIG_REV10_BUSSHELTER
 
 
