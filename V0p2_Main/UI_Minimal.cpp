@@ -204,13 +204,12 @@ bool tickUI(const uint_fast8_t sec)
     // Force relatively-frequent re-read of temp pot UI device.
     TempPot.read();
     }
+  // Force to FROST mode (and cancel any erroneous BAKE, etc) when at FROST end of dial.
+  if(TempPot.isAtLoEndStop()) { setWarmModeDebounced(false); }  
 #endif
 
-  // Provide feedback of significant UI activity...
-  if(significantUIOp)
-    {
-    userOpFeedback();
-    }
+  // Provide extra user feedback for significant UI actions...
+  if(significantUIOp) { userOpFeedback(); }
 
 #if !defined(ENABLE_SIMPLIFIED_MODE_BAKE)
   // Full MODE button behaviour:
