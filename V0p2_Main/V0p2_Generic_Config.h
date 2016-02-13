@@ -469,6 +469,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 
 #ifdef CONFIG_Trial2013Winter_Round2_SECURE_HUB
 #define CONFIG_Trial2013Winter_Round2 // Just like normal REV2 except...
+// IF DEFINED: there is run-time help available for the CLI.
+#undef ENABLE_CLI_HELP
 // IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
 #undef ENABLE_LOCAL_TRV
 // IF DEFINED: this unit controls a valve, but provides slave valve control only.
@@ -484,7 +486,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: allow JSON stats frames alongside binary ones.
 #define ENABLE_JSON_OUTPUT
 // IF DEFINED: enable periodic secure beacon broadcast.
-#define ENABLE_SECURE_RADIO_BEACON
+#undef ENABLE_SECURE_RADIO_BEACON
 // IF DEFINED: allow binary stats to be TXed.
 #undef ENABLE_BINARY_STATS_TX
 // IF DEFINED: enable support for fast (>50kbps) packet-handling carrier (leading length byte).

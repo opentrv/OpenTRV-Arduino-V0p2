@@ -902,8 +902,10 @@ static OTV0P2BASE::SimpleStatsRotation<10> ss1; // Configured for maximum differ
 // as assumed supplied by security layer to remote recipent.
 void bareStatsTX(const bool allowDoubleTX, const bool doBinary, const bool forceSecure)
   {
-  //  Add RFM23B preamble and a trailing CRC to the frame IFF channel is unframed.
-  const bool RFM23BFramed = PrimaryRadio.getChannelConfig()->isUnframed;
+  // Note if radio/comms channel is itself framed.
+  const bool framed = !PrimaryRadio.getChannelConfig()->isUnframed;
+  // Add RFM23B preamble and a trailing CRC to the frame IFF channel is unframed.
+  const bool RFM23BFramed = !framed;
 
 #if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
   const bool doEnc = true;
@@ -924,8 +926,8 @@ void bareStatsTX(const bool allowDoubleTX, const bool doBinary, const bool force
   //   * max binary length, or max JSON length + 1 for CRC + 1 to allow detection of oversize message
   //   * terminating 0xff
 //  uint8_t buf[STATS_MSG_START_OFFSET + max(FullStatsMessageCore_MAX_BYTES_ON_WIRE,  MSG_JSON_MAX_LENGTH+1) + 1];
-  // Buffer need be no larger than typical 64-byte radio module TX buffer limit + optional terminator.
-  const uint8_t MSG_BUF_SIZE = 64 + 1;
+  // Buffer need be no larger than leading length byte + typical 64-byte radio module TX buffer limit + optional terminator.
+  const uint8_t MSG_BUF_SIZE = 1 + 64 + 1;
   uint8_t buf[MSG_BUF_SIZE];
 #if 0
   // Make sure buffer is cleared for debug purposes
@@ -961,16 +963,18 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
   else // Send binary *or* JSON on each attempt so as not to overwhelm the receiver.
     {
     // Send JSON message.
-    // set pointer location based on whether start of message will have preamble TODO move to OTRFM23BLink queueToSend?
+    bool sendingJSONFailed = false; // Set true and stop attempting JSON send in case of error.
+
+    // Set pointer location based on whether start of message will have preamble TODO move to OTRFM23BLink queueToSend?
     uint8_t *bptr = buf;
-    if (RFM23BFramed) bptr += STATS_MSG_START_OFFSET;
+    if(RFM23BFramed) { bptr += STATS_MSG_START_OFFSET; }
+    // Leave space for possible leading frame-length byte, eg for encrypted frame.
+    else { ++bptr; }
+    // Where to write the real frame content.
+    uint8_t *const realTXFrameStart = bptr;
 
-    // Now append JSON text and closing 0xff...
-    // Use letters that correspond to the values in ParsedRemoteStatsRecord and when displaying/parsing @ status records.
-    int8_t wrote;
-
-    // If forcing encryption then force OFF "@" ID field
-    // assuming that an encrypted channel will carry the ID itself
+    // If forcing encryption then suppress the "@" ID field entirely,
+    // assuming that the encrypted commands will carry the ID, ie in the 'envelope'.
     if(doEnc) { static const char nul[1] = {}; ss1.setID(nul); }
     else
       {
@@ -1043,63 +1047,99 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
     // Size for JSON in 'O' frame is:
     //    ENC_BODY_SMALL_FIXED_PTEXT_MAX_SIZE - 2 leading body bytes + for trailing '}' not sent.
     const uint8_t maxSecureJSONSize = OTRadioLink::ENC_BODY_SMALL_FIXED_PTEXT_MAX_SIZE - 2 + 1;
-    // Allow a further byte for the trailing '\0' in string representation.
-    uint8_t ptextBuf[maxSecureJSONSize + 1];
+    // writeJSON() requires two further bytes including one for the trailing '\0'.
+    uint8_t ptextBuf[maxSecureJSONSize + 2];
 
-    wrote = ss1.writeJSON(bptr, sizeof(buf) - (bptr-buf), privacyLevel, maximise); //!allowDoubleTX && randRNG8NextBoolean());
+    // Redirect JSON output appropriately.
+    uint8_t *const bufJSON = doEnc ? ptextBuf : bptr;
+    const uint8_t bufJSONlen = doEnc ? sizeof(ptextBuf) : sizeof(buf) - (bptr-buf);
 
-    if(0 == wrote)
+    // Get the 'building' key for broadcast.
+    uint8_t key[16];
+    if(doEnc)
       {
-DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
-      return;
+      if(!OTV0P2BASE::getPrimaryBuilding16ByteSecretKey(key))
+        {
+        sendingJSONFailed = true;
+#if 1 && defined(DEBUG)
+        DEBUG_SERIAL_PRINTLN_FLASHSTRING("!failed (no key)");
+#endif
+        }
       }
 
-    OTV0P2BASE::outputJSONStats(&Serial, true, bptr, sizeof(buf) - (bptr-buf)); // Serial must already be running!
-    OTV0P2BASE::flushSerialSCTSensitive(); // Ensure all flushed since system clock may be messed with...
+    // Now append JSON text and closing 0xff...
+    // Use letters that correspond to the values in ParsedRemoteStatsRecord and when displaying/parsing @ status records.
+    int8_t wrote;
+    if(!sendingJSONFailed)
+      {
+      // Generate JSON and write to appropriate buffer:
+      // direct to TX buffer if not encrypting, else to separate buffer.
+      wrote = ss1.writeJSON(bufJSON, bufJSONlen, privacyLevel, maximise); //!allowDoubleTX && randRNG8NextBoolean());
+      if(0 == wrote)
+        {
+//DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
+        sendingJSONFailed = true;
+        }
+      }
+
+    // Push the JSON output to Serial.
+    if(!sendingJSONFailed)
+      {
+      OTV0P2BASE::outputJSONStats(&Serial, true, bufJSON, bufJSONlen); // Serial must already be running!
+      OTV0P2BASE::flushSerialSCTSensitive(); // Ensure all flushed since system clock may be messed with...
+      }
+
+    // If doing encryption
+    // then build encrypted frame from raw JSON.
+    if(!sendingJSONFailed && doEnc)
+      {
+      const OTRadioLink::fixed32BTextSize12BNonce16BTagSimpleEnc_ptr_t e = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_STATELESS;
+      const uint8_t txIDLen = OTRadioLink::ENC_BODY_DEFAULT_ID_BYTES;
+      // When sending on a channel with framing, do not explicitly send the frame length byte.
+      const uint8_t offset = framed ? 1 : 0;
+      // Assumed to be at least one free writeable byte ahead of bptr.
+      const uint8_t bodylen = OTRadioLink::generateSecureOFrameRawForTX(
+            realTXFrameStart - offset, sizeof(realTXFrameStart) - (realTXFrameStart-buf) + offset,
+            txIDLen, 0x7f, (const char *)bufJSON, e, NULL, key);
+      sendingJSONFailed = (0 == bodylen);
+      bptr = realTXFrameStart - offset + bodylen;
+      }
 
 #ifdef ENABLE_RADIO_SECONDARY_MODULE
-// FIXME secondary send assumes SIM900.
-// FIXME cannot use strlen for binary frames
-#if 0 && defined(DEBUG)
-    OTV0P2BASE::serialPrintAndFlush(F("full: "));
-    PrimaryRadio.queueToSend(buf, 64); // debug
-#endif // 0
-    SecondaryRadio.queueToSend(buf + STATS_MSG_START_OFFSET, strlen((const char*)buf+STATS_MSG_START_OFFSET));
+    if(!sendingJSONFailed)
+      {
+      SecondaryRadio.queueToSend(realTXFrameStart, doEnc ? (bptr - realTXFrameStart) : wrote); //strlen((const char*)buf+STATS_MSG_START_OFFSET));
+      }
 #endif // ENABLE_RADIO_SECONDARY_MODULE
 
 #ifdef ENABLE_RADIO_RX
     handleQueuedMessages(&Serial, false, &PrimaryRadio); // Serial must already be running!
 #endif
-    // Adjust JSON message for transmission.
-    // (Set high-bit on final closing brace to make it unique, and compute (non-0xff) CRC.)
-    // This is only required for RFM23B
-    if (RFM23BFramed) {
-          const uint8_t crc = OTV0P2BASE::adjustJSONMsgForTXAndComputeCRC((char *)bptr);
-          if(0xff == crc)
-            {
-    #if 0 && defined(DEBUG)
-            DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON msg bad!");
-    #endif
-            return;
-            }
-        bptr += wrote;
-        *bptr++ = crc; // Add 7-bit CRC for on-the-wire check.
-    } else {
-        bptr += wrote;    // to avoid another conditional
-    }
-    *bptr = 0xff; // Terminate message for TX.
 
-#if 0 && defined(DEBUG)
-    if(bptr - buf >= 64)
+    if(!sendingJSONFailed)
       {
-      DEBUG_SERIAL_PRINT_FLASHSTRING("Too long for RFM2x: ");
-      DEBUG_SERIAL_PRINT((int)(bptr - buf));
-      DEBUG_SERIAL_PRINTLN();
-      return;
+      // Adjust JSON message for transmission.
+      // (Set high-bit on final closing brace to make it unique, and compute (non-0xff) CRC.)
+      // This is only required for RFM23B
+      if(RFM23BFramed)
+        {
+        const uint8_t crc = OTV0P2BASE::adjustJSONMsgForTXAndComputeCRC((char *)bptr);
+        if(0xff == crc) { sendingJSONFailed = true; }
+        else
+          {
+          bptr += wrote;
+          *bptr++ = crc; // Add 7-bit CRC for on-the-wire check.
+          }
+        }
+      else { bptr += wrote; }   // to avoid another conditional
+      *bptr = 0xff; // Terminate message for TX.
       }
-#endif
-    // Send it!
-    RFM22RawStatsTXFFTerminated(buf, allowDoubleTX, RFM23BFramed);
+
+    if(!sendingJSONFailed)
+      {
+      // Send it!
+      RFM22RawStatsTXFFTerminated(buf, allowDoubleTX, RFM23BFramed);
+      }
     }
 #endif // defined(ENABLE_JSON_OUTPUT)
 
@@ -2000,7 +2040,7 @@ void loopOpenTRV()
       if(!OTV0P2BASE::getPrimaryBuilding16ByteSecretKey(key))
         {
 #if 1 && defined(DEBUG)
-        DEBUG_SERIAL_PRINTLN_FLASHSTRING("failed (no key)");
+        DEBUG_SERIAL_PRINTLN_FLASHSTRING("!failed (no key)");
 #endif
         break;
         }
