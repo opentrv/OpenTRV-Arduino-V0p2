@@ -896,7 +896,10 @@ static OTV0P2BASE::SimpleStatsRotation<10> ss1; // Configured for maximum differ
 // This may be binary or JSON format.
 //   * allowDoubleTX  allow double TX to increase chance of successful reception
 //   * doBinary  send binary form, else JSON form if supported
-//   * RFM23BFramed   Add preamble and CRC to frame. Defaults to true for compatibility
+//   * RFM23BFramed   Add preamble and CRC to frame. Defaults to true for compatibility.
+// Sends stats on primary channel with possible duplicate to secondary channel.
+// If sending encrypted then ID/counter fields (eg @ and + for JSON) are omitted
+// as assumed supplied by security layer to remote recipent.
 void bareStatsTX(const bool allowDoubleTX, const bool doBinary, const bool RFM23BFramed)
   {
   const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled<V0P2_UART_BAUD>(); // FIXME
@@ -940,7 +943,6 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
     // Send it!
     RFM22RawStatsTXFFTerminated(buf, allowDoubleTX);
     // Record stats as if remote, and treat channel as secure.
-//    recordCoreStats(true, &content);
     outputCoreStats(&Serial, true, &content);
     handleQueuedMessages(&Serial, false, &PrimaryRadio); // Serial must already be running!
 #endif // ENABLE_BINARY_STATS_TX
@@ -958,7 +960,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
     // Use letters that correspond to the values in ParsedRemoteStatsRecord and when displaying/parsing @ status records.
     int8_t wrote;
 
-#ifdef ENABLE_FHT8VSIMPLE
+#if defined(ENABLE_FHT8VSIMPLE)
     // Insert FHT8V-style ID in stats messages if appropriate.
     // Will not be appropriate if primary channel provides ID itself.
     static char idBuf[5]; // Static so as to have lifetime no shorter than ss1.
