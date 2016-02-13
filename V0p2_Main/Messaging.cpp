@@ -419,10 +419,10 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("!O frame short");
       const uint8_t percentOpen = secBodyBuf[0];
       if(percentOpen <= 100) { remoteCallForHeatRX(0, percentOpen); }
 #endif
-      // If containing JSON stats
-      // then forward secure frame as-is across the secondary link,
+      // If the frame contains JSON stats
+      // then forward entire secure frame as-is across the secondary radio relay link,
       // else print directly to console/Serial.
-      if((decryptedBodyOutSize > 3) && ('{' == secBodyBuf[2]))
+      if((0 != (secBodyBuf[1] & 0x10)) && (decryptedBodyOutSize > 3) && ('{' == secBodyBuf[2]))
         {
 #ifdef ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY
         SecondaryRadio.queueToSend(msg, msglen); 
