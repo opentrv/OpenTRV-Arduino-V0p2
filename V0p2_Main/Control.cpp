@@ -933,10 +933,10 @@ void bareStatsTX(const bool allowDoubleTX, const bool doBinary, const bool force
 #endif // 0
 
 #if defined(ENABLE_JSON_OUTPUT)
-  if(doBinary)
+  if(doBinary && !doEnc) // Note that binary form is not secure, so not permitted for secure systems.
 #endif // ENABLE_JSON_OUTPUT
     {
-#if defined(ENABLE_BINARY_STATS_TX) && defined(ENABLE_FS20_ENCODING_SUPPORT)
+#if defined(ENABLE_BINARY_STATS_TX) && defined(ENABLE_FS20_ENCODING_SUPPORT) && !defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
     // Send binary message first (insecure, FS20-piggyback format).
     // Gather core stats.
     OTV0P2BASE::FullStatsMessageCore_t content;
@@ -954,7 +954,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
     // Record stats as if remote, and treat channel as secure.
     outputCoreStats(&Serial, true, &content);
     handleQueuedMessages(&Serial, false, &PrimaryRadio); // Serial must already be running!
-#endif // ENABLE_BINARY_STATS_TX
+#endif // defined(ENABLE_BINARY_STATS_TX) ...
     }
 
 #if defined(ENABLE_JSON_OUTPUT)
@@ -1995,7 +1995,7 @@ void loopOpenTRV()
 #if 1 && defined(DEBUG)
       DEBUG_SERIAL_PRINT_FLASHSTRING("Beacon TX... ");
 #endif
-      // Get the 'building' key for braadcast.
+      // Get the 'building' key for broadcast.
       uint8_t key[16];
       if(!OTV0P2BASE::getPrimaryBuilding16ByteSecretKey(key))
         {
@@ -2005,8 +2005,6 @@ void loopOpenTRV()
         break;
         }
       const OTRadioLink::fixed32BTextSize12BNonce16BTagSimpleEnc_ptr_t e = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_STATELESS;
-//      // Generate beacon with ID long enough to used directly in the IV with no lookup.
-//      const uint8_t txIDLen = 6;
       const uint8_t txIDLen = OTRadioLink::ENC_BODY_DEFAULT_ID_BYTES;
       uint8_t buf[OTRadioLink::generateSecureBeaconMaxBufSize];
       const uint8_t bodylen = OTRadioLink::generateSecureBeaconRawForTX(buf, sizeof(buf), txIDLen, e, NULL, key);
