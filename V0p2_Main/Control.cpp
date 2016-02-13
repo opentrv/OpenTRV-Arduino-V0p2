@@ -905,6 +905,12 @@ void bareStatsTX(const bool allowDoubleTX, const bool doBinary, const bool force
   //  Add RFM23B preamble and a trailing CRC to the frame IFF channel is unframed.
   const bool RFM23BFramed = PrimaryRadio.getChannelConfig()->isUnframed;
 
+#if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
+  const bool doEnc = true;
+#else
+  const bool doEnc = forceSecure;
+#endif
+
   const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled<V0P2_UART_BAUD>(); // FIXME
 #if (FullStatsMessageCore_MAX_BYTES_ON_WIRE > STATS_MSG_MAX_LEN)
 #error FullStatsMessageCore_MAX_BYTES_ON_WIRE too big
@@ -963,35 +969,38 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
     // Use letters that correspond to the values in ParsedRemoteStatsRecord and when displaying/parsing @ status records.
     int8_t wrote;
 
-#if defined(ENABLE_FHT8VSIMPLE)
-    // Insert FHT8V-style ID in stats messages if appropriate.
-    // Will not be appropriate if primary channel provides ID itself.
-    static char idBuf[5]; // Static so as to have lifetime no shorter than ss1.
-    if(localFHT8VTRVEnabled())
+    // If forcing encryption then force OFF "@" ID field
+    // assuming that an encrypted channel will carry the ID itself
+    if(doEnc) { static const char nul[1] = {}; ss1.setID(nul); }
+    else
       {
-      const uint8_t hc1 = FHT8VGetHC1();
-      const uint8_t hc2 = FHT8VGetHC2();
-      idBuf[0] = OTV0P2BASE::hexDigit(hc1 >> 4);
-      idBuf[1] = OTV0P2BASE::hexDigit(hc1);
-      idBuf[2] = OTV0P2BASE::hexDigit(hc2 >> 4);
-      idBuf[3] = OTV0P2BASE::hexDigit(hc2);
-      idBuf[4] = '\0';
-      ss1.setID(idBuf);
-      }
-    else { ss1.setID(NULL); } // Use built-in ID.
+#if defined(ENABLE_FHT8VSIMPLE)
+      // Insert FHT8V-style ID in stats messages if appropriate.
+      // Will not be appropriate if primary channel provides ID itself.
+      static char idBuf[5]; // Static so as to have lifetime no shorter than ss1.
+      if(localFHT8VTRVEnabled())
+        {
+        const uint8_t hc1 = FHT8VGetHC1();
+        const uint8_t hc2 = FHT8VGetHC2();
+        idBuf[0] = OTV0P2BASE::hexDigit(hc1 >> 4);
+        idBuf[1] = OTV0P2BASE::hexDigit(hc1);
+        idBuf[2] = OTV0P2BASE::hexDigit(hc2 >> 4);
+        idBuf[3] = OTV0P2BASE::hexDigit(hc2);
+        idBuf[4] = '\0';
+        ss1.setID(idBuf);
+        }
+      else { ss1.setID(NULL); } // Use built-in ID.
 #endif
+      }
 
     // Managed JSON stats.
     const bool maximise = true; // Make best use of available bandwidth...
     if(ss1.isEmpty())
       {
-//#ifdef DEBUG
-      // Enable count for diagnostic purposes, eg while TX is lossy,
+      // Enable "+" count field for diagnostic purposes, eg while TX is lossy,
       // if the primary radio channel does not include a sequence number itself.
-      ss1.enableCount(true); 
-//#endif
-//      // Try and get as much out on the first TX as possible.
-//      maximise = true;
+      // Assume that an encrypted channel will provide its own (visible) sequence counter.
+      ss1.enableCount(!doEnc); 
       }
     ss1.put(TemperatureC16);
 #if defined(HUMIDITY_SENSOR_SUPPORT)
