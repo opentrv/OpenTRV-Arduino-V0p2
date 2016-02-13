@@ -1038,6 +1038,14 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 #else
     const uint8_t privacyLevel = OTV0P2BASE::getStatsTXLevel();
 #endif
+
+    // Buffer to write JSON to before encryption.
+    // Size for JSON in 'O' frame is:
+    //    ENC_BODY_SMALL_FIXED_PTEXT_MAX_SIZE - 2 leading body bytes + for trailing '}' not sent.
+    const uint8_t maxSecureJSONSize = OTRadioLink::ENC_BODY_SMALL_FIXED_PTEXT_MAX_SIZE - 2 + 1;
+    // Allow a further byte for the trailing '\0' in string represent.ation
+    uint8_t ptextBuf[maxSecureJSONSize + 1];
+
     wrote = ss1.writeJSON(bptr, sizeof(buf) - (bptr-buf), privacyLevel, maximise); //!allowDoubleTX && randRNG8NextBoolean());
 
     if(0 == wrote)
