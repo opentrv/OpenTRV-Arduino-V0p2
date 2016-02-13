@@ -488,13 +488,11 @@ void populateCoreStats(OTV0P2BASE::FullStatsMessageCore_t *content);
 // This may be binary or JSON format.
 //   * allowDoubleTX  allow double TX to increase chance of successful reception
 //   * doBinary  send binary form if supported, else JSON form if supported
-//   * sendSecure  if true then send encrypted and authenticated
-//   * RFM23BFramed   add RFM23B preamble and a trailing CRC to the frame;
-//                    defaults to true for compatibility
-// Sends stats on primary channel with possible duplicate to secondary channel.
+//   * forceSecure  if true then force sending encrypted and authenticated
+// Sends stats on primary radio channel 0 with possible duplicate to secondary channel.
 // If sending encrypted then ID/counter fields (eg @ and + for JSON) are omitted
 // as assumed supplied by security layer to remote recipent.
-void bareStatsTX(bool allowDoubleTX, bool doBinary, bool sendSecure = false, bool RFM23BFramed = true);
+void bareStatsTX(bool allowDoubleTX, bool doBinary, bool forceSecure = false);
 
 #ifdef ENABLE_BOILER_HUB
 // Raw notification of received call for heat from remote (eg FHT8V) unit.

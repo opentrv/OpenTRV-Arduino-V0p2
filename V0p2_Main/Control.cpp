@@ -896,14 +896,15 @@ static OTV0P2BASE::SimpleStatsRotation<10> ss1; // Configured for maximum differ
 // This may be binary or JSON format.
 //   * allowDoubleTX  allow double TX to increase chance of successful reception
 //   * doBinary  send binary form if supported, else JSON form if supported
-//   * sendSecure  if true then send encrypted and authenticated
-//   * RFM23BFramed   add RFM23B preamble and a trailing CRC to the frame;
-//                    defaults to true for compatibility
-// Sends stats on primary channel with possible duplicate to secondary channel.
+//   * forceSecure  if true then force sending encrypted and authenticated
+// Sends stats on primary radio channel 0 with possible duplicate to secondary channel.
 // If sending encrypted then ID/counter fields (eg @ and + for JSON) are omitted
 // as assumed supplied by security layer to remote recipent.
-void bareStatsTX(const bool allowDoubleTX, const bool doBinary, const bool sendSecure, const bool RFM23BFramed)
+void bareStatsTX(const bool allowDoubleTX, const bool doBinary, const bool forceSecure)
   {
+  //  Add RFM23B preamble and a trailing CRC to the frame IFF channel is unframed.
+  const bool RFM23BFramed = PrimaryRadio.getChannelConfig()->isUnframed;
+
   const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled<V0P2_UART_BAUD>(); // FIXME
 #if (FullStatsMessageCore_MAX_BYTES_ON_WIRE > STATS_MSG_MAX_LEN)
 #error FullStatsMessageCore_MAX_BYTES_ON_WIRE too big
