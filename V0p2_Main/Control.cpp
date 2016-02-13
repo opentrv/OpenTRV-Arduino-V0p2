@@ -2005,8 +2005,9 @@ void loopOpenTRV()
         break;
         }
       const OTRadioLink::fixed32BTextSize12BNonce16BTagSimpleEnc_ptr_t e = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_STATELESS;
-      // Generate beacon with ID long enough to used directly in the IV with no lookup.
-      const uint8_t txIDLen = 6;
+//      // Generate beacon with ID long enough to used directly in the IV with no lookup.
+//      const uint8_t txIDLen = 6;
+      const uint8_t txIDLen = OTRadioLink::ENC_BODY_DEFAULT_ID_BYTES;
       uint8_t buf[OTRadioLink::generateSecureBeaconMaxBufSize];
       const uint8_t bodylen = OTRadioLink::generateSecureBeaconRawForTX(buf, sizeof(buf), txIDLen, e, NULL, key);
       // ASSUME FRAMED CHANNEL 0 (but could check with config isUnframed flag).
