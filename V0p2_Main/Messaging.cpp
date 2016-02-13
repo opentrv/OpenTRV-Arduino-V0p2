@@ -389,7 +389,9 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Beacon");
       if(decryptedBodyOutSize != 0)
         {
 #if 1 && defined(DEBUG)
-DEBUG_SERIAL_PRINTLN_FLASHSTRING("!Beacon data");
+DEBUG_SERIAL_PRINT_FLASHSTRING("!Beacon data ");
+DEBUG_SERIAL_PRINT(decryptedBodyOutSize);
+DEBUG_SERIAL_PRINTLN();
 #endif
         break;
         }
