@@ -855,10 +855,6 @@ void populateCoreStats(OTV0P2BASE::FullStatsMessageCore_t *const content)
 
 
 
-
-
-
-
 // Call this to do an I/O poll if needed; returns true if something useful happened.
 // This call should typically take << 1ms at 1MHz CPU.
 // Does not change CPU clock speeds, mess with interrupts (other than possible brief blocking), or sleep.
@@ -964,7 +960,8 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 
 #ifdef ENABLE_FHT8VSIMPLE
     // Insert FHT8V-style ID in stats messages if appropriate.
-    static char idBuf[5]; // Static so as to have lifetime not shorter than ss1.
+    // Will not be appropriate if primary channel provides ID itself.
+    static char idBuf[5]; // Static so as to have lifetime no shorter than ss1.
     if(localFHT8VTRVEnabled())
       {
       const uint8_t hc1 = FHT8VGetHC1();
@@ -976,7 +973,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
       idBuf[4] = '\0';
       ss1.setID(idBuf);
       }
-    else { ss1.setID(NULL); } // Use build-in ID.
+    else { ss1.setID(NULL); } // Use built-in ID.
 #endif
 
     // Managed JSON stats.
@@ -984,7 +981,9 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
     if(ss1.isEmpty())
       {
 //#ifdef DEBUG
-      ss1.enableCount(true); // For diagnostic purposes, eg while TX is lossy.
+      // Enable count for diagnostic purposes, eg while TX is lossy,
+      // if the primary radio channel does not include a sequence number itself.
+      ss1.enableCount(true); 
 //#endif
 //      // Try and get as much out on the first TX as possible.
 //      maximise = true;
@@ -996,12 +995,12 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 #if defined(ENABLE_OCCUPANCY_SUPPORT)
     ss1.put(Occupancy.twoBitTag(), Occupancy.twoBitOccupancyValue()); // Reduce spurious TX cf percentage.
 #if !defined(ENABLE_TRIMMED_BANDWIDTH)
-    ss1.put(Occupancy.vacHTag(), Occupancy.getVacancyH()); // EXPERIMENTAL
+    ss1.put(Occupancy.vacHTag(), Occupancy.getVacancyH(), true); // Low priority as notionally redundant.
 #endif // !defined(ENABLE_TRIMMED_BANDWIDTH)
 #endif // defined(ENABLE_OCCUPANCY_SUPPORT)
     // OPTIONAL items
-    // Only TX supply voltage for units apparently not mains powered.
-    if(!Supply_cV.isMains()) { ss1.put(Supply_cV); } else { ss1.remove(Supply_cV.tag()); }
+    // Only TX supply voltage for units apparently not mains powered, and TX with low priority as slow changing.
+    if(!Supply_cV.isMains()) { ss1.put(Supply_cV, true); } else { ss1.remove(Supply_cV.tag()); }
 #ifdef ENABLE_BOILER_HUB
     // Show boiler state for boiler hubs.
     ss1.put("b", (int) isBoilerOn());
@@ -1016,7 +1015,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
     ss1.put(NominalRadValve);
     ss1.put(NominalRadValve.tagTTC(), NominalRadValve.getTargetTempC());
 #if !defined(ENABLE_TRIMMED_BANDWIDTH)
-    ss1.put(NominalRadValve.tagCMPC(), NominalRadValve.getCumulativeMovementPC()); // EXPERIMENTAL
+    ss1.put(NominalRadValve.tagCMPC(), NominalRadValve.getCumulativeMovementPC(), true); // Low priority as notionally redundant.
 #endif // !defined(ENABLE_TRIMMED_BANDWIDTH)
 #endif // defined(ENABLE_LOCAL_TRV)
 
