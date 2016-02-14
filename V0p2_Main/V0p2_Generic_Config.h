@@ -63,7 +63,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
 //#define CONFIG_DORM1 // REV7 / DORM1 all-in-one valve unit.
 //#define CONFIG_DORM1_BOILER // REV8 / DORM1 boiler-control unit.
-//#define CONFIG_REV10_AS_RELAY_ONLY // REV10: stats relay only.
+//#define CONFIG_REV10_AS_GSM_RELAY_ONLY // REV10: stats relay only.
 //#define CONFIG_REV11_RAW_JSON // REV11 as raw JSON-only stats/sensor leaf.
 
 
@@ -404,7 +404,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
 #define ENABLE_PRIMARY_TEMP_SENSOR_SHT21
 // Using RoHS-compliant phototransistor in place of LDR.
-#define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
+#define ENABLE_AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // IF DEFINED: detect occupancy based on relative humidity, if available.
 // DHD20160101: seems to still be set off spuriously by fast drop in temp when rad turns off (TODO-696).
 #undef ENABLE_OCCUPANCY_DETECTION_FROM_RH
@@ -457,7 +457,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //// IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
 //#define ENABLE_PRIMARY_TEMP_SENSOR_SHT21
 // Using RoHS-compliant phototransistor in place of LDR.
-#define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
+#define ENABLE_AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // Anticipation logic not yet ready for prime-time.
 //#define ENABLE_ANTICIPATION
 //// Enable experimental voice detection.
@@ -622,7 +622,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
 #define ENABLE_PRIMARY_TEMP_SENSOR_SHT21
 // Using RoHS-compliant phototransistor in place of LDR.
-#define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
+#define ENABLE_AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // Anticipation logic not yet ready for prime-time.
 //#define ENABLE_ANTICIPATION
 // IF UNDEFINED: this unit cannot act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
@@ -641,7 +641,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
 #define ENABLE_PRIMARY_TEMP_SENSOR_SHT21
 // Using RoHS-compliant phototransistor in place of LDR.
-#define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
+#define ENABLE_AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // IF DEFINED: use the temperature-setting potentiometer/dial if present.
 #undef ENABLE_TEMP_POT_IF_PRESENT
 // IF DEFINED: basic FROST/WARM temperatures are settable.
@@ -681,7 +681,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
 #define ENABLE_PRIMARY_TEMP_SENSOR_SHT21
 // Using RoHS-compliant phototransistor in place of LDR.
-#define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
+#define ENABLE_AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // IF UNDEFINED: this unit cannot act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
 #undef ENABLE_BOILER_HUB
 // IF UNDEFINED: do not allow TX of stats frames.
@@ -712,7 +712,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
 #define ENABLE_PRIMARY_TEMP_SENSOR_SHT21
 // Using RoHS-compliant phototransistor in place of LDR.
-//#define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
+//#define ENABLE_AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // IF DEFINED: this unit can act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
 #define ENABLE_BOILER_HUB
 // IF DEFINED: allow RX of stats frames.
@@ -728,7 +728,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #ifdef CONFIG_REV9_cut1
 #define V0p2_REV 9 // Just like cut2 but with some bugs...
 // For 1st-cut REV9 boards phototransistor was accidentally pulling down not up.
-#define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400_WRONG_WAY
+#define ENABLE_AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400_WRONG_WAY
 #endif
 
 #ifdef CONFIG_REV9 // REV9 cut2, derived from REV4.
@@ -741,7 +741,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: enable use of additional (eg external) DS18B20 temp sensor(s).
 #define ENABLE_EXTERNAL_TEMP_SENSOR_DS18B20
 // Using RoHS-compliant phototransistor in place of LDR.
-#define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
+#define ENABLE_AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // IF UNDEFINED: this unit cannot act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
 #undef ENABLE_BOILER_HUB
 // IF DEFINED: allow RX of stats frames.
@@ -783,7 +783,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
 #define ENABLE_PRIMARY_TEMP_SENSOR_SHT21
 // Using RoHS-compliant phototransistor in place of LDR.
-#define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
+#define ENABLE_AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
 #undef ENABLE_LOCAL_TRV
 // IF DEFINED: this unit controls a valve, but provides slave valve control only.
@@ -895,10 +895,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #endif // CONFIG_REV10_BUSSHELTER
 
 
-#ifdef CONFIG_REV10_AS_RELAY_ONLY // REV10: stats relay.
+#ifdef CONFIG_REV10_AS_GSM_RELAY_ONLY // REV10: stats relay.
 #define V0p2_REV 10
 // Using RoHS-compliant phototransistor in place of LDR.
-#define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
+#define ENABLE_AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // IF DEFINED: basic FROST/WARM temperatures are settable.
 #undef ENABLE_SETTABLE_TARGET_TEMPERATURES
 // IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
@@ -930,13 +930,13 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // SIM900 relay.
 #define ENABLE_RADIO_SIM900   // Enable SIM900
 #define RADIO_SECONDARY_SIM900  // Assign SIM900
-#endif // REV10_ASRELAY
+#endif // CONFIG_REV10_AS_GSM_RELAY_ONLY
 
 
 #ifdef CONFIG_REV10_BHR // REV10: boiler hub and stats relay.
 #define V0p2_REV 10
 // Using RoHS-compliant phototransistor in place of LDR.
-#define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
+#define ENABLE_AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // IF DEFINED: basic FROST/WARM temperatures are settable.
 #undef ENABLE_SETTABLE_TARGET_TEMPERATURES
 // IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
@@ -981,7 +981,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
 #define ENABLE_PRIMARY_TEMP_SENSOR_SHT21
 // Using RoHS-compliant phototransistor in place of LDR.
-#define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
+#define ENABLE_AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // Anticipation logic not yet ready for prime-time.
 //#define ENABLE_ANTICIPATION
 // IF UNDEFINED: this unit cannot act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
@@ -999,7 +999,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
 #define ENABLE_PRIMARY_TEMP_SENSOR_SHT21
 // Using RoHS-compliant phototransistor in place of LDR.
-#define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
+#define ENABLE_AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // IF DEFINED: basic FROST/WARM temperatures are settable.
 #undef ENABLE_SETTABLE_TARGET_TEMPERATURES
 // IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
