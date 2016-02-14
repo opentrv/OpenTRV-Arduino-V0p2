@@ -896,11 +896,10 @@ static OTV0P2BASE::SimpleStatsRotation<10> ss1; // Configured for maximum differ
 // This may be binary or JSON format.
 //   * allowDoubleTX  allow double TX to increase chance of successful reception
 //   * doBinary  send binary form if supported, else JSON form if supported
-//   * forceSecure  if true then force sending encrypted and authenticated
 // Sends stats on primary radio channel 0 with possible duplicate to secondary channel.
 // If sending encrypted then ID/counter fields (eg @ and + for JSON) are omitted
 // as assumed supplied by security layer to remote recipent.
-void bareStatsTX(const bool allowDoubleTX, const bool doBinary, const bool forceSecure)
+void bareStatsTX(const bool allowDoubleTX, const bool doBinary)
   {
   // Note if radio/comms channel is itself framed.
   const bool framed = !PrimaryRadio.getChannelConfig()->isUnframed;
@@ -910,7 +909,7 @@ void bareStatsTX(const bool allowDoubleTX, const bool doBinary, const bool force
 #if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
   const bool doEnc = true;
 #else
-  const bool doEnc = forceSecure;
+  const bool doEnc = false;
 #endif
 
   const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled<V0P2_UART_BAUD>(); // FIXME
@@ -1093,6 +1092,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
     // then build encrypted frame from raw JSON.
     if(!sendingJSONFailed && doEnc)
       {
+#if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
       const OTRadioLink::fixed32BTextSize12BNonce16BTagSimpleEnc_ptr_t e = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_STATELESS;
       const uint8_t txIDLen = OTRadioLink::ENC_BODY_DEFAULT_ID_BYTES;
       // When sending on a channel with framing, do not explicitly send the frame length byte.
@@ -1103,6 +1103,9 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
             txIDLen, 0x7f, (const char *)bufJSON, e, NULL, key);
       sendingJSONFailed = (0 == bodylen);
       bptr = realTXFrameStart - offset + bodylen;
+#else
+      sendingJSONFailed = true; // Crypto support may not be available.
+#endif // defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
       }
 
 #ifdef ENABLE_RADIO_SECONDARY_MODULE
@@ -1140,6 +1143,10 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
       // Send it!
       RFM22RawStatsTXFFTerminated(buf, allowDoubleTX, RFM23BFramed);
       }
+
+#if 1 && defined(DEBUG)
+    if(sendingJSONFailed) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("!failed JSON TX"); }
+#endif
     }
 #endif // defined(ENABLE_JSON_OUTPUT)
 
