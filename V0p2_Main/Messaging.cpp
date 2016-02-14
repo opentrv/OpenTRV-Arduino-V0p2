@@ -192,7 +192,7 @@ OTRadioLink::printRXMsg(p, txbuf, bodylen);
 // Returns true on success, false otherwise.
 static bool decodeAndHandleFTp2_FS20_native(Print *p, const bool secure, const uint8_t * const msg, const uint8_t msglen)
 {
-  // Decode the FS20/FHT8V command into the buffer/struct.
+  // Decode the FS20/FHT8V command into the command struct.
   OTRadValve::FHT8VRadValveBase::fht8v_msg_t command;
   uint8_t const *lastByte = msg+msglen-1;
   uint8_t const *trailer = OTRadValve::FHT8VRadValveBase::FHT8VDecodeBitStream(msg, lastByte, &command);
