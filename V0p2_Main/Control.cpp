@@ -1088,7 +1088,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
       OTV0P2BASE::flushSerialSCTSensitive(); // Ensure all flushed since system clock may be messed with...
       }
 
-    // Get the 'building' key for stats sendng.
+    // Get the 'building' key for stats sending.
     uint8_t key[16];
     if(!sendingJSONFailed && doEnc)
       {
