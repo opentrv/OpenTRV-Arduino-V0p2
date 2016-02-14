@@ -199,13 +199,14 @@ bool tickUI(const uint_fast8_t sec)
   const bool enhancedUIFeedback = veryRecentUIControlUse();
 
 #ifdef TEMP_POT_AVAILABLE
-  // Force relatively-frequent re-read of temp pot UI device
-  // if recent UI maunal activity, and periodically,
-  // to keep valve responsive.
+  // Force relatively-frequent re-read of temp pot UI device periodically
+  // and if there has been recent UI maunal activity,
+  // to keep the valve UI responsive.
 #if !defined(ENABLE_FAST_TEMP_POT_SAMPLING) || !defined(ENABLE_OCCUPANCY_SUPPORT)
   if(enhancedUIFeedback || forthTick)
 #else
-  // Polls on every tick unless the room has been vacant for a day or two or is in FROST mode.
+  // Even more responsive at some possible energy cost...
+  // Polls pot on every tick unless the room has been vacant for a day or two or is in FROST mode.
   if(enhancedUIFeedback || forthTick || (inWarmMode() && !Occupancy.longlongVacant()))
 #endif
     {
