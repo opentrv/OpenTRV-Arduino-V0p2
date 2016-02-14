@@ -1105,7 +1105,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
             realTXFrameStart - offset, sizeof(buf) - (realTXFrameStart-buf) + offset,
             txIDLen, 0x7f, (const char *)bufJSON, e, NULL, key);
       sendingJSONFailed = (0 == bodylen);
-      wrote = bodylen;
+      wrote = bodylen - offset;
 #else
       sendingJSONFailed = true; // Crypto support may not be available.
 #endif // defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)

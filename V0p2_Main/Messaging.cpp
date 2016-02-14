@@ -192,10 +192,6 @@ OTRadioLink::printRXMsg(p, txbuf, bodylen);
 // Returns true on success, false otherwise.
 static bool decodeAndHandleFTp2_FS20_native(Print *p, const bool secure, const uint8_t * const msg, const uint8_t msglen)
 {
-#if 0 && defined(DEBUG)
-  OTRadioLink::printRXMsg(p, msg, msglen);
-#endif
-
   // Decode the FS20/FHT8V command into the buffer/struct.
   OTRadValve::FHT8VRadValveBase::fht8v_msg_t command;
   uint8_t const *lastByte = msg+msglen-1;
@@ -464,8 +460,9 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uin
 
   // TODO: consider extracting hash of all message data (good/bad) and injecting into entropy pool.
 #if 0 && defined(DEBUG)
-  OTRadioLink::printRXMsg(p, msg, msglen);
+  OTRadioLink::printRXMsg(p, msg-1, msglen+1); // Print len+frame.
 #endif
+
   if(msglen < 2) { return; } // Too short to be useful, so ignore.
 
    // Length-first OpenTRV secureable-frame format...
