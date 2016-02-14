@@ -192,8 +192,8 @@ OTRadioLink::printRXMsg(p, txbuf, bodylen);
 // Returns true on success, false otherwise.
 static bool decodeAndHandleFTp2_FS20_native(Print *p, const bool secure, const uint8_t * const msg, const uint8_t msglen)
 {
-#if 0 && defined(DEBUG)
-  OTRadioLink::printRXMsg(p, msg, msglen);
+#if 1 && defined(DEBUG)
+  OTRadioLink::printRXMsg(p, msg-1, msglen+1); // Print len+frame.
 #endif
 
   // Decode the FS20/FHT8V command into the buffer/struct.
