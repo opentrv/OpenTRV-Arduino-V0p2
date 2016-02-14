@@ -63,6 +63,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
 //#define CONFIG_DORM1 // REV7 / DORM1 all-in-one valve unit.
 //#define CONFIG_DORM1_BOILER // REV8 / DORM1 boiler-control unit.
+//#define CONFIG_REV10_AS_RELAY_ONLY // REV10: stats relay only.
 //#define CONFIG_REV11_RAW_JSON // REV11 as raw JSON-only stats/sensor leaf.
 
 
@@ -88,24 +89,11 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_DE_TESTLAB // Deniz's test environment.
 //#define CONFIG_REV10_STRIPBOARD // REV10-based stripboard precursor for bus shelters
 //#define CONFIG_REV10 // Generic REV10 config
-//#define CONFIG_REV10_ASRELAY // REV10: stats relay only.
 //#define CONFIG_REV10_BHR // REV10: boiler hub and stats relay.
 // TODO //#define CONFIG_REV10_SECURE_BOILERHUB_GSM_SECURE // REV10 PCB boiler hub, relay to GSM, 2015/12 secure protocol.
 //#define CONFIG_REV11_RFM23BTEST // Basic test to see if stats send
 //#define CONFIG_REV14_PROTO  // Prototype REV14 w/ LoRa, TMP, SHT and QM-1
 //#define CONFIG_BAREBONES // No peripherals / on breadboard.
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -907,7 +895,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #endif // CONFIG_REV10_BUSSHELTER
 
 
-#ifdef CONFIG_REV10_ASRELAY // REV10: stats relay.
+#ifdef CONFIG_REV10_AS_RELAY_ONLY // REV10: stats relay.
 #define V0p2_REV 10
 // Using RoHS-compliant phototransistor in place of LDR.
 #define AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
