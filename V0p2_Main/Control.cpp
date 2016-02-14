@@ -1053,19 +1053,6 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
     uint8_t *const bufJSON = doEnc ? ptextBuf : bptr;
     const uint8_t bufJSONlen = doEnc ? sizeof(ptextBuf) : min(OTV0P2BASE::MSG_JSON_MAX_LENGTH+2, sizeof(buf) - (bptr-buf));
 
-    // Get the 'building' key for broadcast.
-    uint8_t key[16];
-    if(doEnc)
-      {
-      if(!OTV0P2BASE::getPrimaryBuilding16ByteSecretKey(key))
-        {
-        sendingJSONFailed = true;
-#if 1 && defined(DEBUG)
-        DEBUG_SERIAL_PRINTLN_FLASHSTRING("!failed (no key)");
-#endif
-        }
-      }
-
     // Number of bytes written for body.
     // For non-secure, this is the size of the JSON text.
     // For secure this is overridden with the secure frame size.
@@ -1099,6 +1086,19 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
         Serial.println();
         }
       OTV0P2BASE::flushSerialSCTSensitive(); // Ensure all flushed since system clock may be messed with...
+      }
+
+    // Get the 'building' key for stats sendng.
+    uint8_t key[16];
+    if(!sendingJSONFailed && doEnc)
+      {
+      if(!OTV0P2BASE::getPrimaryBuilding16ByteSecretKey(key))
+        {
+        sendingJSONFailed = true;
+#if 1 && defined(DEBUG)
+        DEBUG_SERIAL_PRINTLN_FLASHSTRING("!failed (no key)");
+#endif
+        }
       }
 
     // If doing encryption
