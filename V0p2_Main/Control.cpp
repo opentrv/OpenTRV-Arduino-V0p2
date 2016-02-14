@@ -1125,9 +1125,16 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
       // When sending on a channel with framing, do not explicitly send the frame length byte.
       const uint8_t offset = framed ? 1 : 0;
       // Assumed to be at least one free writeable byte ahead of bptr.
+#if defined(ENABLE_NOMINAL_RAD_VALVE)
+      // Get current modelled valve position.
+      const uint8_t valvePC = NominalRadValve.get();
+#else
+      // Distinguished 'invalid' valve position; never mistaken for a real valve.
+      const uint8_t valvePC = 0x7f;
+#endif // defined(ENABLE_NOMINAL_RAD_VALVE)
       const uint8_t bodylen = OTRadioLink::generateSecureOFrameRawForTX(
             realTXFrameStart - offset, sizeof(buf) - (realTXFrameStart-buf) + offset,
-            txIDLen, 0x7f, (const char *)bufJSON, e, NULL, key);
+            txIDLen, valvePC, (const char *)bufJSON, e, NULL, key);
       sendingJSONFailed = (0 == bodylen);
       wrote = bodylen - offset;
 #else
@@ -2285,7 +2292,7 @@ void loopOpenTRV()
 
 #if defined(HAS_DORM1_VALVE_DRIVE) && defined(ENABLE_LOCAL_TRV)
   // Handle local direct-drive valve, eg DORM1.
-#ifdef ENABLE_NOMINAL_RAD_VALVE
+#if defined(ENABLE_NOMINAL_RAD_VALVE)
   // Get current modelled valve position into abstract driver.
   ValveDirect.set(NominalRadValve.get());
 #endif
