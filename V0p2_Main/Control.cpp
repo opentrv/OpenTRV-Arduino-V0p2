@@ -1051,7 +1051,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 
     // Redirect JSON output appropriately.
     uint8_t *const bufJSON = doEnc ? ptextBuf : bptr;
-    const uint8_t bufJSONlen = doEnc ? sizeof(ptextBuf) : sizeof(buf) - (bptr-buf);
+    const uint8_t bufJSONlen = doEnc ? sizeof(ptextBuf) : min(OTV0P2BASE::MSG_JSON_MAX_LENGTH+2, sizeof(buf) - (bptr-buf));
 
     // Get the 'building' key for broadcast.
     uint8_t key[16];
@@ -1076,7 +1076,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
       wrote = ss1.writeJSON(bufJSON, bufJSONlen, privacyLevel, maximise); //!allowDoubleTX && randRNG8NextBoolean());
       if(0 == wrote)
         {
-//DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
+DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
         sendingJSONFailed = true;
         }
       }
@@ -1099,7 +1099,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
       const uint8_t offset = framed ? 1 : 0;
       // Assumed to be at least one free writeable byte ahead of bptr.
       const uint8_t bodylen = OTRadioLink::generateSecureOFrameRawForTX(
-            realTXFrameStart - offset, sizeof(realTXFrameStart) - (realTXFrameStart-buf) + offset,
+            realTXFrameStart - offset, sizeof(buf) - (realTXFrameStart-buf) + offset,
             txIDLen, 0x7f, (const char *)bufJSON, e, NULL, key);
       sendingJSONFailed = (0 == bodylen);
       bptr = realTXFrameStart - offset + bodylen;
@@ -1107,6 +1107,10 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
       sendingJSONFailed = true; // Crypto support may not be available.
 #endif // defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
       }
+
+#if 1 && defined(DEBUG)
+    if(sendingJSONFailed) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("!failed JSON enc"); }
+#endif
 
 #ifdef ENABLE_RADIO_SECONDARY_MODULE
     if(!sendingJSONFailed)
