@@ -205,11 +205,11 @@ static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChanne
 #endif // ENABLE_RADIO_PRIMARY_RFM23B
 
 
-#ifdef RADIO_SECONDARY_SIM900
+#ifdef ENABLE_RADIO_SECONDARY_SIM900
 static const OTRadioLink::OTRadioChannelConfig SecondaryRadioConfig(&SIM900Config, true);
 #else
 static const OTRadioLink::OTRadioChannelConfig SecondaryRadioConfig(NULL, true);
-#endif // RADIO_SECONDARY_SIM900
+#endif // ENABLE_RADIO_SECONDARY_SIM900
 
 
 #if defined(ALLOW_CC1_SUPPORT_RELAY)

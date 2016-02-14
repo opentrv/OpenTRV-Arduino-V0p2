@@ -207,7 +207,7 @@ bool tickUI(const uint_fast8_t sec)
 #else
   // Even more responsive at some possible energy cost...
   // Polls pot on every tick unless the room has been vacant for a day or two or is in FROST mode.
-  if(enhancedUIFeedback || forthTick || (inWarmMode() && !Occupancy.longlongVacant()))
+  if(enhancedUIFeedback || forthTick || (inWarmMode() && !Occupancy.longLongVacant()))
 #endif
     {
     TempPot.read();
@@ -230,7 +230,7 @@ bool tickUI(const uint_fast8_t sec)
       {
       // Note if a boundary was crossed, ignoring any false 'start-up' transient.
       if(0 != lastNominalWarmTarget) { significantUIOp = true; }
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
       DEBUG_SERIAL_PRINT_FLASHSTRING("WT");
       DEBUG_SERIAL_PRINT(nominalWarmTarget);
       DEBUG_SERIAL_PRINTLN();
@@ -326,7 +326,7 @@ bool tickUI(const uint_fast8_t sec)
     // Force display while UI controls are being used, eg to indicate temp pot position.
     if(justTouched || inWarmMode()) // Generate flash(es) if in WARM mode or fiddling with UI other than Mode button.
       {
-      // DHD20131223: only flash if the room is lit so as to save energy and avoid disturbing sleep, etc.
+      // DHD20131223: only flash if the room not known to be dark so as to save energy and avoid disturbing sleep, etc.
       // In this case force resample of light level frequently in case user turns light on eg to operate unit.
       // Do show LED flash if user has recently operated controls (other than mode button) manually.
       // Flash infrequently if no recently operated controls and not in BAKE mode and not actually calling for heat;
@@ -336,7 +336,7 @@ bool tickUI(const uint_fast8_t sec)
 #if defined(ENABLE_NOMINAL_RAD_VALVE) && defined(ENABLE_LOCAL_TRV)
              || NominalRadValve.isCallingForHeat()
 #endif
-             || inBakeMode()) && AmbLight.isRoomLit()))
+             || inBakeMode()) && !AmbLight.isRoomDark()))
         {
         // First flash to indicate WARM mode (or pot being twiddled).
         LED_HEATCALL_ON();
@@ -789,7 +789,7 @@ static void printCLILine(const uint8_t deadline, const char syntax, __FlashStrin
 static void dumpCLIUsage(const uint8_t stopBy)
   {
 #ifndef _CLI_HELP_
-  Serial.println(F("No help")); // Minimal placeholder.
+  OTV0P2BASE::CLI::InvalidIgnored(); // Minimal placeholder.
 #else
   const uint8_t deadline = OTV0P2BASE::fnmin((uint8_t)(stopBy - OTV0P2BASE::fnmin(stopBy,CLI_PRINT_OH_SCT)), STOP_PRINTING_DESCRIPTION_AT);
   Serial.println();

@@ -498,7 +498,8 @@ uint8_t ModelledRadValve::computeTargetTemp()
     const bool likelyVacantNow = longVacant || Occupancy.isLikelyUnoccupied();
     const bool ecoBias = hasEcoBias();
     // True if the room has been dark long enough to indicate night.  (TODO-792)
-    const bool darkForHours = AmbLight.getDarkMinutes() > 245; // A little over 4h, not quite max 255.
+    const uint8_t dm = AmbLight.getDarkMinutes();
+    const bool darkForHours = dm > 245; // A little over 4h, not quite max 255.
     // Be more ready to decide room not likely occupied soon if eco-biased.
     // Note that this value is likely to be used +/- 1 so must be in range [1,23].
     const uint8_t thisHourNLOThreshold = ecoBias ? 15 : 12;
@@ -513,7 +514,7 @@ uint8_t ModelledRadValve::computeTargetTemp()
         (darkForHours || (hoursLessOccupiedThanNext < (thisHourNLOThreshold+1))));
     const uint8_t minLightsOffForSetbackMins = ecoBias ? 10 : 20;
     if(longVacant ||
-       ((notLikelyOccupiedSoon || (AmbLight.getDarkMinutes() > minLightsOffForSetbackMins) || (ecoBias && (Occupancy.getVacancyH() > 0) && (0 == OTV0P2BASE::getByHourStat(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR, OTV0P2BASE::STATS_SPECIAL_HOUR_CURRENT_HOUR)))) &&
+       ((notLikelyOccupiedSoon || (dm > minLightsOffForSetbackMins) || (ecoBias && (Occupancy.getVacancyH() > 0) && (0 == OTV0P2BASE::getByHourStat(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR, OTV0P2BASE::STATS_SPECIAL_HOUR_CURRENT_HOUR)))) &&
            !Scheduler.isAnyScheduleOnWARMNow() && !recentUIControlUse()))
       {
       // Use a default minimal non-annoying setback if:
@@ -537,12 +538,11 @@ uint8_t ModelledRadValve::computeTargetTemp()
                                Occupancy.isLikelyOccupied() ||
                                (!longVacant && !AmbLight.isRoomDark() && (hoursLessOccupiedThanThis > 4)) ||
                                (!longVacant && !darkForHours && (hoursLessOccupiedThanNext >= thisHourNLOThreshold-1)) ||
-//                               (!longLongVacant && OTV0P2BASE::inOutlierQuartile(true, V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED)) || // if the room is in the upper quartile of occupancy for this time and hasn't been vacant for a very long time
                                (!longVacant && Scheduler.isAnyScheduleOnWARMSoon())) ?
               SETBACK_DEFAULT :
           ((ecoBias && (longLongVacant ||
               (notLikelyOccupiedSoon && (isEcoTemperature(wt) ||
-                  ((AmbLight.getDarkMinutes() > (uint8_t)min(254, 60*minVacantAndDarkForFULLSetbackH)) && (Occupancy.getVacancyH() >= minVacantAndDarkForFULLSetbackH)))))) ?
+                  ((dm > (uint8_t)min(254, 60*minVacantAndDarkForFULLSetbackH)) && (Occupancy.getVacancyH() >= minVacantAndDarkForFULLSetbackH)))))) ?
               SETBACK_FULL : SETBACK_ECO);
 
       return(OTV0P2BASE::fnmax((uint8_t)(wt - setback), getFROSTTargetC())); // Target must never be set low enough to create a frost/freeze hazard.
@@ -585,7 +585,7 @@ void ModelledRadValve::computeTargetTemperature()
   inputState.widenDeadband = (!veryRecentUIUse) &&
       (retainedState.isFiltering ||
       (!inWarmMode()) ||
-      (!AmbLight.isRoomLit() && !AmbLight.isUnavailable()) ||
+      AmbLight.isRoomDark() || // Must be false if light sensor not usable.
       Occupancy.longVacant() || (hasEcoBias() && (Occupancy.getVacancyH() >= minVacancyHoursForWideningECO)));
   // Capture adjusted reference/room temperatures
   // and set callingForHeat flag also using same outline logic as computeRequiredTRVPercentOpen() will use.
@@ -1066,7 +1066,9 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
       wrote = ss1.writeJSON(bufJSON, bufJSONlen, privacyLevel, maximise); //!allowDoubleTX && randRNG8NextBoolean());
       if(0 == wrote)
         {
+#if 0 && defined(DEBUG)
 DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
+#endif
         sendingJSONFailed = true;
         }
       }
@@ -1074,9 +1076,8 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
     // Push the JSON output to Serial.
     if(!sendingJSONFailed)
       {
-      if(!doEnc)
-        { OTV0P2BASE::outputJSONStats(&Serial, true, bufJSON, bufJSONlen); } // Serial must already be running!
-      else
+ #if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
+      if(doEnc)
         {
         // Insert synthetic full ID/@ field for local stats, but no sequence number for now.
         Serial.print(F("{\"@\":\""));
@@ -1085,6 +1086,9 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
         Serial.write(bufJSON+1, wrote-1);
         Serial.println();
         }
+      else
+#endif // defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
+        { OTV0P2BASE::outputJSONStats(&Serial, true, bufJSON, bufJSONlen); } // Serial must already be running!
       OTV0P2BASE::flushSerialSCTSensitive(); // Ensure all flushed since system clock may be messed with...
       }
 
@@ -1092,13 +1096,17 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
     uint8_t key[16];
     if(!sendingJSONFailed && doEnc)
       {
+#if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
       if(!OTV0P2BASE::getPrimaryBuilding16ByteSecretKey(key))
         {
         sendingJSONFailed = true;
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
         DEBUG_SERIAL_PRINTLN_FLASHSTRING("!failed (no key)");
 #endif
         }
+#else
+      sendingJSONFailed = true; // Crypto support may not be available.
+#endif // defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
       }
 
     // If doing encryption
@@ -1121,7 +1129,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
 #endif // defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
       }
 
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
     if(sendingJSONFailed) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("!failed JSON enc"); }
 #endif
 
