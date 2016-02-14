@@ -331,7 +331,7 @@ if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("Beacon RX failed at header decode"
       {
       isOK = false;
 #if 1 && defined(DEBUG)
-      DEBUG_SERIAL_PRINTLN_FLASHSTRING("Failed (no key)");
+      DEBUG_SERIAL_PRINTLN_FLASHSTRING("!failed (no key)");
 #endif
       }
     }
@@ -341,7 +341,7 @@ if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("Beacon RX failed at header decode"
     // Look up the full node ID of the sender in the associations table,
     // and if successful then attempt to decode the message.
     const int8_t index = OTV0P2BASE::getNextMatchingNodeID(0, sfh.id, sfh.getIl(), senderNodeID);
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
     if(index < 0) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("RX lookup failed"); }
 #endif
     isOK = (index >= 0) &&
@@ -358,7 +358,7 @@ if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("Beacon RX failed at header decode"
   if(!isOK) { return(false); } // Stop if not OK.
 
   // If frame still OK to process then switch on frame type.
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
 DEBUG_SERIAL_PRINT_FLASHSTRING("RX seq#");
 DEBUG_SERIAL_PRINT(sfh.getSeq());
 DEBUG_SERIAL_PRINTLN();
@@ -400,7 +400,7 @@ DEBUG_SERIAL_PRINTLN();
 
     case 'O' | 0x80: // Basic OpenTRV secure frame...
       {
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
 DEBUG_SERIAL_PRINTLN_FLASHSTRING("'O'");
 #endif
       if(decryptedBodyOutSize < 2)
@@ -428,7 +428,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("!O frame short");
 #else // Don't write to console/Serial also if relayed.
         // Write out the JSON message, inserting synthetic ID/@ and seq/+.
         Serial.print(F("{\"@\":\""));
-        for(int i = 0; i < sizeof(senderNodeID); ++i) { Serial.print(senderNodeID[i], HEX); }
+        for(int i = 0; i < OTV0P2BASE::OpenTRV_Node_ID_Bytes; ++i) { Serial.print(senderNodeID[i], HEX); }
         Serial.print(F("\",\"+\":"));
         Serial.print(sfh.getSeq());
         Serial.print(',');

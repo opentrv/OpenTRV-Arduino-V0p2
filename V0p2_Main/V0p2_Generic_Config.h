@@ -486,7 +486,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // IF DEFINED: allow JSON stats frames alongside binary ones.
 #define ENABLE_JSON_OUTPUT
 // IF DEFINED: enable periodic secure beacon broadcast.
-#define ENABLE_SECURE_RADIO_BEACON
+#undef ENABLE_SECURE_RADIO_BEACON
 // IF DEFINED: allow binary stats to be TXed.
 #undef ENABLE_BINARY_STATS_TX
 // IF DEFINED: enable support for fast (>50kbps) packet-handling carrier (leading length byte).

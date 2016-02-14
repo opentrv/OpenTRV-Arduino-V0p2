@@ -1087,7 +1087,17 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
     // Push the JSON output to Serial.
     if(!sendingJSONFailed)
       {
-      OTV0P2BASE::outputJSONStats(&Serial, true, bufJSON, bufJSONlen); // Serial must already be running!
+      if(!doEnc)
+        { OTV0P2BASE::outputJSONStats(&Serial, true, bufJSON, bufJSONlen); } // Serial must already be running!
+      else
+        {
+        // Insert synthetic full ID/@ field for local stats, but no sequence number for now.
+        Serial.print(F("{\"@\":\""));
+        for(int i = 0; i < OTV0P2BASE::OpenTRV_Node_ID_Bytes; ++i) { Serial.print(eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_ID+i), HEX); }
+        Serial.print(F("\","));
+        Serial.write(bufJSON+1, wrote-1);
+        Serial.println();
+        }
       OTV0P2BASE::flushSerialSCTSensitive(); // Ensure all flushed since system clock may be messed with...
       }
 
