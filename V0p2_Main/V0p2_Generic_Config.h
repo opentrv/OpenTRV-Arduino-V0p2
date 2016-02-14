@@ -170,8 +170,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define V0p2_REV 1
 // TODO-264: Find out why IDLE seems to crash some REV1 boards.
 #undef ENABLE_USE_OF_AVR_IDLE_MODE
-// Use common settings.
-#define COMMON_SETTINGS
 #endif
 
 
@@ -319,8 +317,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define RADIO_SECONDARY_NULL
 // IF DEFINED: allow periodic machine- and human- readable status report to serial, starting with "="/
 //#undef ENABLE_SERIAL_STATUS_REPORT
-// Use common settings.
-#define COMMON_SETTINGS
 #endif
 
 #ifdef CONFIG_Trial2013Winter_Round2_SECURE_NOHUB
@@ -395,8 +391,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define V0p2_REV 2
 // IF DEFINED: allow for less light on sideways-pointing LDR on cut4 2014/03/17 REV2 boards (TODO-209).
 #define ENABLE_AMBLIGHT_EXTRA_SENSITIVE
-// Use common settings.
-#define COMMON_SETTINGS
 #endif
 
 // ------------------------- REV7
@@ -454,8 +448,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #undef ENABLE_UI_LED_2_IF_AVAILABLE
 // IF DEFINED: reverse DORM1 motor with respect to very first samples.
 #define ENABLE_DORM1_MOTOR_REVERSED
-// Use common settings.
-#define COMMON_SETTINGS
 #endif
 
 
@@ -488,8 +480,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #undef ENABLE_STATS_RX
 // IF DEFINED: initial direct motor drive design.
 //#define ENABLE_V1_DIRECT_MOTOR_DRIVE
-// Use common settings.
-#define COMMON_SETTINGS
 #endif
 
 #ifdef CONFIG_BAREBONES
@@ -626,8 +616,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #undef ENABLE_STATS_RX
 // IF DEFINED: initial direct motor drive design.
 //#define ENABLE_V1_DIRECT_MOTOR_DRIVE
-// Use common settings.
-#define COMMON_SETTINGS
 #endif
 
 // ------------------------- REV4
@@ -651,8 +639,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define ENABLE_ANTICIPATION
 // IF UNDEFINED: this unit cannot act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
 //#undef ENABLE_BOILER_HUB
-// Use common settings.
-#define COMMON_SETTINGS
 #endif
 
 
@@ -690,8 +676,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #undef ENABLE_BINARY_STATS_TX
 // IF DEFINED: enable support for FS20 carrier for RX of raw FS20 and piggybacked binary (non-JSON) stats.
 #undef ENABLE_FS20_NATIVE_AND_BINARY_STATS_RX
-// Use common settings.
-#define COMMON_SETTINGS
 #endif
 
 
@@ -728,8 +712,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #undef ENABLE_EXTENDED_CLI
 // IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
 #define ENABLE_LOCAL_TRV
-// Use common settings.
-#define COMMON_SETTINGS
 #endif
 
 // ------------------------- REV8
@@ -751,8 +733,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define ENABLE_STATS_TX
 // IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
 #undef ENABLE_LOCAL_TRV
-// Use common settings.
-#define COMMON_SETTINGS
 #endif
 
 // ------------------------- REV9
@@ -808,8 +788,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define ALLOW_CC1_SUPPORT
 #define ALLOW_CC1_SUPPORT_RELAY
 #define ALLOW_CC1_SUPPORT_RELAY_IO // Direct addressing of LEDs, use of buttons, etc.
-// Use common settings.
-#define COMMON_SETTINGS
 #endif
 
 #ifdef CONFIG_REV9_STATS // REV9 cut2, derived from REV4, as stats node, for testing.
@@ -834,8 +812,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define ENABLE_ANTICIPATION
 // IF UNDEFINED: this unit cannot act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
 //#undef ENABLE_BOILER_HUB
-// Use common settings.
-#define COMMON_SETTINGS
 #endif
 
 // ------------------------- REV10
@@ -844,7 +820,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 
 #ifdef CONFIG_REV10 // REV10 base config
 #define V0p2_REV 10
-#define COMMON_SETTINGS
 // IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
 #undef ENABLE_LOCAL_TRV
 // IF DEFINED: this unit *can* act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.  ***
@@ -879,7 +854,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 
 #ifdef CONFIG_REV10_STRIPBOARD // REV10-based stripboard precursor for bus shelters
 #define V0p2_REV 10
-#define COMMON_SETTINGS
 // IF DEFINED: this unit will act as a thermostat controlling a local TRV (and calling for heat from the boiler), else is a sensor/hub unit.
 #undef ENABLE_LOCAL_TRV
 // IF DEFINED: this unit *can* act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.  ***
@@ -968,8 +942,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // SIM900 relay.
 #define ENABLE_RADIO_SIM900   // Enable SIM900
 #define RADIO_SECONDARY_SIM900  // Assign SIM900
-// Use common settings.
-#define COMMON_SETTINGS
 #endif // REV10_ASRELAY
 
 
@@ -1008,8 +980,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // SIM900 relay.
 #define ENABLE_RADIO_SIM900   // Enable SIM900
 #define RADIO_SECONDARY_SIM900  // Assign SIM900
-// Use common settings.
-#define COMMON_SETTINGS
 #endif
 
 
@@ -1028,8 +998,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define ENABLE_ANTICIPATION
 // IF UNDEFINED: this unit cannot act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
 //#undef ENABLE_BOILER_HUB
-// Use common settings.
-#define COMMON_SETTINGS
 // IF DEFINED: this unit can act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
 #undef ENABLE_BOILER_HUB
 // IF DEFINED: allow RX of stats frames.
@@ -1062,8 +1030,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #undef ENABLE_BINARY_STATS_TX
 // IF DEFINED: enable support for FS20 carrier for RX of raw FS20 and piggybacked binary (non-JSON) stats.
 #undef ENABLE_FS20_NATIVE_AND_BINARY_STATS_RX
-// Use common settings.
-#define COMMON_SETTINGS
 #endif
 
 // -------------------------
@@ -1071,7 +1037,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #ifdef CONFIG_REV14_PROTO // Prototype REV14 w/ LoRa, TMP, SHT and QM-1
 
 #define V0p2_REV 14
-#define COMMON_SETTINGS
 // IF DEFINED: basic FROST/WARM temperatures are settable.
 #undef ENABLE_SETTABLE_TARGET_TEMPERATURES
 // IF DEFINED: use active-low LEARN button(s).  Needs ENABLE_SINGLETON_SCHEDULE.  ***
@@ -1162,8 +1127,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #undef ENABLE_OCCUPANCY_SUPPORT
 // IF DEFINED: detect occupancy based on ambient light, if available.
 #undef ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
-// Use common settings.
-#define COMMON_SETTINGS
 #endif
 
 // -------------------------
@@ -1185,12 +1148,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // (Don't fiddle with these unless you are sure of module interdependencies, etc!)
 
 
-#ifdef COMMON_SETTINGS // FOR REV0 onwards...
-#if (V0p2_REV >= 1) // && (V0p2_REV <= 8) // && !defined(CONFIG_DHD_TESTLAB_REV2) // All REV 1--8 PCBs use RFM23B.
-// IF DEFINED: RFM23 is in use in place of RFM22.
-#define RFM22_IS_ACTUALLY_RFM23 // Note: RFM23 used on V0.2 PCB.
-#endif // V0p2_REV >= 1
-#endif // COMMON_SETTINGS
 
 // If ENABLE_LEARN_BUTTON then in the absence of anything better ENABLE_SINGLETON_SCHEDULE should be supported.
 #ifdef ENABLE_LEARN_BUTTON

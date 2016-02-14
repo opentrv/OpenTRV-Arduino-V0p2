@@ -295,10 +295,6 @@ void optionalPOST()
 //  const bool neededToWakeSPI = OTV0P2BASE::powerUpSPIIfDisabled();
 //  DEBUG_SERIAL_PRINT(neededToWakeSPI);
 //  DEBUG_SERIAL_PRINTLN();
-#if !defined(RFM22_IS_ACTUALLY_RFM23) && defined(DEBUG) && !defined(ENABLE_MIN_ENERGY_BOOT)
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("(Using RFM22.)");
-#endif // !defined(RFM22_IS_ACTUALLY_RFM23) && defined(DEBUG) && !defined(ENABLE_MIN_ENERGY_BOOT)
-
   // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
   PrimaryRadio.preinit(NULL);
 #if 1 && defined(DEBUG) && !defined(ENABLE_TRIMMED_MEMORY)
