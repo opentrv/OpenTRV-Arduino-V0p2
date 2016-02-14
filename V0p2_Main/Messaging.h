@@ -92,7 +92,7 @@ void RFM22RawStatsTXFFTerminated(uint8_t *buf, bool doubleTX, bool RFM23BFramed 
 
 // Adds the STATS_MSG_START_OFFSET preamble to enable reception by a remote RFM22B/RFM23B.
 // Returns the first free byte after the preamble.
-static inline uint8_t *RFM22RXPreambleAdd(uint8_t *buf)
+inline uint8_t *RFM22RXPreambleAdd(uint8_t *buf)
   {
   // Start with RFM23-friendly preamble which ends with with the aacccccc sync word.
   memset(buf, RFM22_PREAMBLE_BYTE, RFM22_PREAMBLE_BYTES);

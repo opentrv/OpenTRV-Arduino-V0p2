@@ -341,10 +341,13 @@ if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("Beacon RX failed at header decode"
     }
   if(secureFrame && isOK)
     {
-    // Look up the full node ID of the send in the associations table,
+    // Look up the full node ID of the sender in the associations table,
     // and if successful then attempt to decode the message.
     uint8_t nodeID[OTV0P2BASE::OpenTRV_Node_ID_Bytes];
     const int8_t index = OTV0P2BASE::getNextMatchingNodeID(0, sfh.id, sfh.getIl(), nodeID);
+#if 1 && defined(DEBUG)
+    if(index < 0) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("RX lookup failed"); }
+#endif
     isOK = (index >= 0) &&
            (0 != OTRadioLink::decodeSecureSmallFrameFromID(&sfh, msg-1, msglen+1,
                               OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_STATELESS,

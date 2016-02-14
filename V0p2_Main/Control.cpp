@@ -1066,9 +1066,12 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
         }
       }
 
-    // Now append JSON text and closing 0xff...
-    // Use letters that correspond to the values in ParsedRemoteStatsRecord and when displaying/parsing @ status records.
-    int8_t wrote;
+    // Number of bytes written for body.
+    // For non-secure, this is the size of the JSON text.
+    // For secure this is overridden with the secure frame size.
+    int8_t wrote = 0;
+
+    // Generate JSON text.
     if(!sendingJSONFailed)
       {
       // Generate JSON and write to appropriate buffer:
@@ -1102,7 +1105,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
             realTXFrameStart - offset, sizeof(buf) - (realTXFrameStart-buf) + offset,
             txIDLen, 0x7f, (const char *)bufJSON, e, NULL, key);
       sendingJSONFailed = (0 == bodylen);
-      bptr = realTXFrameStart - offset + bodylen;
+      wrote = bodylen;
 #else
       sendingJSONFailed = true; // Crypto support may not be available.
 #endif // defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
@@ -1115,7 +1118,8 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
 #ifdef ENABLE_RADIO_SECONDARY_MODULE
     if(!sendingJSONFailed)
       {
-      SecondaryRadio.queueToSend(realTXFrameStart, doEnc ? (bptr - realTXFrameStart) : wrote); //strlen((const char*)buf+STATS_MSG_START_OFFSET));
+      // Write out unadjusted JSON or encrypted frame on secondary radio.
+      SecondaryRadio.queueToSend(realTXFrameStart, doEnc ? (bptr - realTXFrameStart) : wrote);
       }
 #endif // ENABLE_RADIO_SECONDARY_MODULE
 
@@ -1125,27 +1129,31 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
 
     if(!sendingJSONFailed)
       {
-      // Adjust JSON message for transmission.
+      // If not encrypting, adjust the JSON for transmission and add a CRC.
       // (Set high-bit on final closing brace to make it unique, and compute (non-0xff) CRC.)
-      // This is only required for RFM23B
+      if(!doEnc)
+          {
+          const uint8_t crc = OTV0P2BASE::adjustJSONMsgForTXAndComputeCRC((char *)bptr);
+          if(0xff == crc) { sendingJSONFailed = true; }
+          else
+            {
+            bptr += wrote;
+            *bptr++ = crc; // Add 7-bit CRC for on-the-wire check.
+            ++wrote;
+            }
+          }
+
+      // Use ugly 0xff-terminated RFM23B send.
       if(RFM23BFramed)
         {
-        const uint8_t crc = OTV0P2BASE::adjustJSONMsgForTXAndComputeCRC((char *)bptr);
-        if(0xff == crc) { sendingJSONFailed = true; }
-        else
-          {
-          bptr += wrote;
-          *bptr++ = crc; // Add 7-bit CRC for on-the-wire check.
-          }
+        *bptr = 0xff; // Terminate message for TX.
+        RFM22RawStatsTXFFTerminated(buf, allowDoubleTX, RFM23BFramed);
         }
-      else { bptr += wrote; }   // to avoid another conditional
-      *bptr = 0xff; // Terminate message for TX.
-      }
-
-    if(!sendingJSONFailed)
-      {
-      // Send it!
-      RFM22RawStatsTXFFTerminated(buf, allowDoubleTX, RFM23BFramed);
+      else
+        {
+        // Send directly to the primary radio...
+        PrimaryRadio.queueToSend(realTXFrameStart, wrote);
+        }
       }
 
 #if 1 && defined(DEBUG)
