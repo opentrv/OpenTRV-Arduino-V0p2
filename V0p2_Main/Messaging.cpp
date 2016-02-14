@@ -192,7 +192,7 @@ OTRadioLink::printRXMsg(p, txbuf, bodylen);
 // Returns true on success, false otherwise.
 static bool decodeAndHandleFTp2_FS20_native(Print *p, const bool secure, const uint8_t * const msg, const uint8_t msglen)
 {
-  // Decode the FS20/FHT8V command into the command struct.
+  // Decode the FS20/FHT8V command into the buffer/struct.
   OTRadValve::FHT8VRadValveBase::fht8v_msg_t command;
   uint8_t const *lastByte = msg+msglen-1;
   uint8_t const *trailer = OTRadValve::FHT8VRadValveBase::FHT8VDecodeBitStream(msg, lastByte, &command);
@@ -335,19 +335,19 @@ if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("Beacon RX failed at header decode"
 #endif
       }
     }
+  uint8_t senderNodeID[OTV0P2BASE::OpenTRV_Node_ID_Bytes];
   if(secureFrame && isOK)
     {
     // Look up the full node ID of the sender in the associations table,
     // and if successful then attempt to decode the message.
-    uint8_t nodeID[OTV0P2BASE::OpenTRV_Node_ID_Bytes];
-    const int8_t index = OTV0P2BASE::getNextMatchingNodeID(0, sfh.id, sfh.getIl(), nodeID);
+    const int8_t index = OTV0P2BASE::getNextMatchingNodeID(0, sfh.id, sfh.getIl(), senderNodeID);
 #if 1 && defined(DEBUG)
     if(index < 0) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("RX lookup failed"); }
 #endif
     isOK = (index >= 0) &&
            (0 != OTRadioLink::decodeSecureSmallFrameFromID(&sfh, msg-1, msglen+1,
                               OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_STATELESS,
-                              nodeID, sizeof(nodeID),
+                              senderNodeID, sizeof(senderNodeID),
                               NULL, key,
                               secBodyBuf, sizeof(secBodyBuf), decryptedBodyOutSize));
 #if 1 && defined(DEBUG)
@@ -426,10 +426,17 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("!O frame short");
 #ifdef ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY
         SecondaryRadio.queueToSend(msg, msglen); 
 #else // Don't write to console/Serial also if relayed.
-//        // Write out the JSON message.
+        // Write out the JSON message, inserting synthetic ID/@ and seq/+.
+        Serial.print(F("{\"@\":\""));
+        for(int i = 0; i < sizeof(senderNodeID); ++i) { Serial.print(senderNodeID[i], HEX); }
+        Serial.print(F("\",\"+\":"));
+        Serial.print(sfh.getSeq());
+        Serial.print(',');
+        Serial.write(secBodyBuf + 3, decryptedBodyOutSize - 3);
+        Serial.println('}');
 //        OTV0P2BASE::outputJSONStats(&Serial, secure, msg, msglen);
-//        // Attempt to ensure that trailing characters are pushed out fully.
-//        OTV0P2BASE::flushSerialProductive();
+        // Attempt to ensure that trailing characters are pushed out fully.
+        OTV0P2BASE::flushSerialProductive();
 #endif // ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY
         }
       return(true);
