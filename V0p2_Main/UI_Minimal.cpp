@@ -597,11 +597,11 @@ Thh mm is the local current 24h time in hours and minutes.
 Whh mm is the scheduled on/warm time in hours and minutes, or an invalid time if none.
 Fhh mm is the scheduled off/frost time in hours and minutes, or an invalid time if none.
 The ";" terminates this schedule section.
-'S' introduces the current and settable-target temperatures in Celsius/centrigrade, if supported.
+'S' introduces the current and settable-target temperatures in Celsius/centigrade, if supported.
 eg 'S5 5 17'
 The first number is the current target in C, the second is the FROST target, the third is the WARM target.
 The 'e' or 'c' indicates eco or comfort bias.
-A 'w' indicates that this hour is predicted for smart warming ('f' indocates not), and another 'w' the hour ahead.
+A 'w' indicates that this hour is predicted for smart warming ('f' indicates not), and another 'w' the hour ahead.
 A trailing 'o' indicates room occupancy.
 The ";" terminates this 'settable' section.
 
@@ -615,7 +615,7 @@ void serialStatusReport()
 
   // Aim to overlap CPU usage with characters being TXed for throughput determined primarily by output size and baud.
 
-  // Stats line starts with distingushed marker character.
+  // Stats line starts with distinguished marker character.
   // Initial '=' section with common essentials.
   Serial.print((char) OTV0P2BASE::SERLINE_START_CHAR_STATS);
 //#ifdef SUPPORT_BAKE
@@ -723,7 +723,7 @@ void serialStatusReport()
 
 #if 1 && defined(ENABLE_JSON_OUTPUT) && !defined(ENABLE_TRIMMED_MEMORY)
   Serial.print(';'); // Terminate previous section.
-  char buf[40];
+  char buf[40]; // Keep short enough not to cause overruns.
   static const uint8_t maxStatsLineValues = 5;
   static OTV0P2BASE::SimpleStatsRotation<maxStatsLineValues> ss1; // Configured for maximum different stats.
 //  ss1.put(TemperatureC16); // Already at start of = stats line.
