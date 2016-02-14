@@ -447,6 +447,7 @@ bool tickUI(const uint_fast8_t sec)
 
 
 // Check/apply the user's schedule, at least once each minute, and act on any timed events.
+#if !defined(checkUserSchedule)
 void checkUserSchedule()
   {
   // Get minutes since midnight local time [0,1439].
@@ -467,6 +468,7 @@ void checkUserSchedule()
       { setWarmModeDebounced(true); }
     }
   }
+#endif // !defined(checkUserSchedule)
 
 
 #ifdef ENABLE_EXTENDED_CLI
@@ -647,6 +649,7 @@ void serialStatusReport()
   const uint_least8_t mm = OTV0P2BASE::getMinutesLT();
   Serial.print(';'); // End previous section.
   Serial.print('T'); Serial.print(hh); Serial_print_space(); Serial.print(mm);
+#if defined(SCHEDULER_AVAILABLE)
   // Show all schedules set.
   for(uint8_t scheduleNumber = 0; scheduleNumber < Scheduler.MAX_SIMPLE_SCHEDULES; ++scheduleNumber)
     {
@@ -664,6 +667,7 @@ void serialStatusReport()
     Serial.print('F'); Serial.print(endH); Serial_print_space(); Serial.print(endM);
     }
   if(Scheduler.isAnyScheduleOnWARMNow()) { Serial.print('*'); } // Indicate that at least one schedule is active now.
+#endif // ENABLE_SINGLETON_SCHEDULE
 #endif
 
   // *S* section: settable target/threshold temperatures, current target, and eco/smart/occupied flags.
@@ -715,7 +719,7 @@ void serialStatusReport()
     }
 #endif
 
-#ifdef ENABLE_LOCAL_TRV
+#if defined(ENABLE_LOCAL_TRV) && !defined(ENABLE_TRIMMED_MEMORY)
   // *M* section: min-valve-percentage open section, iff not at default value.
   const uint8_t minValvePcOpen = NominalRadValve.getMinValvePcReallyOpen();
   if(OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN != minValvePcOpen) { Serial.print(F(";M")); Serial.print(minValvePcOpen); }
@@ -738,7 +742,7 @@ void serialStatusReport()
   ss1.put(Occupancy);
 //  ss1.put(Occupancy.vacHTag(), Occupancy.getVacancyH()); // EXPERIMENTAL
 #endif // defined(ENABLE_OCCUPANCY_SUPPORT)
-#if defined(ENABLE_MODELLED_RAD_VALVE) && !defined(ENABLE_TRIMMED_MEMORY) && !defined(ENABLE_TRIMMED_BANDWIDTH)
+#if defined(ENABLE_MODELLED_RAD_VALVE) && !defined(ENABLE_TRIMMED_MEMORY)
     ss1.put(NominalRadValve.tagCMPC(), NominalRadValve.getCumulativeMovementPC()); // EXPERIMENTAL
 #endif // ENABLE_MODELLED_RAD_VALVE
   const uint8_t wrote = ss1.writeJSON((uint8_t *)buf, sizeof(buf), 0, true);
@@ -819,7 +823,7 @@ static void dumpCLIUsage(const uint8_t stopBy)
 #endif
 
   //printCLILine(deadline, 'L', F("Learn to warm every 24h from now, clear if in frost mode, schedule 0"));
-#ifdef ENABLE_LEARN_BUTTON
+#if defined(SCHEDULER_AVAILABLE)
   printCLILine(deadline, F("L S"), F("Learn daily warm now, clear if in frost mode, schedule S"));
   //printCLILine(deadline, F("P HH MM"), F("Program: warm daily starting at HH MM schedule 0"));
   printCLILine(deadline, F("P HH MM S"), F("Program: warm daily starting at HH MM schedule S"));
@@ -1091,8 +1095,9 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
 
 #ifdef ENABLE_FULL_OT_CLI // *******  NON-CORE CLI FEATURES
 
-#if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
+#if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) && (defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)) && defined(ENABLE_RADIO_RX)
         // Set new node association (nodes to accept frames from).
+        // Only needed if able to RX and/or some sort of hub.
         case 'A': { showStatus = OTV0P2BASE::CLI::SetNodeAssoc().doCommand(buf, n); break; }
 #endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
 

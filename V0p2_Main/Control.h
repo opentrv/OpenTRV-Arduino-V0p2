@@ -117,8 +117,6 @@ void loopOpenTRV();
 //#endif // ENABLE_LEARN_BUTTON
 
 
-
-
 // Forcing the warm mode to the specified state immediately.
 // Iff forcing to FROST mode then any pending BAKE time is cancelled,
 // else BAKE status is unchanged.
@@ -211,19 +209,26 @@ void setMinBoilerOnMinutes(uint8_t mins);
 #define setMinBoilerOnMinutes(mins) {} // Do nothing.
 #endif
 
-#ifdef ENABLE_DEFAULT_ALWAYS_RX
+#if defined(ENABLE_DEFAULT_ALWAYS_RX)
 // True: always in central hub/listen mode.
 #define inHubMode() (true)
 // True: always in stats hub/listen mode.
 #define inStatsHubMode() (true)
+#elif !defined(ENABLE_RADIO_RX)
+// No RX/listening allowed, so never in hub mode.
+// False: never in central hub/listen mode.
+#define inHubMode() (false)
+// False: never in stats hub/listen mode.
+#define inStatsHubMode() (false)
 #else
 // True if in central hub/listen mode (possibly with local radiator also).
 #define inHubMode() (0 != getMinBoilerOnMinutes())
 // True if in stats hub/listen mode (minimum timeout).
 #define inStatsHubMode() (1 == getMinBoilerOnMinutes())
-#endif
+#endif // defined(ENABLE_DEFAULT_ALWAYS_RX)
 
-
+#if defined(ENABLE_SINGLETON_SCHEDULE)
+#define SCHEDULER_AVAILABLE
 // Customised scheduler for the current OpenTRV application.
 class SimpleValveSchedule : public OTV0P2BASE::SimpleValveScheduleBase
     {
@@ -247,10 +252,10 @@ class SimpleValveSchedule : public OTV0P2BASE::SimpleValveScheduleBase
     };
 // Singleton scheduler instance.
 extern SimpleValveSchedule Scheduler;
-
-
-
-
+#else
+// Dummy scheduler to simplify coding.
+extern OTV0P2BASE::NULLValveSchedule Scheduler;
+#endif // defined(ENABLE_SINGLETON_SCHEDULE)
 
 
 #if defined(ENABLE_LOCAL_TRV)

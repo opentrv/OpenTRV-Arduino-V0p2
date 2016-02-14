@@ -59,9 +59,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_Trial2013Winter_Round2_LVBHSH // REV2 cut4: local valve control, boiler hub, stats hub & TX.
 //#define CONFIG_Trial2013Winter_Round2_LVBH // REV2 cut4 local valve control and boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as plain boiler hub.
-//#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
+#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
 //#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
-#define CONFIG_DORM1 // REV7 / DORM1 all-in-one valve unit.
+//#define CONFIG_DORM1 // REV7 / DORM1 all-in-one valve unit.
 //#define CONFIG_DORM1_BOILER // REV8 / DORM1 boiler-control unit.
 //#define CONFIG_REV10_AS_GSM_RELAY_ONLY // REV10: stats relay only.
 //#define CONFIG_REV11_RAW_JSON // REV11 as raw JSON-only stats/sensor leaf.
@@ -861,8 +861,16 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define ENABLE_JSON_OUTPUT
 #endif
 
+
+// If a stats or boiler hub, define ENABLE_HUB_LISTEN.
+#if defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)
+#define ENABLE_HUB_LISTEN
+// Force-enable RX if not already so.
+#define ENABLE_RADIO_RX
+#endif
+
 // If (potentially) needing to run in some sort of continuous RX mode, define a flag.
-#if defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX) || defined(ENABLE_DEFAULT_ALWAYS_RX)
+#if defined(ENABLE_HUB_LISTEN) || defined(ENABLE_DEFAULT_ALWAYS_RX)
 #define ENABLE_CONTINUOUS_RX // was #define CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX true
 #endif
 

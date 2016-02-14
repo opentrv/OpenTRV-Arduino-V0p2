@@ -88,7 +88,7 @@ OTRadioLink::OTNullRadioLink NullRadio;
 // Brings in necessary radio libs.
 #ifdef ENABLE_RADIO_RFM23B
 #if defined(ENABLE_TRIMMED_MEMORY) || !defined(ENABLE_CONTINUOUS_RX)
-static const uint8_t RFM23B_RX_QUEUE_SIZE = max(2, OTRFM23BLink::DEFAULT_RFM23B_RX_QUEUE_CAPACITY-1);
+static const uint8_t RFM23B_RX_QUEUE_SIZE = max(2, OTRFM23BLink::DEFAULT_RFM23B_RX_QUEUE_CAPACITY) - 1;
 #else
 static const uint8_t RFM23B_RX_QUEUE_SIZE = OTRFM23BLink::DEFAULT_RFM23B_RX_QUEUE_CAPACITY;
 #endif

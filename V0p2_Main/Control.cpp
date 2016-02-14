@@ -33,9 +33,11 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #include <OTAESGCM.h>
 #endif
 
-// TODO: may want to declare only when used, eg with local valve.
+
+#if defined(SCHEDULER_AVAILABLE)
 // Singleton scheduler instance.
 SimpleValveSchedule Scheduler;
+#endif
 
 
 #ifdef ENABLE_BOILER_HUB

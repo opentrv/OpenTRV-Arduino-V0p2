@@ -111,7 +111,11 @@ bool veryRecentUIControlUse();
 bool recentUIControlUse();
 
 // Check/apply the user's schedule, at least once each minute, and act on any timed events.
+#if defined(SCHEDULER_AVAILABLE)
 void checkUserSchedule();
+#else
+#define checkUserSchedule() // Reduce to a no-op.
+#endif // defined(SCHEDULER_AVAILABLE)
 
 // UI feedback.
 // Provide low-key visual / audio / tactile feedback on a significant user action.
