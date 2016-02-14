@@ -88,7 +88,7 @@ OTRadioLink::OTNullRadioLink NullRadio;
 // Brings in necessary radio libs.
 #ifdef ENABLE_RADIO_RFM23B
 #if defined(ENABLE_TRIMMED_MEMORY) || !defined(ENABLE_CONTINUOUS_RX)
-static const uint8_t RFM23B_RX_QUEUE_SIZE = 1;
+static const uint8_t RFM23B_RX_QUEUE_SIZE = max(2, OTRFM23BLink::DEFAULT_RFM23B_RX_QUEUE_CAPACITY-1);
 #else
 static const uint8_t RFM23B_RX_QUEUE_SIZE = OTRFM23BLink::DEFAULT_RFM23B_RX_QUEUE_CAPACITY;
 #endif
@@ -97,7 +97,12 @@ static const int8_t RFM23B_IRQ_PIN = PIN_RFM_NIRQ;
 #else
 static const int8_t RFM23B_IRQ_PIN = -1;
 #endif
-OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, RFM23B_IRQ_PIN, RFM23B_RX_QUEUE_SIZE> RFM23B;
+#if defined(ENABLE_RADIO_RX)
+static const bool RFM23B_allowRX = true;
+#else
+static const bool RFM23B_allowRX = false;
+#endif
+OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, RFM23B_IRQ_PIN, RFM23B_RX_QUEUE_SIZE, RFM23B_allowRX> RFM23B;
 #endif // ENABLE_RADIO_RFM23B
 #ifdef ENABLE_RADIO_SIM900
 OTSIM900Link::OTSIM900Link SIM900(REGULATOR_POWERUP, RADIO_POWER_PIN, SOFTSERIAL_RX_PIN, SOFTSERIAL_TX_PIN);
@@ -130,6 +135,7 @@ OTRadioLink::OTRadioLink &SecondaryRadio = NullRadio;
 
 // RFM22 is apparently SPI mode 0 for Arduino library pov.
 
+#if defined(ENABLE_RFM23B_FS20_RAW_PREAMBLE)
 // Send the underlying stats binary/text 'whitened' message.
 // This must be terminated with an 0xff (which is not sent),
 // and no longer than STATS_MSG_MAX_LEN bytes long in total (excluding the terminating 0xff).
@@ -160,6 +166,7 @@ void RFM22RawStatsTXFFTerminated(uint8_t * const buf, const bool doubleTX, bool 
     } // DEBUG
   //DEBUG_SERIAL_PRINTLN_FLASHSTRING("RS");
   }
+#endif // defined(ENABLE_RFM23B_FS20_RAW_PREAMBLE)
 
 
 #ifdef ALLOW_CC1_SUPPORT_RELAY

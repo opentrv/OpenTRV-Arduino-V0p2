@@ -903,8 +903,12 @@ void bareStatsTX(const bool allowDoubleTX, const bool doBinary)
   {
   // Note if radio/comms channel is itself framed.
   const bool framed = !PrimaryRadio.getChannelConfig()->isUnframed;
+#if defined(ENABLE_RFM23B_FS20_RAW_PREAMBLE)
   // Add RFM23B preamble and a trailing CRC to the frame IFF channel is unframed.
   const bool RFM23BFramed = !framed;
+#else
+  const bool RFM23BFramed = false; // Never use this raw framing unless enabled explicitly.
+#endif
 
 #if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
   const bool doEnc = true;
@@ -1161,6 +1165,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
             }
           }
 
+#if defined(ENABLE_RFM23B_FS20_RAW_PREAMBLE)
       // Use ugly 0xff-terminated RFM23B send.
       if(RFM23BFramed)
         {
@@ -1168,6 +1173,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
         RFM22RawStatsTXFFTerminated(buf, allowDoubleTX, RFM23BFramed);
         }
       else
+#endif
         {
         // Send directly to the primary radio...
         PrimaryRadio.queueToSend(realTXFrameStart, wrote);
@@ -1257,7 +1263,7 @@ static uint8_t minuteCount;
 
 // Mask for Port B input change interrupts.
 #define MASK_PB_BASIC 0b00000000 // Nothing.
-#ifdef PIN_RFM_NIRQ
+#if defined(PIN_RFM_NIRQ) && defined(ENABLE_RADIO_RX) // RFM23B IRQ only used for RX.
   #if (PIN_RFM_NIRQ < 8) || (PIN_RFM_NIRQ > 15)
     #error PIN_RFM_NIRQ expected to be on port B
   #endif
@@ -1575,7 +1581,7 @@ void remoteCallForHeatRX(const uint16_t id, const uint8_t percentOpen)
 #endif
 
 
-
+#if defined(ENABLE_RADIO_RX)
 // Returns true if continuous background RX has been set up.
 static bool setUpContinuousRX(const bool second0)
   {
@@ -1617,7 +1623,7 @@ static bool setUpContinuousRX(const bool second0)
 
   if(needsToListen)
     {
-#if 1 && defined(DEBUG) && !defined(ENABLE_TRIMMED_MEMORY)
+#if 1 && defined(DEBUG) && defined(ENABLE_RADIO_RX) && !defined(ENABLE_TRIMMED_MEMORY)
     for(uint8_t lastErr; 0 != (lastErr = PrimaryRadio.getRXErr()); )
       {
       DEBUG_SERIAL_PRINT_FLASHSTRING("!RX err ");
@@ -1659,6 +1665,7 @@ static bool setUpContinuousRX(const bool second0)
   return(false);
 #endif // defined(ENABLE_CONTINUOUS_RX)
   }
+#endif // defined(ENABLE_RADIO_RX)
 
 // Process calls for heat, ie turn boiler on and off as appropriate.
 // Has control of OUT_HEATCALL if defined(ENABLE_BOILER_HUB).
@@ -1956,10 +1963,9 @@ void loopOpenTRV()
       }
 #endif
     }
-#ifdef ENABLE_RADIO_RX
+
   // Handling the UI may have taken a little while, so process I/O a little.
   handleQueuedMessages(&Serial, true, &PrimaryRadio); // Deal with any pending I/O.
-#endif
 
 
 #ifdef ENABLE_MODELLED_RAD_VALVE
@@ -2147,7 +2153,7 @@ void loopOpenTRV()
     // This should happen as soon after the latest readings as possible (temperature especially).
     case 56:
       {
-#ifdef ENABLE_OCCUPANCY_SUPPORT
+#if defined(ENABLE_OCCUPANCY_SUPPORT)
       // Update occupancy measures that partially use rolling stats.
 #if defined(ENABLE_OCCUPANCY_DETECTION_FROM_RH) && defined(HUMIDITY_SENSOR_SUPPORT)
       // If RH% is rising fast enough then take this a mild occupancy indicator.
@@ -2173,11 +2179,11 @@ void loopOpenTRV()
             { Occupancy.markAsPossiblyOccupied(); }
           }
         }
-#endif
+#endif // defined(ENABLE_OCCUPANCY_DETECTION_FROM_RH) && defined(HUMIDITY_SENSOR_SUPPORT)
+
       // Update occupancy status (fresh for target recomputation) at a fixed rate.
       Occupancy.read();
-#endif
-
+#endif // defined(ENABLE_OCCUPANCY_SUPPORT)
 
 #ifdef ENABLE_NOMINAL_RAD_VALVE
       // Recompute target, valve position and call for heat, etc.
@@ -2328,7 +2334,6 @@ void loopOpenTRV()
 #endif
 
 
-
 #if 0 && defined(DEBUG)
   const int tDone = getSubCycleTime();
   if(tDone > 1) // Ignore for trivial 1-click time.
@@ -2348,9 +2353,7 @@ void loopOpenTRV()
     const uint8_t orc = 1 + ~eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_OVERRUN_COUNTER);
     OTV0P2BASE::eeprom_smart_update_byte((uint8_t *)V0P2BASE_EE_START_OVERRUN_COUNTER, ~orc);
 #if 1 && defined(DEBUG)
-    DEBUG_SERIAL_PRINT_FLASHSTRING("!loop overrun ");
-    DEBUG_SERIAL_PRINT(TIME_LSD);
-    DEBUG_SERIAL_PRINTLN();
+    DEBUG_SERIAL_PRINTLN_FLASHSTRING("!loop overrun");
 #endif
 #if defined(ENABLE_FHT8VSIMPLE)
     FHT8V.resyncWithValve(); // Assume that sync with valve may have been lost, so re-sync.
