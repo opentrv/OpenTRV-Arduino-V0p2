@@ -1043,7 +1043,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 #endif // defined(ENABLE_LOCAL_TRV)
 
 #if defined(ENABLE_ALWAYS_TX_ALL_STATS)
-    const uint8_t privacyLevel = OTV0P2BASE::stTXmostUnsec;
+    const uint8_t privacyLevel = OTV0P2BASE::stTXalwaysAll;
 #else
     const uint8_t privacyLevel = OTV0P2BASE::getStatsTXLevel();
 #endif
@@ -1308,7 +1308,7 @@ static uint8_t minuteCount;
 
 void setupOpenTRV()
   {
-#if 0 && defined(DEBUG)
+#if 1 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("Entering setup...");
 #endif
 
@@ -1317,7 +1317,7 @@ void setupOpenTRV()
   PrimaryRadio.listen(false);
 
 #if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("RFM23B.listen(false);");
+  DEBUG_SERIAL_PRINTLN_FLASHSTRING("PrimaryRadio.listen(false);");
 #endif
 
   // Set up async edge interrupts.
