@@ -1308,7 +1308,7 @@ static uint8_t minuteCount;
 
 void setupOpenTRV()
   {
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("Entering setup...");
 #endif
 

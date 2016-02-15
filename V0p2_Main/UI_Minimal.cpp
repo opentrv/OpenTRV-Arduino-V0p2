@@ -230,7 +230,7 @@ bool tickUI(const uint_fast8_t sec)
       {
       // Note if a boundary was crossed, ignoring any false 'start-up' transient.
       if(0 != lastNominalWarmTarget) { significantUIOp = true; }
-#if 0 && defined(DEBUG)
+#if 1 && defined(DEBUG)
       DEBUG_SERIAL_PRINT_FLASHSTRING("WT");
       DEBUG_SERIAL_PRINT(nominalWarmTarget);
       DEBUG_SERIAL_PRINTLN();
