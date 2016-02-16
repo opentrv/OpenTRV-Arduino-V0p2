@@ -348,7 +348,7 @@ if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX bad secure header"); }
     // Look up the full node ID of the sender in the associations table,
     // and if successful then attempt to decode the message.
     const int8_t index = OTV0P2BASE::getNextMatchingNodeID(0, sfh.id, sfh.getIl(), senderNodeID);
-#if 0 && defined(DEBUG)
+#if 1 && defined(DEBUG)
     if(index < 0) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX no assoc"); }
 #endif
     isOK = (index >= 0) &&
