@@ -413,7 +413,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("'O'");
       if(decryptedBodyOutSize < 2)
         {
 #if 1 && defined(DEBUG)
-DEBUG_SERIAL_PRINTLN_FLASHSTRING("!O frame short");
+DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX O short"); // "O' frame too short.
 #endif
         break;
         }
