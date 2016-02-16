@@ -300,7 +300,7 @@ static bool decodeAndHandleOTSecureableFrame(Print *p, const bool secure, const 
   // If isOK flag is set false for any reason, frame is broken/unsafe/unauth.
   bool isOK = (l > 0);
 #if 0 && defined(DEBUG)
-if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("Beacon RX failed at header decode"); }
+if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX bad secure header"); }
 #endif
   // If failed this early and this badly, let someone else try parsing the message buffer...
   if(!isOK) { return(false); }
@@ -338,7 +338,7 @@ if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("Beacon RX failed at header decode"
       {
       isOK = false;
 #if 1 && defined(DEBUG)
-      DEBUG_SERIAL_PRINTLN_FLASHSTRING("!failed (no key)");
+      DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX no key");
 #endif
       }
     }
@@ -349,7 +349,7 @@ if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("Beacon RX failed at header decode"
     // and if successful then attempt to decode the message.
     const int8_t index = OTV0P2BASE::getNextMatchingNodeID(0, sfh.id, sfh.getIl(), senderNodeID);
 #if 0 && defined(DEBUG)
-    if(index < 0) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("RX lookup failed"); }
+    if(index < 0) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX no assoc"); }
 #endif
     isOK = (index >= 0) &&
            (0 != OTRadioLink::decodeSecureSmallFrameFromID(&sfh, msg-1, msglen+1,
@@ -358,7 +358,7 @@ if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("Beacon RX failed at header decode"
                               NULL, key,
                               secBodyBuf, sizeof(secBodyBuf), decryptedBodyOutSize));
 #if 1 && defined(DEBUG)
-    if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("RX lookup/auth failed"); }
+    if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX assoc/auth"); }
 #endif
     }
 
