@@ -384,6 +384,42 @@ void optionalPOST()
       }
     }
 //  posPOST(2, F("slow RTC clock OK"));
+#if 1 // Probationary Xtal sanity check
+  // Test low frequency oscillator vs main clock oscillator.
+  // Tests clock frequency with 15 ms nap in between for up to 30 cycles and panics if not within bounds.
+  // As of 2016-02-16, all working REV7s give count >= 120 and that fail to program via bootloader give count <= 119
+  // REV10 gives 119-120 (only one tested though)
+  {
+    static const uint8_t optimalLFClock = 122; // might be optimal...
+    static const uint8_t errorLFClock = 4; // max drift from allowed value
+    uint8_t count = 0;
+    for(uint8_t i = 0; ; i++) {
+      ::OTV0P2BASE::nap(WDTO_15MS);
+      ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+      // wait for edge on xtal counter
+      // start counting cycles
+      // on next edge, stop
+          const uint8_t t0 = TCNT2;
+          while(t0 == TCNT2) {}
+          const uint8_t t01 = TCNT0;
+          const uint8_t t1 = TCNT2;
+          while(t1 == TCNT2) {}
+          const uint8_t t02 = TCNT0;
+          count = t02-t01;
+      }
+      // Check end conditions
+      if((count < optimalLFClock+errorLFClock) & (count > optimalLFClock-errorLFClock)) break;
+      if(i > 30) panic();
+    }
+    // optionally print value to debug
+#if 0 && defined(DEBUG)
+    DEBUG_SERIAL_PRINT_FLASHSTRING("Xtal cntr check: ");
+    DEBUG_SERIAL_PRINT(count);
+    DEBUG_SERIAL_PRINTLN();
+#endif
+  }
+#endif // Probationary Xtal sanity check
+
 #else
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("(No xtal.)");
 #endif
