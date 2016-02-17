@@ -694,18 +694,26 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats IDx");
 // This will write any output to the supplied Print object,
 // typically the Serial output (which must be running if so).
 // This will attempt to process messages in such a way
-// as to avoid internal overflows or other resource exhaustion.
+// as to avoid internal overflows or other resource exhaustion,
+// which may mean deferring work at certain times
+// such as the end of minor cycle.
 // The Print object pointer must not be NULL.
 bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadioLink *rl)
   {
-  bool workDone = false;
-  bool neededWaking = false; // Set true once this routine wakes Serial.
-
   // Deal with any I/O that is queued.
   pollIO(true);
 
   // Check for activity on the radio link.
   rl->poll();
+
+  // Avoid starting any potentially-slow processing very late in the minor cycle.
+  // This is to reduce the risk of loop overruns
+  // at the risk of delaying some processing
+  // or even dropping some incoming messages if queues fill up.
+  if(OTV0P2BASE::getSubCycleTime() >= ((OTV0P2BASE::GSCT_MAX/4)*3)) { return(false); }
+
+  bool workDone = false;
+  bool neededWaking = false; // Set true once this routine wakes Serial.
   const volatile uint8_t *pb;
   if(NULL != (pb = rl->peekRXMsg()))
     {

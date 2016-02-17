@@ -410,10 +410,14 @@ void optionalPOST()
       // Check end conditions
       if((count < optimalLFClock+errorLFClock) & (count > optimalLFClock-errorLFClock)) break;
       if(i > 30) panic();
+      // Capture some entropy from the (chaotic?) clock wobble, but don't claim any.  (TODO-800)
+      OTV0P2BASE::addEntropyToPool(count, 0);
+      // Also perturb the PRNG with essentially the same data (which is one reason not to claim entropy above).
+      OTV0P2BASE::seedRNG8(count, i, TCNT2);
     }
     // optionally print value to debug
 #if 0 && defined(DEBUG)
-    DEBUG_SERIAL_PRINT_FLASHSTRING("Xtal cntr check: ");
+    DEBUG_SERIAL_PRINT_FLASHSTRING("Xtal freq check: ");
     DEBUG_SERIAL_PRINT(count);
     DEBUG_SERIAL_PRINTLN();
 #endif

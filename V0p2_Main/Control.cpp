@@ -1859,7 +1859,6 @@ void loopOpenTRV()
     if(handleQueuedMessages(&Serial, true, &PrimaryRadio)) { continue; }
 #endif
 
-
 // If missing h/w interrupts for anything that needs rapid response
 // then AVOID the lowest-power long sleep.
 #if defined(ENABLE_CONTINUOUS_RX) && !defined(PIN_RFM_NIRQ)
