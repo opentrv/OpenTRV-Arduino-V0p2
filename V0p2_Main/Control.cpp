@@ -2046,19 +2046,15 @@ void loopOpenTRV()
         {
         // Sleep randomly up to 25% of the minor cycle
         // to spread transmissions and thus help avoid collisions.
+        // (Longer than 25%/0.5s could interfere with other ops such as FHT8V TXes.)
         const uint8_t stopBy = 1 + (((OTV0P2BASE::GSCT_MAX >> 2) | 7) & OTV0P2BASE::randRNG8());
         while(OTV0P2BASE::getSubCycleTime() <= stopBy)
           {
+          // Soak up any pending I/O while waiting.
+          if(handleQueuedMessages(&Serial, true, &PrimaryRadio)) { continue; }
           // Sleep a little.
           OTV0P2BASE::nap(WDTO_15MS, true);
-          // Deal with any pending I/O.
-          pollIO(); 
-          handleQueuedMessages(&Serial, true, &PrimaryRadio);
           }
-//        pollIO(); // Deal with any pending I/O.
-//        // Sleep randomly up to 128ms to spread transmissions and thus help avoid collisions.
-//        OTV0P2BASE::sleepLowPowerLessThanMs(1 + (OTV0P2BASE::randRNG8() & 0x7f));
-//        handleQueuedMessages(&Serial, true, &PrimaryRadio); // Deal with any pending I/O.
         // Send it!
         // Try for double TX for extra robustness unless:
         //   * this is a speculative 'extra' TX

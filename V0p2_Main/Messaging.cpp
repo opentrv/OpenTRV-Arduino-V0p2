@@ -701,7 +701,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats IDx");
 bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadioLink *rl)
   {
   // Deal with any I/O that is queued.
-  pollIO(true);
+  bool workDone = pollIO(true);
 
   // Check for activity on the radio link.
   rl->poll();
@@ -710,9 +710,8 @@ bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadi
   // This is to reduce the risk of loop overruns
   // at the risk of delaying some processing
   // or even dropping some incoming messages if queues fill up.
-  if(OTV0P2BASE::getSubCycleTime() >= ((OTV0P2BASE::GSCT_MAX/4)*3)) { return(false); }
+  if(OTV0P2BASE::getSubCycleTime() >= ((OTV0P2BASE::GSCT_MAX/4)*3)) { return(workDone); }
 
-  bool workDone = false;
   bool neededWaking = false; // Set true once this routine wakes Serial.
   const volatile uint8_t *pb;
   if(NULL != (pb = rl->peekRXMsg()))
