@@ -700,17 +700,19 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats IDx");
 // The Print object pointer must not be NULL.
 bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadioLink *rl)
   {
+  // Avoid starting any potentially-slow processing very late in the minor cycle.
+  // This is to reduce the risk of loop overruns
+  // at the risk of delaying some processing
+  // or even dropping some incoming messages if queues fill up.
+  // Decoding (and printing to serial) a secure 'O' frame takes ~60 ticks (~0.47s).
+  const uint8_t sctStart = OTV0P2BASE::getSubCycleTime();
+  if(sctStart >= ((OTV0P2BASE::GSCT_MAX/4)*3)) { return(false); }
+
   // Deal with any I/O that is queued.
   bool workDone = pollIO(true);
 
   // Check for activity on the radio link.
   rl->poll();
-
-  // Avoid starting any potentially-slow processing very late in the minor cycle.
-  // This is to reduce the risk of loop overruns
-  // at the risk of delaying some processing
-  // or even dropping some incoming messages if queues fill up.
-  if(OTV0P2BASE::getSubCycleTime() >= ((OTV0P2BASE::GSCT_MAX/4)*3)) { return(workDone); }
 
   bool neededWaking = false; // Set true once this routine wakes Serial.
   const volatile uint8_t *pb;
@@ -727,6 +729,17 @@ bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadi
 
   // Turn off serial at end, if this routine woke it.
   if(neededWaking) { OTV0P2BASE::flushSerialProductive(); OTV0P2BASE::powerDownSerial(); }
+
+#if 0 && defined(DEBUG)
+  const uint8_t sctEnd = OTV0P2BASE::getSubCycleTime();
+  const uint8_t ticks = sctEnd - sctStart;
+  if(ticks > 1)
+    {
+    OTV0P2BASE::serialPrintAndFlush(ticks);
+    OTV0P2BASE::serialPrintlnAndFlush();
+    }
+#endif
+
   return(workDone);
   }
 #endif // ENABLE_RADIO_RX

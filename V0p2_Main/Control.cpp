@@ -857,32 +857,32 @@ void populateCoreStats(OTV0P2BASE::FullStatsMessageCore_t *const content)
 
 
 
-// Call this to do an I/O poll if needed; returns true if something useful happened.
+// Call this to do an I/O poll if needed; returns true if something useful definitely happened.
 // This call should typically take << 1ms at 1MHz CPU.
 // Does not change CPU clock speeds, mess with interrupts (other than possible brief blocking), or sleep.
 // Should also do nothing that interacts with Serial.
 // Limits actual poll rate to something like once every 8ms, unless force is true.
 //   * force if true then force full poll on every call (ie do not internally rate-limit)
+// Note that radio poll() can be for TX as well as RX activity.
 // Not thread-safe, eg not to be called from within an ISR.
 bool pollIO(const bool force)
   {
 #ifdef ENABLE_RADIO_PRIMARY_MODULE
-//  if(inHubMode())
-//    {
-    static volatile uint8_t _pO_lastPoll;
-    // Poll RX at most about every ~8ms.
-    const uint8_t sct = OTV0P2BASE::getSubCycleTime();
-    if(force || (sct != _pO_lastPoll))
-      {
-      _pO_lastPoll = sct;
-      // Poll for inbound frames.
-      // The will generally be little time to do this before getting an overrun or dropped frame.
-      PrimaryRadio.poll();
-#ifdef ENABLE_RADIO_SECONDARY_MODULE
-      SecondaryRadio.poll();
-#endif
-      }
-//    }
+  static volatile uint8_t _pO_lastPoll;
+  // Poll RX at most about every ~8ms.
+  const uint8_t sct = OTV0P2BASE::getSubCycleTime();
+  if(force || (sct != _pO_lastPoll))
+    {
+    _pO_lastPoll = sct;
+    // Poll for inbound frames.
+    // If RX is not interrupt-driven then
+    // there will usually be little time to do this
+    // before getting an RX overrun or dropped frame.
+    PrimaryRadio.poll();
+  #ifdef ENABLE_RADIO_SECONDARY_MODULE
+    SecondaryRadio.poll();
+  #endif
+    }
 #endif
   return(false);
   }
