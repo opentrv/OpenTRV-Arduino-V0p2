@@ -80,8 +80,10 @@ void serialPrintlnBuildVersion();
 // Call this to do an I/O poll if needed; returns true if something useful happened.
 // This call should typically take << 1ms at 1MHz CPU.
 // Does not change CPU clock speeds, mess with interrupts (other than possible brief blocking), or sleep.
-// Limits actual poll rate to something like once every 32ms, unless force is true.
+// Should also do nothing that interacts with Serial.
+// Limits actual poll rate to something like once every 8ms, unless force is true.
 //   * force if true then force full poll on every call (ie do not internally rate-limit)
+// Not thread-safe, eg not to be called from within an ISR.
 // NOTE: implementation may not be in power-management module.
 bool pollIO(bool force = false);
 // Nap productively polling I/O, etc, across the system while spending time in low-power mode if possible.

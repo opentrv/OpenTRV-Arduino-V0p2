@@ -45,7 +45,16 @@ OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
 #if defined(TEMP_POT_REVERSE)
 OTV0P2BASE::SensorTemperaturePot TempPot(OTV0P2BASE::SensorTemperaturePot::TEMP_POT_RAW_MAX, 0);
 #else
+#if (V0p2_REV != 7) // For DORM1/REV7 natural direction for temp dial pot is correct.
 OTV0P2BASE::SensorTemperaturePot TempPot(0, OTV0P2BASE::SensorTemperaturePot::TEMP_POT_RAW_MAX);
+#else
+// DORM1 / REV7 initial unit range ~[45,293] DHD20160211 (seen <45 to >325).
+// Thus could be ~30 points per item on scale: * 16 17 18 >19< 20 21 22 BOOST
+// Actual precision/reproducability of pot is circa +/- 4.
+static const uint16_t REV7_pot_low = 48;
+static const uint16_t REV7_pot_high = 296;
+OTV0P2BASE::SensorTemperaturePot TempPot(REV7_pot_low, REV7_pot_high);
+#endif // (V0p2_REV != 7)
 #endif // defined(TEMP_POT_REVERSE)
 #endif
 
@@ -53,7 +62,7 @@ OTV0P2BASE::SensorTemperaturePot TempPot(0, OTV0P2BASE::SensorTemperaturePot::TE
 #ifdef ENABLE_AMBLIGHT_SENSOR
 // Normal 2 bit shift between raw and externally-presented values.
 static const uint8_t shiftRawScaleTo8Bit = 2;
-#ifdef AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
+#ifdef ENABLE_AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // This implementation expects a phototransitor TEPT4400 (50nA dark current, nominal 200uA@100lx@Vce=50V) from IO_POWER_UP to LDR_SENSOR_AIN and 220k to ground.
 // Measurement should be taken wrt to internal fixed 1.1V bandgap reference, since light indication is current flow across a fixed resistor.
 // Aiming for maximum reading at or above 100--300lx, ie decent domestic internal lighting.
@@ -72,7 +81,7 @@ static const int LDR_THR_HIGH = 250U;
 static const int LDR_THR_LOW = 270U;
 static const int LDR_THR_HIGH = 400U;
 #endif
-#else // LDR (!defined(AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400))
+#else // LDR (!defined(ENABLE_AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400))
 // This implementation expects an LDR (1M dark resistance) from IO_POWER_UP to LDR_SENSOR_AIN and 100k to ground.
 // Measurement should be taken wrt to supply voltage, since light indication is a fraction of that.
 // Values below from PICAXE V0.09 impl approx multiplied by 4+ to allow for scale change.
@@ -83,7 +92,7 @@ static const int LDR_THR_HIGH = 70U;
 static const int LDR_THR_LOW = 160U; // Was 30.
 static const int LDR_THR_HIGH = 200U; // Was 35.
 #endif // ENABLE_AMBLIGHT_EXTRA_SENSITIVE
-#endif // AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
+#endif // ENABLE_AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // Singleton implementation/instance.
 AmbientLight AmbLight(LDR_THR_HIGH >> shiftRawScaleTo8Bit);
 #endif // ENABLE_AMBLIGHT_SENSOR
@@ -132,9 +141,9 @@ OTV0P2BASE::VoiceDetectionQM1 Voice;
 
 // DORM1/REV7 direct drive actuator.
 #ifdef HAS_DORM1_VALVE_DRIVE
-//#ifdef DIRECT_MOTOR_DRIVE_V1
+//#ifdef ENABLE_V1_DIRECT_MOTOR_DRIVE
 // Singleton implementation/instance.
-#ifdef ENABLE_DORM1_MOTOR_REVERSED // Reversed vs sample 2015/12
+#ifdef ENABLE_DORM1_MOTOR_REVERSED // Reversed vs sample 2015/12.
 OTRadValve::ValveMotorDirectV1<MOTOR_DRIVE_ML, MOTOR_DRIVE_MR, MOTOR_DRIVE_MI_AIN, MOTOR_DRIVE_MC_AIN> ValveDirect;
 #else
 OTRadValve::ValveMotorDirectV1<MOTOR_DRIVE_MR, MOTOR_DRIVE_ML, MOTOR_DRIVE_MI_AIN, MOTOR_DRIVE_MC_AIN> ValveDirect;

@@ -117,8 +117,6 @@ void loopOpenTRV();
 //#endif // ENABLE_LEARN_BUTTON
 
 
-
-
 // Forcing the warm mode to the specified state immediately.
 // Iff forcing to FROST mode then any pending BAKE time is cancelled,
 // else BAKE status is unchanged.
@@ -130,28 +128,17 @@ void setWarmModeDebounced(const bool warm);
 // This is a 'debounced' value to reduce accidental triggering.
 bool inWarmMode();
 
-//#ifdef SUPPORT_BAKE // IF DEFINED: this unit supports BAKE mode.
-// Force to BAKE mode;
-// Should be only be called once 'debounced' if coming from a button press for example.
+// Force to BAKE mode.
+// Should ideally be only be called once 'debounced' if coming from a button press for example.
 // Is safe to call repeatedly from test routines, eg does not cause EEPROM wear.
-void startBakeDebounced();
-//// If true then the unit is in 'bake' mode, a subset of 'warm' mode which boosts the temperature target temporarily.
-//bool inBakeMode();
+// Is thread-/ISR- safe.
+void startBake();
 // If true then the unit is in 'bake' mode, a subset of 'warm' mode which boosts the temperature target temporarily.
 // This is a 'debounced' value to reduce accidental triggering.
 bool inBakeMode();
 // Should be only be called once 'debounced' if coming from a button press for example.
-// Cancel 'bake' mode if active; does not force to FROST mode.
+// Cancel 'bake' mode if active: does not force to FROST mode.
 void cancelBakeDebounced();
-//#else
-//#define startBakeDebounced() {}
-//// NO-OP versions if BAKE mode not supported.
-////#define inBakeMode() (false)
-//#define inBakeModeDebounced() (false)
-//#define cancelBakeDebounced() {}
-//#endif
-
-
 
 
 #if defined(UNIT_TESTS)
@@ -188,7 +175,8 @@ uint8_t getWARMTargetC();
 // Expose internal calculation of WARM target based on user physical control for unit testing.
 // Derived from temperature pot position, 0 for coldest (most eco), 255 for hotest (comfort).
 // Temp ranges from eco-1C to comfort+1C levels across full (reduced jitter) [0,255] pot range.
-uint8_t computeWARMTargetC(const uint8_t pot);
+// Everything beyond the lo/hi end-stop thresholds is forced to the appropriate end temperature.
+uint8_t computeWARMTargetC(uint8_t pot, uint8_t loEndStop, uint8_t hiEndStop);
 #endif
 
 
@@ -221,19 +209,26 @@ void setMinBoilerOnMinutes(uint8_t mins);
 #define setMinBoilerOnMinutes(mins) {} // Do nothing.
 #endif
 
-#ifdef ENABLE_DEFAULT_ALWAYS_RX
+#if defined(ENABLE_DEFAULT_ALWAYS_RX)
 // True: always in central hub/listen mode.
 #define inHubMode() (true)
 // True: always in stats hub/listen mode.
 #define inStatsHubMode() (true)
+#elif !defined(ENABLE_RADIO_RX)
+// No RX/listening allowed, so never in hub mode.
+// False: never in central hub/listen mode.
+#define inHubMode() (false)
+// False: never in stats hub/listen mode.
+#define inStatsHubMode() (false)
 #else
 // True if in central hub/listen mode (possibly with local radiator also).
 #define inHubMode() (0 != getMinBoilerOnMinutes())
 // True if in stats hub/listen mode (minimum timeout).
 #define inStatsHubMode() (1 == getMinBoilerOnMinutes())
-#endif
+#endif // defined(ENABLE_DEFAULT_ALWAYS_RX)
 
-
+#if defined(ENABLE_SINGLETON_SCHEDULE)
+#define SCHEDULER_AVAILABLE
 // Customised scheduler for the current OpenTRV application.
 class SimpleValveSchedule : public OTV0P2BASE::SimpleValveScheduleBase
     {
@@ -257,10 +252,10 @@ class SimpleValveSchedule : public OTV0P2BASE::SimpleValveScheduleBase
     };
 // Singleton scheduler instance.
 extern SimpleValveSchedule Scheduler;
-
-
-
-
+#else
+// Dummy scheduler to simplify coding.
+extern OTV0P2BASE::NULLValveSchedule Scheduler;
+#endif // defined(ENABLE_SINGLETON_SCHEDULE)
 
 
 #if defined(ENABLE_LOCAL_TRV)
@@ -485,28 +480,6 @@ void sampleStats(bool fullSample);
 uint8_t smoothStatsValue(uint8_t oldSmoothed, uint8_t newValue);
 #endif
 
-// Range-compress an signed int 16ths-Celsius temperature to a unsigned single-byte value < 0xff.
-// This preserves at least the first bit after the binary point for all values,
-// and three bits after binary point for values in the most interesting mid range around normal room temperatures,
-// with transitions at whole degrees Celsius.
-// Input values below 0C are treated as 0C, and above 100C as 100C, thus allowing air and DHW temperature values.
-#define COMPRESSION_C16_FLOOR_VAL 0 // Floor input value to compression.
-#define COMPRESSION_C16_LOW_THRESHOLD (16<<4) // Values in range [COMPRESSION_LOW_THRESHOLD_C16,COMPRESSION_HIGH_THRESHOLD_C16[ have maximum precision.
-#define COMPRESSION_C16_LOW_THR_AFTER (COMPRESSION_C16_LOW_THRESHOLD>>3) // Low threshold after compression.
-#define COMPRESSION_C16_HIGH_THRESHOLD (24<<4)
-#define COMPRESSION_C16_HIGH_THR_AFTER (COMPRESSION_C16_LOW_THR_AFTER + ((COMPRESSION_C16_HIGH_THRESHOLD-COMPRESSION_C16_LOW_THRESHOLD)>>1)) // High threshold after compression.
-#define COMPRESSION_C16_CEIL_VAL (100<<4) // Ceiling input value to compression.
-#define COMPRESSION_C16_CEIL_VAL_AFTER (COMPRESSION_C16_HIGH_THR_AFTER + ((COMPRESSION_C16_CEIL_VAL-COMPRESSION_C16_HIGH_THRESHOLD) >> 3)) // Ceiling input value after compression.
-uint8_t compressTempC16(int tempC16);
-// Reverses range compression done by compressTempC16(); results in range [0,100], with varying precision based on original value.
-// 0xff (or other invalid) input results in STATS_UNSET_INT.
-int expandTempC16(uint8_t cTemp);
-
-// Maximum valid encoded/compressed stats values.
-#define MAX_STATS_TEMP COMPRESSION_C16_CEIL_VAL_AFTER // Maximum valid compressed temperature value in stats.
-#define MAX_STATS_AMBLIGHT 254 // Maximum valid ambient light value in stats (very top of range is compressed).
-
-
 #ifdef ENABLE_FS20_ENCODING_SUPPORT
 // Clear and populate core stats structure with information from this node.
 // Exactly what gets filled in will depend on sensors on the node,
@@ -519,9 +492,11 @@ void populateCoreStats(OTV0P2BASE::FullStatsMessageCore_t *content);
 // to current channel security and sensitivity level.
 // This may be binary or JSON format.
 //   * allowDoubleTX  allow double TX to increase chance of successful reception
-//   * doBinary  send binary form, else JSON form if supported
-//   * RFM23BFramed   Add preamble and CRC to frame. Defaults to true for compatibility
-void bareStatsTX(const bool allowDoubleTX, const bool doBinary, const bool RFM23BFramed = true);
+//   * doBinary  send binary form if supported, else JSON form if supported
+// Sends stats on primary radio channel 0 with possible duplicate to secondary channel.
+// If sending encrypted then ID/counter fields (eg @ and + for JSON) are omitted
+// as assumed supplied by security layer to remote recipent.
+void bareStatsTX(bool allowDoubleTX, bool doBinary);
 
 #ifdef ENABLE_BOILER_HUB
 // Raw notification of received call for heat from remote (eg FHT8V) unit.

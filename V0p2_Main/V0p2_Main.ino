@@ -205,11 +205,11 @@ static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChanne
 #endif // ENABLE_RADIO_PRIMARY_RFM23B
 
 
-#ifdef RADIO_SECONDARY_SIM900
+#ifdef ENABLE_RADIO_SECONDARY_SIM900
 static const OTRadioLink::OTRadioChannelConfig SecondaryRadioConfig(&SIM900Config, true);
 #else
 static const OTRadioLink::OTRadioChannelConfig SecondaryRadioConfig(NULL, true);
-#endif // RADIO_SECONDARY_SIM900
+#endif // ENABLE_RADIO_SECONDARY_SIM900
 
 
 #if defined(ALLOW_CC1_SUPPORT_RELAY)
@@ -295,10 +295,6 @@ void optionalPOST()
 //  const bool neededToWakeSPI = OTV0P2BASE::powerUpSPIIfDisabled();
 //  DEBUG_SERIAL_PRINT(neededToWakeSPI);
 //  DEBUG_SERIAL_PRINTLN();
-#if !defined(RFM22_IS_ACTUALLY_RFM23) && defined(DEBUG) && !defined(ENABLE_MIN_ENERGY_BOOT)
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("(Using RFM22.)");
-#endif // !defined(RFM22_IS_ACTUALLY_RFM23) && defined(DEBUG) && !defined(ENABLE_MIN_ENERGY_BOOT)
-
   // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
   PrimaryRadio.preinit(NULL);
 #if 1 && defined(DEBUG) && !defined(ENABLE_TRIMMED_MEMORY)
@@ -321,12 +317,15 @@ void optionalPOST()
 
 #ifdef ENABLE_RADIO_SECONDARY_MODULE
 #ifdef ENABLE_RADIO_SIM900
-// Turn power on for SIM900 with PFET for secondary power control.
-fastDigitalWrite(A3, 0);
-pinMode(A3, OUTPUT);
+  // Turn power on for SIM900 with PFET for secondary power control.
+  fastDigitalWrite(A3, 0);
+  pinMode(A3, OUTPUT);
 #endif // ENABLE_RADIO_SIM900
-// Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
+  // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
   SecondaryRadio.preinit(NULL);
+#if 1 && defined(DEBUG) && !defined(ENABLE_TRIMMED_MEMORY)
+  DEBUG_SERIAL_PRINTLN_FLASHSTRING("R2");
+#endif
   // Check that the radio is correctly connected; panic if not...
   if(!SecondaryRadio.configure(1, &SecondaryRadioConfig) || !SecondaryRadio.begin()) { panic(); }
   // Assume no RX nor filtering on secondary radio.
@@ -385,6 +384,46 @@ pinMode(A3, OUTPUT);
       }
     }
 //  posPOST(2, F("slow RTC clock OK"));
+#if 1 // Probationary Xtal sanity check
+  // Test low frequency oscillator vs main clock oscillator.
+  // Tests clock frequency with 15 ms nap in between for up to 30 cycles and panics if not within bounds.
+  // As of 2016-02-16, all working REV7s give count >= 120 and that fail to program via bootloader give count <= 119
+  // REV10 gives 119-120 (only one tested though)
+  {
+    static const uint8_t optimalLFClock = 122; // might be optimal...
+    static const uint8_t errorLFClock = 4; // max drift from allowed value
+    uint8_t count = 0;
+    for(uint8_t i = 0; ; i++) {
+      ::OTV0P2BASE::nap(WDTO_15MS);
+      ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+      // wait for edge on xtal counter
+      // start counting cycles
+      // on next edge, stop
+          const uint8_t t0 = TCNT2;
+          while(t0 == TCNT2) {}
+          const uint8_t t01 = TCNT0;
+          const uint8_t t1 = TCNT2;
+          while(t1 == TCNT2) {}
+          const uint8_t t02 = TCNT0;
+          count = t02-t01;
+      }
+      // Check end conditions
+      if((count < optimalLFClock+errorLFClock) & (count > optimalLFClock-errorLFClock)) break;
+      if(i > 30) panic();
+      // Capture some entropy from the (chaotic?) clock wobble, but don't claim any.  (TODO-800)
+      OTV0P2BASE::addEntropyToPool(count, 0);
+      // Also perturb the PRNG with essentially the same data (which is one reason not to claim entropy above).
+      OTV0P2BASE::seedRNG8(count, i, TCNT2);
+    }
+    // optionally print value to debug
+#if 0 && defined(DEBUG)
+    DEBUG_SERIAL_PRINT_FLASHSTRING("Xtal freq check: ");
+    DEBUG_SERIAL_PRINT(count);
+    DEBUG_SERIAL_PRINTLN();
+#endif
+  }
+#endif // Probationary Xtal sanity check
+
 #else
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("(No xtal.)");
 #endif

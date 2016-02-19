@@ -699,7 +699,7 @@ static void testModeControls()
   setWarmModeDebounced(false);
   AssertIsTrue(!inWarmMode());
   AssertIsTrue(!inBakeMode());
-  startBakeDebounced();
+  startBake();
   AssertIsTrue(inWarmMode());
   AssertIsTrue(inBakeMode());
   cancelBakeDebounced();

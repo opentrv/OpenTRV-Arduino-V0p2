@@ -61,18 +61,38 @@ void resetCLIActiveTimer() { CLITimeoutM = CLI_DEFAULT_TIMEOUT_M; }
 // Thread-safe.
 bool isCLIActive() { return(0 != CLITimeoutM); }
 
-// Record local manual operation of a local physical UI control, eg not remote or via CLI.
+// Record local manual operation of a physical UI control, eg not remote or via CLI.
 // Marks room as occupied amongst other things.
-// To be thread-safe, everything that this touches or calls must be.
+// To be thread-/ISR- safe, everything that this touches or calls must be.
 // Thread-safe.
 void markUIControlUsed()
   {
   statusChange = true; // Note user interaction with the system.
   uiTimeoutM = UI_DEFAULT_RECENT_USE_TIMEOUT_M; // Ensure that UI controls are kept 'warm' for a little while.
+#if defined(ENABLE_UI_WAKES_CLI)
   // Make CLI active for a while (at some slight possibly-significant energy cost).
   resetCLIActiveTimer(); // Thread-safe.
+#endif
   // User operation of controls locally is strong indication of presence.
   Occupancy.markAsOccupied(); // Thread-safe.
+  }
+
+// Set true on significant local UI operation.
+// Should be cleared when feedback has been given.
+// Marked volatile for thread-safe lockless access;
+static volatile bool significantUIOp;
+// Record significant local manual operation of a physical UI control, eg not remote or via CLI.
+// Marks room as occupied amongst other things.
+// As markUIControlUsed() but likely to generate some feedback to the user, ASAP.
+// Thread-safe.
+void markUIControlUsedSignificant()
+  {
+  // Provide some instant visual feedback if possible.
+  LED_HEATCALL_ON_ISR_SAFE();
+  // Flag up need for feedback.
+  significantUIOp = true;
+  // Do main UI-touched work.
+  markUIControlUsed();
   }
 
 // True if a manual UI control has been very recently (minutes ago) operated.
@@ -86,6 +106,31 @@ bool veryRecentUIControlUse() { return(uiTimeoutM >= (UI_DEFAULT_RECENT_USE_TIME
 // Thread-safe....
 bool recentUIControlUse() { return(0 != uiTimeoutM); }
 
+// UI feedback.
+// Provide low-key visual / audio / tactile feedback on a significant user action.
+// May take hundreds of milliseconds and noticeable energy.
+// By default includes visual feedback,
+// but that can be prevented if other visual feedback already in progress.
+// Marks the UI as used.
+// Not thread-/ISR- safe.
+void userOpFeedback(bool includeVisual)
+  {
+  if(includeVisual) { LED_HEATCALL_ON(); }
+  markUIControlUsed();
+#if defined(ENABLE_LOCAL_TRV) && defined(ENABLE_V1_DIRECT_MOTOR_DRIVE)
+  // Sound and tactile feedback with local valve, like mobile phone vibrate mode.
+  // Only do this if in a normal state, eg not calibrating nor in error.
+  if(ValveDirect.isInNormalRunState()) { ValveDirect.wiggle(); }
+    else
+#else
+  // In absence of being all-in-one, or as else where valve cannot be used...
+  // pause briefly to let LED on be seen.
+    { if(includeVisual) { smallPause(); } }
+#endif
+  if(includeVisual) { LED_HEATCALL_OFF(); }
+  // Note that feedback for significant UI action has been given.
+  significantUIOp = false;
+  }
 
 
 #ifdef ENABLE_LEARN_BUTTON
@@ -154,13 +199,55 @@ bool tickUI(const uint_fast8_t sec)
   const bool enhancedUIFeedback = veryRecentUIControlUse();
 
 #ifdef TEMP_POT_AVAILABLE
-  if(enhancedUIFeedback || forthTick) // If recent UI activity, and periodically.
+  // Force relatively-frequent re-read of temp pot UI device periodically
+  // and if there has been recent UI maunal activity,
+  // to keep the valve UI responsive.
+#if !defined(ENABLE_FAST_TEMP_POT_SAMPLING) || !defined(ENABLE_OCCUPANCY_SUPPORT)
+  if(enhancedUIFeedback || forthTick)
+#else
+  // Even more responsive at some possible energy cost...
+  // Polls pot on every tick unless the room has been vacant for a day or two or is in FROST mode.
+  if(enhancedUIFeedback || forthTick || (inWarmMode() && !Occupancy.longLongVacant()))
+#endif
     {
-    // Force relatively-frequent re-read of temp pot UI device.
     TempPot.read();
+#if 0 && defined(DEBUG)
+      DEBUG_SERIAL_PRINT_FLASHSTRING("TP");
+      DEBUG_SERIAL_PRINT(TempPot.getRaw());
+      DEBUG_SERIAL_PRINTLN();
+#endif   
+    // Force to FROST mode (and cancel any erroneous BAKE, etc) when at FROST end of dial.
+    const bool isLo = TempPot.isAtLoEndStop();
+    if(isLo) { setWarmModeDebounced(false); }  
+    // Feed back significant change in pot position, ie at temperature boundaries.
+    // Synthesise a 'warm' target temp that distinguishes end stops...
+    const uint8_t nominalWarmTarget = isLo ? 1 :
+        (TempPot.isAtHiEndStop() ? 99 :
+        getWARMTargetC());
+    // Record of 'last' nominalWarmTarget; initially 0.
+    static uint8_t lastNominalWarmTarget;
+    if(nominalWarmTarget != lastNominalWarmTarget)
+      {
+      // Note if a boundary was crossed, ignoring any false 'start-up' transient.
+      if(0 != lastNominalWarmTarget) { significantUIOp = true; }
+#if 1 && defined(DEBUG)
+      DEBUG_SERIAL_PRINT_FLASHSTRING("WT");
+      DEBUG_SERIAL_PRINT(nominalWarmTarget);
+      DEBUG_SERIAL_PRINTLN();
+#endif
+      lastNominalWarmTarget = nominalWarmTarget;
+      }
     }
 #endif
 
+  // Provide extra user feedback for significant UI actions...
+  if(significantUIOp) { userOpFeedback(); }
+
+#if !defined(ENABLE_SIMPLIFIED_MODE_BAKE)
+  // Full MODE button behaviour:
+  //   * cycle through FROST/WARM/BAKE while held down
+  //   * switch to selected mode on release
+  //
   // If true then is in WARM (or BAKE) mode; defaults to (starts as) false/FROST.
   // Should be only be set when 'debounced'.
   // Defaults to (starts as) false/FROST.
@@ -215,7 +302,9 @@ bool tickUI(const uint_fast8_t sec)
       }
     }
   else
+#endif // !defined(ENABLE_SIMPLIFIED_MODE_BAKE)
     {
+#if !defined(ENABLE_SIMPLIFIED_MODE_BAKE)
     // Update real control variables for mode when button is released.
     if(modeButtonWasPressed)
       {
@@ -223,20 +312,21 @@ bool tickUI(const uint_fast8_t sec)
       // Will also capture programmatic changes to isWarmMode, eg from schedules.
       const bool isWarmModeDebounced = isWarmModePutative;
       setWarmModeDebounced(isWarmModeDebounced);
-      if(isBakeModePutative) { startBakeDebounced(); } else { cancelBakeDebounced(); }
+      if(isBakeModePutative) { startBake(); } else { cancelBakeDebounced(); }
 
       markUIControlUsed(); // Note activity on release of MODE button...
       modeButtonWasPressed = false;
       }
+#endif // !defined(ENABLE_SIMPLIFIED_MODE_BAKE)
 
-    // Keep reporting UI status if the user has just touched the unit in some way or UI is enhanced
+    // Keep reporting UI status if the user has just touched the unit in some way or UI feedback is enhanced.
     const bool justTouched = statusChange || enhancedUIFeedback;
 
     // Mode button not pressed: indicate current mode with flash(es); more flashes if actually calling for heat.
     // Force display while UI controls are being used, eg to indicate temp pot position.
     if(justTouched || inWarmMode()) // Generate flash(es) if in WARM mode or fiddling with UI other than Mode button.
       {
-      // DHD20131223: only flash if the room is lit so as to save energy and avoid disturbing sleep, etc.
+      // DHD20131223: only flash if the room not known to be dark so as to save energy and avoid disturbing sleep, etc.
       // In this case force resample of light level frequently in case user turns light on eg to operate unit.
       // Do show LED flash if user has recently operated controls (other than mode button) manually.
       // Flash infrequently if no recently operated controls and not in BAKE mode and not actually calling for heat;
@@ -246,7 +336,7 @@ bool tickUI(const uint_fast8_t sec)
 #if defined(ENABLE_NOMINAL_RAD_VALVE) && defined(ENABLE_LOCAL_TRV)
              || NominalRadValve.isCallingForHeat()
 #endif
-             || inBakeMode()) && AmbLight.isRoomLit()))
+             || inBakeMode()) && !AmbLight.isRoomDark()))
         {
         // First flash to indicate WARM mode (or pot being twiddled).
         LED_HEATCALL_ON();
@@ -334,7 +424,7 @@ bool tickUI(const uint_fast8_t sec)
   if(fastDigitalRead(BUTTON_LEARN_L) == LOW)
     {
     handleLEARN(0);
-    markUIControlUsed(); // Mark controls used and room as currently occupied given button press.
+    userOpFeedback(false); // Mark controls used and room as currently occupied given button press.
     LED_HEATCALL_ON(); // Leave heatcall LED on while learn button held down.
     }
 
@@ -343,7 +433,7 @@ bool tickUI(const uint_fast8_t sec)
   else if(fastDigitalRead(BUTTON_LEARN2_L) == LOW)
     {
     handleLEARN(1);
-    markUIControlUsed(); // Mark controls used and room as currently occupied given button press.
+    userOpFeedback(false); // Mark controls used and room as currently occupied given button press.
     LED_HEATCALL_ON(); // Leave heatcall LED on while learn button held down.
     }
 #endif
@@ -357,6 +447,7 @@ bool tickUI(const uint_fast8_t sec)
 
 
 // Check/apply the user's schedule, at least once each minute, and act on any timed events.
+#if !defined(checkUserSchedule)
 void checkUserSchedule()
   {
   // Get minutes since midnight local time [0,1439].
@@ -377,6 +468,7 @@ void checkUserSchedule()
       { setWarmModeDebounced(true); }
     }
   }
+#endif // !defined(checkUserSchedule)
 
 
 #ifdef ENABLE_EXTENDED_CLI
@@ -507,11 +599,11 @@ Thh mm is the local current 24h time in hours and minutes.
 Whh mm is the scheduled on/warm time in hours and minutes, or an invalid time if none.
 Fhh mm is the scheduled off/frost time in hours and minutes, or an invalid time if none.
 The ";" terminates this schedule section.
-'S' introduces the current and settable-target temperatures in Celsius/centrigrade, if supported.
+'S' introduces the current and settable-target temperatures in Celsius/centigrade, if supported.
 eg 'S5 5 17'
 The first number is the current target in C, the second is the FROST target, the third is the WARM target.
 The 'e' or 'c' indicates eco or comfort bias.
-A 'w' indicates that this hour is predicted for smart warming ('f' indocates not), and another 'w' the hour ahead.
+A 'w' indicates that this hour is predicted for smart warming ('f' indicates not), and another 'w' the hour ahead.
 A trailing 'o' indicates room occupancy.
 The ";" terminates this 'settable' section.
 
@@ -525,7 +617,7 @@ void serialStatusReport()
 
   // Aim to overlap CPU usage with characters being TXed for throughput determined primarily by output size and baud.
 
-  // Stats line starts with distingushed marker character.
+  // Stats line starts with distinguished marker character.
   // Initial '=' section with common essentials.
   Serial.print((char) OTV0P2BASE::SERLINE_START_CHAR_STATS);
 //#ifdef SUPPORT_BAKE
@@ -557,6 +649,7 @@ void serialStatusReport()
   const uint_least8_t mm = OTV0P2BASE::getMinutesLT();
   Serial.print(';'); // End previous section.
   Serial.print('T'); Serial.print(hh); Serial_print_space(); Serial.print(mm);
+#if defined(SCHEDULER_AVAILABLE)
   // Show all schedules set.
   for(uint8_t scheduleNumber = 0; scheduleNumber < Scheduler.MAX_SIMPLE_SCHEDULES; ++scheduleNumber)
     {
@@ -574,6 +667,7 @@ void serialStatusReport()
     Serial.print('F'); Serial.print(endH); Serial_print_space(); Serial.print(endM);
     }
   if(Scheduler.isAnyScheduleOnWARMNow()) { Serial.print('*'); } // Indicate that at least one schedule is active now.
+#endif // ENABLE_SINGLETON_SCHEDULE
 #endif
 
   // *S* section: settable target/threshold temperatures, current target, and eco/smart/occupied flags.
@@ -625,7 +719,7 @@ void serialStatusReport()
     }
 #endif
 
-#ifdef ENABLE_LOCAL_TRV
+#if defined(ENABLE_LOCAL_TRV) && !defined(ENABLE_TRIMMED_MEMORY)
   // *M* section: min-valve-percentage open section, iff not at default value.
   const uint8_t minValvePcOpen = NominalRadValve.getMinValvePcReallyOpen();
   if(OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN != minValvePcOpen) { Serial.print(F(";M")); Serial.print(minValvePcOpen); }
@@ -633,7 +727,7 @@ void serialStatusReport()
 
 #if 1 && defined(ENABLE_JSON_OUTPUT) && !defined(ENABLE_TRIMMED_MEMORY)
   Serial.print(';'); // Terminate previous section.
-  char buf[80];
+  char buf[40]; // Keep short enough not to cause overruns.
   static const uint8_t maxStatsLineValues = 5;
   static OTV0P2BASE::SimpleStatsRotation<maxStatsLineValues> ss1; // Configured for maximum different stats.
 //  ss1.put(TemperatureC16); // Already at start of = stats line.
@@ -648,7 +742,7 @@ void serialStatusReport()
   ss1.put(Occupancy);
 //  ss1.put(Occupancy.vacHTag(), Occupancy.getVacancyH()); // EXPERIMENTAL
 #endif // defined(ENABLE_OCCUPANCY_SUPPORT)
-#if defined(ENABLE_MODELLED_RAD_VALVE) && !defined(ENABLE_TRIMMED_MEMORY) && !defined(ENABLE_TRIMMED_BANDWIDTH)
+#if defined(ENABLE_MODELLED_RAD_VALVE) && !defined(ENABLE_TRIMMED_MEMORY)
     ss1.put(NominalRadValve.tagCMPC(), NominalRadValve.getCumulativeMovementPC()); // EXPERIMENTAL
 #endif // ENABLE_MODELLED_RAD_VALVE
   const uint8_t wrote = ss1.writeJSON((uint8_t *)buf, sizeof(buf), 0, true);
@@ -699,7 +793,7 @@ static void printCLILine(const uint8_t deadline, const char syntax, __FlashStrin
 static void dumpCLIUsage(const uint8_t stopBy)
   {
 #ifndef _CLI_HELP_
-  Serial.println(F("No help")); // Minimal placeholder.
+  OTV0P2BASE::CLI::InvalidIgnored(); // Minimal placeholder.
 #else
   const uint8_t deadline = OTV0P2BASE::fnmin((uint8_t)(stopBy - OTV0P2BASE::fnmin(stopBy,CLI_PRINT_OH_SCT)), STOP_PRINTING_DESCRIPTION_AT);
   Serial.println();
@@ -729,7 +823,7 @@ static void dumpCLIUsage(const uint8_t stopBy)
 #endif
 
   //printCLILine(deadline, 'L', F("Learn to warm every 24h from now, clear if in frost mode, schedule 0"));
-#ifdef ENABLE_LEARN_BUTTON
+#if defined(SCHEDULER_AVAILABLE)
   printCLILine(deadline, F("L S"), F("Learn daily warm now, clear if in frost mode, schedule S"));
   //printCLILine(deadline, F("P HH MM"), F("Program: warm daily starting at HH MM schedule 0"));
   printCLILine(deadline, F("P HH MM S"), F("Program: warm daily starting at HH MM schedule S"));
@@ -753,17 +847,12 @@ static void dumpCLIUsage(const uint8_t stopBy)
   Serial.println();
   }
 
-
-// Prints warning to serial (that must be up and running) that invalid (CLI) input has been ignored.
-// Probably should not be inlined, to avoid creating duplicate strings in Flash.
-static void InvalidIgnored() { Serial.println(F("Invalid, ignored.")); }
-
 // If INTERACTIVE_ECHO defined then immediately echo received characters, not at end of line.
 #define CLI_INTERACTIVE_ECHO
 
 // TODO better way of handling this?
 #ifdef ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
-#define MAXIMUM_CLI_OT_RESPONSE_CHARS 37 // 37 = 4("K B ") + 32(AES key) + 1('\r' | 'n')
+#define MAXIMUM_CLI_OT_RESPONSE_CHARS 52 // 52 = 4("K B") + 16x(AES key token) + 1('\r' | 'n')
 #else
 #define MAXIMUM_CLI_OT_RESPONSE_CHARS 9 // Just enough for any valid core/OT command expected not including trailing LF.  (Note that Serial RX buffer is 64 bytes.)
 #endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
@@ -923,14 +1012,11 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
       // Avoid showing status as may already be rather a lot of output.
       default: case '?': { dumpCLIUsage(maxSCT); showStatus = false; break; }
 
-
-      // CORE CLI FEATURES: keep small and low-impact.
-      //     E, [H], I, S V
-      // ---
       // Exit/deactivate CLI immediately.
       // This should be followed by JUST CR ('\r') OR LF ('\n')
       // else the second will wake the CLI up again.
       case 'E': { CLITimeoutM = 0; break; }
+
 #if defined(ENABLE_FHT8VSIMPLE) && (defined(ENABLE_LOCAL_TRV) || defined(ENABLE_SLAVE_TRV))
       // H nn nn
       // Set (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control.
@@ -947,7 +1033,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
             {
             const int hc1 = atoi(tok1);
             const int hc2 = atoi(tok2);
-            if((hc1 < 0) || (hc1 > 99) || (hc2 < 0) || (hc2 > 99)) { InvalidIgnored(); }
+            if((hc1 < 0) || (hc1 > 99) || (hc2 < 0) || (hc2 > 99)) { OTV0P2BASE::CLI::InvalidIgnored(); }
             else
               {
               // Set house codes and force resync if changed.
@@ -963,102 +1049,10 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         break;
         }
 #endif
+
       // Set or display new random ID.
-      // Set only if the command line is (nearly) exactly "I *" to avoid accidental reset.
-      // In either cas display the current one.
-      // Should possibly restart the system afterwards.
-      //
-      // Example use:
-      //
-      //>I
-      //ID: 98 A4 F5 99 E3 94 A8 C2
-      //=F0%@18C6;X0;T15 38 W255 0 F255 0 W255 0 F255 0;S6 6 16;{"@":"98a4","L":146,"B|cV":333,"occ|%":0,"vC|%":0}
-      //
-      //>I
-      //ID: 98 A4 F5 99 E3 94 A8 C2
-      //=F0%@18C6;X0;T15 38 W255 0 F255 0 W255 0 F255 0;S6 6 16;{"@":"98a4","L":146,"B|cV":333,"occ|%":0,"vC|%":0}
-      //
-      //>
-      //
-      //>
-      //
-      //>
-      //
-      //>I *
-      //Setting ID byte 0 9F
-      //Setting ID byte 1 9C
-      //Setting ID byte 2 8B
-      //Setting ID byte 3 B2
-      //Setting ID byte 4 A0
-      //Setting ID byte 5 E2
-      //Setting ID byte 6 E2
-      //Setting ID byte 7 AF
-      //ID: 9F 9C 8B B2 A0 E2 E2 AF
-      //=F0%@18C6;X0;T15 38 W255 0 F255 0 W255 0 F255 0;S6 6 16;{"@":"9f9c","L":146,"B|cV":333,"occ|%":0,"vC|%":0}
-      //
-      //>
-      case 'I':
-        {
-        if((3 == n) && ('*' == buf[2]))
-          { OTV0P2BASE::ensureIDCreated(true); } // Force ID change.
-        Serial.print(F("ID:"));
-        for(uint8_t i = 0; i < V0P2BASE_EE_LEN_ID; ++i)
-          {
-          Serial.print(' ');
-          Serial.print(eeprom_read_byte((uint8_t *)(V0P2BASE_EE_START_ID + i)), HEX);
-          }
-        Serial.println();
-        break;
-        }
+      case 'I': { showStatus = OTV0P2BASE::CLI::NodeID().doCommand(buf, n); break; }
 
-#ifdef ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
-// Commented out because braces not balanced and breaking compile of entire function!
-//      // Set primary key:
-//      case 'K':
-//        {
-//        char *last; // Used by strtok_r().
-//        char *tok1;
-//        // Minimum 5 character sequence makes sense and is safe to tokenise, eg "K B *".
-//        if((n >= 5) && (NULL != (tok1 = strtok_r(buf+2, " ", &last))))
-//          {
-//          if ('B' == *tok1) {
-//        	  char *tok2 = strtok_r(NULL, " ", &last);
-//        	  if (NULL != tok2) {
-//        		  if (*tok2 == '*') {
-//        			  OTV0P2BASE::setPrimaryBuilding16ByteSecretKey(NULL);
-//        			  Serial.println(F("Building Key cleared"));
-//        		  } else if (n == 36) {
-//        			  // tokenise, create buffer, fill with parsed tokens and pass to setPrima...()
-//        		  } else InvalidIgnored();
-//        	  }
-//          }
-//
-//        break;
-//        }
-      // Set new node
-      case 'A':
-        {
-        char *last; // Used by strtok_r().
-        char *tok1;
-        // Minimum 3 character sequence makes sense and is safe to tokenise, eg "A *".
-        if((n >= 3) && (NULL != (tok1 = strtok_r(buf+2, " ", &last)))) {
-          if ('*' == *tok1) {
-            // function call to clear noeds
-        	// TODO above function
-            Serial.println(F("Node IDs cleared"));
-          } else if(n == 18) {
-        	  char *tok2 = strtok_r(NULL, " ", &last);
-        	  if (NULL != tok2) {
-        		  if (n == 18) {
-        			  // tokenise, create buffer, fill with parsed tokens and pass to relevant function
-
-        		  } else InvalidIgnored();
-        	  }
-          }
-        }
-        break;
-        }
-#endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
       // Status line and optional smart/scheduled warming prediction request.
       case 'S':
         {
@@ -1072,6 +1066,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         Serial.println();
         break; // Note that status is by default printed after processing input line.
         }
+
       // Version information printed as one line to serial, machine- and human- parseable.
       case 'V':
         {
@@ -1081,7 +1076,6 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
 #endif
         break;
         }
-
 
 #ifdef ENABLE_EXTENDED_CLI
       // Handle CLI extension commands.
@@ -1097,10 +1091,15 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         Serial.println(success ? F("OK") : F("FAILED"));
         break;
         }
-#endif  
+#endif 
 
+#ifdef ENABLE_FULL_OT_CLI // *******  NON-CORE CLI FEATURES
 
-#ifdef ENABLE_FULL_OT_CLI // NON-CORE CLI FEATURES
+#if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) && (defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)) && defined(ENABLE_RADIO_RX)
+        // Set new node association (nodes to accept frames from).
+        // Only needed if able to RX and/or some sort of hub.
+        case 'A': { showStatus = OTV0P2BASE::CLI::SetNodeAssoc().doCommand(buf, n); break; }
+#endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
 
 #if defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)
       // C M
@@ -1137,94 +1136,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
 //        }
 
       // Dump (human-friendly) stats: D N
-      // DEBUG only: "D?" to force partial stats sample and "D!" to force an immediate full stats sample; use with care.
-      // Avoid showing status afterwards as may already be rather a lot of output.
-      case 'D':
-        {
-#if 0 && defined(DEBUG)
-        if(n == 2) // Sneaky way of forcing stats samples.
-          {
-          if('?' == buf[1]) { sampleStats(false); Serial.println(F("Part sample")); }
-          else if('!' == buf[1]) { sampleStats(true); Serial.println(F("Full sample")); }
-          break;
-          }
-#endif
-        char *last; // Used by strtok_r().
-        char *tok1;
-        // Minimum 3 character sequence makes sense and is safe to tokenise, eg "D 0".
-        if((n >= 3) && (NULL != (tok1 = strtok_r(buf+2, " ", &last))))
-          {
-          const uint8_t setN = (uint8_t) atoi(tok1);
-          const uint8_t thisHH = OTV0P2BASE::getHoursLT();
-//          const uint8_t lastHH = (thisHH > 0) ? (thisHH-1) : 23;
-          // Print label.
-          switch(setN)
-            {
-            default: { Serial.print('?'); break; }
-            case V0P2BASE_EE_STATS_SET_TEMP_BY_HOUR:
-            case V0P2BASE_EE_STATS_SET_TEMP_BY_HOUR_SMOOTHED:
-                { Serial.print('C'); break; }
-            case V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR:
-            case V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED:
-                { Serial.print(F("ambl")); break; }
-            case V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR:
-            case V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED:
-                { Serial.print(F("occ%")); break; }
-            case V0P2BASE_EE_STATS_SET_RHPC_BY_HOUR:
-            case V0P2BASE_EE_STATS_SET_RHPC_BY_HOUR_SMOOTHED:
-                { Serial.print(F("RH%")); break; }
-            case V0P2BASE_EE_STATS_SET_USER1_BY_HOUR:
-            case V0P2BASE_EE_STATS_SET_USER1_BY_HOUR_SMOOTHED:
-                { Serial.print('u'); break; }
-#if defined(V0P2BASE_EE_STATS_SET_WARMMODE_BY_HOUR_OF_WK)
-            case V0P2BASE_EE_STATS_SET_WARMMODE_BY_HOUR_OF_WK:
-                { Serial.print('W'); break; }
-#endif
-            }
-          Serial_print_space();
-          if(setN & 1) { Serial.print(F("smoothed")); } else { Serial.print(F("last")); }
-          Serial_print_space();
-          // Now print values.
-          for(uint8_t hh = 0; hh < 24; ++hh)
-            {
-            const uint8_t statRaw = OTV0P2BASE::getByHourStat(setN, hh);
-            // For unset stat show '-'...
-            if(OTV0P2BASE::STATS_UNSET_BYTE == statRaw) { Serial.print('-'); }
-            // ...else print more human-friendly version of stat.
-            else switch(setN)
-              {
-              default: { Serial.print(statRaw); break; } // Generic decimal stats.
-
-              // Special formatting cases.
-              case V0P2BASE_EE_STATS_SET_TEMP_BY_HOUR:
-              case V0P2BASE_EE_STATS_SET_TEMP_BY_HOUR_SMOOTHED:
-                // Uncompanded temperature, rounded.
-                { Serial.print((expandTempC16(statRaw)+8) >> 4); break; }
-#if defined(V0P2BASE_EE_STATS_SET_WARMMODE_BY_HOUR_OF_WK)
-              case V0P2BASE_EE_STATS_SET_WARMMODE_BY_HOUR_OF_WK:
-                // Warm mode usage bitmap by hour over week.
-                { Serial.print(statRaw, HEX); break; }
-#endif
-              }
-#if 0 && defined(DEBUG)
-            // Show how many values are lower than the current one.
-            Serial.print('(');
-            Serial.print(OTV0P2BASE::countStatSamplesBelow(setN, statRaw));
-            Serial.print(')');
-#endif
-            if(hh == thisHH) { Serial.print('<'); } // Highlight current stat in this set.
-#if 0 && defined(DEBUG)
-            if(inOutlierQuartile(false, setN, hh)) { Serial.print('B'); } // In bottom quartile.
-            if(inOutlierQuartile(true, setN, hh)) { Serial.print('T'); } // In top quartile.
-#endif
-            Serial_print_space();
-            }
-          Serial.println();
-          }
-
-        showStatus = false;
-        break;
-        }
+      case 'D': { showStatus = OTV0P2BASE::CLI::DumpStats().doCommand(buf, n); break; }
 
       // Switch to FROST mode OR set FROST/setback temperature (even with temp pot available).
       // With F! force to frost and holiday (long-vacant) mode.  Useful for testing and for remote CLI use.
@@ -1243,13 +1155,18 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         if((n >= 3) && (NULL != (tok1 = strtok_r(buf+2, " ", &last))))
           {
           const uint8_t tempC = (uint8_t) atoi(tok1);
-          if(!setFROSTTargetC(tempC)) { InvalidIgnored(); }
+          if(!setFROSTTargetC(tempC)) { OTV0P2BASE::CLI::InvalidIgnored(); }
           }
         else
 #endif
           { setWarmModeDebounced(false); } // No parameter supplied; switch to FROST mode.
         break;
         }
+ 
+#if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
+      // Set secret key.
+      case 'K': { showStatus = OTV0P2BASE::CLI::SetSecretKey().doCommand(buf, n); break; }
+#endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
 
 #ifdef ENABLE_LEARN_BUTTON
       // Learn current settings, just as if primary/specified LEARN button had been pressed.
@@ -1307,7 +1224,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
               }
 //#endif
             // Does not fully validate user inputs (eg for -ve values), but cannot set impossible values.
-            if(!Scheduler.setSimpleSchedule((uint_least16_t) ((60 * hh) + mm), (uint8_t)s)) { InvalidIgnored(); }
+            if(!Scheduler.setSimpleSchedule((uint_least16_t) ((60 * hh) + mm), (uint8_t)s)) { OTV0P2BASE::CLI::InvalidIgnored(); }
             }
           }
         break;
@@ -1315,27 +1232,10 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
 #endif // ENABLE_LEARN_BUTTON
 
       // Switch to (or restart) BAKE (Quick Heat) mode: Q
-      case 'Q': { startBakeDebounced(); break; }
+      case 'Q': { startBake(); break; }
 
       // Time set T HH MM.
-      case 'T':
-        {
-        char *last; // Used by strtok_r().
-        char *tok1;
-        // Minimum 5 character sequence makes sense and is safe to tokenise, eg "T 1 2".
-        if((n >= 5) && (NULL != (tok1 = strtok_r(buf+2, " ", &last))))
-          {
-          char *tok2 = strtok_r(NULL, " ", &last);
-          if(NULL != tok2)
-            {
-            const int hh = atoi(tok1);
-            const int mm = atoi(tok2);
-            // TODO: zap collected stats if time change too large (eg >> 1h).
-            if(!OTV0P2BASE::setHoursMinutesLT(hh, mm)) { InvalidIgnored(); }
-            }
-          }
-        break;
-        }
+      case 'T': { showStatus = OTV0P2BASE::CLI::SetTime().doCommand(buf, n); break; }
 
       // Switch to WARM (not BAKE) mode OR set WARM temperature.
       case 'W':
@@ -1359,30 +1259,10 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
 
       // tX security level: X NN
       // Avoid showing status afterwards as may already be rather a lot of output.
-      case 'X':
-        {
-        char *last; // Used by strtok_r().
-        char *tok1;
-        // Minimum 3 character sequence makes sense and is safe to tokenise, eg "X 0".
-        if((n >= 3) && (NULL != (tok1 = strtok_r(buf+2, " ", &last))))
-          {
-          const uint8_t nn = (uint8_t) atoi(tok1);
-          OTV0P2BASE::eeprom_smart_update_byte((uint8_t *)V0P2BASE_EE_START_STATS_TX_ENABLE, nn);
-          }
-        break;
-        }
+      case 'X': { showStatus = OTV0P2BASE::CLI::SetTXPrivacy().doCommand(buf, n); break; }
 
       // Zap/erase learned statistics.
-      case 'Z':
-        {
-        // Try to avoid causing an overrun if near the end of the minor cycle (even allowing for the warning message if unfinished!).
-        if(OTV0P2BASE::zapStats((uint16_t) OTV0P2BASE::fnmax(1, ((int)OTV0P2BASE::msRemainingThisBasicCycle()/2) - 20)))
-          { Serial.println(F("Zapped.")); }
-        else
-          { Serial.println(F("Not finished.")); }
-        showStatus = false; // May be slow; avoid showing stats line which will in any case be unchanged.
-        break;
-        }
+      case 'Z': { showStatus = OTV0P2BASE::CLI::ZapStats().doCommand(buf, n); break; }
 #endif // ENABLE_FULL_OT_CLI // NON-CORE FEATURES
       }
 

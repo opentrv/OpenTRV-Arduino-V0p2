@@ -87,10 +87,17 @@ inline bool tickUI(uint_fast8_t) { LED_HEATCALL_OFF(); return(false); } // Alway
 bool tickUI(uint_fast8_t sec);
 #endif
 
-// Record local manual operation of a local physical UI control, eg not remote or via CLI.
+// Record local manual operation of a physical UI control, eg not remote or via CLI.
 // Marks room as occupied amongst other things.
 // Thread-safe.
 void markUIControlUsed();
+
+// Record significant local manual operation of a physical UI control, eg not remote or via CLI.
+// Marks room as occupied amongst other things.
+// As markUIControlUsed() but likely to generate some feedback to the user, ASAP.
+// Thread-safe.
+void markUIControlUsedSignificant();
+
 
 // True if a manual UI control has been very recently (minutes ago) operated.
 // The user may still be interacting with the control and the UI etc should probably be extra responsive.
@@ -104,7 +111,20 @@ bool veryRecentUIControlUse();
 bool recentUIControlUse();
 
 // Check/apply the user's schedule, at least once each minute, and act on any timed events.
+#if defined(SCHEDULER_AVAILABLE)
 void checkUserSchedule();
+#else
+#define checkUserSchedule() // Reduce to a no-op.
+#endif // defined(SCHEDULER_AVAILABLE)
+
+// UI feedback.
+// Provide low-key visual / audio / tactile feedback on a significant user action.
+// May take hundreds of milliseconds and noticeable energy.
+// By default includes visual feedback,
+// but that can be prevented if other visual feedback already in progress.
+// Marks the UI as used.
+// Not thread-/ISR- safe.
+void userOpFeedback(bool includeVisual = true);
 
 
 // Sends a short 1-line CRLF-terminated status report on the serial connection (at 'standard' baud).

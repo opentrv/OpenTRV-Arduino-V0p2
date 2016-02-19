@@ -93,8 +93,8 @@ extern OTV0P2BASE::TemperatureC16_DS18B20 extDS18B20_0;
 extern OTV0P2BASE::RoomTemperatureC16_SHT21 TemperatureC16; // SHT21 impl.
 #elif defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20)
   #if defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
-// DSB18B20 temperature impl, with slightly reduced precision to improve speed.
-extern OTV0P2BASE::TemperatureC16_DS18B20 TemperatureC16;
+  // DSB18B20 temperature impl, with slightly reduced precision to improve speed.
+  extern OTV0P2BASE::TemperatureC16_DS18B20 TemperatureC16;
   #endif // defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
 #else // Don't use TMP112 if SHT21 or DS18B20 have been selected.
 extern OTV0P2BASE::RoomTemperatureC16_TMP112 TemperatureC16;
@@ -128,10 +128,10 @@ extern OTV0P2BASE::VoiceDetectionQM1 Voice;
 
 
 // DORM1/REV7 direct drive motor actuator.
-#if /* defined(ENABLE_LOCAL_TRV) && */ defined(DIRECT_MOTOR_DRIVE_V1)
+#if /* defined(ENABLE_LOCAL_TRV) && */ defined(ENABLE_V1_DIRECT_MOTOR_DRIVE)
 #define HAS_DORM1_VALVE_DRIVE
 // Singleton implementation/instance.
-#ifdef ENABLE_DORM1_MOTOR_REVERSED // Reversed vs sample 2015/12
+#ifdef ENABLE_DORM1_MOTOR_REVERSED // Reversed vs sample 2015/12.
 extern OTRadValve::ValveMotorDirectV1<MOTOR_DRIVE_ML, MOTOR_DRIVE_MR, MOTOR_DRIVE_MI_AIN, MOTOR_DRIVE_MC_AIN> ValveDirect;
 #else
 extern OTRadValve::ValveMotorDirectV1<MOTOR_DRIVE_MR, MOTOR_DRIVE_ML, MOTOR_DRIVE_MI_AIN, MOTOR_DRIVE_MC_AIN> ValveDirect;
