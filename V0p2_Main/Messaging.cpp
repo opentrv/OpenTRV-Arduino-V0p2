@@ -705,6 +705,8 @@ bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadi
   // at the risk of delaying some processing
   // or even dropping some incoming messages if queues fill up.
   // Decoding (and printing to serial) a secure 'O' frame takes ~60 ticks (~0.47s).
+  // Allow for up to 0.5s of such processing worst-case,
+  // ie don't start processing anything later that 0.5s before the minor cycle end.
   const uint8_t sctStart = OTV0P2BASE::getSubCycleTime();
   if(sctStart >= ((OTV0P2BASE::GSCT_MAX/4)*3)) { return(false); }
 
