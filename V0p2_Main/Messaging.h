@@ -144,7 +144,7 @@ inline bool enableTrailingStatsPayload() { return(OTV0P2BASE::getStatsTXLevel() 
 // The Print object pointer must not be NULL.
 bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadioLink *rl);
 #else
-#define handleQueuedMessages(p, wakeSerialIfNeeded, rl)
+#define handleQueuedMessages(p, wakeSerialIfNeeded, rl) (false)
 #endif
 
 
