@@ -246,6 +246,11 @@ class SimpleValveSchedule : public OTV0P2BASE::SimpleValveScheduleBase
             const uint8_t wt = getWARMTargetC();
             if(isEcoTemperature(wt)) { return(LEARNED_ON_PERIOD_M); }
             else if(isComfortTemperature(wt)) { return(LEARNED_ON_PERIOD_COMFORT_M); }
+#if defined(ENABLE_OCCUPANCY_SUPPORT)
+            // If vacant for a long time (>1d) and not at maximum comfort end of scale
+            // then truncate the on period to the minimum to attempt to save energy.
+            else if(Occupancy.longVacant()) { return(LEARNED_ON_PERIOD_M); }
+#endif
             else { return((LEARNED_ON_PERIOD_M + LEARNED_ON_PERIOD_COMFORT_M) / 2); }
 #endif // LEARNED_ON_PERIOD_M == LEARNED_ON_PERIOD_COMFORT_M
             }
