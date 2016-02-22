@@ -1234,10 +1234,15 @@ static void wireComponentsTogether()
   // Typically at most one call would be made on any appropriate pot adjustment.
   TempPot.setWFBCallbacks(setWarmModeFromManualUI, setBakeModeFromManualUI);
 #endif // TEMP_POT_AVAILABLE
+
 #if V0p2_REV == 14
   pinMode(REGULATOR_POWERUP, OUTPUT);
+#ifdef ENABLE_VOICE_SENSOR
   fastDigitalWrite(REGULATOR_POWERUP, HIGH);
-#endif
+#else
+  fastDigitalWrite(REGULATOR_POWERUP, LOW);
+#endif // ENABLE_VOICE_SENSOR
+#endif // V0p2_REV == 14
   }
 
 
