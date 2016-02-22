@@ -224,6 +224,21 @@ void setMinBoilerOnMinutes(uint8_t mins);
 #define inStatsHubMode() (1 == getMinBoilerOnMinutes())
 #endif // defined(ENABLE_DEFAULT_ALWAYS_RX)
 
+// FIXME Moved up from line 464 to fix compilation errors (OccupancyTracker needed on line 261)
+// IF DEFINED: support for general timed and multi-input occupancy detection / use.
+#ifdef ENABLE_OCCUPANCY_SUPPORT
+typedef OTV0P2BASE::PseudoSensorOccupancyTracker OccupancyTracker;
+#else
+// Placeholder class with dummy static status methods to reduce code complexity.
+typedef OTV0P2BASE::DummySensorOccupancyTracker OccupancyTracker;
+#endif
+// Singleton implementation for entire node.
+extern OccupancyTracker Occupancy;
+// Single generic occupancy callback for occupied for this instance.
+void genericMarkAsOccupied();
+// Single generic occupancy callback for 'possibly occupied' for this instance.
+void genericMarkAsPossiblyOccupied();
+
 #if defined(ENABLE_SINGLETON_SCHEDULE)
 #define SCHEDULER_AVAILABLE
 // Customised scheduler for the current OpenTRV application.
@@ -448,22 +463,6 @@ extern ModelledRadValve NominalRadValve;
 // Simply alias directly to FHT8V for REV9 slave for example.
 #define NominalRadValve FHT8V
 #endif
-
-
-// IF DEFINED: support for general timed and multi-input occupancy detection / use.
-#ifdef ENABLE_OCCUPANCY_SUPPORT
-typedef OTV0P2BASE::PseudoSensorOccupancyTracker OccupancyTracker;
-#else
-// Placeholder class with dummy static status methods to reduce code complexity.
-typedef OTV0P2BASE::DummySensorOccupancyTracker OccupancyTracker;
-#endif
-// Singleton implementation for entire node.
-extern OccupancyTracker Occupancy;
-// Single generic occupancy callback for occupied for this instance.
-void genericMarkAsOccupied();
-// Single generic occupancy callback for 'possibly occupied' for this instance.
-void genericMarkAsPossiblyOccupied();
-
 
 // Sample statistics once per hour as background to simple monitoring and adaptive behaviour.
 // Call this once per hour with fullSample==true, as near the end of the hour as possible;
