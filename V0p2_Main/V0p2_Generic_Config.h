@@ -76,7 +76,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_Trial2013Winter_Round2_SECURE_NOHUB // REV2 cut4 leaf (valve/sensor) 2015/12 secure protocol.
 //#define CONFIG_Trial2013Winter_Round2_SECURE_HUB // REV2 cut4 hub (boiler/stats) 2015/12 secure protocol.
 //#define CONFIG_DHD_TESTLAB_REV4 // REV4 cut2.
-//#define CONFIG_DHD_TESTLAB_REV4_NOHUB // REV4 cut2, no hub.
+#define CONFIG_DHD_TESTLAB_REV4_NOHUB // REV4 cut2, no hub.
 //#define CONFIG_BH_DHW // Bo's hot water.
 //#define CONFIG_BH_TESTLAB // Bo's test environment.
 //#define CONFIG_DORM1_SANS32K // REV7 / DORM1 without working 32768Hz clock.
@@ -93,7 +93,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // TODO //#define CONFIG_REV10_SECURE_BOILERHUB_GSM_SECURE // REV10 PCB boiler hub, relay to GSM, 2015/12 secure protocol.
 //#define CONFIG_REV11_RFM23BTEST // Basic test to see if stats send
 //#define CONFIG_REV14_PROTO  // Prototype REV14 w/ LoRa, TMP, SHT and QM-1
-#define CONFIG_REV14 // REV14 w/ light sensor, SHT21 and voice sensor Measured current consumption (no QM-1 or mobdet): 100-200 uA when serial shut and not attempting Tx
+//#define CONFIG_REV14 // REV14 w/ light sensor, SHT21 and voice sensor Measured current consumption (no QM-1 or mobdet): 100-200 uA when serial shut and not attempting Tx
 //#define CONFIG_BAREBONES // No peripherals / on breadboard.
 
 
@@ -557,28 +557,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #endif
 
 // ------------------------- REV4
-
-#ifdef CONFIG_DHD_TESTLAB_REV4_NOHUB // REV4 board but no listening...
-#define CONFIG_DHD_TESTLAB_REV4
-// IF DEFINED: this unit can act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
-#undef ENABLE_BOILER_HUB
-// IF DEFINED: allow RX of stats frames.
-#undef ENABLE_STATS_RX
-#endif
-
-#ifdef CONFIG_DHD_TESTLAB_REV4 // DHD's test lab with TRV on REV4 (cut2) board.
-// Revision of V0.2 board.
-#define V0p2_REV 4 // REV0 covers DHD's breadboard and first V0.2 PCB.
-// IF DEFINED: enable use of on-board SHT21 RH and temp sensor (in lieu of TMP112).
-#define ENABLE_PRIMARY_TEMP_SENSOR_SHT21
-// Using RoHS-compliant phototransistor in place of LDR.
-#define ENABLE_AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
-// Anticipation logic not yet ready for prime-time.
-//#define ENABLE_ANTICIPATION
-// IF UNDEFINED: this unit cannot act as boiler-control hub listening to remote thermostats, possibly in addition to controlling a local TRV.
-//#undef ENABLE_BOILER_HUB
-#endif
-
+// All-in-one valve unit.
+#include <OTV0p2_CONFIG_REV4.h>
 
 
 // ------------------------- REV8
