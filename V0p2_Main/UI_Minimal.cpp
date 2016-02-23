@@ -1332,7 +1332,7 @@ bool getSwitchToggleStateCO() { return(switch_toggle_state); }
 //    * turn the user-visible LED solid red (for a while)
 //    * flip the status flag providing it has been more than 30 minutes since the last one
 //      (this 30 minutes being the time at which contact with the hub would be deemed lost if no comms)
-//    * send an alert message immediately (with the usual 'likely-to-get-heard loudness settings)
+//    * send an alert message immediately (with the usual 'likely-to-get-heard' loudness settings)
 //      and possibly periodically until a new poll request comes in (as indicated by a call to setLEDsCO())
 bool tickUICO(const uint_fast8_t sec)
   {
@@ -1347,7 +1347,7 @@ bool tickUICO(const uint_fast8_t sec)
   oldButtonPressed = buttonPressed;
   if(buttonJustPressed)
     {
-    // Set the LED to solid red until upto the comms timeout.
+    // Set the LED to solid red until up to the comms timeout.
     // When the hub poll the LEDs will be set to whatever the poll specifies.
     setLEDsCO(1, MIN_BOOST_INTERVAL_M*2, 3, false);
     // If not still counting down since the last switch-state toggle,
@@ -1379,7 +1379,7 @@ bool tickUICO(const uint_fast8_t sec)
     setLEDs(lcCO);
 
     // Deal with flashing (non-solid) output here.
-    // Do some fiendly I/O polling while waiting!
+    // Do some friendly I/O polling while waiting!
     if(lfCO != 3)
       {
       // Make this the first flash.
