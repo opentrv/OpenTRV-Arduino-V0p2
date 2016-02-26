@@ -694,6 +694,62 @@ Source: www.centralsemi.com ..SOT-563PD.pdf</description>
 </deviceset>
 </devicesets>
 </library>
+<library name="DS1820">
+<description>Dallas DS1820 (TO-92)
+&lt;br&gt;
+&lt;a href="http://jayakody2000lk.wordpress.com"&gt;jayakody2000lk.wordpress.com&lt;/a&gt;</description>
+<packages>
+<package name="TO-92">
+<wire x1="-2.095" y1="-1.651" x2="-0.7869" y2="2.5484" width="0.1524" layer="21" curve="-111.097684"/>
+<wire x1="0.7869" y1="2.5484" x2="2.095" y2="-1.651" width="0.1524" layer="21" curve="-111.097684"/>
+<wire x1="-2.095" y1="-1.651" x2="2.095" y2="-1.651" width="0.1524" layer="21"/>
+<wire x1="-2.254" y1="-0.254" x2="-0.286" y2="-0.254" width="0.1524" layer="51"/>
+<wire x1="-2.655" y1="-0.254" x2="-2.254" y2="-0.254" width="0.1524" layer="21"/>
+<wire x1="-0.286" y1="-0.254" x2="0.286" y2="-0.254" width="0.1524" layer="21"/>
+<wire x1="2.254" y1="-0.254" x2="2.655" y2="-0.254" width="0.1524" layer="21"/>
+<wire x1="0.286" y1="-0.254" x2="2.254" y2="-0.254" width="0.1524" layer="51"/>
+<wire x1="-0.7864" y1="2.5484" x2="0.7864" y2="2.5484" width="0.1524" layer="51" curve="-34.298964"/>
+<pad name="1" x="-1.27" y="0" drill="0.8128" diameter="1.27" shape="octagon"/>
+<pad name="2" x="0" y="1.905" drill="0.8128" diameter="1.27" shape="octagon"/>
+<pad name="3" x="1.27" y="0" drill="0.8128" diameter="1.27" shape="octagon"/>
+<text x="2.413" y="1.651" size="1.27" layer="25" ratio="10">&gt;NAME</text>
+<text x="2.921" y="-1.27" size="1.27" layer="27" ratio="10">&gt;VALUE</text>
+</package>
+</packages>
+<symbols>
+<symbol name="1820">
+<wire x1="-7.62" y1="5.08" x2="7.62" y2="5.08" width="0.254" layer="94"/>
+<wire x1="7.62" y1="5.08" x2="7.62" y2="-5.08" width="0.254" layer="94"/>
+<wire x1="7.62" y1="-5.08" x2="-7.62" y2="-5.08" width="0.254" layer="94"/>
+<wire x1="-7.62" y1="-5.08" x2="-7.62" y2="5.08" width="0.254" layer="94"/>
+<text x="-7.62" y="6.35" size="1.778" layer="95">&gt;NAME</text>
+<text x="2.54" y="-7.62" size="1.778" layer="96">&gt;VALUE</text>
+<pin name="VDD" x="-10.16" y="2.54" length="short" direction="in"/>
+<pin name="GND" x="0" y="-7.62" length="short" direction="pwr" rot="R90"/>
+<pin name="DQ" x="10.16" y="2.54" length="short" direction="out" rot="R180"/>
+</symbol>
+</symbols>
+<devicesets>
+<deviceset name="DS1820" prefix="IC">
+<description>DS1820 - 1-Wire Digital Thermometer</description>
+<gates>
+<gate name="G$1" symbol="1820" x="0" y="0"/>
+</gates>
+<devices>
+<device name="" package="TO-92">
+<connects>
+<connect gate="G$1" pin="DQ" pad="2"/>
+<connect gate="G$1" pin="GND" pad="1"/>
+<connect gate="G$1" pin="VDD" pad="3"/>
+</connects>
+<technologies>
+<technology name=""/>
+</technologies>
+</device>
+</devices>
+</deviceset>
+</devicesets>
+</library>
 </libraries>
 <attributes>
 </attributes>
@@ -716,6 +772,7 @@ Source: www.centralsemi.com ..SOT-563PD.pdf</description>
 <part name="GND12" library="SparkFun-Aesthetics" deviceset="GND" device=""/>
 <part name="GND1" library="SparkFun-Aesthetics" deviceset="GND" device=""/>
 <part name="U$4" library="SHT21" deviceset="SHT21" device=""/>
+<part name="IC1" library="DS1820" deviceset="DS1820" device=""/>
 </parts>
 <sheets>
 <sheet>
@@ -751,6 +808,7 @@ Source: www.centralsemi.com ..SOT-563PD.pdf</description>
 <instance part="GND12" gate="1" x="259.08" y="241.3"/>
 <instance part="GND1" gate="1" x="256.54" y="180.34"/>
 <instance part="U$4" gate="G$1" x="241.3" y="182.88"/>
+<instance part="IC1" gate="G$1" x="157.48" y="185.42"/>
 </instances>
 <busses>
 </busses>
@@ -770,6 +828,9 @@ Source: www.centralsemi.com ..SOT-563PD.pdf</description>
 <wire x1="228.6" y1="182.88" x2="220.98" y2="182.88" width="0.1524" layer="91"/>
 <label x="215.9" y="182.88" size="1.778" layer="95"/>
 <pinref part="U$4" gate="G$1" pin="V+"/>
+</segment>
+<segment>
+<wire x1="134.62" y1="187.96" x2="147.32" y2="187.96" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="GND" class="1">
@@ -802,6 +863,9 @@ Source: www.centralsemi.com ..SOT-563PD.pdf</description>
 <pinref part="GND1" gate="1" pin="GND"/>
 <wire x1="254" y1="182.88" x2="256.54" y2="182.88" width="0.1524" layer="91"/>
 <pinref part="U$4" gate="G$1" pin="GND"/>
+</segment>
+<segment>
+<wire x1="157.48" y1="165.1" x2="157.48" y2="177.8" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="SDA" class="0">
@@ -836,6 +900,16 @@ Source: www.centralsemi.com ..SOT-563PD.pdf</description>
 <wire x1="165.1" y1="236.22" x2="157.48" y2="236.22" width="0.1524" layer="91"/>
 <label x="167.64" y="236.22" size="1.778" layer="95"/>
 <pinref part="I2C_EXT" gate="A" pin="9"/>
+</segment>
+</net>
+<net name="DQ" class="0">
+<segment>
+<pinref part="I2C_EXT" gate="A" pin="17"/>
+<wire x1="157.48" y1="246.38" x2="165.1" y2="246.38" width="0.1524" layer="91"/>
+<label x="167.64" y="246.38" size="1.778" layer="95"/>
+</segment>
+<segment>
+<wire x1="167.64" y1="187.96" x2="175.26" y2="187.96" width="0.1524" layer="91"/>
 </segment>
 </net>
 </nets>

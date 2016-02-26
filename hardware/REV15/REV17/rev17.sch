@@ -5182,24 +5182,6 @@ Source: http://www.mouser.com/ds/2/392/products_18-2245.pdf</description>
 <junction x="114.3" y="149.86"/>
 </segment>
 </net>
-<net name="N$20" class="0">
-<segment>
-<pinref part="RFM22B" gate="G$1" pin="RXANT"/>
-<wire x1="142.24" y1="157.48" x2="147.32" y2="157.48" width="0.1524" layer="91"/>
-<pinref part="RFM22B" gate="G$1" pin="GPIO0"/>
-<wire x1="147.32" y1="149.86" x2="142.24" y2="149.86" width="0.1524" layer="91"/>
-<wire x1="147.32" y1="157.48" x2="147.32" y2="149.86" width="0.1524" layer="91"/>
-</segment>
-</net>
-<net name="N$21" class="0">
-<segment>
-<pinref part="RFM22B" gate="G$1" pin="TXANT"/>
-<wire x1="142.24" y1="154.94" x2="149.86" y2="154.94" width="0.1524" layer="91"/>
-<pinref part="RFM22B" gate="G$1" pin="GPIO1"/>
-<wire x1="149.86" y1="147.32" x2="142.24" y2="147.32" width="0.1524" layer="91"/>
-<wire x1="149.86" y1="154.94" x2="149.86" y2="147.32" width="0.1524" layer="91"/>
-</segment>
-</net>
 <net name="N$26" class="2">
 <segment>
 <pinref part="ANT" gate="1" pin="P"/>

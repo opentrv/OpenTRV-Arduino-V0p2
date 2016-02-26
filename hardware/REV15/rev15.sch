@@ -8330,7 +8330,6 @@ Source: www.kingbright.com</description>
 <text x="7.62" y="10.16" size="1.778" layer="91"></text>
 <text x="7.62" y="10.16" size="1.778" layer="91">OF ANY KIND, either express or implied. See the Licence for the</text>
 <text x="7.62" y="7.62" size="1.778" layer="91">specific language governing permissions and limitations under the Licence.</text>
-<wire x1="93.98" y1="208.28" x2="45.72" y2="208.28" width="0.3048" layer="94"/>
 <wire x1="45.72" y1="208.28" x2="0" y2="208.28" width="0.3048" layer="94"/>
 <wire x1="157.48" y1="208.28" x2="157.48" y2="264.16" width="0.3048" layer="94"/>
 <wire x1="226.06" y1="208.28" x2="226.06" y2="264.16" width="0.3048" layer="94"/>
