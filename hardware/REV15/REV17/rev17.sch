@@ -5260,29 +5260,10 @@ Source: http://www.mouser.com/ds/2/392/products_18-2245.pdf</description>
 </sheet>
 </sheets>
 <errors>
-<approved hash="104,1,78.74,241.3,U1,+3.3V,VCC,,,"/>
-<approved hash="204,1,228.6,165.1,U2,VIN,,,,"/>
-<approved hash="104,1,228.6,162.56,U2,GND1,GND,,,"/>
-<approved hash="104,1,228.6,160.02,U2,GND2,GND,,,"/>
-<approved hash="104,1,228.6,157.48,U2,5V,5VGSM,,,"/>
-<approved hash="104,1,228.6,154.94,U2,3V,VCC,,,"/>
-<approved hash="104,1,165.1,63.5,IC2,GND1,GND,,,"/>
-<approved hash="104,1,165.1,91.44,IC2,VCC1,VCC,,,"/>
-<approved hash="104,1,165.1,68.58,IC2,GND/ANALOG,GND,,,"/>
-<approved hash="104,1,165.1,60.96,IC2,GND2,GND,,,"/>
-<approved hash="104,1,165.1,88.9,IC2,VCC2,VCC,,,"/>
-<approved hash="106,1,226.06,104.14,N$1,,,,,"/>
-<approved hash="106,1,226.06,101.6,N$5,,,,,"/>
-<approved hash="106,1,226.06,88.9,VOICE,,,,,"/>
+<approved hash="202,1,142.24,157.48,RFM22B,RXANT,,,,"/>
+<approved hash="202,1,142.24,154.94,RFM22B,TXANT,,,,"/>
 <approved hash="113,1,194.206,131.976,FRAME1,,,,,"/>
-<approved hash="113,1,203.522,236.474,LED,,,,,"/>
-<approved hash="113,1,24.6697,190.5,X1,,,,,"/>
-<approved hash="113,1,126.869,214.588,I2C_EXT,,,,,"/>
-<approved hash="113,1,358.462,128.27,LED1,,,,,"/>
-<approved hash="113,1,350.52,121.076,T1,,,,,"/>
-<approved hash="113,1,358.14,99.623,REL1,,,,,"/>
-<approved hash="113,1,342.17,91.44,X3,,,,,"/>
-<approved hash="113,1,137.439,202.027,DQ,,,,,"/>
+<approved hash="113,1,153.712,236.089,I2C_EXT,,,,,"/>
 </errors>
 </schematic>
 </drawing>
