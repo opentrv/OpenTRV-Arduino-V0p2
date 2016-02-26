@@ -831,6 +831,8 @@ Source: www.centralsemi.com ..SOT-563PD.pdf</description>
 </segment>
 <segment>
 <wire x1="134.62" y1="187.96" x2="147.32" y2="187.96" width="0.1524" layer="91"/>
+<pinref part="IC1" gate="G$1" pin="VDD"/>
+<label x="129.54" y="187.96" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="GND" class="1">
@@ -866,6 +868,8 @@ Source: www.centralsemi.com ..SOT-563PD.pdf</description>
 </segment>
 <segment>
 <wire x1="157.48" y1="165.1" x2="157.48" y2="177.8" width="0.1524" layer="91"/>
+<pinref part="IC1" gate="G$1" pin="GND"/>
+<label x="160.02" y="165.1" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="SDA" class="0">
@@ -910,35 +914,24 @@ Source: www.centralsemi.com ..SOT-563PD.pdf</description>
 </segment>
 <segment>
 <wire x1="167.64" y1="187.96" x2="175.26" y2="187.96" width="0.1524" layer="91"/>
+<pinref part="IC1" gate="G$1" pin="DQ"/>
+<label x="175.26" y="185.42" size="1.778" layer="95"/>
 </segment>
 </net>
 </nets>
 </sheet>
 </sheets>
 <errors>
-<approved hash="104,1,78.74,241.3,U1,+3.3V,VCC,,,"/>
-<approved hash="204,1,228.6,165.1,U2,VIN,,,,"/>
-<approved hash="104,1,228.6,162.56,U2,GND1,GND,,,"/>
-<approved hash="104,1,228.6,160.02,U2,GND2,GND,,,"/>
-<approved hash="104,1,228.6,157.48,U2,5V,5VGSM,,,"/>
-<approved hash="104,1,228.6,154.94,U2,3V,VCC,,,"/>
-<approved hash="104,1,165.1,63.5,IC2,GND1,GND,,,"/>
-<approved hash="104,1,165.1,91.44,IC2,VCC1,VCC,,,"/>
-<approved hash="104,1,165.1,68.58,IC2,GND/ANALOG,GND,,,"/>
-<approved hash="104,1,165.1,60.96,IC2,GND2,GND,,,"/>
-<approved hash="104,1,165.1,88.9,IC2,VCC2,VCC,,,"/>
-<approved hash="106,1,226.06,104.14,N$1,,,,,"/>
-<approved hash="106,1,226.06,101.6,N$5,,,,,"/>
-<approved hash="106,1,226.06,88.9,VOICE,,,,,"/>
+<approved hash="202,1,147.32,187.96,IC1,VDD,,,,"/>
+<approved hash="106,1,157.48,246.38,DQ,,,,,"/>
+<approved hash="111,1,147.32,187.96,VCC,,,,,"/>
+<approved hash="111,1,157.48,177.8,GND,,,,,"/>
+<approved hash="111,1,167.64,187.96,DQ,,,,,"/>
 <approved hash="113,1,194.206,131.976,FRAME1,,,,,"/>
-<approved hash="113,1,203.522,236.474,LED,,,,,"/>
-<approved hash="113,1,24.6697,190.5,X1,,,,,"/>
-<approved hash="113,1,126.869,214.588,I2C_EXT,,,,,"/>
-<approved hash="113,1,358.462,128.27,LED1,,,,,"/>
-<approved hash="113,1,350.52,121.076,T1,,,,,"/>
-<approved hash="113,1,358.14,99.623,REL1,,,,,"/>
-<approved hash="113,1,342.17,91.44,X3,,,,,"/>
-<approved hash="113,1,137.439,202.027,DQ,,,,,"/>
+<approved hash="113,1,153.712,236.089,I2C_EXT,,,,,"/>
+<approved hash="115,1,140.97,187.96,VCC,,,,,"/>
+<approved hash="115,1,171.45,187.96,DQ,,,,,"/>
+<approved hash="115,1,157.48,171.45,GND,,,,,"/>
 </errors>
 </schematic>
 </drawing>

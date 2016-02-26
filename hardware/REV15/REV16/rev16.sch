@@ -1369,13 +1369,10 @@ Standard 0603 ceramic capacitor, and 0.1" leaded capacitor.</description>
 </net>
 <net name="5V" class="1">
 <segment>
-<wire x1="81.28" y1="243.84" x2="83.82" y2="243.84" width="0.1524" layer="91"/>
-<wire x1="83.82" y1="243.84" x2="93.98" y2="243.84" width="0.1524" layer="91"/>
 <pinref part="USBPOWER" gate="G$1" pin="VCC"/>
-<wire x1="76.2" y1="251.46" x2="81.28" y2="251.46" width="0.1524" layer="91"/>
-<wire x1="81.28" y1="251.46" x2="81.28" y2="243.84" width="0.1524" layer="91"/>
-<junction x="76.2" y="251.46"/>
-<junction x="83.82" y="243.84"/>
+<wire x1="76.2" y1="251.46" x2="88.9" y2="251.46" width="0.1524" layer="91"/>
+<wire x1="88.9" y1="251.46" x2="88.9" y2="243.84" width="0.1524" layer="91"/>
+<label x="91.44" y="243.84" size="1.778" layer="95"/>
 </segment>
 <segment>
 <wire x1="215.9" y1="228.6" x2="218.44" y2="228.6" width="0.1524" layer="91"/>
@@ -1390,6 +1387,7 @@ Standard 0603 ceramic capacitor, and 0.1" leaded capacitor.</description>
 <label x="218.44" y="226.06" size="1.778" layer="95" rot="R180"/>
 <junction x="210.82" y="238.76"/>
 <wire x1="200.66" y1="238.76" x2="210.82" y2="238.76" width="0.1524" layer="91"/>
+<label x="198.12" y="238.76" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="N$8" class="1">
@@ -1409,29 +1407,13 @@ Standard 0603 ceramic capacitor, and 0.1" leaded capacitor.</description>
 </sheet>
 </sheets>
 <errors>
-<approved hash="104,1,78.74,241.3,U1,+3.3V,VCC,,,"/>
-<approved hash="204,1,228.6,165.1,U2,VIN,,,,"/>
-<approved hash="104,1,228.6,162.56,U2,GND1,GND,,,"/>
-<approved hash="104,1,228.6,160.02,U2,GND2,GND,,,"/>
-<approved hash="104,1,228.6,157.48,U2,5V,5VGSM,,,"/>
-<approved hash="104,1,228.6,154.94,U2,3V,VCC,,,"/>
-<approved hash="104,1,165.1,63.5,IC2,GND1,GND,,,"/>
-<approved hash="104,1,165.1,91.44,IC2,VCC1,VCC,,,"/>
-<approved hash="104,1,165.1,68.58,IC2,GND/ANALOG,GND,,,"/>
-<approved hash="104,1,165.1,60.96,IC2,GND2,GND,,,"/>
-<approved hash="104,1,165.1,88.9,IC2,VCC2,VCC,,,"/>
-<approved hash="106,1,226.06,104.14,N$1,,,,,"/>
-<approved hash="106,1,226.06,101.6,N$5,,,,,"/>
-<approved hash="106,1,226.06,88.9,VOICE,,,,,"/>
+<approved hash="104,1,251.46,238.76,U1,+3.3V,N$8,,,"/>
 <approved hash="113,1,194.206,131.976,FRAME1,,,,,"/>
-<approved hash="113,1,203.522,236.474,LED,,,,,"/>
-<approved hash="113,1,24.6697,190.5,X1,,,,,"/>
-<approved hash="113,1,126.869,214.588,I2C_EXT,,,,,"/>
-<approved hash="113,1,358.462,128.27,LED1,,,,,"/>
-<approved hash="113,1,350.52,121.076,T1,,,,,"/>
-<approved hash="113,1,358.14,99.623,REL1,,,,,"/>
-<approved hash="113,1,342.17,91.44,X3,,,,,"/>
-<approved hash="113,1,137.439,202.027,DQ,,,,,"/>
+<approved hash="113,1,9.8806,232.313,-,,,,,"/>
+<approved hash="113,1,9.8806,239.933,+,,,,,"/>
+<approved hash="113,1,153.712,236.089,I2C_EXT,,,,,"/>
+<approved hash="113,1,255.205,244.229,JP1,,,,,"/>
+<approved hash="115,1,82.55,243.84,5V,,,,,"/>
 </errors>
 </schematic>
 </drawing>
