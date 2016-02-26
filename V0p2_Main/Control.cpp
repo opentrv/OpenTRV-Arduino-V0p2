@@ -731,14 +731,16 @@ void sampleStats(const bool fullSample)
   static int8_t warmCount; // Sub-sample WARM count; initially zero, and zeroed after each full sample.
   if(inWarmMode()) { ++warmCount; } else { --warmCount; }
 #endif
+#if defined(ENABLE_AMBLIGHT_SENSOR)
   // Ambient light.
   const uint16_t ambLight = OTV0P2BASE::fnmin(AmbLight.get(), OTV0P2BASE::MAX_STATS_AMBLIGHT); // Constrain value at top end to avoid 'not set' value.
   static uint16_t ambLightTotal;
   ambLightTotal = firstSample ? ambLight : (ambLightTotal + ambLight);
+#endif
   const int tempC16 = TemperatureC16.get();
   static int tempC16Total;
   tempC16Total = firstSample ? tempC16 : (tempC16Total + tempC16);
-#ifdef ENABLE_OCCUPANCY_SUPPORT
+#if defined(ENABLE_OCCUPANCY_SUPPORT)
   const uint16_t occpc = Occupancy.get();
   static uint16_t occpcTotal;
   occpcTotal = firstSample ? occpc : (occpcTotal + occpc);
@@ -781,10 +783,12 @@ void sampleStats(const bool fullSample)
 #endif
   simpleUpdateStatsPair(V0P2BASE_EE_STATS_SET_TEMP_BY_HOUR, hh, temp);
 
+#if defined(ENABLE_AMBLIGHT_SENSOR)
   // Ambient light; last and smoothed data sets,
   simpleUpdateStatsPair(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR, hh, smartDivToU8(ambLightTotal, sc));
+#endif
 
-#ifdef ENABLE_OCCUPANCY_SUPPORT
+#if defined(ENABLE_OCCUPANCY_SUPPORT)
   // Occupancy confidence percent, if supported; last and smoothed data sets,
   simpleUpdateStatsPair(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR, hh, smartDivToU8(occpcTotal, sc));
 #endif 
@@ -1251,7 +1255,7 @@ static void wireComponentsTogether()
 // but can be called whenever user adjusts settings for example.
 static void updateSensorsFromStats()
   {
-#ifdef ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
+#if defined(ENABLE_AMBLIGHT_SENSOR) && defined(ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT)
   // Update with rolling stats to adapt to sensors and local environment.
   // ...and prevailing mode, so may take a while to adjust.
   AmbLight.setMinMax(
@@ -2039,7 +2043,7 @@ void loopOpenTRV()
     case 6: { txTick = OTV0P2BASE::randRNG8() & 3; break; } // Pick which of the 4 slots to use.
     case 8: case 10: case 12: case 14: if(0 != txTick--) { break; } // Only the slot where onSec is zero is used.
       {
-      if(!enableTrailingStatsPayload()) { break; } // Not allowed to send stuff like this.
+      if(!enableTrailingStatsPayload()) { break; } // Not allowed to send stats.
 #if defined(ENABLE_FHT8VSIMPLE)
       // Avoid transmit conflict with FS20; just drop the slot.
       // We should possibly choose between this and piggybacking stats to avoid busting duty-cycle rules.
@@ -2138,6 +2142,7 @@ void loopOpenTRV()
     case 50: { if(runAll) { RelHumidity.read(); } break; }
 #endif
 
+#if defined(ENABLE_AMBLIGHT_SENSOR)
     // Poll ambient light level at a fixed rate.
     // This allows the unit to respond consistently to (eg) switching lights on (eg TODO-388).
     case 52:
@@ -2151,6 +2156,7 @@ void loopOpenTRV()
       AmbLight.read();
       break;
       }
+#endif
 
     // At a hub, sample temperature regularly as late as possible in the minute just before recomputing valve position.
     // Force a regular read to make stats such as rate-of-change simple and to minimise lag.

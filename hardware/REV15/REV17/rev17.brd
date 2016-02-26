@@ -1820,7 +1820,10 @@ for trimmer refence see : &lt;u&gt;www.electrospec-inc.com/cross_references/trim
 <contactref element="C8" pad="C"/>
 <contactref element="C7" pad="1"/>
 <contactref element="RFM22B" pad="15"/>
-<wire x1="25.02" y1="32.4" x2="25.02" y2="20.4" width="0" layer="19" extent="1-1"/>
+<via x="25.4" y="38.1" extent="1-16" drill="0.5"/>
+<via x="21.59" y="29.21" extent="1-16" drill="0.5"/>
+<via x="20.32" y="35.56" extent="1-16" drill="0.5"/>
+<via x="43.18" y="29.21" extent="1-16" drill="0.5"/>
 </signal>
 <signal name="32KHZ">
 </signal>

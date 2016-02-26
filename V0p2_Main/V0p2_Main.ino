@@ -346,7 +346,7 @@ void optionalPOST()
      || (fastDigitalRead(BUTTON_LEARN2_L) == LOW)
 #endif
     )
-    { panic(F("button stuck")); }
+    { panic(F("button")); }
 //#else
 //    DEBUG_SERIAL_PRINT(fastDigitalRead(BUTTON_MODE_L)); DEBUG_SERIAL_PRINTLN(); // Should be BOOSTSWITCH_L for REV9.
 //    DEBUG_SERIAL_PRINT(fastDigitalRead(BUTTON_LEARN_L)); DEBUG_SERIAL_PRINTLN();
@@ -380,7 +380,7 @@ void optionalPOST()
 #if 0 && defined(DEBUG)
       DEBUG_SERIAL_PRINTLN_FLASHSTRING("32768Hz clock may not be running!");
 #endif
-      panic(F("Xtal?")); // Async clock not running.
+      panic(F("Xtal")); // Async clock not running.
       }
     }
 //  posPOST(2, F("slow RTC clock OK"));
@@ -408,12 +408,12 @@ void optionalPOST()
           count = t02-t01;
       }
       // Check end conditions
-      if((count < optimalLFClock+errorLFClock) & (count > optimalLFClock-errorLFClock)) break;
-      if(i > 30) panic();
+      if((count < optimalLFClock+errorLFClock) & (count > optimalLFClock-errorLFClock)) { break; }
+      if(i > 30) { panic(F("xtal")); }
       // Capture some entropy from the (chaotic?) clock wobble, but don't claim any.  (TODO-800)
       OTV0P2BASE::addEntropyToPool(count, 0);
-      // Also perturb the PRNG with essentially the same data (which is one reason not to claim entropy above).
-      OTV0P2BASE::seedRNG8(count, i, TCNT2);
+//      // Also perturb the PRNG with essentially the same data (which is one reason not to claim entropy above).
+//      OTV0P2BASE::seedRNG8(count, i, TCNT2);
     }
     // optionally print value to debug
 #if 0 && defined(DEBUG)
@@ -527,21 +527,23 @@ void setup()
   // This may mean that the alt loop/POST will have to initialise them explicitly,
   // and the initial seed entropy may be marginally reduced also.
 #if !defined(ALT_MAIN_LOOP) && !defined(UNIT_TESTS)
-  const int light = AmbLight.read();
-#if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("L: ");
-  DEBUG_SERIAL_PRINT(light);
-  DEBUG_SERIAL_PRINTLN();
-#endif
   const int heat = TemperatureC16.read();
-#if 0 && defined(DEBUG)
+#if 0 && defined(DEBUG) && !defined(ENABLE_TRIMMED_MEMORY)
   DEBUG_SERIAL_PRINT_FLASHSTRING("T: ");
   DEBUG_SERIAL_PRINT(heat);
   DEBUG_SERIAL_PRINTLN();
 #endif
-#ifdef HUMIDITY_SENSOR_SUPPORT
+#if defined(ENABLE_AMBLIGHT_SENSOR)
+  const int light = AmbLight.read();
+#if 0 && defined(DEBUG) && !defined(ENABLE_TRIMMED_MEMORY)
+  DEBUG_SERIAL_PRINT_FLASHSTRING("L: ");
+  DEBUG_SERIAL_PRINT(light);
+  DEBUG_SERIAL_PRINTLN();
+#endif
+#endif
+#if defined(HUMIDITY_SENSOR_SUPPORT)
   const uint8_t rh = RelHumidity.read();
-#if 0 && defined(DEBUG)
+#if 0 && defined(DEBUG) && !defined(ENABLE_TRIMMED_MEMORY)
   DEBUG_SERIAL_PRINT_FLASHSTRING("RH%: ");
   DEBUG_SERIAL_PRINT(rh);
   DEBUG_SERIAL_PRINTLN();
@@ -549,7 +551,7 @@ void setup()
 #endif
 #if defined(TEMP_POT_AVAILABLE)
   const int tempPot = TempPot.read();
-#if 0 && defined(DEBUG)
+#if 0 && defined(DEBUG) && !defined(ENABLE_TRIMMED_MEMORY)
   DEBUG_SERIAL_PRINT_FLASHSTRING("temp pot: ");
   DEBUG_SERIAL_PRINT(tempPot);
   DEBUG_SERIAL_PRINTLN();
@@ -561,7 +563,7 @@ void setup()
 #if !defined(ALT_MAIN_LOOP) && !defined(UNIT_TESTS)
   // Get current power supply voltage (internal sensor).
   const uint16_t Vcc = Supply_cV.read();
-#if 1 && defined(DEBUG)
+#if 1 && defined(DEBUG) && !defined(ENABLE_TRIMMED_MEMORY)
   DEBUG_SERIAL_PRINT_FLASHSTRING("Vcc: ");
   DEBUG_SERIAL_PRINT(Vcc);
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("cV");
@@ -592,7 +594,7 @@ void setup()
 #if defined(TEMP_POT_AVAILABLE)
                        ((((uint16_t)tempPot) << 3) + tempPot) ^
 #endif
-                       (light << 4) ^
+                       (AmbLight.get() << 4) ^
 #if defined(HUMIDITY_SENSOR_SUPPORT)
                        ((((uint16_t)rh) << 8) - rh) ^
 #endif
@@ -669,7 +671,7 @@ void setup()
   if(!OTV0P2BASE::ensureIDCreated())
     {
     if(!OTV0P2BASE::ensureIDCreated(true)) // Force reset.
-      { panic(F("!Bad ID: can't fix")); }
+      { panic(F("!Bad ID")); }
     }
 
 
@@ -677,7 +679,7 @@ void setup()
 //  pinMode(LED_HEATCALL, OUTPUT);
   LED_HEATCALL_OFF();
 
-#if defined(ENABLE_CLI) && !defined(ALT_MAIN_LOOP) && !defined(UNIT_TESTS) && !defined(ENABLE_TRIMMED_MEMORY)
+#if defined(ENABLE_CLI) && defined(ENABLE_CLI_HELP) && !defined(ALT_MAIN_LOOP) && !defined(UNIT_TESTS) && !defined(ENABLE_TRIMMED_MEMORY)
   // Help user get to CLI.
   OTV0P2BASE::serialPrintlnAndFlush(F("At CLI > prompt enter ? for help"));
 #endif
