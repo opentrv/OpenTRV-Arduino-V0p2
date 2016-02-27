@@ -29,6 +29,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #include "Messaging.h"
 #include <OTV0p2Base.h>
 
+
 // Special setup for OpenTRV beyond generic hardware setup.
 void setupOpenTRV();
 
