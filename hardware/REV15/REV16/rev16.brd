@@ -125,7 +125,7 @@
 </layers>
 <board>
 <plain>
-<text x="-5.318971875" y="13.33876875" size="1" layer="25" font="vector" rot="R180">20151208</text>
+<text x="47.62123125" y="13.731028125" size="1" layer="25" font="vector" rot="R270">20160229</text>
 <text x="13.950803125" y="1.684378125" size="1" layer="22" font="vector" rot="MR180">License: http://goo.gl/3d71UJ</text>
 <text x="19.416121875" y="0.70546875" size="1" layer="25" font="vector">OpenTRV.org.uk</text>
 <text x="2.54" y="24.13" size="1" layer="25" font="vector" rot="R270">Remove jumper 
@@ -723,8 +723,8 @@ We've spent an enormous amount of time creating and checking these footprints an
 </pass>
 </autorouter>
 <elements>
-<element name="U$2" library="logo" package="TONNE" value="" x="-9.025" y="25.81711875"/>
-<element name="U$1" library="ohw-logo" package="OSHW_10X200_NOTEXT" value="" x="-10.725834375" y="16.02610625"/>
+<element name="U$2" library="logo" package="TONNE" value="" x="37.965" y="33.43711875"/>
+<element name="U$1" library="ohw-logo" package="OSHW_10X200_NOTEXT" value="" x="12.134165625" y="8.40610625"/>
 <element name="-" library="wirepad" package="2,15/1,0" value="" x="48.58" y="32.17"/>
 <element name="+" library="wirepad" package="2,15/1,0" value="" x="48.58" y="19.37"/>
 <element name="USBPOWER" library="micro-usb-fci-10103592" package="MICRO-USB-FCI-10103592" value="MICRO-USB-FCI-10103592" x="3.2" y="34.401771875" rot="MR90"/>

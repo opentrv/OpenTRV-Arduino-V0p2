@@ -5071,8 +5071,7 @@ Source: http://www.mouser.com/ds/2/392/products_18-2245.pdf</description>
 <text x="7.62" y="17.78" size="1.778" layer="91">Unless required by applicable law or agreed to in writing, </text>
 <text x="7.62" y="15.24" size="1.778" layer="91">software, hardware and materials distributed under this Licence</text>
 <text x="7.62" y="12.7" size="1.778" layer="91">is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS</text>
-<text x="7.62" y="2.54" size="1.778" layer="91">Author(s) / Copyright (s): Bo Herrmannsen 2013--2014, Damon Hart-Davis 2013--2014, Mike Stirling 2013</text>
-<text x="289.56" y="33.02" size="1.778" layer="91">OpenTRV Wireless TRV Controller</text>
+<text x="7.62" y="2.54" size="1.778" layer="91">Author(s) / Copyright (s): Bo Herrmannsen 2013--2016, Damon Hart-Davis 2013--2016, Mike Stirling 2013</text>
 <text x="7.62" y="10.16" size="1.778" layer="91"></text>
 <text x="7.62" y="10.16" size="1.778" layer="91">OF ANY KIND, either express or implied. See the Licence for the</text>
 <text x="7.62" y="7.62" size="1.778" layer="91">specific language governing permissions and limitations under the Licence.</text>
