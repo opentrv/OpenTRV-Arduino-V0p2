@@ -65,8 +65,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
   static const char SIM900_APN[] PROGMEM      = "\"arkessa.net\",\"arkessa\",\"arkessa\""; // Arkessa
 
 // UDP Configs - Uncomment based on which server you want to send to
-//  static const char SIM900_UDP_ADDR[14] PROGMEM = "46.101.52.242"; // ORS server
-  static const char SIM900_UDP_ADDR[14] PROGMEM = "46.101.64.191";   // Brent server
+//  static const char SIM900_UDP_ADDR[14] PROGMEM = "0.0.0.0"; // ORS server
+  static const char SIM900_UDP_ADDR[14] PROGMEM = "0.0.0.0";   // Brent server
   static const char SIM900_UDP_PORT[5] PROGMEM = "9999";             // Standard port for OpenTRV servers
   const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config(
                                                   false,

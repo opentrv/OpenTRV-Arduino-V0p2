@@ -46,7 +46,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
   // FOR FLASH.
   static const char myPin[] PROGMEM = "0000";
   static const char myAPN[] PROGMEM = "m2mkit.telefonica.com";
-  static const char myUDPAddr[] PROGMEM = "46.101.64.191";
+  static const char myUDPAddr[] PROGMEM = "0.0.0.0";
   static const char myUDPPort[] PROGMEM = "9999";
 
 
@@ -113,7 +113,7 @@ void POSTalt()
 //
 //  const char myPin[] PROGMEM = "0000";
 //  const char myAPN[] PROGMEM = "m2mkit.telefonica.com"; // FIXME check this
-//  const char myUDPAddr[] PROGMEM = "46.101.52.242";
+//  const char myUDPAddr[] PROGMEM = "0.0.0.0";
 //  const char myUDPPort[] PROGMEM = "9999";
 //  static const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config {
 //                                                  false,
