@@ -125,7 +125,7 @@
 </layers>
 <board>
 <plain>
-<text x="-5.318971875" y="13.33876875" size="1" layer="25" font="vector" rot="R180">20151208</text>
+<text x="47.62123125" y="12.461028125" size="1" layer="25" font="vector" rot="R270">20160229</text>
 <text x="36.849196875" y="0.855621875" size="1" layer="22" font="vector" rot="MR0">License: http://goo.gl/3d71UJ</text>
 <text x="31.383878125" y="1.83453125" size="1" layer="25" font="vector" rot="R180">OpenTRV.org.uk</text>
 <wire x1="0" y1="0" x2="0" y2="50" width="0.4064" layer="20"/>
@@ -1833,7 +1833,7 @@ Source: http://www.osram.convergy.de/ ... Lb_q993.pdf</description>
 <element name="R7" library="resistor" package="R0603" value="470R" x="19.978165625" y="5.225" smashed="yes">
 <attribute name="NAME" x="17.440165625" y="5.0265" size="1" layer="25" font="vector" rot="R90"/>
 </element>
-<element name="U$2" library="logo" package="TONNE" value="" x="-7.755" y="27.08711875"/>
+<element name="U$2" library="logo" package="TONNE" value="" x="41.775" y="32.16711875"/>
 <element name="R2" library="resistor" package="R0603" value="4.7K" x="30.006046875" y="29.3970875" smashed="yes" rot="R270">
 <attribute name="NAME" x="30.47489375" y="31.03400625" size="1" layer="25" font="vector" rot="R90"/>
 </element>
@@ -1850,7 +1850,7 @@ Source: http://www.osram.convergy.de/ ... Lb_q993.pdf</description>
 <element name="C10" library="resistor" package="C0603" value="100nF" x="39.9293875" y="17.25869375" smashed="yes">
 <attribute name="NAME" x="41.212525" y="15.8739" size="1" layer="25" font="vector" rot="R180"/>
 </element>
-<element name="U$1" library="ohw-logo" package="OSHW_10X200_NOTEXT" value="" x="-10.725834375" y="16.02610625"/>
+<element name="U$1" library="ohw-logo" package="OSHW_10X200_NOTEXT" value="" x="4.514165625" y="26.18610625"/>
 <element name="C12" library="resistor" package="C0603" value="100nF" x="40.08" y="21.19" smashed="yes">
 <attribute name="NAME" x="41.160225" y="19.938" size="1" layer="25" font="vector" rot="R180"/>
 </element>

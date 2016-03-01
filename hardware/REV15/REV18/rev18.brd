@@ -125,7 +125,7 @@
 </layers>
 <board>
 <plain>
-<text x="-5.318971875" y="13.33876875" size="1" layer="25" font="vector" rot="R180">20151208</text>
+<text x="47.62123125" y="13.731028125" size="1" layer="25" font="vector" rot="R270">20160229</text>
 <text x="36.849196875" y="2.125621875" size="1" layer="22" font="vector" rot="MR0">License: http://goo.gl/3d71UJ</text>
 <text x="28.843878125" y="3.10453125" size="1" layer="25" font="vector" rot="R180">OpenTRV.org.uk</text>
 <text x="2.54" y="24.13" size="1" layer="25" rot="R270">SHT21</text>
@@ -653,8 +653,8 @@ Source: www.centralsemi.com ..SOT-563PD.pdf</description>
 </pass>
 </autorouter>
 <elements>
-<element name="U$2" library="logo" package="TONNE" value="" x="-9.025" y="25.81711875"/>
-<element name="U$1" library="ohw-logo" package="OSHW_10X200_NOTEXT" value="" x="-10.725834375" y="16.02610625"/>
+<element name="U$2" library="logo" package="TONNE" value="" x="39.235" y="32.16711875"/>
+<element name="U$1" library="ohw-logo" package="OSHW_10X200_NOTEXT" value="" x="22.294165625" y="7.13610625"/>
 <element name="I2C_EXT" library="pinhead" package="2X10" value="" x="18.05" y="45.905" smashed="yes">
 <attribute name="NAME" x="23.13" y="41.46" size="1.27" layer="25" ratio="10"/>
 <attribute name="VALUE" x="5.35" y="41.46" size="1.27" layer="27"/>
