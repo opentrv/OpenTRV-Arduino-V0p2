@@ -286,9 +286,6 @@ static bool FilterRXISR(const volatile uint8_t *buf, volatile uint8_t &buflen)
 // Aborts with a call to panic() if a test fails.
 void optionalPOST()
   {
-  // Capture early sub-cycle time to help ensure that the 32768Hz async clock is actually running.
-  const uint8_t earlySCT = OTV0P2BASE::getSubCycleTime();
-
 //  posPOST(1, F("about to test radio module"));
 
 // FIXME  This section needs refactoring

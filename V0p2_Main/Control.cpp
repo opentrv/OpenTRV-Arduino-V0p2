@@ -2065,7 +2065,9 @@ void loopOpenTRV()
 #endif
 
       // Stats TX in the minute after all sensors should have been polled (so that readings are fresh).
+#if !defined(ENABLE_FREQUENT_STATS_TX)
       if(minute1From4AfterSensors)
+#endif
         {
         // Sleep randomly up to 25% of the minor cycle
         // to spread transmissions and thus help avoid collisions.
