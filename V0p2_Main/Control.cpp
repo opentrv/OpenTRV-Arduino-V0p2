@@ -873,7 +873,6 @@ void populateCoreStats(OTV0P2BASE::FullStatsMessageCore_t *const content)
 #endif // ENABLE_FS20_ENCODING_SUPPORT
 
 
-
 // Call this to do an I/O poll if needed; returns true if something useful definitely happened.
 // This call should typically take << 1ms at 1MHz CPU.
 // Does not change CPU clock speeds, mess with interrupts (other than possible brief blocking), or sleep.
