@@ -92,6 +92,8 @@ void panic()
 // Panic with fixed message.
 void panic(const __FlashStringHelper *s)
   {
+  OTV0P2BASE::serialPrintlnAndFlush(); // Start new line to highlight error.  // May fail.
+  OTV0P2BASE::serialPrintAndFlush('!'); // Indicate error with leading '!' // May fail.
   OTV0P2BASE::serialPrintlnAndFlush(s); // May fail.
   panic();
   }
