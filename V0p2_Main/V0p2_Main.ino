@@ -99,7 +99,6 @@ void panic(const __FlashStringHelper *s)
   }
 
 
-
 // Signal position in basic POST sequence as a small positive integer, or zero for done/none.
 // Simple count of position in ON flashes.
 // LED is assumed to be ON upon entry, and is left ON at exit.
@@ -330,7 +329,6 @@ void optionalPOST()
   // Assume no RX nor filtering on secondary radio.
 #endif // ENABLE_RADIO_SECONDARY_MODULE
 
-
 //  posPOST(1, F("Radio OK, checking buttons/sensors and xtal"));
 
 // Buttons should not be activated DURING boot for user-facing boards; an activated button implies a fault.
@@ -490,7 +488,6 @@ void setup()
 #endif
 #endif
 
-
 #if !defined(ALT_MAIN_LOOP) && !defined(UNIT_TESTS)
   // Get current power supply voltage (internal sensor).
   const uint16_t Vcc = Supply_cV.read();
@@ -513,7 +510,6 @@ void setup()
 #endif
 #endif
 
-
 #if !defined(ALT_MAIN_LOOP) && !defined(UNIT_TESTS)
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("Computing initial target/demand...");
@@ -524,7 +520,6 @@ void setup()
 #endif
 #endif
 
-
   // Ensure that the unique node ID is set up (mainly on first use).
   // Have one attempt (don't want to stress an already failing EEPROM) to force-reset if not good, then panic.
   // Needs to have had entropy gathered, etc.
@@ -534,9 +529,7 @@ void setup()
       { panic(F("!Bad ID")); }
     }
 
-
-  // Initialised: turn heatcall UI LED off.
-//  pinMode(LED_HEATCALL, OUTPUT);
+  // Initialised: turn main/heatcall UI LED off.
   LED_HEATCALL_OFF();
 
 #if defined(ENABLE_CLI) && defined(ENABLE_CLI_HELP) && !defined(ALT_MAIN_LOOP) && !defined(UNIT_TESTS) && !defined(ENABLE_TRIMMED_MEMORY)
@@ -551,12 +544,6 @@ void setup()
   setupOpenTRV();
 #endif
   }
-
-
-
-
-
-
 
 
 //========================================
