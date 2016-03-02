@@ -151,7 +151,7 @@ static const char _YYYYMmmDD[] =
   '/',
   __DATE__[0], __DATE__[1], __DATE__[2],
   '/',
-  __DATE__[4], __DATE__[5],
+  ((' ' == __DATE__[4]) ? '0' : __DATE__[4]), __DATE__[5],
   '\0'
   };
 // Version (code/board) information printed as one line to serial (with line-end, and flushed); machine- and human- parseable.
@@ -160,7 +160,7 @@ void serialPrintlnBuildVersion()
   {
   OTV0P2BASE::serialPrintAndFlush(F("board V0.2 REV"));
   OTV0P2BASE::serialPrintAndFlush(V0p2_REV);
-  OTV0P2BASE::serialPrintAndFlush(F(" "));
+  OTV0P2BASE::serialPrintAndFlush(' ');
   OTV0P2BASE::serialPrintAndFlush(_YYYYMmmDD);
   OTV0P2BASE::serialPrintlnAndFlush(F(" " __TIME__));
   }
