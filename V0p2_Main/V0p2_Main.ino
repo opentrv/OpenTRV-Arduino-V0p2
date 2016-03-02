@@ -37,10 +37,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #include <OTAESGCM.h>
 #endif
 
-#include <util/crc16.h>
-#include <avr/eeprom.h>
-#include <avr/pgmspace.h> // for radio config
-
 #include "V0p2_Main.h"
 
 #include "V0p2_Generic_Config.h"
@@ -206,9 +202,9 @@ static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChanne
 #endif // ENABLE_RADIO_PRIMARY_RFM23B
 
 
-#ifdef ENABLE_RADIO_SECONDARY_SIM900
+#if defined(ENABLE_RADIO_SECONDARY_SIM900)
 static const OTRadioLink::OTRadioChannelConfig SecondaryRadioConfig(&SIM900Config, true);
-#else
+#elif defined(ENABLE_RADIO_SECONDARY_MODULE)
 static const OTRadioLink::OTRadioChannelConfig SecondaryRadioConfig(NULL, true);
 #endif // ENABLE_RADIO_SECONDARY_SIM900
 
