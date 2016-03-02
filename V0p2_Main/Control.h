@@ -295,6 +295,10 @@ class ModelledRadValve : public OTRadValve::AbstractRadValve
     // Marked volatile for thread-safe lock-free access.
     volatile bool underTarget;
 
+    // The current automated setback (if any) in the direction of energy saving in C; non-negative.
+    // Not intended for ISR/threaded access.
+    uint8_t setbackC;
+
     // True if in glacial mode.
     // TODO: not fully implemented.
     bool glacial;
@@ -317,6 +321,7 @@ class ModelledRadValve : public OTRadValve::AbstractRadValve
     ModelledRadValve()
       : inputState(0),
         callingForHeat(false), underTarget(false),
+        setbackC(0),
 #if defined(TRV_SLEW_GLACIAL)
         glacial(true)
 #else
@@ -411,6 +416,18 @@ class ModelledRadValve : public OTRadValve::AbstractRadValve
     // The lifetime of the pointed-to text must be at least that of this instance.
     const char *tagTTC() const { return("tT|C"); }
 
+    // Get the current automated setback (if any) in the direction of energy saving in C; non-negative.
+    // For heating this is the number of C below the nominal user-set target temperature
+    // that getTargetTempC() is; zero if no setback is in effect.
+    // Generally will be 0 in FROST or BAKE modes.
+    // Not ISR-/thread- safe.
+    uint8_t getSetbackC() const { return(setbackC); }
+
+    // Returns a suggested (JSON) tag/field/key name including units of getSetbackC(); not NULL.
+    // It would often be appropriate to mark this as low priority since depth of setback matters more than speed.
+    // The lifetime of the pointed-to text must be at least that of this instance.
+    const char *tagTSC() const { return("tS|C"); }
+
     // Stateless directly-testable version behind computeTargetTemperature().
     static uint8_t computeTargetTemp();
 
@@ -439,6 +456,7 @@ class ModelledRadValve : public OTRadValve::AbstractRadValve
     static uint8_t computeRequiredTRVPercentOpen(uint8_t valvePCOpen, const struct ModelledRadValveInputState &inputState, struct ModelledRadValveState &retainedState);
 
     // Get cumulative valve movement %; rolls at 8192 in range [0,8191], ie non-negative.
+    // It would often be appropriate to mark this as low priority since it can be computed from valve positions.
     uint16_t getCumulativeMovementPC() { return(retainedState.cumulativeMovementPC); }
 
     // Returns a suggested (JSON) tag/field/key name including units of getCumulativeMovementPC(); not NULL.
