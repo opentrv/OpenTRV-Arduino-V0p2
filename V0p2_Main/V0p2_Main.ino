@@ -155,7 +155,7 @@ static const char _YYYYMmmDD[] =
   '\0'
   };
 // Version (code/board) information printed as one line to serial (with line-end, and flushed); machine- and human- parseable.
-// Format: "board VXXXX REVY; YYYY/Mmm/DD HH:MM:SS".
+// Format: "board VX.X REVY YYYY/Mmm/DD HH:MM:SS".
 void serialPrintlnBuildVersion()
   {
   OTV0P2BASE::serialPrintAndFlush(F("board V0.2 REV"));
