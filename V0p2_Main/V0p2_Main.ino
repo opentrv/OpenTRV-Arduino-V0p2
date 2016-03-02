@@ -286,9 +286,6 @@ static bool FilterRXISR(const volatile uint8_t *buf, volatile uint8_t &buflen)
 // Aborts with a call to panic() if a test fails.
 void optionalPOST()
   {
-  // Capture early sub-cycle time to help ensure that the 32768Hz async clock is actually running.
-  const uint8_t earlySCT = OTV0P2BASE::getSubCycleTime();
-
 //  posPOST(1, F("about to test radio module"));
 
 // FIXME  This section needs refactoring
@@ -354,78 +351,10 @@ void optionalPOST()
 //    DEBUG_SERIAL_PRINT(fastDigitalRead(BUTTON_LEARN_L)); DEBUG_SERIAL_PRINTLN();
 //    DEBUG_SERIAL_PRINT(fastDigitalRead(BUTTON_LEARN2_L)); DEBUG_SERIAL_PRINTLN(); // AKA WINDOW SWITCH
 #endif
-#endif // select user-facing boards.
+#endif // Select user-facing boards.
 
 #if defined(ENABLE_WAKEUP_32768HZ_XTAL)
-  // Check that the 32768Hz async clock is actually running having done significant CPU-intensive work.
-  const uint8_t laterSCT = OTV0P2BASE::getSubCycleTime();
-  if(laterSCT == earlySCT)
-    {
-#if defined(ENABLE_WAKEUP_32768HZ_XTAL)
-    // Allow extra time for 32768Hz crystal to start reliably, see: http://www.atmel.com/Images/doc1259.pdf
-#if 0 && defined(DEBUG)
-    DEBUG_SERIAL_PRINTLN_FLASHSTRING("Sleeping to let 32768Hz clock start...");
-#endif
-    // Time spent here should not be a whole multiple of basic cycle time to avoid a spuriously-stationary async clock reading!
-    // Allow several seconds to start.
-    // Attempt to capture some entropy while waiting, implicitly from oscillator start-up time if nothing else.
-    for(uint8_t i = 255; (--i > 0) && (earlySCT == OTV0P2BASE::getSubCycleTime()); )
-      {
-      OTV0P2BASE::addEntropyToPool(OTV0P2BASE::clockJitterWDT() ^ OTV0P2BASE::noisyADCRead(), 1); // Conservatively hope for at least 1 bit from combined sources!
-      OTV0P2BASE::nap(WDTO_15MS); // Ensure lower mount of ~3s until loop finishes.
-      OTV0P2BASE::captureEntropy1(); // Have other fun, though likely largely ineffective at this stage.
-      }
-#endif
-    const uint8_t latestSCT = OTV0P2BASE::getSubCycleTime();
-    if(latestSCT == earlySCT)
-      {
-#if 0 && defined(DEBUG)
-      DEBUG_SERIAL_PRINTLN_FLASHSTRING("32768Hz clock may not be running!");
-#endif
-      panic(F("Xtal")); // Async clock not running.
-      }
-    }
-//  posPOST(2, F("slow RTC clock OK"));
-#if 1 // Probationary Xtal sanity check
-  // Test low frequency oscillator vs main clock oscillator.
-  // Tests clock frequency with 15 ms nap in between for up to 30 cycles and panics if not within bounds.
-  // As of 2016-02-16, all working REV7s give count >= 120 and that fail to program via bootloader give count <= 119
-  // REV10 gives 119-120 (only one tested though)
-  {
-    static const uint8_t optimalLFClock = 122; // might be optimal...
-    static const uint8_t errorLFClock = 4; // max drift from allowed value
-    uint8_t count = 0;
-    for(uint8_t i = 0; ; i++) {
-      ::OTV0P2BASE::nap(WDTO_15MS);
-      ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
-      // wait for edge on xtal counter
-      // start counting cycles
-      // on next edge, stop
-          const uint8_t t0 = TCNT2;
-          while(t0 == TCNT2) {}
-          const uint8_t t01 = TCNT0;
-          const uint8_t t1 = TCNT2;
-          while(t1 == TCNT2) {}
-          const uint8_t t02 = TCNT0;
-          count = t02-t01;
-      }
-      // Check end conditions
-      if((count < optimalLFClock+errorLFClock) & (count > optimalLFClock-errorLFClock)) { break; }
-      if(i > 30) { panic(F("xtal")); }
-      // Capture some entropy from the (chaotic?) clock wobble, but don't claim any.  (TODO-800)
-      OTV0P2BASE::addEntropyToPool(count, 0);
-//      // Also perturb the PRNG with essentially the same data (which is one reason not to claim entropy above).
-//      OTV0P2BASE::seedRNG8(count, i, TCNT2);
-    }
-    // optionally print value to debug
-#if 0 && defined(DEBUG)
-    DEBUG_SERIAL_PRINT_FLASHSTRING("Xtal freq check: ");
-    DEBUG_SERIAL_PRINT(count);
-    DEBUG_SERIAL_PRINTLN();
-#endif
-  }
-#endif // Probationary Xtal sanity check
-
+  if(!::OTV0P2BASE::HWTEST::check32768HzOsc()) { panic(F("Xtal")); } // Async clock not running correctly.
 #else
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("(No xtal.)");
 #endif
