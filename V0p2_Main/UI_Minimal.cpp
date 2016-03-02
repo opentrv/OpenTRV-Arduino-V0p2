@@ -1246,7 +1246,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         if((n >= 3) && (NULL != (tok1 = strtok_r(buf+2, " ", &last))))
           {
           const uint8_t tempC = (uint8_t) atoi(tok1);
-          if(!setWARMTargetC(tempC)) { InvalidIgnored(); }
+          if(!setWARMTargetC(tempC)) { OTV0P2BASE::CLI::InvalidIgnored(); }
           }
         else
 #endif
