@@ -1073,9 +1073,17 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
     // writeJSON() requires two further bytes including one for the trailing '\0'.
     uint8_t ptextBuf[maxSecureJSONSize + 2];
 
+    // Allow for a cap on JSON TX size, eg where TX is lossy for near-maximum sizes.
+    // This can only reduce the maximum size, and it should not try to make it silly small.
+#if defined(ENABLE_JSON_STATS_LEN_CAP)
+    static const uint8_t max_plaintext_JSON_len = min(OTV0P2BASE::MSG_JSON_MAX_LENGTH, ENABLE_JSON_STATS_LEN_CAP);
+#else
+    static const uint8_t max_plaintext_JSON_len = OTV0P2BASE::MSG_JSON_MAX_LENGTH;
+#endif
+
     // Redirect JSON output appropriately.
     uint8_t *const bufJSON = doEnc ? ptextBuf : bptr;
-    const uint8_t bufJSONlen = doEnc ? sizeof(ptextBuf) : min(OTV0P2BASE::MSG_JSON_MAX_LENGTH+2, sizeof(buf) - (bptr-buf));
+    const uint8_t bufJSONlen = doEnc ? sizeof(ptextBuf) : min(max_plaintext_JSON_len+2, sizeof(buf) - (bptr-buf));
 
     // Number of bytes written for body.
     // For non-secure, this is the size of the JSON text.
