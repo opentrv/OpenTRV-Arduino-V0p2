@@ -443,6 +443,9 @@ void ModelledRadValve::recalibrate()
 // TODO: unit tests confirming that it is possible to reach all setback levels other than at highest comfort settings.
 uint8_t ModelledRadValve::computeTargetTemp()
   {
+  // By default, the setback is regarded as zero/off.
+  setbackC = 0;
+
   // In FROST mode.
   if(!inWarmMode())
     {
@@ -547,7 +550,13 @@ uint8_t ModelledRadValve::computeTargetTemp()
                   ((dm > (uint8_t)min(254, 60*minVacantAndDarkForFULLSetbackH)) && (Occupancy.getVacancyH() >= minVacantAndDarkForFULLSetbackH)))))) ?
               SETBACK_FULL : SETBACK_ECO);
 
-      return(OTV0P2BASE::fnmax((uint8_t)(wt - setback), getFROSTTargetC())); // Target must never be set low enough to create a frost/freeze hazard.
+      // Target must never be set low enough to create a frost/freeze hazard.
+      const uint8_t newTarget = OTV0P2BASE::fnmax((uint8_t)(wt - setback), getFROSTTargetC());
+
+      // Explicitly compute the actual setback for monitoring purposes.
+      if(newTarget < wt) { setbackC = wt - newTarget; }
+
+      return(newTarget);
       }
     // Else use WARM target as-is.
     return(wt);
@@ -1036,11 +1045,13 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
     ss1.put(AmbLight); // Always send ambient light level (assuming sensor is present).
 #endif // ENABLE_AMBLIGHT_SENSOR
 #ifdef ENABLE_VOICE_STATS
-    ss1.put(Voice);	// FIXME voice stats
+    ss1.put(Voice);
 #endif // ENABLE_VOICE_STATS
-#if defined(ENABLE_LOCAL_TRV) // Deploying as sensor unit, not TRV controller, so show all sensors and no TRV stuff.
+#if defined(ENABLE_LOCAL_TRV)
+    // Show TRV-related stats since enabled.
     ss1.put(NominalRadValve);
     ss1.put(NominalRadValve.tagTTC(), NominalRadValve.getTargetTempC());
+    ss1.put(NominalRadValve.tagTSC(), NominalRadValve.getSetbackC(), true); // Low priority; depth matters more than speed.
 #if !defined(ENABLE_TRIMMED_BANDWIDTH)
     ss1.put(NominalRadValve.tagCMPC(), NominalRadValve.getCumulativeMovementPC(), true); // Low priority as notionally redundant.
 #endif // !defined(ENABLE_TRIMMED_BANDWIDTH)
