@@ -348,11 +348,11 @@ if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX bad secure header"); }
     // Look up the full node ID of the sender in the associations table,
     // and if successful then attempt to decode the message.
     const int8_t index = OTV0P2BASE::getNextMatchingNodeID(0, sfh.id, sfh.getIl(), senderNodeID);
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
     if(index < 0) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX no assoc"); }
 #endif
     isOK = (index >= 0) &&
-           (0 != OTRadioLink::decodeSecureSmallFrameFromID(&sfh, msg-1, msglen+1,
+           (0 != OTRadioLink::SimpleSecureFrame32or0BodyV0p2::getInstance().decodeSecureSmallFrameFromID(&sfh, msg-1, msglen+1,
                               OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_STATELESS,
                               senderNodeID, sizeof(senderNodeID),
                               NULL, key,
