@@ -144,7 +144,7 @@ void POSTalt()
   // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
   PrimaryRadio.preinit(NULL);
   // Check that the radio is correctly connected; panic if not...
-  if(!PrimaryRadio.configure(1, &RFMConfig) || !PrimaryRadio.begin()) { panic(F("PANIC!")); }
+  if(!PrimaryRadio.configure(1, &RFMConfig) || !PrimaryRadio.begin()) { panic(F("r1")); }
 #endif
 
 
