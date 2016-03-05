@@ -1146,7 +1146,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
     if(!sendingJSONFailed && doEnc)
       {
 #if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
-      const OTRadioLink::SimpleSecureFrame32or0BodyBase::fixed32BTextSize12BNonce16BTagSimpleEnc_ptr_t e = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_STATELESS;
+      const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEnc_ptr_t e = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_STATELESS;
       const uint8_t txIDLen = OTRadioLink::ENC_BODY_DEFAULT_ID_BYTES;
       // When sending on a channel with framing, do not explicitly send the frame length byte.
       const uint8_t offset = framed ? 1 : 0;
@@ -1158,7 +1158,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
       // Distinguished 'invalid' valve position; never mistaken for a real valve.
       const uint8_t valvePC = 0x7f;
 #endif // defined(ENABLE_NOMINAL_RAD_VALVE)
-      const uint8_t bodylen = OTRadioLink::SimpleSecureFrame32or0BodyV0p2::getInstance().generateSecureOFrameRawForTX(
+      const uint8_t bodylen = OTRadioLink::SimpleSecureFrame32or0BodyTXV0p2::getInstance().generateSecureOFrameRawForTX(
             realTXFrameStart - offset, sizeof(buf) - (realTXFrameStart-buf) + offset,
             txIDLen, valvePC, (const char *)bufJSON, e, NULL, key);
       sendingJSONFailed = (0 == bodylen);
