@@ -349,16 +349,16 @@ if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX bad secure header"); }
     // and if successful then attempt to decode the message.
     const int8_t index = OTV0P2BASE::getNextMatchingNodeID(0, sfh.id, sfh.getIl(), senderNodeID);
 #if 0 && defined(DEBUG)
-    if(index < 0) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX no assoc"); }
+    if(index < 0) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX assoc"); }
 #endif
     isOK = (index >= 0) &&
-           (0 != OTRadioLink::SimpleSecureFrame32or0BodyV0p2::getInstance().decodeSecureSmallFrameFromID(&sfh, msg-1, msglen+1,
+           (0 != OTRadioLink::SimpleSecureFrame32or0BodyRXV0p2::getInstance().decodeSecureSmallFrameFromID(&sfh, msg-1, msglen+1,
                               OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_STATELESS,
                               senderNodeID, sizeof(senderNodeID),
                               NULL, key,
                               secBodyBuf, sizeof(secBodyBuf), decryptedBodyOutSize));
 #if 1 && defined(DEBUG)
-    if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX assoc/auth"); }
+    if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX assoc/auth"); } // Missing association or filed auth.
 #endif
     }
 
@@ -378,7 +378,7 @@ DEBUG_SERIAL_PRINTLN();
     // Beacon / Alive frame, non-secure.
     case OTRadioLink::FTS_ALIVE:
       {
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
 DEBUG_SERIAL_PRINTLN_FLASHSTRING("Beacon nonsecure");
 #endif
       // Ignores any body data.
@@ -388,13 +388,13 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Beacon nonsecure");
     // Beacon / Alive frame, secure.
     case OTRadioLink::FTS_ALIVE | 0x80:
       {
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
 DEBUG_SERIAL_PRINTLN_FLASHSTRING("Beacon");
 #endif
       // Does not expect any body data.
       if(decryptedBodyOutSize != 0)
         {
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
 DEBUG_SERIAL_PRINT_FLASHSTRING("!Beacon data ");
 DEBUG_SERIAL_PRINT(decryptedBodyOutSize);
 DEBUG_SERIAL_PRINTLN();
