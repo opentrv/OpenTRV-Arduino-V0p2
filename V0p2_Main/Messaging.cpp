@@ -345,20 +345,26 @@ if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX bad secure header"); }
   uint8_t senderNodeID[OTV0P2BASE::OpenTRV_Node_ID_Bytes];
   if(secureFrame && isOK)
     {
-    // Look up the full node ID of the sender in the associations table,
-    // and if successful then attempt to decode the message.
-    const int8_t index = OTV0P2BASE::getNextMatchingNodeID(0, sfh.id, sfh.getIl(), senderNodeID);
-#if 0 && defined(DEBUG)
-    if(index < 0) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX assoc"); }
-#endif
-    isOK = (index >= 0) &&
-           (0 != OTRadioLink::SimpleSecureFrame32or0BodyRXV0p2::getInstance()._decodeSecureSmallFrameFromID(&sfh, msg-1, msglen+1,
-                              OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_STATELESS,
-                              senderNodeID, sizeof(senderNodeID),
-                              NULL, key,
-                              secBodyBuf, sizeof(secBodyBuf), decryptedBodyOutSize));
-#if 1 && defined(DEBUG)
-    if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX assoc/auth"); } // Missing association or filed auth.
+    // Look up full ID in associations table,
+    // validate RX message counter,
+    // authenticate and decrypt,
+    // update RX message counter.
+    isOK = (0 != OTRadioLink::SimpleSecureFrame32or0BodyRXV0p2::getInstance().decodeSecureSmallFrameSafely(&sfh, msg-1, msglen+1,
+                                            OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_STATELESS,
+                                            NULL, key,
+                                            secBodyBuf, sizeof(secBodyBuf), decryptedBodyOutSize,
+                                            senderNodeID,
+                                            true));
+#if 1 // && defined(DEBUG)
+    if(!isOK)
+      {
+      // Useful network diagnostics: a couple of bytes of the claimed ID of rejected frames.
+      // Warnings rather than errors because there may legitimately be multiple disjoint networks.
+      OTV0P2BASE::serialPrintAndFlush(F("?RX assoc/auth")); // Missing association or failed auth.
+      if(sfh.getIl() > 0) { OTV0P2BASE::serialPrintAndFlush(' '); OTV0P2BASE::serialPrintAndFlush(sfh.id[0], HEX); }
+      if(sfh.getIl() > 1) { OTV0P2BASE::serialPrintAndFlush(' '); OTV0P2BASE::serialPrintAndFlush(sfh.id[1], HEX); }
+      OTV0P2BASE::serialPrintlnAndFlush();
+      }
 #endif
     }
 
