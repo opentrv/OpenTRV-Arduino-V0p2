@@ -195,6 +195,5 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define CONFIG_TRAILING_ZEROS_FILTER_RX
 #endif
 
-
 #endif
 
