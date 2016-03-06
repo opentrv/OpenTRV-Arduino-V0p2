@@ -1165,7 +1165,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
  
 #if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
       // Set secret key.
-      case 'K': { showStatus = OTV0P2BASE::CLI::SetSecretKey().doCommand(buf, n); break; }
+      case 'K': { showStatus = OTV0P2BASE::CLI::SetSecretKey(OTRadioLink::SimpleSecureFrame32or0BodyTXV0p2::resetRaw3BytePersistentTXRestartCounterCond).doCommand(buf, n); break; }
 #endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
 
 #ifdef ENABLE_LEARN_BUTTON
