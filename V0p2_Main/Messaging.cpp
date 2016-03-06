@@ -352,7 +352,7 @@ if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX bad secure header"); }
     if(index < 0) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX assoc"); }
 #endif
     isOK = (index >= 0) &&
-           (0 != OTRadioLink::SimpleSecureFrame32or0BodyRXV0p2::getInstance().decodeSecureSmallFrameFromID(&sfh, msg-1, msglen+1,
+           (0 != OTRadioLink::SimpleSecureFrame32or0BodyRXV0p2::getInstance()._decodeSecureSmallFrameFromID(&sfh, msg-1, msglen+1,
                               OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_STATELESS,
                               senderNodeID, sizeof(senderNodeID),
                               NULL, key,
