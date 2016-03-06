@@ -72,8 +72,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_Trial2013Winter_Round1_STATSHUB // REV1 as stats hub.
 //#define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
 //#define CONFIG_Trial2013Winter_Round2_BHR // REV2 cut4: boiler hub and stats relay.
-#define CONFIG_Trial2013Winter_Round2_SECURE_NOHUB // REV2 cut4 leaf (valve/sensor) 2015/12 secure protocol.
-//#define CONFIG_Trial2013Winter_Round2_SECURE_STATSHUB // REV2 cut4 hub (boiler/stats) 2015/12 secure protocol.
+//#define CONFIG_Trial2013Winter_Round2_SECURE_NOHUB // REV2 cut4 leaf (valve/sensor) 2015/12 secure protocol.
+#define CONFIG_Trial2013Winter_Round2_SECURE_STATSHUB // REV2 cut4 hub (boiler/stats) 2015/12 secure protocol.
 //#define CONFIG_DHD_TESTLAB_REV4 // REV4 cut2.
 //#define CONFIG_DHD_TESTLAB_REV4_NOHUB // REV4 cut2, no hub.
 //#define CONFIG_BH_DHW // Bo's hot water.
