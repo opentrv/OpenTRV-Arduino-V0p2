@@ -2062,55 +2062,66 @@ void loopOpenTRV()
     // Periodic transmission of stats if NOT driving a local valve (else stats can be piggybacked onto that).
     // Randomised somewhat between slots and also within the slot to help avoid collisions.
     static uint8_t txTick;
-    case 6: { txTick = OTV0P2BASE::randRNG8() & 3; break; } // Pick which of the 4 slots to use.
-    case 8: case 10: case 12: case 14: if(0 != txTick--) { break; } // Only the slot where onSec is zero is used.
+    case 6: { txTick = OTV0P2BASE::randRNG8() & 7; break; } // Pick which of the 8 slots to use.
+    case 8: case 10: case 12: case 14: case 16: case 18: case 20: case 22:
       {
-      if(!enableTrailingStatsPayload()) { break; } // Not allowed to send stats.
+      // Only the slot where txTick is zero is used.
+      if(0 != txTick--) { break; }
+
+#if !defined(ENABLE_FREQUENT_STATS_TX)
+      // Stats TX in the minute after all sensors should have been polled (so that readings are fresh).
+      // Usually send one frame every 4 minutes, else abort,
+      // but occasionally send otherwise to make (secure) traffic analysis harder,
+      // though not enough to make a significant difference to bandwidth.
+      // Send very slightly more often when changed stats pending to send upstream.
+      // TODO: send immediately with 100% valve payload when user puts system into BAKE mode for fast response.
+      if(!minute1From4AfterSensors && (OTV0P2BASE::randRNG8() > (ss1.changedValue() ? 13 : 11))) { break; }
+#endif
+
 #if defined(ENABLE_FHT8VSIMPLE)
       // Avoid transmit conflict with FS20; just drop the slot.
       // We should possibly choose between this and piggybacking stats to avoid busting duty-cycle rules.
       if(localFHT8VTRVEnabled() && useExtraFHT8VTXSlots) { break; }
 #endif
 
-      // Stats TX in the minute after all sensors should have been polled (so that readings are fresh).
-#if !defined(ENABLE_FREQUENT_STATS_TX)
-      if(minute1From4AfterSensors)
-#endif
+      // Abort if not allowed to send stats at all.
+      // FIXME: fix this to send bare calls for heat / valve % instead from valves for secure non-FHT8V comms.
+      if(!enableTrailingStatsPayload()) { break; }
+
+      // Sleep randomly up to ~25% of the minor cycle
+      // to spread transmissions and thus help avoid collisions.
+      // (Longer than 25%/0.5s could interfere with other ops such as FHT8V TXes.)
+      const uint8_t stopBy = 1 + (((OTV0P2BASE::GSCT_MAX >> 2) | 7) & OTV0P2BASE::randRNG8());
+      while(OTV0P2BASE::getSubCycleTime() <= stopBy)
         {
-        // Sleep randomly up to 25% of the minor cycle
-        // to spread transmissions and thus help avoid collisions.
-        // (Longer than 25%/0.5s could interfere with other ops such as FHT8V TXes.)
-        const uint8_t stopBy = 1 + (((OTV0P2BASE::GSCT_MAX >> 2) | 7) & OTV0P2BASE::randRNG8());
-        while(OTV0P2BASE::getSubCycleTime() <= stopBy)
-          {
-          // Soak up any pending I/O while waiting.
-          if(handleQueuedMessages(&Serial, true, &PrimaryRadio)) { continue; }
-          // Sleep a little.
-          OTV0P2BASE::nap(WDTO_15MS, true);
-          }
-        // Send it!
-        // Try for double TX for extra robustness unless:
-        //   * this is a speculative 'extra' TX
-        //   * battery is low
-        //   * this node is a hub so needs to listen as much as possible
-        // This doesn't generally/always need to send binary/both formats
-        // if this is controlling a local FHT8V on which the binary stats can be piggybacked.
-        // Ie, if doesn't have a local TRV then it must send binary some of the time.
-        // Any recently-changed stats value is a hint that a strong transmission might be a good idea.
-#if defined(ENABLE_BINARY_STATS_TX) && defined(ENABLE_FS20_ENCODING_SUPPORT)
-        const bool doBinary = !localFHT8VTRVEnabled() && OTV0P2BASE::randRNG8NextBoolean();
-#else
-        const bool doBinary = false;
-#endif
-        bareStatsTX(!batteryLow && !inHubMode() && ss1.changedValue(), doBinary);
+        // Handle any pending I/O while waiting.
+        if(handleQueuedMessages(&Serial, true, &PrimaryRadio)) { continue; }
+        // Sleep a little.
+        OTV0P2BASE::nap(WDTO_15MS, true);
         }
+
+      // Send stats!
+      // Try for double TX for extra robustness unless:
+      //   * this is a speculative 'extra' TX
+      //   * battery is low
+      //   * this node is a hub so needs to listen as much as possible
+      // This doesn't generally/always need to send binary/both formats
+      // if this is controlling a local FHT8V on which the binary stats can be piggybacked.
+      // Ie, if doesn't have a local TRV then it must send binary some of the time.
+      // Any recently-changed stats value is a hint that a strong transmission might be a good idea.
+#if defined(ENABLE_BINARY_STATS_TX) && defined(ENABLE_FS20_ENCODING_SUPPORT)
+      const bool doBinary = !localFHT8VTRVEnabled() && OTV0P2BASE::randRNG8NextBoolean();
+#else
+      const bool doBinary = false;
+#endif
+      bareStatsTX(!batteryLow && !inHubMode() && ss1.changedValue(), doBinary);
       break;
       }
 #endif // defined(ENABLE_STATS_TX)
 
 #if defined(ENABLE_SECURE_RADIO_BEACON)
-    // Send a small secure radio beacon "I'm alive!" message regularly.
-    case 16:
+    // Send a small secure radio beacon "I'm alive!" message regularly if configured.
+    case 30:
       {
 #if 1 && defined(DEBUG)
       DEBUG_SERIAL_PRINT_FLASHSTRING("Beacon TX... ");
