@@ -358,9 +358,9 @@ if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX bad secure header"); }
 #if 1 // && defined(DEBUG)
     if(!isOK)
       {
-      // Useful network diagnostics: a couple of bytes of the claimed ID of rejected frames.
+      // Useful brief network diagnostics: a couple of bytes of the claimed ID of rejected frames.
       // Warnings rather than errors because there may legitimately be multiple disjoint networks.
-      OTV0P2BASE::serialPrintAndFlush(F("?RX assoc/auth")); // Missing association or failed auth.
+      OTV0P2BASE::serialPrintAndFlush(F("?RX auth")); // Missing association or failed auth.
       if(sfh.getIl() > 0) { OTV0P2BASE::serialPrintAndFlush(' '); OTV0P2BASE::serialPrintAndFlush(sfh.id[0], HEX); }
       if(sfh.getIl() > 1) { OTV0P2BASE::serialPrintAndFlush(' '); OTV0P2BASE::serialPrintAndFlush(sfh.id[1], HEX); }
       OTV0P2BASE::serialPrintlnAndFlush();
