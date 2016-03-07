@@ -92,7 +92,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // TODO //#define CONFIG_REV10_SECURE_BOILERHUB_GSM_SECURE // REV10 PCB boiler hub, relay to GSM, 2015/12 secure protocol.
 //#define CONFIG_REV11_RFM23BTEST // Basic test to see if stats send
 //#define CONFIG_REV14_PROTO  // Prototype REV14 w/ LoRa, TMP, SHT and QM-1
-//#define CONFIG_REV14 // REV14 w/ light sensor, SHT21 and voice sensor Measured current consumption (no QM-1 or mobdet): 100-200 uA when serial shut and not attempting Tx
+//#define CONFIG_REV14 // REV14 w/ light sensor, SHT21 and voice sensor.
 //#define CONFIG_BAREBONES // No peripherals / on breadboard.
 
 
