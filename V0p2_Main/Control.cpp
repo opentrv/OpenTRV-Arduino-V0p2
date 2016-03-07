@@ -2068,7 +2068,13 @@ void loopOpenTRV()
       // Only the slot where txTick is zero is used.
       if(0 != txTick--) { break; }
 
-#if !defined(ENABLE_FREQUENT_STATS_TX)
+#if defined(ENABLE_FHT8VSIMPLE)
+      // Avoid transmit conflict with FS20; just drop the slot.
+      // We should possibly choose between this and piggybacking stats to avoid busting duty-cycle rules.
+      if(useExtraFHT8VTXSlots && localFHT8VTRVEnabled()) { break; }
+#endif
+
+#if !defined(ENABLE_FREQUENT_STATS_TX) // If ENABLE_FREQUENT_STATS_TX then send every minute regardless.
       // Stats TX in the minute after all sensors should have been polled (so that readings are fresh).
       // Usually send one frame every 4 minutes, else abort,
       // but occasionally send otherwise to make (secure) traffic analysis harder,
@@ -2076,12 +2082,6 @@ void loopOpenTRV()
       // Send very slightly more often when changed stats pending to send upstream.
       // TODO: send immediately with 100% valve payload when user puts system into BAKE mode for fast response.
       if(!minute1From4AfterSensors && (OTV0P2BASE::randRNG8() > (ss1.changedValue() ? 13 : 11))) { break; }
-#endif
-
-#if defined(ENABLE_FHT8VSIMPLE)
-      // Avoid transmit conflict with FS20; just drop the slot.
-      // We should possibly choose between this and piggybacking stats to avoid busting duty-cycle rules.
-      if(localFHT8VTRVEnabled() && useExtraFHT8VTXSlots) { break; }
 #endif
 
       // Abort if not allowed to send stats at all.
