@@ -840,7 +840,9 @@ static void dumpCLIUsage(const uint8_t stopBy)
 #if defined(ENABLE_SETTABLE_TARGET_TEMPERATURES) && !defined(TEMP_POT_AVAILABLE)
   printCLILine(deadline, F("W CC"), F("set Warm temp CC"));
 #endif
+#if !defined(ENABLE_ALWAYS_TX_ALL_STATS)
   printCLILine(deadline, 'X', F("Xmit security level; 0 always, 255 never"));
+#endif
   printCLILine(deadline, 'Z', F("Zap stats"));
 #endif // ENABLE_FULL_OT_CLI
 #endif // ENABLE_CLI_HELP
@@ -1257,9 +1259,11 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         break;
         }
 
+#if !defined(ENABLE_ALWAYS_TX_ALL_STATS)
       // tX security level: X NN
       // Avoid showing status afterwards as may already be rather a lot of output.
       case 'X': { showStatus = OTV0P2BASE::CLI::SetTXPrivacy().doCommand(buf, n); break; }
+#endif
 
       // Zap/erase learned statistics.
       case 'Z': { showStatus = OTV0P2BASE::CLI::ZapStats().doCommand(buf, n); break; }
