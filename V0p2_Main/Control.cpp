@@ -1132,8 +1132,8 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
       if(!OTV0P2BASE::getPrimaryBuilding16ByteSecretKey(key))
         {
         sendingJSONFailed = true;
-#if 0 && defined(DEBUG)
-        DEBUG_SERIAL_PRINTLN_FLASHSTRING("!failed (no key)");
+#if 1 // && defined(DEBUG)
+        OTV0P2BASE::serialPrintlnAndFlush(F("!TX key")); // Know why TX failed.
 #endif
         }
 #else
