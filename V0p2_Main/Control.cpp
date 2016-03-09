@@ -480,6 +480,11 @@ uint8_t ModelledRadValve::computeTargetTemp()
     {
     const uint8_t wt = getWARMTargetC();
 
+#if defined(ENABLE_SETBACK_LOCKOUT_COUNTDOWN)
+    // If smart setbacks are locked out then return WARM temperature as-is.  (TODO-786)
+    if(0xff != eeprom_read_byte((uint8_t *)OTV0P2BASE::V0P2BASE_EE_START_SETBACK_LOCKOUT_COUNTDOWN_H_INV)) { return(wt); }
+#endif
+
     // Set back target the temperature a little if the room seems to have been vacant for a long time (TODO-107)
     // or it is too dark for anyone to be active or the room is not likely occupied at this time
     // or the room was apparently not occupied at thus time yesterday (and is not now).
@@ -586,16 +591,15 @@ void ModelledRadValve::computeTargetTemperature()
   // Request a fast response from the valve if user is manually adjusting controls.
   const bool veryRecentUIUse = veryRecentUIControlUse();
   inputState.fastResponseRequired = veryRecentUIUse;
-  // Widen the allowed deadband significantly in an unlit/quiet/vacant room (TODO-383, TODO-593)
+  // Widen the allowed deadband significantly in an unlit/quiet/vacant room (TODO-383, TODO-593, TODO-786)
   // (or in FROST mode, or if temperature is jittery eg changing fast and filtering has been engaged)
   // to attempt to reduce the total number and size of adjustments and thus reduce noise/disturbance (and battery drain).
   // The wider deadband (less good temperature regulation) might be noticeable/annoying to sensitive occupants.
   // With a wider deadband may also simply suppress any movement/noise on some/most minutes while close to target temperature.
   // For responsiveness, don't widen the deadband immediately after manual controls have been used (TODO-593).
-  // Note: use !AmbLight.isRoomLight() in case unit is getting poor ambient light readings to keep noise and battery use down.
   //
   // Minimum number of hours vacant to force wider deadband in ECO mode, else a full day ('long vacant') is the threshold.
-  // May still have to back off this if only automatic occupancy input is ambient light and day >> 6h, ie other than deep winter.
+  // May still have to back this off if only automatic occupancy input is ambient light and day >> 6h, ie other than deep winter.
   const uint8_t minVacancyHoursForWideningECO = 3;
   inputState.widenDeadband = (!veryRecentUIUse) &&
       (retainedState.isFiltering ||
