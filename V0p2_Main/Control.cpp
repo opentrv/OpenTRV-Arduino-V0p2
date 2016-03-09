@@ -1307,6 +1307,7 @@ static void endOfHourTasks()
 #endif
   }
 
+
 // Controller's view of Least Significant Digits of the current (local) time, in this case whole seconds.
 // See PICAXE V0.1/V0.09/DHD201302L0 code.
 #define TIME_LSD_IS_BINARY // TIME_LSD is in binary (cf BCD).
