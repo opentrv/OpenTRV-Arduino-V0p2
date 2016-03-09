@@ -281,7 +281,7 @@ static bool FilterRXISR(const volatile uint8_t *buf, volatile uint8_t &buflen)
 // Aborts with a call to panic() if a test fails.
 void optionalPOST()
   {
-  // Try to have 32678Hz clock at least running before going any further.
+  // Have 32678Hz clock at least running before going any further.
 #if defined(ENABLE_WAKEUP_32768HZ_XTAL)
   if(!::OTV0P2BASE::HWTEST::check32768HzOsc()) { panic(F("xtal")); } // Async clock not running correctly.
 #else
