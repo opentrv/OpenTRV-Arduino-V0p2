@@ -1277,7 +1277,7 @@ static void wireComponentsTogether()
 
 
 // Initialise sensors with stats info where needed.
-// Should be called at least hourly,
+// Should be called at least hourly after all stats have been updatedß,
 // but can be called whenever user adjusts settings for example.
 static void updateSensorsFromStats()
   {
@@ -1293,6 +1293,15 @@ static void updateSensorsFromStats()
 #endif // ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
   }
 
+// Run tasks needed at the end of each hour.
+// Should be run once at a fixed slot in the last minute of each hour.
+// Will be run after all stats for the current hour have been updated.
+static void endOfHourTasks()
+  {
+#if defined(ENABLE_SETBACK_LOCKOUT_COUNTDOWN)
+// TODO: count down the lockout if not finished...  (TODO-786)
+#endif
+  }
 
 // Controller's view of Least Significiant Digits of the current (local) time, in this case whole seconds.
 // See PICAXE V0.1/V0.09/DHD201302L0 code.
@@ -1805,7 +1814,6 @@ static void processCallsForHeat(const bool second0)
   }
 
 
-
 // Main loop for OpenTRV radiator control.
 // Note: exiting and re-entering can take a little while, handling Arduino background tasks such as serial.
 void loopOpenTRV()
@@ -2054,6 +2062,8 @@ void loopOpenTRV()
       checkUserSchedule(); // Force to user's programmed settings, if any, at the correct time.
       // Ensure that the RTC has been persisted promptly when necessary.
       OTV0P2BASE::persistRTC();
+      // Run hourly tasks at the end of the hour.
+      if(59 == OTV0P2BASE::getMinutesLT()) { endOfHourTasks(); }
       break;
       }
 
