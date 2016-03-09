@@ -162,7 +162,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define ENABLE_JSON_OUTPUT
 #endif
 
-
 // If a stats or boiler hub, define ENABLE_HUB_LISTEN.
 #if defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)
 #define ENABLE_HUB_LISTEN
