@@ -1232,9 +1232,6 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
 
 
 
-
-
-
 // Wire components directly together, eg for occupancy sensing.
 static void wireComponentsTogether()
   {
@@ -1277,7 +1274,7 @@ static void wireComponentsTogether()
 
 
 // Initialise sensors with stats info where needed.
-// Should be called at least hourly,
+// Should be called at least hourly after all stats have been updatedß,
 // but can be called whenever user adjusts settings for example.
 static void updateSensorsFromStats()
   {
@@ -1293,8 +1290,24 @@ static void updateSensorsFromStats()
 #endif // ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
   }
 
+// Run tasks needed at the end of each hour.
+// Should be run once at a fixed slot in the last minute of each hour.
+// Will be run after all stats for the current hour have been updated.
+static void endOfHourTasks()
+  {
+#if defined(ENABLE_SETBACK_LOCKOUT_COUNTDOWN)
+    // Count down the lockout if not finished...  (TODO-786)
+    const uint8_t sloInv = eeprom_read_byte((uint8_t *)OTV0P2BASE::V0P2BASE_EE_START_SETBACK_LOCKOUT_COUNTDOWN_H_INV);
+    if(0xff != sloInv)
+      {
+      // Logically decrement the inverted value, invert it and store it back.
+      const uint8_t updated = ~((~sloInv)-1);
+      OTV0P2BASE::eeprom_smart_update_byte((uint8_t *)OTV0P2BASE::V0P2BASE_EE_START_SETBACK_LOCKOUT_COUNTDOWN_H_INV, updated);
+      }
+#endif
+  }
 
-// Controller's view of Least Significiant Digits of the current (local) time, in this case whole seconds.
+// Controller's view of Least Significant Digits of the current (local) time, in this case whole seconds.
 // See PICAXE V0.1/V0.09/DHD201302L0 code.
 #define TIME_LSD_IS_BINARY // TIME_LSD is in binary (cf BCD).
 #define TIME_CYCLE_S 60 // TIME_LSD ranges from 0 to TIME_CYCLE_S-1, also major cycle length.
@@ -1805,7 +1818,6 @@ static void processCallsForHeat(const bool second0)
   }
 
 
-
 // Main loop for OpenTRV radiator control.
 // Note: exiting and re-entering can take a little while, handling Arduino background tasks such as serial.
 void loopOpenTRV()
@@ -2054,6 +2066,8 @@ void loopOpenTRV()
       checkUserSchedule(); // Force to user's programmed settings, if any, at the correct time.
       // Ensure that the RTC has been persisted promptly when necessary.
       OTV0P2BASE::persistRTC();
+      // Run hourly tasks at the end of the hour.
+      if(59 == OTV0P2BASE::getMinutesLT()) { endOfHourTasks(); }
       break;
       }
 
