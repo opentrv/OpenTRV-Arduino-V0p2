@@ -355,8 +355,9 @@ void optionalPOST()
 #endif
 #endif // Select user-facing boards.
 
-  // Single/main POST checkpoint for speed.
-  posPOST(1 /* , F("POST OK") */ );
+// Save space (and time) by avoiding the second POST sequence; LED will be turned off anyway.
+//  // Single/main POST checkpoint for speed.
+//  posPOST(1 /* , F("POST OK") */ );
   }
 
 
