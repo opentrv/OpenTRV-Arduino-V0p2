@@ -482,7 +482,11 @@ uint8_t ModelledRadValve::computeTargetTemp()
 
 #if defined(ENABLE_SETBACK_LOCKOUT_COUNTDOWN)
     // If smart setbacks are locked out then return WARM temperature as-is.  (TODO-786)
-    if(0xff != eeprom_read_byte((uint8_t *)OTV0P2BASE::V0P2BASE_EE_START_SETBACK_LOCKOUT_COUNTDOWN_H_INV)) { return(wt); }
+    if(0xff != eeprom_read_byte((uint8_t *)OTV0P2BASE::V0P2BASE_EE_START_SETBACK_LOCKOUT_COUNTDOWN_H_INV))
+      {
+      OTV0P2BASE::serialPrintlnAndFlush("?SLO");
+      return(wt);
+      }
 #endif
 
     // Set back target the temperature a little if the room seems to have been vacant for a long time (TODO-107)
