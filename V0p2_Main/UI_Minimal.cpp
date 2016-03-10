@@ -1055,6 +1055,11 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         }
 #endif
 
+#if defined(ENABLE_GENERIC_PARAM_CLI_ACCESS)
+      // Show/set generic parameter values (eg "G N [M]").
+      case 'G': { showStatus = OTV0P2BASE::CLI::GenericParam().doCommand(buf, n); break; }
+#endif
+
       // Set or display new random ID.
       case 'I': { showStatus = OTV0P2BASE::CLI::NodeID().doCommand(buf, n); break; }
 
