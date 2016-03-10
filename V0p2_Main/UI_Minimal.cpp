@@ -809,6 +809,9 @@ static void dumpCLIUsage(const uint8_t stopBy)
   printCLILine(deadline, F("I *"), F("create new ID"));
   printCLILine(deadline, 'S', F("show Status"));
   printCLILine(deadline, 'V', F("sys Version"));
+#ifdef ENABLE_GENERIC_PARAM_CLI_ACCESS
+  printCLILine(deadline, F("G N [M]"), F("Show [set] generic param N [to M]")); // *******
+#endif
 
 #ifdef ENABLE_FULL_OT_CLI
   // Optional CLI features...
@@ -843,7 +846,6 @@ static void dumpCLIUsage(const uint8_t stopBy)
 #if !defined(ENABLE_ALWAYS_TX_ALL_STATS)
   printCLILine(deadline, 'X', F("Xmit security level; 0 always, 255 never"));
 #endif
-  printCLILine(deadline, F("Y N [M]"), F("Show [set] extended param N [to M]")); // *******
   printCLILine(deadline, 'Z', F("Zap stats"));
 #endif // ENABLE_FULL_OT_CLI
 #endif // ENABLE_CLI_HELP
