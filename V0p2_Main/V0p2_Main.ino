@@ -325,7 +325,7 @@ void optionalPOST()
 #endif // ENABLE_RADIO_SIM900
   // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
   SecondaryRadio.preinit(NULL);
-#if 1 && defined(DEBUG) && !defined(ENABLE_TRIMMED_MEMORY)
+#if 0 && defined(DEBUG) && !defined(ENABLE_TRIMMED_MEMORY)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("R2");
 #endif
   // Check that the radio is correctly connected; panic if not...

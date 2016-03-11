@@ -1184,7 +1184,9 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
     if(!sendingJSONFailed)
       {
       // Write out unadjusted JSON or encrypted frame on secondary radio.
-      SecondaryRadio.queueToSend(realTXFrameStart, doEnc ? (bptr - realTXFrameStart) : wrote);
+//      SecondaryRadio.queueToSend(realTXFrameStart, doEnc ? (bptr - realTXFrameStart) : wrote);
+      // Assumes that framing (or not) of primary and secondary radios is the same (usually: both framed).
+      SecondaryRadio.queueToSend(realTXFrameStart, wrote);
       }
 #endif // ENABLE_RADIO_SECONDARY_MODULE
 
