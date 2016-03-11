@@ -329,7 +329,7 @@ void optionalPOST()
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("R2");
 #endif
   // Check that the radio is correctly connected; panic if not...
-  if(!SecondaryRadio.configure(1, &SecondaryRadioConfig) || !SecondaryRadio.begin()) { panic(); }
+  if(!SecondaryRadio.configure(1, &SecondaryRadioConfig) || !SecondaryRadio.begin()) { panic(F("r2")); }
   // Assume no RX nor filtering on secondary radio.
 #endif // ENABLE_RADIO_SECONDARY_MODULE
 
