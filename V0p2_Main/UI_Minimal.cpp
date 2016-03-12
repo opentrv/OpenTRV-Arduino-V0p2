@@ -915,7 +915,6 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
   // Idle a short while to try to save energy, waiting for serial TX end and possible RX response start.
   OTV0P2BASE::flushSerialSCTSensitive();
 
-
   // Wait for input command line from the user (received characters may already have been queued)...
   // Read a line up to a terminating CR, either on its own or as part of CRLF.
   // (Note that command content and timing may be useful to fold into PRNG entropy pool.)
@@ -929,20 +928,20 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
       {
       int ic = Serial.read();
       if(('\r' == ic) || ('\n' == ic)) { break; } // Stop at CR, eg from CRLF, or LF.
-#ifdef CLI_INTERACTIVE_ECHO
-      if(('\b' == ic) || (127 == ic))
-        {
-        // Handle backspace or delete as delete...
-        if(n > 0) // Ignore unless something to delete...
-          {
-          Serial.print('\b');
-          Serial.print(' ');
-          Serial.print('\b');
-          --n;
-          }
-        continue;
-        }
-#endif
+//#ifdef CLI_INTERACTIVE_ECHO
+//      if(('\b' == ic) || (127 == ic))
+//        {
+//        // Handle backspace or delete as delete...
+//        if(n > 0) // Ignore unless something to delete...
+//          {
+//          Serial.print('\b');
+//          Serial.print(' ');
+//          Serial.print('\b');
+//          --n;
+//          }
+//        continue;
+//        }
+//#endif
       if((ic < 32) || (ic > 126)) { continue; } // Drop bogus non-printable characters.
       // Ignore any leading char that is not a letter (or '?' or '+'),
       // and force leading (command) char to upper case.
@@ -1008,6 +1007,8 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
 #else
     Serial.println(buf); // Echo the line received (asynchronously).
 #endif
+    // Force any pending output before return / possible UART power-down.
+    OTV0P2BASE::flushSerialSCTSensitive();
 
     // Process the input received, with action based on the first char...
     bool showStatus = true; // Default to showing status.
