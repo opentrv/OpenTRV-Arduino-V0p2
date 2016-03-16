@@ -156,7 +156,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #endif
 #endif
 
-// For now (DHD20150927) allowing stats TX forces JSON to allos JSON stats.
+// For now (DHD20150927) allowing stats TX forces allowing JSON stats.
 // IF DEFINED: allow TX of stats frames.
 #ifdef ENABLE_STATS_TX
 // IF DEFINED: allow JSON stats frames alongside binary ones.

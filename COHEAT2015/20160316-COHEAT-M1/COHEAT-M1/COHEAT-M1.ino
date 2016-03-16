@@ -1,6 +1,6 @@
 // Uncomment exactly one of the following CONFIG_ lines to select which board is being built for.
-#define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
-//#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
+//#define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
+#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
 
 //#ifndef BAUD
 //#define BAUD 4800 // Ensure that OpenTRV 'standard' UART speed is set unless explicitly overridden.
@@ -19,6 +19,35 @@
 //#include <OTAESGCM.h>
 //#endif
 #include <OTV0p2_Board_IO_Config.h> // I/O pin allocation and setup: include ahead of I/O module headers.
+
+// If a stats or boiler hub, define ENABLE_HUB_LISTEN.
+#if defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)
+#define ENABLE_HUB_LISTEN
+// Force-enable RX if not already so.
+#define ENABLE_RADIO_RX
+#endif
+// If (potentially) needing to run in some sort of continuous RX mode, define a flag.
+#if defined(ENABLE_HUB_LISTEN) || defined(ENABLE_DEFAULT_ALWAYS_RX)
+#define ENABLE_CONTINUOUS_RX // was #define CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX true
+#endif
+// By default (up to 2015), use the RFM22/RFM23 module to talk to an FHT8V wireless radiator valve.
+#ifdef ENABLE_FHT8VSIMPLE
+#define ENABLE_RADIO_RFM23B
+#define ENABLE_FS20_CARRIER_SUPPORT
+#define ENABLE_FS20_ENCODING_SUPPORT
+// If this can be a hub, enable extra RX code.
+#if defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)
+#define ENABLE_FHT8VSIMPLE_RX
+#define LISTEN_FOR_FTp2_FS20_native
+#endif // defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)
+#if defined(ENABLE_STATS_RX)
+#define ENABLE_FS20_NATIVE_AND_BINARY_STATS_RX
+#endif // defined(ENABLE_STATS_RX)
+#endif // ENABLE_FHT8VSIMPLE
+// If in stats or boiler hub mode, and with an FS20 OOK carrier, then apply a trailing-zeros RX filter.
+#if (defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)) && defined(LISTEN_FOR_FTp2_FS20_native)
+#define CONFIG_TRAILING_ZEROS_FILTER_RX
+#endif
 
 // Indicate that the system is broken in an obvious way (distress flashing of the main UI LED).
 // DOES NOT RETURN.
@@ -56,8 +85,6 @@ inline void burnHundredsOfCyclesProductivelyAndPoll()
 extern OTRadioLink::OTRadioLink &PrimaryRadio;
 
 // Controller's view of Least Significant Digits of the current (local) time, in this case whole seconds.
-// See PICAXE V0.1/V0.09/DHD201302L0 code.
-#define TIME_LSD_IS_BINARY // TIME_LSD is in binary (cf BCD).
 #define TIME_CYCLE_S 60 // TIME_LSD ranges from 0 to TIME_CYCLE_S-1, also major cycle length.
 static uint_fast8_t TIME_LSD; // Controller's notion of seconds within major cycle.
 
@@ -105,6 +132,12 @@ static void inline mediumPause() { OTV0P2BASE::nap(WDTO_60MS); } // 60ms vs 144m
 // Premature wakeups MAY be allowed to avoid blocking I/O polling for too long.
 #define BIG_PAUSE_MS 120
 static void inline bigPause() { OTV0P2BASE::nap(WDTO_120MS); } // 120ms vs 288ms nominal for PICAXE V0.09 impl.
+// Pause between flashes to allow them to be distinguished (>100ms); was mediumPause() for PICAXE V0.09 impl.
+static void inline offPause()
+  {
+  bigPause(); // 120ms, was V0.09 144ms mediumPause() for PICAXE V0.09 impl.
+  pollIO(); // Slip in an I/O poll.
+  }
 
 #ifdef ALLOW_CC1_SUPPORT_RELAY_IO // REV9 CC1 relay...
 // Call this on even numbered seconds (with current time in seconds) to allow the CO UI to operate.
@@ -126,13 +159,6 @@ void setLEDsCO(uint8_t lc, uint8_t lt, uint8_t lf, bool fromPollAndCmd);
 // Safe to call from an ISR (though this would be unexpected).
 bool getSwitchToggleStateCO();
 #endif
-
-
-
-
-
-
-
 
 
 // Indicate that the system is broken in an obvious way (distress flashing the main LED).
@@ -196,9 +222,277 @@ void serialPrintlnBuildVersion()
   OTV0P2BASE::serialPrintlnAndFlush(F(" " __TIME__));
   }
 
+// FHT8V radio-controlled actuator.
+// Singleton FHT8V valve instance (to control remote FHT8V valve by radio).
+static const uint8_t _FHT8V_MAX_EXTRA_TRAILER_BYTES = (1 + max(OTV0P2BASE::MESSAGING_TRAILING_MINIMAL_STATS_PAYLOAD_BYTES, OTV0P2BASE::FullStatsMessageCore_MAX_BYTES_ON_WIRE));
+extern OTRadValve::FHT8VRadValve<_FHT8V_MAX_EXTRA_TRAILER_BYTES, OTRadValve::FHT8VRadValveBase::RFM23_PREAMBLE_BYTES, OTRadValve::FHT8VRadValveBase::RFM23_PREAMBLE_BYTE> FHT8V;
+// This unit may control a local TRV.
+// Returns TRV if valve/radiator is to be controlled by this unit.
+// Usually the case, but may not be for (a) a hub or (b) a not-yet-configured unit.
+// Returns false if house code parts are set to invalid or uninitialised values (>99).
+#if defined(ENABLE_LOCAL_TRV) || defined(ENABLE_SLAVE_TRV)
+inline bool localFHT8VTRVEnabled() { return(!FHT8V.isUnavailable()); }
+#else
+#define localFHT8VTRVEnabled() (false) // Local FHT8V TRV disabled.
+#endif
+//// Clear both housecode parts (and thus disable local valve).
+//void FHT8VClearHC();
+//// Set (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control.
+//// Will cache in FHT8V instance for speed.
+//void FHT8VSetHC1(uint8_t hc);
+//void FHT8VSetHC2(uint8_t hc);
+//// Get (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control (will be 0xff until set).
+//// Used FHT8V instance as a transparent cache of the values for speed.
+//uint8_t FHT8VGetHC1();
+//uint8_t FHT8VGetHC2();
+//inline uint16_t FHT8VGetHC() { return(FHT8VGetHC2() | (((uint16_t) FHT8VGetHC1()) << 8)); }
+//// Load EEPROM house codes into primary FHT8V instance at start-up or once cleared in FHT8V instance.
+//void FHT8VLoadHCFromEEPROM();
+
+OTRadValve::FHT8VRadValve<_FHT8V_MAX_EXTRA_TRAILER_BYTES, OTRadValve::FHT8VRadValveBase::RFM23_PREAMBLE_BYTES, OTRadValve::FHT8VRadValveBase::RFM23_PREAMBLE_BYTE> FHT8V(NULL);
+
+// Clear both housecode parts (and thus disable local valve).
+// Does nothing if FHT8V not in use.
+void FHT8VClearHC()
+{
+  FHT8V.clearHC();
+  OTV0P2BASE::eeprom_smart_erase_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC1);
+  OTV0P2BASE::eeprom_smart_erase_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC2);
+}
+
+// Set (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control.
+// Also set value in FHT8V rad valve model.
+// Does nothing if FHT8V not in use.
+void FHT8VSetHC1(uint8_t hc)
+{
+  FHT8V.setHC1(hc);
+  OTV0P2BASE::eeprom_smart_update_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC1, hc);
+}
+void FHT8VSetHC2(uint8_t hc)
+{
+  FHT8V.setHC2(hc);
+  OTV0P2BASE::eeprom_smart_update_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC2, hc);
+}
+
+// Get (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control (will be 0xff until set).
+// FHT8V instance values are used as a cache.
+// Does nothing if FHT8V not in use.
+uint8_t FHT8VGetHC1()
+{
+  const uint8_t vv = FHT8V.getHC1();
+  // If cached value in FHT8V instance is valid, return it.
+  if (OTRadValve::FHT8VRadValveBase::isValidFHTV8HouseCode(vv))
+  {
+    return (vv);
+  }
+  // Else if EEPROM value is valid, then cache it in the FHT8V instance and return it.
+  const uint8_t ev = eeprom_read_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC1);
+  if (OTRadValve::FHT8VRadValveBase::isValidFHTV8HouseCode(ev))
+  {
+    FHT8V.setHC1(ev);
+  }
+  return (ev);
+}
+uint8_t FHT8VGetHC2()
+{
+  const uint8_t vv = FHT8V.getHC2();
+  // If cached value in FHT8V instance is valid, return it.
+  if (OTRadValve::FHT8VRadValveBase::isValidFHTV8HouseCode(vv))
+  {
+    return (vv);
+  }
+  // Else if EEPROM value is valid, then cache it in the FHT8V instance and return it.
+  const uint8_t ev = eeprom_read_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC2);
+  if (OTRadValve::FHT8VRadValveBase::isValidFHTV8HouseCode(ev))
+  {
+    FHT8V.setHC2(ev);
+  }
+  return (ev);
+}
+
+// Load EEPROM house codes into primary FHT8V instance at start-up or once cleared in FHT8V instance.
+void FHT8VLoadHCFromEEPROM()
+{
+  // Uses side-effect to cache/save in FHT8V instance.
+  FHT8VGetHC1();
+  FHT8VGetHC2();
+}
+
+#ifdef ALLOW_CC1_SUPPORT_RELAY
+// Send a CC1 Alert message with this unit's house code via the RFM23B.
+bool sendCC1AlertByRFM23B()
+  {
+  OTProtocolCC::CC1Alert a = OTProtocolCC::CC1Alert::make(FHT8VGetHC1(), FHT8VGetHC2());
+  if(a.isValid()) // Might be invalid if house codes are, eg if house codes not set.
+    {
+    uint8_t txbuf[OTProtocolCC::CC1Alert::primary_frame_bytes+1]; // More than large enough for preamble + sync + alert message.
+    const uint8_t bodylen = a.encodeSimple(txbuf, sizeof(txbuf), true);
+#if 0 && defined(DEBUG)
+OTRadioLink::printRXMsg(p, txbuf, bodylen);
+#endif
+    // Send loud since the hub may be relatively far away,
+    // there is no 'ACK', and these messages should not be sent very often.
+    // Should be consistent with automatically-generated alerts to help with diagnosis.
+    return(PrimaryRadio.sendRaw(txbuf, bodylen, 0, OTRadioLink::OTRadioLink::TXmax));
+    }
+  return(false); // Failed.
+  }
+#endif
+
+#ifdef ALLOW_CC1_SUPPORT_RELAY_IO // REV9 CC1 relay...
+// Do basic static LED setting.
+static void setLEDs(const uint8_t lc)
+    {
+    // Assume primary UI LED is the red one (at least fot REV9 boards)...
+    if(lc & 1) { LED_HEATCALL_ON(); } else { LED_HEATCALL_OFF(); }
+    // Assume secondary UI LED is the green one (at least fot REV9 boards)...
+    if(lc & 2) { LED_UI2_ON(); } else { LED_UI2_OFF(); }
+    }
+
+// Logical last-requested light colour (lc).
+static uint8_t lcCO;
+// Count down in 2s ticks until LEDs go out (derived from lt).
+static uint8_t countDownLEDSforCO;
+// Requested flash type (lf).
+static uint8_t lfCO;
+
+// Handle boost button-press semantics.
+// Timeout in minutes before a new boot request will be fully actioned.
+// This is kept long enough to ensure that the hub cannot have failed to see the status flip
+// unless all contact has in fact been lost.
+static const uint8_t MIN_BOOST_INTERVAL_M = 30;
+// Count down from last flip of switch-toggle state, minutes.  Cannot toggle unless this is zero.
+static uint8_t toggle_blocked_countdown_m;
+// True if the button was active on the previous tick.
+static bool oldButtonPressed;
+// Switch state toggled when user activates boost function.
+// Marked volatile to allow safe lock-free read access from an ISR if necessary.
+static volatile bool switch_toggle_state;
+// True while waiting for poll after a boost request.
+// Cleared after a poll which is presumed to notice the request.
+static bool waitingForPollAfterBoostRequest;
+
+// Get the switch toggle state.
+// The hub should monitor this changing,
+// taking the change as indication of a boost request.
+// This is allowed to toggle only much slower than the hub should poll,
+// thus ensuring that the hub doesn't miss a boost request.
+// Safe to call from an ISR (though this would be unexpected).
+bool getSwitchToggleStateCO() { return(switch_toggle_state); }
+
+// Call this on even numbered seconds (with current time in seconds) to allow the CO UI to operate.
+// Should never be skipped, so as to allow the UI to remain responsive.
+//
+// The boost button for the CO relay is BUTTON_MODE_L.
+// This routine/UI cares about off-to-on active edges of the button, ie the moment of being pressed,
+// at which it will:
+//    * turn the user-visible LED solid red (for a while)
+//    * flip the status flag providing it has been more than 30 minutes since the last one
+//      (this 30 minutes being the time at which contact with the hub would be deemed lost if no comms)
+//    * send an alert message immediately (with the usual 'likely-to-get-heard' loudness settings)
+//      and possibly periodically until a new poll request comes in (as indicated by a call to setLEDsCO())
+bool tickUICO(const uint_fast8_t sec)
+  {
+  // Deal with the countdown timers.
+  if((0 == sec) && (toggle_blocked_countdown_m > 0)) { --toggle_blocked_countdown_m; }
+  if(countDownLEDSforCO > 0) { --countDownLEDSforCO; }
+
+  // Note whether the button is pressed on this tick.
+  const bool buttonPressed = (LOW == fastDigitalRead(BUTTON_MODE_L));
+  // Note whether the button has just been pressed.
+  const bool buttonJustPressed = (buttonPressed && !oldButtonPressed);
+  oldButtonPressed = buttonPressed;
+  if(buttonJustPressed)
+    {
+    // Set the LED to solid red until up to the comms timeout.
+    // When the hub poll the LEDs will be set to whatever the poll specifies.
+    setLEDsCO(1, MIN_BOOST_INTERVAL_M*2, 3, false);
+    // If not still counting down since the last switch-state toggle,
+    // toggle it now,
+    // and restart the count-down.
+    if(0 == toggle_blocked_countdown_m)
+        {
+        switch_toggle_state = !switch_toggle_state;
+        toggle_blocked_countdown_m = MIN_BOOST_INTERVAL_M;
+        }
+    // Set up to set alerts periodically until polled.
+    // Has the effect of allow the hub to know when boost is being requested
+    // even if it's not yet time to flip the toggle.
+    waitingForPollAfterBoostRequest = true;
+    // Send an alert message immediately,
+    // AFTER adjusting all relevant state so as to avoid a race,
+    // inviting the hub to poll this node ASAP and eg notice the toggle state.
+    sendCC1AlertByRFM23B();
+    // Do no further UI processing this tick.
+    // Note the user interaction to the caller.
+    return(true);
+    }
+
+  // All LEDs off when their count-down timer is/hits zero.
+  if(0 == countDownLEDSforCO) { lcCO = 0; setLEDs(0); }
+  // Else force 'correct' requested light colour and deal with any 'flash' state.
+  else
+    {
+    setLEDs(lcCO);
+
+    // Deal with flashing (non-solid) output here.
+    // Do some friendly I/O polling while waiting!
+    if(lfCO != 3)
+      {
+      // Make this the first flash.
+      mediumPause();
+      setLEDs(0); // End of first flash.
+      pollIO(); // Poll while LEDs are off.
+      if(2 == lfCO)
+        {
+        offPause();
+        pollIO(); // Poll while LEDs are off.
+        // Start the second flash.
+        setLEDs(lcCO);
+        mediumPause();
+        setLEDs(0); // End of second flash.
+        pollIO(); // Poll while LEDs are off.
+        }
+      }
+    }
+
+  // If still waiting for a poll after a boost request,
+  // arrange to send extra alerts about once every two minutes,
+  // randomly so as to minimise collisions with other regular traffic.
+  if(waitingForPollAfterBoostRequest && (sec == (OTV0P2BASE::randRNG8() & 0x3e)))
+    { sendCC1AlertByRFM23B(); }
+
+  return(false); // No human interaction this tick...
+  }
+
+// Directly adjust LEDs.
+// May be called from a message handler, so minimise blocking.
+//   * light-colour         [0,3] bit flags 1==red 2==green (lc) 0 => stop everything
+//   * light-on-time        [1,15] (0 not allowed) 30-450s in units of 30s (lt) ???
+//   * light-flash          [1,3] (0 not allowed) 1==single 2==double 3==on (lf)
+// If fromPollAndCmd is true then this was called from an incoming Poll/Cms message receipt.
+// Not ISR- safe.
+void setLEDsCO(const uint8_t lc, const uint8_t lt, const uint8_t lf, const bool fromPollAndCmd)
+    {
+    lcCO = lc;
+    countDownLEDSforCO = (lt >= 17) ? 255 : lt * 15; // Units are 30s, ticks are 2s; overflow is avoided.
+    lfCO = lf;
+    setLEDs(lc); // Set correct colour immediately.
+    if(3 != lf)
+      {
+      // Only a flash of some sort is requested,
+      // so just flicker the LED(s),
+      // then turn off again until proper flash handler.
+      tinyPause();
+      setLEDs(0);
+      }
+    // Assume that the hub will shortly know about any pending request.
+    if(fromPollAndCmd) { waitingForPollAfterBoostRequest = false; }
+    }
+#endif
+
 bool pollIO(const bool force)
   {
-#ifdef ENABLE_RADIO_PRIMARY_MODULE
   static volatile uint8_t _pO_lastPoll;
   // Poll RX at most about every ~8ms.
   const uint8_t sct = OTV0P2BASE::getSubCycleTime();
@@ -211,7 +505,6 @@ bool pollIO(const bool force)
     // before getting an RX overrun or dropped frame.
     PrimaryRadio.poll();
     }
-#endif
   return(false);
   }
 
@@ -781,6 +1074,16 @@ void loop()
     }
   TIME_LSD = newTLSD;
 
+  // Use the zeroth second in each minute to force extra deep device sleeps/resets, etc.
+  const bool second0 = (0 == TIME_LSD);
+  
+#ifdef ALLOW_CC1_SUPPORT_RELAY_IO // REV9 CC1 relay...
+    // Run the CC1 relay UI.
+    if(tickUICO(TIME_LSD))
+      {
+//      showStatus = true;
+      }
+#endif
 
 
   }
