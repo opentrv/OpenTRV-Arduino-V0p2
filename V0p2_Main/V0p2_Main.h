@@ -46,7 +46,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #include <OTRadioLink.h>
 #include <OTRadValve.h>
 #include "V0p2_Generic_Config.h" // Config switches and module dependencies.
-#include "V0p2_Board_IO_Config.h" // I/O pin allocation: include ahead of I/O module headers.
+#include <OTV0p2_Board_IO_Config.h> // I/O pin allocation and setup: include ahead of I/O module headers.
 
 // Link in support for alternate Power On Self-Test (startup) and main loop if required.
 #if defined(ALT_MAIN_LOOP) // Exclude code from production systems.

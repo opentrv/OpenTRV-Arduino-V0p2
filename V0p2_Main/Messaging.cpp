@@ -24,7 +24,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
 
 #include "Messaging.h"
 
-#include "V0p2_Board_IO_Config.h" // I/O pin allocation: include ahead of I/O module headers.
+#include <OTV0p2_Board_IO_Config.h> // I/O pin allocation and setup: include ahead of I/O module headers.
 
 #if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) || defined(ENABLE_SECURE_RADIO_BEACON)
 #include <OTAESGCM.h>
