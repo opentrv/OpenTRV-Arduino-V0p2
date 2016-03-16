@@ -445,9 +445,9 @@ void setup()
   // Set up async edge interrupts.
   ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
     {
-    //PCMSK0 = PB; PCINT  0--7    (LEARN1 and Radio)
+    //PCMSK0 = PB; PCINT  0--7    (Radio)
     //PCMSK1 = PC; PCINT  8--15
-    //PCMSK2 = PD; PCINT 16--24   (Serial RX and LEARN2 and MODE and Voice)
+    //PCMSK2 = PD; PCINT 16--24   (Serial RX)
 
     PCICR =
 #if defined(MASK_PB) && (MASK_PB != 0) // If PB interrupts required.
@@ -486,10 +486,32 @@ void setup()
   TIME_LSD = OTV0P2BASE::getSecondsLT();
   }
 
-void loop() {
-  // put your main code here, to run repeatedly:
 
-}
+// Main code here, loops every 2s.
+void loop()
+  {
+  OTV0P2BASE::powerDownSerial(); // Ensure that serial I/O is off.
+  // Power down most stuff (except radio for hub RX).
+  OTV0P2BASE::minimisePowerWithoutSleep();
+  uint_fast8_t newTLSD;
+  while(TIME_LSD == (newTLSD = OTV0P2BASE::getSecondsLT()))
+    {
+// FIXME FIXME FIXME
+//    // Poll I/O and process message incrementally (in this otherwise idle time)
+//    // before sleep and on wakeup in case some IO needs further processing now,
+//    // eg work was accrued during the previous major slow/outer loop
+//    // or the in a previous orbit of this loop sleep or nap was terminated by an I/O interrupt.
+//    // Come back and have another go if work was done, until the next tick at most.
+//    if(handleQueuedMessages(&Serial, true, &PrimaryRadio)) { continue; }
+
+    // Normal long minimal-power sleep until wake-up interrupt.
+    // Rely on interrupt to force fall through to I/O poll() below.
+    OTV0P2BASE::sleepUntilInt();
+    }
+  TIME_LSD = newTLSD;
+
+
+  }
 
 
 
