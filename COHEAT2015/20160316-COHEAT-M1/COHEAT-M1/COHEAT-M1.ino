@@ -1,10 +1,6 @@
-// Uncomment exactly one of the following CONFIG_ lines to select which board is being built for.
+// Uncomment exactly one of the following CONFIG_... lines to select which board is being built for.
 //#define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
 #define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
-
-//#ifndef BAUD
-//#define BAUD 4800 // Ensure that OpenTRV 'standard' UART speed is set unless explicitly overridden.
-//#endif
 
 #include <Arduino.h>
 #include <Wire.h>
@@ -15,39 +11,23 @@
 #include <OTProtocolCC.h>
 #include <OTV0p2_CONFIG_REV2.h>
 #include <OTV0p2_CONFIG_REV9.h>
-//#if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) || defined(ENABLE_SECURE_RADIO_BEACON)
-//#include <OTAESGCM.h>
-//#endif
+#if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
+#include <OTAESGCM.h>
+#endif
 #include <OTV0p2_Board_IO_Config.h> // I/O pin allocation and setup: include ahead of I/O module headers.
 
-// If a stats or boiler hub, define ENABLE_HUB_LISTEN.
-#if defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)
 #define ENABLE_HUB_LISTEN
 // Force-enable RX if not already so.
 #define ENABLE_RADIO_RX
-#endif
-// If (potentially) needing to run in some sort of continuous RX mode, define a flag.
-#if defined(ENABLE_HUB_LISTEN) || defined(ENABLE_DEFAULT_ALWAYS_RX)
 #define ENABLE_CONTINUOUS_RX // was #define CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX true
-#endif
 // By default (up to 2015), use the RFM22/RFM23 module to talk to an FHT8V wireless radiator valve.
 #ifdef ENABLE_FHT8VSIMPLE
 #define ENABLE_RADIO_RFM23B
 #define ENABLE_FS20_CARRIER_SUPPORT
 #define ENABLE_FS20_ENCODING_SUPPORT
-// If this can be a hub, enable extra RX code.
-#if defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)
 #define ENABLE_FHT8VSIMPLE_RX
 #define LISTEN_FOR_FTp2_FS20_native
-#endif // defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)
-#if defined(ENABLE_STATS_RX)
-#define ENABLE_FS20_NATIVE_AND_BINARY_STATS_RX
-#endif // defined(ENABLE_STATS_RX)
 #endif // ENABLE_FHT8VSIMPLE
-// If in stats or boiler hub mode, and with an FS20 OOK carrier, then apply a trailing-zeros RX filter.
-#if (defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)) && defined(LISTEN_FOR_FTp2_FS20_native)
-#define CONFIG_TRAILING_ZEROS_FILTER_RX
-#endif
 
 // Indicate that the system is broken in an obvious way (distress flashing of the main UI LED).
 // DOES NOT RETURN.
@@ -83,6 +63,8 @@ inline void burnHundredsOfCyclesProductivelyAndPoll()
   }
 
 extern OTRadioLink::OTRadioLink &PrimaryRadio;
+
+//---------------------
 
 // Controller's view of Least Significant Digits of the current (local) time, in this case whole seconds.
 #define TIME_CYCLE_S 60 // TIME_LSD ranges from 0 to TIME_CYCLE_S-1, also major cycle length.

@@ -158,7 +158,6 @@ static void inline offPause()
 // Counts calls to tickUI.
 static uint8_t tickCount;
 
-
 // Call this on even numbered seconds (with current time in seconds) to allow the UI to operate.
 // Should never be skipped, so as to allow the UI to remain responsive.
 // Runs in 350ms or less; usually takes only a few milliseconds or microseconds.
