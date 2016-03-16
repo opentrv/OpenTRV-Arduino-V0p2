@@ -445,9 +445,9 @@ void setup()
   // Set up async edge interrupts.
   ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
     {
-    //PCMSK0 = PB; PCINT  0--7    (LEARN1 and Radio)
+    //PCMSK0 = PB; PCINT  0--7    (Radio)
     //PCMSK1 = PC; PCINT  8--15
-    //PCMSK2 = PD; PCINT 16--24   (Serial RX and LEARN2 and MODE and Voice)
+    //PCMSK2 = PD; PCINT 16--24   (Serial RX)
 
     PCICR =
 #if defined(MASK_PB) && (MASK_PB != 0) // If PB interrupts required.
@@ -485,6 +485,7 @@ void setup()
   // Set appropriate loop() values just before entering it.
   TIME_LSD = OTV0P2BASE::getSecondsLT();
   }
+
 
 void loop() {
   // put your main code here, to run repeatedly:
