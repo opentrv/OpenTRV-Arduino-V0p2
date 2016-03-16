@@ -126,7 +126,7 @@ OTRadioLink::OTRadioLink &PrimaryRadio = NullRadio;
 OTRadioLink::OTRadioLink &SecondaryRadio = RFM23B;
 #elif defined(ENABLE_RADIO_SECONDARY_SIM900)
 OTRadioLink::OTRadioLink &SecondaryRadio = SIM900;
-#elif defined(RADIO_SECONDARY_RN2483)
+#elif defined(ENABLE_RADIO_SECONDARY_RN2483)
 OTRadioLink::OTRadioLink &SecondaryRadio = RN2483;
 #else
 OTRadioLink::OTRadioLink &SecondaryRadio = NullRadio;
