@@ -56,8 +56,6 @@ inline void burnHundredsOfCyclesProductivelyAndPoll()
 extern OTRadioLink::OTRadioLink &PrimaryRadio;
 
 // Controller's view of Least Significant Digits of the current (local) time, in this case whole seconds.
-// See PICAXE V0.1/V0.09/DHD201302L0 code.
-#define TIME_LSD_IS_BINARY // TIME_LSD is in binary (cf BCD).
 #define TIME_CYCLE_S 60 // TIME_LSD ranges from 0 to TIME_CYCLE_S-1, also major cycle length.
 static uint_fast8_t TIME_LSD; // Controller's notion of seconds within major cycle.
 
