@@ -53,6 +53,20 @@ inline void burnHundredsOfCyclesProductivelyAndPoll()
   else { OTV0P2BASE::captureEntropy1(); }
   }
 
+extern OTRadioLink::OTRadioLink &PrimaryRadio;
+
+// Controller's view of Least Significant Digits of the current (local) time, in this case whole seconds.
+// See PICAXE V0.1/V0.09/DHD201302L0 code.
+#define TIME_LSD_IS_BINARY // TIME_LSD is in binary (cf BCD).
+#define TIME_CYCLE_S 60 // TIME_LSD ranges from 0 to TIME_CYCLE_S-1, also major cycle length.
+static uint_fast8_t TIME_LSD; // Controller's notion of seconds within major cycle.
+
+// 'Elapsed minutes' count of minute/major cycles; cheaper than accessing RTC and not tied to real time.
+// Starts at or just above zero (within the first 4-minute cycle) to help avoid collisions between units after mass power-up.
+// Wraps at its maximum (0xff) value.
+static uint8_t minuteCount;
+
+
 #ifndef DEBUG
 #define DEBUG_SERIAL_PRINT(s) // Do nothing.
 #define DEBUG_SERIAL_PRINTFMT(s, format) // Do nothing.
@@ -406,20 +420,53 @@ bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadi
   return(workDone);
   }
 
+// Returns true if continuous background RX has been set up.
+static bool setUpContinuousRX()
+  {
+  // Possible paranoia...
+  // Periodically (every few hours) force radio off or at least to be not listening.
+  if((30 == TIME_LSD) && (128 == minuteCount)) { PrimaryRadio.listen(false); }
 
+  const bool needsToListen = true; // By default listen if always doing RX.
 
+  // Act on eavesdropping need, setting up or clearing down hooks as required.
+  PrimaryRadio.listen(needsToListen);
 
+  if(needsToListen)
+    {
+#if 1 && defined(DEBUG) && defined(ENABLE_RADIO_RX) && !defined(ENABLE_TRIMMED_MEMORY)
+    for(uint8_t lastErr; 0 != (lastErr = PrimaryRadio.getRXErr()); )
+      {
+      DEBUG_SERIAL_PRINT_FLASHSTRING("!RX err ");
+      DEBUG_SERIAL_PRINT(lastErr);
+      DEBUG_SERIAL_PRINTLN();
+      }
+    const uint8_t dropped = PrimaryRadio.getRXMsgsDroppedRecent();
+    static uint8_t oldDropped;
+    if(dropped != oldDropped)
+      {
+      DEBUG_SERIAL_PRINT_FLASHSTRING("!RX DROP ");
+      DEBUG_SERIAL_PRINT(dropped);
+      DEBUG_SERIAL_PRINTLN();
+      oldDropped = dropped;
+      }
+#endif
+#if 0 && defined(DEBUG) && !defined(ENABLE_TRIMMED_MEMORY)
+    // Filtered out messages are not an error.
+    const uint8_t filtered = PrimaryRadio.getRXMsgsFilteredRecent();
+    static uint8_t oldFiltered;
+    if(filtered != oldFiltered)
+      {
+      DEBUG_SERIAL_PRINT_FLASHSTRING("RX filtered ");
+      DEBUG_SERIAL_PRINT(filtered);
+      DEBUG_SERIAL_PRINTLN();
+      oldFiltered = filtered;
+      }
+#endif
+    }
+  return(needsToListen);
+  }
 
-// Controller's view of Least Significant Digits of the current (local) time, in this case whole seconds.
-// See PICAXE V0.1/V0.09/DHD201302L0 code.
-#define TIME_LSD_IS_BINARY // TIME_LSD is in binary (cf BCD).
-#define TIME_CYCLE_S 60 // TIME_LSD ranges from 0 to TIME_CYCLE_S-1, also major cycle length.
-static uint_fast8_t TIME_LSD; // Controller's notion of seconds within major cycle.
-
-// 'Elapsed minutes' count of minute/major cycles; cheaper than accessing RTC and not tied to real time.
-// Starts at or just above zero (within the first 4-minute cycle) to help avoid collisions between units after mass power-up.
-// Wraps at its maximum (0xff) value.
-static uint8_t minuteCount;
 
 // Mask for Port B input change interrupts.
 #define MASK_PB_BASIC 0b00000000 // Nothing.
@@ -713,6 +760,8 @@ void setup()
 // Main code here, loops every 2s.
 void loop()
   {
+  const bool needsToListen = setUpContinuousRX();
+
   OTV0P2BASE::powerDownSerial(); // Ensure that serial I/O is off.
   // Power down most stuff (except radio for hub RX).
   OTV0P2BASE::minimisePowerWithoutSleep();
