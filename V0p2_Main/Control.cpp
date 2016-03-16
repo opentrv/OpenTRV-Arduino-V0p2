@@ -1034,11 +1034,13 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 
     // Managed JSON stats.
 #if defined(ENABLE_JSON_FRAME_MINIMISED)
-    const bool maximise = false; // Minimise frame size (eg for noisy radio links)...
-    // Suppress "+" count field even at loss of diagnostics.
+    // Minimise frame size (eg for noisy radio links)...
+     const bool maximise = false;
+   // Suppress "+" count field, accepting loss of diagnostics.
     ss1.enableCount(false); 
 #else
-    const bool maximise = true; // Make best use of available bandwidth...
+    // Make best use of available bandwidth...
+    const bool maximise = true;
     // Enable "+" count field for diagnostic purposes, eg while TX is lossy,
     // if the primary radio channel does not include a sequence number itself.
     // Assume that an encrypted channel will provide its own (visible) sequence counter.
