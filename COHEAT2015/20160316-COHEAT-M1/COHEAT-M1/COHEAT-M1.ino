@@ -10,6 +10,7 @@
 #include <Wire.h>
 #include <OTV0p2Base.h>
 #include <OTRadioLink.h>
+#include <OTRFM23BLink.h>
 #include <OTRadValve.h>
 #include <OTProtocolCC.h>
 #include <OTV0p2_CONFIG_REV2.h>
@@ -289,6 +290,57 @@ ISR(PCINT2_vect)
   }
 #endif
 
+
+static const uint8_t RFM23B_RX_QUEUE_SIZE = OTRFM23BLink::DEFAULT_RFM23B_RX_QUEUE_CAPACITY;
+static const int8_t RFM23B_IRQ_PIN = PIN_RFM_NIRQ;
+static const bool RFM23B_allowRX = true;
+OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, RFM23B_IRQ_PIN, RFM23B_RX_QUEUE_SIZE, RFM23B_allowRX> RFM23B;
+// Assigns radio to PrimaryRadio alias.
+OTRadioLink::OTRadioLink &PrimaryRadio = RFM23B;
+
+#if defined(ALLOW_CC1_SUPPORT_RELAY)
+// For a CC1 relay, ignore everything except FTp2_CC1PollAndCmd messages.
+// With care (not accessing EEPROM for example) this could also reject anything with wrong house code.
+static bool FilterRXISR(const volatile uint8_t *buf, volatile uint8_t &buflen)
+  {
+  if((buflen < 8) || (OTRadioLink::FTp2_CC1PollAndCmd != buf[0])) { return(false); }
+  buflen = 8; // Truncate message to correct size for efficiency.
+  return(true); // Accept message.
+  }
+#elif defined(ALLOW_CC1_SUPPORT_HUB)
+// For a CC1 hub, ignore everything except FTp2_CC1Alert and FTp2_CC1PollResponse messages.
+static bool FilterRXISR(const volatile uint8_t *buf, volatile uint8_t &buflen)
+  {
+  if(buflen < 8) { return(false); }
+  const uint8_t t = buf[0];
+  if((OTRadioLink::FTp2_CC1Alert != t) && (OTRadioLink::FTp2_CC1PollResponse != t)) { return(false); }
+  buflen = 8; // Truncate message to correct size for efficiency.
+  return(true); // Accept message.
+  }
+#endif
+
+#if defined(ALLOW_CC1_SUPPORT)
+// COHEAT: REV2/REV9 talking on fast GFSK channel 0, REV9 TX to FHT8V on slow OOK.
+#define RADIO_CONFIG_NAME "COHEAT DUAL CHANNEL"
+static const uint8_t nPrimaryRadioChannels = 2;
+static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChannels] =
+  {
+  // GFSK channel 0 full config, RX/TX, not in itself secure.
+  OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsGFSK57600, true),
+  // FS20/FHT8V compatible channel 1 full config, used for TX only, not secure, unframed.
+  OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsOOK5000, true, false, true, false, false, true),
+  };
+#elif defined(ENABLE_FAST_FRAMED_CARRIER_SUPPORT)
+#define RADIO_CONFIG_NAME "GFSK"
+// Nodes talking on fast GFSK channel 0.
+static const uint8_t nPrimaryRadioChannels = 1;
+static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChannels] =
+  {
+  // GFSK channel 0 full config, RX/TX, not in itself secure.
+  OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsGFSK57600, true),
+  };
+#endif
+
 // One-off setup.
 void setup()
   {
@@ -339,15 +391,14 @@ void setup()
 //  // Signal that xtal is running AND give it time to settle.
 //  posPOST(0 /*, F("about to test radio module") */);
 
-// FIXME FIXME FIXME
-//  // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
-//  PrimaryRadio.preinit(NULL);
-//  // Check that the radio is correctly connected; panic if not...
-//  if(!PrimaryRadio.configure(nPrimaryRadioChannels, RFM23BConfigs) || !PrimaryRadio.begin()) { panic(F("r1")); }
-//  // Apply filtering, if any, while we're having fun...
-//#ifndef NO_RX_FILTER
-//  PrimaryRadio.setFilterRXISR(FilterRXISR);
-//#endif // NO_RX_FILTER
+  // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
+  PrimaryRadio.preinit(NULL);
+  // Check that the radio is correctly connected; panic if not...
+  if(!PrimaryRadio.configure(nPrimaryRadioChannels, RFM23BConfigs) || !PrimaryRadio.begin()) { panic(F("r1")); }
+  // Apply filtering, if any, while we're having fun...
+#ifndef NO_RX_FILTER
+  PrimaryRadio.setFilterRXISR(FilterRXISR);
+#endif // NO_RX_FILTER
 
 //  posPOST(1, F("Radio OK, checking buttons/sensors and xtal"));
 
@@ -389,10 +440,9 @@ void setup()
 //  // Report initial status.
 //  serialStatusReport();
 
-// FIXME FIXME FIXME
-//  // Radio not listening to start with.
-//  // Ignore any initial spurious RX interrupts for example.
-//  PrimaryRadio.listen(false);
+  // Radio not listening to start with.
+  // Ignore any initial spurious RX interrupts for example.
+  PrimaryRadio.listen(false);
 
   // Set up async edge interrupts.
   ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
