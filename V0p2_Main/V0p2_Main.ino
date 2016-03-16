@@ -373,7 +373,7 @@ void setup()
 //#endif
 
   // IO setup for safety, and to avoid pins floating.
-  IOSetup();
+  OTV0P2BASE::IOSetup();
 
 //#if defined(ENABLE_MIN_ENERGY_BOOT)
 //  nap(WDTO_120MS); // Sleep to let power supply recover a little.

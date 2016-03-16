@@ -245,14 +245,13 @@ ISR(PCINT0_vect)
   const uint8_t changes = pins ^ prevStatePB;
   prevStatePB = pins;
 
-// FIXME FIXME FIXME
-//#if defined(RFM23B_INT_MASK)
-//  // RFM23B nIRQ falling edge is of interest.
-//  // Handler routine not required/expected to 'clear' this interrupt.
-//  // TODO: try to ensure that OTRFM23BLink.handleInterruptSimple() is inlineable to minimise ISR prologue/epilogue time and space.
-//  if((changes & RFM23B_INT_MASK) && !(pins & RFM23B_INT_MASK))
-//    { PrimaryRadio.handleInterruptSimple(); }
-//#endif
+#if defined(RFM23B_INT_MASK)
+  // RFM23B nIRQ falling edge is of interest.
+  // Handler routine not required/expected to 'clear' this interrupt.
+  // TODO: try to ensure that OTRFM23BLink.handleInterruptSimple() is inlineable to minimise ISR prologue/epilogue time and space.
+  if((changes & RFM23B_INT_MASK) && !(pins & RFM23B_INT_MASK))
+    { PrimaryRadio.handleInterruptSimple(); }
+#endif
   }
 #endif
 
@@ -289,7 +288,6 @@ ISR(PCINT2_vect)
 //  if(!(changes & MASK_PD & ~1)) { resetCLIActiveTimer(); }
   }
 #endif
-
 
 static const uint8_t RFM23B_RX_QUEUE_SIZE = OTRFM23BLink::DEFAULT_RFM23B_RX_QUEUE_CAPACITY;
 static const int8_t RFM23B_IRQ_PIN = PIN_RFM_NIRQ;
@@ -347,7 +345,7 @@ void setup()
   // Set appropriate low-power states, interrupts, etc, ASAP.
   OTV0P2BASE::powerSetup();
   // IO setup for safety, and to avoid pins floating.
-  IOSetup();
+  OTV0P2BASE::IOSetup();
   // Restore previous RTC state if available.
   OTV0P2BASE::restoreRTC();
 #if defined(LED_UI2_EXISTS) && defined(ENABLE_UI_LED_2_IF_AVAILABLE)
