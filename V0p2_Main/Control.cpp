@@ -1035,8 +1035,8 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
     // Managed JSON stats.
 #if defined(ENABLE_JSON_FRAME_MINIMISED)
     // Minimise frame size (eg for noisy radio links)...
-     const bool maximise = false;
-   // Suppress "+" count field, accepting loss of diagnostics.
+    const bool maximise = false;
+    // Suppress "+" count field, accepting loss of diagnostics.
     ss1.enableCount(false); 
 #else
     // Make best use of available bandwidth...
