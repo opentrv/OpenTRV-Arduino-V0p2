@@ -24,7 +24,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
 
 #include "Messaging.h"
 
-#include "V0p2_Board_IO_Config.h" // I/O pin allocation: include ahead of I/O module headers.
+#include <OTV0p2_Board_IO_Config.h> // I/O pin allocation and setup: include ahead of I/O module headers.
 
 #if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) || defined(ENABLE_SECURE_RADIO_BEACON)
 #include <OTAESGCM.h>
@@ -70,7 +70,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
 
 // UDP Configs - Uncomment based on which server you want to send to
 //  static const char SIM900_UDP_ADDR[14] PROGMEM = "0.0.0.0"; // ORS server
-  static const char SIM900_UDP_ADDR[14] PROGMEM = "0.0.0.0";   // Brent server
+  static const char SIM900_UDP_ADDR[16] PROGMEM = "0.0.0.0";   // Brent server
   static const char SIM900_UDP_PORT[5] PROGMEM = "9999";             // Standard port for OpenTRV servers
   const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config(
                                                   false,
@@ -126,7 +126,7 @@ OTRadioLink::OTRadioLink &PrimaryRadio = NullRadio;
 OTRadioLink::OTRadioLink &SecondaryRadio = RFM23B;
 #elif defined(ENABLE_RADIO_SECONDARY_SIM900)
 OTRadioLink::OTRadioLink &SecondaryRadio = SIM900;
-#elif defined(RADIO_SECONDARY_RN2483)
+#elif defined(ENABLE_RADIO_SECONDARY_RN2483)
 OTRadioLink::OTRadioLink &SecondaryRadio = RN2483;
 #else
 OTRadioLink::OTRadioLink &SecondaryRadio = NullRadio;
