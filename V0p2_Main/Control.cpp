@@ -1002,9 +1002,15 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
     // Where to write the real frame content.
     uint8_t *const realTXFrameStart = bptr;
 
-    // If forcing encryption then suppress the "@" ID field entirely,
+    // If forcing encryption or if unconditionally suppressed
+    // then suppress the "@" ID field entirely,
     // assuming that the encrypted commands will carry the ID, ie in the 'envelope'.
-    if(doEnc) { static const char nul[1] = {}; ss1.setID(nul); }
+#if defined(ENABLE_JSON_SUPPRESSED_ID)
+    if(true)
+#else
+    if(doEnc)
+#endif // defined(ENABLE_JSON_SUPPRESSED_ID)
+        { static const char nul[1] = {}; ss1.setID(nul); }
     else
       {
 #if defined(ENABLE_FHT8VSIMPLE)
@@ -1027,14 +1033,21 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
       }
 
     // Managed JSON stats.
+#if defined(ENABLE_JSON_FRAME_MINIMISED)
+    const bool maximise = false; // Minimise frame size (eg for noisy radio links)...
+    // Suppress "+" count field even at loss of diagnostics.
+    ss1.enableCount(false); 
+#else
     const bool maximise = true; // Make best use of available bandwidth...
-    if(ss1.isEmpty())
-      {
-      // Enable "+" count field for diagnostic purposes, eg while TX is lossy,
-      // if the primary radio channel does not include a sequence number itself.
-      // Assume that an encrypted channel will provide its own (visible) sequence counter.
-      ss1.enableCount(!doEnc); 
-      }
+    // Enable "+" count field for diagnostic purposes, eg while TX is lossy,
+    // if the primary radio channel does not include a sequence number itself.
+    // Assume that an encrypted channel will provide its own (visible) sequence counter.
+    ss1.enableCount(!doEnc); 
+#endif // defined(ENABLE_JSON_FRAME_MINIMISED)
+//    if(ss1.isEmpty())
+//      {
+//      // Perform run-once operations...
+//      }
     ss1.put(TemperatureC16);
 #if defined(HUMIDITY_SENSOR_SUPPORT)
     ss1.put(RelHumidity);
