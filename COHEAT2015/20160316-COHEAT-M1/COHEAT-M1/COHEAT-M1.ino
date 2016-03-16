@@ -234,8 +234,6 @@ static uint8_t minuteCount;
 #endif
 
 #if defined(MASK_PB) && (MASK_PB != 0) // If PB interrupts required.
-//// Interrupt count.  Marked volatile so safe to read without a lock as is a single byte.
-//static volatile uint8_t intCountPB;
 // Previous state of port B pins to help detect changes.
 static volatile uint8_t prevStatePB;
 // Interrupt service routine for PB I/O port transition changes.
@@ -291,8 +289,9 @@ ISR(PCINT2_vect)
   }
 #endif
 
-
-void setup() {
+// One-off setup.
+void setup()
+  {
   // Set appropriate low-power states, interrupts, etc, ASAP.
   OTV0P2BASE::powerSetup();
   // IO setup for safety, and to avoid pins floating.
@@ -437,7 +436,7 @@ void setup() {
 
   // Set appropriate loop() values just before entering it.
   TIME_LSD = OTV0P2BASE::getSecondsLT();
-}
+  }
 
 void loop() {
   // put your main code here, to run repeatedly:
