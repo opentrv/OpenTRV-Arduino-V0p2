@@ -1,0 +1,1 @@
+COHEAT standalone release with minimal boilerplate OpenTRV code and ability to support secure comms.
