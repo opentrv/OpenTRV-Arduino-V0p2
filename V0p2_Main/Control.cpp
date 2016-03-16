@@ -1662,7 +1662,7 @@ void remoteCallForHeatRX(const uint16_t id, const uint8_t percentOpen)
 
 #if defined(ENABLE_RADIO_RX)
 // Returns true if continuous background RX has been set up.
-static bool setUpContinuousRX(const bool second0)
+static bool setUpContinuousRX()
   {
   // Possible paranoia...
   // Periodically (every few hours) force radio off or at least to be not listening.
@@ -1894,7 +1894,7 @@ void loopOpenTRV()
 //  if(getSubCycleTime() >= nearOverrunThreshold) { tooNearOverrun = true; }
 
 #if defined(ENABLE_CONTINUOUS_RX)
-  const bool needsToListen = setUpContinuousRX(second0);
+  const bool needsToListen = setUpContinuousRX();
 #endif
 
 #if defined(ENABLE_BOILER_HUB)

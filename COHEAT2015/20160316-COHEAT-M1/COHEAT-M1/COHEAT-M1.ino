@@ -53,6 +53,8 @@ inline void burnHundredsOfCyclesProductivelyAndPoll()
   else { OTV0P2BASE::captureEntropy1(); }
   }
 
+extern OTRadioLink::OTRadioLink &PrimaryRadio;
+
 #ifndef DEBUG
 #define DEBUG_SERIAL_PRINT(s) // Do nothing.
 #define DEBUG_SERIAL_PRINTFMT(s, format) // Do nothing.
@@ -406,8 +408,53 @@ bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadi
   return(workDone);
   }
 
+// Returns true if continuous background RX has been set up.
+static bool setUpContinuousRX()
+  {
+// FIXME FIXME FIXME
+//  // Possible paranoia...
+//  // Periodically (every few hours) force radio off or at least to be not listening.
+//  if((30 == TIME_LSD) && (128 == minuteCount)) { PrimaryRadio.listen(false); }
 
+  const bool needsToListen = true; // By default listen if always doing RX.
 
+  // Act on eavesdropping need, setting up or clearing down hooks as required.
+  PrimaryRadio.listen(needsToListen);
+
+  if(needsToListen)
+    {
+#if 1 && defined(DEBUG) && defined(ENABLE_RADIO_RX) && !defined(ENABLE_TRIMMED_MEMORY)
+    for(uint8_t lastErr; 0 != (lastErr = PrimaryRadio.getRXErr()); )
+      {
+      DEBUG_SERIAL_PRINT_FLASHSTRING("!RX err ");
+      DEBUG_SERIAL_PRINT(lastErr);
+      DEBUG_SERIAL_PRINTLN();
+      }
+    const uint8_t dropped = PrimaryRadio.getRXMsgsDroppedRecent();
+    static uint8_t oldDropped;
+    if(dropped != oldDropped)
+      {
+      DEBUG_SERIAL_PRINT_FLASHSTRING("!RX DROP ");
+      DEBUG_SERIAL_PRINT(dropped);
+      DEBUG_SERIAL_PRINTLN();
+      oldDropped = dropped;
+      }
+#endif
+#if 0 && defined(DEBUG) && !defined(ENABLE_TRIMMED_MEMORY)
+    // Filtered out messages are not an error.
+    const uint8_t filtered = PrimaryRadio.getRXMsgsFilteredRecent();
+    static uint8_t oldFiltered;
+    if(filtered != oldFiltered)
+      {
+      DEBUG_SERIAL_PRINT_FLASHSTRING("RX filtered ");
+      DEBUG_SERIAL_PRINT(filtered);
+      DEBUG_SERIAL_PRINTLN();
+      oldFiltered = filtered;
+      }
+#endif
+    }
+  return(needsToListen);
+  }
 
 
 // Controller's view of Least Significant Digits of the current (local) time, in this case whole seconds.
@@ -713,6 +760,8 @@ void setup()
 // Main code here, loops every 2s.
 void loop()
   {
+  const bool needsToListen = setUpContinuousRX();
+
   OTV0P2BASE::powerDownSerial(); // Ensure that serial I/O is off.
   // Power down most stuff (except radio for hub RX).
   OTV0P2BASE::minimisePowerWithoutSleep();
