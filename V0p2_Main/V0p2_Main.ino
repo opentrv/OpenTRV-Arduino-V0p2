@@ -325,11 +325,11 @@ void optionalPOST()
 #endif // ENABLE_RADIO_SIM900
   // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
   SecondaryRadio.preinit(NULL);
-#if 1 && defined(DEBUG) && !defined(ENABLE_TRIMMED_MEMORY)
+#if 0 && defined(DEBUG) && !defined(ENABLE_TRIMMED_MEMORY)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("R2");
 #endif
   // Check that the radio is correctly connected; panic if not...
-  if(!SecondaryRadio.configure(1, &SecondaryRadioConfig) || !SecondaryRadio.begin()) { panic(); }
+  if(!SecondaryRadio.configure(1, &SecondaryRadioConfig) || !SecondaryRadio.begin()) { panic(F("r2")); }
   // Assume no RX nor filtering on secondary radio.
 #endif // ENABLE_RADIO_SECONDARY_MODULE
 
@@ -355,8 +355,9 @@ void optionalPOST()
 #endif
 #endif // Select user-facing boards.
 
-  // Single/main POST checkpoint for speed.
-  posPOST(1 /* , F("POST OK") */ );
+// Save space (and time) by avoiding the second POST sequence; LED will be turned off anyway.
+//  // Single/main POST checkpoint for speed.
+//  posPOST(1 /* , F("POST OK") */ );
   }
 
 

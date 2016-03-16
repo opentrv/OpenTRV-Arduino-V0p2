@@ -482,7 +482,11 @@ uint8_t ModelledRadValve::computeTargetTemp()
 
 #if defined(ENABLE_SETBACK_LOCKOUT_COUNTDOWN)
     // If smart setbacks are locked out then return WARM temperature as-is.  (TODO-786)
-    if(0xff != eeprom_read_byte((uint8_t *)OTV0P2BASE::V0P2BASE_EE_START_SETBACK_LOCKOUT_COUNTDOWN_H_INV)) { return(wt); }
+    if(0xff != eeprom_read_byte((uint8_t *)OTV0P2BASE::V0P2BASE_EE_START_SETBACK_LOCKOUT_COUNTDOWN_H_INV))
+      {
+      OTV0P2BASE::serialPrintlnAndFlush("?SLO");
+      return(wt);
+      }
 #endif
 
     // Set back target the temperature a little if the room seems to have been vacant for a long time (TODO-107)
@@ -1180,7 +1184,9 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
     if(!sendingJSONFailed)
       {
       // Write out unadjusted JSON or encrypted frame on secondary radio.
-      SecondaryRadio.queueToSend(realTXFrameStart, doEnc ? (bptr - realTXFrameStart) : wrote);
+//      SecondaryRadio.queueToSend(realTXFrameStart, doEnc ? (bptr - realTXFrameStart) : wrote);
+      // Assumes that framing (or not) of primary and secondary radios is the same (usually: both framed).
+      SecondaryRadio.queueToSend(realTXFrameStart, wrote);
       }
 #endif // ENABLE_RADIO_SECONDARY_MODULE
 
@@ -2100,7 +2106,7 @@ void loopOpenTRV()
       // though not enough to make a significant difference to bandwidth.
       // Send very slightly more often when changed stats pending to send upstream.
       // TODO: send immediately with 100% valve payload when user puts system into BAKE mode for fast response.
-      if(!minute1From4AfterSensors && (OTV0P2BASE::randRNG8() > (ss1.changedValue() ? 13 : 11))) { break; }
+      if(!minute1From4AfterSensors && (OTV0P2BASE::randRNG8() > (ss1.changedValue() ? 4 : 3))) { break; }
 #endif
 
       // Abort if not allowed to send stats at all.

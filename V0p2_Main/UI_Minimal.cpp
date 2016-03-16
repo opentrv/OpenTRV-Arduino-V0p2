@@ -809,6 +809,9 @@ static void dumpCLIUsage(const uint8_t stopBy)
   printCLILine(deadline, F("I *"), F("create new ID"));
   printCLILine(deadline, 'S', F("show Status"));
   printCLILine(deadline, 'V', F("sys Version"));
+#ifdef ENABLE_GENERIC_PARAM_CLI_ACCESS
+  printCLILine(deadline, F("G N [M]"), F("Show [set] generic param N [to M]")); // *******
+#endif
 
 #ifdef ENABLE_FULL_OT_CLI
   // Optional CLI features...
@@ -912,7 +915,6 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
   // Idle a short while to try to save energy, waiting for serial TX end and possible RX response start.
   OTV0P2BASE::flushSerialSCTSensitive();
 
-
   // Wait for input command line from the user (received characters may already have been queued)...
   // Read a line up to a terminating CR, either on its own or as part of CRLF.
   // (Note that command content and timing may be useful to fold into PRNG entropy pool.)
@@ -926,20 +928,20 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
       {
       int ic = Serial.read();
       if(('\r' == ic) || ('\n' == ic)) { break; } // Stop at CR, eg from CRLF, or LF.
-#ifdef CLI_INTERACTIVE_ECHO
-      if(('\b' == ic) || (127 == ic))
-        {
-        // Handle backspace or delete as delete...
-        if(n > 0) // Ignore unless something to delete...
-          {
-          Serial.print('\b');
-          Serial.print(' ');
-          Serial.print('\b');
-          --n;
-          }
-        continue;
-        }
-#endif
+//#ifdef CLI_INTERACTIVE_ECHO
+//      if(('\b' == ic) || (127 == ic))
+//        {
+//        // Handle backspace or delete as delete...
+//        if(n > 0) // Ignore unless something to delete...
+//          {
+//          Serial.print('\b');
+//          Serial.print(' ');
+//          Serial.print('\b');
+//          --n;
+//          }
+//        continue;
+//        }
+//#endif
       if((ic < 32) || (ic > 126)) { continue; } // Drop bogus non-printable characters.
       // Ignore any leading char that is not a letter (or '?' or '+'),
       // and force leading (command) char to upper case.
@@ -1005,6 +1007,8 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
 #else
     Serial.println(buf); // Echo the line received (asynchronously).
 #endif
+    // Force any pending output before return / possible UART power-down.
+    OTV0P2BASE::flushSerialSCTSensitive();
 
     // Process the input received, with action based on the first char...
     bool showStatus = true; // Default to showing status.
@@ -1052,17 +1056,21 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         }
 #endif
 
+#if defined(ENABLE_GENERIC_PARAM_CLI_ACCESS)
+      // Show/set generic parameter values (eg "G N [M]").
+      case 'G': { showStatus = OTV0P2BASE::CLI::GenericParam().doCommand(buf, n); break; }
+#endif
+
       // Set or display new random ID.
       case 'I': { showStatus = OTV0P2BASE::CLI::NodeID().doCommand(buf, n); break; }
 
       // Status line and optional smart/scheduled warming prediction request.
       case 'S':
         {
-        Serial.print(F("Resets: "));
+        Serial.print(F("Resets/overruns: "));
         const uint8_t resetCount = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_RESET_COUNT);
         Serial.print(resetCount);
-        Serial.println();
-        Serial.print(F("Overruns: "));
+        Serial.print(' ');
         const uint8_t overrunCount = (~eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_OVERRUN_COUNTER)) & 0xff;
         Serial.print(overrunCount);
         Serial.println();
@@ -1073,7 +1081,8 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
       case 'V':
         {
         serialPrintlnBuildVersion();
-#ifdef ENABLE_EXTENDED_CLI // Allow for much longer input commands for extended CLI.
+#if defined(DEBUG) && defined(ENABLE_EXTENDED_CLI) // && !defined(ENABLE_TRIMMED_MEMORY)
+        // Allow for much longer input commands for extended CLI.
         Serial.print(F("Ext CLI max chars: ")); Serial.println(MAXIMUM_CLI_RESPONSE_CHARS);
 #endif
         break;
@@ -1103,7 +1112,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         case 'A': { showStatus = OTV0P2BASE::CLI::SetNodeAssoc().doCommand(buf, n); break; }
 #endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
 
-#if defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)
+#if defined(ENABLE_RADIO_RX) && (defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)) && !defined(ENABLE_DEFAULT_ALWAYS_RX)
       // C M
       // Set central-hub boiler minimum on (and off) time; 0 to disable.
       case 'C':
@@ -1137,14 +1146,17 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
 //        break;
 //        }
 
+#if !defined(ENABLE_TRIMMED_MEMORY)
       // Dump (human-friendly) stats: D N
       case 'D': { showStatus = OTV0P2BASE::CLI::DumpStats().doCommand(buf, n); break; }
+#endif
 
+#if defined(ENABLE_LOCAL_TRV)
       // Switch to FROST mode OR set FROST/setback temperature (even with temp pot available).
       // With F! force to frost and holiday (long-vacant) mode.  Useful for testing and for remote CLI use.
       case 'F':
         {
-#ifdef ENABLE_OCCUPANCY_SUPPORT
+#if defined(ENABLE_OCCUPANCY_SUPPORT) && !defined(ENABLE_TRIMMED_MEMORY)
         if((n == 2) && ('!' == buf[1]))
           {
           Serial.println(F("hols"));
@@ -1164,6 +1176,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
           { setWarmModeDebounced(false); } // No parameter supplied; switch to FROST mode.
         break;
         }
+#endif // defined(ENABLE_LOCAL_TRV)
  
 #if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
       // Set secret key.
@@ -1189,7 +1202,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         }
 #endif // ENABLE_LEARN_BUTTON
 
-#if defined(ENABLE_NOMINAL_RAD_VALVE)
+#if defined(ENABLE_NOMINAL_RAD_VALVE) && !defined(ENABLE_TRIMMED_MEMORY)
       // Set/clear min-valve-open-% threshold override.
       case 'O':
         {
@@ -1233,12 +1246,16 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         }
 #endif // ENABLE_LEARN_BUTTON
 
+#if defined(ENABLE_LOCAL_TRV) && !defined(ENABLE_TRIMMED_MEMORY)
       // Switch to (or restart) BAKE (Quick Heat) mode: Q
+      // We can live without this if very short of memory.
       case 'Q': { startBake(); break; }
+#endif
 
       // Time set T HH MM.
       case 'T': { showStatus = OTV0P2BASE::CLI::SetTime().doCommand(buf, n); break; }
 
+#if defined(ENABLE_LOCAL_TRV)
       // Switch to WARM (not BAKE) mode OR set WARM temperature.
       case 'W':
         {
@@ -1258,15 +1275,19 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
           }
         break;
         }
+#endif // defined(ENABLE_LOCAL_TRV)
 
 #if !defined(ENABLE_ALWAYS_TX_ALL_STATS)
-      // tX security level: X NN
+      // TX security/privacy level: X NN
       // Avoid showing status afterwards as may already be rather a lot of output.
       case 'X': { showStatus = OTV0P2BASE::CLI::SetTXPrivacy().doCommand(buf, n); break; }
 #endif
 
+#if defined(ENABLE_LOCAL_TRV)
       // Zap/erase learned statistics.
       case 'Z': { showStatus = OTV0P2BASE::CLI::ZapStats().doCommand(buf, n); break; }
+#endif // defined(ENABLE_LOCAL_TRV)
+
 #endif // ENABLE_FULL_OT_CLI // NON-CORE FEATURES
       }
 
