@@ -33,7 +33,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #include "UI_Minimal.h"
 
 
-
 // Marked true if the physical UI controls are being used.
 // Cleared at end of tickUI().
 // Marked volatile for thread-safe lock-free non-read-modify-write access to byte-wide value.
@@ -851,7 +850,7 @@ static void dumpCLIUsage(const uint8_t stopBy)
   Serial.println();
   }
 
-// If INTERACTIVE_ECHO defined then immediately echo received characters, not at end of line.
+// If CLI_INTERACTIVE_ECHO defined then immediately echo received characters, not at end of line.
 #define CLI_INTERACTIVE_ECHO
 
 // TODO better way of handling this?
@@ -868,10 +867,6 @@ static void dumpCLIUsage(const uint8_t stopBy)
 #define IDLE_SLEEP_SCT (15/(OTV0P2BASE::SUBCYCLE_TICK_MS_RD)) // Approx sub-cycle ticks in idle sleep (15ms), erring on side of being too large; strictly positive.
 #define BUF_FILL_TIME_MS (((MAXIMUM_CLI_RESPONSE_CHARS*10) * 1000L + (BAUD-1)) / BAUD) // Time to read full/maximal input command buffer; ms, strictly positive.
 #define BUF_FILL_TIME_SCT (BUF_FILL_TIME_MS/(OTV0P2BASE::SUBCYCLE_TICK_MS_RD)) // Approx sub-cycle ticks to fill buf, erring on side of being too large; strictly positive.
-#define MIN_POLL_SCT max(IDLE_SLEEP_SCT, BUF_FILL_TIME_SCT)
-//#if MIN_POLL_SCT > CLI_POLL_MIN_SCT
-//#error "MIN_POLL_SCT > CLI_POLL_MIN_SCT" 
-//#endif
 #define MIN_RX_BUFFER 16 // Minimum Arduino Serial RX buffer size.
 // DHD20131213: CAN_IDLE_15MS/idle15AndPoll() true seemed to be causing intermittent crashes.
 // DHD20150827: CAN_IDLE_15MS/idle15AndPoll() true causing crashes on 7% of REV9 boards.
@@ -898,116 +893,18 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
       }
     }
 
-  // Compute safe limit time given granularity of sleep and buffer fill.
-  const uint8_t targetMaxSCT = (maxSCT <= MIN_POLL_SCT) ? ((uint8_t) 0) : ((uint8_t) (maxSCT - 1 - MIN_POLL_SCT));
-  if(OTV0P2BASE::getSubCycleTime() >= targetMaxSCT) { return; } // Too short to try.
-
   const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled<V0P2_UART_BAUD>();
-
-  // Purge any stray pending input, such as a trailing LF from previous input.
-  while(Serial.available() > 0) { Serial.read(); }
-
-  // Generate and flush prompt character to the user, after a CRLF to reduce ambiguity.
-  // Do this AFTER flushing the input so that sending command immediately after prompt should work.
-  Serial.println();
-  Serial.print(CLIPromptChar);
-  // Idle a short while to try to save energy, waiting for serial TX end and possible RX response start.
-  OTV0P2BASE::flushSerialSCTSensitive();
 
   // Wait for input command line from the user (received characters may already have been queued)...
   // Read a line up to a terminating CR, either on its own or as part of CRLF.
   // (Note that command content and timing may be useful to fold into PRNG entropy pool.)
   static char buf[MAXIMUM_CLI_RESPONSE_CHARS+1]; // Note: static state, efficient for small command lines.  Space for terminating '\0'.
-  //Serial.setTimeout(timeoutms); const int n = Serial.readBytesUntil('\r', buf, MAXIMUM_CLI_RESPONSE_CHARS);
-  uint8_t n = 0;
-  while(n < MAXIMUM_CLI_RESPONSE_CHARS)
-    {
-    // Read next character if immediately available.
-    if(Serial.available() > 0)
-      {
-      int ic = Serial.read();
-      if(('\r' == ic) || ('\n' == ic)) { break; } // Stop at CR, eg from CRLF, or LF.
-//#ifdef CLI_INTERACTIVE_ECHO
-//      if(('\b' == ic) || (127 == ic))
-//        {
-//        // Handle backspace or delete as delete...
-//        if(n > 0) // Ignore unless something to delete...
-//          {
-//          Serial.print('\b');
-//          Serial.print(' ');
-//          Serial.print('\b');
-//          --n;
-//          }
-//        continue;
-//        }
-//#endif
-      if((ic < 32) || (ic > 126)) { continue; } // Drop bogus non-printable characters.
-      // Ignore any leading char that is not a letter (or '?' or '+'),
-      // and force leading (command) char to upper case.
-      if(0 == n)
-        {
-        ic = toupper(ic);
-        if(('+' != ic) && ('?' != ic) && ((ic < 'A') || (ic > 'Z'))) { continue; }
-        }
-      // Store the incoming char.
-      buf[n++] = (char) ic;
-#ifdef CLI_INTERACTIVE_ECHO
-      Serial.print((char) ic); // Echo immediately.
-#endif
-      continue;
-      }
-    // Quit WITHOUT PROCESSING THE POSSIBLY-INCOMPLETE INPUT if time limit is hit (or very close).
-    const uint8_t sct = OTV0P2BASE::getSubCycleTime();
-    if(sct >= targetMaxSCT)
-      {
-      n = 0;
-      break;
-      }
-    // Idle waiting for input, to save power, then/else do something useful with some CPU cycles...
-#if CAN_IDLE_15MS
-    // Minimise power consumption leaving CPU/UART clock running, if no danger of RX overrun.
-    // Don't do this too close to end of target end time to avoid missing it.
-    // Note: may get woken on timer0 interrupts as well as RX and watchdog.
-    if(sct < targetMaxSCT-2)
-      {
-//      idle15AndPoll(); // COH-63 and others: crashes some REV0 and REV9 boards (reset).
-      // Rely on being woken by UART, or timer 0 (every ~16ms with 1MHz CPU), or backstop of timer 2.
-      set_sleep_mode(SLEEP_MODE_IDLE); // Leave everything running but the CPU...
-      sleep_mode();
-      pollIO(false);
-      continue;
-      }
-#endif
-    burnHundredsOfCyclesProductivelyAndPoll(); // Use time time to poll for I/O, etc.
-    }
+  const uint8_t n = OTV0P2BASE::CLI::promptAndReadCommandLine(maxSCT, buf, sizeof(buf), burnHundredsOfCyclesProductivelyAndPoll);
 
   if(n > 0)
     {
-    // Restart the CLI timer on receipt of plausible (ASCII) input (cf noise from UART floating or starting up),
-    // Else print a very brief low-CPU-cost help message and give up as efficiently and safely and quickly as possible.
-    const char firstChar = buf[0];
-    const bool plausibleCommand = ((firstChar > ' ') && (firstChar <= 'z'));
-    if(plausibleCommand) { resetCLIActiveTimer(); }
-    else
-      {
-      Serial.println(F("? for CLI help"));
-      // Force any pending output before return / possible UART power-down.
-      OTV0P2BASE::flushSerialSCTSensitive();
-      if(neededWaking) { OTV0P2BASE::powerDownSerial(); }
-      return;
-      }
-
-    // Null-terminate the received command line.
-    buf[n] = '\0';
-
-    // strupr(buf); // Force to upper-case
-#ifdef CLI_INTERACTIVE_ECHO
-    Serial.println(); // ACK user's end-of-line.
-#else
-    Serial.println(buf); // Echo the line received (asynchronously).
-#endif
-    // Force any pending output before return / possible UART power-down.
-    OTV0P2BASE::flushSerialSCTSensitive();
+    // Got plausible input so keep the CLI awake a little longer.
+    resetCLIActiveTimer();
 
     // Process the input received, with action based on the first char...
     bool showStatus = true; // Default to showing status.
@@ -1080,9 +977,9 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
 #ifdef ENABLE_FULL_OT_CLI // *******  NON-CORE CLI FEATURES
 
 #if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) && (defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)) && defined(ENABLE_RADIO_RX)
-        // Set new node association (nodes to accept frames from).
-        // Only needed if able to RX and/or some sort of hub.
-        case 'A': { showStatus = OTV0P2BASE::CLI::SetNodeAssoc().doCommand(buf, n); break; }
+      // Set new node association (nodes to accept frames from).
+      // Only needed if able to RX and/or some sort of hub.
+      case 'A': { showStatus = OTV0P2BASE::CLI::SetNodeAssoc().doCommand(buf, n); break; }
 #endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
 
 #if defined(ENABLE_RADIO_RX) && (defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)) && !defined(ENABLE_DEFAULT_ALWAYS_RX)
