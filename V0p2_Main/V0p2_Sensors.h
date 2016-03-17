@@ -139,9 +139,8 @@ extern OTRadValve::ValveMotorDirectV1<MOTOR_DRIVE_MR, MOTOR_DRIVE_ML, MOTOR_DRIV
 #endif
 
 
-// FHT8V radio-controlled actuator.
-#ifdef ENABLE_FHT8VSIMPLE
 // Singleton FHT8V valve instance (to control remote FHT8V valve by radio).
+#ifdef ENABLE_FHT8VSIMPLE
 static const uint8_t _FHT8V_MAX_EXTRA_TRAILER_BYTES = (1 + max(OTV0P2BASE::MESSAGING_TRAILING_MINIMAL_STATS_PAYLOAD_BYTES, OTV0P2BASE::FullStatsMessageCore_MAX_BYTES_ON_WIRE));
 extern OTRadValve::FHT8VRadValve<_FHT8V_MAX_EXTRA_TRAILER_BYTES, OTRadValve::FHT8VRadValveBase::RFM23_PREAMBLE_BYTES, OTRadValve::FHT8VRadValveBase::RFM23_PREAMBLE_BYTE> FHT8V;
 // This unit may control a local TRV.
