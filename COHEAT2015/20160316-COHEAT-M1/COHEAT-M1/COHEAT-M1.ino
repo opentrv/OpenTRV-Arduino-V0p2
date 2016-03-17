@@ -204,10 +204,9 @@ void serialPrintlnBuildVersion()
   OTV0P2BASE::serialPrintlnAndFlush(F(" " __TIME__));
   }
 
-// FHT8V radio-controlled actuator.
 // Singleton FHT8V valve instance (to control remote FHT8V valve by radio).
 static const uint8_t _FHT8V_MAX_EXTRA_TRAILER_BYTES = (1 + max(OTV0P2BASE::MESSAGING_TRAILING_MINIMAL_STATS_PAYLOAD_BYTES, OTV0P2BASE::FullStatsMessageCore_MAX_BYTES_ON_WIRE));
-extern OTRadValve::FHT8VRadValve<_FHT8V_MAX_EXTRA_TRAILER_BYTES, OTRadValve::FHT8VRadValveBase::RFM23_PREAMBLE_BYTES, OTRadValve::FHT8VRadValveBase::RFM23_PREAMBLE_BYTE> FHT8V;
+OTRadValve::FHT8VRadValve<_FHT8V_MAX_EXTRA_TRAILER_BYTES, OTRadValve::FHT8VRadValveBase::RFM23_PREAMBLE_BYTES, OTRadValve::FHT8VRadValveBase::RFM23_PREAMBLE_BYTE> FHT8V(NULL);
 // This unit may control a local TRV.
 // Returns TRV if valve/radiator is to be controlled by this unit.
 // Usually the case, but may not be for (a) a hub or (b) a not-yet-configured unit.
@@ -217,94 +216,13 @@ inline bool localFHT8VTRVEnabled() { return(!FHT8V.isUnavailable()); }
 #else
 #define localFHT8VTRVEnabled() (false) // Local FHT8V TRV disabled.
 #endif
-//// Clear both housecode parts (and thus disable local valve).
-//void FHT8VClearHC();
-//// Set (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control.
-//// Will cache in FHT8V instance for speed.
-//void FHT8VSetHC1(uint8_t hc);
-//void FHT8VSetHC2(uint8_t hc);
-//// Get (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control (will be 0xff until set).
-//// Used FHT8V instance as a transparent cache of the values for speed.
-//uint8_t FHT8VGetHC1();
-//uint8_t FHT8VGetHC2();
-//inline uint16_t FHT8VGetHC() { return(FHT8VGetHC2() | (((uint16_t) FHT8VGetHC1()) << 8)); }
-//// Load EEPROM house codes into primary FHT8V instance at start-up or once cleared in FHT8V instance.
-//void FHT8VLoadHCFromEEPROM();
 
-OTRadValve::FHT8VRadValve<_FHT8V_MAX_EXTRA_TRAILER_BYTES, OTRadValve::FHT8VRadValveBase::RFM23_PREAMBLE_BYTES, OTRadValve::FHT8VRadValveBase::RFM23_PREAMBLE_BYTE> FHT8V(NULL);
-
-// Clear both housecode parts (and thus disable local valve).
-// Does nothing if FHT8V not in use.
-void FHT8VClearHC()
-{
-  FHT8V.clearHC();
-  OTV0P2BASE::eeprom_smart_erase_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC1);
-  OTV0P2BASE::eeprom_smart_erase_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC2);
-}
-
-// Set (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control.
-// Also set value in FHT8V rad valve model.
-// Does nothing if FHT8V not in use.
-void FHT8VSetHC1(uint8_t hc)
-{
-  FHT8V.setHC1(hc);
-  OTV0P2BASE::eeprom_smart_update_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC1, hc);
-}
-void FHT8VSetHC2(uint8_t hc)
-{
-  FHT8V.setHC2(hc);
-  OTV0P2BASE::eeprom_smart_update_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC2, hc);
-}
-
-// Get (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control (will be 0xff until set).
-// FHT8V instance values are used as a cache.
-// Does nothing if FHT8V not in use.
-uint8_t FHT8VGetHC1()
-{
-  const uint8_t vv = FHT8V.getHC1();
-  // If cached value in FHT8V instance is valid, return it.
-  if (OTRadValve::FHT8VRadValveBase::isValidFHTV8HouseCode(vv))
-  {
-    return (vv);
-  }
-  // Else if EEPROM value is valid, then cache it in the FHT8V instance and return it.
-  const uint8_t ev = eeprom_read_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC1);
-  if (OTRadValve::FHT8VRadValveBase::isValidFHTV8HouseCode(ev))
-  {
-    FHT8V.setHC1(ev);
-  }
-  return (ev);
-}
-uint8_t FHT8VGetHC2()
-{
-  const uint8_t vv = FHT8V.getHC2();
-  // If cached value in FHT8V instance is valid, return it.
-  if (OTRadValve::FHT8VRadValveBase::isValidFHTV8HouseCode(vv))
-  {
-    return (vv);
-  }
-  // Else if EEPROM value is valid, then cache it in the FHT8V instance and return it.
-  const uint8_t ev = eeprom_read_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC2);
-  if (OTRadValve::FHT8VRadValveBase::isValidFHTV8HouseCode(ev))
-  {
-    FHT8V.setHC2(ev);
-  }
-  return (ev);
-}
-
-// Load EEPROM house codes into primary FHT8V instance at start-up or once cleared in FHT8V instance.
-void FHT8VLoadHCFromEEPROM()
-{
-  // Uses side-effect to cache/save in FHT8V instance.
-  FHT8VGetHC1();
-  FHT8VGetHC2();
-}
 
 #ifdef ALLOW_CC1_SUPPORT_RELAY
 // Send a CC1 Alert message with this unit's house code via the RFM23B.
 bool sendCC1AlertByRFM23B()
   {
-  OTProtocolCC::CC1Alert a = OTProtocolCC::CC1Alert::make(FHT8VGetHC1(), FHT8VGetHC2());
+  OTProtocolCC::CC1Alert a = OTProtocolCC::CC1Alert::make(FHT8V.nvGetHC1(), FHT8V.nvGetHC2());
   if(a.isValid()) // Might be invalid if house codes are, eg if house codes not set.
     {
     uint8_t txbuf[OTProtocolCC::CC1Alert::primary_frame_bytes+1]; // More than large enough for preamble + sync + alert message.
@@ -1026,6 +944,16 @@ void setup()
   OTV0P2BASE::setSeconds(b >> 2);
   // Start anywhere in first 4 minute cycle.
   minuteCount = b & 3;
+
+#ifdef ENABLE_FHT8VSIMPLE
+  // Set up radio with FHT8V.
+  FHT8V.setRadio(&PrimaryRadio);
+  // Load EEPROM house codes into primary FHT8V instance at start.
+  FHT8V.nvLoadHC();
+#ifdef ALLOW_CC1_SUPPORT
+  FHT8V.setChannelTX(1);
+#endif // ALLOW_CC1_SUPPORT
+#endif // ENABLE_FHT8VSIMPLE
 
   // Set appropriate loop() values just before entering it.
   TIME_LSD = OTV0P2BASE::getSecondsLT();

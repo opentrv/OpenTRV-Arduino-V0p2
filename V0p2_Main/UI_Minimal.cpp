@@ -703,13 +703,13 @@ void serialStatusReport()
   // *H* section: house codes for local FHT8V valve and if syncing, iff set.
 #if defined(ENABLE_FHT8VSIMPLE)
   // Print optional house code section if codes set.
-  const uint8_t hc1 = FHT8VGetHC1();
+  const uint8_t hc1 = FHT8V.nvGetHC1();
   if(hc1 != 255)
     {
     Serial.print(F(";HC"));
     Serial.print(hc1);
     Serial_print_space();
-    Serial.print(FHT8VGetHC2());
+    Serial.print(FHT8V.nvGetHC2());
     if(!FHT8V.isInNormalRunState())
       {
       Serial_print_space();
@@ -1042,14 +1042,14 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
             else
               {
               // Set house codes and force resync if changed.
-              FHT8VSetHC1(hc1);
-              FHT8VSetHC2(hc2);
+              FHT8V.nvSetHC1(hc1);
+              FHT8V.nvSetHC2(hc2);
               }
             }
           }
         else if(n < 2) // Just 'H', possibly with trailing whitespace.
           {
-          FHT8VClearHC(); // Clear codes and force into unsynchronized state.
+          FHT8V.nvClearHC(); // Clear codes and force into unsynchronized state.
           }
         break;
         }

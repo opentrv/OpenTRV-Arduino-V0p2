@@ -153,19 +153,19 @@ inline bool localFHT8VTRVEnabled() { return(!FHT8V.isUnavailable()); }
 #else
 #define localFHT8VTRVEnabled() (false) // Local FHT8V TRV disabled.
 #endif
-// Clear both housecode parts (and thus disable local valve).
-void FHT8VClearHC();
-// Set (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control.
-// Will cache in FHT8V instance for speed.
-void FHT8VSetHC1(uint8_t hc);
-void FHT8VSetHC2(uint8_t hc);
-// Get (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control (will be 0xff until set).
-// Used FHT8V instance as a transparent cache of the values for speed.
-uint8_t FHT8VGetHC1();
-uint8_t FHT8VGetHC2();
-inline uint16_t FHT8VGetHC() { return(FHT8VGetHC2() | (((uint16_t) FHT8VGetHC1()) << 8)); }
-// Load EEPROM house codes into primary FHT8V instance at start-up or once cleared in FHT8V instance.
-void FHT8VLoadHCFromEEPROM();
+//// Clear both housecode parts (and thus disable local valve).
+//void FHT8VClearHC();
+//// Set (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control.
+//// Will cache in FHT8V instance for speed.
+//void FHT8VSetHC1(uint8_t hc);
+//void FHT8VSetHC2(uint8_t hc);
+//// Get (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control (will be 0xff until set).
+//// Used FHT8V instance as a transparent cache of the values for speed.
+//uint8_t FHT8VGetHC1();
+//uint8_t FHT8VGetHC2();
+//inline uint16_t FHT8VGetHC() { return(FHT8VGetHC2() | (((uint16_t) FHT8VGetHC1()) << 8)); }
+//// Load EEPROM house codes into primary FHT8V instance at start-up or once cleared in FHT8V instance.
+//void FHT8VLoadHCFromEEPROM();
 #endif // ENABLE_FHT8VSIMPLE
 
 
