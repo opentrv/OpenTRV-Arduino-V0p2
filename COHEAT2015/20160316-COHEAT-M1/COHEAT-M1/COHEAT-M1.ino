@@ -48,19 +48,7 @@ void serialPrintlnBuildVersion();
 // Limits actual poll rate to something like once every 8ms, unless force is true.
 //   * force if true then force full poll on every call (ie do not internally rate-limit)
 // Not thread-safe, eg not to be called from within an ISR.
-// NOTE: implementation may not be in power-management module.
 bool pollIO(bool force = false);
-
-// Call this to productively burn tens to hundreds of CPU cycles, and poll I/O, eg in a busy-wait loop.
-// This may churn PRNGs or gather entropy for example.
-// This call should typically take << 1ms at 1MHz CPU.
-// Does not change CPU clock speeds, mess with interrupts (other than possible brief blocking), or sleep.
-// May capture some entropy in secure and non-secure PRNGs.
-inline void burnHundredsOfCyclesProductivelyAndPoll()
-  {
-  if(pollIO()) { OTV0P2BASE::seedRNG8(OTV0P2BASE::getCPUCycleCount(), 37 /* _watchdogFired */, OTV0P2BASE::_getSubCycleTime()); }
-  else { OTV0P2BASE::captureEntropy1(); }
-  }
 
 extern OTRadioLink::OTRadioLink &PrimaryRadio;
 
