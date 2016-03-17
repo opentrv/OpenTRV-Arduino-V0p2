@@ -855,8 +855,8 @@ void populateCoreStats(OTV0P2BASE::FullStatsMessageCore_t *const content)
   if(localFHT8VTRVEnabled())
     {
     // Use FHT8V house codes if available.
-    content->id0 = FHT8VGetHC1();
-    content->id1 = FHT8VGetHC2();
+    content->id0 = FHT8V.nvGetHC1();
+    content->id1 = FHT8V.nvGetHC2();
     }
   else
     {
@@ -1019,8 +1019,8 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
       static char idBuf[5]; // Static so as to have lifetime no shorter than ss1.
       if(localFHT8VTRVEnabled())
         {
-        const uint8_t hc1 = FHT8VGetHC1();
-        const uint8_t hc2 = FHT8VGetHC2();
+        const uint8_t hc1 = FHT8V.nvGetHC1();
+        const uint8_t hc2 = FHT8V.nvGetHC2();
         idBuf[0] = OTV0P2BASE::hexDigit(hc1 >> 4);
         idBuf[1] = OTV0P2BASE::hexDigit(hc1);
         idBuf[2] = OTV0P2BASE::hexDigit(hc2 >> 4);
@@ -1257,10 +1257,10 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
 static void wireComponentsTogether()
   {
 #ifdef ENABLE_FHT8VSIMPLE
-  // Set up radio.
+  // Set up radio with FHT8V.
   FHT8V.setRadio(&PrimaryRadio);
   // Load EEPROM house codes into primary FHT8V instance at start.
-  FHT8VLoadHCFromEEPROM();
+  FHT8V.nvLoadHC();
 #ifdef ALLOW_CC1_SUPPORT
   FHT8V.setChannelTX(1);
 #endif // ALLOW_CC1_SUPPORT
@@ -2294,7 +2294,7 @@ void loopOpenTRV()
 #if defined(ENABLE_BOILER_HUB)
       // Feed in the local valve position when calling for heat just as if over the air.
       // (Does not arrive with the normal FHT8V timing of 2-minute gaps so boiler may turn off out of sync.)
-      if(FHT8V.isControlledValveReallyOpen()) { remoteCallForHeatRX(FHT8VGetHC(), FHT8V.get()); }
+      if(FHT8V.isControlledValveReallyOpen()) { remoteCallForHeatRX(FHT8V.nvGetHC(), FHT8V.get()); }
 #endif // defined(ENABLE_BOILER_HUB)
 #elif defined(ENABLE_NOMINAL_RAD_VALVE) && defined(ENABLE_LOCAL_TRV) // Other local valve types, simulate a remote call for heat with a fake ID.
 #if defined(ENABLE_BOILER_HUB)
