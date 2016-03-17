@@ -53,6 +53,21 @@ bool pollIO(bool force = false);
 // Sends a short 1-line CRLF-terminated status report on the serial connection (at 'standard' baud).
 void serialStatusReport() { OTV0P2BASE::serialPrintlnAndFlush(F("=")); }
 
+// Reset CLI active timer to the full whack before it goes inactive again (ie makes CLI active for a while).
+// Thread-safe.
+void resetCLIActiveTimer();
+// Returns true if the CLI is (or should currently be) active, at least intermittently.
+// Thread-safe.
+bool isCLIActive();
+// Used to poll user side for CLI input until specified sub-cycle time.
+// A period of less than (say) 500ms will be difficult for direct human response on a raw terminal.
+// A period of less than (say) 100ms is not recommended to avoid possibility of overrun on long interactions.
+// Times itself out after at least a minute or two of inactivity. 
+// NOT RENTRANT (eg uses static state for speed and code space).
+void pollCLI(uint8_t maxSCT, bool startOfMinute);
+
+const uint8_t nearOverrunThreshold = OTV0P2BASE::GSCT_MAX - 8; // ~64ms/~32 serial TX chars of grace time...
+
 // Primary radio module.
 extern OTRadioLink::OTRadioLink &PrimaryRadio;
 
@@ -799,6 +814,119 @@ static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChanne
   };
 #endif
 
+// Remaining minutes to keep CLI active; zero implies inactive.
+// Starts up with full value to allow easy setting of time, etc, without specially activating CLI.
+// Marked volatile for thread-safe lock-free non-read-modify-write access to byte-wide value.
+// Compound operations on this value must block interrupts.
+#define CLI_DEFAULT_TIMEOUT_M 2
+static volatile uint8_t CLITimeoutM = CLI_DEFAULT_TIMEOUT_M;
+// Reset CLI active timer to the full whack before it goes inactive again (ie makes CLI active for a while).
+// Thread-safe.
+void resetCLIActiveTimer() { CLITimeoutM = CLI_DEFAULT_TIMEOUT_M; }
+// Returns true if the CLI is active, at least intermittently.
+// Thread-safe.
+bool isCLIActive() { return(0 != CLITimeoutM); }
+#if defined(ENABLE_EXTENDED_CLI) || defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
+static const uint8_t MAXIMUM_CLI_RESPONSE_CHARS = 1 + OTV0P2BASE::CLI::MAX_TYPICAL_CLI_BUFFER;
+#else
+static const uint8_t MAXIMUM_CLI_RESPONSE_CHARS = 1 + OTV0P2BASE::CLI::MIN_TYPICAL_CLI_BUFFER;
+#endif
+// Used to poll user side for CLI input until specified sub-cycle time.
+// Commands should be sent terminated by CR *or* LF; both may prevent 'E' (exit) from working properly.
+// A period of less than (say) 500ms will be difficult for direct human response on a raw terminal.
+// A period of less than (say) 100ms is not recommended to avoid possibility of overrun on long interactions.
+// Times itself out after at least a minute or two of inactivity. 
+// NOT RENTRANT (eg uses static state for speed and code space).
+void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
+  {
+  // Perform any once-per-minute operations.
+  if(startOfMinute)
+    {
+    ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
+      {
+      // Run down CLI timer if need be.
+      if(CLITimeoutM > 0) { --CLITimeoutM; }
+      }
+    }
+
+  const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled<V0P2_UART_BAUD>();
+
+  // Wait for input command line from the user (received characters may already have been queued)...
+  // Read a line up to a terminating CR, either on its own or as part of CRLF.
+  // (Note that command content and timing may be useful to fold into PRNG entropy pool.)
+  static char buf[MAXIMUM_CLI_RESPONSE_CHARS+1]; // Note: static state, efficient for small command lines.  Space for terminating '\0'.
+  const uint8_t n = OTV0P2BASE::CLI::promptAndReadCommandLine(maxSCT, buf, sizeof(buf), NULL);
+
+  if(n > 0)
+    {
+    // Got plausible input so keep the CLI awake a little longer.
+    resetCLIActiveTimer();
+
+    // Process the input received, with action based on the first char...
+    bool showStatus = true; // Default to showing status.
+    switch(buf[0])
+      {
+      // Explicit request for help, or unrecognised first character.
+      // Avoid showing status as may already be rather a lot of output.
+      default: case '?': { /* dumpCLIUsage(maxSCT); */ showStatus = false; break; }
+
+      // Exit/deactivate CLI immediately.
+      // This should be followed by JUST CR ('\r') OR LF ('\n')
+      // else the second will wake the CLI up again.
+      case 'E': { CLITimeoutM = 0; break; }
+
+#if defined(ENABLE_FHT8VSIMPLE) && (defined(ENABLE_LOCAL_TRV) || defined(ENABLE_SLAVE_TRV))
+      // H [nn nn]
+      // Set (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control.
+      // Missing values will clear the code entirely (and disable use of the valve).
+      case 'H': { showStatus = OTRadValve::FHT8VRadValveBase::SetHouseCode(&FHT8V).doCommand(buf, n); break; }
+#endif
+
+      // Status line and optional smart/scheduled warming prediction request.
+      case 'S':
+        {
+        Serial.print(F("Resets/overruns: "));
+        const uint8_t resetCount = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_RESET_COUNT);
+        Serial.print(resetCount);
+        Serial.print(' ');
+        const uint8_t overrunCount = (~eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_OVERRUN_COUNTER)) & 0xff;
+        Serial.print(overrunCount);
+        Serial.println();
+        break; // Note that status is by default printed after processing input line.
+        }
+
+// FIXME FIXME FIXME
+//#ifdef ENABLE_EXTENDED_CLI
+//      // Handle CLI extension commands.
+//      // Command of form:
+//      //   +EXT .....
+//      // where EXT is the name of the extension, usually 3 letters.
+//      //
+//      // It is acceptable for extCLIHandler() to alter the buffer passed,
+//      // eg with strtok_t().
+//      case '+':
+//        {
+//        const bool success = extCLIHandler(&Serial, buf, n);
+//        Serial.println(success ? F("OK") : F("FAILED"));
+//        break;
+//        }
+//#endif 
+      }
+
+    // Almost always show status line afterwards as feedback of command received and new state.
+    if(showStatus) { serialStatusReport(); }
+    // Else show ack of command received.
+    else { Serial.println(F("OK")); }
+    }
+  else { Serial.println(); } // Terminate empty/partial CLI input line after timeout.
+
+  // Force any pending output before return / possible UART power-down.
+  OTV0P2BASE::flushSerialSCTSensitive();
+
+  if(neededWaking) { OTV0P2BASE::powerDownSerial(); }
+  }
+
+
 // One-off setup.
 void setup()
   {
@@ -988,5 +1116,28 @@ void loop()
       }
 #endif
 
+  // Command-Line Interface (CLI) polling, if still active.
+  if(isCLIActive())
+    {
+    const uint8_t sct = OTV0P2BASE::getSubCycleTime();
+    const uint8_t listenTime = OTV0P2BASE::CLI::MIN_CLI_POLL_SCT;
+    const uint8_t stopBy = nearOverrunThreshold - 1;
+    pollCLI(stopBy, 0 == TIME_LSD);
+    }
+
+  // Detect and handle (actual or near) overrun, if it happens, though it should not.
+  if(TIME_LSD != OTV0P2BASE::getSecondsLT())
+    {
+    // Increment the overrun counter (stored inverted, so 0xff initialised => 0 overruns).
+    const uint8_t orc = 1 + ~eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_OVERRUN_COUNTER);
+    OTV0P2BASE::eeprom_smart_update_byte((uint8_t *)V0P2BASE_EE_START_OVERRUN_COUNTER, ~orc);
+#if 1 && defined(DEBUG)
+    DEBUG_SERIAL_PRINTLN_FLASHSTRING("!loop overrun");
+#endif
+#if defined(ENABLE_FHT8VSIMPLE)
+    FHT8V.resyncWithValve(); // Assume that sync with valve may have been lost, so re-sync.
+#endif
+    TIME_LSD = OTV0P2BASE::getSecondsLT(); // Prepare to sleep until start of next full minor cycle.
+    }
   }
 

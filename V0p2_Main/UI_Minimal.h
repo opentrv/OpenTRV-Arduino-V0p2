@@ -135,9 +135,6 @@ void serialStatusReport();
 #define serialStatusReport() { }
 #endif
 
-// Character that should trigger any pending command from user to be sent.
-#define CLIPromptChar ((char) OTV0P2BASE::SERLINE_START_CHAR_CLI) // Printable ASCII char that should be avoided in status output.
-
 // Reset CLI active timer to the full whack before it goes inactive again (ie makes CLI active for a while).
 // Thread-safe.
 void resetCLIActiveTimer();
@@ -152,11 +149,6 @@ bool isCLIActive();
 // Times itself out after at least a minute or two of inactivity. 
 // NOT RENTRANT (eg uses static state for speed and code space).
 void pollCLI(uint8_t maxSCT, bool startOfMinute);
-
-// Minimum recommended poll time in sub-cycle ticks...
-#define CLI_POLL_MIN_SCT (200/OTV0P2BASE::SUBCYCLE_TICK_MS_RN)
-
-
 
 // Use WDT-based timer for xxxPause() routines.
 // Very tiny low-power sleep to approximately match the PICAXE V0.09 routine of the same name.

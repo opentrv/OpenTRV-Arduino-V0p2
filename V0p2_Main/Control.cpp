@@ -2409,17 +2409,12 @@ void loopOpenTRV()
   // using a timeout which should safely avoid overrun, ie missing the next basic tick,
   // and which should also allow some energy-saving sleep.
 #if 1 && defined(ENABLE_CLI)
-  const bool humanCLIUse = isCLIActive(); // Keeping CLI active for human interaction rather than for automated interaction.
-  if(showStatus || humanCLIUse)
+  if(isCLIActive())
     {
     const uint8_t sct = OTV0P2BASE::getSubCycleTime();
-    const uint8_t listenTime = max(OTV0P2BASE::GSCT_MAX/16, CLI_POLL_MIN_SCT);
-    const uint8_t stopBy = nearOverrunThreshold - 1 - listenTime;
-    if(sct < (stopBy - 1 - listenTime))
-      // Don't listen beyond the last 16th of the cycle,
-      // or a minimal time if only prodding for interaction with automated front-end,
-      // as listening for UART RX uses lots of power.
-      { pollCLI(humanCLIUse ? stopBy : (sct+CLI_POLL_MIN_SCT), 0 == TIME_LSD); }
+    const uint8_t listenTime = OTV0P2BASE::CLI::MIN_CLI_POLL_SCT;
+    const uint8_t stopBy = nearOverrunThreshold - 1;
+    pollCLI(stopBy, 0 == TIME_LSD);
     }
 #endif
 

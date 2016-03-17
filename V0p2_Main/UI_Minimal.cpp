@@ -51,11 +51,9 @@ static volatile uint8_t uiTimeoutM;
 // Compound operations on this value must block interrupts.
 #define CLI_DEFAULT_TIMEOUT_M 2
 static volatile uint8_t CLITimeoutM = CLI_DEFAULT_TIMEOUT_M;
-
 // Reset CLI active timer to the full whack before it goes inactive again (ie makes CLI active for a while).
 // Thread-safe.
 void resetCLIActiveTimer() { CLITimeoutM = CLI_DEFAULT_TIMEOUT_M; }
-
 // Returns true if the CLI is active, at least intermittently.
 // Thread-safe.
 bool isCLIActive() { return(0 != CLITimeoutM); }
@@ -850,30 +848,10 @@ static void dumpCLIUsage(const uint8_t stopBy)
   Serial.println();
   }
 
-// If CLI_INTERACTIVE_ECHO defined then immediately echo received characters, not at end of line.
-#define CLI_INTERACTIVE_ECHO
-
-// TODO better way of handling this?
-#ifdef ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
-#define MAXIMUM_CLI_OT_RESPONSE_CHARS 52 // 52 = 4("K B") + 16x(AES key token) + 1('\r' | 'n')
+#if defined(ENABLE_EXTENDED_CLI) || defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
+static const uint8_t MAXIMUM_CLI_RESPONSE_CHARS = 1 + OTV0P2BASE::CLI::MAX_TYPICAL_CLI_BUFFER;
 #else
-#define MAXIMUM_CLI_OT_RESPONSE_CHARS 9 // Just enough for any valid core/OT command expected not including trailing LF.  (Note that Serial RX buffer is 64 bytes.)
-#endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
-#ifdef ENABLE_EXTENDED_CLI // Allow for much longer input commands.
-#define MAXIMUM_CLI_RESPONSE_CHARS (max(64, MAXIMUM_CLI_OT_RESPONSE_CHARS))
-#else
-#define MAXIMUM_CLI_RESPONSE_CHARS MAXIMUM_CLI_OT_RESPONSE_CHARS
-#endif
-#define IDLE_SLEEP_SCT (15/(OTV0P2BASE::SUBCYCLE_TICK_MS_RD)) // Approx sub-cycle ticks in idle sleep (15ms), erring on side of being too large; strictly positive.
-#define BUF_FILL_TIME_MS (((MAXIMUM_CLI_RESPONSE_CHARS*10) * 1000L + (BAUD-1)) / BAUD) // Time to read full/maximal input command buffer; ms, strictly positive.
-#define BUF_FILL_TIME_SCT (BUF_FILL_TIME_MS/(OTV0P2BASE::SUBCYCLE_TICK_MS_RD)) // Approx sub-cycle ticks to fill buf, erring on side of being too large; strictly positive.
-#define MIN_RX_BUFFER 16 // Minimum Arduino Serial RX buffer size.
-// DHD20131213: CAN_IDLE_15MS/idle15AndPoll() true seemed to be causing intermittent crashes.
-// DHD20150827: CAN_IDLE_15MS/idle15AndPoll() true causing crashes on 7% of REV9 boards.
-#if !defined(OTV0P2BASE_IDLE_NOT_RECOMMENDED) && defined(ENABLE_USE_OF_AVR_IDLE_MODE) // Allow use of IDLE mode.
-#define CAN_IDLE_15MS ((BAUD <= 4800) || (MAXIMUM_CLI_RESPONSE_CHARS < MIN_RX_BUFFER)) // If true, cannot get RX overrun during 15--30ms idle.
-#else
-#define CAN_IDLE_15MS (false)
+static const uint8_t MAXIMUM_CLI_RESPONSE_CHARS = 1 + OTV0P2BASE::CLI::MIN_TYPICAL_CLI_BUFFER;
 #endif
 // Used to poll user side for CLI input until specified sub-cycle time.
 // Commands should be sent terminated by CR *or* LF; both may prevent 'E' (exit) from working properly.
