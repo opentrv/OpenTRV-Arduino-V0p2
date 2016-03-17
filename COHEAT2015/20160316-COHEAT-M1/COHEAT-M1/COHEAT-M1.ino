@@ -50,19 +50,54 @@ void serialPrintlnBuildVersion();
 // Not thread-safe, eg not to be called from within an ISR.
 bool pollIO(bool force = false);
 
+// Sends a short 1-line CRLF-terminated status report on the serial connection (at 'standard' baud).
+void serialStatusReport() { OTV0P2BASE::serialPrintlnAndFlush(F("=")); }
+
+// Primary radio module.
 extern OTRadioLink::OTRadioLink &PrimaryRadio;
 
+#ifdef ALLOW_CC1_SUPPORT_RELAY_IO // REV9 CC1 relay...
+// Call this on even numbered seconds (with current time in seconds) to allow the CO UI to operate.
+// Should never be skipped, so as to allow the UI to remain responsive.
+bool tickUICO(uint_fast8_t sec);
+// Directly adjust LEDs.
+//   * light-colour         [0,3] bit flags 1==red 2==green (lc) 0 => stop everything
+//   * light-on-time        [1,15] (0 not allowed) 30-450s in units of 30s (lt) ???
+//   * light-flash          [1,3] (0 not allowed) 1==single 2==double 3==on (lf)
+// If fromPollAndCmd is true then this is being called from an incoming Poll/Cms message receipt.
+// Not ISR- safe.
+void setLEDsCO(uint8_t lc, uint8_t lt, uint8_t lf, bool fromPollAndCmd);
+// Get the switch toggle state.
+// The hub should monitor this changing,
+// taking the change as indication of a boost request.
+// This is allowed to toggle only much slower than the hub should poll,
+// thus ensuring that the hub doesn't miss a boost request.
+// Safe to call from an ISR (though this would be unexpected).
+bool getSwitchToggleStateCO();
+#endif
+
+// Use WDT-based timer for xxxPause() routines.
+// Very tiny low-power sleep to approximately match the PICAXE V0.09 routine of the same name.
+#define VERYTINY_PAUSE_MS 5
+static void inline veryTinyPause() { OTV0P2BASE::sleepLowPowerMs(VERYTINY_PAUSE_MS); }
+// Tiny low-power sleep to approximately match the PICAXE V0.09 routine of the same name.
+#define TINY_PAUSE_MS 15
+static void inline tinyPause() { OTV0P2BASE::nap(WDTO_15MS); } // 15ms vs 18ms nominal for PICAXE V0.09 impl.
+// Small low-power sleep.
+#define SMALL_PAUSE_MS 30
+static void inline smallPause() { OTV0P2BASE::nap(WDTO_30MS); }
+// Medium low-power sleep to approximately match the PICAXE V0.09 routine of the same name.
+// Premature wakeups MAY be allowed to avoid blocking I/O polling for too long.
+#define MEDIUM_PAUSE_MS 60
+static void inline mediumPause() { OTV0P2BASE::nap(WDTO_60MS); } // 60ms vs 144ms nominal for PICAXE V0.09 impl.
+// Big low-power sleep to approximately match the PICAXE V0.09 routine of the same name.
+// Premature wakeups MAY be allowed to avoid blocking I/O polling for too long.
+#define BIG_PAUSE_MS 120
+static void inline bigPause() { OTV0P2BASE::nap(WDTO_120MS); } // 120ms vs 288ms nominal for PICAXE V0.09 impl.
+// Pause between flashes to allow them to be distinguished (>100ms); was mediumPause() for PICAXE V0.09 impl.
+static void inline offPause() { bigPause(); pollIO(); }
+
 //---------------------
-
-// Controller's view of Least Significant Digits of the current (local) time, in this case whole seconds.
-#define TIME_CYCLE_S 60 // TIME_LSD ranges from 0 to TIME_CYCLE_S-1, also major cycle length.
-static uint_fast8_t TIME_LSD; // Controller's notion of seconds within major cycle.
-
-// 'Elapsed minutes' count of minute/major cycles; cheaper than accessing RTC and not tied to real time.
-// Starts at or just above zero (within the first 4-minute cycle) to help avoid collisions between units after mass power-up.
-// Wraps at its maximum (0xff) value.
-static uint8_t minuteCount;
-
 
 #ifndef DEBUG
 #define DEBUG_SERIAL_PRINT(s) // Do nothing.
@@ -84,51 +119,19 @@ extern void _debug_serial_timestamp();
 #define DEBUG_SERIAL_TIMESTAMP() _debug_serial_timestamp()
 #endif // DEBUG
 
-// Use WDT-based timer for xxxPause() routines.
-// Very tiny low-power sleep to approximately match the PICAXE V0.09 routine of the same name.
-#define VERYTINY_PAUSE_MS 5
-static void inline veryTinyPause() { OTV0P2BASE::sleepLowPowerMs(VERYTINY_PAUSE_MS); }
-// Tiny low-power sleep to approximately match the PICAXE V0.09 routine of the same name.
-#define TINY_PAUSE_MS 15
-static void inline tinyPause() { OTV0P2BASE::nap(WDTO_15MS); } // 15ms vs 18ms nominal for PICAXE V0.09 impl.
-// Small low-power sleep.
-#define SMALL_PAUSE_MS 30
-static void inline smallPause() { OTV0P2BASE::nap(WDTO_30MS); }
-// Medium low-power sleep to approximately match the PICAXE V0.09 routine of the same name.
-// Premature wakeups MAY be allowed to avoid blocking I/O polling for too long.
-#define MEDIUM_PAUSE_MS 60
-static void inline mediumPause() { OTV0P2BASE::nap(WDTO_60MS); } // 60ms vs 144ms nominal for PICAXE V0.09 impl.
-// Big low-power sleep to approximately match the PICAXE V0.09 routine of the same name.
-// Premature wakeups MAY be allowed to avoid blocking I/O polling for too long.
-#define BIG_PAUSE_MS 120
-static void inline bigPause() { OTV0P2BASE::nap(WDTO_120MS); } // 120ms vs 288ms nominal for PICAXE V0.09 impl.
-// Pause between flashes to allow them to be distinguished (>100ms); was mediumPause() for PICAXE V0.09 impl.
-static void inline offPause()
-  {
-  bigPause(); // 120ms, was V0.09 144ms mediumPause() for PICAXE V0.09 impl.
-  pollIO(); // Slip in an I/O poll.
-  }
+//---------------------
 
-#ifdef ALLOW_CC1_SUPPORT_RELAY_IO // REV9 CC1 relay...
-// Call this on even numbered seconds (with current time in seconds) to allow the CO UI to operate.
-// Should never be skipped, so as to allow the UI to remain responsive.
-bool tickUICO(uint_fast8_t sec);
-// Directly adjust LEDs.
-//   * light-colour         [0,3] bit flags 1==red 2==green (lc) 0 => stop everything
-//   * light-on-time        [1,15] (0 not allowed) 30-450s in units of 30s (lt) ???
-//   * light-flash          [1,3] (0 not allowed) 1==single 2==double 3==on (lf)
-// If fromPollAndCmd is true then this is being called from an incoming Poll/Cms message receipt.
-// Not ISR- safe.
-void setLEDsCO(uint8_t lc, uint8_t lt, uint8_t lf, bool fromPollAndCmd);
+// Controller's view of Least Significant Digits of the current (local) time, in this case whole seconds.
+#define TIME_CYCLE_S 60 // TIME_LSD ranges from 0 to TIME_CYCLE_S-1, also major cycle length.
+static uint_fast8_t TIME_LSD; // Controller's notion of seconds within major cycle.
 
-// Get the switch toggle state.
-// The hub should monitor this changing,
-// taking the change as indication of a boost request.
-// This is allowed to toggle only much slower than the hub should poll,
-// thus ensuring that the hub doesn't miss a boost request.
-// Safe to call from an ISR (though this would be unexpected).
-bool getSwitchToggleStateCO();
-#endif
+// 'Elapsed minutes' count of minute/major cycles; cheaper than accessing RTC and not tied to real time.
+// Starts at or just above zero (within the first 4-minute cycle) to help avoid collisions between units after mass power-up.
+// Wraps at its maximum (0xff) value.
+static uint8_t minuteCount;
+
+
+
 
 
 // Indicate that the system is broken in an obvious way (distress flashing the main LED).
@@ -888,12 +891,8 @@ void setup()
   // Initialised: turn main/heatcall UI LED off.
   LED_HEATCALL_OFF();
 
-  // Help user get to CLI.
-  OTV0P2BASE::serialPrintlnAndFlush(F("At CLI > prompt enter ? for help"));
-
-// FIXME FIXME FIXME
-//  // Report initial status.
-//  serialStatusReport();
+  // Report initial status.
+  serialStatusReport();
 
   // Radio not listening to start with.
   // Ignore any initial spurious RX interrupts for example.
