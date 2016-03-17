@@ -814,6 +814,95 @@ static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChanne
   };
 #endif
 
+#ifdef ENABLE_EXTENDED_CLI
+// Handle CLI extension commands.
+// Commands of form:
+//   +EXT .....
+// where EXT is the name of the extension, usually 3 letters.
+
+// It is acceptable for extCLIHandler() to alter the buffer passed,
+// eg with strtok_t().
+static bool extCLIHandler(Print *const p, char *const buf, const uint8_t n)
+  {
+
+#ifdef ALLOW_CC1_SUPPORT_RELAY
+  // If CC1 replay then allow +CC1 ! command to send an alert to the hub.
+  // Full command is:
+  //    +CC1 !
+  // This unit's housecode is used in the frame sent.
+  const uint8_t CC1_A_PREFIX_LEN = 6;
+  // Falling through rather than return(true) indicates failure.
+  if((n >= CC1_A_PREFIX_LEN) && (0 == strncmp("+CC1 !", buf, CC1_A_PREFIX_LEN)))
+    {
+    // Send the alert!
+    return(sendCC1AlertByRFM23B());
+    }
+#endif
+
+#ifdef ALLOW_CC1_SUPPORT_HUB
+  // If CC1 hub then allow +CC1 ? command to poll a remote relay.
+  // Full command is:
+  //    +CC1 ? hc1 hc2 rp lc lt lf
+  // ie six numeric arguments, see below, with out-of-range values coerced (other than housecodes):
+//            // Factory method to create instance.
+//            // Invalid parameters (except house codes) will be coerced into range.
+//            //   * House code (hc1, hc2) of valve controller that the poll/command is being sent to.
+//            //   * rad-open-percent     [0,100] 0-100 in 1% steps, percent open approx to set rad valve (rp)
+//            //   * light-colour         [0,3] bit flags 1==red 2==green (lc) 0 => stop everything
+//            //   * light-on-time        [1,15] (0 not allowed) 30-450s in units of 30s (lt) ???
+//            //   * light-flash          [1,3] (0 not allowed) 1==single 2==double 3==on (lf)
+//            // Returns instance; check isValid().
+//            static CC1PollAndCommand make(uint8_t hc1, uint8_t hc2,
+//                                          uint8_t rp,
+//                                          uint8_t lc, uint8_t lt, uint8_t lf);
+  const uint8_t CC1_Q_PREFIX_LEN = 7;
+  const uint8_t CC1_Q_PARAMS = 6;
+  // Falling through rather than return(true) indicates failure.
+  if((n >= CC1_Q_PREFIX_LEN) && (0 == strncmp("+CC1 ? ", buf, CC1_Q_PREFIX_LEN)))
+    {
+    char *last; // Used by strtok_r().
+    char *tok1;
+    // Attempt to parse the parameters.
+    if((n-CC1_Q_PREFIX_LEN >= CC1_Q_PARAMS*2-1) && (NULL != (tok1 = strtok_r(buf+CC1_Q_PREFIX_LEN, " ", &last))))
+      {
+      char *tok2 = strtok_r(NULL, " ", &last);
+      char *tok3 = (NULL == tok2) ? NULL : strtok_r(NULL, " ", &last);
+      char *tok4 = (NULL == tok3) ? NULL : strtok_r(NULL, " ", &last);
+      char *tok5 = (NULL == tok4) ? NULL : strtok_r(NULL, " ", &last);
+      char *tok6 = (NULL == tok5) ? NULL : strtok_r(NULL, " ", &last);
+      if(NULL != tok6)
+        {
+        OTProtocolCC::CC1PollAndCommand q = OTProtocolCC::CC1PollAndCommand::make(
+            atoi(tok1),
+            atoi(tok2),
+            atoi(tok3),
+            atoi(tok4),
+            atoi(tok5),
+            atoi(tok6));
+        if(q.isValid())
+          {
+          uint8_t txbuf[OTProtocolCC::CC1PollAndCommand::primary_frame_bytes+1]; // More than large enough for preamble + sync + alert message.
+          const uint8_t bodylen = q.encodeSimple(txbuf, sizeof(txbuf), true);
+#if 0 && defined(DEBUG)
+    OTRadioLink::printRXMsg(p, txbuf, bodylen);
+#endif
+          // TX at normal volume since ACKed and can be repeated if necessary.
+          if(PrimaryRadio.sendRaw(txbuf, bodylen))
+            { return(true); } // Done it!
+#if 1 && defined(DEBUG)
+          else { DEBUG_SERIAL_PRINT_FLASHSTRING("!TX failed"); } 
+#endif
+          }
+        }
+      }
+    return(false); // FAILED if fallen through from above.
+    }
+#endif
+
+  return(false); // FAILED if not otherwise handled.
+  }
+#endif 
+
 // Remaining minutes to keep CLI active; zero implies inactive.
 // Starts up with full value to allow easy setting of time, etc, without specially activating CLI.
 // Marked volatile for thread-safe lock-free non-read-modify-write access to byte-wide value.
@@ -895,22 +984,21 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         break; // Note that status is by default printed after processing input line.
         }
 
-// FIXME FIXME FIXME
-//#ifdef ENABLE_EXTENDED_CLI
-//      // Handle CLI extension commands.
-//      // Command of form:
-//      //   +EXT .....
-//      // where EXT is the name of the extension, usually 3 letters.
-//      //
-//      // It is acceptable for extCLIHandler() to alter the buffer passed,
-//      // eg with strtok_t().
-//      case '+':
-//        {
-//        const bool success = extCLIHandler(&Serial, buf, n);
-//        Serial.println(success ? F("OK") : F("FAILED"));
-//        break;
-//        }
-//#endif 
+#ifdef ENABLE_EXTENDED_CLI
+      // Handle CLI extension commands.
+      // Command of form:
+      //   +EXT .....
+      // where EXT is the name of the extension, usually 3 letters.
+      //
+      // It is acceptable for extCLIHandler() to alter the buffer passed,
+      // eg with strtok_t().
+      case '+':
+        {
+        const bool success = extCLIHandler(&Serial, buf, n);
+        Serial.println(success ? F("OK") : F("FAILED"));
+        break;
+        }
+#endif 
       }
 
     // Almost always show status line afterwards as feedback of command received and new state.
