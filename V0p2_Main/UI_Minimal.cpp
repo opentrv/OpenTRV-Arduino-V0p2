@@ -1023,36 +1023,10 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
       case 'E': { CLITimeoutM = 0; break; }
 
 #if defined(ENABLE_FHT8VSIMPLE) && (defined(ENABLE_LOCAL_TRV) || defined(ENABLE_SLAVE_TRV))
-      // H nn nn
+      // H [nn nn]
       // Set (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control.
       // Missing values will clear the code entirely (and disable use of the valve).
-      case 'H':
-        {
-        char *last; // Used by strtok_r().
-        char *tok1;
-        // Minimum 5 character sequence makes sense and is safe to tokenise, eg "H 1 2".
-        if((n >= 5) && (NULL != (tok1 = strtok_r(buf+2, " ", &last))))
-          {
-          char *tok2 = strtok_r(NULL, " ", &last);
-          if(NULL != tok2)
-            {
-            const int hc1 = atoi(tok1);
-            const int hc2 = atoi(tok2);
-            if((hc1 < 0) || (hc1 > 99) || (hc2 < 0) || (hc2 > 99)) { OTV0P2BASE::CLI::InvalidIgnored(); }
-            else
-              {
-              // Set house codes and force resync if changed.
-              FHT8V.nvSetHC1(hc1);
-              FHT8V.nvSetHC2(hc2);
-              }
-            }
-          }
-        else if(n < 2) // Just 'H', possibly with trailing whitespace.
-          {
-          FHT8V.nvClearHC(); // Clear codes and force into unsynchronized state.
-          }
-        break;
-        }
+      case 'H': { showStatus = OTRadValve::FHT8VRadValveBase::SetHouseCode(&FHT8V).doCommand(buf, n); break; }
 #endif
 
 #if defined(ENABLE_GENERIC_PARAM_CLI_ACCESS)

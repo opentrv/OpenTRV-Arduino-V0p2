@@ -217,6 +217,12 @@ inline bool localFHT8VTRVEnabled() { return(!FHT8V.isUnavailable()); }
 #define localFHT8VTRVEnabled() (false) // Local FHT8V TRV disabled.
 #endif
 
+#if defined(ENABLE_SLAVE_TRV)
+#define ENABLE_NOMINAL_RAD_VALVE
+// Simply alias directly to FHT8V for REV9 slave.
+#define NominalRadValve FHT8V
+#endif
+
 
 #ifdef ALLOW_CC1_SUPPORT_RELAY
 // Send a CC1 Alert message with this unit's house code via the RFM23B.
