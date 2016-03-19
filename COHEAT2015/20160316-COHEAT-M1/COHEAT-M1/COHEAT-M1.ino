@@ -1280,7 +1280,6 @@ void loop()
       }
 #endif
 
-
 #if defined(ENABLE_FHT8VSIMPLE)
   // Try for double TX for more robust conversation with valve?
   const bool doubleTXForFTH8V = false;
@@ -1289,17 +1288,19 @@ void loop()
   bool useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_First(doubleTXForFTH8V); // Time for extra TX before UI.
   if(useExtraFHT8VTXSlots)
     {
-    // Time for extra TX before other actions, but don't bother if minimising power in frost mode.
+    handleQueuedMessages(&Serial, true, &PrimaryRadio);
     // ---------- HALF SECOND #1 -----------
     useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V); 
     }
   if(useExtraFHT8VTXSlots)
     {
+    handleQueuedMessages(&Serial, true, &PrimaryRadio);
     // ---------- HALF SECOND #2 -----------
     useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V); 
     }
   if(useExtraFHT8VTXSlots)
     {
+    handleQueuedMessages(&Serial, true, &PrimaryRadio);
     // ---------- HALF SECOND #3 -----------
     useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V); 
     }
