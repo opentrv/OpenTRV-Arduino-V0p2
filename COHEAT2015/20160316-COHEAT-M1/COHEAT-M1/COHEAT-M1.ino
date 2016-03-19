@@ -1303,5 +1303,10 @@ void loop()
 #endif
     TIME_LSD = OTV0P2BASE::getSecondsLT(); // Prepare to sleep until start of next full minor cycle.
     }
+
+// FIXME FIXME FIXME
+// Put back all FHT8V 0.5s interval stuff!
+
+    
   }
 
