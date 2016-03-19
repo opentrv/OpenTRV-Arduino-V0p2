@@ -1280,6 +1280,31 @@ void loop()
       }
 #endif
 
+
+#if defined(ENABLE_FHT8VSIMPLE)
+  // Try for double TX for more robust conversation with valve?
+  const bool doubleTXForFTH8V = false;
+  // FHT8V is highest priority and runs first.
+  // ---------- HALF SECOND #0 -----------
+  bool useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_First(doubleTXForFTH8V); // Time for extra TX before UI.
+  if(useExtraFHT8VTXSlots)
+    {
+    // Time for extra TX before other actions, but don't bother if minimising power in frost mode.
+    // ---------- HALF SECOND #1 -----------
+    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V); 
+    }
+  if(useExtraFHT8VTXSlots)
+    {
+    // ---------- HALF SECOND #2 -----------
+    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V); 
+    }
+  if(useExtraFHT8VTXSlots)
+    {
+    // ---------- HALF SECOND #3 -----------
+    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V); 
+    }
+#endif
+
   // Command-Line Interface (CLI) polling, if still active.
   if(isCLIActive())
     {
