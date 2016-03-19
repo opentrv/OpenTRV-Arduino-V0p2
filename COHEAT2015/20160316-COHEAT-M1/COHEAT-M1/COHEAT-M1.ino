@@ -625,7 +625,6 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uin
       // After decode instance should be valid and with correct house code.
       if(c.isValid())
         {
-//        p->print(F("+CC1 * ")); p->print(a.getHC1()); p->print(' '); p->println(a.getHC2());
         // Process the message only if it is targetted at this node.
         const uint8_t hc1 = FHT8VGetHC1();
         const uint8_t hc2 = FHT8VGetHC2();
@@ -882,6 +881,7 @@ static bool FilterRXISR(const volatile uint8_t *buf, volatile uint8_t &buflen)
   {
   if((buflen < 8) || (OTRadioLink::FTp2_CC1PollAndCmd != buf[0])) { return(false); }
   buflen = 8; // Truncate message to correct size for efficiency.
+  // TODO: filter on inbound address/housecode as FHT8V.getHC{1,2}() are thread-safe.
   return(true); // Accept message.
   }
 #elif defined(ALLOW_CC1_SUPPORT_HUB)
@@ -896,7 +896,6 @@ static bool FilterRXISR(const volatile uint8_t *buf, volatile uint8_t &buflen)
   }
 #endif
 
-#if defined(ALLOW_CC1_SUPPORT)
 // COHEAT: REV2/REV9 talking on fast GFSK channel 0, REV9 TX to FHT8V on slow OOK.
 #define RADIO_CONFIG_NAME "COHEAT DUAL CHANNEL"
 static const uint8_t nPrimaryRadioChannels = 2;
@@ -907,18 +906,7 @@ static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChanne
   // FS20/FHT8V compatible channel 1 full config, used for TX only, not secure, unframed.
   OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsOOK5000, true, false, true, false, false, true),
   };
-#elif defined(ENABLE_FAST_FRAMED_CARRIER_SUPPORT)
-#define RADIO_CONFIG_NAME "GFSK"
-// Nodes talking on fast GFSK channel 0.
-static const uint8_t nPrimaryRadioChannels = 1;
-static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChannels] =
-  {
-  // GFSK channel 0 full config, RX/TX, not in itself secure.
-  OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsGFSK57600, true),
-  };
-#endif
 
-#ifdef ENABLE_EXTENDED_CLI
 // Handle CLI extension commands.
 // Commands of form:
 //   +EXT .....
@@ -1005,7 +993,6 @@ static bool extCLIHandler(Print *const p, char *const buf, const uint8_t n)
 
   return(false); // FAILED if not otherwise handled.
   }
-#endif 
 
 // Remaining minutes to keep CLI active; zero implies inactive.
 // Starts up with full value to allow easy setting of time, etc, without specially activating CLI.
