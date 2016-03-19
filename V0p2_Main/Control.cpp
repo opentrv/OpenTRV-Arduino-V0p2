@@ -1924,7 +1924,7 @@ void loopOpenTRV()
     // eg work was accrued during the previous major slow/outer loop
     // or the in a previous orbit of this loop sleep or nap was terminated by an I/O interrupt.
     // May generate output to host on Serial.
-    // Come back and have another go if work was done, until the next tick at most.
+    // Come back and have another go immediately until no work done.
     if(handleQueuedMessages(&Serial, true, &PrimaryRadio)) { continue; }
 #endif
 
@@ -1945,7 +1945,7 @@ void loopOpenTRV()
     else
       {
       // Normal long minimal-power sleep until wake-up interrupt.
-      // Rely on interrupt to force quick loop round to I/O poll().
+      // Rely on interrupt to force quick loop round to I/O poll.
       ::OTV0P2BASE::sleepUntilInt();
       }
 //    DEBUG_SERIAL_PRINTLN_FLASHSTRING("w"); // Wakeup.

@@ -1252,23 +1252,19 @@ void setup()
 // Main code here, loops every 2s.
 void loop()
   {
-  const bool needsToListen = setUpContinuousRX();
-
+  setUpContinuousRX();
   OTV0P2BASE::powerDownSerial(); // Ensure that serial I/O is off.
   // Power down most stuff (except radio for hub RX).
   OTV0P2BASE::minimisePowerWithoutSleep();
   uint_fast8_t newTLSD;
   while(TIME_LSD == (newTLSD = OTV0P2BASE::getSecondsLT()))
     {
-    // Poll I/O and process message incrementally (in this otherwise idle time)
-    // before sleep and on wakeup in case some IO needs further processing now,
-    // eg work was accrued during the previous major slow/outer loop
-    // or the in a previous orbit of this loop sleep or nap was terminated by an I/O interrupt.
-    // Come back and have another go if work was done, until the next tick at most.
+    // Poll I/O and process message incrementally (in this otherwise idle time).
+    // Come back and have another go immediately until no work remaining.
     if(handleQueuedMessages(&Serial, true, &PrimaryRadio)) { continue; }
 
     // Normal long minimal-power sleep until wake-up interrupt.
-    // Rely on interrupt to force fall through to I/O poll() below.
+    // Rely on interrupt to force quick loop round to I/O poll.
     OTV0P2BASE::sleepUntilInt();
     }
   TIME_LSD = newTLSD;
