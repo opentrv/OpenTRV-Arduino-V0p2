@@ -71,6 +71,60 @@ const uint8_t nearOverrunThreshold = OTV0P2BASE::GSCT_MAX - 8; // ~64ms/~32 seri
 // Primary radio module.
 extern OTRadioLink::OTRadioLink &PrimaryRadio;
 
+// Sense (usually non-linearly) over full likely internal ambient lighting range of a (UK) home,
+// down to levels too dark to be active in (and at which heating could be set back for example).
+#ifdef ENABLE_AMBLIGHT_SENSOR
+// Sensor for ambient light level; 0 is dark, 255 is bright.
+typedef OTV0P2BASE::SensorAmbientLight AmbientLight;
+#else // !defined(ENABLE_AMBLIGHT_SENSOR)
+typedef OTV0P2BASE::DummySensorAmbientLight AmbientLight; // Dummy stand-in.
+#endif // ENABLE_AMBLIGHT_SENSOR
+// Singleton implementation/instance.
+extern AmbientLight AmbLight;
+
+// Create very light-weight standard-speed OneWire(TM) support if a pin has been allocated to it.
+// Meant to be similar to use to OneWire library V2.2.
+// Supports search but not necessarily CRC.
+// Designed to work with 1MHz/1MIPS CPU clock.
+#if defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
+#define SUPPORTS_MINIMAL_ONEWIRE
+extern OTV0P2BASE::MinimalOneWire<> MinOW_DEFAULT_OWDQ;
+#endif
+
+// Cannot have internal and external use of same DS18B20 at same time...
+#if defined(ENABLE_EXTERNAL_TEMP_SENSOR_DS18B20) && !defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20) && defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
+#define SENSOR_EXTERNAL_DS18B20_ENABLE_0 // Enable sensor zero.
+extern OTV0P2BASE::TemperatureC16_DS18B20 extDS18B20_0;
+#endif
+
+// Ambient/room temperature sensor, usually on main board.
+#if defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21)
+extern OTV0P2BASE::RoomTemperatureC16_SHT21 TemperatureC16; // SHT21 impl.
+#elif defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20)
+  #if defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
+  // DSB18B20 temperature impl, with slightly reduced precision to improve speed.
+  extern OTV0P2BASE::TemperatureC16_DS18B20 TemperatureC16;
+  #endif // defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
+#else // Don't use TMP112 if SHT21 or DS18B20 have been selected.
+extern OTV0P2BASE::RoomTemperatureC16_TMP112 TemperatureC16;
+#endif
+
+// HUMIDITY_SENSOR_SUPPORT is defined if at least one humidity sensor has support compiled in.
+// Simple implementations can assume that the sensor will be present if defined;
+// more sophisticated implementations may wish to make run-time checks.
+// If SHT21 support is enabled at compile-time then its humidity sensor may be used at run-time.
+#if defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21)
+#define HUMIDITY_SENSOR_SUPPORT // Humidity sensing available.
+#endif
+
+#if defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21)
+// Singleton implementation/instance.
+extern OTV0P2BASE::HumiditySensorSHT21 RelHumidity;
+#else
+// Dummy implementation to minimise coding changes.
+extern OTV0P2BASE::DummyHumiditySensorSHT21 RelHumidity;
+#endif
+
 #ifdef ALLOW_CC1_SUPPORT_RELAY_IO // REV9 CC1 relay...
 // Call this on even numbered seconds (with current time in seconds) to allow the CO UI to operate.
 // Should never be skipped, so as to allow the UI to remain responsive.
@@ -146,23 +200,14 @@ static uint_fast8_t TIME_LSD; // Controller's notion of seconds within major cyc
 static uint8_t minuteCount;
 
 
-
-
-
 // Indicate that the system is broken in an obvious way (distress flashing the main LED).
 // DOES NOT RETURN.
 // Tries to turn off most stuff safely that will benefit from doing so, but nothing too complex.
 // Tries not to use lots of energy so as to keep distress beacon running for a while.
 void panic()
   {
-#ifdef ENABLE_RADIO_PRIMARY_MODULE
   // Reset radio and go into low-power mode.
   PrimaryRadio.panicShutdown();
-#endif
-#ifdef ENABLE_RADIO_SECONDARY_MODULE
-  // Reset radio and go into low-power mode.
-  SecondaryRadio.panicShutdown();
-#endif
   // Power down almost everything else...
   OTV0P2BASE::minimisePowerWithoutSleep();
 #ifdef LED_HEATCALL
@@ -209,6 +254,65 @@ void serialPrintlnBuildVersion()
   OTV0P2BASE::serialPrintAndFlush(_YYYYMmmDD);
   OTV0P2BASE::serialPrintlnAndFlush(F(" " __TIME__));
   }
+
+
+#ifdef ENABLE_AMBLIGHT_SENSOR
+// Normal 2 bit shift between raw and externally-presented values.
+static const uint8_t shiftRawScaleTo8Bit = 2;
+#ifdef ENABLE_AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
+// This implementation expects a phototransitor TEPT4400 (50nA dark current, nominal 200uA@100lx@Vce=50V) from IO_POWER_UP to LDR_SENSOR_AIN and 220k to ground.
+// Measurement should be taken wrt to internal fixed 1.1V bandgap reference, since light indication is current flow across a fixed resistor.
+// Aiming for maximum reading at or above 100--300lx, ie decent domestic internal lighting.
+// Note that phototransistor is likely far more directionally-sensitive than LDR and its response nearly linear.
+// This extends the dynamic range and switches to measurement vs supply when full-scale against bandgap ref, then scales by Vss/Vbandgap and compresses to fit.
+// http://home.wlv.ac.uk/~in6840/Lightinglevels.htm
+// http://www.engineeringtoolbox.com/light-level-rooms-d_708.html
+// http://www.pocklington-trust.org.uk/Resources/Thomas%20Pocklington/Documents/PDF/Research%20Publications/GPG5.pdf
+// http://www.vishay.com/docs/84154/appnotesensors.pdf
+static const int LDR_THR_LOW = 270U;
+static const int LDR_THR_HIGH = 400U;
+#else // LDR (!defined(ENABLE_AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400))
+// This implementation expects an LDR (1M dark resistance) from IO_POWER_UP to LDR_SENSOR_AIN and 100k to ground.
+// Measurement should be taken wrt to supply voltage, since light indication is a fraction of that.
+// Values below from PICAXE V0.09 impl approx multiplied by 4+ to allow for scale change.
+#ifdef ENABLE_AMBLIGHT_EXTRA_SENSITIVE // Define if LDR not exposed to much light, eg for REV2 cut4 sideways-pointing LDR (TODO-209).
+static const int LDR_THR_LOW = 50U;
+static const int LDR_THR_HIGH = 70U;
+#else // Normal settings.
+static const int LDR_THR_LOW = 160U; // Was 30.
+static const int LDR_THR_HIGH = 200U; // Was 35.
+#endif // ENABLE_AMBLIGHT_EXTRA_SENSITIVE
+#endif // ENABLE_AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
+// Singleton implementation/instance.
+AmbientLight AmbLight(LDR_THR_HIGH >> shiftRawScaleTo8Bit);
+#endif // ENABLE_AMBLIGHT_SENSOR
+
+#if defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
+OTV0P2BASE::MinimalOneWire<> MinOW_DEFAULT;
+#endif
+
+#if defined(SENSOR_EXTERNAL_DS18B20_ENABLE_0) // Enable sensor zero.
+OTV0P2BASE::TemperatureC16_DS18B20 extDS18B20_0(MinOW_DEFAULT, 0);
+#endif
+
+#if defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21)
+// Singleton implementation/instance.
+OTV0P2BASE::HumiditySensorSHT21 RelHumidity;
+#else
+OTV0P2BASE::DummyHumiditySensorSHT21 RelHumidity;
+#endif
+
+// Ambient/room temperature sensor, usually on main board.
+#if defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21)
+OTV0P2BASE::RoomTemperatureC16_SHT21 TemperatureC16; // SHT21 impl.
+#elif defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20)
+#if defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
+// DSB18B20 temperature impl, with slightly reduced precision to improve speed.
+OTV0P2BASE::TemperatureC16_DS18B20 TemperatureC16(MinOW_DEFAULT, 0, OTV0P2BASE::TemperatureC16_DS18B20::MAX_PRECISION - 1);
+#endif
+#else // Don't use TMP112 if SHT21 or DS18B20 are selected.
+OTV0P2BASE::RoomTemperatureC16_TMP112 TemperatureC16;
+#endif
 
 // Singleton FHT8V valve instance (to control remote FHT8V valve by radio).
 static const uint8_t _FHT8V_MAX_EXTRA_TRAILER_BYTES = (1 + max(OTV0P2BASE::MESSAGING_TRAILING_MINIMAL_STATS_PAYLOAD_BYTES, OTV0P2BASE::FullStatsMessageCore_MAX_BYTES_ON_WIRE));
@@ -1075,17 +1179,6 @@ void setup()
 #endif // NO_RX_FILTER
 
 //  posPOST(1, F("Radio OK, checking buttons/sensors and xtal"));
-
-// FIXME FIXME FIXME
-//  // Collect full set of environmental values before entering loop() in normal mode.
-//  // This should also help ensure that sensors are properly initialised.
-//  const int heat = TemperatureC16.read();
-//#if defined(ENABLE_AMBLIGHT_SENSOR)
-//  const int light = AmbLight.read();
-//#endif
-//#if defined(HUMIDITY_SENSOR_SUPPORT)
-//  const uint8_t rh = RelHumidity.read();
-//#endif
 
   // Seed RNGs, after having gathered some sensor values in RAM...
   OTV0P2BASE::seedPRNGs();
