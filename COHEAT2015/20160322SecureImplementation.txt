@@ -11,7 +11,7 @@ Basics
  2) The interaction between the REV9 and FHT8V remains in cleartext;
     in a production system the REV9 or an OpenTRV REV7 could, for example,
     control the radiator valve directly, thus eliminating this unprotected link
-    (and a source of unreliability).
+    (and a source of current unreliability).
 
  3) Some details of the security scheme have been trimmed to keep the demo code
     of manageable size, but should be implemented on a production system.
@@ -25,16 +25,16 @@ Basics
  
  6) Note that the security mechanisms shown in the security demo
     are NOT intended to defeat determined state-level actors,
-    nor to resist TEMPEST style attacks (or defend against physical access to devices,
+    nor to resist TEMPEST style attacks ,
+    nor defend against attacks facilitated by physical access to devices,
     nor to resist DoS (Denial of Service) attacks on the radio channel for example.
 
  7) The logical interaction between a REV2 hub and its REV9 relay remains the same:
      a) the same CLI/serial input/output at either end
-     b) the FHT8V valve ID being use to identify the relaying REV9 also
-     c) the same GFSK fast channel being used between REV2 and REV9
-    (Note: REV2s and REV9s will only be able to communicate within one group.)
+     b) the FHT8V valve ID being used to identify the relaying REV9 also
+     c) the same GFSK fast channel being used between REV2 and REV9 as in recent releases
 
- 8) All messages with be authenticated with the body encrypted
+ 8) All messages will be authenticated and with the body encrypted
     with security boundaries/secrets following the 'primary building key' model,
     with a single secret key (AES-GCM 128) shared between the REV9s and REV2
     for one dwelling, so that compromise of the key for one dwelling
@@ -50,7 +50,23 @@ Basics
 Some Implementation Detail
 ==========================
 
+10) The nominal ID used to construct the nonce/IV is nominally extended with 0x80 bytes
+    for traffic from REV9 (relay) to REV2 (hub)
+    and is nominally extended with 0 bytes for (reverse) traffic from hub to relay.
 
+11) The same frame type codes ('!', '?', '*') are used for message/frame types
+    as for the non-secure frames, though with the high bit set to indicate secure.
+
+12) The securable frame format with type 0x80 (final trailer byte) AES-GCM security is used.
+
+13) Two bytes of ID are used in all messages/frames, and those are the house codes,
+    and only values in the range [0,99] for each byte are considered valid.
+
+14) The alert ('!') frame has no body.
+
+15) The '?' and '*' frame types use the body as constructed for the non-secure frame,
+    padded to 32 bytes before encryption.  This is quick to implement though redundant,
+    and could be improved.
 
 
 
