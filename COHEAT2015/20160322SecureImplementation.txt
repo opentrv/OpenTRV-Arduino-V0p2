@@ -3,6 +3,7 @@ Notes on Secure Implementation Demonstration
 DHD20160322
 
 Basics
+======
 
  1) The March 2016 release is intended to demonstrate securing the key interactions
     between the main components bin the COHEAT system.
@@ -37,7 +38,30 @@ Basics
     with a single secret key (AES-GCM 128) shared between the REV9s and REV2
     for one dwelling, so that compromise of the key for one dwelling
     does not allow eavesdropping on, or interference of traffic (injection),
-    for any other.
+    for any other.  This key is entered via the CLI.
 
- 9) For this demo keys will be kept in EEPROM rather than fuse-protected Flash,
+ 9) The REV9 relays will only respond to traffic directed to their (valve) ID.
+    The REV2s will only respond to REV9 with which they are explicitly associated
+    and with which they share a secret building key. 
+
+
+Some Implementation Detail
+==========================
+
+10) 
+
+
+
+
+
+
+Options Not Implemented
+=======================
+
+O1) For this demo keys will be kept in EEPROM rather than fuse-protected Flash,
     so would be extractable by someone with physical access and appropriate tools.
+
+O2) No random alerts will be sent to defeat traffic analysis and occupancy guessing.
+
+O3) Zero-length IDs will not be used (to make traffic analysis harder)
+    as the CPU load would be too high and the benefits too small.
