@@ -34,7 +34,8 @@ Basics
      c) the same GFSK fast channel being used between REV2 and REV9
     (Note: REV2s and REV9s will only be able to communicate within one group.)
 
- 8) Encryption will be on the 'primary building key' model,
+ 8) All messages with be authenticated with the body encrypted
+    with security boundaries/secrets following the 'primary building key' model,
     with a single secret key (AES-GCM 128) shared between the REV9s and REV2
     for one dwelling, so that compromise of the key for one dwelling
     does not allow eavesdropping on, or interference of traffic (injection),
@@ -69,5 +70,5 @@ O3) Zero-length IDs will not be used (to make traffic analysis harder)
 
 O4) For production, filtering of received messages by ID should be added to the
     interrupt RX IRQ handler, to help ensure that correct messages are not lost
-    through the queue filling up.
+    through the queue filling up from (unwanted) messages from nearby dwellings.
 
