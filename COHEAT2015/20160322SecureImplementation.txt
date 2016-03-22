@@ -1,0 +1,32 @@
+Notes on Secure Implementation Demonstration
+============================================
+DHD20160322
+
+ 1) The March 2016 release is intended to demonstrate securing the key interactions
+    between the main components bin the COHEAT system.
+
+ 2) The interaction between the REV9 and FHT8V remains in cleartext;
+    in a production system the REV9 or an OpenTRV REV7 could, for example,
+    control the radiator valve directly, thus eliminating this unprotected link
+    (and a source of unreliability).
+
+ 3) Some details of the security scheme have been trimmed to keep the demo code
+    of manageable size, but should be implemented on a production system.
+    These are noted below.
+
+ 4) Again, in a production system, where security is especially important,
+    such as at secure (military, police, etc) sites, and where side channels
+    may indicate a lack of personnel out on duty for example,
+    or where there are particularly vulnerable people present,
+    the mechanisms described to defeat traffic analysis may warrant stepping up.
+ 
+ 6) Note that the security mechanisms shown in the security demo
+    are NOT intended to defeat determined state-level actors,
+    nor to resist TEMPEST style attacks (or defend against physical access to devices,
+    nor to resist DoS (Denial of Service) attacks on the radio channel for example.
+
+ 7) The logical interaction between a REV2 hub and its REV9 relay remains the same:
+     a) the same CLI/serial input/output at either end
+     b) the FHT8V valve ID being use to identify the relaying REV9 also
+     c) the same GFSK fast channel being used between REV2 and REV9
+
