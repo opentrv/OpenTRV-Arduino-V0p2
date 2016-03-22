@@ -68,6 +68,9 @@ Some Implementation Detail
     padded to 32 bytes before encryption.  This is quick to implement though redundant,
     and could be improved.
 
+16) Message counters will function as usual from REV9 relay to REV2 hub,
+    with the RX message counter held logically with the node association.
+
 
 
 
