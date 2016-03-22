@@ -84,7 +84,7 @@ General notes:
  5) Note that ALL REV2/hub units potentially hear ALL traffic (eg alerts and poll responses).
  6) Note that REV9s will only respond to poll/cmd messages addressed to their housecode.
  7) REV2/REV9 units cannot listen while transmitting, eg when the REV9 is talking to the FHT8V which it does intensely during sync.
-
+ 8) All these interactions remain the same for the secure version though extra random alerts may be emitted to hamper traffic analysis.
 
 Suggestions to maximise radio performance:
 
