@@ -42,7 +42,8 @@ Basics
 
  9) The REV9 relays will only respond to traffic directed to their (valve) ID.
     The REV2s will only respond to REV9 with which they are explicitly associated
-    and with which they share a secret building key. 
+    and with which they share a secret building key.
+    Associations are entered via the CLI, and are limited to 8 REV9s per REV2.
 
 
 Some Implementation Detail
@@ -65,3 +66,8 @@ O2) No random alerts will be sent to defeat traffic analysis and occupancy guess
 
 O3) Zero-length IDs will not be used (to make traffic analysis harder)
     as the CPU load would be too high and the benefits too small.
+
+O4) For production, filtering of received messages by ID should be added to the
+    interrupt RX IRQ handler, to help ensure that correct messages are not lost
+    through the queue filling up.
+
