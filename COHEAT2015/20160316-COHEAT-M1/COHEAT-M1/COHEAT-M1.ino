@@ -20,14 +20,6 @@
 // Force-enable RX if not already so.
 #define ENABLE_RADIO_RX
 #define ENABLE_CONTINUOUS_RX // was #define CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX true
-// By default (up to 2015), use the RFM22/RFM23 module to talk to an FHT8V wireless radiator valve.
-#ifdef ENABLE_FHT8VSIMPLE
-#define ENABLE_RADIO_RFM23B
-#define ENABLE_FS20_CARRIER_SUPPORT
-#define ENABLE_FS20_ENCODING_SUPPORT
-#define ENABLE_FHT8VSIMPLE_RX
-#define LISTEN_FOR_FTp2_FS20_native
-#endif // ENABLE_FHT8VSIMPLE
 
 // Indicate that the system is broken in an obvious way (distress flashing of the main UI LED).
 // DOES NOT RETURN.
@@ -626,8 +618,8 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uin
       if(c.isValid())
         {
         // Process the message only if it is targetted at this node.
-        const uint8_t hc1 = FHT8VGetHC1();
-        const uint8_t hc2 = FHT8VGetHC2();
+        const uint8_t hc1 = FHT8V.nvGetHC1();
+        const uint8_t hc2 = FHT8V.nvGetHC2();
         if((c.getHC1() == hc1) && (c.getHC2() == hc2))
           {
           // Act on the incoming command.
@@ -912,7 +904,9 @@ void serialStatusReport()
 #if !defined(ENABLE_FHT8VSIMPLE)
   OTV0P2BASE::serialPrintlnAndFlush(F("="));
 #else
-  TemperatureC16.read(); // Force read as not polled in main loop for COHEAT...
+  // Force sensor read as not polled in main loop for COHEAT... (And flush any serial before messing with clocks, etc.)
+  OTV0P2BASE::flushSerialSCTSensitive();
+  TemperatureC16.read();
   const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled<V0P2_UART_BAUD>(); // FIXME
   // Stats line starts with distinguished marker character '='.
   Serial.print((char) OTV0P2BASE::SERLINE_START_CHAR_STATS);
@@ -953,7 +947,7 @@ static bool extCLIHandler(Print *const p, char *const buf, const uint8_t n)
   {
 
 #ifdef ALLOW_CC1_SUPPORT_RELAY
-  // If CC1 replay then allow +CC1 ! command to send an alert to the hub.
+  // If CC1 relay then allow +CC1 ! command to send an alert to the hub.
   // Full command is:
   //    +CC1 !
   // This unit's housecode is used in the frame sent.
@@ -1205,11 +1199,6 @@ void setup()
   // Seed RNGs, after having gathered some sensor values in RAM...
   OTV0P2BASE::seedPRNGs();
 
-//#if defined(ENABLE_NOMINAL_RAD_VALVE)
-//  // Update targets, output to TRV and boiler, etc, to be sensible before main loop starts.
-//  NominalRadValve.read();
-//#endif
-
   // Ensure that the unique node ID is set up (mainly on first use).
   // Have one attempt (don't want to stress an already failing EEPROM) to force-reset if not good, then panic.
   // Needs to have had entropy gathered, etc.
@@ -1320,24 +1309,24 @@ void loop()
   const bool doubleTXForFTH8V = false;
   // FHT8V is highest priority and runs first.
   // ---------- HALF SECOND #0 -----------
-  bool useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_First(doubleTXForFTH8V); // Time for extra TX before UI.
+  bool useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8V.FHT8VPollSyncAndTX_First(doubleTXForFTH8V); // Time for extra TX before UI.
   if(useExtraFHT8VTXSlots)
     {
     handleQueuedMessages(&Serial, true, &PrimaryRadio);
     // ---------- HALF SECOND #1 -----------
-    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V); 
+    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8V.FHT8VPollSyncAndTX_Next(doubleTXForFTH8V); 
     }
   if(useExtraFHT8VTXSlots)
     {
     handleQueuedMessages(&Serial, true, &PrimaryRadio);
     // ---------- HALF SECOND #2 -----------
-    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V); 
+    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8V.FHT8VPollSyncAndTX_Next(doubleTXForFTH8V); 
     }
   if(useExtraFHT8VTXSlots)
     {
     handleQueuedMessages(&Serial, true, &PrimaryRadio);
     // ---------- HALF SECOND #3 -----------
-    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V); 
+    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8V.FHT8VPollSyncAndTX_Next(doubleTXForFTH8V); 
     }
 #endif
 
