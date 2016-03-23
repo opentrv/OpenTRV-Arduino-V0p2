@@ -20,14 +20,6 @@
 // Force-enable RX if not already so.
 #define ENABLE_RADIO_RX
 #define ENABLE_CONTINUOUS_RX // was #define CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX true
-// By default (up to 2015), use the RFM22/RFM23 module to talk to an FHT8V wireless radiator valve.
-#ifdef ENABLE_FHT8VSIMPLE
-#define ENABLE_RADIO_RFM23B
-#define ENABLE_FS20_CARRIER_SUPPORT
-#define ENABLE_FS20_ENCODING_SUPPORT
-#define ENABLE_FHT8VSIMPLE_RX
-#define LISTEN_FOR_FTp2_FS20_native
-#endif // ENABLE_FHT8VSIMPLE
 
 // Indicate that the system is broken in an obvious way (distress flashing of the main UI LED).
 // DOES NOT RETURN.
@@ -626,8 +618,8 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uin
       if(c.isValid())
         {
         // Process the message only if it is targetted at this node.
-        const uint8_t hc1 = FHT8VGetHC1();
-        const uint8_t hc2 = FHT8VGetHC2();
+        const uint8_t hc1 = FHT8V.nvGetHC1();
+        const uint8_t hc2 = FHT8V.nvGetHC2();
         if((c.getHC1() == hc1) && (c.getHC2() == hc2))
           {
           // Act on the incoming command.
@@ -1320,24 +1312,24 @@ void loop()
   const bool doubleTXForFTH8V = false;
   // FHT8V is highest priority and runs first.
   // ---------- HALF SECOND #0 -----------
-  bool useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_First(doubleTXForFTH8V); // Time for extra TX before UI.
+  bool useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8V.FHT8VPollSyncAndTX_First(doubleTXForFTH8V); // Time for extra TX before UI.
   if(useExtraFHT8VTXSlots)
     {
     handleQueuedMessages(&Serial, true, &PrimaryRadio);
     // ---------- HALF SECOND #1 -----------
-    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V); 
+    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8V.FHT8VPollSyncAndTX_Next(doubleTXForFTH8V); 
     }
   if(useExtraFHT8VTXSlots)
     {
     handleQueuedMessages(&Serial, true, &PrimaryRadio);
     // ---------- HALF SECOND #2 -----------
-    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V); 
+    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8V.FHT8VPollSyncAndTX_Next(doubleTXForFTH8V); 
     }
   if(useExtraFHT8VTXSlots)
     {
     handleQueuedMessages(&Serial, true, &PrimaryRadio);
     // ---------- HALF SECOND #3 -----------
-    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8VPollSyncAndTX_Next(doubleTXForFTH8V); 
+    useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8V.FHT8VPollSyncAndTX_Next(doubleTXForFTH8V); 
     }
 #endif
 
