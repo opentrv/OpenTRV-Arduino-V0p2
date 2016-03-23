@@ -71,6 +71,14 @@ Some Implementation Detail
 16) Message counters will function as usual from REV9 relay to REV2 hub,
     with the RX message counter held logically with the node association.
 
+17) The flow from REV2 hub to REV9 is also regarded as a first-class channel,
+    not for example a 'lite' backchannel based on responding only when spoken to,
+    and average poll rate per REV9 from a REV2 is circa one message per 5 minutes.
+    Thus, the REV9 uses the full RX association and message counter machinery,
+    with the REV9 carrying a single association for its REV2 hub by default.
+    Thiss allows for over 10 years' nominal life with current implementation and EEPROM.
+    (It is possible to have backup REV2 hubs for TX and RX, and the backup devices
+    also associated with the REV9.)
 
 
 
