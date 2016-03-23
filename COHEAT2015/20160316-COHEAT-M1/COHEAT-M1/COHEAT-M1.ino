@@ -1,6 +1,8 @@
 // Uncomment exactly one of the following CONFIG_... lines to select which board is being built for.
-//#define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
-#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
+#define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
+//#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
+
+#define DEBUG // Uncomment for debug output.
 
 #include <Arduino.h>
 #include <Wire.h>
@@ -542,7 +544,6 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uin
 
   const uint8_t firstByte = msg[0];
 
-#ifdef ENABLE_FS20_ENCODING_SUPPORT
   switch(firstByte)
     {
     default: // Reject unrecognised leading type byte.
@@ -663,10 +664,9 @@ OTRadioLink::printRXMsg(p, txbuf, bodylen);
       }
 #endif // ALLOW_CC1_SUPPORT_RELAY
     }
-#endif // ENABLE_FS20_ENCODING_SUPPORT
 
   // Unparseable frame: drop it; possibly log it as an error.
-#if 0 && defined(DEBUG) && !defined(ENABLE_TRIMMED_MEMORY)
+#if 1 && defined(DEBUG) && !defined(ENABLE_TRIMMED_MEMORY)
   p->print(F("!RX bad msg, len+prefix: ")); OTRadioLink::printRXMsg(p, msg-1, min(msglen+1, 8));
 #endif
   return;
@@ -734,7 +734,7 @@ static bool setUpContinuousRX()
 
   if(needsToListen)
     {
-#if 1 && defined(DEBUG) && defined(ENABLE_RADIO_RX) && !defined(ENABLE_TRIMMED_MEMORY)
+#if 1 && defined(DEBUG) // && defined(ENABLE_RADIO_RX) && !defined(ENABLE_TRIMMED_MEMORY)
     for(uint8_t lastErr; 0 != (lastErr = PrimaryRadio.getRXErr()); )
       {
       DEBUG_SERIAL_PRINT_FLASHSTRING("!RX err ");
@@ -871,8 +871,7 @@ OTRadioLink::OTRadioLink &PrimaryRadio = RFM23B;
 static bool FilterRXISR(const volatile uint8_t *buf, volatile uint8_t &buflen)
   {
   if((buflen < 8) || (OTRadioLink::FTp2_CC1PollAndCmd != buf[0])) { return(false); }
-  buflen = 8; // Truncate message to correct size for efficiency.
-  // TODO: filter on inbound address/housecode as FHT8V.getHC{1,2}() are thread-safe.
+  // TODO: filter for only this unit address/housecode as FHT8V.getHC{1,2}() are thread-safe.
   return(true); // Accept message.
   }
 #elif defined(ALLOW_CC1_SUPPORT_HUB)
@@ -882,7 +881,7 @@ static bool FilterRXISR(const volatile uint8_t *buf, volatile uint8_t &buflen)
   if(buflen < 8) { return(false); }
   const uint8_t t = buf[0];
   if((OTRadioLink::FTp2_CC1Alert != t) && (OTRadioLink::FTp2_CC1PollResponse != t)) { return(false); }
-  buflen = 8; // Truncate message to correct size for efficiency.
+  // TODO: filter for only associated relay address/housecodes.
   return(true); // Accept message.
   }
 #endif
