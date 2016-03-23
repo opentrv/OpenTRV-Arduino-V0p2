@@ -57,7 +57,7 @@ Some Implementation Detail
 11) The same frame type codes ('!', '?', '*') are used for message/frame types
     as for the non-secure frames, though with the high bit set to indicate secure.
 
-12) The securable frame format with type 0x80 (final trailer byte) AES-GCM security is used.
+12) The secureable frame format with type 0x80 (final trailer byte) AES-GCM security is used.
 
 13) Two bytes of ID are used in all messages/frames, and those are the house codes,
     and only values in the range [0,99] for each byte are considered valid.
