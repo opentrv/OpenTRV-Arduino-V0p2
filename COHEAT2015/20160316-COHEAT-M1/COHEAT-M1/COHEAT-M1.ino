@@ -1,6 +1,6 @@
 // Uncomment exactly one of the following CONFIG_... lines to select which board is being built for.
-#define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
-//#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
+//#define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
+#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
 
 #include <Arduino.h>
 #include <Wire.h>
@@ -51,7 +51,7 @@ void serialPrintlnBuildVersion();
 bool pollIO(bool force = false);
 
 // Sends a short 1-line CRLF-terminated status report on the serial connection (at 'standard' baud).
-void serialStatusReport() { OTV0P2BASE::serialPrintlnAndFlush(F("=")); }
+void serialStatusReport();
 
 // Reset CLI active timer to the full whack before it goes inactive again (ie makes CLI active for a while).
 // Thread-safe.
@@ -906,11 +906,47 @@ static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChanne
   OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsOOK5000, true, false, true, false, false, true),
   };
 
+// Sends a short 1-line CRLF-terminated status report on the serial connection (at 'standard' baud).
+void serialStatusReport()
+  {
+#if !defined(ENABLE_FHT8VSIMPLE)
+  OTV0P2BASE::serialPrintlnAndFlush(F("="));
+#else
+  TemperatureC16.read(); // Force read as not polled in main loop for COHEAT...
+  const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled<V0P2_UART_BAUD>(); // FIXME
+  // Stats line starts with distinguished marker character '='.
+  Serial.print((char) OTV0P2BASE::SERLINE_START_CHAR_STATS);
+  Serial.print(NominalRadValve.get()); Serial.print('%'); // Target valve position.
+  const int temp = TemperatureC16.get();
+  Serial.print('@'); Serial.print(temp >> 4); Serial.print('C'); // Unrounded whole degrees C.
+      Serial.print(temp & 0xf, HEX); // Show 16ths in hex.
+  // Print optional house code section if codes set.
+  const uint8_t hc1 = FHT8V.nvGetHC1();
+  if(hc1 != 255)
+    {
+    Serial.print(F(";HC"));
+    Serial.print(hc1);
+    Serial.print(' ');
+    Serial.print(FHT8V.nvGetHC2());
+    if(!FHT8V.isInNormalRunState())
+      {
+      Serial.print(' ');
+      Serial.print('s'); // Indicate syncing with trailing lower-case 's' in field...
+      }
+    }
+  // Terminate line.
+  Serial.println();
+  // Ensure that all text is sent before this routine returns, in case any sleep/powerdown follows that kills the UART.
+  OTV0P2BASE::flushSerialSCTSensitive();
+  if(neededWaking) { OTV0P2BASE::powerDownSerial(); }
+#endif 
+  }
+
 // Handle CLI extension commands.
 // Commands of form:
 //   +EXT .....
 // where EXT is the name of the extension, usually 3 letters.
-
+//
 // It is acceptable for extCLIHandler() to alter the buffer passed,
 // eg with strtok_t().
 static bool extCLIHandler(Print *const p, char *const buf, const uint8_t n)
