@@ -3,7 +3,7 @@
 //#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
 
 // IF DEFINED: entire comms model switches to secure.
-//#define ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
+#define ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
 
 #define DEBUG // Uncomment for debug output.
 
@@ -868,18 +868,22 @@ OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, RFM23B_IRQ_PIN, RFM23B_RX_QUEUE_SIZE, RF
 // Assigns radio to PrimaryRadio alias.
 OTRadioLink::OTRadioLink &PrimaryRadio = RFM23B;
 
+// Quickly filter RX traffic to preserve queue space for stuff likely to be of interest.
 #if defined(ALLOW_CC1_SUPPORT_RELAY)
 // For a CC1 relay, ignore everything except FTp2_CC1PollAndCmd messages.
-// With care (not accessing EEPROM for example) this could also reject anything with wrong house code.
+// With care (not accessing EEPROM for example) this can also reject anything with wrong house code.
 static bool FilterRXISR(const volatile uint8_t *buf, volatile uint8_t &buflen)
   {
 #ifndef ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
   if((buflen < 8) || (OTRadioLink::FTp2_CC1PollAndCmd != buf[0])) { return(false); }
-  // TODO: filter for only this unit address/housecode as FHT8V.getHC{1,2}() are thread-safe.
+  // Filter for only this unit address/housecode as FHT8V.getHC{1,2}() are thread-safe.
+  if((FHT8V.getHC1() == buf[1]) || (FHT8V.getHC2() == buf[2])) { return(false); }
 #else
-  // Expect secure frame with 2-byte ID and empty body.
-  if((buflen < 28) || ((0x80|OTRadioLink::FTp2_CC1PollAndCmd) != buf[0])) { return(false); }
-  // TODO: filter for only this unit address/housecode as FHT8V.getHC{1,2}() are thread-safe.
+  // Expect secure frame with 2-byte ID and 32-byte encrypted body.
+  if((buflen < 60) || ((0x80|OTRadioLink::FTp2_CC1PollAndCmd) != buf[0])) { return(false); }
+  // Filter for only this unit address/housecode as FHT8V.getHC{1,2}() are thread-safe.
+  if((buf[1] & 0xf) < 2) { return(false); }
+  if((FHT8V.getHC1() == buf[2]) || (FHT8V.getHC2() == buf[3])) { return(false); }
 #endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
   return(true); // Accept message.
   }
@@ -893,8 +897,8 @@ static bool FilterRXISR(const volatile uint8_t *buf, volatile uint8_t &buflen)
   if((OTRadioLink::FTp2_CC1Alert != t) && (OTRadioLink::FTp2_CC1PollResponse != t)) { return(false); }
   // TODO: filter for only associated relay address/housecodes.
 #else
-  // Expect secure frame with 2-byte ID and 32-byte encrypted body.
-  if(buflen < 60) { return(false); }
+  // Expect secure frame with 2-byte ID and empty or 32-byte encrypted body.
+  if(buflen < 28) { return(false); }
   const uint8_t t = buf[0];
   if(((0x80|OTRadioLink::FTp2_CC1Alert) != t) && ((0x80|OTRadioLink::FTp2_CC1PollResponse) != t)) { return(false); }
   // TODO: filter for only associated relay address/housecodes.
