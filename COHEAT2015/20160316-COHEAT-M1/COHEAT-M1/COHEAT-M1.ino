@@ -868,7 +868,8 @@ OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, RFM23B_IRQ_PIN, RFM23B_RX_QUEUE_SIZE, RF
 // Assigns radio to PrimaryRadio alias.
 OTRadioLink::OTRadioLink &PrimaryRadio = RFM23B;
 
-// Quickly filter RX traffic to preserve queue space for stuff likely to be of interest.
+// Quickly screen/filter RX traffic to preserve queue space for stuff likely to be of interest.
+// If in doubt, accept a frame, ie should not reject incorrectly.
 #if defined(ALLOW_CC1_SUPPORT_RELAY)
 // For a CC1 relay, ignore everything except FTp2_CC1PollAndCmd messages.
 // With care (not accessing EEPROM for example) this can also reject anything with wrong house code.
@@ -897,7 +898,7 @@ static bool FilterRXISR(const volatile uint8_t *buf, volatile uint8_t &buflen)
   if((OTRadioLink::FTp2_CC1Alert != t) && (OTRadioLink::FTp2_CC1PollResponse != t)) { return(false); }
   // TODO: filter for only associated relay address/housecodes.
 #else
-  // Expect secure frame with 2-byte ID and empty or 32-byte encrypted body.
+  // Expect secure frame with 2-byte ID and 0- or 32-byte encrypted body.
   if(buflen < 28) { return(false); }
   const uint8_t t = buf[0];
   if(((0x80|OTRadioLink::FTp2_CC1Alert) != t) && ((0x80|OTRadioLink::FTp2_CC1PollResponse) != t)) { return(false); }
