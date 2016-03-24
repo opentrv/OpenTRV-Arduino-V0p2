@@ -1,6 +1,6 @@
 // Uncomment exactly one of the following CONFIG_... lines to select which board is being built for.
-#define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
-//#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
+//#define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
+#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
 
 // IF DEFINED: entire comms model switches to secure.
 #define ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
@@ -335,19 +335,20 @@ inline bool localFHT8VTRVEnabled() { return(!FHT8V.isUnavailable()); }
 // Send a CC1 Alert message with this unit's house code via the RFM23B.
 bool sendCC1AlertByRFM23B()
   {
+#if !defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
   OTProtocolCC::CC1Alert a = OTProtocolCC::CC1Alert::make(FHT8V.nvGetHC1(), FHT8V.nvGetHC2());
   if(a.isValid()) // Might be invalid if house codes are, eg if house codes not set.
     {
     uint8_t txbuf[OTProtocolCC::CC1Alert::primary_frame_bytes+1]; // More than large enough for preamble + sync + alert message.
     const uint8_t bodylen = a.encodeSimple(txbuf, sizeof(txbuf), true);
-#if 0 && defined(DEBUG)
-OTRadioLink::printRXMsg(p, txbuf, bodylen);
-#endif
     // Send loud since the hub may be relatively far away,
     // there is no 'ACK', and these messages should not be sent very often.
     // Should be consistent with automatically-generated alerts to help with diagnosis.
     return(PrimaryRadio.sendRaw(txbuf, bodylen, 0, OTRadioLink::OTRadioLink::TXmax));
     }
+#else
+#error --- send beacon frame
+#endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
   return(false); // Failed.
   }
 #endif
