@@ -2,6 +2,9 @@
 #define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
 //#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
 
+// IF DEFINED: entire comms model switches to secure.
+//#define ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
+
 #define DEBUG // Uncomment for debug output.
 
 #include <Arduino.h>
@@ -870,18 +873,32 @@ OTRadioLink::OTRadioLink &PrimaryRadio = RFM23B;
 // With care (not accessing EEPROM for example) this could also reject anything with wrong house code.
 static bool FilterRXISR(const volatile uint8_t *buf, volatile uint8_t &buflen)
   {
+#ifndef ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
   if((buflen < 8) || (OTRadioLink::FTp2_CC1PollAndCmd != buf[0])) { return(false); }
   // TODO: filter for only this unit address/housecode as FHT8V.getHC{1,2}() are thread-safe.
+#else
+  // Expect secure frame with 2-byte ID and empty body.
+  if((buflen < 29) || ((0x80|OTRadioLink::FTp2_CC1PollAndCmd) != buf[0])) { return(false); }
+  // TODO: filter for only this unit address/housecode as FHT8V.getHC{1,2}() are thread-safe.
+#endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
   return(true); // Accept message.
   }
 #elif defined(ALLOW_CC1_SUPPORT_HUB)
 // For a CC1 hub, ignore everything except FTp2_CC1Alert and FTp2_CC1PollResponse messages.
 static bool FilterRXISR(const volatile uint8_t *buf, volatile uint8_t &buflen)
   {
+#ifndef ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
   if(buflen < 8) { return(false); }
   const uint8_t t = buf[0];
   if((OTRadioLink::FTp2_CC1Alert != t) && (OTRadioLink::FTp2_CC1PollResponse != t)) { return(false); }
   // TODO: filter for only associated relay address/housecodes.
+#else
+  // Expect secure frame with 2-byte ID and 32-byte encrypted body.
+  if(buflen < 63) { return(false); }
+  const uint8_t t = buf[0];
+  if(((0x80|OTRadioLink::FTp2_CC1Alert) != t) && ((0x80|OTRadioLink::FTp2_CC1PollResponse) != t)) { return(false); }
+  // TODO: filter for only associated relay address/housecodes.
+#endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
   return(true); // Accept message.
   }
 #endif
