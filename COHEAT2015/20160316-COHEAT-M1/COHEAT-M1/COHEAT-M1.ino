@@ -1246,11 +1246,7 @@ void setup()
 #endif
 
   // Have 32678Hz clock at least running before going any further.
-#if defined(ENABLE_WAKEUP_32768HZ_XTAL)
   if(!::OTV0P2BASE::HWTEST::check32768HzOsc()) { panic(F("xtal")); } // Async clock not running correctly.
-#else
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("(No xtal.)");
-#endif
 
 //  // Signal that xtal is running AND give it time to settle.
 //  posPOST(0 /*, F("about to test radio module") */);
