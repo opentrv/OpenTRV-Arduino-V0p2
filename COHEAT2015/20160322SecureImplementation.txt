@@ -136,3 +136,11 @@ S3) For REV9 relays, issue the "S" CLI command to find the node's full TX hex ID
         Resets/overruns: 142 46
         =0%@19CC;HC34 62 TX ID 22 3E 80 80 80 80 80 80
 
+S4) For the REV2 hub, clear out any security associations ("A *")
+    then for each REV9 relay, add in its TX ID as above to associate it:
+        >A 22 3E 80 80 80 80 80 80
+        Index 0
+        OK
+    The index will go up for each association.
+    A maximum of eight (8) relays can be associated with one hub.
+    Associations can be listed with "A ?".
