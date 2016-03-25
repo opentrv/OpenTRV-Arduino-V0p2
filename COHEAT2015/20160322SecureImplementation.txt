@@ -81,6 +81,11 @@ Some Implementation Detail
     (It is possible to have backup REV2 hubs for TX and RX, and the backup devices
     also associated with the REV9.)
 
+18) The flow from REV2 hub to REV9 is however a reverse flow in that
+    it will be sent with the ID of the recipient in the header, not the sender.
+    Thus, in accordance with the spec, the last six bytes of the ID for the nonce/IV
+    will be 0x00, whereas from REV2 to REV9 those trailing bytes will be 0x80.
+
 
 Options Not Implemented
 =======================
