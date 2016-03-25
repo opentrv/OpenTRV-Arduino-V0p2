@@ -647,6 +647,8 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX key");
 #if defined(ALLOW_CC1_SUPPORT_HUB)
     // Handle alert message (at hub).
     // Dump onto serial to be seen by the attached host.
+#if !defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
+    // Non-secure.
     case OTRadioLink::FTp2_CC1Alert:
       {
       OTProtocolCC::CC1Alert a;
@@ -657,8 +659,18 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX key");
         // Pass message to host to deal with as "! hc1 hc2" after prefix indicating relayed (CC1 alert) message.
         p->print(F("+CC1 ! ")); p->print(a.getHC1()); p->print(' '); p->println(a.getHC2());
         }
-      return;
+      return; // OK
       }
+#else
+    // Secure.
+    case 0x80 | OTRadioLink::FTp2_CC1Alert:
+      {
+      // Already authenticated and no body to decode.
+      // Pass message to host to deal with as "! hc1 hc2" after prefix indicating relayed (CC1 alert) message.
+      p->print(F("+CC1 ! ")); p->print(senderNodeID[0]); p->print(' '); p->println(senderNodeID[1]);
+      return; // OK
+      }
+#endif // defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
 #endif // defined(ALLOW_CC1_SUPPORT_HUB)
 
 #ifdef ALLOW_CC1_SUPPORT_HUB
