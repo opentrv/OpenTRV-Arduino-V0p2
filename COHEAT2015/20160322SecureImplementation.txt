@@ -119,10 +119,19 @@ S1) Choose/create a 128-bit secret key for each dwelling,
 
 S2) Program this into the hub (REV2) and all relays (REV9s) for that dwelling
     as the primary building key using the CLI, eg:
-    > K B a4 09 53 d5 65 61 72 8c b2 dd 9f 34 2d de f0 ea
+    >K B a4 09 53 d5 65 61 72 8c b2 dd 9f 34 2d de f0 ea
     B set
     OK
     (Due to a bug you may need to power-cycle and repeat for this to work.)
     Before this is set, or if the key is cleared with "K B *"
     errors of the form "!TX key" may be visible indicating the TX key is missing.
+
+S3) For REV9 relays, issue the "S" CLI command to find the node's full TX hex ID is,
+    (once the house code for the FHT8V has been set) for association with a REV2 hub,
+    eg for decimal house code 34 62 the ID padded to 8 bytes is:
+    22 3e 80 80 80 80 80 80 as seen here:
+    >S
+    Resets/overruns: 142 46
+    =0%@19CC;HC34 62 TX ID 22 3E 80 80 80 80 80 80
+
 
