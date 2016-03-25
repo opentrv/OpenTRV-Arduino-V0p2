@@ -384,8 +384,7 @@ bool sendCC1AlertByRFM23B()
     // doing so may reuse IVs and destroy the cipher security.
     const bool success = (0 != bodylen) && PrimaryRadio.sendRaw(buf+1, bodylen-1);
 #if 1 && defined(DEBUG)
-    DEBUG_SERIAL_PRINT(success);
-    DEBUG_SERIAL_PRINTLN();
+    if(!success) { OTV0P2BASE::serialPrintlnAndFlush("!TX"); }
 #endif
 #endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
   return(false); // Failed.

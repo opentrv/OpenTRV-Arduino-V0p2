@@ -123,4 +123,6 @@ S2) Program this into the hub (REV2) and all relays (REV9s) for that dwelling
     B set
     OK
     (Due to a bug you may need to power-cycle and repeat for this to work.)
+    Before this is set, or if the key is cleared with "K B *"
+    errors of the form "!TX key" may be visible indicating the TX key is missing.
 
