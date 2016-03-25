@@ -111,6 +111,10 @@ O5) The CPU clock can be run faster (up to 8MHz vs usual 1MHz when running at 3.
     for the cipher code and while not (eg) processing serial or other I/O
     given that 1 encrypt/decrypt takes ~0.5s at 1MHz.
 
+O6) A full 32-byte encrypted body is unnecessary for this application;
+    the addition of an option for a 16-byte body would reduce bandwidth by ~25%
+    and would not make traffic analysis easier.
+
 
 Setup
 =====
