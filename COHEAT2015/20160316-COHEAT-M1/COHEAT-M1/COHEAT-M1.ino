@@ -989,6 +989,16 @@ void serialStatusReport()
       Serial.print(' ');
       Serial.print('s'); // Indicate syncing with trailing lower-case 's' in field...
       }
+    // Now show TX ID for secure association.
+    Serial.print(F(" TX ID"));
+    uint8_t idbuf[OTV0P2BASE::OpenTRV_Node_ID_Bytes];
+    getTXID(idbuf);
+    for(uint8_t i = 0; i < V0P2BASE_EE_LEN_ID; ++i)
+      {
+      Serial.print(' ');
+      Serial.print(idbuf[i], HEX);
+      }
+    Serial.println();
     }
   // Terminate line.
   Serial.println();
