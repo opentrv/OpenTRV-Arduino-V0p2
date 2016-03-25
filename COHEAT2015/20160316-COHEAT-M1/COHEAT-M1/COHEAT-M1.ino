@@ -324,6 +324,20 @@ inline bool localFHT8VTRVEnabled() { return(!FHT8V.isUnavailable()); }
 #define localFHT8VTRVEnabled() (false) // Local FHT8V TRV disabled.
 #endif
 
+
+#if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
+#ifdef ALLOW_CC1_SUPPORT_RELAY
+// Support for secure TX side using FHT8V ID plus 0x80 padding from relay.
+// ID is of length OTV0P2BASE::OpenTRV_Node_ID_Bytes.
+static bool getTXID(uint8_t *)
+  {
+  return(false); // FAIL: FIXME not implemented.
+  }
+OTRadioLink::SimpleSecureFrame32or0BodyTXV0p2SuppliedID secureTXState(getTXID);
+#endif
+#endif
+
+
 #if defined(ENABLE_SLAVE_TRV)
 #define ENABLE_NOMINAL_RAD_VALVE
 // Simply alias directly to FHT8V for REV9 slave.
@@ -347,7 +361,8 @@ bool sendCC1AlertByRFM23B()
     return(PrimaryRadio.sendRaw(txbuf, bodylen, 0, OTRadioLink::OTRadioLink::TXmax));
     }
 #else
-#error --- send beacon frame
+//#error --- send beacon frame
+ // generateSecureBeaconRaw()
 #endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
   return(false); // Failed.
   }
