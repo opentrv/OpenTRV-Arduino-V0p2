@@ -151,3 +151,10 @@ S4) For the REV2 hub, clear out any security associations ("A *")
     The index will go up for each association.
     A maximum of eight (8) relays can be associated with one hub.
     Associations can be listed with "A ?".
+
+S5) For each REV9 relay, clear out any security associations ("A *")
+    then associate its own ID but with the trailing "80" bytes replaced with "00"s,
+    eg for the host with TX ID 22 3E 80 ...
+        > A TX ID 22 3E 00 00 00 00 00 00
+        Index 0
+        OK
