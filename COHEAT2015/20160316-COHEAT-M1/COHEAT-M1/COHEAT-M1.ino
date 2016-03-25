@@ -324,6 +324,12 @@ inline bool localFHT8VTRVEnabled() { return(!FHT8V.isUnavailable()); }
 #define localFHT8VTRVEnabled() (false) // Local FHT8V TRV disabled.
 #endif
 
+#if defined(ENABLE_SLAVE_TRV)
+#define ENABLE_NOMINAL_RAD_VALVE
+// Simply alias directly to FHT8V for REV9 slave.
+#define NominalRadValve FHT8V
+#endif
+
 
 #if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
 #ifdef ALLOW_CC1_SUPPORT_RELAY
@@ -335,13 +341,6 @@ static bool getTXID(uint8_t *)
   }
 OTRadioLink::SimpleSecureFrame32or0BodyTXV0p2SuppliedID secureTXState(getTXID);
 #endif
-#endif
-
-
-#if defined(ENABLE_SLAVE_TRV)
-#define ENABLE_NOMINAL_RAD_VALVE
-// Simply alias directly to FHT8V for REV9 slave.
-#define NominalRadValve FHT8V
 #endif
 
 
