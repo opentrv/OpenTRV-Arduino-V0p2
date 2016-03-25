@@ -638,7 +638,6 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX key");
 #endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
 
   const uint8_t firstByte = msg[0];
-
   switch(firstByte)
     {
     default: // Reject unrecognised leading type byte.
