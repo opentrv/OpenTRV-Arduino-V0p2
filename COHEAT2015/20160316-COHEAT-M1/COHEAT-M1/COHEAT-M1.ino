@@ -368,26 +368,29 @@ bool sendCC1AlertByRFM23B()
     return(PrimaryRadio.sendRaw(txbuf, bodylen, 0, OTRadioLink::OTRadioLink::TXmax));
     }
 #else
-    uint8_t key[16];
-    if(!OTV0P2BASE::getPrimaryBuilding16ByteSecretKey(key))
-      {
-      OTV0P2BASE::serialPrintlnAndFlush("!TX key");
-      return(false); // Failed.
-      }
-    const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEnc_ptr_t e = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_STATELESS;
-    const uint8_t txIDLen = OTRadioLink::ENC_BODY_DEFAULT_ID_BYTES;
-    uint8_t buf[OTRadioLink::SimpleSecureFrame32or0BodyTXBase::generateSecureBeaconMaxBufSize];
-    const uint8_t bodylen = secureTXState.generateSecureBeaconRawForTX(buf, sizeof(buf), 2, e, NULL, key);
-    // ASSUME FRAMED CHANNEL 0 (but could check with config isUnframed flag).
-    // When sending on a channel with framing, do not explicitly send the frame length byte.
-    // DO NOT attempt to send if construction of the secure frame failed;
-    // doing so may reuse IVs and destroy the cipher security.
-    const bool success = (0 != bodylen) && PrimaryRadio.sendRaw(buf+1, bodylen-1);
+  uint8_t key[16];
+  if(!OTV0P2BASE::getPrimaryBuilding16ByteSecretKey(key))
+    {
+    OTV0P2BASE::serialPrintlnAndFlush("!TX key");
+    return(false); // Failed.
+    }
+  const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEnc_ptr_t e = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_STATELESS;
+  const uint8_t txIDLen = OTRadioLink::ENC_BODY_DEFAULT_ID_BYTES;
+  uint8_t buf[OTRadioLink::SimpleSecureFrame32or0BodyTXBase::generateSecureBeaconMaxBufSize];
+  const uint8_t bodylen = secureTXState.generateSecureBeaconRawForTX(buf, sizeof(buf), 2, e, NULL, key);
+  // ASSUME FRAMED CHANNEL 0 (but could check with config isUnframed flag).
+  // When sending on a channel with framing, do not explicitly send the frame length byte.
+  // DO NOT attempt to send if construction of the secure frame failed;
+  // doing so may reuse IVs and destroy the cipher security.
+  const bool success = (0 != bodylen) && PrimaryRadio.sendRaw(buf+1, bodylen-1);
 #if 1 && defined(DEBUG)
-    if(!success) { OTV0P2BASE::serialPrintlnAndFlush("!TX"); }
+  if(!success) { OTV0P2BASE::serialPrintlnAndFlush("!TX"); }
+  else { OTV0P2BASE::serialPrintlnAndFlush("TX alert"); }
 #endif
+  if(success) { return(true); } // Done!
 #endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
-  return(false); // Failed.
+  // FAILED if fallen through to here.
+  return(false);
   }
 #endif
 
