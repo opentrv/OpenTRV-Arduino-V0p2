@@ -601,7 +601,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX bad secure header");
   if(!OTV0P2BASE::getPrimaryBuilding16ByteSecretKey(key))
     {
 #if 1 && defined(DEBUG)
-DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX no key");
+DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX key");
 #endif
     return; // FAIL
     }
@@ -612,7 +612,6 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX no key");
   uint8_t decryptedBodyOutSize = 0;
   // Body length after any decryption, etc.
   uint8_t receivedBodyLength;
-  
 #endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
 
   const uint8_t firstByte = msg[0];
