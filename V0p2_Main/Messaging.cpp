@@ -312,8 +312,8 @@ if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX bad secure header"); }
 
   // Validate integrity of frame (CRC for non-secure, auth for secure).
   const bool secureFrame = sfh.isSecure();
-  uint8_t receivedBodyLength; // Body length after any decryption, etc.
-  //uint8_t *const decryptedBodyOut, const uint8_t decryptedBodyOutBuflen, uint8_t &decryptedBodyOutSize
+  // Body length after any decryption, etc.
+  uint8_t receivedBodyLength;
   // TODO: validate entire message, eg including auth, or CRC if insecure msg rcvd&allowed.
 #if defined(ENABLE_OTSECUREFRAME_INSECURE_RX_PERMITTED) // Allow insecure.
   // Only bother to check insecure form (and link code to do so) if insecure RX is allowed.

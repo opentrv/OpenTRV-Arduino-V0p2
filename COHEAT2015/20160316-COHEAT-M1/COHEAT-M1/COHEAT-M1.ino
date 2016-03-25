@@ -22,9 +22,9 @@
 #include <OTV0p2_Board_IO_Config.h> // I/O pin allocation and setup: include ahead of I/O module headers.
 
 #define ENABLE_HUB_LISTEN
-// Force-enable RX if not already so.
+// Force-enable always-on RX if not already so.
 #define ENABLE_RADIO_RX
-#define ENABLE_CONTINUOUS_RX // was #define CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX true
+#define ENABLE_CONTINUOUS_RX
 
 // Indicate that the system is broken in an obvious way (distress flashing of the main UI LED).
 // DOES NOT RETURN.
@@ -580,7 +580,10 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uin
   OTRadioLink::printRXMsg(p, msg-1, msglen+1); // Print len+frame.
 #endif
 
-#if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
+#if !defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
+   // For non-secure, check that there enough bytes for expected (fixed) frame size.
+   if(msglen < 8) { return; } // Too short to be useful, so ignore.
+#else 
   // For length-first OpenTRV secureable-frame format, validate structure of header/frame first.
   // This is quick and checks for insane/dangerous values throughout.
   OTRadioLink::SecurableFrameHeader sfh;
@@ -590,11 +593,26 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uin
 #if 1 && defined(DEBUG)
 DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX bad secure header");
 #endif
-    return; // FAILED
+    return; // FAIL
     }
-#else 
-   // For non-secure, just check enough bytes for expected (fixed) frame size.
-   if(msglen < 8) { return; } // Too short to be useful, so ignore.
+  // Check that there is an association/key for the inbound message.
+  uint8_t key[16];
+  // Get the 'building' key.
+  if(!OTV0P2BASE::getPrimaryBuilding16ByteSecretKey(key))
+    {
+#if 1 && defined(DEBUG)
+DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX no key");
+#endif
+    return; // FAIL
+    }
+  // Attempt to authenticate (and decrypt) the frame before inspecting content.
+  // Buffer for receiving secure frame body.
+  // (Non-secure frame bodies should be read directly from the frame buffer.)
+  uint8_t secBodyBuf[OTRadioLink::ENC_BODY_SMALL_FIXED_PTEXT_MAX_SIZE];
+  uint8_t decryptedBodyOutSize = 0;
+  // Body length after any decryption, etc.
+  uint8_t receivedBodyLength;
+  
 #endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
 
   const uint8_t firstByte = msg[0];
