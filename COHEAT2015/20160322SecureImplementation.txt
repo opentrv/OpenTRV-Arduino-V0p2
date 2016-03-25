@@ -82,9 +82,6 @@ Some Implementation Detail
     also associated with the REV9.)
 
 
-
-
-
 Options Not Implemented
 =======================
 
@@ -99,4 +96,8 @@ O3) Zero-length IDs will not be used (to make traffic analysis harder)
 O4) For production, filtering of received messages by ID should be added to the
     interrupt RX IRQ handler, to help ensure that correct messages are not lost
     through the queue filling up from (unwanted) messages from nearby dwellings.
+    This should be implemented at relay (by own ID) and hub (by association).
 
+O5) The CPU clock can be run faster (up to 8MHz vs usual 1MHz when running at 3.3V)
+    for the cipher code and while not (eg) processing serial or other I/O
+    given that 1 encrypt/decrypt takes 0.5s.
