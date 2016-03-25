@@ -256,30 +256,9 @@ void serialPrintlnBuildVersion()
 #ifdef ENABLE_AMBLIGHT_SENSOR
 // Normal 2 bit shift between raw and externally-presented values.
 static const uint8_t shiftRawScaleTo8Bit = 2;
-#ifdef ENABLE_AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // This implementation expects a phototransitor TEPT4400 (50nA dark current, nominal 200uA@100lx@Vce=50V) from IO_POWER_UP to LDR_SENSOR_AIN and 220k to ground.
-// Measurement should be taken wrt to internal fixed 1.1V bandgap reference, since light indication is current flow across a fixed resistor.
-// Aiming for maximum reading at or above 100--300lx, ie decent domestic internal lighting.
-// Note that phototransistor is likely far more directionally-sensitive than LDR and its response nearly linear.
-// This extends the dynamic range and switches to measurement vs supply when full-scale against bandgap ref, then scales by Vss/Vbandgap and compresses to fit.
-// http://home.wlv.ac.uk/~in6840/Lightinglevels.htm
-// http://www.engineeringtoolbox.com/light-level-rooms-d_708.html
-// http://www.pocklington-trust.org.uk/Resources/Thomas%20Pocklington/Documents/PDF/Research%20Publications/GPG5.pdf
-// http://www.vishay.com/docs/84154/appnotesensors.pdf
 static const int LDR_THR_LOW = 270U;
 static const int LDR_THR_HIGH = 400U;
-#else // LDR (!defined(ENABLE_AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400))
-// This implementation expects an LDR (1M dark resistance) from IO_POWER_UP to LDR_SENSOR_AIN and 100k to ground.
-// Measurement should be taken wrt to supply voltage, since light indication is a fraction of that.
-// Values below from PICAXE V0.09 impl approx multiplied by 4+ to allow for scale change.
-#ifdef ENABLE_AMBLIGHT_EXTRA_SENSITIVE // Define if LDR not exposed to much light, eg for REV2 cut4 sideways-pointing LDR (TODO-209).
-static const int LDR_THR_LOW = 50U;
-static const int LDR_THR_HIGH = 70U;
-#else // Normal settings.
-static const int LDR_THR_LOW = 160U; // Was 30.
-static const int LDR_THR_HIGH = 200U; // Was 35.
-#endif // ENABLE_AMBLIGHT_EXTRA_SENSITIVE
-#endif // ENABLE_AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
 // Singleton implementation/instance.
 AmbientLight AmbLight(LDR_THR_HIGH >> shiftRawScaleTo8Bit);
 #endif // ENABLE_AMBLIGHT_SENSOR
@@ -329,9 +308,11 @@ inline bool localFHT8VTRVEnabled() { return(!FHT8V.isUnavailable()); }
 // Simply alias directly to FHT8V for REV9 slave.
 #define NominalRadValve FHT8V
 #endif
-
+ 
 
 #if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
+// TX 2 bytes of ID in each secure frame, corresponding to the FHT8V housecode.
+static const uint8_t lenTXID = 2;
 #if defined(ALLOW_CC1_SUPPORT_RELAY)
 // Support for secure TX side using FHT8V ID plus 0x80 padding from REV9 relay.
 // (High bits of trailing bytes should be high for traffic FROM node whose ID is in header.)
@@ -375,9 +356,8 @@ bool sendCC1AlertByRFM23B()
     return(false); // Failed.
     }
   const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEnc_ptr_t e = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_STATELESS;
-  const uint8_t txIDLen = OTRadioLink::ENC_BODY_DEFAULT_ID_BYTES;
   uint8_t buf[OTRadioLink::SimpleSecureFrame32or0BodyTXBase::generateSecureBeaconMaxBufSize];
-  const uint8_t bodylen = secureTXState.generateSecureBeaconRawForTX(buf, sizeof(buf), 2, e, NULL, key);
+  const uint8_t bodylen = secureTXState.generateSecureBeaconRawForTX(buf, sizeof(buf), lenTXID, e, NULL, key); // 2 byte ID.
   // ASSUME FRAMED CHANNEL 0 (but could check with config isUnframed flag).
   // When sending on a channel with framing, do not explicitly send the frame length byte.
   // DO NOT attempt to send if construction of the secure frame failed;
@@ -1137,9 +1117,6 @@ static bool extCLIHandler(Print *const p, char *const buf, const uint8_t n)
           {
           uint8_t txbuf[OTProtocolCC::CC1PollAndCommand::primary_frame_bytes+1]; // More than large enough for preamble + sync + alert message.
           const uint8_t bodylen = q.encodeSimple(txbuf, sizeof(txbuf), true);
-#if 0 && defined(DEBUG)
-    OTRadioLink::printRXMsg(p, txbuf, bodylen);
-#endif
           // TX at normal volume since ACKed and can be repeated if necessary.
           if(PrimaryRadio.sendRaw(txbuf, bodylen))
             { return(true); } // Done it!

@@ -338,7 +338,7 @@ if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX bad secure header"); }
       {
       isOK = false;
 #if 1 && defined(DEBUG)
-      DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX no key");
+      DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX key");
 #endif
       }
     }
