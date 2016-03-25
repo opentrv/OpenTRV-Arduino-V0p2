@@ -348,6 +348,7 @@ bool sendCC1AlertByRFM23B()
     }
 #else
 #error --- send beacon frame
+ // generateSecureBeaconRaw()
 #endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
   return(false); // Failed.
   }
