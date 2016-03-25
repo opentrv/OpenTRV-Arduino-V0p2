@@ -334,6 +334,7 @@ inline bool localFHT8VTRVEnabled() { return(!FHT8V.isUnavailable()); }
 #if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
 #ifdef ALLOW_CC1_SUPPORT_RELAY
 // Support for secure TX side using FHT8V ID plus 0x80 padding from relay.
+// (High bits of trailing bytes should be high for traffic from node whose ID is in header.)
 // ID is of length OTV0P2BASE::OpenTRV_Node_ID_Bytes.
 static bool getTXID(uint8_t *const id)
   {

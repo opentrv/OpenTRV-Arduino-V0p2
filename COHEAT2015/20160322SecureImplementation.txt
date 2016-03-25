@@ -105,4 +105,4 @@ O4) For production, filtering of received messages by ID should be added to the
 
 O5) The CPU clock can be run faster (up to 8MHz vs usual 1MHz when running at 3.3V)
     for the cipher code and while not (eg) processing serial or other I/O
-    given that 1 encrypt/decrypt takes 0.5s.
+    given that 1 encrypt/decrypt takes ~0.5s at 1MHz.
