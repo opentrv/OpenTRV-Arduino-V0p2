@@ -1,6 +1,6 @@
 // Uncomment exactly one of the following CONFIG_... lines to select which board is being built for.
-//#define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
-#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
+#define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
+//#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
 
 // IF DEFINED: entire comms model switches to secure.
 #define ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
@@ -576,16 +576,26 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uin
   const uint8_t msglen = msg[-1];
 
   // TODO: consider extracting hash of all message data (good/bad) and injecting into entropy pool.
-#if 0 && defined(DEBUG)
+#if 1 && defined(DEBUG)
   OTRadioLink::printRXMsg(p, msg-1, msglen+1); // Print len+frame.
 #endif
 
-  if(msglen < 2) { return; } // Too short to be useful, so ignore.
-
-//   // Length-first OpenTRV secureable-frame format...
-//#if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) // && defined(ENABLE_FAST_FRAMED_CARRIER_SUPPORT)
-//  if(decodeAndHandleOTSecureableFrame(p, secure, msg)) { return; }
-//#endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
+#if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
+  // For length-first OpenTRV secureable-frame format, validate structure of header/frame first.
+  // This is quick and checks for insane/dangerous values throughout.
+  OTRadioLink::SecurableFrameHeader sfh;
+  const uint8_t l = sfh.checkAndDecodeSmallFrameHeader(msg-1, msglen+1);
+  if((0 == l) || !sfh.isSecure()) // Invalid header, or not in secure format.
+    {
+#if 1 && defined(DEBUG)
+DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX bad secure header");
+#endif
+    return; // FAILED
+    }
+#else 
+   // For non-secure, just check enough bytes for expected (fixed) frame size.
+   if(msglen < 8) { return; } // Too short to be useful, so ignore.
+#endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
 
   const uint8_t firstByte = msg[0];
 
@@ -595,7 +605,7 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uin
     case OTRadioLink::FTp2_NONE: // Reject zero-length with leading length byte.
       break;
 
-#ifdef ALLOW_CC1_SUPPORT_HUB
+#if defined(ALLOW_CC1_SUPPORT_HUB)
     // Handle alert message (at hub).
     // Dump onto serial to be seen by the attached host.
     case OTRadioLink::FTp2_CC1Alert:
@@ -610,7 +620,7 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uin
         }
       return;
       }
-#endif
+#endif // defined(ALLOW_CC1_SUPPORT_HUB)
 
 #ifdef ALLOW_CC1_SUPPORT_HUB
     // Handle poll-response message (at hub).
