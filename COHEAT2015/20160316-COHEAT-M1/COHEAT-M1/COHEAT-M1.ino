@@ -377,7 +377,7 @@ bool sendCC1AlertByRFM23B()
     const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEnc_ptr_t e = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_STATELESS;
     const uint8_t txIDLen = OTRadioLink::ENC_BODY_DEFAULT_ID_BYTES;
     uint8_t buf[OTRadioLink::SimpleSecureFrame32or0BodyTXBase::generateSecureBeaconMaxBufSize];
-    const uint8_t bodylen = OTRadioLink::generateSecureBeaconRawForTXXXX(buf, sizeof(buf), XXX, e, NULL, key);
+    const uint8_t bodylen = secureTXState.generateSecureBeaconRawForTX(buf, sizeof(buf), 2, e, NULL, key);
     // ASSUME FRAMED CHANNEL 0 (but could check with config isUnframed flag).
     // When sending on a channel with framing, do not explicitly send the frame length byte.
     // DO NOT attempt to send if construction of the secure frame failed;
@@ -967,7 +967,7 @@ void serialStatusReport()
   // Force sensor read as not polled in main loop for COHEAT... (And flush any serial before messing with clocks, etc.)
   OTV0P2BASE::flushSerialSCTSensitive();
   TemperatureC16.read();
-  const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled<V0P2_UART_BAUD>(); // FIXME
+  const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled<V0P2_UART_BAUD>();
   // Stats line starts with distinguished marker character '='.
   Serial.print((char) OTV0P2BASE::SERLINE_START_CHAR_STATS);
   Serial.print(NominalRadValve.get()); Serial.print('%'); // Target valve position.
