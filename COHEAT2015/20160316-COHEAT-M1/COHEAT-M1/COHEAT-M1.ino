@@ -335,9 +335,12 @@ inline bool localFHT8VTRVEnabled() { return(!FHT8V.isUnavailable()); }
 #ifdef ALLOW_CC1_SUPPORT_RELAY
 // Support for secure TX side using FHT8V ID plus 0x80 padding from relay.
 // ID is of length OTV0P2BASE::OpenTRV_Node_ID_Bytes.
-static bool getTXID(uint8_t *)
+static bool getTXID(uint8_t *const id)
   {
-  return(false); // FAIL: FIXME not implemented.
+  id[0] = FHT8V.getHC1();
+  id[1] = FHT8V.getHC2();
+  memset(id+2, 0x80, OTV0P2BASE::OpenTRV_Node_ID_Bytes-2);
+  return(true);
   }
 OTRadioLink::SimpleSecureFrame32or0BodyTXV0p2SuppliedID secureTXState(getTXID);
 #endif
