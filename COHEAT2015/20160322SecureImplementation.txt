@@ -124,7 +124,8 @@ S2) Program this into the hub (REV2) and all relays (REV9s) for that dwelling
         OK
     (Due to a bug you may need to power-cycle and repeat for this to work.)
     Before this is set, or if the key is cleared with "K B *"
-    errors of the form "!TX key" may be visible indicating the TX key is missing.
+    errors of the form "!TX key" may be visible indicating that the TX key is missing,
+    and for the hubs "!RX key" also indicate no key available to decode incoming.
 
 S3) For REV9 relays, issue the "S" CLI command to find the node's full TX hex ID is,
     (once the house code for the FHT8V has been set) for association with a REV2 hub,

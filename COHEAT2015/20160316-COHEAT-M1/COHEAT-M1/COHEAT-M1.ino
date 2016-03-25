@@ -595,13 +595,12 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX bad secure header");
 #endif
     return; // FAIL
     }
-  // Check that there is an association/key for the inbound message.
   uint8_t key[16];
   // Get the 'building' key.
   if(!OTV0P2BASE::getPrimaryBuilding16ByteSecretKey(key))
     {
 #if 1 && defined(DEBUG)
-DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX no key");
+DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX key");
 #endif
     return; // FAIL
     }
@@ -612,7 +611,30 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX no key");
   uint8_t decryptedBodyOutSize = 0;
   // Body length after any decryption, etc.
   uint8_t receivedBodyLength;
-  
+  // Check that there is an association/key for the inbound message.
+  uint8_t senderNodeID[OTV0P2BASE::OpenTRV_Node_ID_Bytes];
+  // Look up full ID in associations table,
+  // validate RX message counter,
+  // authenticate and decrypt,
+  // update RX message counter.
+  const uint8_t dfl = OTRadioLink::SimpleSecureFrame32or0BodyRXV0p2::getInstance().decodeSecureSmallFrameSafely(&sfh, msg-1, msglen+1,
+                                          OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_STATELESS,
+                                          NULL, key,
+                                          secBodyBuf, sizeof(secBodyBuf), decryptedBodyOutSize,
+                                          senderNodeID,
+                                          true);
+  if(0 == dfl)
+    {
+#if 1 // && defined(DEBUG)
+    // Useful brief network diagnostics: a couple of bytes of the claimed ID of rejected frames.
+    // Warnings rather than errors because there may legitimately be multiple disjoint networks.
+    OTV0P2BASE::serialPrintAndFlush(F("?RX auth")); // Missing association or failed auth.
+    if(sfh.getIl() > 0) { OTV0P2BASE::serialPrintAndFlush(' '); OTV0P2BASE::serialPrintAndFlush(sfh.id[0], HEX); }
+    if(sfh.getIl() > 1) { OTV0P2BASE::serialPrintAndFlush(' '); OTV0P2BASE::serialPrintAndFlush(sfh.id[1], HEX); }
+    OTV0P2BASE::serialPrintlnAndFlush();
+#endif
+    return; // FAIL
+    }
 #endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
 
   const uint8_t firstByte = msg[0];
