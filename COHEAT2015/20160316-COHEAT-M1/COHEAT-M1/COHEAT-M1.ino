@@ -368,8 +368,25 @@ bool sendCC1AlertByRFM23B()
     return(PrimaryRadio.sendRaw(txbuf, bodylen, 0, OTRadioLink::OTRadioLink::TXmax));
     }
 #else
-//#error --- send beacon frame
- // generateSecureBeaconRaw()
+    uint8_t key[16];
+    if(!OTV0P2BASE::getPrimaryBuilding16ByteSecretKey(key))
+      {
+      OTV0P2BASE::serialPrintlnAndFlush("!TX key");
+      return(false); // Failed.
+      }
+    const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEnc_ptr_t e = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_STATELESS;
+    const uint8_t txIDLen = OTRadioLink::ENC_BODY_DEFAULT_ID_BYTES;
+    uint8_t buf[OTRadioLink::SimpleSecureFrame32or0BodyTXBase::generateSecureBeaconMaxBufSize];
+    const uint8_t bodylen = OTRadioLink::generateSecureBeaconRawForTXXXX(buf, sizeof(buf), XXX, e, NULL, key);
+    // ASSUME FRAMED CHANNEL 0 (but could check with config isUnframed flag).
+    // When sending on a channel with framing, do not explicitly send the frame length byte.
+    // DO NOT attempt to send if construction of the secure frame failed;
+    // doing so may reuse IVs and destroy the cipher security.
+    const bool success = (0 != bodylen) && PrimaryRadio.sendRaw(buf+1, bodylen-1);
+#if 1 && defined(DEBUG)
+    DEBUG_SERIAL_PRINT(success);
+    DEBUG_SERIAL_PRINTLN();
+#endif
 #endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
   return(false); // Failed.
   }
@@ -932,7 +949,6 @@ static bool FilterRXISR(const volatile uint8_t *buf, volatile uint8_t &buflen)
 #endif
 
 // COHEAT: REV2/REV9 talking on fast GFSK channel 0, REV9 TX to FHT8V on slow OOK.
-#define RADIO_CONFIG_NAME "COHEAT DUAL CHANNEL"
 static const uint8_t nPrimaryRadioChannels = 2;
 static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChannels] =
   {
@@ -1123,6 +1139,12 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
       // Avoid showing status as may already be rather a lot of output.
       default: case '?': { /* dumpCLIUsage(maxSCT); */ showStatus = false; break; }
 
+#if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
+      // Set new node association (nodes to accept frames from).
+      // Only needed if able to RX and/or some sort of hub.
+      case 'A': { showStatus = OTV0P2BASE::CLI::SetNodeAssoc().doCommand(buf, n); break; }
+#endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
+
       // Exit/deactivate CLI immediately.
       // This should be followed by JUST CR ('\r') OR LF ('\n')
       // else the second will wake the CLI up again.
@@ -1134,6 +1156,11 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
       // Missing values will clear the code entirely (and disable use of the valve).
       case 'H': { showStatus = OTRadValve::FHT8VRadValveBase::SetHouseCode(&FHT8V).doCommand(buf, n); break; }
 #endif
+ 
+#if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
+      // Set secret key.
+      case 'K': { showStatus = OTV0P2BASE::CLI::SetSecretKey(OTRadioLink::SimpleSecureFrame32or0BodyTXV0p2::resetRaw3BytePersistentTXRestartCounterCond).doCommand(buf, n); break; }
+#endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
 
       // Status line and optional smart/scheduled warming prediction request.
       case 'S':
