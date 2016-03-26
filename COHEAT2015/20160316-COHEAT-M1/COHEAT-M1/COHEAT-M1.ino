@@ -351,10 +351,7 @@ bool sendCC1AlertByRFM23B()
 #else
   uint8_t key[16];
   if(!OTV0P2BASE::getPrimaryBuilding16ByteSecretKey(key))
-    {
-    OTV0P2BASE::serialPrintlnAndFlush("!TX key");
-    return(false); // Failed.
-    }
+    { OTV0P2BASE::serialPrintlnAndFlush("!TX key"); return(false); } // FAIL
   const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEnc_ptr_t e = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_STATELESS;
   uint8_t buf[OTRadioLink::SimpleSecureFrame32or0BodyTXBase::generateSecureBeaconMaxBufSize];
   const uint8_t bodylen = secureTXState.generateSecureBeaconRawForTX(buf, sizeof(buf), lenTXID, e, NULL, key); // 2 byte ID.
@@ -579,9 +576,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX bad secure header");
   // Get the 'building' key.
   if(!OTV0P2BASE::getPrimaryBuilding16ByteSecretKey(key))
     {
-#if 1 && defined(DEBUG)
-DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX key");
-#endif
+    DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX key");
     return; // FAIL
     }
   // Attempt to authenticate (and decrypt) the frame before inspecting content.
@@ -735,15 +730,34 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX key");
           // TODO: may need to insert a delay to allow hub to be ready if use of read() above is not enough.
           uint8_t txbuf[OTProtocolCC::CC1PollResponse::primary_frame_bytes+1]; // More than large enough for preamble + sync + alert message.
           const uint8_t bodylen = r.encodeSimple(txbuf, sizeof(txbuf), true);
-#if 0 && defined(DEBUG)
-OTRadioLink::printRXMsg(p, txbuf, bodylen);
-#endif
-          if(PrimaryRadio.sendRaw(txbuf, bodylen)) // Send at default volume...  One going missing won't hurt that much.
-            {
 #if 1 && defined(DEBUG)
-            p->println(F("polled")); // Done it!
+          p->println(F("polled")); // Done it!
 #endif
-            }
+#if !defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
+          // Non-secure: send raw frame as-is.
+          if(!PrimaryRadio.sendRaw(txbuf, bodylen)) // Send at default power...  One going missing won't hurt that much.
+            { OTV0P2BASE::serialPrintlnAndFlush("!TX fail"); return; } // FAIL
+#else
+          // Secure: wrap frame in encrypted layer...
+          uint8_t key[16];
+          if(!OTV0P2BASE::getPrimaryBuilding16ByteSecretKey(key))
+            { OTV0P2BASE::serialPrintlnAndFlush("!TX key"); return; } // FAIL
+          const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEnc_ptr_t e = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_STATELESS;
+          uint8_t buf[OTRadioLink::SecurableFrameHeader::maxSmallFrameSize];
+
+
+
+
+
+// FIXME FIXME FIXME
+
+
+
+
+
+
+          OTV0P2BASE::serialPrintlnAndFlush("!TX not impl"); // FAIL
+#endif // !defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) 
           }
         }
       return;
