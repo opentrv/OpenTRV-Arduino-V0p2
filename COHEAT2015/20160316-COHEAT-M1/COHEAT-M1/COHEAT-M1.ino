@@ -1,6 +1,6 @@
 // Uncomment exactly one of the following CONFIG_... lines to select which board is being built for.
-#define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
-//#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
+//#define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
+#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
 
 // IF DEFINED: entire comms model switches to secure.
 #define ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
@@ -562,8 +562,7 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uin
   {
   const uint8_t msglen = msg[-1];
 
-  // TODO: consider extracting hash of all message data (good/bad) and injecting into entropy pool.
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
   OTRadioLink::printRXMsg(p, msg-1, msglen+1); // Print len+frame.
 #endif
 
