@@ -561,6 +561,8 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uin
 #if !defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
    // For non-secure, check that there enough bytes for expected (fixed) frame size.
    if(msglen < 8) { return; } // Too short to be useful, so ignore.
+   const uint8_t *cleartextBody = msg;
+   const uint8_t cleartextBodyLen = msglen;
 #else 
   // For length-first OpenTRV secureable-frame format, validate structure of header/frame first.
   // This is quick and checks for insane/dangerous values throughout.
@@ -584,9 +586,8 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX bad secure header");
   // Buffer for receiving secure frame body.
   // (Non-secure frame bodies should be read directly from the frame buffer.)
   uint8_t secBodyBuf[OTRadioLink::ENC_BODY_SMALL_FIXED_PTEXT_MAX_SIZE];
-  uint8_t decryptedBodyOutSize = 0;
   // Body length after any decryption, etc.
-  uint8_t receivedBodyLength;
+  uint8_t decryptedBodyOutSize = 0;
   // Check that there is an association/key for the inbound message.
   uint8_t senderNodeID[OTV0P2BASE::OpenTRV_Node_ID_Bytes];
   // Look up full ID in associations table,
@@ -611,6 +612,8 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX bad secure header");
 #endif
     return; // FAIL
     }
+   const uint8_t *cleartextBody = secBodyBuf;
+   const uint8_t cleartextBodyLen = decryptedBodyOutSize;
 #endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
 
   const uint8_t firstByte = msg[0];
@@ -652,10 +655,14 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX bad secure header");
 #ifdef ALLOW_CC1_SUPPORT_HUB
     // Handle poll-response message (at hub).
     // Dump onto serial to be seen by the attached host.
-    case OTRadioLink::FTp2_CC1PollResponse:
+#if !defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
+    case OTRadioLink::FTp2_CC1PollResponse: // Non-secure.
+#else
+    case 0x80 | OTRadioLink::FTp2_CC1PollResponse: // Secure.
+#endif // !defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
       {
       OTProtocolCC::CC1PollResponse a;
-      a.OTProtocolCC::CC1PollResponse::decodeSimple(msg, msglen);
+      a.OTProtocolCC::CC1PollResponse::decodeSimple(cleartextBody, cleartextBodyLen);
       // After decode instance should be valid and with correct (source) house code.
       if(a.isValid())
         {
@@ -693,10 +700,14 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX bad secure header");
     // Handle poll/cmd message (at relay).
     // IFF this message is addressed to this (target) unit's house code
     // then action the commands and respond (quickly) with a poll response.
-    case OTRadioLink::FTp2_CC1PollAndCmd:
+#if !defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
+    case OTRadioLink::FTp2_CC1PollAndCmd: // Non-secure.
+#else
+    case 0x80 | OTRadioLink::FTp2_CC1PollAndCmd: // Secure.
+#endif // !defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
       {
       OTProtocolCC::CC1PollAndCommand c;
-      c.OTProtocolCC::CC1PollAndCommand::decodeSimple(msg, msglen);
+      c.OTProtocolCC::CC1PollAndCommand::decodeSimple(cleartextBody, cleartextBodyLen);
       // After decode instance should be valid and with correct house code.
       if(c.isValid())
         {
@@ -746,18 +757,12 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX bad secure header");
             { OTV0P2BASE::serialPrintlnAndFlush(F("!TX key")); return; } // FAIL
           const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEnc_ptr_t e = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_STATELESS;
           uint8_t buf[OTRadioLink::SecurableFrameHeader::maxSmallFrameSize];
-
-
-
-
-// FIXME FIXME FIXME
-
-
-
-
-
-
-          OTV0P2BASE::serialPrintlnAndFlush(F("!TX not impl")); // FAIL
+          const uint8_t sbodylen = secureTXState.generateSecureOStyleFrameForTX(buf, sizeof(buf), OTRadioLink::FTS_RESERVED_A, lenTXID, txbuf, bodylen, e, NULL, key);
+          const bool success = (0 != sbodylen) && PrimaryRadio.sendRaw(buf+1, bodylen-1);
+#if 1 && defined(DEBUG)
+          if(!success) { OTV0P2BASE::serialPrintlnAndFlush(F("!TX A")); }
+          else { OTV0P2BASE::serialPrintlnAndFlush(F("TX A")); }
+#endif
 #endif // !defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) 
           }
         }
@@ -852,7 +857,7 @@ static bool setUpContinuousRX()
       oldDropped = dropped;
       }
 #endif
-#if 1 && defined(DEBUG) && !defined(ENABLE_TRIMMED_MEMORY)
+#if 0 && defined(DEBUG) && !defined(ENABLE_TRIMMED_MEMORY)
     // Filtered out messages are not an error.
     const uint8_t filtered = PrimaryRadio.getRXMsgsFilteredRecent();
     static uint8_t oldFiltered;
@@ -1144,19 +1149,13 @@ static bool extCLIHandler(Print *const p, char *const buf, const uint8_t n)
             { OTV0P2BASE::serialPrintlnAndFlush(F("!TX key")); return(false); } // FAIL
           const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEnc_ptr_t e = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_STATELESS;
           uint8_t buf[OTRadioLink::SecurableFrameHeader::maxSmallFrameSize];
-
-
-
-
-
-// FIXME FIXME FIXME
-
-
-
-
-
-
-//          OTV0P2BASE::serialPrintlnAndFlush(F("!TX not impl")); // FAIL
+          const uint8_t sbodylen = secureTXState.generateSecureOStyleFrameForTX(buf, sizeof(buf), OTRadioLink::FTS_RESERVED_Q, lenTXID, txbuf, bodylen, e, NULL, key);
+          const bool success = (0 != sbodylen) && PrimaryRadio.sendRaw(buf+1, bodylen-1);
+#if 1 && defined(DEBUG)
+          if(!success) { OTV0P2BASE::serialPrintlnAndFlush(F("!TX Q")); }
+          else { OTV0P2BASE::serialPrintlnAndFlush(F("TX Q")); }
+#endif
+          if(success) { return(true); }
 #endif // !defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) 
           // Fall-through is failure...
           OTV0P2BASE::serialPrintlnAndFlush(F("!TX fail"));
