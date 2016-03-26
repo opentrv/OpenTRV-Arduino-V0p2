@@ -187,6 +187,14 @@ extern void _debug_serial_timestamp();
 
 //---------------------
 
+// Returns true if there is time to andle at least one message inbound our outbound.
+// Includes time required to encrypt/decrypt/print a message if need be (~0.5s at 1MHz CPU).
+static bool timeToHandleMessage()
+  {
+  const uint8_t sct = OTV0P2BASE::getSubCycleTime();
+  return(sct < min((OTV0P2BASE::GSCT_MAX/4)*3, nearOverrunThreshold - 1)); 
+  }
+
 // Controller's view of Least Significant Digits of the current (local) time, in this case whole seconds.
 #define TIME_CYCLE_S 60 // TIME_LSD ranges from 0 to TIME_CYCLE_S-1, also major cycle length.
 static uint_fast8_t TIME_LSD; // Controller's notion of seconds within major cycle.
@@ -195,7 +203,6 @@ static uint_fast8_t TIME_LSD; // Controller's notion of seconds within major cyc
 // Starts at or just above zero (within the first 4-minute cycle) to help avoid collisions between units after mass power-up.
 // Wraps at its maximum (0xff) value.
 static uint8_t minuteCount;
-
 
 // Indicate that the system is broken in an obvious way (distress flashing the main LED).
 // DOES NOT RETURN.
@@ -343,8 +350,8 @@ static void setTXID(const uint8_t hc1, const uint8_t hc2)
 
 
 #ifdef ALLOW_CC1_SUPPORT_RELAY
-// Send a CC1 Alert message with this unit's house code via the RFM23B.
-bool sendCC1AlertByRFM23B()
+// Send a CC1 Alert message with this unit's house code; returns false on failure.
+bool sendCC1Alert()
   {
 #if !defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
   OTProtocolCC::CC1Alert a = OTProtocolCC::CC1Alert::make(FHT8V.nvGetHC1(), FHT8V.nvGetHC2());
@@ -378,7 +385,70 @@ bool sendCC1AlertByRFM23B()
   // FAILED if fallen through to here.
   return(false);
   }
+#endif // ALLOW_CC1_SUPPORT_RELAY
+
+#ifdef ALLOW_CC1_SUPPORT_RELAY
+// True if a poll response is needed.
+// Cleared upon successful send.
+static bool pollResponseNeeded;
+// Send a CC1 poll response message with this unit's house code; returns false on failure.
+bool sendCC1PollResponse()
+  {
+  // Respond to the hub with sensor data.
+  // Can use read() for very freshest values at risk of some delay/cost.
+  const uint8_t hc1 = FHT8V.nvGetHC1();
+  const uint8_t hc2 = FHT8V.nvGetHC2();
+#ifdef HUMIDITY_SENSOR_SUPPORT
+  const uint8_t rh = RelHumidity.read() >> 1; // Scale from [0,100] to [0,50] for TX.
+#else
+  const uint8_t rh = 0; // RH% not available.
 #endif
+  const uint8_t tp = (uint8_t) constrain(extDS18B20_0.read() >> 3, 0, 199); // Scale to to 1/2C [0,100[ for TX.
+  const uint8_t tr = (uint8_t) constrain(TemperatureC16.read() >> 2, 0, 199); // Scale from 1/16C to 1/4C [0,50[ for TX.
+  const uint8_t al = AmbLight.read() >> 2; // Scale from [0,255] to [1,62] for TX (allow value coercion at extremes).
+  const bool s = getSwitchToggleStateCO();
+  const bool w = (fastDigitalRead(BUTTON_LEARN2_L) != LOW); // BUTTON_LEARN2_L high means open circuit means door/window open.
+  const bool sy = !NominalRadValve.isInNormalRunState(); // Assume only non-normal FHT8V state is 'syncing'.
+  OTProtocolCC::CC1PollResponse r =
+      OTProtocolCC::CC1PollResponse::make(hc1, hc2, rh, tp, tr, al, s, w, sy);
+  // Send message back to hub.
+  // Hub can poll again if it does not see the response.
+  // TODO: may need to insert a delay to allow hub to be ready if use of read() above is not enough.
+  uint8_t txbuf[OTProtocolCC::CC1PollResponse::primary_frame_bytes+1]; // More than large enough for preamble + sync + alert message.
+  const uint8_t bodylen = r.encodeSimple(txbuf, sizeof(txbuf), true);
+#if 1 && defined(DEBUG)
+  OTV0P2BASE::serialPrintlnAndFlush(F("polled"));
+#endif
+#if !defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
+  // Non-secure: send raw frame as-is.
+  // Send at default power...  One going missing won't hurt that much.
+  if(!PrimaryRadio.sendRaw(txbuf, bodylen))
+    { OTV0P2BASE::serialPrintlnAndFlush(F("!TX fail")); return(false); } // FAIL
+#else
+  // Secure: wrap frame in encrypted layer...
+  uint8_t key[16];
+  if(!OTV0P2BASE::getPrimaryBuilding16ByteSecretKey(key))
+    { OTV0P2BASE::serialPrintlnAndFlush(F("!TX key")); return(false); } // FAIL
+  const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEnc_ptr_t e = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_STATELESS;
+  uint8_t sbuf[OTRadioLink::SecurableFrameHeader::maxSmallFrameSize];
+  const uint8_t sbodylen = secureTXState.generateSecureOStyleFrameForTX(sbuf, sizeof(sbuf), OTRadioLink::FTS_RESERVED_A, lenTXID, txbuf, bodylen, e, NULL, key);
+  const bool success = (0 != sbodylen) && PrimaryRadio.sendRaw(sbuf+1, sbodylen-1);
+#if 1 && defined(DEBUG)
+  if(!success) { OTV0P2BASE::serialPrintlnAndFlush(F("!TX A")); }
+  else { OTV0P2BASE::serialPrintlnAndFlush(F("TX A")); }
+#endif
+  if(success)
+    {
+    // Note successful dispatch of response.
+    pollResponseNeeded = false;
+    return(true);
+    }
+#endif // !defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
+  // FAILED if fallen through to here.
+  return(false);
+  }
+#endif // ALLOW_CC1_SUPPORT_RELAY
+
 
 #ifdef ALLOW_CC1_SUPPORT_RELAY_IO // REV9 CC1 relay...
 // Do basic static LED setting.
@@ -463,7 +533,7 @@ bool tickUICO(const uint_fast8_t sec)
     // Send an alert message immediately,
     // AFTER adjusting all relevant state so as to avoid a race,
     // inviting the hub to poll this node ASAP and eg notice the toggle state.
-    sendCC1AlertByRFM23B();
+    sendCC1Alert();
     // Do no further UI processing this tick.
     // Note the user interaction to the caller.
     return(true);
@@ -502,7 +572,7 @@ bool tickUICO(const uint_fast8_t sec)
   // no closer together than every about every 8 seconds,
   // randomly so as to minimise collisions with other regular traffic.
   if(waitingForPollAfterBoostRequest && (sec == (OTV0P2BASE::randRNG8() & 0x38)))
-    { sendCC1AlertByRFM23B(); }
+    { sendCC1Alert(); }
 
   return(false); // No human interaction this tick...
   }
@@ -725,53 +795,14 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX bad secure header");
         if((c.getHC1() == hc1) && (c.getHC2() == hc2))
           {
           // Act on the incoming command.
-          // Set LEDs.
+          // Note that a poll response will be needed.
+          pollResponseNeeded = true;
+          // Set LEDs immediately.
           setLEDsCO(c.getLC(), c.getLT(), c.getLF(), true);
-          // Set radiator valve position.
+          // Set radiator valve position immediately.
           NominalRadValve.set(c.getRP());
-
-          // Respond to the hub with sensor data.
-          // Can use read() for very freshest values at risk of some delay/cost.
-#ifdef HUMIDITY_SENSOR_SUPPORT
-          const uint8_t rh = RelHumidity.read() >> 1; // Scale from [0,100] to [0,50] for TX.
-#else
-          const uint8_t rh = 0; // RH% not available.
-#endif
-          const uint8_t tp = (uint8_t) constrain(extDS18B20_0.read() >> 3, 0, 199); // Scale to to 1/2C [0,100[ for TX.
-          const uint8_t tr = (uint8_t) constrain(TemperatureC16.read() >> 2, 0, 199); // Scale from 1/16C to 1/4C [0,50[ for TX.
-          const uint8_t al = AmbLight.read() >> 2; // Scale from [0,255] to [1,62] for TX (allow value coercion at extremes).
-          const bool s = getSwitchToggleStateCO();
-          const bool w = (fastDigitalRead(BUTTON_LEARN2_L) != LOW); // BUTTON_LEARN2_L high means open circuit means door/window open.
-          const bool sy = !NominalRadValve.isInNormalRunState(); // Assume only non-normal FHT8V state is 'syncing'.
-          OTProtocolCC::CC1PollResponse r =
-              OTProtocolCC::CC1PollResponse::make(hc1, hc2, rh, tp, tr, al, s, w, sy);
-          // Send message back to hub.
-          // Hub can poll again if it does not see the response.
-          // TODO: may need to insert a delay to allow hub to be ready if use of read() above is not enough.
-          uint8_t txbuf[OTProtocolCC::CC1PollResponse::primary_frame_bytes+1]; // More than large enough for preamble + sync + alert message.
-          const uint8_t bodylen = r.encodeSimple(txbuf, sizeof(txbuf), true);
-#if 1 && defined(DEBUG)
-          p->println(F("polled"));
-#endif
-#if !defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
-          // Non-secure: send raw frame as-is.
-          // Send at default power...  One going missing won't hurt that much.
-          if(!PrimaryRadio.sendRaw(txbuf, bodylen))
-            { OTV0P2BASE::serialPrintlnAndFlush(F("!TX fail")); return; } // FAIL
-#else
-          // Secure: wrap frame in encrypted layer...
-          uint8_t key[16];
-          if(!OTV0P2BASE::getPrimaryBuilding16ByteSecretKey(key))
-            { OTV0P2BASE::serialPrintlnAndFlush(F("!TX key")); return; } // FAIL
-          const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEnc_ptr_t e = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_STATELESS;
-          uint8_t sbuf[OTRadioLink::SecurableFrameHeader::maxSmallFrameSize];
-          const uint8_t sbodylen = secureTXState.generateSecureOStyleFrameForTX(sbuf, sizeof(sbuf), OTRadioLink::FTS_RESERVED_A, lenTXID, txbuf, bodylen, e, NULL, key);
-          const bool success = (0 != sbodylen) && PrimaryRadio.sendRaw(sbuf+1, sbodylen-1);
-#if 1 && defined(DEBUG)
-          if(!success) { OTV0P2BASE::serialPrintlnAndFlush(F("!TX A")); }
-          else { OTV0P2BASE::serialPrintlnAndFlush(F("TX A")); }
-#endif
-#endif // !defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) 
+          // If relatively early in the cycle then send the response immediately.
+          if(timeToHandleMessage()) { sendCC1PollResponse(); }
           }
         }
       return;
@@ -803,11 +834,7 @@ bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadi
   // This is to reduce the risk of loop overruns
   // at the risk of delaying some processing
   // or even dropping some incoming messages if queues fill up.
-  // Decoding (and printing to serial) a secure 'O' frame takes ~60 ticks (~0.47s).
-  // Allow for up to 0.5s of such processing worst-case,
-  // ie don't start processing anything later that 0.5s before the minor cycle end.
-  const uint8_t sctStart = OTV0P2BASE::getSubCycleTime();
-  if(sctStart >= ((OTV0P2BASE::GSCT_MAX/4)*3)) { return(false); }
+  if(!timeToHandleMessage()) { return(false); }
 
   // Deal with any I/O that is queued.
   bool workDone = pollIO(true);
@@ -1097,7 +1124,7 @@ static bool extCLIHandler(Print *const p, char *const buf, const uint8_t n)
   if((n >= CC1_A_PREFIX_LEN) && (0 == strncmp("+CC1 !", buf, CC1_A_PREFIX_LEN)))
     {
     // Send the alert!
-    return(sendCC1AlertByRFM23B());
+    return(sendCC1Alert());
     }
 #endif
 
@@ -1431,6 +1458,9 @@ void setup()
 #endif // ALLOW_CC1_SUPPORT
 #endif // ENABLE_FHT8VSIMPLE
 
+  // Start listening.
+  PrimaryRadio.listen(true);
+
   // Set appropriate loop() values just before entering it.
   TIME_LSD = OTV0P2BASE::getSecondsLT();
   }
@@ -1449,6 +1479,8 @@ void loop()
     // Poll I/O and process message incrementally (in this otherwise idle time).
     // Come back and have another go immediately until no work remaining.
     if(handleQueuedMessages(&Serial, true, &PrimaryRadio)) { continue; }
+    // Handle any pending poll response needed.
+    if(pollResponseNeeded) { sendCC1PollResponse(); continue; }
 
     // Normal long minimal-power sleep until wake-up interrupt.
     // Rely on interrupt to force quick loop round to I/O poll.
@@ -1496,10 +1528,11 @@ void loop()
   // Command-Line Interface (CLI) polling, if still active.
   if(isCLIActive())
     {
-    const uint8_t sct = OTV0P2BASE::getSubCycleTime();
-    const uint8_t listenTime = OTV0P2BASE::CLI::MIN_CLI_POLL_SCT;
-    const uint8_t stopBy = nearOverrunThreshold - 1;
-    pollCLI(stopBy, 0 == TIME_LSD);
+    // Don't wait too late to start listening for a command
+    // to give the user decent chance to enter a command string
+    // and/or that may involve encryption.
+    const uint8_t stopBy = min((OTV0P2BASE::GSCT_MAX/4)*3, nearOverrunThreshold - 1);
+    if(timeToHandleMessage()) { pollCLI(stopBy, 0 == TIME_LSD); }
     }
 
   // Detect and handle (actual or near) overrun, if it happens, though it should not.
