@@ -351,7 +351,7 @@ bool sendCC1AlertByRFM23B()
 #else
   uint8_t key[16];
   if(!OTV0P2BASE::getPrimaryBuilding16ByteSecretKey(key))
-    { OTV0P2BASE::serialPrintlnAndFlush("!TX key"); return(false); } // FAIL
+    { OTV0P2BASE::serialPrintlnAndFlush(F("!TX key")); return(false); } // FAIL
   const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEnc_ptr_t e = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_STATELESS;
   uint8_t buf[OTRadioLink::SimpleSecureFrame32or0BodyTXBase::generateSecureBeaconMaxBufSize];
   const uint8_t bodylen = secureTXState.generateSecureBeaconRawForTX(buf, sizeof(buf), lenTXID, e, NULL, key); // 2 byte ID.
@@ -361,8 +361,8 @@ bool sendCC1AlertByRFM23B()
   // doing so may reuse IVs and destroy the cipher security.
   const bool success = (0 != bodylen) && PrimaryRadio.sendRaw(buf+1, bodylen-1);
 #if 1 && defined(DEBUG)
-  if(!success) { OTV0P2BASE::serialPrintlnAndFlush("!TX"); }
-  else { OTV0P2BASE::serialPrintlnAndFlush("TX alert"); }
+  if(!success) { OTV0P2BASE::serialPrintlnAndFlush(F("!TX")); }
+  else { OTV0P2BASE::serialPrintlnAndFlush(F("TX alert")); }
 #endif
   if(success) { return(true); } // Done!
 #endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
@@ -490,8 +490,9 @@ bool tickUICO(const uint_fast8_t sec)
 
   // If still waiting for a poll after a boost request,
   // arrange to send extra alerts about once every two minutes,
+  // no closer together than every about every 8 seconds,
   // randomly so as to minimise collisions with other regular traffic.
-  if(waitingForPollAfterBoostRequest && (sec == (OTV0P2BASE::randRNG8() & 0x3e)))
+  if(waitingForPollAfterBoostRequest && (sec == (OTV0P2BASE::randRNG8() & 0x38)))
     { sendCC1AlertByRFM23B(); }
 
   return(false); // No human interaction this tick...
@@ -737,12 +738,12 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX bad secure header");
           // Non-secure: send raw frame as-is.
           // Send at default power...  One going missing won't hurt that much.
           if(!PrimaryRadio.sendRaw(txbuf, bodylen))
-            { OTV0P2BASE::serialPrintlnAndFlush("!TX fail"); return; } // FAIL
+            { OTV0P2BASE::serialPrintlnAndFlush(F("!TX fail")); return; } // FAIL
 #else
           // Secure: wrap frame in encrypted layer...
           uint8_t key[16];
           if(!OTV0P2BASE::getPrimaryBuilding16ByteSecretKey(key))
-            { OTV0P2BASE::serialPrintlnAndFlush("!TX key"); return; } // FAIL
+            { OTV0P2BASE::serialPrintlnAndFlush(F("!TX key")); return; } // FAIL
           const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEnc_ptr_t e = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_STATELESS;
           uint8_t buf[OTRadioLink::SecurableFrameHeader::maxSmallFrameSize];
 
@@ -756,7 +757,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX bad secure header");
 
 
 
-          OTV0P2BASE::serialPrintlnAndFlush("!TX not impl"); // FAIL
+          OTV0P2BASE::serialPrintlnAndFlush(F("!TX not impl")); // FAIL
 #endif // !defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) 
           }
         }
@@ -851,7 +852,7 @@ static bool setUpContinuousRX()
       oldDropped = dropped;
       }
 #endif
-#if 0 && defined(DEBUG) && !defined(ENABLE_TRIMMED_MEMORY)
+#if 1 && defined(DEBUG) && !defined(ENABLE_TRIMMED_MEMORY)
     // Filtered out messages are not an error.
     const uint8_t filtered = PrimaryRadio.getRXMsgsFilteredRecent();
     static uint8_t oldFiltered;
@@ -1140,7 +1141,7 @@ static bool extCLIHandler(Print *const p, char *const buf, const uint8_t n)
           // Secure: wrap frame in encrypted layer...
           uint8_t key[16];
           if(!OTV0P2BASE::getPrimaryBuilding16ByteSecretKey(key))
-            { OTV0P2BASE::serialPrintlnAndFlush("!TX key"); return(false); } // FAIL
+            { OTV0P2BASE::serialPrintlnAndFlush(F("!TX key")); return(false); } // FAIL
           const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEnc_ptr_t e = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_STATELESS;
           uint8_t buf[OTRadioLink::SecurableFrameHeader::maxSmallFrameSize];
 
@@ -1155,10 +1156,10 @@ static bool extCLIHandler(Print *const p, char *const buf, const uint8_t n)
 
 
 
-          OTV0P2BASE::serialPrintlnAndFlush("!TX not impl"); // FAIL
+//          OTV0P2BASE::serialPrintlnAndFlush(F("!TX not impl")); // FAIL
 #endif // !defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) 
           // Fall-through is failure...
-          DEBUG_SERIAL_PRINT_FLASHSTRING("!TX fail");
+          OTV0P2BASE::serialPrintlnAndFlush(F("!TX fail"));
           }
         }
       }
