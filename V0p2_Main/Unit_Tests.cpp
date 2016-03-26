@@ -103,11 +103,6 @@ static void testLibVersions()
 #if !(0 == ARDUINO_LIB_OTRFM23BLINK_VERSION_MAJOR) || !(9 <= ARDUINO_LIB_OTRFM23BLINK_VERSION_MINOR)
 #error Wrong OTRFM23BLink library version!
 #endif
-#ifdef ALLOW_CC1_SUPPORT
-#if !(0 == ARDUINO_LIB_OTPROTOCOLCC_VERSION_MAJOR) || !(3 <= ARDUINO_LIB_OTPROTOCOLCC_VERSION_MINOR)
-#error Wrong OTProtocolCC library version!
-#endif
-#endif
   }
 
 

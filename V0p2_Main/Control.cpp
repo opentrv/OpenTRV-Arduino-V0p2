@@ -1261,9 +1261,6 @@ static void wireComponentsTogether()
   FHT8V.setRadio(&PrimaryRadio);
   // Load EEPROM house codes into primary FHT8V instance at start.
   FHT8V.nvLoadHC();
-#ifdef ALLOW_CC1_SUPPORT
-  FHT8V.setChannelTX(1);
-#endif // ALLOW_CC1_SUPPORT
 #endif // ENABLE_FHT8VSIMPLE
 
 #if defined(ENABLE_OCCUPANCY_SUPPORT) && defined(ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT)
@@ -2029,14 +2026,6 @@ void loopOpenTRV()
       {
       showStatus = true;
       recompute = true;
-      }
-#endif
-  // Alternative UI tickers...
-#ifdef ALLOW_CC1_SUPPORT_RELAY_IO // REV9 CC1 relay...
-    // Run the CC1 relay UI.
-    if(tickUICO(TIME_LSD))
-      {
-      showStatus = true;
       }
 #endif
     }
