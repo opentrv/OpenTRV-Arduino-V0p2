@@ -134,7 +134,7 @@ S2) Program this into the hub (REV2) and all relays (REV9s) for that dwelling
     errors of the form "!TX key" may be visible indicating that the TX key is missing,
     and for the hubs "!RX key" also indicate no key available to decode incoming.
 
-S3) For REV9 relays, issue the "S" CLI command to find the node's full TX hex ID is,
+S3) For each REV9 relay, issue the "S" CLI command to find the node's full TX hex ID,
     (once the house code for the FHT8V has been set) for association with a REV2 hub,
     eg for decimal house code 34 62 the ID padded to 8 bytes is:
         22 3E 80 80 80 80 80 80
@@ -143,7 +143,14 @@ S3) For REV9 relays, issue the "S" CLI command to find the node's full TX hex ID
         Resets/overruns: 142 46
         =0%@19CC;HC34 62 TX ID 22 3E 80 80 80 80 80 80
 
-S4) For the REV2 hub, clear out any security associations ("A *")
+S4) For each REV9 relay, clear out any security associations ("A *")
+    then associate its own ID but with the trailing "80" bytes replaced with "00"s,
+    eg for the host with TX ID 22 3E 80 ...
+        > A TX ID 22 3E 00 00 00 00 00 00
+        Index 0
+        OK
+
+S5) For the REV2 hub, clear out any security associations ("A *")
     then for each REV9 relay, add in its TX ID as above to associate it:
         >A 22 3E 80 80 80 80 80 80
         Index 0
@@ -151,11 +158,4 @@ S4) For the REV2 hub, clear out any security associations ("A *")
     The index will go up for each association.
     A maximum of eight (8) relays can be associated with one hub.
     Associations can be listed with "A ?".
-
-S5) For each REV9 relay, clear out any security associations ("A *")
-    then associate its own ID but with the trailing "80" bytes replaced with "00"s,
-    eg for the host with TX ID 22 3E 80 ...
-        > A TX ID 22 3E 00 00 00 00 00 00
-        Index 0
-        OK
 
