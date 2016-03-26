@@ -2370,6 +2370,9 @@ void loopOpenTRV()
     }
 #endif
 
+  // End-of-loop processing, that may be slow.
+  // Ensure progress on queued messages ahead of slow work.  (TODO-867)
+  handleQueuedMessages(&Serial, true, &PrimaryRadio); // Deal with any pending I/O.
 
 #if defined(HAS_DORM1_VALVE_DRIVE) && defined(ENABLE_LOCAL_TRV)
   // Handle local direct-drive valve, eg DORM1.
@@ -2400,7 +2403,6 @@ void loopOpenTRV()
      (OTV0P2BASE::getSubCycleTime() < ((OTV0P2BASE::GSCT_MAX/4)*3)))
     { ValveDirect.read(); }
 #endif
-
 
   // Command-Line Interface (CLI) polling.
   // If a reasonable chunk of the minor cycle remains after all other work is done

@@ -1479,8 +1479,10 @@ void loop()
     // Poll I/O and process message incrementally (in this otherwise idle time).
     // Come back and have another go immediately until no work remaining.
     if(handleQueuedMessages(&Serial, true, &PrimaryRadio)) { continue; }
+#if defined(ALLOW_CC1_SUPPORT_RELAY)
     // Handle any pending poll response needed.
-    if(pollResponseNeeded) { sendCC1PollResponse(); continue; }
+    if(pollResponseNeeded && timeToHandleMessage()) { sendCC1PollResponse(); continue; }
+#endif
 
     // Normal long minimal-power sleep until wake-up interrupt.
     // Rely on interrupt to force quick loop round to I/O poll.
@@ -1525,14 +1527,25 @@ void loop()
     }
 #endif
 
-  // Command-Line Interface (CLI) polling, if still active.
-  if(isCLIActive())
+  // If time to do some trailing processing, CLI, etc...
+  while(timeToHandleMessage())
     {
-    // Don't wait too late to start listening for a command
-    // to give the user decent chance to enter a command string
-    // and/or that may involve encryption.
-    const uint8_t stopBy = min((OTV0P2BASE::GSCT_MAX/4)*3, nearOverrunThreshold - 1);
-    if(timeToHandleMessage()) { pollCLI(stopBy, 0 == TIME_LSD); }
+    if(handleQueuedMessages(&Serial, true, &PrimaryRadio)) { continue; }
+#if defined(ALLOW_CC1_SUPPORT_RELAY)
+    // Handle any pending poll response needed.
+    if(pollResponseNeeded && timeToHandleMessage()) { sendCC1PollResponse(); continue; }
+#endif
+    // Done queued work...
+    // Command-Line Interface (CLI) polling, if still active.
+    if(isCLIActive())
+      {
+      // Don't wait too late to start listening for a command
+      // to give the user a decent chance to enter a command string
+      // and/or that may involve encryption.
+      const uint8_t stopBy = min((OTV0P2BASE::GSCT_MAX/4)*3, nearOverrunThreshold - 1);
+      if(timeToHandleMessage()) { pollCLI(stopBy, 0 == TIME_LSD); }
+      }
+    break;
     }
 
   // Detect and handle (actual or near) overrun, if it happens, though it should not.
