@@ -353,13 +353,13 @@ bool sendCC1AlertByRFM23B()
   if(!OTV0P2BASE::getPrimaryBuilding16ByteSecretKey(key))
     { OTV0P2BASE::serialPrintlnAndFlush(F("!TX key")); return(false); } // FAIL
   const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEnc_ptr_t e = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_STATELESS;
-  uint8_t buf[OTRadioLink::SimpleSecureFrame32or0BodyTXBase::generateSecureBeaconMaxBufSize];
-  const uint8_t bodylen = secureTXState.generateSecureBeaconRawForTX(buf, sizeof(buf), lenTXID, e, NULL, key); // 2 byte ID.
+  uint8_t sbuf[OTRadioLink::SimpleSecureFrame32or0BodyTXBase::generateSecureBeaconMaxBufSize];
+  const uint8_t sbodylen = secureTXState.generateSecureBeaconRawForTX(sbuf, sizeof(sbuf), lenTXID, e, NULL, key); // 2 byte ID.
   // ASSUME FRAMED CHANNEL 0 (but could check with config isUnframed flag).
   // When sending on a channel with framing, do not explicitly send the frame length byte.
   // DO NOT attempt to send if construction of the secure frame failed;
   // doing so may reuse IVs and destroy the cipher security.
-  const bool success = (0 != bodylen) && PrimaryRadio.sendRaw(buf+1, bodylen-1);
+  const bool success = (0 != sbodylen) && PrimaryRadio.sendRaw(sbuf+1, sbodylen-1);
 #if 1 && defined(DEBUG)
   if(!success) { OTV0P2BASE::serialPrintlnAndFlush(F("!TX")); }
   else { OTV0P2BASE::serialPrintlnAndFlush(F("TX alert")); }
@@ -756,9 +756,9 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX bad secure header");
           if(!OTV0P2BASE::getPrimaryBuilding16ByteSecretKey(key))
             { OTV0P2BASE::serialPrintlnAndFlush(F("!TX key")); return; } // FAIL
           const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEnc_ptr_t e = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_STATELESS;
-          uint8_t buf[OTRadioLink::SecurableFrameHeader::maxSmallFrameSize];
-          const uint8_t sbodylen = secureTXState.generateSecureOStyleFrameForTX(buf, sizeof(buf), OTRadioLink::FTS_RESERVED_A, lenTXID, txbuf, bodylen, e, NULL, key);
-          const bool success = (0 != sbodylen) && PrimaryRadio.sendRaw(buf+1, bodylen-1);
+          uint8_t sbuf[OTRadioLink::SecurableFrameHeader::maxSmallFrameSize];
+          const uint8_t sbodylen = secureTXState.generateSecureOStyleFrameForTX(sbuf, sizeof(sbuf), OTRadioLink::FTS_RESERVED_A, lenTXID, txbuf, bodylen, e, NULL, key);
+          const bool success = (0 != sbodylen) && PrimaryRadio.sendRaw(sbuf+1, sbodylen-1);
 #if 1 && defined(DEBUG)
           if(!success) { OTV0P2BASE::serialPrintlnAndFlush(F("!TX A")); }
           else { OTV0P2BASE::serialPrintlnAndFlush(F("TX A")); }
@@ -981,13 +981,13 @@ static bool FilterRXISR(const volatile uint8_t *buf, volatile uint8_t &buflen)
 #ifndef ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
   if((buflen < 8) || (OTRadioLink::FTp2_CC1PollAndCmd != buf[0])) { return(false); }
   // Filter for only this unit address/housecode as FHT8V.getHC{1,2}() are thread-safe.
-  if((FHT8V.getHC1() == buf[1]) || (FHT8V.getHC2() == buf[2])) { return(false); }
+  if((FHT8V.getHC1() != buf[1]) || (FHT8V.getHC2() != buf[2])) { return(false); }
 #else
   // Expect secure frame with 2-byte ID and 32-byte encrypted body.
   if((buflen < 60) || ((0x80|OTRadioLink::FTp2_CC1PollAndCmd) != buf[0])) { return(false); }
   // Filter for only this unit address/housecode as FHT8V.getHC{1,2}() are thread-safe.
   if((buf[1] & 0xf) < 2) { return(false); }
-  if((FHT8V.getHC1() == buf[2]) || (FHT8V.getHC2() == buf[3])) { return(false); }
+  if((FHT8V.getHC1() != buf[2]) || (FHT8V.getHC2() != buf[3])) { return(false); }
 #endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
   return(true); // Accept message.
   }
@@ -1148,9 +1148,9 @@ static bool extCLIHandler(Print *const p, char *const buf, const uint8_t n)
           if(!OTV0P2BASE::getPrimaryBuilding16ByteSecretKey(key))
             { OTV0P2BASE::serialPrintlnAndFlush(F("!TX key")); return(false); } // FAIL
           const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEnc_ptr_t e = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_STATELESS;
-          uint8_t buf[OTRadioLink::SecurableFrameHeader::maxSmallFrameSize];
-          const uint8_t sbodylen = secureTXState.generateSecureOStyleFrameForTX(buf, sizeof(buf), OTRadioLink::FTS_RESERVED_Q, lenTXID, txbuf, bodylen, e, NULL, key);
-          const bool success = (0 != sbodylen) && PrimaryRadio.sendRaw(buf+1, bodylen-1);
+          uint8_t sbuf[OTRadioLink::SecurableFrameHeader::maxSmallFrameSize];
+          const uint8_t sbodylen = secureTXState.generateSecureOStyleFrameForTX(sbuf, sizeof(sbuf), OTRadioLink::FTS_RESERVED_Q, lenTXID, txbuf, bodylen, e, NULL, key);
+          const bool success = (0 != sbodylen) && PrimaryRadio.sendRaw(sbuf+1, sbodylen-1);
 #if 1 && defined(DEBUG)
           if(!success) { OTV0P2BASE::serialPrintlnAndFlush(F("!TX Q")); }
           else { OTV0P2BASE::serialPrintlnAndFlush(F("TX Q")); }
