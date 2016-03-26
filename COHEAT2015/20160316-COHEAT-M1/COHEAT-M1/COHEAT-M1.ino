@@ -1157,6 +1157,8 @@ static bool extCLIHandler(Print *const p, char *const buf, const uint8_t n)
           if(!OTV0P2BASE::getPrimaryBuilding16ByteSecretKey(key))
             { OTV0P2BASE::serialPrintlnAndFlush(F("!TX key")); return(false); } // FAIL
           const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEnc_ptr_t e = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_STATELESS;
+          // Note: hub must indicate which relay it is sendinf (reverse traffic) to.
+          setTXID(FHT8V.nvGetHC1(), FHT8V.nvGetHC2());
           uint8_t sbuf[OTRadioLink::SecurableFrameHeader::maxSmallFrameSize];
           const uint8_t sbodylen = secureTXState.generateSecureOStyleFrameForTX(sbuf, sizeof(sbuf), OTRadioLink::FTS_RESERVED_Q, lenTXID, txbuf, bodylen, e, NULL, key);
           const bool success = (0 != sbodylen) && PrimaryRadio.sendRaw(sbuf+1, sbodylen-1);
