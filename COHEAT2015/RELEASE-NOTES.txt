@@ -77,10 +77,10 @@ Notes:
     exactly one of which should be uncommented.
 
 20160131-COHEAT-dual-channel-beta4: (beta release)
-Date: 2016/02/35
+Date: 2016/02/31
 Reason for patch: attempting to detect failing hardware
 Code path: COHEAT2015/20160131-COHEAT-dual-channel-beta4
-Should be built against 20160131-COHEAT-dual-channel-beta3 of OTRadioLink and and OTProtocolCC on Arduino IDE 1.6.5.
+Should be built against 20160131-COHEAT-dual-channel-beta3 of OTRadioLink and OTProtocolCC on Arduino IDE 1.6.5.
 Adjust config flags in V0p2_Generic_Config.h to switch between hub (CONFIG_Trial2013Winter_Round2_CC1HUB) and relay (CONFIG_REV9) boards.
 Notes:
   * ONLY CHANGE IS TO POST to attempt to detect marginal crystal hardware.
@@ -92,4 +92,10 @@ Notes:
     and:
     //#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
     exactly one of which should be uncommented.
-    
+ 
+20160327-COHEAT-M1-alpha-3: (alpha release)
+Date: 2016/03/27
+Reason for patch: stripped down secure version + feedback from COHEAT installs
+Code path: COHEAT2015/20160316-COHEAT-M1
+Should be built against 20160327-COHEAT-M1-alpha-3 of OTRadioLink and OTProtocolCC and OTAESGCM on Arduino IDE 1.6.5 or 1.6.8.
+Adjust config flags at top of COHEAT-M1.ino to switch between hub (CONFIG_Trial2013Winter_Round2_CC1HUB) and relay (CONFIG_REV9) boards, and secure comms or cleartext.
