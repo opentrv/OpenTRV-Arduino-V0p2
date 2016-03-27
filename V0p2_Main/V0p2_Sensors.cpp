@@ -123,7 +123,7 @@ OTV0P2BASE::RoomTemperatureC16_SHT21 TemperatureC16; // SHT21 impl.
 #elif defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20)
 #if defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
 // DSB18B20 temperature impl, with slightly reduced precision to improve speed.
-OTV0P2BASE::TemperatureC16_DS18B20 TemperatureC16(MinOW_DEFAULT, 0, OTV0P2BASE::TemperatureC16_DS18B20::MAX_PRECISION - 1);
+OTV0P2BASE::TemperatureC16_DS18B20 TemperatureC16(MinOW_DEFAULT, OTV0P2BASE::TemperatureC16_DS18B20::MAX_PRECISION - 1);
 #endif
 #else // Don't use TMP112 if SHT21 or DS18B20 are selected.
 OTV0P2BASE::RoomTemperatureC16_TMP112 TemperatureC16;

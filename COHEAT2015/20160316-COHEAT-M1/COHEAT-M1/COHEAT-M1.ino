@@ -275,7 +275,7 @@ OTV0P2BASE::MinimalOneWire<> MinOW_DEFAULT;
 #endif
 
 #if defined(SENSOR_EXTERNAL_DS18B20_ENABLE_0) // Enable sensor zero.
-OTV0P2BASE::TemperatureC16_DS18B20 extDS18B20_0(MinOW_DEFAULT, 0);
+OTV0P2BASE::TemperatureC16_DS18B20 extDS18B20_0(MinOW_DEFAULT);
 #endif
 
 #if defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21)
