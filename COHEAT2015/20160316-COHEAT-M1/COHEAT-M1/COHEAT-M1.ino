@@ -274,8 +274,9 @@ AmbientLight AmbLight(LDR_THR_HIGH >> shiftRawScaleTo8Bit);
 OTV0P2BASE::MinimalOneWire<> MinOW_DEFAULT;
 #endif
 
-#if defined(SENSOR_EXTERNAL_DS18B20_ENABLE_0) // Enable sensor zero.
-OTV0P2BASE::TemperatureC16_DS18B20 extDS18B20_0(MinOW_DEFAULT);
+#if defined(SENSOR_EXTERNAL_DS18B20_ENABLE_0)
+// External (return pipe) DS18B20 temperature, 9 bit (0.5C) precision.
+OTV0P2BASE::TemperatureC16_DS18B20 extDS18B20_0(MinOW_DEFAULT, OTV0P2BASE::TemperatureC16_DS18B20::MIN_PRECISION);
 #endif
 
 #if defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21)
@@ -288,11 +289,6 @@ OTV0P2BASE::DummyHumiditySensorSHT21 RelHumidity;
 // Ambient/room temperature sensor, usually on main board.
 #if defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21)
 OTV0P2BASE::RoomTemperatureC16_SHT21 TemperatureC16; // SHT21 impl.
-#elif defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20)
-#if defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
-// DSB18B20 temperature impl, with slightly reduced precision to improve speed.
-OTV0P2BASE::TemperatureC16_DS18B20 TemperatureC16(MinOW_DEFAULT, 0, OTV0P2BASE::TemperatureC16_DS18B20::MAX_PRECISION - 1);
-#endif
 #else // Don't use TMP112 if SHT21 or DS18B20 are selected.
 OTV0P2BASE::RoomTemperatureC16_TMP112 TemperatureC16;
 #endif
