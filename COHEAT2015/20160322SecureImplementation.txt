@@ -146,7 +146,7 @@ S3) For each REV9 relay, issue the "S" CLI command to find the node's full TX he
 S4) For each REV9 relay, clear out any security associations ("A *")
     then associate its own ID but with the trailing "80" bytes replaced with "00"s,
     eg for the host with TX ID 22 3E 80 ...
-        > A TX ID 22 3E 00 00 00 00 00 00
+        >A 22 3E 00 00 00 00 00 00
         Index 0
         OK
 
