@@ -1081,6 +1081,7 @@ void serialStatusReport()
       Serial.print(' ');
       Serial.print('s'); // Indicate syncing with trailing lower-case 's' in field...
       }
+#if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
     // Now show TX ID for secure association.
     Serial.print(F(" TX ID"));
     uint8_t idbuf[OTV0P2BASE::OpenTRV_Node_ID_Bytes];
@@ -1090,6 +1091,7 @@ void serialStatusReport()
       Serial.print(' ');
       Serial.print(idbuf[i], HEX);
       }
+#endif // defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
     Serial.println();
     }
   // Terminate line.
