@@ -1539,7 +1539,7 @@ void loop()
       // to give the user a decent chance to enter a command string
       // and/or that may involve encryption.
       const uint8_t stopBy = min((OTV0P2BASE::GSCT_MAX/4)*3, nearOverrunThreshold - 1);
-      if(timeToHandleMessage()) { pollCLI(stopBy, 0 == TIME_LSD); }
+      pollCLI(stopBy, 0 == TIME_LSD);
       }
     break;
     }
