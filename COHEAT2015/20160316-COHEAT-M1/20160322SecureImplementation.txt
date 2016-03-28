@@ -115,6 +115,12 @@ O6) A full 32-byte encrypted body is unnecessary for this application;
     the addition of an option for a 16-byte body would reduce bandwidth by ~25%
     and would not make traffic analysis easier.
 
+O7) Switching to a TX counter per relay from the hub
+    (or development of a different low-wear RX message counter mechanism)
+    will allow the relays a ~10Y life at a message per 5 minutes average,
+    else with the current algorithm and shared TX counter from the hub,
+    lifetime might only be ~2Y if eight relays are deployed with one hub.
+
 
 Setup
 =====
