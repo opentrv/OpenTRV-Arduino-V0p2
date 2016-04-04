@@ -309,9 +309,7 @@ if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX bad secure header"); }
     if(!OTV0P2BASE::getPrimaryBuilding16ByteSecretKey(key))
       {
       isOK = false;
-#if 1 && defined(DEBUG)
-      DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX key");
-#endif
+      OTV0P2BASE::serialPrintlnAndFlush(F("!RX key"));
       }
     }
   uint8_t senderNodeID[OTV0P2BASE::OpenTRV_Node_ID_Bytes];
