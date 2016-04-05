@@ -1,0 +1,174 @@
+Notes on Secure Implementation Demonstration
+============================================
+DHD20160322
+
+
+Basics
+======
+
+ 0) The March 2016 release is intended to demonstrate securing the key interactions
+    between the main components bin the COHEAT system.
+
+ 1) See the specification of the underlying AES-GCM-based security scheme here:
+    https://raw.githubusercontent.com/DamonHD/OpenTRV/master/standards/protocol/IoTCommsFrameFormat/SecureBasicFrame-V0.1-201601.txt
+
+ 2) The interaction between the REV9 and FHT8V remains in cleartext;
+    in a production system the REV9 or an OpenTRV REV7 could, for example,
+    control the radiator valve directly, thus eliminating this unprotected link
+    (and a source of current unreliability).
+
+ 3) Some details of the security scheme have been trimmed to keep the demo code
+    of manageable size, but should be implemented on a production system.
+    These are noted below.
+
+ 4) Again, in a production system, where security is especially important,
+    such as at secure (military, police, etc) sites, and where side channels
+    may indicate a lack of personnel out on duty for example,
+    or where there are particularly vulnerable people present,
+    the mechanisms described to defeat traffic analysis may warrant stepping up.
+ 
+ 6) Note that the security mechanisms shown in the security demo
+    are NOT intended to defeat determined state-level actors,
+    nor to resist TEMPEST style attacks,
+    nor defend against attacks facilitated by physical access to devices,
+    nor to resist DoS (Denial of Service) attacks on the radio channel for example.
+
+ 7) The logical interaction between a REV2 hub and its REV9 relay remains the same:
+     a) the same CLI/serial input/output at either end
+     b) the FHT8V valve ID being used to identify the relaying REV9 also
+     c) the same GFSK fast channel being used between REV2 and REV9 as in recent releases
+
+ 8) All messages will be authenticated and with the body encrypted
+    with security boundaries/secrets following the 'primary building key' model,
+    with a single secret key (AES-GCM 128) shared between the REV9s and REV2
+    for one dwelling, so that compromise of the key for one dwelling
+    does not allow eavesdropping on, or interference of traffic (injection),
+    for any other.  This key is entered via the CLI.
+
+ 9) The REV9 relays will only respond to traffic directed to their (valve) ID.
+    The REV2s will only respond to REV9 with which they are explicitly associated
+    and with which they share a secret building key.
+    Associations are entered via the CLI, and are limited to 8 REV9s per REV2.
+
+
+Some Implementation Detail
+==========================
+
+10) The nominal ID used to construct the nonce/IV is nominally extended with 0x80 bytes
+    for traffic from REV9 (relay) to REV2 (hub)
+    and is nominally extended with 0 bytes for (reverse) traffic from hub to relay.
+
+11) The same frame type codes ('!', '?', '*') are used for message/frame types
+    as for the non-secure frames, though with the high bit set to indicate secure.
+
+12) The secureable frame format with type 0x80 (final trailer byte) AES-GCM security is used.
+
+13) Two bytes of ID are used in all messages/frames, and those are the house codes,
+    and only values in the range [0,99] for each byte are considered valid.
+
+14) The alert ('!') frame has no body.
+
+15) The '?' and '*' frame types use the body as constructed for the non-secure frame,
+    padded to 32 bytes before encryption.  This is quick to implement though redundant,
+    and could be improved.
+
+16) Message counters will function as usual for flow from from REV9 relay to REV2 hub,
+    with the RX message counter held logically with the node association.
+    The REV2 hub will hold an association for each REV9 in the dwelling.
+
+17) The flow from REV2 hub to REV9 is also regarded as a first-class channel,
+    not for example a 'lite' backchannel based on responding only when spoken to,
+    and average poll rate per REV9 from a REV2 currently averages one message per 5 minutes.
+    Thus, the REV9 uses the full RX association and message counter machinery,
+    with the REV9 carrying a single association for its REV2 hub by default.
+    This allows for over 10 years' nominal life with current implementation and EEPROM.
+    (It is possible to have backup REV2 hubs for TX and RX, and the backup devices
+    also associated with the REV9.)
+
+18) The flow from REV2 hub to REV9 is however a reverse flow in that
+    it will be sent with the ID of the recipient in the header, not the sender.
+    Thus, in accordance with the spec, the last six bytes of the ID for the nonce/IV
+    will be 0x00, whereas from REV2 to REV9 those trailing bytes will be 0x80.
+
+
+Options Not Implemented
+=======================
+
+O1) For this demo keys will be kept in EEPROM rather than fuse-protected Flash,
+    so would be extractable by someone with physical access and appropriate tools.
+
+O2) No random alerts will be sent to defeat traffic analysis and occupancy guessing.
+
+O3) Zero-length IDs will not be used (to make traffic analysis harder)
+    as the CPU load would be too high and the benefits too small.
+
+O4) For production, filtering of received messages by ID should be added to the
+    interrupt RX IRQ handler, to help ensure that correct messages are not lost
+    through the queue filling up from (unwanted) messages from nearby dwellings.
+    This should be implemented at relay (by own ID) and hub (by association).
+
+O5) The CPU clock can be run faster (up to 8MHz vs usual 1MHz when running at 3.3V)
+    for the cipher code and while not (eg) processing serial or other I/O
+    given that 1 encrypt/decrypt takes ~0.5s at 1MHz.
+
+O6) A full 32-byte encrypted body is unnecessary for this application;
+    the addition of an option for a 16-byte body would reduce bandwidth by ~25%
+    and would not make traffic analysis easier.
+
+O7) Switching to a TX counter per relay from the hub
+    (or development of a different low-wear RX message counter mechanism)
+    will allow the relays a ~10Y life at a message per 5 minutes average,
+    else with the current algorithm and shared TX counter from the hub,
+    lifetime might only be ~2Y if eight relays are deployed with one hub.
+
+
+Setup
+=====
+
+S1) Choose/create a 128-bit secret key for each dwelling,
+    eg using http://random.hd.org/getBits.jsp?numBytes=8&type=hex
+    The form of the key should be:
+        a4 09 53 d5 65 61 72 8c b2 dd 9f 34 2d de f0 ea
+
+S2) Program this into the hub (REV2) and all relays (REV9s) for that dwelling
+    as the primary building key using the CLI, eg:
+        >K B a4 09 53 d5 65 61 72 8c b2 dd 9f 34 2d de f0 ea
+        B set
+        OK
+    (Due to a bug you may need to power-cycle and repeat for this to work.)
+    Before this is set, or if the key is cleared with "K B *"
+    errors of the form "!TX key" may be visible indicating that the TX key is missing,
+    and for the hubs "!RX key" also indicate no key available to decode incoming.
+
+S3) For each REV9 relay, issue the "S" CLI command to find the node's full TX hex ID,
+    (once the house code for the FHT8V has been set) for association with a REV2 hub,
+    eg for decimal house code 34 62 the ID padded to 8 bytes is:
+        22 3E 80 80 80 80 80 80
+    as seen here:
+        >S
+        Resets/overruns: 142 46
+        =0%@19CC;HC34 62 TX ID 22 3E 80 80 80 80 80 80
+
+S4) For each REV9 relay, clear out any security associations ("A *")
+    then associate its own ID but with the trailing "80" bytes replaced with "00"s,
+    eg for the host with TX ID 22 3E 80 ...
+        >A *
+        Cleared
+        OK
+        >A 22 3E 00 00 00 00 00 00
+        Index 0
+        OK
+
+S5) For the REV2 hub, clear out any security associations ("A *")
+    then for each REV9 relay, add in its TX ID as above to associate it:
+        >A *
+        Cleared
+        OK
+        >A 22 3E 80 80 80 80 80 80
+        Index 0
+        OK
+        >A ...
+    The index will go up for each association.
+    A maximum of eight (8) relays can be associated with one hub.
+    Associations can be listed with "A ?".
+

@@ -108,12 +108,6 @@ inline uint8_t *RFM22RXPreambleAdd(uint8_t *buf)
 #endif
 
 
-#ifdef ALLOW_CC1_SUPPORT_RELAY
-// Send a CC1 Alert message with this unit's house code via the RFM23B.
-bool sendCC1AlertByRFM23B();
-#endif
-
-
 // Returns true if an unencrypted trailing static payload and similar (eg bare stats transmission) is permitted.
 // True if the TX_ENABLE value is no higher than stTXmostUnsec.
 // Some filtering may be required even if this is true.

@@ -123,7 +123,7 @@ OTV0P2BASE::RoomTemperatureC16_SHT21 TemperatureC16; // SHT21 impl.
 #elif defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20)
 #if defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
 // DSB18B20 temperature impl, with slightly reduced precision to improve speed.
-OTV0P2BASE::TemperatureC16_DS18B20 TemperatureC16(MinOW_DEFAULT, 0, OTV0P2BASE::TemperatureC16_DS18B20::MAX_PRECISION - 1);
+OTV0P2BASE::TemperatureC16_DS18B20 TemperatureC16(MinOW_DEFAULT, OTV0P2BASE::TemperatureC16_DS18B20::MAX_PRECISION - 1);
 #endif
 #else // Don't use TMP112 if SHT21 or DS18B20 are selected.
 OTV0P2BASE::RoomTemperatureC16_TMP112 TemperatureC16;
@@ -187,79 +187,5 @@ uint8_t *appendStatsToTXBufferWithFF(uint8_t *bptr, const uint8_t bufSize)
 
 #ifdef ENABLE_FHT8VSIMPLE
 OTRadValve::FHT8VRadValve<_FHT8V_MAX_EXTRA_TRAILER_BYTES, OTRadValve::FHT8VRadValveBase::RFM23_PREAMBLE_BYTES, OTRadValve::FHT8VRadValveBase::RFM23_PREAMBLE_BYTE> FHT8V(appendStatsToTXBufferWithFF);
-#endif
-
-// Clear both housecode parts (and thus disable local valve).
-// Does nothing if FHT8V not in use.
-#ifdef ENABLE_FHT8VSIMPLE
-void FHT8VClearHC()
-{
-  FHT8V.clearHC();
-  OTV0P2BASE::eeprom_smart_erase_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC1);
-  OTV0P2BASE::eeprom_smart_erase_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC2);
-}
-#endif
-
-// Set (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control.
-// Also set value in FHT8V rad valve model.
-// Does nothing if FHT8V not in use.
-#ifdef ENABLE_FHT8VSIMPLE
-void FHT8VSetHC1(uint8_t hc)
-{
-  FHT8V.setHC1(hc);
-  OTV0P2BASE::eeprom_smart_update_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC1, hc);
-}
-void FHT8VSetHC2(uint8_t hc)
-{
-  FHT8V.setHC2(hc);
-  OTV0P2BASE::eeprom_smart_update_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC2, hc);
-}
-#endif
-
-// Get (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control (will be 0xff until set).
-// FHT8V instance values are used as a cache.
-// Does nothing if FHT8V not in use.
-#ifdef ENABLE_FHT8VSIMPLE
-uint8_t FHT8VGetHC1()
-{
-  const uint8_t vv = FHT8V.getHC1();
-  // If cached value in FHT8V instance is valid, return it.
-  if (OTRadValve::FHT8VRadValveBase::isValidFHTV8HouseCode(vv))
-  {
-    return (vv);
-  }
-  // Else if EEPROM value is valid, then cache it in the FHT8V instance and return it.
-  const uint8_t ev = eeprom_read_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC1);
-  if (OTRadValve::FHT8VRadValveBase::isValidFHTV8HouseCode(ev))
-  {
-    FHT8V.setHC1(ev);
-  }
-  return (ev);
-}
-uint8_t FHT8VGetHC2()
-{
-  const uint8_t vv = FHT8V.getHC2();
-  // If cached value in FHT8V instance is valid, return it.
-  if (OTRadValve::FHT8VRadValveBase::isValidFHTV8HouseCode(vv))
-  {
-    return (vv);
-  }
-  // Else if EEPROM value is valid, then cache it in the FHT8V instance and return it.
-  const uint8_t ev = eeprom_read_byte((uint8_t*)V0P2BASE_EE_START_FHT8V_HC2);
-  if (OTRadValve::FHT8VRadValveBase::isValidFHTV8HouseCode(ev))
-  {
-    FHT8V.setHC2(ev);
-  }
-  return (ev);
-}
 #endif // ENABLE_FHT8VSIMPLE
 
-#ifdef ENABLE_FHT8VSIMPLE
-// Load EEPROM house codes into primary FHT8V instance at start-up or once cleared in FHT8V instance.
-void FHT8VLoadHCFromEEPROM()
-{
-  // Uses side-effect to cache/save in FHT8V instance.
-  FHT8VGetHC1();
-  FHT8VGetHC2();
-}
-#endif // ENABLE_FHT8VSIMPLE

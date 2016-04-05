@@ -33,7 +33,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #include "UI_Minimal.h"
 
 
-
 // Marked true if the physical UI controls are being used.
 // Cleared at end of tickUI().
 // Marked volatile for thread-safe lock-free non-read-modify-write access to byte-wide value.
@@ -52,11 +51,9 @@ static volatile uint8_t uiTimeoutM;
 // Compound operations on this value must block interrupts.
 #define CLI_DEFAULT_TIMEOUT_M 2
 static volatile uint8_t CLITimeoutM = CLI_DEFAULT_TIMEOUT_M;
-
 // Reset CLI active timer to the full whack before it goes inactive again (ie makes CLI active for a while).
 // Thread-safe.
 void resetCLIActiveTimer() { CLITimeoutM = CLI_DEFAULT_TIMEOUT_M; }
-
 // Returns true if the CLI is active, at least intermittently.
 // Thread-safe.
 bool isCLIActive() { return(0 != CLITimeoutM); }
@@ -157,7 +154,6 @@ static void inline offPause()
 
 // Counts calls to tickUI.
 static uint8_t tickCount;
-
 
 // Call this on even numbered seconds (with current time in seconds) to allow the UI to operate.
 // Should never be skipped, so as to allow the UI to remain responsive.
@@ -386,9 +382,9 @@ bool tickUI(const uint_fast8_t sec)
     // then emit a tiny double flash on every 4th tick.
     // This call for heat may be frost protection or pre-warming / anticipating demand.
     // DHD20130528: new 4th-tick flash in FROST mode...
-    // DHD20131223: only flash if the room is lit so as to save energy and avoid disturbing sleep, etc.
+    // DHD20131223: only flash if the room is not dark (ie or if no working light sensor) so as to save energy and avoid disturbing sleep, etc.
     else if(forthTick &&
-            AmbLight.isRoomLit() &&
+            !AmbLight.isRoomDark() &&
             NominalRadValve.isCallingForHeat() /* &&
             NominalRadValve.isControlledValveReallyOpen() */ )
       {
@@ -483,81 +479,6 @@ void checkUserSchedule()
 // eg with strtok_t().
 static bool extCLIHandler(Print *const p, char *const buf, const uint8_t n)
   {
-
-#ifdef ALLOW_CC1_SUPPORT_RELAY
-  // If CC1 replay then allow +CC1 ! command to send an alert to the hub.
-  // Full command is:
-  //    +CC1 !
-  // This unit's housecode is used in the frame sent.
-  const uint8_t CC1_A_PREFIX_LEN = 6;
-  // Falling through rather than return(true) indicates failure.
-  if((n >= CC1_A_PREFIX_LEN) && (0 == strncmp("+CC1 !", buf, CC1_A_PREFIX_LEN)))
-    {
-    // Send the alert!
-    return(sendCC1AlertByRFM23B());
-    }
-#endif
-
-#ifdef ALLOW_CC1_SUPPORT_HUB
-  // If CC1 hub then allow +CC1 ? command to poll a remote relay.
-  // Full command is:
-  //    +CC1 ? hc1 hc2 rp lc lt lf
-  // ie six numeric arguments, see below, with out-of-range values coerced (other than housecodes):
-//            // Factory method to create instance.
-//            // Invalid parameters (except house codes) will be coerced into range.
-//            //   * House code (hc1, hc2) of valve controller that the poll/command is being sent to.
-//            //   * rad-open-percent     [0,100] 0-100 in 1% steps, percent open approx to set rad valve (rp)
-//            //   * light-colour         [0,3] bit flags 1==red 2==green (lc) 0 => stop everything
-//            //   * light-on-time        [1,15] (0 not allowed) 30-450s in units of 30s (lt) ???
-//            //   * light-flash          [1,3] (0 not allowed) 1==single 2==double 3==on (lf)
-//            // Returns instance; check isValid().
-//            static CC1PollAndCommand make(uint8_t hc1, uint8_t hc2,
-//                                          uint8_t rp,
-//                                          uint8_t lc, uint8_t lt, uint8_t lf);
-  const uint8_t CC1_Q_PREFIX_LEN = 7;
-  const uint8_t CC1_Q_PARAMS = 6;
-  // Falling through rather than return(true) indicates failure.
-  if((n >= CC1_Q_PREFIX_LEN) && (0 == strncmp("+CC1 ? ", buf, CC1_Q_PREFIX_LEN)))
-    {
-    char *last; // Used by strtok_r().
-    char *tok1;
-    // Attempt to parse the parameters.
-    if((n-CC1_Q_PREFIX_LEN >= CC1_Q_PARAMS*2-1) && (NULL != (tok1 = strtok_r(buf+CC1_Q_PREFIX_LEN, " ", &last))))
-      {
-      char *tok2 = strtok_r(NULL, " ", &last);
-      char *tok3 = (NULL == tok2) ? NULL : strtok_r(NULL, " ", &last);
-      char *tok4 = (NULL == tok3) ? NULL : strtok_r(NULL, " ", &last);
-      char *tok5 = (NULL == tok4) ? NULL : strtok_r(NULL, " ", &last);
-      char *tok6 = (NULL == tok5) ? NULL : strtok_r(NULL, " ", &last);
-      if(NULL != tok6)
-        {
-        OTProtocolCC::CC1PollAndCommand q = OTProtocolCC::CC1PollAndCommand::make(
-            atoi(tok1),
-            atoi(tok2),
-            atoi(tok3),
-            atoi(tok4),
-            atoi(tok5),
-            atoi(tok6));
-        if(q.isValid())
-          {
-          uint8_t txbuf[OTProtocolCC::CC1PollAndCommand::primary_frame_bytes+1]; // More than large enough for preamble + sync + alert message.
-          const uint8_t bodylen = q.encodeSimple(txbuf, sizeof(txbuf), true);
-#if 0 && defined(DEBUG)
-    OTRadioLink::printRXMsg(p, txbuf, bodylen);
-#endif
-          // TX at normal volume since ACKed and can be repeated if necessary.
-          if(PrimaryRadio.sendRaw(txbuf, bodylen))
-            { return(true); } // Done it!
-#if 1 && defined(DEBUG)
-          else { DEBUG_SERIAL_PRINT_FLASHSTRING("!TX failed"); } 
-#endif
-          }
-        }
-      }
-    return(false); // FAILED if fallen through from above.
-    }
-#endif
-
   return(false); // FAILED if not otherwise handled.
   }
 #endif 
@@ -704,13 +625,13 @@ void serialStatusReport()
   // *H* section: house codes for local FHT8V valve and if syncing, iff set.
 #if defined(ENABLE_FHT8VSIMPLE)
   // Print optional house code section if codes set.
-  const uint8_t hc1 = FHT8VGetHC1();
+  const uint8_t hc1 = FHT8V.nvGetHC1();
   if(hc1 != 255)
     {
     Serial.print(F(";HC"));
     Serial.print(hc1);
     Serial_print_space();
-    Serial.print(FHT8VGetHC2());
+    Serial.print(FHT8V.nvGetHC2());
     if(!FHT8V.isInNormalRunState())
       {
       Serial_print_space();
@@ -852,34 +773,10 @@ static void dumpCLIUsage(const uint8_t stopBy)
   Serial.println();
   }
 
-// If INTERACTIVE_ECHO defined then immediately echo received characters, not at end of line.
-#define CLI_INTERACTIVE_ECHO
-
-// TODO better way of handling this?
-#ifdef ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
-#define MAXIMUM_CLI_OT_RESPONSE_CHARS 52 // 52 = 4("K B") + 16x(AES key token) + 1('\r' | 'n')
+#if defined(ENABLE_EXTENDED_CLI) || defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
+static const uint8_t MAXIMUM_CLI_RESPONSE_CHARS = 1 + OTV0P2BASE::CLI::MAX_TYPICAL_CLI_BUFFER;
 #else
-#define MAXIMUM_CLI_OT_RESPONSE_CHARS 9 // Just enough for any valid core/OT command expected not including trailing LF.  (Note that Serial RX buffer is 64 bytes.)
-#endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
-#ifdef ENABLE_EXTENDED_CLI // Allow for much longer input commands.
-#define MAXIMUM_CLI_RESPONSE_CHARS (max(64, MAXIMUM_CLI_OT_RESPONSE_CHARS))
-#else
-#define MAXIMUM_CLI_RESPONSE_CHARS MAXIMUM_CLI_OT_RESPONSE_CHARS
-#endif
-#define IDLE_SLEEP_SCT (15/(OTV0P2BASE::SUBCYCLE_TICK_MS_RD)) // Approx sub-cycle ticks in idle sleep (15ms), erring on side of being too large; strictly positive.
-#define BUF_FILL_TIME_MS (((MAXIMUM_CLI_RESPONSE_CHARS*10) * 1000L + (BAUD-1)) / BAUD) // Time to read full/maximal input command buffer; ms, strictly positive.
-#define BUF_FILL_TIME_SCT (BUF_FILL_TIME_MS/(OTV0P2BASE::SUBCYCLE_TICK_MS_RD)) // Approx sub-cycle ticks to fill buf, erring on side of being too large; strictly positive.
-#define MIN_POLL_SCT max(IDLE_SLEEP_SCT, BUF_FILL_TIME_SCT)
-//#if MIN_POLL_SCT > CLI_POLL_MIN_SCT
-//#error "MIN_POLL_SCT > CLI_POLL_MIN_SCT" 
-//#endif
-#define MIN_RX_BUFFER 16 // Minimum Arduino Serial RX buffer size.
-// DHD20131213: CAN_IDLE_15MS/idle15AndPoll() true seemed to be causing intermittent crashes.
-// DHD20150827: CAN_IDLE_15MS/idle15AndPoll() true causing crashes on 7% of REV9 boards.
-#if !defined(OTV0P2BASE_IDLE_NOT_RECOMMENDED) && defined(ENABLE_USE_OF_AVR_IDLE_MODE) // Allow use of IDLE mode.
-#define CAN_IDLE_15MS ((BAUD <= 4800) || (MAXIMUM_CLI_RESPONSE_CHARS < MIN_RX_BUFFER)) // If true, cannot get RX overrun during 15--30ms idle.
-#else
-#define CAN_IDLE_15MS (false)
+static const uint8_t MAXIMUM_CLI_RESPONSE_CHARS = 1 + OTV0P2BASE::CLI::MIN_TYPICAL_CLI_BUFFER;
 #endif
 // Used to poll user side for CLI input until specified sub-cycle time.
 // Commands should be sent terminated by CR *or* LF; both may prevent 'E' (exit) from working properly.
@@ -899,116 +796,18 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
       }
     }
 
-  // Compute safe limit time given granularity of sleep and buffer fill.
-  const uint8_t targetMaxSCT = (maxSCT <= MIN_POLL_SCT) ? ((uint8_t) 0) : ((uint8_t) (maxSCT - 1 - MIN_POLL_SCT));
-  if(OTV0P2BASE::getSubCycleTime() >= targetMaxSCT) { return; } // Too short to try.
-
   const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled<V0P2_UART_BAUD>();
-
-  // Purge any stray pending input, such as a trailing LF from previous input.
-  while(Serial.available() > 0) { Serial.read(); }
-
-  // Generate and flush prompt character to the user, after a CRLF to reduce ambiguity.
-  // Do this AFTER flushing the input so that sending command immediately after prompt should work.
-  Serial.println();
-  Serial.print(CLIPromptChar);
-  // Idle a short while to try to save energy, waiting for serial TX end and possible RX response start.
-  OTV0P2BASE::flushSerialSCTSensitive();
 
   // Wait for input command line from the user (received characters may already have been queued)...
   // Read a line up to a terminating CR, either on its own or as part of CRLF.
   // (Note that command content and timing may be useful to fold into PRNG entropy pool.)
   static char buf[MAXIMUM_CLI_RESPONSE_CHARS+1]; // Note: static state, efficient for small command lines.  Space for terminating '\0'.
-  //Serial.setTimeout(timeoutms); const int n = Serial.readBytesUntil('\r', buf, MAXIMUM_CLI_RESPONSE_CHARS);
-  uint8_t n = 0;
-  while(n < MAXIMUM_CLI_RESPONSE_CHARS)
-    {
-    // Read next character if immediately available.
-    if(Serial.available() > 0)
-      {
-      int ic = Serial.read();
-      if(('\r' == ic) || ('\n' == ic)) { break; } // Stop at CR, eg from CRLF, or LF.
-//#ifdef CLI_INTERACTIVE_ECHO
-//      if(('\b' == ic) || (127 == ic))
-//        {
-//        // Handle backspace or delete as delete...
-//        if(n > 0) // Ignore unless something to delete...
-//          {
-//          Serial.print('\b');
-//          Serial.print(' ');
-//          Serial.print('\b');
-//          --n;
-//          }
-//        continue;
-//        }
-//#endif
-      if((ic < 32) || (ic > 126)) { continue; } // Drop bogus non-printable characters.
-      // Ignore any leading char that is not a letter (or '?' or '+'),
-      // and force leading (command) char to upper case.
-      if(0 == n)
-        {
-        ic = toupper(ic);
-        if(('+' != ic) && ('?' != ic) && ((ic < 'A') || (ic > 'Z'))) { continue; }
-        }
-      // Store the incoming char.
-      buf[n++] = (char) ic;
-#ifdef CLI_INTERACTIVE_ECHO
-      Serial.print((char) ic); // Echo immediately.
-#endif
-      continue;
-      }
-    // Quit WITHOUT PROCESSING THE POSSIBLY-INCOMPLETE INPUT if time limit is hit (or very close).
-    const uint8_t sct = OTV0P2BASE::getSubCycleTime();
-    if(sct >= targetMaxSCT)
-      {
-      n = 0;
-      break;
-      }
-    // Idle waiting for input, to save power, then/else do something useful with some CPU cycles...
-#if CAN_IDLE_15MS
-    // Minimise power consumption leaving CPU/UART clock running, if no danger of RX overrun.
-    // Don't do this too close to end of target end time to avoid missing it.
-    // Note: may get woken on timer0 interrupts as well as RX and watchdog.
-    if(sct < targetMaxSCT-2)
-      {
-//      idle15AndPoll(); // COH-63 and others: crashes some REV0 and REV9 boards (reset).
-      // Rely on being woken by UART, or timer 0 (every ~16ms with 1MHz CPU), or backstop of timer 2.
-      set_sleep_mode(SLEEP_MODE_IDLE); // Leave everything running but the CPU...
-      sleep_mode();
-      pollIO(false);
-      continue;
-      }
-#endif
-    burnHundredsOfCyclesProductivelyAndPoll(); // Use time time to poll for I/O, etc.
-    }
+  const uint8_t n = OTV0P2BASE::CLI::promptAndReadCommandLine(maxSCT, buf, sizeof(buf), burnHundredsOfCyclesProductivelyAndPoll);
 
   if(n > 0)
     {
-    // Restart the CLI timer on receipt of plausible (ASCII) input (cf noise from UART floating or starting up),
-    // Else print a very brief low-CPU-cost help message and give up as efficiently and safely and quickly as possible.
-    const char firstChar = buf[0];
-    const bool plausibleCommand = ((firstChar > ' ') && (firstChar <= 'z'));
-    if(plausibleCommand) { resetCLIActiveTimer(); }
-    else
-      {
-      Serial.println(F("? for CLI help"));
-      // Force any pending output before return / possible UART power-down.
-      OTV0P2BASE::flushSerialSCTSensitive();
-      if(neededWaking) { OTV0P2BASE::powerDownSerial(); }
-      return;
-      }
-
-    // Null-terminate the received command line.
-    buf[n] = '\0';
-
-    // strupr(buf); // Force to upper-case
-#ifdef CLI_INTERACTIVE_ECHO
-    Serial.println(); // ACK user's end-of-line.
-#else
-    Serial.println(buf); // Echo the line received (asynchronously).
-#endif
-    // Force any pending output before return / possible UART power-down.
-    OTV0P2BASE::flushSerialSCTSensitive();
+    // Got plausible input so keep the CLI awake a little longer.
+    resetCLIActiveTimer();
 
     // Process the input received, with action based on the first char...
     bool showStatus = true; // Default to showing status.
@@ -1024,36 +823,10 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
       case 'E': { CLITimeoutM = 0; break; }
 
 #if defined(ENABLE_FHT8VSIMPLE) && (defined(ENABLE_LOCAL_TRV) || defined(ENABLE_SLAVE_TRV))
-      // H nn nn
+      // H [nn nn]
       // Set (non-volatile) HC1 and HC2 for single/primary FHT8V wireless valve under control.
       // Missing values will clear the code entirely (and disable use of the valve).
-      case 'H':
-        {
-        char *last; // Used by strtok_r().
-        char *tok1;
-        // Minimum 5 character sequence makes sense and is safe to tokenise, eg "H 1 2".
-        if((n >= 5) && (NULL != (tok1 = strtok_r(buf+2, " ", &last))))
-          {
-          char *tok2 = strtok_r(NULL, " ", &last);
-          if(NULL != tok2)
-            {
-            const int hc1 = atoi(tok1);
-            const int hc2 = atoi(tok2);
-            if((hc1 < 0) || (hc1 > 99) || (hc2 < 0) || (hc2 > 99)) { OTV0P2BASE::CLI::InvalidIgnored(); }
-            else
-              {
-              // Set house codes and force resync if changed.
-              FHT8VSetHC1(hc1);
-              FHT8VSetHC2(hc2);
-              }
-            }
-          }
-        else if(n < 2) // Just 'H', possibly with trailing whitespace.
-          {
-          FHT8VClearHC(); // Clear codes and force into unsynchronized state.
-          }
-        break;
-        }
+      case 'H': { showStatus = OTRadValve::FHT8VRadValveBase::SetHouseCode(&FHT8V).doCommand(buf, n); break; }
 #endif
 
 #if defined(ENABLE_GENERIC_PARAM_CLI_ACCESS)
@@ -1107,9 +880,9 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
 #ifdef ENABLE_FULL_OT_CLI // *******  NON-CORE CLI FEATURES
 
 #if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) && (defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)) && defined(ENABLE_RADIO_RX)
-        // Set new node association (nodes to accept frames from).
-        // Only needed if able to RX and/or some sort of hub.
-        case 'A': { showStatus = OTV0P2BASE::CLI::SetNodeAssoc().doCommand(buf, n); break; }
+      // Set new node association (nodes to accept frames from).
+      // Only needed if able to RX and/or some sort of hub.
+      case 'A': { showStatus = OTV0P2BASE::CLI::SetNodeAssoc().doCommand(buf, n); break; }
 #endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
 
 #if defined(ENABLE_RADIO_RX) && (defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)) && !defined(ENABLE_DEFAULT_ALWAYS_RX)
@@ -1303,158 +1076,3 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
 
   if(neededWaking) { OTV0P2BASE::powerDownSerial(); }
   }
-
-
-
-// CUSTOM IO FOR SPECIAL DEPLOYMENTS
-#ifdef ALLOW_CC1_SUPPORT_RELAY_IO // REV9 CC1 relay...
-// Do basic static LED setting.
-static void setLEDs(const uint8_t lc)
-    {
-    // Assume primary UI LED is the red one (at least fot REV9 boards)...
-    if(lc & 1) { LED_HEATCALL_ON(); } else { LED_HEATCALL_OFF(); }
-    // Assume secondary UI LED is the green one (at least fot REV9 boards)...
-    if(lc & 2) { LED_UI2_ON(); } else { LED_UI2_OFF(); }
-    }
-
-// Logical last-requested light colour (lc).
-static uint8_t lcCO;
-// Count down in 2s ticks until LEDs go out (derived from lt).
-static uint8_t countDownLEDSforCO;
-// Requested flash type (lf).
-static uint8_t lfCO;
-
-// Handle boost button-press semantics.
-// Timeout in minutes before a new boot request will be fully actioned.
-// This is kept long enough to ensure that the hub cannot have failed to see the status flip
-// unless all contact has in fact been lost.
-static const uint8_t MIN_BOOST_INTERVAL_M = 30;
-// Count down from last flip of switch-toggle state, minutes.  Cannot toggle unless this is zero.
-static uint8_t toggle_blocked_countdown_m;
-// True if the button was active on the previous tick.
-static bool oldButtonPressed;
-// Switch state toggled when user activates boost function.
-// Marked volatile to allow safe lock-free read access from an ISR if necessary.
-static volatile bool switch_toggle_state;
-// True while waiting for poll after a boost request.
-// Cleared after a poll which is presumed to notice the request.
-static bool waitingForPollAfterBoostRequest;
-
-// Get the switch toggle state.
-// The hub should monitor this changing,
-// taking the change as indication of a boost request.
-// This is allowed to toggle only much slower than the hub should poll,
-// thus ensuring that the hub doesn't miss a boost request.
-// Safe to call from an ISR (though this would be unexpected).
-bool getSwitchToggleStateCO() { return(switch_toggle_state); }
-
-// Call this on even numbered seconds (with current time in seconds) to allow the CO UI to operate.
-// Should never be skipped, so as to allow the UI to remain responsive.
-//
-// The boost button for the CO relay is BUTTON_MODE_L.
-// This routine/UI cares about off-to-on active edges of the button, ie the moment of being pressed,
-// at which it will:
-//    * turn the user-visible LED solid red (for a while)
-//    * flip the status flag providing it has been more than 30 minutes since the last one
-//      (this 30 minutes being the time at which contact with the hub would be deemed lost if no comms)
-//    * send an alert message immediately (with the usual 'likely-to-get-heard' loudness settings)
-//      and possibly periodically until a new poll request comes in (as indicated by a call to setLEDsCO())
-bool tickUICO(const uint_fast8_t sec)
-  {
-  // Deal with the countdown timers.
-  if((0 == sec) && (toggle_blocked_countdown_m > 0)) { --toggle_blocked_countdown_m; }
-  if(countDownLEDSforCO > 0) { --countDownLEDSforCO; }
-
-  // Note whether the button is pressed on this tick.
-  const bool buttonPressed = (LOW == fastDigitalRead(BUTTON_MODE_L));
-  // Note whether the button has just been pressed.
-  const bool buttonJustPressed = (buttonPressed && !oldButtonPressed);
-  oldButtonPressed = buttonPressed;
-  if(buttonJustPressed)
-    {
-    // Set the LED to solid red until up to the comms timeout.
-    // When the hub poll the LEDs will be set to whatever the poll specifies.
-    setLEDsCO(1, MIN_BOOST_INTERVAL_M*2, 3, false);
-    // If not still counting down since the last switch-state toggle,
-    // toggle it now,
-    // and restart the count-down.
-    if(0 == toggle_blocked_countdown_m)
-        {
-        switch_toggle_state = !switch_toggle_state;
-        toggle_blocked_countdown_m = MIN_BOOST_INTERVAL_M;
-        }
-    // Set up to set alerts periodically until polled.
-    // Has the effect of allow the hub to know when boost is being requested
-    // even if it's not yet time to flip the toggle.
-    waitingForPollAfterBoostRequest = true;
-    // Send an alert message immediately,
-    // AFTER adjusting all relevant state so as to avoid a race,
-    // inviting the hub to poll this node ASAP and eg notice the toggle state.
-    sendCC1AlertByRFM23B();
-    // Do no further UI processing this tick.
-    // Note the user interaction to the caller.
-    return(true);
-    }
-
-  // All LEDs off when their count-down timer is/hits zero.
-  if(0 == countDownLEDSforCO) { lcCO = 0; setLEDs(0); }
-  // Else force 'correct' requested light colour and deal with any 'flash' state.
-  else
-    {
-    setLEDs(lcCO);
-
-    // Deal with flashing (non-solid) output here.
-    // Do some friendly I/O polling while waiting!
-    if(lfCO != 3)
-      {
-      // Make this the first flash.
-      mediumPause();
-      setLEDs(0); // End of first flash.
-      pollIO(); // Poll while LEDs are off.
-      if(2 == lfCO)
-        {
-        offPause();
-        pollIO(); // Poll while LEDs are off.
-        // Start the second flash.
-        setLEDs(lcCO);
-        mediumPause();
-        setLEDs(0); // End of second flash.
-        pollIO(); // Poll while LEDs are off.
-        }
-      }
-    }
-
-  // If still waiting for a poll after a boost request,
-  // arrange to send extra alerts about once every two minutes,
-  // randomly so as to minimise collisions with other regular traffic.
-  if(waitingForPollAfterBoostRequest && (sec == (OTV0P2BASE::randRNG8() & 0x3e)))
-    { sendCC1AlertByRFM23B(); }
-
-  return(false); // No human interaction this tick...
-  }
-
-// Directly adjust LEDs.
-// May be called from a message handler, so minimise blocking.
-//   * light-colour         [0,3] bit flags 1==red 2==green (lc) 0 => stop everything
-//   * light-on-time        [1,15] (0 not allowed) 30-450s in units of 30s (lt) ???
-//   * light-flash          [1,3] (0 not allowed) 1==single 2==double 3==on (lf)
-// If fromPollAndCmd is true then this was called from an incoming Poll/Cms message receipt.
-// Not ISR- safe.
-void setLEDsCO(const uint8_t lc, const uint8_t lt, const uint8_t lf, const bool fromPollAndCmd)
-    {
-    lcCO = lc;
-    countDownLEDSforCO = (lt >= 17) ? 255 : lt * 15; // Units are 30s, ticks are 2s; overflow is avoided.
-    lfCO = lf;
-    setLEDs(lc); // Set correct colour immediately.
-    if(3 != lf)
-      {
-      // Only a flash of some sort is requested,
-      // so just flicker the LED(s),
-      // then turn off again until proper flash handler.
-      tinyPause();
-      setLEDs(0);
-      }
-    // Assume that the hub will shortly know about any pending request.
-    if(fromPollAndCmd) { waitingForPollAfterBoostRequest = false; }
-    }
-#endif

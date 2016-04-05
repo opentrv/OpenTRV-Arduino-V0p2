@@ -61,17 +61,16 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as plain boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
 //#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
-//#define CONFIG_DORM1 // REV7 / DORM1 all-in-one valve unit, secure TX.
+#define CONFIG_DORM1 // REV7 / DORM1 all-in-one valve unit, secure TX.
 //#define CONFIG_DORM1_BOILER // REV8 / DORM1 boiler-control unit.
 //#define CONFIG_REV10_AS_GSM_RELAY_ONLY // REV10: stats relay only.
 //#define CONFIG_REV11_RAW_JSON // REV11 as raw JSON-only stats/sensor leaf.
-#define CONFIG_REV14_WORKSHOP // REV14 w/ light sensor, SHT21, for Launchpad workshop.
+//#define CONFIG_REV14_WORKSHOP // REV14 w/ light sensor, SHT21, for Launchpad workshop.
 
 
 // One-offs and special cases.
 //#define CONFIG_DHD_TESTLAB_REV0 // REV0 / breadboard.
 //#define CONFIG_Trial2013Winter_Round1_STATSHUB // REV1 as stats hub.
-//#define CONFIG_Trial2013Winter_Round2_CC1HUB // REV2 cut4 as CC1 hub.
 //#define CONFIG_Trial2013Winter_Round2_BHR // REV2 cut4: boiler hub and stats relay.
 //#define CONFIG_Trial2013Winter_Round2_SECURE_NOHUB // REV2 cut4 leaf (valve/sensor) 2015/12 secure protocol.
 //#define CONFIG_Trial2013Winter_Round2_SECURE_STATSHUB // REV2 cut4 hub (boiler/stats) 2015/12 secure protocol.
@@ -83,14 +82,12 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_DORM1_MUT // REV7 / DORM1 Winter 2014/2015 minimal for unit testing.
 //#define CONFIG_REV7N // REV7 with external "Model N" valve.
 //#define CONFIG_REV7_AS_SENSOR // REV7 as JSON-only stats/sensor leaf.
-//#define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
 //#define CONFIG_REV9_STATS // REV9 as stats node, cut 2 of the board.
-//#define CONFIG_REV9_cut1 // REV9 as CC1 relay, cut1 of board.
 //#define CONFIG_DE_TESTLAB // Deniz's test environment.
 //#define CONFIG_REV10_STRIPBOARD // REV10-based stripboard precursor for bus shelters
 //#define CONFIG_REV10 // Generic REV10 config
 //#define CONFIG_REV10_BHR // REV10: boiler hub and stats relay.
-// TODO //#define CONFIG_REV10_SECURE_BOILERHUB_GSM_SECURE // REV10 PCB boiler hub, relay to GSM, 2015/12 secure protocol.
+//#define CONFIG_REV10_SECURE_BOILERHUB_GSM_SECURE // REV10 PCB boiler hub, relay to GSM, 2015/12 secure protocol.
 //#define CONFIG_REV11_RFM23BTEST // Basic test to see if stats send
 //#define CONFIG_REV14_PROTO  // Prototype REV14 w/ LoRa, TMP, SHT and QM-1
 //#define CONFIG_REV14 // REV14 w/ light sensor, SHT21 and voice sensor.
@@ -120,8 +117,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // Boiler controller for all-in-one valve unit (DORM1).
 #include <OTV0p2_CONFIG_REV8.h>
 
-// COHEAT radio relay.
-#include <OTV0p2_CONFIG_REV9.h>
+//// COHEAT radio relay.
+//#include <OTV0p2_CONFIG_REV9.h>
 
 // REV8 + GSM Arduino shield + I2CEXT, see TODO-551.
 #include <OTV0p2_CONFIG_REV10.h>
@@ -156,7 +153,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #endif
 #endif
 
-// For now (DHD20150927) allowing stats TX forces JSON to allos JSON stats.
+// For now (DHD20150927) allowing stats TX forces allowing JSON stats.
 // IF DEFINED: allow TX of stats frames.
 #ifdef ENABLE_STATS_TX
 // IF DEFINED: allow JSON stats frames alongside binary ones.

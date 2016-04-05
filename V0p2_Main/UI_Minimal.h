@@ -135,9 +135,6 @@ void serialStatusReport();
 #define serialStatusReport() { }
 #endif
 
-// Character that should trigger any pending command from user to be sent.
-#define CLIPromptChar ((char) OTV0P2BASE::SERLINE_START_CHAR_CLI) // Printable ASCII char that should be avoided in status output.
-
 // Reset CLI active timer to the full whack before it goes inactive again (ie makes CLI active for a while).
 // Thread-safe.
 void resetCLIActiveTimer();
@@ -152,11 +149,6 @@ bool isCLIActive();
 // Times itself out after at least a minute or two of inactivity. 
 // NOT RENTRANT (eg uses static state for speed and code space).
 void pollCLI(uint8_t maxSCT, bool startOfMinute);
-
-// Minimum recommended poll time in sub-cycle ticks...
-#define CLI_POLL_MIN_SCT (200/OTV0P2BASE::SUBCYCLE_TICK_MS_RN)
-
-
 
 // Use WDT-based timer for xxxPause() routines.
 // Very tiny low-power sleep to approximately match the PICAXE V0.09 routine of the same name.
@@ -176,29 +168,6 @@ static void inline mediumPause() { OTV0P2BASE::nap(WDTO_60MS); } // 60ms vs 144m
 // Premature wakeups MAY be allowed to avoid blocking I/O polling for too long.
 #define BIG_PAUSE_MS 120
 static void inline bigPause() { OTV0P2BASE::nap(WDTO_120MS); } // 120ms vs 288ms nominal for PICAXE V0.09 impl.
-
-
-// CUSTOM IO FOR SPECIAL DEPLOYMENTS
-#ifdef ALLOW_CC1_SUPPORT_RELAY_IO // REV9 CC1 relay...
-// Call this on even numbered seconds (with current time in seconds) to allow the CO UI to operate.
-// Should never be skipped, so as to allow the UI to remain responsive.
-bool tickUICO(uint_fast8_t sec);
-// Directly adjust LEDs.
-//   * light-colour         [0,3] bit flags 1==red 2==green (lc) 0 => stop everything
-//   * light-on-time        [1,15] (0 not allowed) 30-450s in units of 30s (lt) ???
-//   * light-flash          [1,3] (0 not allowed) 1==single 2==double 3==on (lf)
-// If fromPollAndCmd is true then this is being called from an incoming Poll/Cms message receipt.
-// Not ISR- safe.
-void setLEDsCO(uint8_t lc, uint8_t lt, uint8_t lf, bool fromPollAndCmd);
-
-// Get the switch toggle state.
-// The hub should monitor this changing,
-// taking the change as indication of a boost request.
-// This is allowed to toggle only much slower than the hub should poll,
-// thus ensuring that the hub doesn't miss a boost request.
-// Safe to call from an ISR (though this would be unexpected).
-bool getSwitchToggleStateCO();
-#endif
 
 
 #endif
