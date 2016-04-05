@@ -382,9 +382,9 @@ bool tickUI(const uint_fast8_t sec)
     // then emit a tiny double flash on every 4th tick.
     // This call for heat may be frost protection or pre-warming / anticipating demand.
     // DHD20130528: new 4th-tick flash in FROST mode...
-    // DHD20131223: only flash if the room is lit so as to save energy and avoid disturbing sleep, etc.
+    // DHD20131223: only flash if the room is not dark (ie or if no working light sensor) so as to save energy and avoid disturbing sleep, etc.
     else if(forthTick &&
-            AmbLight.isRoomLit() &&
+            !AmbLight.isRoomDark() &&
             NominalRadValve.isCallingForHeat() /* &&
             NominalRadValve.isControlledValveReallyOpen() */ )
       {
