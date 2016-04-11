@@ -198,7 +198,7 @@ void POSTalt()
 //  pinMode(3, INPUT);        // FIXME Move to where they are set automatically
 //  digitalWrite(3, LOW);
 
-  bareStatsTX(false, false, false, false);
+//  bareStatsTX(false, false);
 
   }
 
@@ -287,14 +287,14 @@ void loopAlt()
   // Sleep in low-power mode (waiting for interrupts) until seconds roll.
   // NOTE: sleep at the top of the loop to minimise timing jitter/delay from Arduino background activity after loop() returns.
   // DHD20130425: waking up from sleep and getting to start processing below this block may take >10ms.
-#if 0 && defined(DEBUG)
+#if 1 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("*E"); // End-of-cycle sleep.
 #endif
 
 #if !defined(ENABLE_MIN_ENERGY_BOOT)
   OTV0P2BASE::powerDownSerial(); // Ensure that serial I/O is off.
   // Power down most stuff (except radio for hub RX).
-  minimisePowerWithoutSleep();
+  OTV0P2BASE::minimisePowerWithoutSleep();
 #endif
   static uint_fast8_t TIME_LSD; // Controller's notion of seconds within major cycle.
   uint_fast8_t newTLSD;
@@ -334,9 +334,14 @@ void loopAlt()
     }
   TIME_LSD = newTLSD;
 
-#if 0 && defined(DEBUG)
+#if 1 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("*S"); // Start-of-cycle wake.
 #endif
+
+
+
+//OTV0P2BASE::forceReset();
+
 
 
   // START LOOP BODY
@@ -380,7 +385,7 @@ void loopAlt()
           // Ie, if doesn't have a local TRV then it must send binary some of the time.
           // Any recently-changed stats value is a hint that a strong transmission might be a good idea.
           const bool doBinary = false; // !localFHT8VTRVEnabled() && OTV0P2BASE::randRNG8NextBoolean();
-          bareStatsTX(false, false, false, false);
+          bareStatsTX(false, false);
           }
       break;
       }
