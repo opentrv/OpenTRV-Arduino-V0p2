@@ -28,8 +28,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 
 
 // GLOBAL flags that alter system build and behaviour.
-#define DEBUG // If defined, do extra checks and serial logging.  Will take more code space and power.
-#define ALT_MAIN_LOOP // If defined, normal main loop and POST are REPLACED with alternates, for non-OpenTRV builds.
+//#define DEBUG // If defined, do extra checks and serial logging.  Will take more code space and power.
+//#define ALT_MAIN_LOOP // If defined, normal main loop and POST are REPLACED with alternates, for non-OpenTRV builds.
 //#define UNIT_TESTS // If defined, normal main loop is REPLACED with a unit test cycle.  Usually define DEBUG also for get serial logging.
 //#define EST_CPU_DUTYCYCLE // If defined, estimate CPU duty cycle and thus base power consumption.
 

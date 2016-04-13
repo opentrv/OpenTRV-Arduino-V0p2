@@ -1937,17 +1937,22 @@ void loopOpenTRV()
       // then this can only sleep for a short time between explicit poll()s,
       // though in any case allow wake on interrupt to minimise loop timing jitter
       // when the slow RTC 'end of sleep' tick arrives.
-      ::OTV0P2BASE::nap(WDTO_15MS, true);
+      OTV0P2BASE::nap(WDTO_15MS, true);
       }
     else
       {
       // Normal long minimal-power sleep until wake-up interrupt.
       // Rely on interrupt to force quick loop round to I/O poll.
-      ::OTV0P2BASE::sleepUntilInt();
+      OTV0P2BASE::sleepUntilInt();
       }
 //    DEBUG_SERIAL_PRINTLN_FLASHSTRING("w"); // Wakeup.
     }
   TIME_LSD = newTLSD;
+#if defined(ENABLE_WATCHDOG_SLOW)
+  // Reset and immediately re-prime the RTC-based watchdog.
+  OTV0P2BASE::resetRTCWatchDog();
+  OTV0P2BASE::enableRTCWatchdog(true);
+#endif
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("*S"); // Start-of-cycle wake.
 #endif
