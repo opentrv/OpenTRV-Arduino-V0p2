@@ -46,11 +46,11 @@ static volatile bool statusChange;
 static volatile uint8_t uiTimeoutM;
 
 // Remaining minutes to keep CLI active; zero implies inactive.
-// Starts up with full value to allow easy setting of time, etc, without specially activating CLI.
+// Starts up with zero value (CLI off) to avoid taking too many startup cycles from calibration, etc.
 // Marked volatile for thread-safe lock-free non-read-modify-write access to byte-wide value.
 // Compound operations on this value must block interrupts.
 #define CLI_DEFAULT_TIMEOUT_M 2
-static volatile uint8_t CLITimeoutM = CLI_DEFAULT_TIMEOUT_M;
+static volatile uint8_t CLITimeoutM;
 // Reset CLI active timer to the full whack before it goes inactive again (ie makes CLI active for a while).
 // Thread-safe.
 void resetCLIActiveTimer() { CLITimeoutM = CLI_DEFAULT_TIMEOUT_M; }
