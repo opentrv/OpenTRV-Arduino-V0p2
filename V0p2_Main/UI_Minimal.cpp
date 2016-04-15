@@ -58,7 +58,7 @@ void resetCLIActiveTimer() { CLITimeoutM = CLI_DEFAULT_TIMEOUT_M; }
 // Thread-safe.
 bool isCLIActive() { return(0 != CLITimeoutM); }
 
-// Record local manual operation of a physical UI control, eg not remote or via CLI.
+// Record local manual operation of a physical UI control, eg neither remote nor via CLI.
 // Marks room as occupied amongst other things.
 // To be thread-/ISR- safe, everything that this touches or calls must be.
 // Thread-safe.
