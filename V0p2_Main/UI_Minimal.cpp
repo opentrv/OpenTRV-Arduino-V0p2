@@ -840,16 +840,23 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
       // Status line and optional smart/scheduled warming prediction request.
       case 'S':
         {
+#if !defined(ENABLE_WATCHDOG_SLOW)
         Serial.print(F("Resets/overruns: "));
+#else
+        Serial.print(F("Resets: "));
+#endif // !defined(ENABLE_WATCHDOG_SLOW) 
         const uint8_t resetCount = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_RESET_COUNT);
         Serial.print(resetCount);
+#if !defined(ENABLE_WATCHDOG_SLOW)
         Serial.print(' ');
         const uint8_t overrunCount = (~eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_OVERRUN_COUNTER)) & 0xff;
         Serial.print(overrunCount);
+#endif // !defined(ENABLE_WATCHDOG_SLOW)
         Serial.println();
         break; // Note that status is by default printed after processing input line.
         }
 
+#if !defined(ENABLE_TRIMMED_MEMORY)
       // Version information printed as one line to serial, machine- and human- parseable.
       case 'V':
         {
@@ -860,6 +867,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
 #endif
         break;
         }
+#endif // !defined(ENABLE_TRIMMED_MEMORY)
 
 #ifdef ENABLE_EXTENDED_CLI
       // Handle CLI extension commands.
@@ -1025,8 +1033,10 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
       case 'Q': { startBake(); break; }
 #endif
 
+#if !defined(ENABLE_TRIMMED_MEMORY)
       // Time set T HH MM.
       case 'T': { showStatus = OTV0P2BASE::CLI::SetTime().doCommand(buf, n); break; }
+#endif // !defined(ENABLE_TRIMMED_MEMORY)
 
 #if defined(ENABLE_LOCAL_TRV)
       // Switch to WARM (not BAKE) mode OR set WARM temperature.

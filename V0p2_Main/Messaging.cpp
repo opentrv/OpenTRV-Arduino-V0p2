@@ -62,8 +62,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
   static const char SIM900_PIN[5] PROGMEM       = "1111";
 
 // APN Configs - Uncomment based on what SIM you are using
-//  static const char SIM900_APN[] PROGMEM      = "\"everywhere\",\"eesecure\",\"secure\""; // EE
-  static const char SIM900_APN[] PROGMEM      = "\"arkessa.net\",\"arkessa\",\"arkessa\""; // Arkessa
+  static const char SIM900_APN[] PROGMEM      = "\"everywhere\",\"eesecure\",\"secure\""; // EE
+//  static const char SIM900_APN[] PROGMEM      = "\"arkessa.net\",\"arkessa\",\"arkessa\""; // Arkessa
 
 // UDP Configs - Uncomment based on which server you want to send to
 //  static const char SIM900_UDP_ADDR[14] PROGMEM = "0.0.0.0"; // ORS server
