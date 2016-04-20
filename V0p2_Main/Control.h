@@ -57,6 +57,8 @@ void loopOpenTRV();
 #define FROST BIASECO_FROST
 // 18C is a safe room temperature even for the slightly infirm according to NHS England 2014:
 //    http://www.nhs.uk/Livewell/winterhealth/Pages/KeepWarmKeepWell.aspx
+// Babies have less good thermoregulation and a device with setbacks may not be suitable for them:
+//    http://www.nhs.uk/conditions/pregnancy-and-baby/pages/reducing-risk-cot-death.aspx
 // so could possibly be marked explicitly on the control.
 // 21C is recommended living temperature in retirement housing:
 //     http://ipc.brookes.ac.uk/publications/pdf/Identifying_the_health_gain_from_retirement_housing.pdf
