@@ -246,6 +246,7 @@ static bool FilterRXISR(const volatile uint8_t *buf, volatile uint8_t &buflen)
 
 // Optional Power-On Self Test routines.
 // Aborts with a call to panic() if a test fails.
+#if !defined(ALT_MAIN_LOOP)
 void optionalPOST()
   {
   // Have 32678Hz clock at least running before going any further.
@@ -326,6 +327,7 @@ void optionalPOST()
 //  // Single/main POST checkpoint for speed.
 //  posPOST(1 /* , F("POST OK") */ );
   }
+#endif // !defined(ALT_MAIN_LOOP)
 
 
 // Setup routine: runs once after reset.

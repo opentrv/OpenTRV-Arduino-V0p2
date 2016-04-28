@@ -46,11 +46,11 @@ static volatile bool statusChange;
 static volatile uint8_t uiTimeoutM;
 
 // Remaining minutes to keep CLI active; zero implies inactive.
-// Starts up with full value to allow easy setting of time, etc, without specially activating CLI.
+// Starts up with zero value (CLI off) to avoid taking too many startup cycles from calibration, etc.
 // Marked volatile for thread-safe lock-free non-read-modify-write access to byte-wide value.
 // Compound operations on this value must block interrupts.
 #define CLI_DEFAULT_TIMEOUT_M 2
-static volatile uint8_t CLITimeoutM = CLI_DEFAULT_TIMEOUT_M;
+static volatile uint8_t CLITimeoutM;
 // Reset CLI active timer to the full whack before it goes inactive again (ie makes CLI active for a while).
 // Thread-safe.
 void resetCLIActiveTimer() { CLITimeoutM = CLI_DEFAULT_TIMEOUT_M; }
@@ -58,7 +58,7 @@ void resetCLIActiveTimer() { CLITimeoutM = CLI_DEFAULT_TIMEOUT_M; }
 // Thread-safe.
 bool isCLIActive() { return(0 != CLITimeoutM); }
 
-// Record local manual operation of a physical UI control, eg not remote or via CLI.
+// Record local manual operation of a physical UI control, eg neither remote nor via CLI.
 // Marks room as occupied amongst other things.
 // To be thread-/ISR- safe, everything that this touches or calls must be.
 // Thread-safe.
@@ -840,16 +840,23 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
       // Status line and optional smart/scheduled warming prediction request.
       case 'S':
         {
+#if !defined(ENABLE_WATCHDOG_SLOW)
         Serial.print(F("Resets/overruns: "));
+#else
+        Serial.print(F("Resets: "));
+#endif // !defined(ENABLE_WATCHDOG_SLOW) 
         const uint8_t resetCount = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_RESET_COUNT);
         Serial.print(resetCount);
+#if !defined(ENABLE_WATCHDOG_SLOW)
         Serial.print(' ');
         const uint8_t overrunCount = (~eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_OVERRUN_COUNTER)) & 0xff;
         Serial.print(overrunCount);
+#endif // !defined(ENABLE_WATCHDOG_SLOW)
         Serial.println();
         break; // Note that status is by default printed after processing input line.
         }
 
+#if !defined(ENABLE_TRIMMED_MEMORY)
       // Version information printed as one line to serial, machine- and human- parseable.
       case 'V':
         {
@@ -860,6 +867,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
 #endif
         break;
         }
+#endif // !defined(ENABLE_TRIMMED_MEMORY)
 
 #ifdef ENABLE_EXTENDED_CLI
       // Handle CLI extension commands.
@@ -1025,8 +1033,10 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
       case 'Q': { startBake(); break; }
 #endif
 
+#if !defined(ENABLE_TRIMMED_MEMORY)
       // Time set T HH MM.
       case 'T': { showStatus = OTV0P2BASE::CLI::SetTime().doCommand(buf, n); break; }
+#endif // !defined(ENABLE_TRIMMED_MEMORY)
 
 #if defined(ENABLE_LOCAL_TRV)
       // Switch to WARM (not BAKE) mode OR set WARM temperature.
