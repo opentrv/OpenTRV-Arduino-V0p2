@@ -5,7 +5,7 @@
 // IF DEFINED: entire comms model switches to secure.
 #define ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
 
-#define DEBUG // Uncomment for debug output.
+//#define DEBUG // Uncomment for debug output.
 
 #include <Arduino.h>
 #include <Wire.h>
