@@ -3,9 +3,9 @@
 #define CONFIG_REV9 // REV9 as CC1 relay, cut 2 of the board.
 
 // IF DEFINED: entire comms model switches to secure.
-#define ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
+//#define ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
 
-//#define DEBUG // Uncomment for debug output.
+#define DEBUG // Uncomment for debug output.
 
 #include <Arduino.h>
 #include <Wire.h>
@@ -419,7 +419,10 @@ bool sendCC1PollResponse()
   // Non-secure: send raw frame as-is.
   // Send at default power...  One going missing won't hurt that much.
   if(!PrimaryRadio.sendRaw(txbuf, bodylen))
-    { OTV0P2BASE::serialPrintlnAndFlush(F("!TX fail")); return(false); } // FAIL
+    { OTV0P2BASE::serialPrintlnAndFlush(F("!TX *")); return(false); } // FAIL
+  // Note successful dispatch of response.
+  pollResponseNeeded = false;
+  return(true);
 #else
   // Secure: wrap frame in encrypted layer...
   uint8_t key[16];
@@ -430,8 +433,8 @@ bool sendCC1PollResponse()
   const uint8_t sbodylen = secureTXState.generateSecureOStyleFrameForTX(sbuf, sizeof(sbuf), OTRadioLink::FTS_RESERVED_A, lenTXID, txbuf, bodylen, e, NULL, key);
   const bool success = (0 != sbodylen) && PrimaryRadio.sendRaw(sbuf+1, sbodylen-1);
 #if 1 && defined(DEBUG)
-  if(!success) { OTV0P2BASE::serialPrintlnAndFlush(F("!TX A")); }
-  else { OTV0P2BASE::serialPrintlnAndFlush(F("TX A")); }
+  if(!success) { OTV0P2BASE::serialPrintlnAndFlush(F("!TX *")); }
+  else { OTV0P2BASE::serialPrintlnAndFlush(F("TX *")); }
 #endif
   if(success)
     {
