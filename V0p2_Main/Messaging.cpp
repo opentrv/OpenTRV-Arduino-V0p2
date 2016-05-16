@@ -66,7 +66,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
   static const char SIM900_APN[] PROGMEM      = "\"arkessa.net\",\"arkessa\",\"arkessa\""; // Arkessa
 
 // UDP Configs - Edit SIM900_UDP_ADDR for relevant server. NOTE: The server IP address should never be committed to Github.
-  static const char SIM900_UDP_ADDR[16] PROGMEM = "";
+  static const char SIM900_UDP_ADDR[16] PROGMEM = "0.0.0.0";
   static const char SIM900_UDP_PORT[5] PROGMEM = "9999";             // Standard port for OpenTRV servers
   const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config(
                                                   false,
