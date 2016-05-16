@@ -62,12 +62,11 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
   static const char SIM900_PIN[5] PROGMEM       = "1111";
 
 // APN Configs - Uncomment based on what SIM you are using
-  static const char SIM900_APN[] PROGMEM      = "\"everywhere\",\"eesecure\",\"secure\""; // EE
-//  static const char SIM900_APN[] PROGMEM      = "\"arkessa.net\",\"arkessa\",\"arkessa\""; // Arkessa
+//  static const char SIM900_APN[] PROGMEM      = "\"everywhere\",\"eesecure\",\"secure\""; // EE
+  static const char SIM900_APN[] PROGMEM      = "\"arkessa.net\",\"arkessa\",\"arkessa\""; // Arkessa
 
-// UDP Configs - Uncomment based on which server you want to send to
-//  static const char SIM900_UDP_ADDR[14] PROGMEM = "0.0.0.0"; // ORS server
-  static const char SIM900_UDP_ADDR[16] PROGMEM = "0.0.0.0";   // Brent server
+// UDP Configs - Edit SIM900_UDP_ADDR for relevant server. NOTE: The server IP address should never be committed to Github.
+  static const char SIM900_UDP_ADDR[16] PROGMEM = "0.0.0.0";
   static const char SIM900_UDP_PORT[5] PROGMEM = "9999";             // Standard port for OpenTRV servers
   const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config(
                                                   false,
@@ -102,7 +101,8 @@ static const bool RFM23B_allowRX = false;
 OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, RFM23B_IRQ_PIN, RFM23B_RX_QUEUE_SIZE, RFM23B_allowRX> RFM23B;
 #endif // ENABLE_RADIO_RFM23B
 #ifdef ENABLE_RADIO_SIM900
-OTSIM900Link::OTSIM900Link SIM900(REGULATOR_POWERUP, RADIO_POWER_PIN, SOFTSERIAL_RX_PIN, SOFTSERIAL_TX_PIN);
+//OTSIM900Link::OTSIM900Link SIM900(REGULATOR_POWERUP, RADIO_POWER_PIN, SOFTSERIAL_RX_PIN, SOFTSERIAL_TX_PIN);
+OTSIM900Link::OTSIM900Link<8, 5> SIM900(REGULATOR_POWERUP, RADIO_POWER_PIN);
 #endif
 #ifdef ENABLE_RADIO_RN2483
 OTRN2483Link::OTRN2483Link RN2483( RADIO_POWER_PIN, SOFTSERIAL_RX_PIN, SOFTSERIAL_TX_PIN);
