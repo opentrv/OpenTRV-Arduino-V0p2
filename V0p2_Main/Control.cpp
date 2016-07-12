@@ -481,8 +481,8 @@ uint8_t ModelledRadValve::computeTargetTemp()
     const uint8_t wt = getWARMTargetC();
 
 #if defined(ENABLE_SETBACK_LOCKOUT_COUNTDOWN)
-    // If smart setbacks are locked out then return WARM temperature as-is.  (TODO-786)
-    if(0xff != eeprom_read_byte((uint8_t *)OTV0P2BASE::V0P2BASE_EE_START_SETBACK_LOCKOUT_COUNTDOWN_H_INV))
+    // If smart setbacks are locked out then return WARM temperature as-is.  (TODO-786, TODO-906)
+    if(0xff != eeprom_read_byte((uint8_t *)OTV0P2BASE::V0P2BASE_EE_START_SETBACK_LOCKOUT_COUNTDOWN_D_INV))
       {
       OTV0P2BASE::serialPrintlnAndFlush("?SLO");
       return(wt);
@@ -1313,14 +1313,21 @@ static void updateSensorsFromStats()
 // Will be run after all stats for the current hour have been updated.
 static void endOfHourTasks()
   {
+  }
+
+// Run tasks needed at the end of each day (nominal midnight).
+// Should be run once at a fixed slot in the last minute of the last hour of each day.
+// Will be run after all stats for the current hour have been updated.
+static void endOfDayTasks()
+  {
 #if defined(ENABLE_SETBACK_LOCKOUT_COUNTDOWN)
-    // Count down the lockout if not finished...  (TODO-786)
-    const uint8_t sloInv = eeprom_read_byte((uint8_t *)OTV0P2BASE::V0P2BASE_EE_START_SETBACK_LOCKOUT_COUNTDOWN_H_INV);
+    // Count down the lockout if not finished...  (TODO-786, TDO-906)
+    const uint8_t sloInv = eeprom_read_byte((uint8_t *)OTV0P2BASE::V0P2BASE_EE_START_SETBACK_LOCKOUT_COUNTDOWN_D_INV);
     if(0xff != sloInv)
       {
       // Logically decrement the inverted value, invert it and store it back.
       const uint8_t updated = ~((~sloInv)-1);
-      OTV0P2BASE::eeprom_smart_update_byte((uint8_t *)OTV0P2BASE::V0P2BASE_EE_START_SETBACK_LOCKOUT_COUNTDOWN_H_INV, updated);
+      OTV0P2BASE::eeprom_smart_update_byte((uint8_t *)OTV0P2BASE::V0P2BASE_EE_START_SETBACK_LOCKOUT_COUNTDOWN_D_INV, updated);
       }
 #endif
   }
@@ -2083,7 +2090,12 @@ void loopOpenTRV()
       // Ensure that the RTC has been persisted promptly when necessary.
       OTV0P2BASE::persistRTC();
       // Run hourly tasks at the end of the hour.
-      if(59 == OTV0P2BASE::getMinutesLT()) { endOfHourTasks(); }
+      if(59 == OTV0P2BASE::getMinutesLT())
+          {
+          endOfHourTasks();
+          if(23 == OTV0P2BASE::getHoursLT())
+              { endOfDayTasks(); }
+          }
       break;
       }
 
