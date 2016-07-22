@@ -63,7 +63,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
 
 // APN Configs - Uncomment based on what SIM you are using
 //  static const char SIM900_APN[] PROGMEM      = "\"everywhere\",\"eesecure\",\"secure\""; // EE
-  static const char SIM900_APN[] PROGMEM      = "\"arkessa.net\",\"arkessa\",\"arkessa\""; // Arkessa
+//  static const char SIM900_APN[] PROGMEM      = "\"arkessa.net\",\"arkessa\",\"arkessa\""; // Arkessa
+static const char SIM900_APN[] PROGMEM      = "\"mobiledata\""; // Arkessa
 
 // UDP Configs - Edit SIM900_UDP_ADDR for relevant server. NOTE: The server IP address should never be committed to Github.
   static const char SIM900_UDP_ADDR[16] PROGMEM = "0.0.0.0";
@@ -256,7 +257,6 @@ p->print("FS20 msg HC "); p->print(command.hc1); p->print(' '); p->println(comma
   }
 #endif
 
-
 #if defined(ENABLE_RADIO_RX) && defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) // && defined(ENABLE_FAST_FRAMED_CARRIER_SUPPORT)
 // Handle FS20/FHT8V traffic including binary stats.
 // Returns true on successful frame type match, false if no suitable frame was found/decoded and another parser should be tried.
@@ -265,17 +265,18 @@ static bool decodeAndHandleOTSecureableFrame(Print *p, const bool secure, const 
   const uint8_t msglen = msg[-1];
   const uint8_t firstByte = msg[0];
 
+  OTV0P2BASE::serialPrintAndFlush(F("d")); // fixme delete
   // Validate structure of header/frame first.
   // This is quick and checks for insane/dangerous values throughout.
   OTRadioLink::SecurableFrameHeader sfh;
   const uint8_t l = sfh.checkAndDecodeSmallFrameHeader(msg-1, msglen+1);
   // If isOK flag is set false for any reason, frame is broken/unsafe/unauth.
   bool isOK = (l > 0);
-#if 0 && defined(DEBUG)
+#if 1 && defined(DEBUG)
 if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX bad secure header"); }
 #endif
   // If failed this early and this badly, let someone else try parsing the message buffer...
-  if(!isOK) { return(false); }
+  if(!isOK) { OTV0P2BASE::serialPrintAndFlush(F("n\n")); return(false); } // fixme delete
 
   // Buffer for receiving secure frame body.
   // (Non-secure frame bodies should be read directly from the frame buffer.)
@@ -338,7 +339,7 @@ if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX bad secure header"); }
 #endif
     }
 
-  if(!isOK) { return(false); } // Stop if not OK.
+  if(!isOK) { OTV0P2BASE::serialPrintAndFlush(F("N\n")); return(false); } // Stop if not OK.
 
   // If frame still OK to process then switch on frame type.
 #if 0 && defined(DEBUG)
@@ -407,7 +408,9 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX O short"); // "O' frame too short.
       if((0 != (secBodyBuf[1] & 0x10)) && (decryptedBodyOutSize > 3) && ('{' == secBodyBuf[2]))
         {
 #ifdef ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY
+        OTV0P2BASE::serialPrintAndFlush(F("s")); // fixme delete
         SecondaryRadio.queueToSend(msg, msglen); 
+        OTV0P2BASE::serialPrintAndFlush(F("f\n")); // fixme delete
 #else // Don't write to console/Serial also if relayed.
         // Write out the JSON message, inserting synthetic ID/@ and seq/+.
         Serial.print(F("{\"@\":\""));
@@ -433,7 +436,6 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX O short"); // "O' frame too short.
   return(false);
   }
 #endif // defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) 
-
 
 #ifdef ENABLE_RADIO_RX
 // Decode and handle inbound raw message (msg[-1] contains the count of bytes received).
