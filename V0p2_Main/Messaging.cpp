@@ -271,7 +271,7 @@ static bool decodeAndHandleOTSecureableFrame(Print *p, const bool secure, const 
   const uint8_t l = sfh.checkAndDecodeSmallFrameHeader(msg-1, msglen+1);
   // If isOK flag is set false for any reason, frame is broken/unsafe/unauth.
   bool isOK = (l > 0);
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
 if(!isOK) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX bad secure header"); }
 #endif
   // If failed this early and this badly, let someone else try parsing the message buffer...
