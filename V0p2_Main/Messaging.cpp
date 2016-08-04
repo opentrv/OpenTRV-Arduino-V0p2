@@ -63,8 +63,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
 
 // APN Configs - Uncomment based on what SIM you are using
 //  static const char SIM900_APN[] PROGMEM      = "\"everywhere\",\"eesecure\",\"secure\""; // EE
-  static const char SIM900_APN[] PROGMEM      = "\"arkessa.net\",\"arkessa\",\"arkessa\""; // Arkessa
-//static const char SIM900_APN[] PROGMEM      = "\"mobiledata\""; // GeoSIM
+//static const char SIM900_APN[] PROGMEM      = "\"arkessa.net\",\"arkessa\",\"arkessa\""; // Arkessa
+static const char SIM900_APN[] PROGMEM      = "\"mobiledata\""; // GeoSIM
 
 // UDP Configs - Edit SIM900_UDP_ADDR for relevant server. NOTE: The server IP address should never be committed to Github.
   static const char SIM900_UDP_ADDR[16] PROGMEM = "0.0.0.0";
