@@ -1129,82 +1129,6 @@ We've spent an enormous amount of time creating and checking these footprints an
 <rectangle x1="-1.651" y1="-2.921" x2="-0.889" y2="-1.905" layer="21"/>
 <rectangle x1="0.889" y1="-2.921" x2="1.651" y2="-1.905" layer="21"/>
 </package>
-<package name="1X04">
-<description>&lt;b&gt;PIN HEADER&lt;/b&gt;</description>
-<wire x1="0" y1="0.635" x2="0.635" y2="1.27" width="0.1524" layer="21"/>
-<wire x1="0.635" y1="1.27" x2="1.905" y2="1.27" width="0.1524" layer="21"/>
-<wire x1="1.905" y1="1.27" x2="2.54" y2="0.635" width="0.1524" layer="21"/>
-<wire x1="2.54" y1="0.635" x2="2.54" y2="-0.635" width="0.1524" layer="21"/>
-<wire x1="2.54" y1="-0.635" x2="1.905" y2="-1.27" width="0.1524" layer="21"/>
-<wire x1="1.905" y1="-1.27" x2="0.635" y2="-1.27" width="0.1524" layer="21"/>
-<wire x1="0.635" y1="-1.27" x2="0" y2="-0.635" width="0.1524" layer="21"/>
-<wire x1="-4.445" y1="1.27" x2="-3.175" y2="1.27" width="0.1524" layer="21"/>
-<wire x1="-3.175" y1="1.27" x2="-2.54" y2="0.635" width="0.1524" layer="21"/>
-<wire x1="-2.54" y1="0.635" x2="-2.54" y2="-0.635" width="0.1524" layer="21"/>
-<wire x1="-2.54" y1="-0.635" x2="-3.175" y2="-1.27" width="0.1524" layer="21"/>
-<wire x1="-2.54" y1="0.635" x2="-1.905" y2="1.27" width="0.1524" layer="21"/>
-<wire x1="-1.905" y1="1.27" x2="-0.635" y2="1.27" width="0.1524" layer="21"/>
-<wire x1="-0.635" y1="1.27" x2="0" y2="0.635" width="0.1524" layer="21"/>
-<wire x1="0" y1="0.635" x2="0" y2="-0.635" width="0.1524" layer="21"/>
-<wire x1="0" y1="-0.635" x2="-0.635" y2="-1.27" width="0.1524" layer="21"/>
-<wire x1="-0.635" y1="-1.27" x2="-1.905" y2="-1.27" width="0.1524" layer="21"/>
-<wire x1="-1.905" y1="-1.27" x2="-2.54" y2="-0.635" width="0.1524" layer="21"/>
-<wire x1="-5.08" y1="0.635" x2="-5.08" y2="-0.635" width="0.1524" layer="21"/>
-<wire x1="-4.445" y1="1.27" x2="-5.08" y2="0.635" width="0.1524" layer="21"/>
-<wire x1="-5.08" y1="-0.635" x2="-4.445" y2="-1.27" width="0.1524" layer="21"/>
-<wire x1="-3.175" y1="-1.27" x2="-4.445" y2="-1.27" width="0.1524" layer="21"/>
-<wire x1="3.175" y1="1.27" x2="4.445" y2="1.27" width="0.1524" layer="21"/>
-<wire x1="4.445" y1="1.27" x2="5.08" y2="0.635" width="0.1524" layer="21"/>
-<wire x1="5.08" y1="0.635" x2="5.08" y2="-0.635" width="0.1524" layer="21"/>
-<wire x1="5.08" y1="-0.635" x2="4.445" y2="-1.27" width="0.1524" layer="21"/>
-<wire x1="3.175" y1="1.27" x2="2.54" y2="0.635" width="0.1524" layer="21"/>
-<wire x1="2.54" y1="-0.635" x2="3.175" y2="-1.27" width="0.1524" layer="21"/>
-<wire x1="4.445" y1="-1.27" x2="3.175" y2="-1.27" width="0.1524" layer="21"/>
-<pad name="1" x="-3.81" y="0" drill="1.016" shape="long" rot="R90"/>
-<pad name="2" x="-1.27" y="0" drill="1.016" shape="long" rot="R90"/>
-<pad name="3" x="1.27" y="0" drill="1.016" shape="long" rot="R90"/>
-<pad name="4" x="3.81" y="0" drill="1.016" shape="long" rot="R90"/>
-<text x="-5.1562" y="1.8288" size="1.27" layer="25" ratio="10">&gt;NAME</text>
-<text x="-5.08" y="-3.175" size="1.27" layer="27">&gt;VALUE</text>
-<rectangle x1="1.016" y1="-0.254" x2="1.524" y2="0.254" layer="51"/>
-<rectangle x1="-1.524" y1="-0.254" x2="-1.016" y2="0.254" layer="51"/>
-<rectangle x1="-4.064" y1="-0.254" x2="-3.556" y2="0.254" layer="51"/>
-<rectangle x1="3.556" y1="-0.254" x2="4.064" y2="0.254" layer="51"/>
-</package>
-<package name="1X04/90">
-<description>&lt;b&gt;PIN HEADER&lt;/b&gt;</description>
-<wire x1="-5.08" y1="-1.905" x2="-2.54" y2="-1.905" width="0.1524" layer="21"/>
-<wire x1="-2.54" y1="-1.905" x2="-2.54" y2="0.635" width="0.1524" layer="21"/>
-<wire x1="-2.54" y1="0.635" x2="-5.08" y2="0.635" width="0.1524" layer="21"/>
-<wire x1="-5.08" y1="0.635" x2="-5.08" y2="-1.905" width="0.1524" layer="21"/>
-<wire x1="-3.81" y1="6.985" x2="-3.81" y2="1.27" width="0.762" layer="21"/>
-<wire x1="-2.54" y1="-1.905" x2="0" y2="-1.905" width="0.1524" layer="21"/>
-<wire x1="0" y1="-1.905" x2="0" y2="0.635" width="0.1524" layer="21"/>
-<wire x1="0" y1="0.635" x2="-2.54" y2="0.635" width="0.1524" layer="21"/>
-<wire x1="-1.27" y1="6.985" x2="-1.27" y2="1.27" width="0.762" layer="21"/>
-<wire x1="0" y1="-1.905" x2="2.54" y2="-1.905" width="0.1524" layer="21"/>
-<wire x1="2.54" y1="-1.905" x2="2.54" y2="0.635" width="0.1524" layer="21"/>
-<wire x1="2.54" y1="0.635" x2="0" y2="0.635" width="0.1524" layer="21"/>
-<wire x1="1.27" y1="6.985" x2="1.27" y2="1.27" width="0.762" layer="21"/>
-<wire x1="2.54" y1="-1.905" x2="5.08" y2="-1.905" width="0.1524" layer="21"/>
-<wire x1="5.08" y1="-1.905" x2="5.08" y2="0.635" width="0.1524" layer="21"/>
-<wire x1="5.08" y1="0.635" x2="2.54" y2="0.635" width="0.1524" layer="21"/>
-<wire x1="3.81" y1="6.985" x2="3.81" y2="1.27" width="0.762" layer="21"/>
-<pad name="1" x="-3.81" y="-3.81" drill="1.016" shape="long" rot="R90"/>
-<pad name="2" x="-1.27" y="-3.81" drill="1.016" shape="long" rot="R90"/>
-<pad name="3" x="1.27" y="-3.81" drill="1.016" shape="long" rot="R90"/>
-<pad name="4" x="3.81" y="-3.81" drill="1.016" shape="long" rot="R90"/>
-<text x="-5.715" y="-3.81" size="1.27" layer="25" ratio="10" rot="R90">&gt;NAME</text>
-<text x="6.985" y="-4.445" size="1.27" layer="27" rot="R90">&gt;VALUE</text>
-<rectangle x1="-4.191" y1="0.635" x2="-3.429" y2="1.143" layer="21"/>
-<rectangle x1="-1.651" y1="0.635" x2="-0.889" y2="1.143" layer="21"/>
-<rectangle x1="0.889" y1="0.635" x2="1.651" y2="1.143" layer="21"/>
-<rectangle x1="3.429" y1="0.635" x2="4.191" y2="1.143" layer="21"/>
-<rectangle x1="-4.191" y1="-2.921" x2="-3.429" y2="-1.905" layer="21"/>
-<rectangle x1="-1.651" y1="-2.921" x2="-0.889" y2="-1.905" layer="21"/>
-<rectangle x1="0.889" y1="-2.921" x2="1.651" y2="-1.905" layer="21"/>
-<rectangle x1="3.429" y1="-2.921" x2="4.191" y2="-1.905" layer="21"/>
-</package>
 </packages>
 <symbols>
 <symbol name="PINH2X7">
@@ -1258,18 +1182,6 @@ We've spent an enormous amount of time creating and checking these footprints an
 <text x="-6.35" y="-5.08" size="1.778" layer="96">&gt;VALUE</text>
 <pin name="1" x="-2.54" y="2.54" visible="pad" length="short" direction="pas" function="dot"/>
 <pin name="2" x="-2.54" y="0" visible="pad" length="short" direction="pas" function="dot"/>
-</symbol>
-<symbol name="PINHD4">
-<wire x1="-6.35" y1="-5.08" x2="1.27" y2="-5.08" width="0.4064" layer="94"/>
-<wire x1="1.27" y1="-5.08" x2="1.27" y2="7.62" width="0.4064" layer="94"/>
-<wire x1="1.27" y1="7.62" x2="-6.35" y2="7.62" width="0.4064" layer="94"/>
-<wire x1="-6.35" y1="7.62" x2="-6.35" y2="-5.08" width="0.4064" layer="94"/>
-<text x="-6.35" y="8.255" size="1.778" layer="95">&gt;NAME</text>
-<text x="-6.35" y="-7.62" size="1.778" layer="96">&gt;VALUE</text>
-<pin name="1" x="-2.54" y="5.08" visible="pad" length="short" direction="pas" function="dot"/>
-<pin name="2" x="-2.54" y="2.54" visible="pad" length="short" direction="pas" function="dot"/>
-<pin name="3" x="-2.54" y="0" visible="pad" length="short" direction="pas" function="dot"/>
-<pin name="4" x="-2.54" y="-2.54" visible="pad" length="short" direction="pas" function="dot"/>
 </symbol>
 </symbols>
 <devicesets>
@@ -1388,36 +1300,6 @@ We've spent an enormous amount of time creating and checking these footprints an
 <connects>
 <connect gate="G$1" pin="1" pad="1"/>
 <connect gate="G$1" pin="2" pad="2"/>
-</connects>
-<technologies>
-<technology name=""/>
-</technologies>
-</device>
-</devices>
-</deviceset>
-<deviceset name="PINHD-1X4" prefix="JP" uservalue="yes">
-<description>&lt;b&gt;PIN HEADER&lt;/b&gt;</description>
-<gates>
-<gate name="A" symbol="PINHD4" x="0" y="0"/>
-</gates>
-<devices>
-<device name="" package="1X04">
-<connects>
-<connect gate="A" pin="1" pad="1"/>
-<connect gate="A" pin="2" pad="2"/>
-<connect gate="A" pin="3" pad="3"/>
-<connect gate="A" pin="4" pad="4"/>
-</connects>
-<technologies>
-<technology name=""/>
-</technologies>
-</device>
-<device name="/90" package="1X04/90">
-<connects>
-<connect gate="A" pin="1" pad="1"/>
-<connect gate="A" pin="2" pad="2"/>
-<connect gate="A" pin="3" pad="3"/>
-<connect gate="A" pin="4" pad="4"/>
 </connects>
 <technologies>
 <technology name=""/>
@@ -9660,9 +9542,7 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <part name="C3" library="resistor" deviceset="C-EU" device="C0603" value="0.1uF"/>
 <part name="C5" library="resistor" deviceset="C-EU" device="C0603" value="10uF"/>
 <part name="GND9" library="SparkFun-Aesthetics" deviceset="GND" device=""/>
-<part name="NSLEEP" library="wirepad" deviceset="WIREPAD" device="2,15/1,0"/>
 <part name="LDOEN" library="wirepad" deviceset="WIREPAD" device="2,15/1,0"/>
-<part name="JP4" library="pinhead" deviceset="PINHD-1X4" device=""/>
 </parts>
 <sheets>
 <sheet>
@@ -9794,9 +9674,9 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <instance part="C3" gate="G$1" x="43.18" y="91.44" rot="R180"/>
 <instance part="C5" gate="G$1" x="30.48" y="91.44" rot="R180"/>
 <instance part="GND9" gate="1" x="35.56" y="86.36"/>
-<instance part="NSLEEP" gate="G$1" x="48.26" y="137.16"/>
-<instance part="LDOEN" gate="G$1" x="35.56" y="139.7"/>
-<instance part="JP4" gate="A" x="43.18" y="127" rot="R180"/>
+<instance part="LDOEN" gate="G$1" x="35.56" y="139.7" smashed="yes">
+<attribute name="NAME" x="26.797" y="139.0142" size="1.778" layer="95"/>
+</instance>
 </instances>
 <busses>
 </busses>
@@ -10043,6 +9923,11 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <pinref part="IC2" gate="1" pin="DIGITAL_6(PWM)"/>
 <label x="251.46" y="81.28" size="1.778" layer="95"/>
 <pinref part="JP1" gate="G$1" pin="8"/>
+</segment>
+<segment>
+<wire x1="50.8" y1="124.46" x2="48.26" y2="124.46" width="0.1524" layer="91"/>
+<label x="45.72" y="124.46" size="1.778" layer="95"/>
+<pinref part="U1" gate="A" pin="IN1L"/>
 </segment>
 </net>
 <net name="SPI_SCK" class="0">
@@ -10304,6 +10189,11 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <label x="251.46" y="83.82" size="1.778" layer="95"/>
 <pinref part="JP1" gate="G$1" pin="7"/>
 </segment>
+<segment>
+<wire x1="50.8" y1="127" x2="48.26" y2="127" width="0.1524" layer="91"/>
+<label x="45.72" y="127" size="1.778" layer="95"/>
+<pinref part="U1" gate="A" pin="IN2H"/>
+</segment>
 </net>
 <net name="D7" class="0">
 <segment>
@@ -10313,6 +10203,11 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <pinref part="IC2" gate="1" pin="DIGITAL_7"/>
 <label x="251.46" y="78.74" size="1.778" layer="95"/>
 <pinref part="JP1" gate="G$1" pin="9"/>
+</segment>
+<segment>
+<wire x1="50.8" y1="121.92" x2="48.26" y2="121.92" width="0.1524" layer="91"/>
+<label x="45.72" y="121.92" size="1.778" layer="95"/>
+<pinref part="U1" gate="A" pin="IN2L"/>
 </segment>
 </net>
 <net name="D2" class="0">
@@ -10349,6 +10244,14 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <label x="251.46" y="116.84" size="1.778" layer="95"/>
 <pinref part="JP1" gate="G$1" pin="1"/>
 </segment>
+<segment>
+<pinref part="U1" gate="A" pin="VPROPI"/>
+<wire x1="50.8" y1="134.62" x2="40.64" y2="134.62" width="0.1524" layer="91"/>
+<wire x1="40.64" y1="134.62" x2="40.64" y2="121.92" width="0.1524" layer="91"/>
+<pinref part="R14" gate="G$1" pin="2"/>
+<wire x1="40.64" y1="121.92" x2="35.56" y2="121.92" width="0.1524" layer="91"/>
+<label x="38.1" y="127" size="1.778" layer="95"/>
+</segment>
 </net>
 <net name="D3" class="0">
 <segment>
@@ -10358,6 +10261,11 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <wire x1="269.24" y1="106.68" x2="294.64" y2="106.68" width="0.1524" layer="91"/>
 <label x="251.46" y="88.9" size="1.778" layer="95"/>
 <pinref part="JP1" gate="G$1" pin="6"/>
+</segment>
+<segment>
+<wire x1="50.8" y1="129.54" x2="48.26" y2="129.54" width="0.1524" layer="91"/>
+<label x="45.72" y="129.54" size="1.778" layer="95"/>
+<pinref part="U1" gate="A" pin="IN1H"/>
 </segment>
 </net>
 <net name="A3" class="0">
@@ -10436,6 +10344,11 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <label x="251.46" y="73.66" size="1.778" layer="95"/>
 <pinref part="IC2" gate="1" pin="DIGITAL_8"/>
 </segment>
+<segment>
+<pinref part="U1" gate="A" pin="NSLEEP"/>
+<wire x1="48.26" y1="137.16" x2="50.8" y2="137.16" width="0.1524" layer="91"/>
+<label x="35.56" y="137.16" size="1.778" layer="95"/>
+</segment>
 </net>
 <net name="N$5" class="0">
 <segment>
@@ -10500,15 +10413,6 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <junction x="7.62" y="137.16"/>
 </segment>
 </net>
-<net name="N$17" class="0">
-<segment>
-<pinref part="U1" gate="A" pin="VPROPI"/>
-<wire x1="50.8" y1="134.62" x2="40.64" y2="134.62" width="0.1524" layer="91"/>
-<wire x1="40.64" y1="134.62" x2="40.64" y2="121.92" width="0.1524" layer="91"/>
-<pinref part="R14" gate="G$1" pin="2"/>
-<wire x1="40.64" y1="121.92" x2="35.56" y2="121.92" width="0.1524" layer="91"/>
-</segment>
-</net>
 <net name="N$20" class="0">
 <segment>
 <pinref part="U1" gate="A" pin="VCP"/>
@@ -10518,50 +10422,11 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <wire x1="71.12" y1="96.52" x2="68.58" y2="96.52" width="0.1524" layer="91"/>
 </segment>
 </net>
-<net name="N$8" class="0">
-<segment>
-<pinref part="U1" gate="A" pin="NSLEEP"/>
-<pinref part="NSLEEP" gate="G$1" pin="P"/>
-</segment>
-</net>
 <net name="N$16" class="0">
 <segment>
 <pinref part="U1" gate="A" pin="LDOEN"/>
 <pinref part="LDOEN" gate="G$1" pin="P"/>
 <wire x1="38.1" y1="139.7" x2="50.8" y2="139.7" width="0.1524" layer="91"/>
-</segment>
-</net>
-<net name="N$19" class="0">
-<segment>
-<pinref part="U1" gate="A" pin="IN2L"/>
-<pinref part="JP4" gate="A" pin="1"/>
-<wire x1="45.72" y1="121.92" x2="50.8" y2="121.92" width="0.1524" layer="91"/>
-</segment>
-</net>
-<net name="N$24" class="0">
-<segment>
-<pinref part="U1" gate="A" pin="IN1H"/>
-<pinref part="JP4" gate="A" pin="4"/>
-<wire x1="45.72" y1="129.54" x2="50.8" y2="129.54" width="0.1524" layer="91"/>
-</segment>
-</net>
-<net name="N$21" class="0">
-<segment>
-<pinref part="U1" gate="A" pin="IN2H"/>
-<wire x1="50.8" y1="127" x2="48.26" y2="127" width="0.1524" layer="91"/>
-<wire x1="48.26" y1="127" x2="48.26" y2="124.46" width="0.1524" layer="91"/>
-<pinref part="JP4" gate="A" pin="2"/>
-<wire x1="48.26" y1="124.46" x2="45.72" y2="124.46" width="0.1524" layer="91"/>
-</segment>
-</net>
-<net name="N$22" class="0">
-<segment>
-<pinref part="JP4" gate="A" pin="3"/>
-<wire x1="45.72" y1="127" x2="46.736" y2="127" width="0.1524" layer="91"/>
-<wire x1="46.736" y1="127" x2="46.736" y2="125.73" width="0.1524" layer="91"/>
-<pinref part="U1" gate="A" pin="IN1L"/>
-<wire x1="46.736" y1="125.73" x2="50.8" y2="125.73" width="0.1524" layer="91"/>
-<wire x1="50.8" y1="125.73" x2="50.8" y2="124.46" width="0.1524" layer="91"/>
 </segment>
 </net>
 </nets>

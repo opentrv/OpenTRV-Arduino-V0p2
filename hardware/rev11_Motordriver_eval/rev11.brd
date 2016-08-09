@@ -400,48 +400,6 @@ We've spent an enormous amount of time creating and checking these footprints an
 <rectangle x1="-1.524" y1="-0.254" x2="-1.016" y2="0.254" layer="51"/>
 <rectangle x1="1.016" y1="-0.254" x2="1.524" y2="0.254" layer="51"/>
 </package>
-<package name="1X04">
-<description>&lt;b&gt;PIN HEADER&lt;/b&gt;</description>
-<wire x1="0" y1="0.635" x2="0.635" y2="1.27" width="0.1524" layer="21"/>
-<wire x1="0.635" y1="1.27" x2="1.905" y2="1.27" width="0.1524" layer="21"/>
-<wire x1="1.905" y1="1.27" x2="2.54" y2="0.635" width="0.1524" layer="21"/>
-<wire x1="2.54" y1="0.635" x2="2.54" y2="-0.635" width="0.1524" layer="21"/>
-<wire x1="2.54" y1="-0.635" x2="1.905" y2="-1.27" width="0.1524" layer="21"/>
-<wire x1="1.905" y1="-1.27" x2="0.635" y2="-1.27" width="0.1524" layer="21"/>
-<wire x1="0.635" y1="-1.27" x2="0" y2="-0.635" width="0.1524" layer="21"/>
-<wire x1="-4.445" y1="1.27" x2="-3.175" y2="1.27" width="0.1524" layer="21"/>
-<wire x1="-3.175" y1="1.27" x2="-2.54" y2="0.635" width="0.1524" layer="21"/>
-<wire x1="-2.54" y1="0.635" x2="-2.54" y2="-0.635" width="0.1524" layer="21"/>
-<wire x1="-2.54" y1="-0.635" x2="-3.175" y2="-1.27" width="0.1524" layer="21"/>
-<wire x1="-2.54" y1="0.635" x2="-1.905" y2="1.27" width="0.1524" layer="21"/>
-<wire x1="-1.905" y1="1.27" x2="-0.635" y2="1.27" width="0.1524" layer="21"/>
-<wire x1="-0.635" y1="1.27" x2="0" y2="0.635" width="0.1524" layer="21"/>
-<wire x1="0" y1="0.635" x2="0" y2="-0.635" width="0.1524" layer="21"/>
-<wire x1="0" y1="-0.635" x2="-0.635" y2="-1.27" width="0.1524" layer="21"/>
-<wire x1="-0.635" y1="-1.27" x2="-1.905" y2="-1.27" width="0.1524" layer="21"/>
-<wire x1="-1.905" y1="-1.27" x2="-2.54" y2="-0.635" width="0.1524" layer="21"/>
-<wire x1="-5.08" y1="0.635" x2="-5.08" y2="-0.635" width="0.1524" layer="21"/>
-<wire x1="-4.445" y1="1.27" x2="-5.08" y2="0.635" width="0.1524" layer="21"/>
-<wire x1="-5.08" y1="-0.635" x2="-4.445" y2="-1.27" width="0.1524" layer="21"/>
-<wire x1="-3.175" y1="-1.27" x2="-4.445" y2="-1.27" width="0.1524" layer="21"/>
-<wire x1="3.175" y1="1.27" x2="4.445" y2="1.27" width="0.1524" layer="21"/>
-<wire x1="4.445" y1="1.27" x2="5.08" y2="0.635" width="0.1524" layer="21"/>
-<wire x1="5.08" y1="0.635" x2="5.08" y2="-0.635" width="0.1524" layer="21"/>
-<wire x1="5.08" y1="-0.635" x2="4.445" y2="-1.27" width="0.1524" layer="21"/>
-<wire x1="3.175" y1="1.27" x2="2.54" y2="0.635" width="0.1524" layer="21"/>
-<wire x1="2.54" y1="-0.635" x2="3.175" y2="-1.27" width="0.1524" layer="21"/>
-<wire x1="4.445" y1="-1.27" x2="3.175" y2="-1.27" width="0.1524" layer="21"/>
-<pad name="1" x="-3.81" y="0" drill="1.016" shape="long" rot="R90"/>
-<pad name="2" x="-1.27" y="0" drill="1.016" shape="long" rot="R90"/>
-<pad name="3" x="1.27" y="0" drill="1.016" shape="long" rot="R90"/>
-<pad name="4" x="3.81" y="0" drill="1.016" shape="long" rot="R90"/>
-<text x="-5.1562" y="1.8288" size="1.27" layer="25" ratio="10">&gt;NAME</text>
-<text x="-5.08" y="-3.175" size="1.27" layer="27">&gt;VALUE</text>
-<rectangle x1="1.016" y1="-0.254" x2="1.524" y2="0.254" layer="51"/>
-<rectangle x1="-1.524" y1="-0.254" x2="-1.016" y2="0.254" layer="51"/>
-<rectangle x1="-4.064" y1="-0.254" x2="-3.556" y2="0.254" layer="51"/>
-<rectangle x1="3.556" y1="-0.254" x2="4.064" y2="0.254" layer="51"/>
-</package>
 </packages>
 </library>
 <library name="resistor">
@@ -2283,17 +2241,9 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <element name="C5" library="resistor" package="C0603" value="10uF" x="8.255" y="17.145" smashed="yes" rot="R270">
 <attribute name="NAME" x="10.16" y="20.955" size="1" layer="25" rot="R270"/>
 </element>
-<element name="NSLEEP" library="wirepad" package="2,15/1,0" value="WIREPAD2,15/1,0" x="15.24" y="3.81" smashed="yes">
-<attribute name="NAME" x="15.748" y="5.842" size="1" layer="25" rot="R90"/>
-<attribute name="VALUE" x="15.24" y="4.81" size="0.0254" layer="27"/>
-</element>
 <element name="LDOEN" library="wirepad" package="2,15/1,0" value="WIREPAD2,15/1,0" x="17.78" y="3.81" smashed="yes">
 <attribute name="NAME" x="18.288" y="5.842" size="1" layer="25" rot="R90"/>
 <attribute name="VALUE" x="17.78" y="4.81" size="0.0254" layer="27"/>
-</element>
-<element name="JP4" library="pinhead" package="1X04" value="" x="7.62" y="3.81" smashed="yes" rot="R180">
-<attribute name="NAME" x="5.1562" y="6.4262" size="1.27" layer="25" ratio="10" rot="R180"/>
-<attribute name="VALUE" x="12.7" y="6.985" size="1.27" layer="27" rot="R180"/>
 </element>
 </elements>
 <signals>
@@ -2427,11 +2377,11 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <wire x1="16.8656" y1="20.1168" x2="14.8336" y2="18.0848" width="0.5" layer="1"/>
 <wire x1="20.828" y1="20.1168" x2="16.8656" y2="20.1168" width="0.5" layer="1"/>
 <wire x1="22.352" y1="18.5928" x2="20.828" y2="20.1168" width="0.5" layer="1"/>
-<wire x1="22.352" y1="11.9888" x2="22.352" y2="18.5928" width="0.5" layer="1"/>
-<wire x1="29.2608" y1="5.08" x2="22.352" y2="11.9888" width="0.5" layer="16"/>
+<wire x1="22.352" y1="9.4488" x2="22.352" y2="18.5928" width="0.5" layer="1"/>
+<wire x1="29.2608" y1="5.08" x2="22.352" y2="9.4488" width="0.5" layer="16"/>
 <wire x1="30.48" y1="5.08" x2="29.2608" y2="5.08" width="0.5" layer="16"/>
 <wire x1="14.8336" y1="18.0848" x2="14.605" y2="17.995" width="0.5" layer="1"/>
-<via x="22.352" y="11.9888" extent="1-16" drill="0.5"/>
+<via x="22.352" y="9.4488" extent="1-16" drill="0.5"/>
 </signal>
 <signal name="GND" class="1">
 <contactref element="C9" pad="2"/>
@@ -2554,19 +2504,15 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <wire x1="16.764" y1="14.6304" x2="16.764" y2="17.6784" width="0.5" layer="1"/>
 <wire x1="17.78" y1="18.5928" x2="17.78" y2="18.63" width="0.5" layer="1"/>
 <wire x1="16.764" y1="14.6304" x2="16.725" y2="14.605" width="0.5" layer="1"/>
-<wire x1="21.2344" y1="18.6944" x2="20.6248" y2="18.6944" width="0.5" layer="1"/>
-<wire x1="21.336" y1="18.5928" x2="21.2344" y2="18.6944" width="0.5" layer="1"/>
-<wire x1="21.336" y1="18.1864" x2="21.336" y2="18.5928" width="0.5" layer="1"/>
-<wire x1="21.1328" y1="17.9832" x2="21.336" y2="18.1864" width="0.5" layer="1"/>
-<wire x1="20.828" y1="17.9832" x2="21.1328" y2="17.9832" width="0.5" layer="1"/>
-<wire x1="20.828" y1="18.0848" x2="20.828" y2="17.9832" width="0.5" layer="1"/>
-<wire x1="21.2344" y1="18.4912" x2="20.828" y2="18.0848" width="0.5" layer="1"/>
-<wire x1="21.2344" y1="18.5928" x2="21.2344" y2="18.4912" width="0.5" layer="1"/>
-<wire x1="20.9296" y1="18.5928" x2="21.2344" y2="18.5928" width="0.5" layer="1"/>
-<wire x1="20.9296" y1="18.288" x2="20.9296" y2="18.5928" width="0.5" layer="1"/>
-<wire x1="21.336" y1="17.8816" x2="20.9296" y2="18.288" width="0.5" layer="1"/>
-<wire x1="20.6248" y1="18.6944" x2="20.535" y2="18.63" width="0.5" layer="1"/>
-<wire x1="21.336" y1="17.8816" x2="21.340275" y2="17.749453125" width="0.5" layer="1"/>
+<wire x1="21.5392" y1="17.6784" x2="20.6248" y2="18.5928" width="0.5" layer="1"/>
+<wire x1="21.5392" y1="12.3952" x2="21.5392" y2="17.6784" width="0.5" layer="1"/>
+<wire x1="21.4376" y1="12.2936" x2="21.5392" y2="12.3952" width="0.5" layer="1"/>
+<wire x1="21.4376" y1="9.2456" x2="21.4376" y2="12.2936" width="0.5" layer="1"/>
+<wire x1="22.352" y1="8.3312" x2="21.4376" y2="9.2456" width="0.5" layer="1"/>
+<wire x1="22.352" y1="5.2832" x2="22.352" y2="8.3312" width="0.5" layer="1"/>
+<wire x1="21.336" y1="4.2672" x2="22.352" y2="5.2832" width="0.5" layer="1"/>
+<wire x1="20.6248" y1="18.5928" x2="20.535" y2="18.63" width="0.5" layer="1"/>
+<wire x1="21.336" y1="4.2672" x2="21.3" y2="4.23" width="0.5" layer="1"/>
 </signal>
 <signal name="D6">
 <contactref element="IC2" pad="10"/>
@@ -2583,6 +2529,22 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <wire x1="30.5" y1="12.75" x2="30.48" y2="12.7" width="0.2032" layer="1"/>
 <via x="47.25" y="37.125" extent="1-16" drill="0.5"/>
 <via x="46.875" y="24.375" extent="1-16" drill="0.5"/>
+<contactref element="U1" pad="6"/>
+<wire x1="8.636" y1="6.9088" x2="8.636" y2="8.3312" width="0.2032" layer="1"/>
+<wire x1="13.6144" y1="5.1816" x2="13.6144" y2="4.572" width="0.2032" layer="16"/>
+<wire x1="22.0472" y1="13.6144" x2="13.6144" y2="5.1816" width="0.2032" layer="16"/>
+<wire x1="28.3464" y1="13.6144" x2="22.0472" y2="13.6144" width="0.2032" layer="16"/>
+<wire x1="29.2608" y1="12.7" x2="28.3464" y2="13.6144" width="0.2032" layer="16"/>
+<wire x1="30.48" y1="12.7" x2="29.2608" y2="12.7" width="0.2032" layer="16"/>
+<wire x1="8.636" y1="8.3312" x2="8.64" y2="8.4326" width="0.2032" layer="1"/>
+<via x="13.6144" y="4.572" extent="1-16" drill="0.5"/>
+<wire x1="8.5344" y1="6.8072" x2="8.636" y2="6.9088" width="0.2032" layer="1"/>
+<wire x1="8.5344" y1="4.7752" x2="8.5344" y2="6.8072" width="0.2032" layer="1"/>
+<wire x1="9.3472" y1="3.9624" x2="8.5344" y2="4.7752" width="0.2032" layer="1"/>
+<wire x1="9.3472" y1="2.032" x2="9.3472" y2="3.9624" width="0.2032" layer="1"/>
+<wire x1="9.7536" y1="1.6256" x2="9.3472" y2="2.032" width="0.2032" layer="1"/>
+<wire x1="10.668" y1="1.6256" x2="9.7536" y2="1.6256" width="0.2032" layer="1"/>
+<wire x1="13.6144" y1="4.572" x2="10.668" y2="1.6256" width="0.2032" layer="1"/>
 </signal>
 <signal name="SPI_SCK">
 <contactref element="RFM23B" pad="12"/>
@@ -2995,6 +2957,19 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <wire x1="30.5" y1="15.25" x2="30.48" y2="15.24" width="0.2032" layer="1"/>
 <via x="45" y="37.125" extent="1-16" drill="0.5"/>
 <via x="46.5" y="35.625" extent="1-16" drill="0.5"/>
+<contactref element="U1" pad="7"/>
+<wire x1="9.144" y1="6.8072" x2="9.144" y2="8.3312" width="0.2032" layer="1"/>
+<wire x1="21.9456" y1="14.224" x2="10.0584" y2="2.3368" width="0.2032" layer="16"/>
+<wire x1="28.3464" y1="14.224" x2="21.9456" y2="14.224" width="0.2032" layer="16"/>
+<wire x1="29.3624" y1="15.24" x2="28.3464" y2="14.224" width="0.2032" layer="16"/>
+<wire x1="30.48" y1="15.24" x2="29.3624" y2="15.24" width="0.2032" layer="16"/>
+<wire x1="9.144" y1="8.3312" x2="9.14" y2="8.4326" width="0.2032" layer="1"/>
+<via x="10.0584" y="2.3368" extent="1-16" drill="0.5"/>
+<wire x1="8.9408" y1="6.604" x2="9.144" y2="6.8072" width="0.2032" layer="1"/>
+<wire x1="8.9408" y1="4.9784" x2="8.9408" y2="6.604" width="0.2032" layer="1"/>
+<wire x1="9.7536" y1="4.1656" x2="8.9408" y2="4.9784" width="0.2032" layer="1"/>
+<wire x1="9.7536" y1="2.6416" x2="9.7536" y2="4.1656" width="0.2032" layer="1"/>
+<wire x1="10.0584" y1="2.3368" x2="9.7536" y2="2.6416" width="0.2032" layer="1"/>
 </signal>
 <signal name="D2">
 <contactref element="IC2" pad="32"/>
@@ -3048,6 +3023,27 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <wire x1="30.5" y1="10.25" x2="30.48" y2="10.16" width="0.2032" layer="1"/>
 <via x="48.375" y="24.75" extent="1-16" drill="0.5"/>
 <via x="46.875" y="23.25" extent="1-16" drill="0.5"/>
+<contactref element="U1" pad="8"/>
+<wire x1="9.652" y1="6.7056" x2="9.652" y2="8.3312" width="0.2032" layer="1"/>
+<wire x1="9.3472" y1="6.4008" x2="9.652" y2="6.7056" width="0.2032" layer="1"/>
+<wire x1="9.3472" y1="5.3848" x2="9.3472" y2="6.4008" width="0.2032" layer="1"/>
+<wire x1="10.4648" y1="4.2672" x2="9.3472" y2="5.3848" width="0.2032" layer="1"/>
+<wire x1="9.9568" y1="3.7592" x2="10.4648" y2="4.2672" width="0.2032" layer="16"/>
+<wire x1="9.7536" y1="3.7592" x2="9.9568" y2="3.7592" width="0.2032" layer="16"/>
+<wire x1="9.5504" y1="3.556" x2="9.7536" y2="3.7592" width="0.2032" layer="16"/>
+<wire x1="9.4488" y1="3.556" x2="9.5504" y2="3.556" width="0.2032" layer="16"/>
+<wire x1="8.636" y1="2.7432" x2="9.4488" y2="3.556" width="0.2032" layer="16"/>
+<wire x1="8.636" y1="1.8288" x2="8.636" y2="2.7432" width="0.2032" layer="16"/>
+<wire x1="9.8552" y1="0.6096" x2="8.636" y2="1.8288" width="0.2032" layer="16"/>
+<wire x1="10.2616" y1="0.6096" x2="9.8552" y2="0.6096" width="0.2032" layer="16"/>
+<wire x1="12.8016" y1="3.1496" x2="10.2616" y2="0.6096" width="0.2032" layer="16"/>
+<wire x1="14.1224" y1="3.1496" x2="12.8016" y2="3.1496" width="0.2032" layer="16"/>
+<wire x1="22.0472" y1="11.0744" x2="14.1224" y2="3.1496" width="0.2032" layer="16"/>
+<wire x1="28.3464" y1="11.0744" x2="22.0472" y2="11.0744" width="0.2032" layer="16"/>
+<wire x1="29.2608" y1="10.16" x2="28.3464" y2="11.0744" width="0.2032" layer="16"/>
+<wire x1="30.48" y1="10.16" x2="29.2608" y2="10.16" width="0.2032" layer="16"/>
+<wire x1="9.652" y1="8.3312" x2="9.64" y2="8.4326" width="0.2032" layer="1"/>
+<via x="10.4648" y="4.2672" extent="1-16" drill="0.5"/>
 </signal>
 <signal name="A1">
 <contactref element="IC2" pad="24"/>
@@ -3055,11 +3051,29 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <wire x1="36.625" y1="39.75" x2="36.625" y2="45.5" width="0.2032" layer="1"/>
 <wire x1="36.375" y1="39.5" x2="36.625" y2="39.75" width="0.2032" layer="1"/>
 <wire x1="36.375" y1="38.375" x2="36.375" y2="39.5" width="0.2032" layer="16"/>
-<wire x1="30.5" y1="32.5" x2="36.375" y2="38.375" width="0.2032" layer="16"/>
+<wire x1="30.5" y1="32.5" x2="34.7632" y2="36.7632" width="0.2032" layer="16"/>
+<wire x1="34.7632" y1="36.7632" x2="36.375" y2="38.375" width="0.2032" layer="16"/>
 <wire x1="30.5" y1="30.5" x2="30.5" y2="32.5" width="0.2032" layer="16"/>
 <wire x1="36.625" y1="45.5" x2="36.57" y2="45.5676" width="0.2032" layer="1"/>
 <wire x1="30.5" y1="30.5" x2="30.48" y2="30.48" width="0.2032" layer="16"/>
 <via x="36.375" y="39.5" extent="1-16" drill="0.5"/>
+<contactref element="U1" pad="16"/>
+<contactref element="R14" pad="2"/>
+<wire x1="10.14" y1="11.8874" x2="10.16" y2="12.7" width="0.3048" layer="1"/>
+<wire x1="10.16" y1="12.7" x2="10.16" y2="13.97" width="0.3048" layer="1"/>
+<wire x1="10.16" y1="13.97" x2="12.7" y2="13.97" width="0.3048" layer="1"/>
+<wire x1="12.7" y1="13.97" x2="12.7" y2="14.605" width="0.3048" layer="1"/>
+<wire x1="12.7" y1="14.605" x2="13.5128" y2="14.605" width="0.3048" layer="1"/>
+<wire x1="13.5128" y1="14.605" x2="15.025" y2="14.605" width="0.3048" layer="1"/>
+<wire x1="13.5128" y1="15.4432" x2="13.5128" y2="14.605" width="0.2032" layer="1"/>
+<wire x1="13.5128" y1="17.272" x2="13.5128" y2="15.4432" width="0.2032" layer="16"/>
+<wire x1="32.512" y1="36.2712" x2="13.5128" y2="17.272" width="0.2032" layer="16"/>
+<wire x1="32.512" y1="36.6776" x2="32.512" y2="36.2712" width="0.2032" layer="16"/>
+<wire x1="32.9184" y1="37.084" x2="32.512" y2="36.6776" width="0.2032" layer="16"/>
+<wire x1="33.4264" y1="37.084" x2="32.9184" y2="37.084" width="0.2032" layer="16"/>
+<wire x1="33.9344" y1="37.592" x2="33.4264" y2="37.084" width="0.2032" layer="16"/>
+<wire x1="34.7632" y1="36.7632" x2="33.9344" y2="37.592" width="0.2032" layer="16"/>
+<via x="13.5128" y="15.4432" extent="1-16" drill="0.5"/>
 </signal>
 <signal name="D3">
 <contactref element="IC2" pad="1"/>
@@ -3075,6 +3089,23 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <wire x1="30.5" y1="17.875" x2="30.48" y2="17.78" width="0.2032" layer="1"/>
 <via x="35.5" y="36.375" extent="1-16" drill="0.5"/>
 <via x="32.25" y="33.125" extent="1-16" drill="0.5"/>
+<contactref element="U1" pad="5"/>
+<wire x1="8.128" y1="4.1656" x2="8.128" y2="8.3312" width="0.2032" layer="1"/>
+<wire x1="23.876" y1="16.764" x2="13.97" y2="6.858" width="0.2032" layer="16"/>
+<wire x1="28.3464" y1="16.764" x2="23.876" y2="16.764" width="0.2032" layer="16"/>
+<wire x1="29.3624" y1="17.78" x2="28.3464" y2="16.764" width="0.2032" layer="16"/>
+<wire x1="30.48" y1="17.78" x2="29.3624" y2="17.78" width="0.2032" layer="16"/>
+<wire x1="8.128" y1="8.3312" x2="8.14" y2="8.4326" width="0.2032" layer="1"/>
+<via x="8.128" y="4.1656" extent="1-16" drill="0.5"/>
+<wire x1="9.0424" y1="5.08" x2="8.128" y2="4.1656" width="0.2032" layer="16"/>
+<wire x1="9.3472" y1="5.08" x2="9.0424" y2="5.08" width="0.2032" layer="16"/>
+<wire x1="9.652" y1="4.7752" x2="9.3472" y2="5.08" width="0.2032" layer="16"/>
+<wire x1="9.9568" y1="4.7752" x2="9.652" y2="4.7752" width="0.2032" layer="16"/>
+<wire x1="10.16" y1="4.9784" x2="9.9568" y2="4.7752" width="0.2032" layer="16"/>
+<wire x1="10.9728" y1="4.9784" x2="10.16" y2="4.9784" width="0.2032" layer="16"/>
+<wire x1="13.0048" y1="7.0104" x2="10.9728" y2="4.9784" width="0.2032" layer="16"/>
+<wire x1="13.8176" y1="7.0104" x2="13.0048" y2="7.0104" width="0.2032" layer="16"/>
+<wire x1="13.97" y1="6.858" x2="13.8176" y2="7.0104" width="0.2032" layer="16"/>
 </signal>
 <signal name="A3">
 <contactref element="IC2" pad="26"/>
@@ -3181,13 +3212,25 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <contactref element="IC2" pad="12"/>
 <contactref element="PHT1" pad="A"/>
 <wire x1="57.125" y1="40.875" x2="43.6626" y2="40.875" width="0.5" layer="1"/>
-<wire x1="58.375" y1="42.125" x2="57.125" y2="40.875" width="0.5" layer="16"/>
+<wire x1="58.375" y1="42.125" x2="57.5534" y2="41.3034" width="0.5" layer="16"/>
+<wire x1="57.5534" y1="41.3034" x2="57.125" y2="40.875" width="0.5" layer="16"/>
 <wire x1="62.75" y1="42.125" x2="58.375" y2="42.125" width="0.5" layer="1"/>
 <wire x1="68.75" y1="48.125" x2="62.75" y2="42.125" width="0.5" layer="1"/>
 <wire x1="68.75" y1="49.75" x2="68.75" y2="48.125" width="0.5" layer="1"/>
 <wire x1="68.75" y1="49.75" x2="68.779" y2="49.784" width="0.5" layer="1"/>
 <via x="57.125" y="40.875" extent="1-16" drill="0.5"/>
 <via x="58.375" y="42.125" extent="1-16" drill="0.5"/>
+<contactref element="U1" pad="9"/>
+<wire x1="10.14" y1="6.1468" x2="10.14" y2="8.4326" width="0.3048" layer="1"/>
+<wire x1="10.14" y1="8.8392" x2="10.14" y2="6.1468" width="0.5" layer="16"/>
+<wire x1="12.5984" y1="11.3792" x2="10.14" y2="8.8392" width="0.5" layer="16"/>
+<wire x1="12.5984" y1="20.5232" x2="12.5984" y2="11.3792" width="0.5" layer="16"/>
+<wire x1="23.5712" y1="31.496" x2="12.5984" y2="20.5232" width="0.5" layer="16"/>
+<wire x1="23.5712" y1="39.2176" x2="23.5712" y2="31.496" width="0.5" layer="16"/>
+<wire x1="34.036" y1="49.6824" x2="23.5712" y2="39.2176" width="0.5" layer="16"/>
+<wire x1="49.1744" y1="49.6824" x2="34.036" y2="49.6824" width="0.5" layer="16"/>
+<wire x1="57.5534" y1="41.3034" x2="49.1744" y2="49.6824" width="0.5" layer="16"/>
+<via x="10.14" y="6.1468" extent="1-16" drill="0.5"/>
 </signal>
 <signal name="N$5">
 <contactref element="U1" pad="2"/>
@@ -3251,15 +3294,6 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <wire x1="18.796" y1="14.0208" x2="17.78" y2="15.0368" width="0.2032" layer="1"/>
 <wire x1="18.796" y1="14.0208" x2="18.835" y2="13.97" width="0.2032" layer="1"/>
 </signal>
-<signal name="N$17">
-<contactref element="U1" pad="16"/>
-<contactref element="R14" pad="2"/>
-<wire x1="10.14" y1="11.8874" x2="10.16" y2="12.7" width="0.3048" layer="1"/>
-<wire x1="10.16" y1="12.7" x2="10.16" y2="13.97" width="0.3048" layer="1"/>
-<wire x1="10.16" y1="13.97" x2="12.7" y2="13.97" width="0.3048" layer="1"/>
-<wire x1="12.7" y1="13.97" x2="12.7" y2="14.605" width="0.3048" layer="1"/>
-<wire x1="12.7" y1="14.605" x2="15.025" y2="14.605" width="0.3048" layer="1"/>
-</signal>
 <signal name="N$20">
 <contactref element="U1" pad="17"/>
 <contactref element="C2" pad="2"/>
@@ -3270,15 +3304,6 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <wire x1="12.7" y1="15.24" x2="12.7" y2="16.295" width="0.3048" layer="1"/>
 <wire x1="14.605" y1="16.295" x2="12.7" y2="16.295" width="0.3048" layer="1"/>
 </signal>
-<signal name="N$8">
-<contactref element="U1" pad="9"/>
-<contactref element="NSLEEP" pad="1"/>
-<wire x1="10.16" y1="7.7216" x2="10.16" y2="8.3312" width="0.2032" layer="1"/>
-<wire x1="14.0208" y1="3.8608" x2="10.16" y2="7.7216" width="0.2032" layer="1"/>
-<wire x1="15.24" y1="3.8608" x2="14.0208" y2="3.8608" width="0.2032" layer="1"/>
-<wire x1="10.16" y1="8.3312" x2="10.14" y2="8.4326" width="0.2032" layer="1"/>
-<wire x1="15.24" y1="3.8608" x2="15.24" y2="3.81" width="0.2032" layer="1"/>
-</signal>
 <signal name="N$16">
 <contactref element="U1" pad="10"/>
 <contactref element="LDOEN" pad="1"/>
@@ -3288,36 +3313,6 @@ Atmel ATmega8, ATmega168: 8-bit AVR microcontrollers
 <wire x1="17.78" y1="3.8608" x2="16.3576" y2="5.2832" width="0.2032" layer="1"/>
 <wire x1="10.668" y1="8.3312" x2="10.64" y2="8.4326" width="0.2032" layer="1"/>
 <wire x1="17.78" y1="3.8608" x2="17.78" y2="3.81" width="0.2032" layer="1"/>
-</signal>
-<signal name="N$19">
-<contactref element="U1" pad="8"/>
-<contactref element="JP4" pad="1"/>
-<wire x1="9.652" y1="5.588" x2="9.652" y2="8.3312" width="0.2032" layer="1"/>
-<wire x1="11.43" y1="3.81" x2="9.652" y2="5.588" width="0.2032" layer="1"/>
-<wire x1="9.652" y1="8.3312" x2="9.64" y2="8.4326" width="0.2032" layer="1"/>
-</signal>
-<signal name="N$24">
-<contactref element="U1" pad="5"/>
-<contactref element="JP4" pad="4"/>
-<wire x1="8.128" y1="7.9248" x2="8.128" y2="8.3312" width="0.2032" layer="1"/>
-<wire x1="4.064" y1="3.8608" x2="8.128" y2="7.9248" width="0.2032" layer="1"/>
-<wire x1="3.8608" y1="3.8608" x2="4.064" y2="3.8608" width="0.2032" layer="1"/>
-<wire x1="8.128" y1="8.3312" x2="8.14" y2="8.4326" width="0.2032" layer="1"/>
-<wire x1="3.8608" y1="3.8608" x2="3.81" y2="3.81" width="0.2032" layer="1"/>
-</signal>
-<signal name="N$21">
-<contactref element="U1" pad="7"/>
-<contactref element="JP4" pad="2"/>
-<wire x1="9.144" y1="4.064" x2="9.144" y2="8.3312" width="0.2032" layer="1"/>
-<wire x1="8.89" y1="3.81" x2="9.144" y2="4.064" width="0.2032" layer="1"/>
-<wire x1="9.144" y1="8.3312" x2="9.14" y2="8.4326" width="0.2032" layer="1"/>
-</signal>
-<signal name="N$22">
-<contactref element="JP4" pad="3"/>
-<contactref element="U1" pad="6"/>
-<wire x1="8.636" y1="6.096" x2="8.636" y2="8.3312" width="0.2032" layer="1"/>
-<wire x1="6.35" y1="3.81" x2="8.636" y2="6.096" width="0.2032" layer="1"/>
-<wire x1="8.636" y1="8.3312" x2="8.64" y2="8.4326" width="0.2032" layer="1"/>
 </signal>
 </signals>
 </board>
