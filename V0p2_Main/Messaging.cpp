@@ -399,7 +399,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX O short"); // "O' frame too short.
       // but use only if valid.
       // Ignore explicit call-for-heat flag for now.
       const uint8_t percentOpen = secBodyBuf[0];
-      if(percentOpen <= 100) { remoteCallForHeatRX(0, percentOpen); }
+      if(percentOpen <= 100) { remoteCallForHeatRX(0, percentOpen); } // todo call for heat valve id not passed in.
 #endif
       // If the frame contains JSON stats
       // then forward entire secure frame as-is across the secondary radio relay link,
