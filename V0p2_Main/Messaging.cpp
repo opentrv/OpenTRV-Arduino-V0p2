@@ -99,7 +99,7 @@ static const bool RFM23B_allowRX = true;
 #else
 static const bool RFM23B_allowRX = false;
 #endif
-OTRFM23BLink::OTRFM23BLink<PIN_SPI_nSS, RFM23B_IRQ_PIN, RFM23B_RX_QUEUE_SIZE, RFM23B_allowRX> RFM23B;
+OTRFM23BLink::OTRFM23BLink<OTV0P2BASE::V0p2_PIN_SPI_nSS, RFM23B_IRQ_PIN, RFM23B_RX_QUEUE_SIZE, RFM23B_allowRX> RFM23B;
 #endif // ENABLE_RADIO_RFM23B
 #ifdef ENABLE_RADIO_SIM900
 //OTSIM900Link::OTSIM900Link SIM900(REGULATOR_POWERUP, RADIO_POWER_PIN, SOFTSERIAL_RX_PIN, SOFTSERIAL_TX_PIN);
@@ -399,7 +399,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX O short"); // "O' frame too short.
       // but use only if valid.
       // Ignore explicit call-for-heat flag for now.
       const uint8_t percentOpen = secBodyBuf[0];
-      if(percentOpen <= 100) { remoteCallForHeatRX(0, percentOpen); }
+      if(percentOpen <= 100) { remoteCallForHeatRX(0, percentOpen); } // todo call for heat valve id not passed in.
 #endif
       // If the frame contains JSON stats
       // then forward entire secure frame as-is across the secondary radio relay link,
