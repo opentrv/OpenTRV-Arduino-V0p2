@@ -199,7 +199,15 @@ bool setWARMTargetC(uint8_t tempC);
 
 
 #if defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX) || defined(ENABLE_DEFAULT_ALWAYS_RX)
-// Get minimum on (and off) time for pointer (minutes); zero if not in hub mode.
+// Default minimum on/off time in minutes for the boiler relay. Set to 5 as this ensures the boiler will be on for at least one valve Tx cycle.
+// This constant is necessary as if V0P2BASE_EE_START_MIN_BOILER_ON_MINS_INV is not set, the boiler relay will never be turned on.
+static const constexpr uint8_t DEFAULT_MIN_BOILER_ON_MINS = 5;  // todo move to more appropriate place?
+/**
+ * @brief   Get minimum on (and off) time for pointer (minutes).
+ * @retval  value stored V0P2BASE_EE_START_MIN_BOILER_ON_MINS_INV.
+ *          Defaults to 0 if boiler hub not enabled.
+ *          Defaults to 5 if no value set in V0P2BASE_EE_START_MIN_BOILER_ON_MINS_INV.
+ */
 uint8_t getMinBoilerOnMinutes();
 // Set minimum on (and off) time for pointer (minutes); zero to disable hub mode.
 // Suggested minimum of 4 minutes for gas combi; much longer for heat pumps for example.

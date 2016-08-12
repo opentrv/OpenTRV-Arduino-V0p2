@@ -335,7 +335,12 @@ bool hasEcoBias() { return(getWARMTargetC() <= TEMP_SCALE_MID); }
 
 #ifndef getMinBoilerOnMinutes
 // Get minimum on (and off) time for pointer (minutes); zero if not in hub mode.
-uint8_t getMinBoilerOnMinutes() { return(~eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_MIN_BOILER_ON_MINS_INV)); }
+uint8_t getMinBoilerOnMinutes()
+{
+    uint8_t mins = ~eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_MIN_BOILER_ON_MINS_INV);
+    if (mins == 0) return DEFAULT_MIN_BOILER_ON_MINS;  // use default if min on minutes not set in eeprom.
+    else return mins;
+}
 #endif
 
 #ifndef setMinBoilerOnMinutes
@@ -1804,6 +1809,9 @@ static void processCallsForHeat(const bool second0)
         // regardless of when second0 happens to be.
         // (The min(254, ...) is to ensure that the boiler can come on even if minOnMins == 255.)
         // TODO: randomly extend the off-time a little (eg during grid stress) partly to randmonise whole cycle length.
+          OTV0P2BASE::serialPrintAndFlush("boilerNoCallM ");
+          OTV0P2BASE::serialPrintAndFlush(boilerNoCallM); // fixme
+        OTV0P2BASE::serialPrintlnAndFlush();
         if(boilerNoCallM <= min(254, minOnMins)) { ignoreRCfH = true; }
 //        if(OTV0P2BASE::getSubCycleTime() >= nearOverrunThreshold) { } // { tooNearOverrun = true; }
 //        else
@@ -1815,6 +1823,9 @@ static void processCallsForHeat(const bool second0)
         const uint16_t onTimeTicks = minOnMins * (uint16_t) (60U / OTV0P2BASE::MAIN_TICK_S);
         // Restart count-down time (keeping boiler on) with new call for heat.
         boilerCountdownTicks = onTimeTicks;
+        OTV0P2BASE::serialPrintAndFlush("onTimeTicks ");
+        OTV0P2BASE::serialPrintAndFlush(onTimeTicks);
+        OTV0P2BASE::serialPrintlnAndFlush();
         boilerNoCallM = 0; // No time has passed since the last call.
         }
       }
