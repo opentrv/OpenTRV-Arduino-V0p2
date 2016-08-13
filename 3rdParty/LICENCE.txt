@@ -1,0 +1,8 @@
+Libraries in and below this directory are third party and believed to be OK to redistribute as-is.
+OpenTRV makes no claims over them.
+They are here for simplicity in some cases.
+
+Name: Arduinojson (Arduino JSON library)
+Maintainer: Benoit Blanchon (http://blog.benoitblanchon.fr/)
+Licence: MIT
+https://github.com/bblanchon/ArduinoJson
