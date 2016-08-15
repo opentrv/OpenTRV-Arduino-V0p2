@@ -335,12 +335,7 @@ bool hasEcoBias() { return(getWARMTargetC() <= TEMP_SCALE_MID); }
 
 #ifndef getMinBoilerOnMinutes
 // Get minimum on (and off) time for pointer (minutes); zero if not in hub mode.
-uint8_t getMinBoilerOnMinutes()
-{
-    uint8_t mins = ~eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_MIN_BOILER_ON_MINS_INV);
-    if (mins == 0) return DEFAULT_MIN_BOILER_ON_MINS;  // use default if min on minutes not set in eeprom.
-    else return mins;
-}
+uint8_t getMinBoilerOnMinutes() { return(~eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_MIN_BOILER_ON_MINS_INV)); }
 #endif
 
 #ifndef setMinBoilerOnMinutes
