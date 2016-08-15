@@ -202,8 +202,7 @@ bool setWARMTargetC(uint8_t tempC);
 // This constant is necessary as if V0P2BASE_EE_START_MIN_BOILER_ON_MINS_INV is not set, the boiler relay will never be turned on.
 static const constexpr uint8_t DEFAULT_MIN_BOILER_ON_MINS = 5;
 #if defined(ENABLE_DEFAULT_ALWAYS_RX)
-#define getBoilerOnMinutes() (DEFAULT_MIN_BOILER_ON_MINS)
-
+#define getMinBoilerOnMinutes() (DEFAULT_MIN_BOILER_ON_MINS)
 #elif defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)
 // Get minimum on (and off) time for pointer (minutes); zero if not in hub mode.
 uint8_t getMinBoilerOnMinutes();
