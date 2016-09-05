@@ -914,7 +914,7 @@ bool pollIO(const bool force)
 #ifdef ENABLE_STATS_TX
 #if defined(ENABLE_JSON_OUTPUT)
 // Managed JSON stats.
-static OTV0P2BASE::SimpleStatsRotation<10> ss1; // Configured for maximum different stats.	// FIXME increased for voice
+static OTV0P2BASE::SimpleStatsRotation<11> ss1; // Configured for maximum different stats.	// FIXME increased for voice & for setback lockout
 #endif // ENABLE_STATS_TX
 // Do bare stats transmission.
 // Output should be filtered for items appropriate
@@ -1082,7 +1082,10 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
     ss1.put(NominalRadValve.tagCMPC(), NominalRadValve.getCumulativeMovementPC(), true); // Low priority as notionally redundant.
 #endif // !defined(ENABLE_TRIMMED_BANDWIDTH)
 #endif // defined(ENABLE_LOCAL_TRV)
-
+#ifdef ENABLE_SETBACK_LOCKOUT_COUNTDOWN // fixme should this be ENABLE_CONTROL_MODE?
+    // Show state of setback lockout.
+    ss1.put("gE", getSetbackLockout(), true);
+#endif // ENABLE_SETBACK_LOCKOUT_COUNTDOWN
 #if defined(ENABLE_ALWAYS_TX_ALL_STATS)
     const uint8_t privacyLevel = OTV0P2BASE::stTXalwaysAll;
 #else
