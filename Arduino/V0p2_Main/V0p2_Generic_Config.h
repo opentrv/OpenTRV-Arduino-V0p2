@@ -61,10 +61,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as plain boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
 //#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
-//#define CONFIG_DORM1 // REV7 / DORM1 all-in-one valve unit, secure TX.
+#define CONFIG_DORM1 // REV7 / DORM1 all-in-one valve unit, secure TX.
 //#define CONFIG_DORM1_BOILER // REV8 / DORM1 boiler-control unit.
 //#define CONFIG_REV10_AS_GSM_RELAY_ONLY // REV10: stats relay only.
-#define CONFIG_REV10_SECURE_BHR // REV10: secure stats relay and boiler hub.
+//#define CONFIG_REV10_SECURE_BHR // REV10: secure stats relay and boiler hub.
 //#define CONFIG_REV11_RAW_JSON // REV11 as raw JSON-only stats/sensor leaf.
 //#define CONFIG_REV14_WORKSHOP // REV14 w/ light sensor, SHT21, for Launchpad workshop.
 
@@ -92,11 +92,13 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_REV10_SECURE_BOILERHUB_GSM_SECURE // REV10 PCB boiler hub, relay to GSM, 2015/12 secure protocol.
 //#define CONFIG_REV10_SECURE_BHR_NULLRADIO// REV10: boiler hub and stats relay with AESGCM and a null secondary radio.
 //#define CONFIG_REV11_RFM23BTEST // Basic test to see if stats send
+//#define CONFIG_REV11_SECURE_SENSOR
+//#define CONFIG_REV11_SENSOR
 //#define CONFIG_REV11_SECURE_STATSHUB
+//#define CONFIG_REV11_STATSHUB
 //#define CONFIG_REV14_PROTO  // Prototype REV14 w/ LoRa, TMP, SHT and QM-1
 //#define CONFIG_REV14 // REV14 w/ light sensor, SHT21 and voice sensor.
 //#define CONFIG_BAREBONES // No peripherals / on breadboard.
-
 
 
 

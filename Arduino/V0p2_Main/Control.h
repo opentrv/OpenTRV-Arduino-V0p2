@@ -514,6 +514,16 @@ uint8_t smoothStatsValue(uint8_t oldSmoothed, uint8_t newValue);
 void populateCoreStats(OTV0P2BASE::FullStatsMessageCore_t *content);
 #endif // ENABLE_FS20_ENCODING_SUPPORT
 
+#ifdef ENABLE_SETBACK_LOCKOUT_COUNTDOWN // TODO Move this into OTRadioLink for mainline version.
+    /**
+     * @brief   Retrieve the current setback lockout value from the EEPROM.
+     * @retval  The number of days left of the setback lockout. Setback lockout is disabled when this reaches 0.
+     * @note    The value is stored inverted in EEPROM.
+     * @note    This is stored as G 0 for TRV1.5 devices, but may change in future.
+     */
+    static inline uint8_t getSetbackLockout() { return ~(eeprom_read_byte((uint8_t *)OTV0P2BASE::V0P2BASE_EE_START_SETBACK_LOCKOUT_COUNTDOWN_D_INV)); }
+#endif // ENABLE_SETBACK_LOCKOUT_COUNTDOWN
+
 // Do bare stats transmission.
 // Output should be filtered for items appropriate
 // to current channel security and sensitivity level.
