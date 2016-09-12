@@ -73,7 +73,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_DHD_TESTLAB_REV0 // REV0 / breadboard.
 //#define CONFIG_Trial2013Winter_Round1_STATSHUB // REV1 as stats hub.
 //#define CONFIG_Trial2013Winter_Round2_BHR // REV2 cut4: boiler hub and stats relay.
-#define CONFIG_Trial2013Winter_Round1_SECURE_STATSHUB // REV1 as secure stats hub.
+//#define CONFIG_Trial2013Winter_Round1_SECURE_STATSHUB // REV1 as secure stats hub.
+#define CONFIG_Trial2013Winter_Round1_SECURE_SENSOR // REV1 as secure sensor node.
 //#define CONFIG_Trial2013Winter_Round2_SECURE_NOHUB // REV2 cut4 leaf (valve/sensor) 2015/12 secure protocol.
 //#define CONFIG_Trial2013Winter_Round2_SECURE_STATSHUB // REV2 cut4 hub (boiler/stats) 2015/12 secure protocol.
 //#define CONFIG_DHD_TESTLAB_REV4 // REV4 cut2.
