@@ -88,7 +88,8 @@ void loopOpenTRV();
 #define TEMP_SCALE_MAX (BIASCOM_WARM+1) // Top of range for adjustable-base-temperature systems.
 
 // Raise target by this many degrees in 'BAKE' mode (strictly positive).
-#define BAKE_UPLIFT 5
+// DHD20160927 TODO-980 raised from 5 to 10 to ensure very rarely fails to trigger in in shoulder season.
+#define BAKE_UPLIFT 10
 // Maximum 'BAKE' minutes, ie time to crank heating up to BAKE setting (minutes, strictly positive, <255).
 #define BAKE_MAX_M 30
 

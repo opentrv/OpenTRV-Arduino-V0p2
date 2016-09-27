@@ -1,0 +1,16 @@
+A selection of key issue outstanding.
+
+
+Summary: combined boiler hub / stats relay / boiler control does not send own stats over GSM
+Product: Sunamp / Energy Solutions (TRV1 / TRV1.5) trials
+Branch: TRV1.5-rc1
+Tag: TRV1.5-rv1-gE-20160919
+Repo(s): OpenTRV-Arduino-V0p2
+Hardware: REV10 (boiler controller)
+Date reported: 2016/09/21
+Bug tracker URL: https://opentrv.atlassian.net/browse/TODO-978
+Description:
+REV10 relays stats correctly from REV7s, but does not relay its own,
+preventing direct remote tracking of when boiler is being run.
+May also be failing to send its stats over local ISM radio,
+preventing tracking by local separate stats hub.
