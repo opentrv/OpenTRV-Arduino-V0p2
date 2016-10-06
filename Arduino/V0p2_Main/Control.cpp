@@ -1294,9 +1294,9 @@ static void wireComponentsTogether()
   }
 
 
-// Initialise sensors with stats info where needed.
-// Should be called at least hourly after all stats have been updatedß,
-// but can be called whenever user adjusts settings for example.
+// Update sensors with historic/trailing stats information where needed.
+// Should be called at least hourly after all stats have been updated,
+// but can also be called whenever the user adjusts settings for example.
 static void updateSensorsFromStats()
   {
 #if defined(ENABLE_AMBLIGHT_SENSOR) && defined(ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT)
