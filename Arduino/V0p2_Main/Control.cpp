@@ -1294,7 +1294,7 @@ static void wireComponentsTogether()
   }
 
 
-// Update sensors with historic/trailing stats information where needed.
+// Update sensors with historic/trailing statistics information where needed.
 // Should be called at least hourly after all stats have been updated,
 // but can also be called whenever the user adjusts settings for example.
 static void updateSensorsFromStats()
