@@ -37,16 +37,23 @@ void setupOpenTRV();
 void loopOpenTRV();
 
 
-// Default frost (minimum) temperature in degrees C, strictly positive, in range [MIN_TARGET_C,MAX_TARGET_C].
-// Setting frost temperatures at a level likely to protect (eg) fridge/freezers as well as water pipes.
-// Note that 5C or below carries a risk of hypothermia: http://ipc.brookes.ac.uk/publications/pdf/Identifying_the_health_gain_from_retirement_housing.pdf
-// Other parts of the room may be somewhat colder than where the sensor is, so aim a little over 5C.
-// 14C avoids risk of raised blood pressure and is a generally safe and comfortable sleeping temperature.
-// Note: BS EN 215:2004 S5.3.5 says maximum setting must be <= 32C, minimum in range [5C,12C].
-// 15C+ may help mould/mold risk from condensation, see: http://www.nea.org.uk/Resources/NEA/Publications/2013/Resource%20-%20Dealing%20with%20damp%20and%20condensation%20%28lo%20res%29.pdf
-#define BIASECO_FROST (max(6,OTRadValve::MIN_TARGET_C)) // Target FROST temperature for ECO bias; must be in range [MIN_TARGET_C,BIASCOM_FROST[.
-#define BIASCOM_FROST (max(14,OTRadValve::MIN_TARGET_C)) // Target FROST temperature for Comfort bias; must be in range ]BIASECO_FROST,MAX_TARGET_C].
-#define FROST BIASECO_FROST
+// Select basic parameter set to use (or could define new set here).
+#ifndef DHW_TEMPERATURES // Settings for room TRV.
+typedef OTRadValve::DEFAULT_ValveControlParameters PARAMS;
+#else // Default settings for DHW control.
+typedef OTRadValve::DEFAULT_DHW_ValveControlParameters PARAMS;
+#endif
+
+//// Default frost (minimum) temperature in degrees C, strictly positive, in range [MIN_TARGET_C,MAX_TARGET_C].
+//// Setting frost temperatures at a level likely to protect (eg) fridge/freezers as well as water pipes.
+//// Note that 5C or below carries a risk of hypothermia: http://ipc.brookes.ac.uk/publications/pdf/Identifying_the_health_gain_from_retirement_housing.pdf
+//// Other parts of the room may be somewhat colder than where the sensor is, so aim a little over 5C.
+//// 14C avoids risk of raised blood pressure and is a generally safe and comfortable sleeping temperature.
+//// Note: BS EN 215:2004 S5.3.5 says maximum setting must be <= 32C, minimum in range [5C,12C].
+//// 15C+ may help mould/mold risk from condensation, see: http://www.nea.org.uk/Resources/NEA/Publications/2013/Resource%20-%20Dealing%20with%20damp%20and%20condensation%20%28lo%20res%29.pdf
+//#define BIASECO_FROST (max(6,OTRadValve::MIN_TARGET_C)) // Target FROST temperature for ECO bias; must be in range [MIN_TARGET_C,BIASCOM_FROST[.
+//#define BIASCOM_FROST (max(14,OTRadValve::MIN_TARGET_C)) // Target FROST temperature for Comfort bias; must be in range ]BIASECO_FROST,MAX_TARGET_C].
+//#define FROST BIASECO_FROST
 
 // Default warm/comfort room (air) temperature in degrees C; strictly greater than FROST, in range [MIN_TARGET_C,MAX_TARGET_C].
 // Control loop effectively targets upper end of this 1C window as of 20130518, middle as of 20141209.

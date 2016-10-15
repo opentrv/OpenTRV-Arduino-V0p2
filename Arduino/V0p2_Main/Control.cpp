@@ -131,7 +131,7 @@ void _TEST_set_basetemp_override(const _TEST_basetemp_override override)
 uint8_t getFROSTTargetC()
   {
   // Prevent falling to lowest frost temperature if relative humidity is high (eg to avoid mould).
-  const uint8_t result = (!hasEcoBias() || (RelHumidity.isAvailable() && RelHumidity.isRHHighWithHyst())) ? BIASCOM_FROST : BIASECO_FROST;
+  const uint8_t result = (!hasEcoBias() || (RelHumidity.isAvailable() && RelHumidity.isRHHighWithHyst())) ? PARAMS::FROST_ECO : PARAMS::FROST_COM;
 #if defined(ENABLE_SETTABLE_TARGET_TEMPERATURES)
   const uint8_t stored = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_FROST_C);
   // If stored value is set and in bounds and higher than computed value then use stored value instead.
@@ -146,13 +146,13 @@ uint8_t getFROSTTargetC()
   // Get persisted value, if any.
   const uint8_t stored = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_FROST_C);
   // If out of bounds or no stored value then use default.
-  if((stored < MIN_TARGET_C) || (stored > MAX_TARGET_C)) { return(FROST); }
+  if((stored < OTRadValve::MIN_TARGET_C) || (stored > OTRadValve::MAX_TARGET_C)) { return(PARAMS::FROST); }
   // TODO-403: cannot use hasEcoBias() with RH% as that would cause infinite recursion!
   // Return valid persisted value.
   return(stored);
   }
 #else
-#define getFROSTTargetC() ((uint8_t)FROST) // Fixed value.
+#define getFROSTTargetC() (PARAMS::FROST) // Fixed value.
 #endif
 
 // Get 'WARM' target in C; no lower than getFROSTTargetC() returns, strictly positive, in range [MIN_TARGET_C,MAX_TARGET_C].
