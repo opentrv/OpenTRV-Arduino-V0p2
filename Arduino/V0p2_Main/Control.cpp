@@ -164,13 +164,13 @@ uint8_t getFROSTTargetC()
 // Exposed for unit testing.
 uint8_t computeWARMTargetC(const uint8_t pot, const uint8_t loEndStop, const uint8_t hiEndStop)
   {
-#if defined(V0p2_REV)
-#if 7 == V0p2_REV // Must match DORM1 scale 1+7+1 position scale FROST|16|17|18|19|20|21|22|BOOST.
-#if (16 != TEMP_SCALE_MIN) || (22 != TEMP_SCALE_MAX)
-#error Temperature scale must run from 16 to 22 inclusive for REV7 / DORM1 unit.
-#endif
-#endif
-#endif
+//#if defined(V0p2_REV)
+//#if 7 == V0p2_REV // Must match DORM1 scale 1+7+1 position scale FROST|16|17|18|19|20|21|22|BOOST.
+//#if (16 != TEMP_SCALE_MIN) || (22 != TEMP_SCALE_MAX)
+//#error Temperature scale must run from 16 to 22 inclusive for REV7 / DORM1 unit.
+//#endif
+//#endif
+//#endif
 
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINT_FLASHSTRING("cWT(): ");
@@ -180,16 +180,16 @@ uint8_t computeWARMTargetC(const uint8_t pot, const uint8_t loEndStop, const uin
 
   // Everything in the end-stop regions is assigned to the appropriate end temperature.
   // As a tiny optimisation we note that the in-scale end points must be the end temperatures also.
-  if(pot <= loEndStop) { return(TEMP_SCALE_MIN); } // At/near bottom...
-  if(pot >= hiEndStop) { return(TEMP_SCALE_MAX); } // At/near top...
+  if(pot <= loEndStop) { return(PARAMS::TEMP_SCALE_MIN); } // At/near bottom...
+  if(pot >= hiEndStop) { return(PARAMS::TEMP_SCALE_MAX); } // At/near top...
 
   // Allow actual full temp range between low and high end points,
   // plus possibly a little more wiggle-room / manufacturing tolerance.
   // Range is number of actual distinct temperatures on scale between end-stop regions.
   const uint8_t usefulScale = hiEndStop - loEndStop + 1;
-#define DIAL_TEMPS (TEMP_SCALE_MAX - TEMP_SCALE_MIN + 1)
+  static const uint8_t DIAL_TEMPS = PARAMS::TEMP_SCALE_MAX - PARAMS::TEMP_SCALE_MIN + 1;
   const uint8_t range = DIAL_TEMPS;
-#if 7 == DIAL_TEMPS
+#if defined(V0p2_REV) && (7 == V0p2_REV) // Force to DORM1 scale 1+7+1 position scale FROST|16|17|18|19|20|21|22|BOOST.
   // REV7 / DORM1 case, with usefulScale ~ 47 as of 20160212 on first sample unit.
 #define DIAL_TEMPS_SHIM
   const uint8_t rangeUsed = 8;
@@ -216,7 +216,7 @@ uint8_t computeWARMTargetC(const uint8_t pot, const uint8_t loEndStop, const uin
   const uint8_t ppot = ppotBasic;
 #else
   const uint8_t shim = (band >> 1);
-  if(ppotBasic <= shim) { return(TEMP_SCALE_MIN); }
+  if(ppotBasic <= shim) { return(PARAMS::TEMP_SCALE_MIN); }
   const uint8_t ppot = ppotBasic - shim; // Shift up by half a slot... (using n temps in space for n+1)
 #endif
 
@@ -224,9 +224,9 @@ uint8_t computeWARMTargetC(const uint8_t pot, const uint8_t loEndStop, const uin
   // then compute the result iteratively...
 #if DIAL_TEMPS < 10
     {
-    uint8_t result = TEMP_SCALE_MIN;
+    uint8_t result = PARAMS::TEMP_SCALE_MIN;
     uint8_t bottomOfNextBand = band;
-    while((ppot >= bottomOfNextBand) && (result < TEMP_SCALE_MAX))
+    while((ppot >= bottomOfNextBand) && (result < PARAMS::TEMP_SCALE_MAX))
       {
       ++result;
       bottomOfNextBand += band;
@@ -289,12 +289,12 @@ uint8_t getWARMTargetC()
   // Get persisted value, if any.
   const uint8_t stored = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_WARM_C);
   // If out of bounds or no stored value then use default (or frost value if set and higher).
-  if((stored < MIN_TARGET_C) || (stored > MAX_TARGET_C)) { return(OTV0P2BASE::fnmax((uint8_t)WARM, getFROSTTargetC())); }
+  if((stored < OTRadValve::MIN_TARGET_C) || (stored > OTRadValve::MAX_TARGET_C)) { return(OTV0P2BASE::fnmax(PARAMS::WARM, getFROSTTargetC())); }
   // Return valid persisted value (or frost value if set and higher).
   return(OTV0P2BASE::fnmax(stored, getFROSTTargetC()));
   }
 #else
-uint8_t getWARMTargetC() { return((uint8_t) (WARM)); } // Fixed value.
+uint8_t getWARMTargetC() { return((uint8_t) (PARAMS::WARM)); } // Fixed value.
 #endif
 
 #if defined(ENABLE_SETTABLE_TARGET_TEMPERATURES)
@@ -314,7 +314,7 @@ bool setFROSTTargetC(uint8_t tempC)
 // Returns false if not set, eg because below FROST setting or outside range [MIN_TARGET_C,MAX_TARGET_C], else returns true.
 bool setWARMTargetC(uint8_t tempC)
   {
-  if((tempC < MIN_TARGET_C) || (tempC > MAX_TARGET_C)) { return(false); } // Invalid temperature.
+  if((tempC < OTRadValve::MIN_TARGET_C) || (tempC > OTRadValve::MAX_TARGET_C)) { return(false); } // Invalid temperature.
   if(tempC < getFROSTTargetC()) { return(false); } // Cannot set below FROST target.
   OTV0P2BASE::eeprom_smart_update_byte((uint8_t *)V0P2BASE_EE_START_WARM_C, tempC); // Update in EEPROM if necessary.
   return(true); // Assume value correctly written.
@@ -328,7 +328,7 @@ bool setWARMTargetC(uint8_t tempC)
 #ifndef hasEcoBias // If not a macro...
 // True if WARM temperature at/below halfway mark between eco and comfort levels.
 // Midpoint should be just in eco part to provide a system bias toward eco.
-bool hasEcoBias() { return(getWARMTargetC() <= TEMP_SCALE_MID); }
+bool hasEcoBias() { return(getWARMTargetC() <= PARAMS::TEMP_SCALE_MID); }
 //#endif
 #endif
 

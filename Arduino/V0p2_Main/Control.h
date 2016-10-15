@@ -44,40 +44,6 @@ typedef OTRadValve::DEFAULT_ValveControlParameters PARAMS;
 typedef OTRadValve::DEFAULT_DHW_ValveControlParameters PARAMS;
 #endif
 
-//// Default frost (minimum) temperature in degrees C, strictly positive, in range [MIN_TARGET_C,MAX_TARGET_C].
-//// Setting frost temperatures at a level likely to protect (eg) fridge/freezers as well as water pipes.
-//// Note that 5C or below carries a risk of hypothermia: http://ipc.brookes.ac.uk/publications/pdf/Identifying_the_health_gain_from_retirement_housing.pdf
-//// Other parts of the room may be somewhat colder than where the sensor is, so aim a little over 5C.
-//// 14C avoids risk of raised blood pressure and is a generally safe and comfortable sleeping temperature.
-//// Note: BS EN 215:2004 S5.3.5 says maximum setting must be <= 32C, minimum in range [5C,12C].
-//// 15C+ may help mould/mold risk from condensation, see: http://www.nea.org.uk/Resources/NEA/Publications/2013/Resource%20-%20Dealing%20with%20damp%20and%20condensation%20%28lo%20res%29.pdf
-//#define BIASECO_FROST (max(6,OTRadValve::MIN_TARGET_C)) // Target FROST temperature for ECO bias; must be in range [MIN_TARGET_C,BIASCOM_FROST[.
-//#define BIASCOM_FROST (max(14,OTRadValve::MIN_TARGET_C)) // Target FROST temperature for Comfort bias; must be in range ]BIASECO_FROST,MAX_TARGET_C].
-//#define FROST BIASECO_FROST
-
-// Default warm/comfort room (air) temperature in degrees C; strictly greater than FROST, in range [MIN_TARGET_C,MAX_TARGET_C].
-// Control loop effectively targets upper end of this 1C window as of 20130518, middle as of 20141209.
-
-#ifndef DHW_TEMPERATURES // Settings for room TRV.
-// Set so that mid-point is at ~19C (BRE and others regard this as minimum comfort temperature)
-// and half the scale will be below 19C and thus save ('eco') compared to typical UK room temperatures.
-// (17/18 good for energy saving at ~1C below typical UK room temperatures of ~19C in 2012).
-// Note: BS EN 215:2004 S5.3.5 says maximum setting must be <= 32C, minimum in range [5C,12C].
-#define BIASECO_WARM 17 // Target WARM temperature for ECO bias; must be in range ]BIASCOM_FROST+1,BIASCOM_WARM[.
-#define BIASCOM_WARM 21 // Target WARM temperature for Comfort bias; must be in range ]BIASECO_WARM,MAX_TARGET_C-BAKE_UPLIFT-1].
-#else // Default settings for DHW control.
-// 55C+ centre value with boost to 60C+ for DHW Legionella control where needed.
-// Note that the low end (~45C) is safe against scalding but may worry some for storage as a Legionella risk.
-#define BIASECO_WARM 45 // Target WARM temperature for ECO bias; must be in range [MODECOM_WARM,MAX_TARGET_C].
-#define BIASCOM_WARM 65 // Target WARM temperature for Comfort bias; must be in range ]MIN_TARGET_C,MODEECO_WARM].
-#endif
-// Default to a 'safe' temperature.
-#define WARM max(BIASECO_WARM,SAFE_ROOM_TEMPERATURE)
-
-// Scale can run from eco warm -1 to comfort warm + 1, eg: * 16 17 18 >19< 20 21 22 BOOST
-#define TEMP_SCALE_MIN (BIASECO_WARM-1) // Bottom of range for adjustable-base-temperature systems.
-#define TEMP_SCALE_MID ((BIASECO_WARM + BIASCOM_WARM + 1)/2) // Middle of range for adjustable-base-temperature systems; should be 'eco' baised.
-#define TEMP_SCALE_MAX (BIASCOM_WARM+1) // Top of range for adjustable-base-temperature systems.
 
 // Raise target by this many degrees in 'BAKE' mode (strictly positive).
 // DHD20160927 TODO-980 raised from 5 to 10 to ensure very rarely fails to trigger in in shoulder season.
@@ -186,9 +152,9 @@ bool setWARMTargetC(uint8_t tempC);
 #endif
 
 // True if specified temperature is at or below 'eco' WARM target temperature, ie is eco-friendly.
-#define isEcoTemperature(tempC) ((tempC) <= BIASECO_WARM)
+#define isEcoTemperature(tempC) ((tempC) <= PARAMS::WARM_ECO)
 // True if specified temperature is at or above 'comfort' WARM target temperature.
-#define isComfortTemperature(tempC) ((tempC) >= BIASCOM_WARM)
+#define isComfortTemperature(tempC) ((tempC) >= PARAMS::WARM_COM)
 
 // Default minimum on/off time in minutes for the boiler relay.
 // Set to 5 as the default valve Tx cycle is 4 mins and 5 mins is a good amount for most boilers.
