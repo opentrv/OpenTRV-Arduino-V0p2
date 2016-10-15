@@ -462,7 +462,7 @@ uint8_t ModelledRadValve::computeTargetTemp()
       {
       const uint8_t warmTarget = getWARMTargetC();
       // Compute putative pre-warm temperature, usually only just below WARM target.
-      const uint8_t preWarmTempC = OTV0P2BASE::fnmax((uint8_t)(warmTarget - (isEcoTemperature(warmTarget) ? SETBACK_ECO : SETBACK_DEFAULT)), frostC);
+      const uint8_t preWarmTempC = OTV0P2BASE::fnmax((uint8_t)(warmTarget - (isEcoTemperature(warmTarget) ? PARAMS::SETBACK_ECO : PARAMS::SETBACK_DEFAULT)), frostC);
       if(frostC < preWarmTempC) // && (!isEcoTemperature(warmTarget)))
         { return(preWarmTempC); }
       }
@@ -550,11 +550,11 @@ uint8_t ModelledRadValve::computeTargetTemp()
                                (!longVacant && !AmbLight.isRoomDark() && (hoursLessOccupiedThanThis > 4)) ||
                                (!longVacant && !darkForHours && (hoursLessOccupiedThanNext >= thisHourNLOThreshold-1)) ||
                                (!longVacant && Scheduler.isAnyScheduleOnWARMSoon())) ?
-              SETBACK_DEFAULT :
+              PARAMS::SETBACK_DEFAULT :
           ((ecoBias && (longLongVacant ||
               (notLikelyOccupiedSoon && (isEcoTemperature(wt) ||
                   ((dm > (uint8_t)min(254, 60*minVacantAndDarkForFULLSetbackH)) && (Occupancy.getVacancyH() >= minVacantAndDarkForFULLSetbackH)))))) ?
-              SETBACK_FULL : SETBACK_ECO);
+              PARAMS::SETBACK_FULL : PARAMS::SETBACK_ECO);
 
       // Target must never be set low enough to create a frost/freeze hazard.
       const uint8_t newTarget = OTV0P2BASE::fnmax((uint8_t)(wt - setback), getFROSTTargetC());

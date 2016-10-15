@@ -45,27 +45,6 @@ typedef OTRadValve::DEFAULT_DHW_ValveControlParameters PARAMS;
 #endif
 
 
-//// Raise target by this many degrees in 'BAKE' mode (strictly positive).
-//// DHD20160927 TODO-980 raised from 5 to 10 to ensure very rarely fails to trigger in in shoulder season.
-//#define BAKE_UPLIFT 10
-//// Maximum 'BAKE' minutes, ie time to crank heating up to BAKE setting (minutes, strictly positive, <255).
-//#define BAKE_MAX_M 30
-
-// Initial minor setback degrees C (strictly positive).  Note that 1C heating setback may result in ~8% saving in the UK.
-// This may be the maximum setback applied with a comfort bias for example.
-#define SETBACK_DEFAULT 1
-// Enhanced setback, eg in eco mode, for extra energy savings.  Not more than SETBACK_FULL.
-#define SETBACK_ECO (1+SETBACK_DEFAULT)
-// Full setback degrees C (strictly positive and significantly, ie several degrees, greater than SETBACK_DEFAULT, less than MIN_TARGET_C).
-// Deeper setbacks increase energy savings at the cost of longer times to return to target temperatures.
-// See also (recommending 13F/7C setback to 55F/12C): https://www.mge.com/images/pdf/brochures/residential/setbackthermostat.pdf
-// See also (suggesting for an 8hr setback, 1F set-back = 1% energy savings): http://joneakes.com/jons-fixit-database/1270-How-far-back-should-a-set-back-thermostat-be-set
-// This must set back to no more than than MIN_TARGET_C to avoid problems with unsigned arithmetic.
-#define SETBACK_FULL 4
-// Prolonged inactivity time deemed to indicate room(s) really unoccupied to trigger full setback (minutes, strictly positive).
-#define SETBACK_FULL_M min(60, max(30, OTV0P2BASE::PseudoSensorOccupancyTracker::OCCUPATION_TIMEOUT_M))
-
-
 // Period in minutes for simple learned on-time; strictly positive (and less than 256).
 #ifndef LEARNED_ON_PERIOD_M
 #define LEARNED_ON_PERIOD_M 60
