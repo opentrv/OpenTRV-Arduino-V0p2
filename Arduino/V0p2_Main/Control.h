@@ -47,14 +47,7 @@ void loopOpenTRV();
 #define BIASECO_FROST (max(6,OTRadValve::MIN_TARGET_C)) // Target FROST temperature for ECO bias; must be in range [MIN_TARGET_C,BIASCOM_FROST[.
 #define BIASCOM_FROST (max(14,OTRadValve::MIN_TARGET_C)) // Target FROST temperature for Comfort bias; must be in range ]BIASECO_FROST,MAX_TARGET_C].
 #define FROST BIASECO_FROST
-// 18C is a safe room temperature even for the slightly infirm according to NHS England 2014:
-//    http://www.nhs.uk/Livewell/winterhealth/Pages/KeepWarmKeepWell.aspx
-// Small babies have relatively poor thermoregulation so a device with setbacks may not be suitable for them, else ~18C is good:
-//    http://www.nhs.uk/conditions/pregnancy-and-baby/pages/reducing-risk-cot-death.aspx
-// so could possibly be marked explicitly on the control.
-// 21C is recommended living temperature in retirement housing:
-//     http://ipc.brookes.ac.uk/publications/pdf/Identifying_the_health_gain_from_retirement_housing.pdf
-#define SAFE_ROOM_TEMPERATURE 18 // Safe for most purposes.
+
 // Default warm/comfort room (air) temperature in degrees C; strictly greater than FROST, in range [MIN_TARGET_C,MAX_TARGET_C].
 // Control loop effectively targets upper end of this 1C window as of 20130518, middle as of 20141209.
 
