@@ -37,14 +37,6 @@ void setupOpenTRV();
 void loopOpenTRV();
 
 
-// Minimum and maximum bounds target temperatures; degrees C/Celsius/centigrade, strictly positive.
-// Minimum is some way above 0C to avoid freezing pipework even with small measurement errors and non-uniform temperatures.
-// Maximum is set a little below boiling/100C for DHW applications for safety.
-// Setbacks and uplifts cannot move temperature targets outside this range for safety.
-#define MIN_TARGET_C 5 // Minimum temperature setting allowed (to avoid freezing, allowing for offsets at temperature sensor, etc). 
-#define MAX_TARGET_C 95 // Maximum temperature setting allowed (eg for DHW).
-
-
 // Default frost (minimum) temperature in degrees C, strictly positive, in range [MIN_TARGET_C,MAX_TARGET_C].
 // Setting frost temperatures at a level likely to protect (eg) fridge/freezers as well as water pipes.
 // Note that 5C or below carries a risk of hypothermia: http://ipc.brookes.ac.uk/publications/pdf/Identifying_the_health_gain_from_retirement_housing.pdf
@@ -52,8 +44,8 @@ void loopOpenTRV();
 // 14C avoids risk of raised blood pressure and is a generally safe and comfortable sleeping temperature.
 // Note: BS EN 215:2004 S5.3.5 says maximum setting must be <= 32C, minimum in range [5C,12C].
 // 15C+ may help mould/mold risk from condensation, see: http://www.nea.org.uk/Resources/NEA/Publications/2013/Resource%20-%20Dealing%20with%20damp%20and%20condensation%20%28lo%20res%29.pdf
-#define BIASECO_FROST (max(6,MIN_TARGET_C)) // Target FROST temperature for ECO bias; must be in range [MIN_TARGET_C,BIASCOM_FROST[.
-#define BIASCOM_FROST (max(14,MIN_TARGET_C)) // Target FROST temperature for Comfort bias; must be in range ]BIASECO_FROST,MAX_TARGET_C].
+#define BIASECO_FROST (max(6,OTRadValve::MIN_TARGET_C)) // Target FROST temperature for ECO bias; must be in range [MIN_TARGET_C,BIASCOM_FROST[.
+#define BIASCOM_FROST (max(14,OTRadValve::MIN_TARGET_C)) // Target FROST temperature for Comfort bias; must be in range ]BIASECO_FROST,MAX_TARGET_C].
 #define FROST BIASECO_FROST
 // 18C is a safe room temperature even for the slightly infirm according to NHS England 2014:
 //    http://www.nhs.uk/Livewell/winterhealth/Pages/KeepWarmKeepWell.aspx

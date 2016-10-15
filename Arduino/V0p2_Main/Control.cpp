@@ -135,7 +135,7 @@ uint8_t getFROSTTargetC()
 #if defined(ENABLE_SETTABLE_TARGET_TEMPERATURES)
   const uint8_t stored = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_FROST_C);
   // If stored value is set and in bounds and higher than computed value then use stored value instead.
-  if((stored >= MIN_TARGET_C) && (stored <= MAX_TARGET_C) && (stored > result)) { return(stored); }
+  if((stored >= OTRadValve::MIN_TARGET_C) && (stored <= OTRadValve::MAX_TARGET_C) && (stored > result)) { return(stored); }
 #endif
   return(result);
   }
@@ -303,7 +303,7 @@ uint8_t getWARMTargetC() { return((uint8_t) (WARM)); } // Fixed value.
 // Returns false if not set, eg because outside range [MIN_TARGET_C,MAX_TARGET_C], else returns true.
 bool setFROSTTargetC(uint8_t tempC)
   {
-  if((tempC < MIN_TARGET_C) || (tempC > MAX_TARGET_C)) { return(false); } // Invalid temperature.
+  if((tempC < OTRadValve::MIN_TARGET_C) || (tempC > OTRadValve::MAX_TARGET_C)) { return(false); } // Invalid temperature.
   if(tempC > getWARMTargetC()) { return(false); } // Cannot set above WARM target.
   OTV0P2BASE::eeprom_smart_update_byte((uint8_t *)V0P2BASE_EE_START_FROST_C, tempC); // Update in EEPROM if necessary.
   return(true); // Assume value correctly written.
@@ -473,7 +473,7 @@ uint8_t ModelledRadValve::computeTargetTemp()
 
   else if(inBakeMode()) // If in BAKE mode then use elevated target.
     {
-    return(OTV0P2BASE::fnmin((uint8_t)(getWARMTargetC() + BAKE_UPLIFT), (uint8_t)MAX_TARGET_C)); // No setbacks apply in BAKE mode.
+    return(OTV0P2BASE::fnmin((uint8_t)(getWARMTargetC() + BAKE_UPLIFT), OTRadValve::MAX_TARGET_C)); // No setbacks apply in BAKE mode.
     }
 
   else // In 'WARM' mode with possible setback.
