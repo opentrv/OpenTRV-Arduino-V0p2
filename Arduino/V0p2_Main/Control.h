@@ -45,11 +45,11 @@ typedef OTRadValve::DEFAULT_DHW_ValveControlParameters PARAMS;
 #endif
 
 
-// Raise target by this many degrees in 'BAKE' mode (strictly positive).
-// DHD20160927 TODO-980 raised from 5 to 10 to ensure very rarely fails to trigger in in shoulder season.
-#define BAKE_UPLIFT 10
-// Maximum 'BAKE' minutes, ie time to crank heating up to BAKE setting (minutes, strictly positive, <255).
-#define BAKE_MAX_M 30
+//// Raise target by this many degrees in 'BAKE' mode (strictly positive).
+//// DHD20160927 TODO-980 raised from 5 to 10 to ensure very rarely fails to trigger in in shoulder season.
+//#define BAKE_UPLIFT 10
+//// Maximum 'BAKE' minutes, ie time to crank heating up to BAKE setting (minutes, strictly positive, <255).
+//#define BAKE_MAX_M 30
 
 // Initial minor setback degrees C (strictly positive).  Note that 1C heating setback may result in ~8% saving in the UK.
 // This may be the maximum setback applied with a comfort bias for example.

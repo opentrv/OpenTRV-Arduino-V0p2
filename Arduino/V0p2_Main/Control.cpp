@@ -81,7 +81,7 @@ void cancelBakeDebounced() { bakeCountdownM = 0; }
 // Start/restart 'BAKE' mode and timeout.
 // Should ideally be only be called once 'debounced' if coming from a button press for example.
 // Is thread-/ISR- safe.
-void startBake() { isWarmMode = true; bakeCountdownM = BAKE_MAX_M; }
+void startBake() { isWarmMode = true; bakeCountdownM = PARAMS::BAKE_MAX_M; }
 #if defined(ENABLE_SIMPLIFIED_MODE_BAKE)
 // Start BAKE from manual UI interrupt; marks UI as used also.
 // Vetos switch to BAKE mode if a temp pot/dial is present and at the low end stop, ie in FROST position.
@@ -473,7 +473,7 @@ uint8_t ModelledRadValve::computeTargetTemp()
 
   else if(inBakeMode()) // If in BAKE mode then use elevated target.
     {
-    return(OTV0P2BASE::fnmin((uint8_t)(getWARMTargetC() + BAKE_UPLIFT), OTRadValve::MAX_TARGET_C)); // No setbacks apply in BAKE mode.
+    return(OTV0P2BASE::fnmin((uint8_t)(getWARMTargetC() + PARAMS::BAKE_UPLIFT), OTRadValve::MAX_TARGET_C)); // No setbacks apply in BAKE mode.
     }
 
   else // In 'WARM' mode with possible setback.
