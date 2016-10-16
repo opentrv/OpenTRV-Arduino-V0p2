@@ -2423,8 +2423,8 @@ void loopOpenTRV()
 #if 1 && defined(ENABLE_CLI)
   if(isCLIActive())
     {
-    const uint8_t sct = OTV0P2BASE::getSubCycleTime();
-    const uint8_t listenTime = OTV0P2BASE::CLI::MIN_CLI_POLL_SCT;
+//    const uint8_t sct = OTV0P2BASE::getSubCycleTime();
+//    const uint8_t listenTime = OTV0P2BASE::CLI::MIN_CLI_POLL_SCT;
     const uint8_t stopBy = nearOverrunThreshold - 1;
     pollCLI(stopBy, 0 == TIME_LSD);
     }
