@@ -1284,25 +1284,6 @@ static void testSmoothStatsValue()
   }
 
 
-// Test temperature companding.
-static void testTempCompand()
-  {
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("TempCompand");
-  // Ensure that all (whole) temperatures from 0C to 100C are correctly compressed and expanded.
-  for(int i = 0; i <= 100; ++i)
-    {
-    //DEBUG_SERIAL_PRINT(i<<4); DEBUG_SERIAL_PRINT(" => "); DEBUG_SERIAL_PRINT(compressTempC16(i<<4)); DEBUG_SERIAL_PRINT(" => "); DEBUG_SERIAL_PRINT(expandTempC16(compressTempC16(i<<4))); DEBUG_SERIAL_PRINTLN();
-    AssertIsTrueWithErr(i<<4 == expandTempC16(compressTempC16(i<<4)), i);
-    }
-  // Ensure that out-of-range inputs are coerced to the limits.
-  AssertIsTrueWithErr(0 == expandTempC16(compressTempC16(-1)), -1);
-  AssertIsTrueWithErr((100<<4) == expandTempC16(compressTempC16(101<<4)), 101);
-  AssertIsTrueWithErr(COMPRESSION_C16_CEIL_VAL_AFTER == compressTempC16(102<<4), COMPRESSION_C16_CEIL_VAL_AFTER); // Verify ceiling.
-  AssertIsTrue(COMPRESSION_C16_CEIL_VAL_AFTER < 0xff);
-  // Ensure that 'unset' compressed value expands to 'unset' uncompressed value.
-  AssertIsTrue(OTV0P2BASE::STATS_UNSET_INT == expandTempC16(OTV0P2BASE::STATS_UNSET_BYTE));
-  }
-
 // Test some of the mask/port calculations.
 static void testFastDigitalIOCalcs()
   {
