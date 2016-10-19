@@ -140,28 +140,6 @@ static void posPOST(const uint8_t position, const __FlashStringHelper *s = NULL)
   }
 #endif // ALT_MAIN_LOOP
 
-// Rearrange date into sensible most-significant-first order, and make it fully numeric.
-// FIXME: would be better to have this in PROGMEM (Flash) rather than RAM, eg as F() constant.
-static const char _YYYYMmmDD[] =
-  {
-  __DATE__[7], __DATE__[8], __DATE__[9], __DATE__[10],
-  '/',
-  __DATE__[0], __DATE__[1], __DATE__[2],
-  '/',
-  ((' ' == __DATE__[4]) ? '0' : __DATE__[4]), __DATE__[5],
-  '\0'
-  };
-// Version (code/board) information printed as one line to serial (with line-end, and flushed); machine- and human- parseable.
-// Format: "board VX.X REVY YYYY/Mmm/DD HH:MM:SS".
-void serialPrintlnBuildVersion()
-  {
-  OTV0P2BASE::serialPrintAndFlush(F("board V0.2 REV"));
-  OTV0P2BASE::serialPrintAndFlush(V0p2_REV);
-  OTV0P2BASE::serialPrintAndFlush(' ');
-  OTV0P2BASE::serialPrintAndFlush(_YYYYMmmDD);
-  OTV0P2BASE::serialPrintlnAndFlush(F(" " __TIME__));
-  }
-
 
 // Pick an appropriate radio config for RFM23 (if it is the primary radio).
 #ifdef ENABLE_RADIO_PRIMARY_RFM23B
@@ -359,7 +337,7 @@ void setup()
   LED_UI2_ON();
 #endif
   OTV0P2BASE::serialPrintAndFlush(F("\r\nOpenTRV: ")); // Leading CRLF to clear leading junk, eg from bootloader.
-    serialPrintlnBuildVersion();
+    V0p2_serialPrintlnBuildVersion();
 #if defined(LED_UI2_EXISTS) && defined(ENABLE_UI_LED_2_IF_AVAILABLE)
   OTV0P2BASE::nap(WDTO_120MS); // Sleep to let UI2 LED be seen.
   LED_UI2_OFF();
