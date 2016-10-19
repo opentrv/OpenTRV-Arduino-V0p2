@@ -473,8 +473,6 @@ void checkUserSchedule()
 //   +EXT .....
 // where EXT is the name of the extension, usually 3 letters.
 
-#include <OTProtocolCC.h>
-
 // It is acceptable for extCLIHandler() to alter the buffer passed,
 // eg with strtok_t().
 static bool extCLIHandler(Print *const p, char *const buf, const uint8_t n)
