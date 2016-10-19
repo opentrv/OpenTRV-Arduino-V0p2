@@ -512,38 +512,15 @@ void loop()
   const unsigned long usEnd = micros();
   // Nominal loop time should be 2s x 1MHz clock, ie 2,000,000 if CPU running all the time.
   // Should generally be <2000 (<0.1%) for leaf, <20000 (<1%) for hub.
+  // Example output.
+//us apparent: 4544
+//us apparent: 25280
+//us apparent: 9280
   const unsigned long usApparentTaken = usEnd - usStart;
 #if 1 && defined(DEBUG)
   DEBUG_SERIAL_PRINT_FLASHSTRING("us apparent: ");
   DEBUG_SERIAL_PRINT(usApparentTaken);
   DEBUG_SERIAL_PRINTLN();
-// Leaf sample 2014/11/22...
-//us apparent: 4544
-//us apparent: 25280
-//us apparent: 9280
-//us apparent: 68416
-//=F0%@19C7;IC2E0;V3230;X0;R81;T8 1 W255 0 F255 0 W255 0 F255 0;S12 12 16 e;o34
-//
-//>
-//us apparent: 339136
-//us apparent: 1600
-//us apparent: 2112
-//us apparent: 2880
-//us apparent: 3008
-//us apparent: 1408
-//us apparent: 1344
-//Bare stats TX
-//us apparent: 74368
-//{"@":"c2e0","T|C16":311,"H|%":81,"L":238,"B|cV":323}
-//us apparent: 119232
-//us apparent: 1408
-//...
-//us apparent: 3008
-//us apparent: 1344
-//us apparent: 3264
-//us apparent: 1408
-//us apparent: 3776
-//us apparent: 2816
 #endif
 #endif
   }
