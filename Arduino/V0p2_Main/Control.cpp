@@ -107,24 +107,6 @@ void setBakeModeFromManualUI(const bool start)
   }
 
 
-
-#if defined(UNIT_TESTS)
-// Support for unit tests to force particular apparent WARM setting (without EEPROM writes).
-//enum _TEST_basetemp_override
-//  {
-//    _btoUT_normal = 0, // No override
-//    _btoUT_min, // Minimum settable/reasonable temperature.
-//    _btoUT_mid, // Medium settable/reasonable temperature.
-//    _btoUT_max, // Minimum settable/reasonable temperature.
-//  };
-// Current override state; 0 (default) means no override.
-static _TEST_basetemp_override _btoUT_override;
-// Set the override value (or remove the override).
-void _TEST_set_basetemp_override(const _TEST_basetemp_override override)
-  { _btoUT_override = override; }
-#endif
-
-
 // Get 'FROST' protection target in C; no higher than getWARMTargetC() returns, strictly positive, in range [MIN_TARGET_C,MAX_TARGET_C].
 #if defined(TEMP_POT_AVAILABLE)
 // Derived from temperature pot position.
@@ -243,16 +225,6 @@ uint8_t computeWARMTargetC(const uint8_t pot, const uint8_t loEndStop, const uin
 // NOT safe in face of interrupts.
 uint8_t getWARMTargetC()
   {
-#if defined(UNIT_TESTS)
-  // Special behaviour for unit tests.
-  switch(_btoUT_override)
-    {
-    case _btoUT_min: return(TEMP_SCALE_MIN);
-    case _btoUT_mid: return(TEMP_SCALE_MID);
-    case _btoUT_max: return(TEMP_SCALE_MAX);
-    }
-#endif
-
   const uint8_t pot = TempPot.get();
 
   // Cached input and result values; initially zero.
@@ -276,16 +248,6 @@ uint8_t getWARMTargetC()
 // Note that this value is non-volatile (stored in EEPROM).
 uint8_t getWARMTargetC()
   {
-#if defined(UNIT_TESTS)
-  // Special behaviour for unit tests.
-  switch(_btoUT_override)
-    {
-    case _btoUT_min: return(TEMP_SCALE_MIN);
-    case _btoUT_mid: return(TEMP_SCALE_MID);
-    case _btoUT_max: return(TEMP_SCALE_MAX);
-    }
-#endif
-
   // Get persisted value, if any.
   const uint8_t stored = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_WARM_C);
   // If out of bounds or no stored value then use default (or frost value if set and higher).

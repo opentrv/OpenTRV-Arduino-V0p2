@@ -79,20 +79,6 @@ bool inBakeMode();
 void cancelBakeDebounced();
 
 
-#if defined(UNIT_TESTS)
-// Support for unit tests to force particular apparent WARM setting (without EEPROM writes).
-enum _TEST_basetemp_override
-  {
-    _btoUT_normal = 0, // No override
-    _btoUT_min, // Minimum settable/reasonable temperature.
-    _btoUT_mid, // Medium settable/reasonable temperature.
-    _btoUT_max, // Minimum settable/reasonable temperature.
-  };
-#define _TEST_basetemp_override_MAX _btoUT_max // Max legit _TEST_basetemp_override_MAX value.
-// Set the override value (or remove the override).
-void _TEST_set_basetemp_override(_TEST_basetemp_override override);
-#endif
-
 // If true (the default) then the system has an 'Eco' energy-saving bias, else it has a 'comfort' bias.
 // Several system parameters are adjusted depending on the bias,
 // with 'eco' slanted toward saving energy, eg with lower target temperatures and shorter on-times.

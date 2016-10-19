@@ -1149,11 +1149,10 @@ void loopUnitTest()
   testFastDigitalIOCalcs();
   testTargetComputation();
   testModeControls();
-  testJSONStats();
-  testJSONForTX();
-  testFullStatsMessageCoreEncDec();
-  testTempCompand();
-  testSmoothStatsValue();
+  testJSONStats(); // FIXME: move to portable unit tests.
+  testJSONForTX(); // FIXME: move to portable unit tests.
+  testFullStatsMessageCoreEncDec(); // FIXME: move to portable unit tests.
+  testSmoothStatsValue(); // FIXME: move to portable unit tests.
   testSleepUntilSubCycleTime();
   testSensorMocking();
 
