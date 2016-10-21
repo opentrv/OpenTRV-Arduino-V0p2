@@ -85,7 +85,7 @@ static volatile bool significantUIOp;
 void markUIControlUsedSignificant()
   {
   // Provide some instant visual feedback if possible.
-  LED_HEATCALL_ON_ISR_SAFE();
+  OTV0P2BASE::LED_HEATCALL_ON_ISR_SAFE();
   // Flag up need for feedback.
   significantUIOp = true;
   // Do main UI-touched work.
