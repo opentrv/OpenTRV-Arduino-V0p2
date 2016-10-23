@@ -313,14 +313,14 @@ class ModelledRadValve : public OTRadValve::AbstractRadValve
     // the valve is really open,
     // and this needs more heat than can be passively drawn from an already-running boiler.
     // Thread-safe and ISR safe.
-    bool isCallingForHeat() const { return(callingForHeat); }
+    virtual bool isCallingForHeat() const { return(callingForHeat); }
 
     // True if the room/ambient temperature is below target, enough to likely call for heat.
     // This implies that the temperature is (significantly) under target,
     // the valve is really open,
     // and this needs more heat than can be passively drawn from an already-running boiler.
     // Thread-safe and ISR safe.
-    bool isUnderTarget() const { return(underTarget); }
+    virtual bool isUnderTarget() const { return(underTarget); }
 
     // Get target temperature in C as computed by computeTargetTemperature().
     uint8_t getTargetTempC() const { return(inputState.targetTempC); }
