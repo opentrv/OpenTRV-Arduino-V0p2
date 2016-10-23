@@ -45,43 +45,19 @@ SimpleValveSchedule Scheduler;
 static bool isBoilerOn();
 #endif
 
-// If true then is in WARM (or BAKE) mode; defaults to (starts as) false/FROST.
-// Should be only be set when 'debounced'.
-// Defaults to (starts as) false/FROST.
-// Marked volatile to allow atomic access from ISR without a lock.
-static volatile bool isWarmMode;
-// If true then the unit is in 'warm' (heating) mode, else 'frost' protection mode.
-bool inWarmMode() { return(isWarmMode); }
-// Has the effect of forcing the warm mode to the specified state immediately.
-// Should be only be called once 'debounced' if coming from a button press for example.
-// If forcing to FROST mode then any pending BAKE time is cancelled.
-void setWarmModeDebounced(const bool warm)
-  {
-  isWarmMode = warm;
-  if(!warm) { cancelBakeDebounced(); }
-  }
+
+// Radiator valve mode (FROST, WARM, BAKE).
+OTRadValve::ValveMode valveMode;
+
 // Start/cancel WARM mode in one call, driven by manual UI input.
 static void setWarmModeFromManualUI(const bool warm)
   {
   // Give feedback when changing WARM mode.
-  if(inWarmMode() != warm) { markUIControlUsedSignificant(); }
+  if(warm != valveMode.inWarmMode()) { markUIControlUsedSignificant(); }
   // Now set/cancel WARM.
-  setWarmModeDebounced(warm);
+  valveMode.setWarmModeDebounced(warm);
   }
 
-// Only relevant if isWarmMode is true.
-// Marked volatile to allow atomic access from ISR without a lock; decrements should lock out interrupts.
-static volatile uint_least8_t bakeCountdownM;
-// If true then the unit is in 'BAKE' mode, a subset of 'WARM' mode which boosts the temperature target temporarily.
-// ISR-safe.
-bool inBakeMode() { return(isWarmMode && (0 != bakeCountdownM)); }
-// Should be only be called once 'debounced' if coming from a button press for example.
-// Cancel 'bake' mode if active; does not force to FROST mode.
-void cancelBakeDebounced() { bakeCountdownM = 0; }
-// Start/restart 'BAKE' mode and timeout.
-// Should ideally be only be called once 'debounced' if coming from a button press for example.
-// Is thread-/ISR- safe.
-void startBake() { isWarmMode = true; bakeCountdownM = PARAMS::BAKE_MAX_M; }
 #if defined(ENABLE_SIMPLIFIED_MODE_BAKE)
 // Start BAKE from manual UI interrupt; marks UI as used also.
 // Vetos switch to BAKE mode if a temp pot/dial is present and at the low end stop, ie in FROST position.
@@ -93,7 +69,7 @@ static void startBakeFromInt()
   const bool isLo = TempPot.isAtLoEndStop(); // ISR-safe.
   if(isLo) { markUIControlUsed(); return; }
 #endif
-  startBake();
+  valveMode.startBake();
   markUIControlUsedSignificant();
   }
 #endif // defined(ENABLE_SIMPLIFIED_MODE_BAKE)
@@ -101,9 +77,9 @@ static void startBakeFromInt()
 void setBakeModeFromManualUI(const bool start)
   {
   // Give feedback when changing BAKE mode.
-  if(inBakeMode() != start) { markUIControlUsedSignificant(); }
+  if(valveMode.inBakeMode() != start) { markUIControlUsedSignificant(); }
   // Now set/cancel BAKE.
-  if(start) { startBake(); } else { cancelBakeDebounced(); }
+  if(start) { valveMode.startBake(); } else { valveMode.cancelBakeDebounced(); }
   }
 
 
@@ -406,7 +382,7 @@ void ModelledRadValve::recalibrate()
 uint8_t ModelledRadValve::computeTargetTemp()
   {
   // In FROST mode.
-  if(!inWarmMode())
+  if(!valveMode.inWarmMode())
     {
     const uint8_t frostC = getFROSTTargetC();
 
@@ -433,7 +409,7 @@ uint8_t ModelledRadValve::computeTargetTemp()
     return(frostC);
     }
 
-  else if(inBakeMode()) // If in BAKE mode then use elevated target.
+  else if(valveMode.inBakeMode()) // If in BAKE mode then use elevated target.
     {
     return(OTV0P2BASE::fnmin((uint8_t)(getWARMTargetC() + PARAMS::BAKE_UPLIFT), OTRadValve::MAX_TARGET_C)); // No setbacks apply in BAKE mode.
     }
@@ -541,7 +517,7 @@ void ModelledRadValve::computeTargetTemperature()
   // TODO: also consider showing full setback to FROST when a schedule is set but not on.
   // By default, the setback is regarded as zero/off.
   setbackC = 0;
-  if(inWarmMode())
+  if(valveMode.inWarmMode())
     {
     const uint8_t wt = getWARMTargetC();
     if(newTarget < wt) { setbackC = wt - newTarget; }
@@ -552,7 +528,7 @@ void ModelledRadValve::computeTargetTemperature()
   inputState.minPCOpen = getMinPercentOpen();
   inputState.maxPCOpen = getMaxPercentageOpenAllowed();
   inputState.glacial = glacial;
-  inputState.inBakeMode = inBakeMode();
+  inputState.inBakeMode = valveMode.inBakeMode();
   inputState.hasEcoBias = hasEcoBias();
   // Request a fast response from the valve if user is manually adjusting controls.
   const bool veryRecentUIUse = veryRecentUIControlUse();
@@ -569,7 +545,7 @@ void ModelledRadValve::computeTargetTemperature()
   const uint8_t minVacancyHoursForWideningECO = 3;
   inputState.widenDeadband = (!veryRecentUIUse) &&
       (retainedState.isFiltering ||
-      (!inWarmMode()) ||
+      (!valveMode.inWarmMode()) ||
       AmbLight.isRoomDark() || // Must be false if light sensor not usable.
       Occupancy.longVacant() || (hasEcoBias() && (Occupancy.getVacancyH() >= minVacancyHoursForWideningECO)));
   // Capture adjusted reference/room temperatures
@@ -579,7 +555,7 @@ void ModelledRadValve::computeTargetTemperature()
   const bool targetNotReached = (newTarget >= (inputState.refTempC16 >> 4));
   underTarget = targetNotReached;
   // If the target temperature is already reached then cancel any BAKE mode in progress (TODO-648).
-  if(!targetNotReached) { cancelBakeDebounced(); }
+  if(!targetNotReached) { valveMode.cancelBakeDebounced(); }
   // Only report as calling for heat when actively doing so.
   // (Eg opening the valve a little in case the boiler is already running does not count.)
   callingForHeat = targetNotReached &&
@@ -597,11 +573,12 @@ void ModelledRadValve::computeTargetTemperature()
 // Returns true if valve target changed and thus messages may need to be recomputed/sent/etc.
 void ModelledRadValve::computeCallForHeat()
   {
-  ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
-    {
-    // Run down BAKE mode timer if need be, one tick per minute.
-    if(bakeCountdownM > 0) { --bakeCountdownM; }
-    }
+  valveMode.read();
+//  ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
+//    {
+//    // Run down BAKE mode timer if need be, one tick per minute.
+//    if(bakeCountdownM > 0) { --bakeCountdownM; }
+//    }
 
   // Compute target and ensure that required input state is set for computeRequiredTRVPercentOpen().
   computeTargetTemperature();
@@ -1845,7 +1822,7 @@ void loopOpenTRV()
   // Spare the batteries if they are low, or the unit is in FROST mode, or if the room/area appears to be vacant.
   // Stay responsive if the valve is open and/or we are otherwise calling for heat.
   const bool conserveBattery =
-    (batteryLow || !inWarmMode() || Occupancy.longVacant()) &&
+    (batteryLow || !valveMode.inWarmMode() || Occupancy.longVacant()) &&
 #if defined(ENABLE_BOILER_HUB)
     (!isBoilerOn()) && // Unless the boiler is off, stay responsive.
 #endif
