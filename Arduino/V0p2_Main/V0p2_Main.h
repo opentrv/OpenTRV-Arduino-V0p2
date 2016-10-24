@@ -67,10 +67,6 @@ void panic();
 // Panic with fixed message.
 void panic(const __FlashStringHelper *s);
 
-// Version (code/board) information printed as one line to serial (with line-end, and flushed); machine- and human- parseable.
-// Format: "board VXXXX REVY; code YYYY/Mmm/DD HH:MM:SS".
-void serialPrintlnBuildVersion();
-
 // Call this to do an I/O poll if needed; returns true if something useful happened.
 // This call should typically take << 1ms at 1MHz CPU.
 // Does not change CPU clock speeds, mess with interrupts (other than possible brief blocking), or sleep.

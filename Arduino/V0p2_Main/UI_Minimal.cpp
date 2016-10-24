@@ -85,7 +85,7 @@ static volatile bool significantUIOp;
 void markUIControlUsedSignificant()
   {
   // Provide some instant visual feedback if possible.
-  LED_HEATCALL_ON_ISR_SAFE();
+  OTV0P2BASE::LED_HEATCALL_ON_ISR_SAFE();
   // Flag up need for feedback.
   significantUIOp = true;
   // Do main UI-touched work.
@@ -138,7 +138,7 @@ void userOpFeedback(bool includeVisual)
 static void handleLEARN(const uint8_t which)
   {
   // Set simple schedule starting every 24h from a little before now and running for an hour or so.  
-  if(inWarmMode()) { Scheduler.setSimpleSchedule(OTV0P2BASE::getMinutesSinceMidnightLT(), which); }
+  if(valveMode.inWarmMode()) { Scheduler.setSimpleSchedule(OTV0P2BASE::getMinutesSinceMidnightLT(), which); }
   // Clear simple schedule.
   else { Scheduler.clearSimpleSchedule(which); }
   }
@@ -180,12 +180,6 @@ bool tickUI(const uint_fast8_t sec)
 #else
   const bool reportedRecently = false;
 #endif
-// Drive second UI LED if available.
-#if defined(LED_UI2_EXISTS) && defined(ENABLE_UI_LED_2_IF_AVAILABLE)
-  // Flash 2nd UI LED very briefly every 'tick' while activity has recently been reported.
-  if(reportedRecently) { LED_UI2_ON(); veryTinyPause(); }
-  LED_UI2_OFF(); // Generally force 2nd LED off.
-#endif
 
   // True on every 4th tick/call, ie about once every 8 seconds.
   const bool forthTick = !((++tickCount) & 3); // True on every 4th tick.
@@ -203,7 +197,7 @@ bool tickUI(const uint_fast8_t sec)
 #else
   // Even more responsive at some possible energy cost...
   // Polls pot on every tick unless the room has been vacant for a day or two or is in FROST mode.
-  if(enhancedUIFeedback || forthTick || (inWarmMode() && !Occupancy.longLongVacant()))
+  if(enhancedUIFeedback || forthTick || (valveMode.inWarmMode() && !Occupancy.longLongVacant()))
 #endif
     {
     TempPot.read();
@@ -214,7 +208,7 @@ bool tickUI(const uint_fast8_t sec)
 #endif   
     // Force to FROST mode (and cancel any erroneous BAKE, etc) when at FROST end of dial.
     const bool isLo = TempPot.isAtLoEndStop();
-    if(isLo) { setWarmModeDebounced(false); }  
+    if(isLo) { valveMode.setWarmModeDebounced(false); }  
     // Feed back significant change in pot position, ie at temperature boundaries.
     // Synthesise a 'warm' target temp that distinguishes end stops...
     const uint8_t nominalWarmTarget = isLo ? 1 :
@@ -256,8 +250,8 @@ bool tickUI(const uint_fast8_t sec)
     if(!modeButtonWasPressed)
       {
       // Capture real mode variable as button is pressed.
-      isWarmModePutative = inWarmMode();
-      isBakeModePutative = inBakeMode();
+      isWarmModePutative = valveMode.inWarmMode();
+      isBakeModePutative = valveMode.inBakeMode();
       modeButtonWasPressed = true;
       }
 
@@ -307,8 +301,8 @@ bool tickUI(const uint_fast8_t sec)
       // Don't update the debounced WARM mode while button held down.
       // Will also capture programmatic changes to isWarmMode, eg from schedules.
       const bool isWarmModeDebounced = isWarmModePutative;
-      setWarmModeDebounced(isWarmModeDebounced);
-      if(isBakeModePutative) { startBake(); } else { cancelBakeDebounced(); }
+      valveMode.setWarmModeDebounced(isWarmModeDebounced);
+      if(isBakeModePutative) { valveMode.startBake(); } else { valveMode.cancelBakeDebounced(); }
 
       markUIControlUsed(); // Note activity on release of MODE button...
       modeButtonWasPressed = false;
@@ -320,7 +314,7 @@ bool tickUI(const uint_fast8_t sec)
 
     // Mode button not pressed: indicate current mode with flash(es); more flashes if actually calling for heat.
     // Force display while UI controls are being used, eg to indicate temp pot position.
-    if(justTouched || inWarmMode()) // Generate flash(es) if in WARM mode or fiddling with UI other than Mode button.
+    if(justTouched || valveMode.inWarmMode()) // Generate flash(es) if in WARM mode or fiddling with UI other than Mode button.
       {
       // DHD20131223: only flash if the room not known to be dark so as to save energy and avoid disturbing sleep, etc.
       // In this case force resample of light level frequently in case user turns light on eg to operate unit.
@@ -332,7 +326,7 @@ bool tickUI(const uint_fast8_t sec)
 #if defined(ENABLE_NOMINAL_RAD_VALVE) && defined(ENABLE_LOCAL_TRV)
              || NominalRadValve.isCallingForHeat()
 #endif
-             || inBakeMode()) && !AmbLight.isRoomDark()))
+             || valveMode.inBakeMode()) && !AmbLight.isRoomDark()))
         {
         // First flash to indicate WARM mode (or pot being twiddled).
         LED_HEATCALL_ON();
@@ -350,7 +344,7 @@ bool tickUI(const uint_fast8_t sec)
         // or likely to be calling for heat while interacting with the controls, to give fast user feedback (TODO-695).
         if((enhancedUIFeedback && NominalRadValve.isUnderTarget()) ||
             NominalRadValve.isCallingForHeat() ||
-            inBakeMode())
+            valveMode.inBakeMode())
           {
           LED_HEATCALL_OFF();
           offPause(); // V0.09 was mediumPause().
@@ -360,7 +354,7 @@ bool tickUI(const uint_fast8_t sec)
           else if(!isComfortTemperature(wt)) { OTV0P2BASE::sleepLowPowerMs((VERYTINY_PAUSE_MS + TINY_PAUSE_MS) / 2); }
           else { tinyPause(); }
 
-          if(inBakeMode())
+          if(valveMode.inBakeMode())
             {
             // Third (lengthened) flash to indicate BAKE mode.
             LED_HEATCALL_OFF();
@@ -407,7 +401,7 @@ bool tickUI(const uint_fast8_t sec)
       if(currentScheduleStatus != prevScheduleStatus)
         {
         prevScheduleStatus = currentScheduleStatus;
-        setWarmModeDebounced(currentScheduleStatus);
+        valveMode.setWarmModeDebounced(currentScheduleStatus);
         }
       }
     }
@@ -458,10 +452,10 @@ void checkUserSchedule()
     // Note that in the presence of multiple overlapping schedules only the last 'off' applies however.
     if(((Scheduler.MAX_SIMPLE_SCHEDULES < 1) || !Scheduler.isAnyScheduleOnWARMNow()) &&
        (msm == Scheduler.getSimpleScheduleOff(which)))
-      { setWarmModeDebounced(false); }
+      { valveMode.setWarmModeDebounced(false); }
     // Check if now is the simple scheduled on time.
     else if(msm == Scheduler.getSimpleScheduleOn(which))
-      { setWarmModeDebounced(true); }
+      { valveMode.setWarmModeDebounced(true); }
     }
   }
 #endif // !defined(checkUserSchedule)
@@ -472,8 +466,6 @@ void checkUserSchedule()
 // Commands of form:
 //   +EXT .....
 // where EXT is the name of the extension, usually 3 letters.
-
-#include <OTProtocolCC.h>
 
 // It is acceptable for extCLIHandler() to alter the buffer passed,
 // eg with strtok_t().
@@ -542,7 +534,7 @@ void serialStatusReport()
   // Initial '=' section with common essentials.
   Serial.print((char) OTV0P2BASE::SERLINE_START_CHAR_STATS);
 //#ifdef SUPPORT_BAKE
-  Serial.print(inWarmMode() ? (inBakeMode() ? 'B' : 'W') : 'F');
+  Serial.print(valveMode.inWarmMode() ? (valveMode.inBakeMode() ? 'B' : 'W') : 'F');
 //#else
 //  Serial.print(inWarmMode() ? 'W' : 'F');
 //#endif
@@ -860,7 +852,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
       // Version information printed as one line to serial, machine- and human- parseable.
       case 'V':
         {
-        serialPrintlnBuildVersion();
+        V0p2Base_serialPrintlnBuildVersion();
 #if defined(DEBUG) && defined(ENABLE_EXTENDED_CLI) // && !defined(ENABLE_TRIMMED_MEMORY)
         // Allow for much longer input commands for extended CLI.
         Serial.print(F("Ext CLI max chars: ")); Serial.println(MAXIMUM_CLI_RESPONSE_CHARS);
@@ -954,7 +946,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
           }
         else
 #endif
-          { setWarmModeDebounced(false); } // No parameter supplied; switch to FROST mode.
+          { valveMode.setWarmModeDebounced(false); } // No parameter supplied; switch to FROST mode.
         break;
         }
 #endif // defined(ENABLE_LOCAL_TRV)
@@ -1035,7 +1027,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
 #if defined(ENABLE_LOCAL_TRV) && !defined(ENABLE_TRIMMED_MEMORY)
       // Switch to (or restart) BAKE (Quick Heat) mode: Q
       // We can live without this if very short of memory.
-      case 'Q': { startBake(); break; }
+      case 'Q': { valveMode.startBake(); break; }
 #endif
 
 #if !defined(ENABLE_TRIMMED_MEMORY)
@@ -1058,8 +1050,8 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         else
 #endif
           {
-          cancelBakeDebounced(); // Ensure BAKE mode not entered.
-          setWarmModeDebounced(true); // No parameter supplied; switch to WARM mode.
+          valveMode.cancelBakeDebounced(); // Ensure BAKE mode not entered.
+          valveMode.setWarmModeDebounced(true); // No parameter supplied; switch to WARM mode.
           }
         break;
         }

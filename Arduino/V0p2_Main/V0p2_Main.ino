@@ -140,28 +140,6 @@ static void posPOST(const uint8_t position, const __FlashStringHelper *s = NULL)
   }
 #endif // ALT_MAIN_LOOP
 
-// Rearrange date into sensible most-significant-first order, and make it fully numeric.
-// FIXME: would be better to have this in PROGMEM (Flash) rather than RAM, eg as F() constant.
-static const char _YYYYMmmDD[] =
-  {
-  __DATE__[7], __DATE__[8], __DATE__[9], __DATE__[10],
-  '/',
-  __DATE__[0], __DATE__[1], __DATE__[2],
-  '/',
-  ((' ' == __DATE__[4]) ? '0' : __DATE__[4]), __DATE__[5],
-  '\0'
-  };
-// Version (code/board) information printed as one line to serial (with line-end, and flushed); machine- and human- parseable.
-// Format: "board VX.X REVY YYYY/Mmm/DD HH:MM:SS".
-void serialPrintlnBuildVersion()
-  {
-  OTV0P2BASE::serialPrintAndFlush(F("board V0.2 REV"));
-  OTV0P2BASE::serialPrintAndFlush(V0p2_REV);
-  OTV0P2BASE::serialPrintAndFlush(' ');
-  OTV0P2BASE::serialPrintAndFlush(_YYYYMmmDD);
-  OTV0P2BASE::serialPrintlnAndFlush(F(" " __TIME__));
-  }
-
 
 // Pick an appropriate radio config for RFM23 (if it is the primary radio).
 #ifdef ENABLE_RADIO_PRIMARY_RFM23B
@@ -359,7 +337,7 @@ void setup()
   LED_UI2_ON();
 #endif
   OTV0P2BASE::serialPrintAndFlush(F("\r\nOpenTRV: ")); // Leading CRLF to clear leading junk, eg from bootloader.
-    serialPrintlnBuildVersion();
+    V0p2Base_serialPrintlnBuildVersion();
 #if defined(LED_UI2_EXISTS) && defined(ENABLE_UI_LED_2_IF_AVAILABLE)
   OTV0P2BASE::nap(WDTO_120MS); // Sleep to let UI2 LED be seen.
   LED_UI2_OFF();
@@ -534,38 +512,15 @@ void loop()
   const unsigned long usEnd = micros();
   // Nominal loop time should be 2s x 1MHz clock, ie 2,000,000 if CPU running all the time.
   // Should generally be <2000 (<0.1%) for leaf, <20000 (<1%) for hub.
+  // Example output.
+//us apparent: 4544
+//us apparent: 25280
+//us apparent: 9280
   const unsigned long usApparentTaken = usEnd - usStart;
 #if 1 && defined(DEBUG)
   DEBUG_SERIAL_PRINT_FLASHSTRING("us apparent: ");
   DEBUG_SERIAL_PRINT(usApparentTaken);
   DEBUG_SERIAL_PRINTLN();
-// Leaf sample 2014/11/22...
-//us apparent: 4544
-//us apparent: 25280
-//us apparent: 9280
-//us apparent: 68416
-//=F0%@19C7;IC2E0;V3230;X0;R81;T8 1 W255 0 F255 0 W255 0 F255 0;S12 12 16 e;o34
-//
-//>
-//us apparent: 339136
-//us apparent: 1600
-//us apparent: 2112
-//us apparent: 2880
-//us apparent: 3008
-//us apparent: 1408
-//us apparent: 1344
-//Bare stats TX
-//us apparent: 74368
-//{"@":"c2e0","T|C16":311,"H|%":81,"L":238,"B|cV":323}
-//us apparent: 119232
-//us apparent: 1408
-//...
-//us apparent: 3008
-//us apparent: 1344
-//us apparent: 3264
-//us apparent: 1408
-//us apparent: 3776
-//us apparent: 2816
 #endif
 #endif
   }

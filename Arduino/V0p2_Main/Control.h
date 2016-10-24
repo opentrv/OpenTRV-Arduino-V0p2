@@ -37,75 +37,12 @@ void setupOpenTRV();
 void loopOpenTRV();
 
 
-// Minimum and maximum bounds target temperatures; degrees C/Celsius/centigrade, strictly positive.
-// Minimum is some way above 0C to avoid freezing pipework even with small measurement errors and non-uniform temperatures.
-// Maximum is set a little below boiling/100C for DHW applications for safety.
-// Setbacks and uplifts cannot move temperature targets outside this range for safety.
-#define MIN_TARGET_C 5 // Minimum temperature setting allowed (to avoid freezing, allowing for offsets at temperature sensor, etc). 
-#define MAX_TARGET_C 95 // Maximum temperature setting allowed (eg for DHW).
-
-
-// Default frost (minimum) temperature in degrees C, strictly positive, in range [MIN_TARGET_C,MAX_TARGET_C].
-// Setting frost temperatures at a level likely to protect (eg) fridge/freezers as well as water pipes.
-// Note that 5C or below carries a risk of hypothermia: http://ipc.brookes.ac.uk/publications/pdf/Identifying_the_health_gain_from_retirement_housing.pdf
-// Other parts of the room may be somewhat colder than where the sensor is, so aim a little over 5C.
-// 14C avoids risk of raised blood pressure and is a generally safe and comfortable sleeping temperature.
-// Note: BS EN 215:2004 S5.3.5 says maximum setting must be <= 32C, minimum in range [5C,12C].
-// 15C+ may help mould/mold risk from condensation, see: http://www.nea.org.uk/Resources/NEA/Publications/2013/Resource%20-%20Dealing%20with%20damp%20and%20condensation%20%28lo%20res%29.pdf
-#define BIASECO_FROST (max(6,MIN_TARGET_C)) // Target FROST temperature for ECO bias; must be in range [MIN_TARGET_C,BIASCOM_FROST[.
-#define BIASCOM_FROST (max(14,MIN_TARGET_C)) // Target FROST temperature for Comfort bias; must be in range ]BIASECO_FROST,MAX_TARGET_C].
-#define FROST BIASECO_FROST
-// 18C is a safe room temperature even for the slightly infirm according to NHS England 2014:
-//    http://www.nhs.uk/Livewell/winterhealth/Pages/KeepWarmKeepWell.aspx
-// Small babies have relatively poor thermoregulation so a device with setbacks may not be suitable for them, else ~18C is good:
-//    http://www.nhs.uk/conditions/pregnancy-and-baby/pages/reducing-risk-cot-death.aspx
-// so could possibly be marked explicitly on the control.
-// 21C is recommended living temperature in retirement housing:
-//     http://ipc.brookes.ac.uk/publications/pdf/Identifying_the_health_gain_from_retirement_housing.pdf
-#define SAFE_ROOM_TEMPERATURE 18 // Safe for most purposes.
-// Default warm/comfort room (air) temperature in degrees C; strictly greater than FROST, in range [MIN_TARGET_C,MAX_TARGET_C].
-// Control loop effectively targets upper end of this 1C window as of 20130518, middle as of 20141209.
-
+// Select basic parameter set to use (or could define new set here).
 #ifndef DHW_TEMPERATURES // Settings for room TRV.
-// Set so that mid-point is at ~19C (BRE and others regard this as minimum comfort temperature)
-// and half the scale will be below 19C and thus save ('eco') compared to typical UK room temperatures.
-// (17/18 good for energy saving at ~1C below typical UK room temperatures of ~19C in 2012).
-// Note: BS EN 215:2004 S5.3.5 says maximum setting must be <= 32C, minimum in range [5C,12C].
-#define BIASECO_WARM 17 // Target WARM temperature for ECO bias; must be in range ]BIASCOM_FROST+1,BIASCOM_WARM[.
-#define BIASCOM_WARM 21 // Target WARM temperature for Comfort bias; must be in range ]BIASECO_WARM,MAX_TARGET_C-BAKE_UPLIFT-1].
+typedef OTRadValve::DEFAULT_ValveControlParameters PARAMS;
 #else // Default settings for DHW control.
-// 55C+ centre value with boost to 60C+ for DHW Legionella control where needed.
-// Note that the low end (~45C) is safe against scalding but may worry some for storage as a Legionella risk.
-#define BIASECO_WARM 45 // Target WARM temperature for ECO bias; must be in range [MODECOM_WARM,MAX_TARGET_C].
-#define BIASCOM_WARM 65 // Target WARM temperature for Comfort bias; must be in range ]MIN_TARGET_C,MODEECO_WARM].
+typedef OTRadValve::DEFAULT_DHW_ValveControlParameters PARAMS;
 #endif
-// Default to a 'safe' temperature.
-#define WARM max(BIASECO_WARM,SAFE_ROOM_TEMPERATURE)
-
-// Scale can run from eco warm -1 to comfort warm + 1, eg: * 16 17 18 >19< 20 21 22 BOOST
-#define TEMP_SCALE_MIN (BIASECO_WARM-1) // Bottom of range for adjustable-base-temperature systems.
-#define TEMP_SCALE_MID ((BIASECO_WARM + BIASCOM_WARM + 1)/2) // Middle of range for adjustable-base-temperature systems; should be 'eco' baised.
-#define TEMP_SCALE_MAX (BIASCOM_WARM+1) // Top of range for adjustable-base-temperature systems.
-
-// Raise target by this many degrees in 'BAKE' mode (strictly positive).
-// DHD20160927 TODO-980 raised from 5 to 10 to ensure very rarely fails to trigger in in shoulder season.
-#define BAKE_UPLIFT 10
-// Maximum 'BAKE' minutes, ie time to crank heating up to BAKE setting (minutes, strictly positive, <255).
-#define BAKE_MAX_M 30
-
-// Initial minor setback degrees C (strictly positive).  Note that 1C heating setback may result in ~8% saving in the UK.
-// This may be the maximum setback applied with a comfort bias for example.
-#define SETBACK_DEFAULT 1
-// Enhanced setback, eg in eco mode, for extra energy savings.  Not more than SETBACK_FULL.
-#define SETBACK_ECO (1+SETBACK_DEFAULT)
-// Full setback degrees C (strictly positive and significantly, ie several degrees, greater than SETBACK_DEFAULT, less than MIN_TARGET_C).
-// Deeper setbacks increase energy savings at the cost of longer times to return to target temperatures.
-// See also (recommending 13F/7C setback to 55F/12C): https://www.mge.com/images/pdf/brochures/residential/setbackthermostat.pdf
-// See also (suggesting for an 8hr setback, 1F set-back = 1% energy savings): http://joneakes.com/jons-fixit-database/1270-How-far-back-should-a-set-back-thermostat-be-set
-// This must set back to no more than than MIN_TARGET_C to avoid problems with unsigned arithmetic.
-#define SETBACK_FULL 4
-// Prolonged inactivity time deemed to indicate room(s) really unoccupied to trigger full setback (minutes, strictly positive).
-#define SETBACK_FULL_M min(60, max(30, OTV0P2BASE::PseudoSensorOccupancyTracker::OCCUPATION_TIMEOUT_M))
 
 
 // Period in minutes for simple learned on-time; strictly positive (and less than 256).
@@ -120,41 +57,9 @@ void loopOpenTRV();
 #endif
 
 
-// Forcing the warm mode to the specified state immediately.
-// Iff forcing to FROST mode then any pending BAKE time is cancelled,
-// else BAKE status is unchanged.
-// Should be only be called once 'debounced' if coming from a button press for example.
-// Is safe to call repeatedly from test routines, eg does not cause EEPROM wear.
-void setWarmModeDebounced(const bool warm);
-// If true then the unit is in 'warm' (heating) mode, else 'frost' protection mode.
-// This is a 'debounced' value to reduce accidental triggering.
-bool inWarmMode();
-// Force to BAKE mode.
-// Should ideally be only be called once 'debounced' if coming from a button press for example.
-// Is safe to call repeatedly from test routines, eg does not cause EEPROM wear.
-// Is thread-/ISR- safe.
-void startBake();
-// If true then the unit is in 'bake' mode, a subset of 'warm' mode which boosts the temperature target temporarily.
-// This is a 'debounced' value to reduce accidental triggering.
-bool inBakeMode();
-// Should be only be called once 'debounced' if coming from a button press for example.
-// Cancel 'bake' mode if active: does not force to FROST mode.
-void cancelBakeDebounced();
+// Radiator valve mode (FROST, WARM, BAKE).
+extern OTRadValve::ValveMode valveMode;
 
-
-#if defined(UNIT_TESTS)
-// Support for unit tests to force particular apparent WARM setting (without EEPROM writes).
-enum _TEST_basetemp_override
-  {
-    _btoUT_normal = 0, // No override
-    _btoUT_min, // Minimum settable/reasonable temperature.
-    _btoUT_mid, // Medium settable/reasonable temperature.
-    _btoUT_max, // Minimum settable/reasonable temperature.
-  };
-#define _TEST_basetemp_override_MAX _btoUT_max // Max legit _TEST_basetemp_override_MAX value.
-// Set the override value (or remove the override).
-void _TEST_set_basetemp_override(_TEST_basetemp_override override);
-#endif
 
 // If true (the default) then the system has an 'Eco' energy-saving bias, else it has a 'comfort' bias.
 // Several system parameters are adjusted depending on the bias,
@@ -194,9 +99,9 @@ bool setWARMTargetC(uint8_t tempC);
 #endif
 
 // True if specified temperature is at or below 'eco' WARM target temperature, ie is eco-friendly.
-#define isEcoTemperature(tempC) ((tempC) <= BIASECO_WARM)
+#define isEcoTemperature(tempC) ((tempC) <= PARAMS::WARM_ECO)
 // True if specified temperature is at or above 'comfort' WARM target temperature.
-#define isComfortTemperature(tempC) ((tempC) >= BIASCOM_WARM)
+#define isComfortTemperature(tempC) ((tempC) >= PARAMS::WARM_COM)
 
 // Default minimum on/off time in minutes for the boiler relay.
 // Set to 5 as the default valve Tx cycle is 4 mins and 5 mins is a good amount for most boilers.
@@ -408,14 +313,14 @@ class ModelledRadValve : public OTRadValve::AbstractRadValve
     // the valve is really open,
     // and this needs more heat than can be passively drawn from an already-running boiler.
     // Thread-safe and ISR safe.
-    bool isCallingForHeat() const { return(callingForHeat); }
+    virtual bool isCallingForHeat() const { return(callingForHeat); }
 
     // True if the room/ambient temperature is below target, enough to likely call for heat.
     // This implies that the temperature is (significantly) under target,
     // the valve is really open,
     // and this needs more heat than can be passively drawn from an already-running boiler.
     // Thread-safe and ISR safe.
-    bool isUnderTarget() const { return(underTarget); }
+    virtual bool isUnderTarget() const { return(underTarget); }
 
     // Get target temperature in C as computed by computeTargetTemperature().
     uint8_t getTargetTempC() const { return(inputState.targetTempC); }

@@ -190,7 +190,7 @@ static bool decodeAndHandleFTp2_FS20_native(Print *p, const bool secure, const u
     p->print(command.hc1); p->print(' ');
     p->println(command.hc2);
 #endif
-    const uint8_t percentOpen = OTRadValve::FHT8VRadValveBase::convert255ScaleToPercent(command.extension);
+    const uint8_t percentOpen = OTRadValve::FHT8VRadValveUtil::convert255ScaleToPercent(command.extension);
     remoteCallForHeatRX(compoundHC, percentOpen);
     }
 #endif
