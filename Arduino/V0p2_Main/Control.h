@@ -63,7 +63,12 @@ extern OTRadValve::ValveMode valveMode;
 
 // WIP: temperature control object.
 // Choose which subtype to use depending on board type...
+
+#if defined(ENABLE_SETTABLE_TARGET_TEMPERATURES) // Eg REV1.
+typedef OTRadValve::TempControlSimpleEEPROMBacked<PARAMS> TempControl_t;
+#else
 typedef OTRadValve::TempControlBase TempControl_t;
+#endif
 // defined(TEMP_POT_AVAILABLE) .. defined(ENABLE_SETTABLE_TARGET_TEMPERATURES)
 extern TempControl_t tempControl;
 
