@@ -83,6 +83,10 @@ void setBakeModeFromManualUI(const bool start)
   }
 
 
+// WIP: temperature control object.
+// Choose which subtype to use depending on board type...
+extern TempControl_t tempControl;
+
 // Get 'FROST' protection target in C; no higher than getWARMTargetC() returns, strictly positive, in range [MIN_TARGET_C,MAX_TARGET_C].
 #if defined(TEMP_POT_AVAILABLE)
 // Derived from temperature pot position.

@@ -61,6 +61,13 @@ typedef OTRadValve::DEFAULT_DHW_ValveControlParameters PARAMS;
 extern OTRadValve::ValveMode valveMode;
 
 
+// WIP: temperature control object.
+// Choose which subtype to use depending on board type...
+typedef OTRadValve::TempControlBase TempControl_t;
+// defined(TEMP_POT_AVAILABLE) .. defined(ENABLE_SETTABLE_TARGET_TEMPERATURES)
+extern TempControl_t tempControl;
+
+
 // If true (the default) then the system has an 'Eco' energy-saving bias, else it has a 'comfort' bias.
 // Several system parameters are adjusted depending on the bias,
 // with 'eco' slanted toward saving energy, eg with lower target temperatures and shorter on-times.
