@@ -115,6 +115,7 @@ bool setWARMTargetC(uint8_t tempC);
 // True if specified temperature is at or above 'comfort' WARM target temperature.
 #define isComfortTemperature(tempC) ((tempC) >= PARAMS::WARM_COM)
 
+
 // Default minimum on/off time in minutes for the boiler relay.
 // Set to 5 as the default valve Tx cycle is 4 mins and 5 mins is a good amount for most boilers.
 // This constant is necessary as if V0P2BASE_EE_START_MIN_BOILER_ON_MINS_INV is not set, the boiler relay will never be turned on.
