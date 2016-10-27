@@ -33,7 +33,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #include "UI_Minimal.h"
 
 
-#ifdef valveUI_DEFINED
+#if defined(valveUI_DEFINED)
 // WIP: valve physical UI controller.
 OTRadValve::ModeButtonAndPotActuatorPhysicalUI valveUI(
   &valveMode,

@@ -68,10 +68,10 @@ The OpenTRV project licenses this file to you
 
 
 // WIP: valve physical UI controller.
-#if 0
+#if defined(ENABLE_LOCAL_TRV) && !defined(NO_UI_SUPPORT)
 #define valveUI_DEFINED
 extern OTRadValve::ModeButtonAndPotActuatorPhysicalUI valveUI;
-#endif
+#endif // ENABLE_LOCAL_TRV && !NO_UI_SUPPORT
 
 
 // Call this on even numbered seconds (with current time in seconds) to allow the UI to operate.
