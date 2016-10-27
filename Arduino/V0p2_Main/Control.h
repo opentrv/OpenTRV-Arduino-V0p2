@@ -25,9 +25,11 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 
 #include <stdint.h>
 
+#include <OTV0p2Base.h>
+#include "V0p2_Sensors.h"
+
 #include "V0p2_Main.h"
 #include "Messaging.h"
-#include <OTV0p2Base.h>
 
 
 // Special setup for OpenTRV beyond generic hardware setup.
@@ -38,9 +40,11 @@ void loopOpenTRV();
 
 
 // Select basic parameter set to use (or could define new set here).
-#ifndef DHW_TEMPERATURES // Settings for room TRV.
+#ifndef DHW_TEMPERATURES
+// Settings for room TRV.
 typedef OTRadValve::DEFAULT_ValveControlParameters PARAMS;
-#else // Default settings for DHW control.
+#else
+// Default settings for DHW control.
 typedef OTRadValve::DEFAULT_DHW_ValveControlParameters PARAMS;
 #endif
 
@@ -62,12 +66,18 @@ extern OTRadValve::ValveMode valveMode;
 
 
 // WIP: temperature control object.
-// Choose which subtype to use depending on board type...
-
-#if defined(ENABLE_SETTABLE_TARGET_TEMPERATURES) // Eg REV1.
+// Choose which subtype to use depending on enabled settings and board type.
+#if defined(TEMP_POT_AVAILABLE) // Eg REV2/REV7.
+  #if 0 && defined(HUMIDITY_SENSOR_SUPPORT) // Humidity sensing available.
+  typedef OTRadValve::TempControlTempPot<&TempPot, static_cast<const OTV0P2BASE::HumiditySensorBase*>(&RelHumidity), PARAMS> TempControl_t;
+  #else
+  typedef OTRadValve::TempControlTempPot<&TempPot, static_cast<const OTV0P2BASE::HumiditySensorBase*>(NULL), PARAMS> TempControl_t;
+  #endif // HUMIDITY_SENSOR_SUPPORT
+#elif defined(ENABLE_SETTABLE_TARGET_TEMPERATURES) // Eg REV1.
 typedef OTRadValve::TempControlSimpleEEPROMBacked<PARAMS> TempControl_t;
 #else
-typedef OTRadValve::TempControlBase TempControl_t;
+#error No temperature control type selected.
+// typedef OTRadValve::TempControlBase TempControl_t;
 #endif
 // defined(TEMP_POT_AVAILABLE) .. defined(ENABLE_SETTABLE_TARGET_TEMPERATURES)
 extern TempControl_t tempControl;

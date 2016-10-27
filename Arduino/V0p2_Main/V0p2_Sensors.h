@@ -32,7 +32,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
 
 #include "V0p2_Main.h"
 
-#include "Messaging.h"
+//#include "Messaging.h"
 
 
 // Sensor for supply (eg battery) voltage in millivolts.
