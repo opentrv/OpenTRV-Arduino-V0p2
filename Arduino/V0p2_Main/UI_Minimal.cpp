@@ -213,7 +213,7 @@ bool tickUI(const uint_fast8_t sec)
     // Synthesise a 'warm' target temp that distinguishes end stops...
     const uint8_t nominalWarmTarget = isLo ? 1 :
         (TempPot.isAtHiEndStop() ? 99 :
-        getWARMTargetC());
+        tempControl.getWARMTargetC());
     // Record of 'last' nominalWarmTarget; initially 0.
     static uint8_t lastNominalWarmTarget;
     if(nominalWarmTarget != lastNominalWarmTarget)
@@ -332,11 +332,11 @@ bool tickUI(const uint_fast8_t sec)
         LED_HEATCALL_ON();
         // LED on stepwise proportional to temp pot setting.
         // Small number of steps (3) should help make positioning more obvious.
-        const uint8_t wt = getWARMTargetC();
+        const uint8_t wt = tempControl.getWARMTargetC();
         // Makes vtiny|tiny|medium flash for cool|OK|warm temperature target.
         // Stick to minimum length flashes to save energy unless just touched.
-        if(!justTouched || isEcoTemperature(wt)) { veryTinyPause(); }
-        else if(!isComfortTemperature(wt)) { tinyPause(); }
+        if(!justTouched || tempControl.isEcoTemperature(wt)) { veryTinyPause(); }
+        else if(!tempControl.isComfortTemperature(wt)) { tinyPause(); }
         else { mediumPause(); }
 
 #if defined(ENABLE_NOMINAL_RAD_VALVE) && defined(ENABLE_LOCAL_TRV)
@@ -350,8 +350,8 @@ bool tickUI(const uint_fast8_t sec)
           offPause(); // V0.09 was mediumPause().
           LED_HEATCALL_ON(); // flash
           // Stick to minimum length flashes to save energy unless just touched.
-          if(!justTouched || isEcoTemperature(wt)) { veryTinyPause(); }
-          else if(!isComfortTemperature(wt)) { OTV0P2BASE::sleepLowPowerMs((VERYTINY_PAUSE_MS + TINY_PAUSE_MS) / 2); }
+          if(!justTouched || tempControl.isEcoTemperature(wt)) { veryTinyPause(); }
+          else if(!tempControl.isComfortTemperature(wt)) { OTV0P2BASE::sleepLowPowerMs((VERYTINY_PAUSE_MS + TINY_PAUSE_MS) / 2); }
           else { tinyPause(); }
 
           if(valveMode.inBakeMode())
@@ -362,8 +362,8 @@ bool tickUI(const uint_fast8_t sec)
             LED_HEATCALL_ON();
             // Makes tiny|small|medium flash for eco|OK|comfort temperature target.
             // Stick to minimum length flashes to save energy unless just touched.
-            if(!justTouched || isEcoTemperature(wt)) { veryTinyPause(); }
-            else if(!isComfortTemperature(wt)) { smallPause(); }
+            if(!justTouched || tempControl.isEcoTemperature(wt)) { veryTinyPause(); }
+            else if(!tempControl.isComfortTemperature(wt)) { smallPause(); }
             else { mediumPause(); }
             }
           }
@@ -591,14 +591,14 @@ void serialStatusReport()
   Serial.print(NominalRadValve.getTargetTempC());
 #endif // ENABLE_LOCAL_TRV
   Serial_print_space();
-  Serial.print(getFROSTTargetC());
+  Serial.print(tempControl.getFROSTTargetC());
   Serial_print_space();
-  const uint8_t wt = getWARMTargetC();
+  const uint8_t wt = tempControl.getWARMTargetC();
   Serial.print(wt);
 #ifdef ENABLE_FULL_OT_CLI
   // Show bias.
   Serial_print_space();
-  Serial.print(hasEcoBias() ? (isEcoTemperature(wt) ? 'E' : 'e') : (isComfortTemperature(wt) ? 'C': 'c')); // Show eco/comfort bias.
+  Serial.print(tempControl.hasEcoBias() ? (tempControl.isEcoTemperature(wt) ? 'E' : 'e') : (tempControl.isComfortTemperature(wt) ? 'C': 'c')); // Show eco/comfort bias.
 #endif // ENABLE_FULL_OT_CLI
 #endif // ENABLE_SETTABLE_TARGET_TEMPERATURES
 
@@ -942,7 +942,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         if((n >= 3) && (NULL != (tok1 = strtok_r(buf+2, " ", &last))))
           {
           const uint8_t tempC = (uint8_t) atoi(tok1);
-          if(!setFROSTTargetC(tempC)) { OTV0P2BASE::CLI::InvalidIgnored(); }
+          if(!tempControl.setFROSTTargetC(tempC)) { OTV0P2BASE::CLI::InvalidIgnored(); }
           }
         else
 #endif
@@ -1045,7 +1045,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
         if((n >= 3) && (NULL != (tok1 = strtok_r(buf+2, " ", &last))))
           {
           const uint8_t tempC = (uint8_t) atoi(tok1);
-          if(!setWARMTargetC(tempC)) { OTV0P2BASE::CLI::InvalidIgnored(); }
+          if(!tempControl.setWARMTargetC(tempC)) { OTV0P2BASE::CLI::InvalidIgnored(); }
           }
         else
 #endif
