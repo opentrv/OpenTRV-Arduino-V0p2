@@ -33,6 +33,29 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #include "UI_Minimal.h"
 
 
+#ifdef valveUI_DEFINED
+// WIP: valve physical UI controller.
+OTRadValve::ModeButtonAndPotActuatorPhysicalUI valveUI(
+  &valveMode,
+  &tempControl,
+  &NominalRadValve,
+  &Occupancy,
+  &AmbLight,
+#if defined(TEMP_POT_AVAILABLE) // Eg REV2/REV7.
+      &TempPot,
+#else
+      NULL,
+#endif
+  OTV0P2BASE::LED_HEATCALL_ON, OTV0P2BASE::LED_HEATCALL_OFF, OTV0P2BASE::LED_HEATCALL_ON_ISR_SAFE,
+#if !defined(ENABLE_SIMPLIFIED_MODE_BAKE) 
+      true // Mode button cycles through modes, eg REV1/REV2.
+#else
+      false // Mode button is 'BAKE' and interrupt driven, eg REV7 (TRV1).
+#endif
+  );
+#endif // valveUI_DEFINED
+
+
 // Marked true if the physical UI controls are being used.
 // Cleared at end of tickUI().
 // Marked volatile for thread-safe lock-free non-read-modify-write access to byte-wide value.
@@ -112,7 +135,7 @@ bool recentUIControlUse() { return(0 != uiTimeoutM); }
 // Not thread-/ISR- safe.
 void userOpFeedback(bool includeVisual)
   {
-  if(includeVisual) { LED_HEATCALL_ON(); }
+  if(includeVisual) { OTV0P2BASE::LED_HEATCALL_ON(); }
   markUIControlUsed();
 #if defined(ENABLE_LOCAL_TRV) && defined(ENABLE_V1_DIRECT_MOTOR_DRIVE)
   // Sound and tactile feedback with local valve, like mobile phone vibrate mode.
@@ -124,7 +147,7 @@ void userOpFeedback(bool includeVisual)
   // pause briefly to let LED on be seen.
     { if(includeVisual) { smallPause(); } }
 #endif
-  if(includeVisual) { LED_HEATCALL_OFF(); }
+  if(includeVisual) { OTV0P2BASE::LED_HEATCALL_OFF(); }
   // Note that feedback for significant UI action has been given.
   significantUIOp = false;
   }
@@ -259,29 +282,29 @@ bool tickUI(const uint_fast8_t sec)
     // Mark controls used and room as currently occupied given button press.
     markUIControlUsed();
     // LED on...
-    LED_HEATCALL_ON();
+    OTV0P2BASE::LED_HEATCALL_ON();
     tinyPause(); // Leading tiny pause...
     if(!isWarmModePutative) // Was in FROST mode; moving to WARM mode.
       {
       isWarmModePutative = true;
       isBakeModePutative = false;
       // 2 x flash 'heat call' to indicate now in WARM mode.
-      LED_HEATCALL_OFF();
+      OTV0P2BASE::LED_HEATCALL_OFF();
       offPause();
-      LED_HEATCALL_ON();
+      OTV0P2BASE::LED_HEATCALL_ON();
       tinyPause();
       }
     else if(!isBakeModePutative) // Was in WARM mode, move to BAKE (with full timeout to run).
       {
       isBakeModePutative = true;
       // 2 x flash + one longer flash 'heat call' to indicate now in BAKE mode.
-      LED_HEATCALL_OFF();
+      OTV0P2BASE::LED_HEATCALL_OFF();
       offPause();
-      LED_HEATCALL_ON();
+      OTV0P2BASE::LED_HEATCALL_ON();
       tinyPause();
-      LED_HEATCALL_OFF();
+      OTV0P2BASE::LED_HEATCALL_OFF();
       mediumPause(); // Note different flash on/off duty cycle to try to distinguish this last flash.
-      LED_HEATCALL_ON();
+      OTV0P2BASE::LED_HEATCALL_ON();
       mediumPause();
       }
     else // Was in BAKE (if supported, else was in WARM), move to FROST.
@@ -329,7 +352,7 @@ bool tickUI(const uint_fast8_t sec)
              || valveMode.inBakeMode()) && !AmbLight.isRoomDark()))
         {
         // First flash to indicate WARM mode (or pot being twiddled).
-        LED_HEATCALL_ON();
+        OTV0P2BASE::LED_HEATCALL_ON();
         // LED on stepwise proportional to temp pot setting.
         // Small number of steps (3) should help make positioning more obvious.
         const uint8_t wt = tempControl.getWARMTargetC();
@@ -346,9 +369,9 @@ bool tickUI(const uint_fast8_t sec)
             NominalRadValve.isCallingForHeat() ||
             valveMode.inBakeMode())
           {
-          LED_HEATCALL_OFF();
+          OTV0P2BASE::LED_HEATCALL_OFF();
           offPause(); // V0.09 was mediumPause().
-          LED_HEATCALL_ON(); // flash
+          OTV0P2BASE::LED_HEATCALL_ON(); // flash
           // Stick to minimum length flashes to save energy unless just touched.
           if(!justTouched || tempControl.isEcoTemperature(wt)) { veryTinyPause(); }
           else if(!tempControl.isComfortTemperature(wt)) { OTV0P2BASE::sleepLowPowerMs((VERYTINY_PAUSE_MS + TINY_PAUSE_MS) / 2); }
@@ -357,9 +380,9 @@ bool tickUI(const uint_fast8_t sec)
           if(valveMode.inBakeMode())
             {
             // Third (lengthened) flash to indicate BAKE mode.
-            LED_HEATCALL_OFF();
+            OTV0P2BASE::LED_HEATCALL_OFF();
             mediumPause(); // Note different flash off time to try to distinguish this last flash.
-            LED_HEATCALL_ON();
+            OTV0P2BASE::LED_HEATCALL_ON();
             // Makes tiny|small|medium flash for eco|OK|comfort temperature target.
             // Stick to minimum length flashes to save energy unless just touched.
             if(!justTouched || tempControl.isEcoTemperature(wt)) { veryTinyPause(); }
@@ -383,11 +406,11 @@ bool tickUI(const uint_fast8_t sec)
             NominalRadValve.isControlledValveReallyOpen() */ )
       {
       // Double flash every 4th tick indicates call for heat while in FROST MODE (matches call for heat in WARM mode).
-      LED_HEATCALL_ON(); // flash
+      OTV0P2BASE::LED_HEATCALL_ON(); // flash
       veryTinyPause();
-      LED_HEATCALL_OFF();
+      OTV0P2BASE::LED_HEATCALL_OFF();
       offPause();
-      LED_HEATCALL_ON(); // flash
+      OTV0P2BASE::LED_HEATCALL_ON(); // flash
       veryTinyPause();
       }
 #endif
@@ -407,7 +430,7 @@ bool tickUI(const uint_fast8_t sec)
     }
 
   // Ensure LED forced off unconditionally at least once each cycle.
-  LED_HEATCALL_OFF();
+  OTV0P2BASE::LED_HEATCALL_OFF();
 
 #ifdef ENABLE_LEARN_BUTTON
   // Handle learn button if supported and if is currently pressed.
@@ -415,7 +438,7 @@ bool tickUI(const uint_fast8_t sec)
     {
     handleLEARN(0);
     userOpFeedback(false); // Mark controls used and room as currently occupied given button press.
-    LED_HEATCALL_ON(); // Leave heatcall LED on while learn button held down.
+    OTV0P2BASE::LED_HEATCALL_ON(); // Leave heatcall LED on while learn button held down.
     }
 
 #if defined(BUTTON_LEARN2_L)
@@ -424,7 +447,7 @@ bool tickUI(const uint_fast8_t sec)
     {
     handleLEARN(1);
     userOpFeedback(false); // Mark controls used and room as currently occupied given button press.
-    LED_HEATCALL_ON(); // Leave heatcall LED on while learn button held down.
+    OTV0P2BASE::LED_HEATCALL_ON(); // Leave heatcall LED on while learn button held down.
     }
 #endif
 #endif

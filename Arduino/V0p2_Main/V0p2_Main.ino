@@ -68,16 +68,16 @@ void panic()
 #endif
   // Power down almost everything else...
   OTV0P2BASE::minimisePowerWithoutSleep();
-#ifdef LED_HEATCALL
-  pinMode(LED_HEATCALL, OUTPUT);
+#ifndef V0P2BASE_LED_HEATCALL_IS_L
+  pinMode(OTV0P2BASE::LED_HEATCALL, OUTPUT);
 #else
-  pinMode(LED_HEATCALL_L, OUTPUT);
+  pinMode(OTV0P2BASE::LED_HEATCALL_L, OUTPUT);
 #endif
   for( ; ; )
     {
-    LED_HEATCALL_ON();
+    OTV0P2BASE::LED_HEATCALL_ON();
     tinyPause();
-    LED_HEATCALL_OFF();
+    OTV0P2BASE::LED_HEATCALL_OFF();
     bigPause();
     }
   }
@@ -119,7 +119,7 @@ static void posPOST(const uint8_t position, const __FlashStringHelper *s = NULL)
 //  OTV0P2BASE::serialPrintlnAndFlush(s);
 #endif
 //  pinMode(LED_HEATCALL, OUTPUT);
-  LED_HEATCALL_OFF();
+  OTV0P2BASE::LED_HEATCALL_OFF();
 
   // Skip much of lightshow if '0'/end/none position.
   if(position > 0)
@@ -127,15 +127,15 @@ static void posPOST(const uint8_t position, const __FlashStringHelper *s = NULL)
     OTV0P2BASE::sleepLowPowerMs(2*PP_OFF_MS); // TODO: use this time to gather entropy.
     for(int i = position; --i >= 0; )
       {
-      LED_HEATCALL_ON();
+      OTV0P2BASE::LED_HEATCALL_ON();
       tinyPause();
-      LED_HEATCALL_OFF();
+      OTV0P2BASE::LED_HEATCALL_OFF();
       OTV0P2BASE::sleepLowPowerMs(PP_OFF_MS); // TODO: use this time to gather entropy.
       }
     }
 
   OTV0P2BASE::sleepLowPowerMs(PP_OFF_MS); // TODO: use this time to gather entropy.
-  LED_HEATCALL_ON();
+  OTV0P2BASE::LED_HEATCALL_ON();
   OTV0P2BASE::sleepLowPowerMs(1000); // TODO: use this time to gather entropy.
   }
 #endif // ALT_MAIN_LOOP
@@ -472,7 +472,7 @@ void setup()
     }
 
   // Initialised: turn main/heatcall UI LED off.
-  LED_HEATCALL_OFF();
+  OTV0P2BASE::LED_HEATCALL_OFF();
 
 #if defined(ENABLE_CLI) && defined(ENABLE_CLI_HELP) && !defined(ALT_MAIN_LOOP) && !defined(UNIT_TESTS) && !defined(ENABLE_TRIMMED_MEMORY)
   // Help user get to CLI.

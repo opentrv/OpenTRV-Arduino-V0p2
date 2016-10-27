@@ -1993,10 +1993,10 @@ void loopOpenTRV()
     case 52:
       {
       // Force all UI lights off before sampling ambient light level.
-      LED_HEATCALL_OFF();
+      OTV0P2BASE::LED_HEATCALL_OFF();
 #if defined(LED_UI2_EXISTS) && defined(ENABLE_UI_LED_2_IF_AVAILABLE)
       // Turn off second UI LED if available.
-      LED_UI2_OFF();
+      OTV0P2BASE::LED_UI2_OFF();
 #endif
       AmbLight.read();
       break;

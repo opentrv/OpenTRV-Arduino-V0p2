@@ -67,6 +67,12 @@ The OpenTRV project licenses this file to you
 #include "Control.h" // To get ENABLE_NOMINAL_RAD_VALVE etc.
 
 
+// WIP: valve physical UI controller.
+#if 0
+#define valveUI_DEFINED
+extern OTRadValve::ModeButtonAndPotActuatorPhysicalUI valveUI;
+#endif
+
 
 // Call this on even numbered seconds (with current time in seconds) to allow the UI to operate.
 // Should never be skipped, so as to allow the UI to remain responsive.
@@ -82,7 +88,7 @@ The OpenTRV project licenses this file to you
 // (except to ensure the main LED is turned off once per minor cycle).
 #define NO_UI_SUPPORT
 // Ensure LED forced off unconditionally at least once each cycle.
-inline bool tickUI(uint_fast8_t) { LED_HEATCALL_OFF(); return(false); } // Always false.
+inline bool tickUI(uint_fast8_t) { OTV0P2BASE::LED_HEATCALL_OFF(); return(false); } // Always false.
 #else
 bool tickUI(uint_fast8_t sec);
 #endif
