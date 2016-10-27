@@ -78,47 +78,6 @@ typedef OTRadValve::TempControlSimpleEEPROMBacked<PARAMS> TempControl_t;
 // defined(TEMP_POT_AVAILABLE) .. defined(ENABLE_SETTABLE_TARGET_TEMPERATURES)
 extern TempControl_t tempControl;
 
-//// If true (the default) then the system has an 'Eco' energy-saving bias, else it has a 'comfort' bias.
-//// Several system parameters are adjusted depending on the bias,
-//// with 'eco' slanted toward saving energy, eg with lower target temperatures and shorter on-times.
-//// This is determined from user-settable temperature values.
-//bool hasEcoBias();
-//
-//// Get (possibly dynamically-set) thresholds/parameters.
-////#if defined(ENABLE_SETTABLE_TARGET_TEMPERATURES) || defined(TEMP_POT_AVAILABLE)
-//// Get 'FROST' protection target in C; no higher than getWARMTargetC() returns, strictly positive, in range [MIN_TARGET_C,MAX_TARGET_C].
-//// Depends dynamically on current (last-read) temp-pot setting.
-//uint8_t getFROSTTargetC();
-//// Get 'WARM' target in C; no lower than getFROSTTargetC() returns, strictly positive, in range [MIN_TARGET_C,MAX_TARGET_C].
-//// Depends dynamically on current (last-read) temp-pot setting.
-//uint8_t getWARMTargetC();
-////#endif
-//
-//#if defined(TEMP_POT_AVAILABLE)
-//// Expose internal calculation of WARM target based on user physical control for unit testing.
-//// Derived from temperature pot position, 0 for coldest (most eco), 255 for hotest (comfort).
-//// Temp ranges from eco-1C to comfort+1C levels across full (reduced jitter) [0,255] pot range.
-//// Everything beyond the lo/hi end-stop thresholds is forced to the appropriate end temperature.
-//uint8_t computeWARMTargetC(uint8_t pot, uint8_t loEndStop, uint8_t hiEndStop);
-//#endif
-//
-//#if defined(ENABLE_SETTABLE_TARGET_TEMPERATURES)
-//// Set (non-volatile) 'FROST' protection target in C; no higher than getWARMTargetC() returns, strictly positive, in range [MIN_TARGET_C,MAX_TARGET_C].
-//// Can also be used, even when a temperature pot is present, to set a floor setback temperature.
-//// Returns false if not set, eg because outside range [MIN_TARGET_C,MAX_TARGET_C], else returns true.
-//bool setFROSTTargetC(uint8_t tempC);
-//#endif
-//#if defined(ENABLE_SETTABLE_TARGET_TEMPERATURES) && !defined(TEMP_POT_AVAILABLE)
-//// Set 'WARM' target in C; no lower than getFROSTTargetC() returns, strictly positive, in range [MIN_TARGET_C,MAX_TARGET_C].
-//// Returns false if not set, eg because below FROST setting or outside range [MIN_TARGET_C,MAX_TARGET_C], else returns true.
-//bool setWARMTargetC(uint8_t tempC);
-//#endif
-//
-//// True if specified temperature is at or below 'eco' WARM target temperature, ie is eco-friendly.
-//#define isEcoTemperature(tempC) ((tempC) <= PARAMS::WARM_ECO)
-//// True if specified temperature is at or above 'comfort' WARM target temperature.
-//#define isComfortTemperature(tempC) ((tempC) >= PARAMS::WARM_COM)
-
 
 // Default minimum on/off time in minutes for the boiler relay.
 // Set to 5 as the default valve Tx cycle is 4 mins and 5 mins is a good amount for most boilers.
