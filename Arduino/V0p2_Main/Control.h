@@ -132,11 +132,11 @@ void genericMarkAsPossiblyOccupied();
 #if defined(ENABLE_SINGLETON_SCHEDULE)
 #define SCHEDULER_AVAILABLE
 // Customised scheduler for the current OpenTRV application.
-class SimpleValveSchedule : public OTV0P2BASE::SimpleValveScheduleBase
+class SimpleValveSchedule : public OTV0P2BASE::SimpleValveScheduleEEPROM
     {
     public:
         // Allow scheduled on time to dynamically depend on comfort level.
-        virtual uint8_t onTime()
+        virtual uint8_t onTime() const override
             {
 #if LEARNED_ON_PERIOD_M == LEARNED_ON_PERIOD_COMFORT_M
             // Simplify the logic where no variation in on time is required.
@@ -167,203 +167,9 @@ extern OTV0P2BASE::NULLValveSchedule Scheduler;
 
 #if defined(ENABLE_LOCAL_TRV)
 #define ENABLE_MODELLED_RAD_VALVE
-// Internal model of radiator valve position, embodying control logic.
-class ModelledRadValve : public OTRadValve::AbstractRadValve
-  {
-  private:
-    // All input state for deciding where to set the radiator valve in normal operation.
-    struct OTRadValve::ModelledRadValveInputState inputState;
-    // All retained state for deciding where to set the radiator valve in normal operation.
-    struct OTRadValve::ModelledRadValveState retainedState;
-
-    // True if this node is calling for heat.
-    // Marked volatile for thread-safe lock-free access.
-    volatile bool callingForHeat = false;
-
-    // True if the room/ambient temperature is below target, enough to likely call for heat.
-    // Marked volatile for thread-safe lock-free access.
-    volatile bool underTarget = false;
-
-    // The current automated setback (if any) in the direction of energy saving in C; non-negative.
-    // Not intended for ISR/threaded access.
-    uint8_t setbackC = 0;
-
-    // True if akways in glacial mode.
-    // TODO: not fully implemented.
-    const bool alwaysGlacial;
-
-    // True if in glacial mode.
-    // TODO: not fully implemented.
-    bool glacial;
-
-    // Maximum percentage valve is allowed to be open [0,100].
-    // Usually 100, but special circumstances may require otherwise.
-    const uint8_t maxPCOpen;
-
-    // Cache of minValvePcReallyOpen value [0,99] to save some EEPROM access.
-    // A value of 0 means not yet loaded from EEPROM.
-    static uint8_t mVPRO_cache;
-
-    // Compute target temperature and set heat demand for TRV and boiler; update state.
-    // CALL REGULARLY APPROXIMATELY ONCE PER MINUTE TO ALLOW SIMPLE TIME-BASED CONTROLS.
-    // Inputs are inWarmMode(), isRoomLit().
-    // The inputs must be valid (and recent).
-    // Values set are targetTempC, value (TRVPercentOpen).
-    // This may also prepare data such as TX command sequences for the TRV, boiler, etc.
-    // This routine may take significant CPU time; no I/O is done, only internal state is updated.
-    // Returns true if valve target changed and thus messages may need to be recomputed/sent/etc.
-    void computeCallForHeat();
-
-  public:
-    // Create an instance.
-    ModelledRadValve(const bool _alwaysGlacial = false, const uint8_t _maxPCOpen = 100)
-      : alwaysGlacial(_alwaysGlacial), glacial(_alwaysGlacial),
-        maxPCOpen(OTV0P2BASE::fnmin(_maxPCOpen, (uint8_t)100U))
-      { }
-
-    // Force a read/poll/recomputation of the target position and call for heat.
-    // Sets/clears changed flag if computed valve position changed.
-    // Call at a fixed rate (1/60s).
-    // Potentially expensive/slow.
-    virtual uint8_t read() { computeCallForHeat(); return(value); }
-
-    // Returns preferred poll interval (in seconds); non-zero.
-    // Must be polled at near constant rate, about once per minute.
-    virtual uint8_t preferredPollInterval_s() const { return(60); }
-
-    // Returns a suggested (JSON) tag/field/key name including units of get(); NULL means no recommended tag.
-    // The lifetime of the pointed-to text must be at least that of the Sensor instance.
-    virtual const char *tag() const { return("v|%"); }
-
-    // Returns true if (re)calibrating/(re)initialising/(re)syncing.
-    // The target valve position is not lost while this is true.
-    // By default there is no recalibration step.
-    virtual bool isRecalibrating() const;
-
-    // If possible exercise the valve to avoid pin sticking and recalibrate valve travel.
-    // Default does nothing.
-    virtual void recalibrate();
-
-    // True if the controlled physical valve is thought to be at least partially open right now.
-    // If multiple valves are controlled then is this true only if all are at least partially open.
-    // Used to help avoid running boiler pump against closed valves.
-    // The default is to use the check the current computed position
-    // against the minimum open percentage.
-    // True iff the valve(s) (if any) controlled by this unit are really open.
-    //
-    // When driving a remote wireless valve such as the FHT8V,
-    // this waits until at least the command has been sent.
-    // This also implies open to OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN or equivalent.
-    // Must be exactly one definition/implementation supplied at link time.
-    // If more than one valve is being controlled by this unit,
-    // then this should return true if any of the valves are (significantly) open.
-    virtual bool isControlledValveReallyOpen() const;
-
-    // Get estimated minimum percentage open for significant flow [1,99] for this device.
-    // Return global node value.
-    virtual uint8_t getMinPercentOpen() const { return(getMinValvePcReallyOpen()); }
-
-    // Get maximum allowed percent open [1,100] to limit maximum flow rate.
-    // This may be important for systems such as district heat systems that charge by flow,
-    // and other systems that prefer return temperatures to be as low as possible,
-    // such as condensing boilers.
-    uint8_t getMaxPercentageOpenAllowed() const { return(maxPCOpen); }
-
-    // Enable/disable 'glacial' mode (default false/off).
-    // For heat-pump, district-heating and similar slow-reponse and pay-by-volume environments.
-    // Also may help with over-powerful or unbalanced radiators
-    // with a significant risk of overshoot.
-    void setGlacialMode(bool glacialOn) { glacial = glacialOn; }
-
-    // Returns true if this valve control is in glacial mode.
-    bool inGlacialMode() const { return(glacial); }
-
-    // True if the computed valve position was changed by read().
-    // Can be used to trigger rebuild of messages, force updates to actuators, etc.
-    bool isValveMoved() const { return(retainedState.valveMoved); }
-
-    // True if this unit is actively calling for heat.
-    // This implies that the temperature is (significantly) under target,
-    // the valve is really open,
-    // and this needs more heat than can be passively drawn from an already-running boiler.
-    // Thread-safe and ISR safe.
-    virtual bool isCallingForHeat() const { return(callingForHeat); }
-
-    // True if the room/ambient temperature is below target, enough to likely call for heat.
-    // This implies that the temperature is (significantly) under target,
-    // the valve is really open,
-    // and this needs more heat than can be passively drawn from an already-running boiler.
-    // Thread-safe and ISR safe.
-    virtual bool isUnderTarget() const { return(underTarget); }
-
-    // Get target temperature in C as computed by computeTargetTemperature().
-    uint8_t getTargetTempC() const { return(inputState.targetTempC); }
-
-    // Returns a suggested (JSON) tag/field/key name including units of getTargetTempC(); not NULL.
-    // The lifetime of the pointed-to text must be at least that of this instance.
-    const char *tagTTC() const { return("tT|C"); }
-
-    // Get the current automated setback (if any) in the direction of energy saving in C; non-negative.
-    // For heating this is the number of C below the nominal user-set target temperature
-    // that getTargetTempC() is; zero if no setback is in effect.
-    // Generally will be 0 in FROST or BAKE modes.
-    // Not ISR-/thread- safe.
-    uint8_t getSetbackC() const { return(setbackC); }
-
-    // Returns a suggested (JSON) tag/field/key name including units of getSetbackC(); not NULL.
-    // It would often be appropriate to mark this as low priority since depth of setback matters more than speed.
-    // The lifetime of the pointed-to text must be at least that of this instance.
-    const char *tagTSC() const { return("tS|C"); }
-
-    // Stateless directly-testable version behind computeTargetTemperature().
-    static uint8_t computeTargetTemp();
-
-    // Compute/update target temperature and set up state for computeRequiredTRVPercentOpen().
-    // Can be called as often as required though may be slowish/expensive.
-    // Can be called after any UI/CLI/etc operation
-    // that may cause the target temperature to change.
-    // (Will also be called by computeCallForHeat().)
-    // One aim is to allow reasonable energy savings (10--30%)
-    // even if the device is left in WARM mode all the time,
-    // using occupancy/light/etc to determine when temperature can be set back
-    // without annoying users.
-    //
-    // Will clear any BAKE mode if the newly-computed target temperature is already exceeded.
-    void computeTargetTemperature();
-
-    // Computes optimal valve position given supplied input state including current position; [0,100].
-    // Uses no state other than that passed as the arguments (thus unit testable).
-    // This supplied 'retained' state may be updated.
-    // Uses hysteresis and a proportional control and some other cleverness.
-    // Is always willing to turn off quickly, but on slowly (AKA "slow start" algorithm),
-    // and tries to eliminate unnecessary 'hunting' which makes noise and uses actuator energy.
-    // Nominally called at a regular rate, once per minute.
-    // All inputState values should be set to sensible values before starting.
-    // Usually called by tick() which does required state updates afterwards.
-    static uint8_t computeRequiredTRVPercentOpen(uint8_t valvePCOpen, const struct ModelledRadValveInputState &inputState, struct ModelledRadValveState &retainedState);
-
-    // Get cumulative valve movement %; rolls at 8192 in range [0,8191], ie non-negative.
-    // It would often be appropriate to mark this as low priority since it can be computed from valve positions.
-    uint16_t getCumulativeMovementPC() { return(retainedState.cumulativeMovementPC); }
-
-    // Returns a suggested (JSON) tag/field/key name including units of getCumulativeMovementPC(); not NULL.
-    // The lifetime of the pointed-to text must be at least that of this instance.
-    const char *tagCMPC() const { return("vC|%"); }
-
-    // Return minimum valve percentage open to be considered actually/significantly open; [1,100].
-    // This is a value that has to mean all controlled valves are at least partially open if more than one valve.
-    // At the boiler hub this is also the threshold percentage-open on eavesdropped requests that will call for heat.
-    // If no override is set then OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN is used.
-    static uint8_t getMinValvePcReallyOpen();
-
-    // Set and cache minimum valve percentage open to be considered really open.
-    // Applies to local valve and, at hub, to calls for remote calls for heat.
-    // Any out-of-range value (eg >100) clears the override and OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN will be used.
-    static void setMinValvePcReallyOpen(uint8_t percent);
-  };
 #define ENABLE_NOMINAL_RAD_VALVE
 // Singleton implementation for entire node.
-extern ModelledRadValve NominalRadValve;
+extern OTRadValve::ModelledRadValve NominalRadValve;
 #elif defined(ENABLE_SLAVE_TRV)
 #define ENABLE_NOMINAL_RAD_VALVE
 // Simply alias directly to FHT8V for REV9 slave for example.
