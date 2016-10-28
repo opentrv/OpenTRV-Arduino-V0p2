@@ -106,30 +106,6 @@ static void testLibVersions()
   }
 
 
-
-#ifdef ENABLE_BOILER_HUB
-// Test simple on/off boiler-driver behaviour.
-static void testOnOffBoilerDriverLogic()
-  {
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("OnOffBoilerDriver");
-  // Ensure status structure is a reasonable size.
-  AssertIsTrue(sizeof(OnOffBoilerDriverLogic::PerIDStatus) <= 4);
-  OnOffBoilerDriverLogic oobdl1;
-  // Verify that power-up state is boiler off.
-  AssertIsTrue(!oobdl1.isCallingForHeat());
-  // Calling tick one or more times makes no difference by itself...
-  for(uint8_t i = 2 + (OTV0P2BASE::randRNG8() & 0x1fu); --i > 0; ) { oobdl1.tick2s(); }
-  AssertIsTrue(!oobdl1.isCallingForHeat());
-  // Ensure bogus update/signal is rejected.
-  AssertIsTrue(!oobdl1.receiveSignal(0xffffu, OTV0P2BASE::randRNG8()));
-  AssertIsTrue(!oobdl1.isCallingForHeat());
-  // Ensure no 'live' or other records created.
-  OnOffBoilerDriverLogic::PerIDStatus valves1[1];
-  AssertIsEqual(0, oobdl1.valvesStatus(valves1, 1, OTV0P2BASE::randRNG8NextBoolean()));
-  }
-#endif
-
-
 // Test for general sanity of computation of desired valve position.
 static void testComputeRequiredTRVPercentOpen()
   {
@@ -618,67 +594,6 @@ DEBUG_SERIAL_PRINTLN();
 #endif // ENABLE_MODELLED_RAD_VALVE
   }
 
-// Test self-mocking of sensor modules (and others) to facilitate other unit tests. 
-static void testSensorMocking()
-  {
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("SensorMocking");
-#ifdef ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
-  // Ambient light
-  for(uint8_t i = 0; i < 2; ++i)
-    {
-    const uint8_t nal = OTV0P2BASE::randRNG8();
-    const bool nil = OTV0P2BASE::randRNG8NextBoolean();
-    AmbLight._TEST_set_multi_(((uint16_t)nal)<<2, nil, OTV0P2BASE::randRNG8());
-    AssertIsEqual(nal, AmbLight.get());
-    AssertIsTrue(nil == AmbLight.isRoomLit());
-// DHD20151017: temporarily disabled.
-//    const uint8_t nal2 = OTV0P2BASE::randRNG8();
-//    AmbLight._TEST_set_(nal2);
-//    AssertIsEqual(nal2, AmbLight.get());
-    }
-#endif // ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
-#ifdef ENABLE_OCCUPANCY_SUPPORT
-  // Occupancy
-//  const uint8_t vacH = randRNG8() | 1; // Ensure non-zero.
-//  Occupancy._TEST_set_vacH_(vacH);
-  Occupancy.setHolidayMode();
-  AssertIsEqual(0, Occupancy.get());
-  AssertIsEqual(255, Occupancy.getVacancyH());
-  AssertIsTrue(Occupancy.isLikelyUnoccupied());
-//    Occupancy._TEST_set_vacH_(0);
-  Occupancy._TEST_set_(true);
-  AssertIsEqual(0, Occupancy.getVacancyH());
-  AssertIsTrue(0 != Occupancy.get());
-  AssertIsTrue(Occupancy.isLikelyOccupied());
-#endif
-  // Schedule
-  _TEST_set_schedule_override(_soUT_now);
-  AssertIsTrue(isAnySimpleScheduleSet());
-  AssertIsTrue(isAnyScheduleOnWARMNow());
-  AssertIsTrue(!isAnyScheduleOnWARMSoon());
-  _TEST_set_schedule_override(_soUT_soon);
-  AssertIsTrue(isAnySimpleScheduleSet());
-  AssertIsTrue(!isAnyScheduleOnWARMNow());
-  AssertIsTrue(isAnyScheduleOnWARMSoon());
-  _TEST_set_schedule_override(_soUT_off);
-  AssertIsTrue(!isAnySimpleScheduleSet());
-  AssertIsTrue(!isAnyScheduleOnWARMNow());
-  AssertIsTrue(!isAnyScheduleOnWARMSoon());
-  _TEST_set_schedule_override(_soUT_normal); // Override off.
-  // Base temperature
-  _TEST_set_basetemp_override(_btoUT_min);
-  AssertIsTrue(hasEcoBias());
-  AssertIsTrue(getWARMTargetC() <= BIASECO_WARM);
-  _TEST_set_basetemp_override(_btoUT_mid);
-  AssertIsTrue(hasEcoBias());
-  AssertIsTrue(getWARMTargetC() > BIASECO_WARM);
-  AssertIsTrue(getWARMTargetC() < BIASCOM_WARM);
-  _TEST_set_basetemp_override(_btoUT_max);
-  AssertIsTrue(!hasEcoBias());
-  AssertIsTrue(getWARMTargetC() >= BIASCOM_WARM);
-  _TEST_set_basetemp_override(_btoUT_normal); // Override off.
-  }
-
 // Test handling of JSON stats.
 static void testJSONStats()
   {
@@ -1127,12 +1042,7 @@ void loopUnitTest()
   testFullStatsMessageCoreEncDec(); // FIXME: move to portable unit tests.
   testSmoothStatsValue(); // FIXME: move to portable unit tests.
   testSleepUntilSubCycleTime();
-  testSensorMocking();
 
-  // Boiler-hub tests.
-#ifdef ENABLE_BOILER_HUB
-  testOnOffBoilerDriverLogic();
-#endif
 
   // Sensor tests.
   // May need to be disabled if, for example, running in a simulator or on a partial board.
@@ -1161,7 +1071,6 @@ void loopUnitTest()
   // Also make panic() state flash clearly different to (faster than) this loop success/repeat.
   OTV0P2BASE::sleepLowPowerMs(2000);
   }
-
 
 #endif
 
