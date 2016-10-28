@@ -34,10 +34,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #endif
 
 
-#if defined(SCHEDULER_AVAILABLE)
 // Singleton scheduler instance.
-SimpleValveSchedule Scheduler;
-#endif
+Scheduler_t Scheduler;
 
 
 #ifdef ENABLE_BOILER_HUB
@@ -1039,7 +1037,7 @@ ISR(PCINT2_vect)
 #if defined(ENABLE_SIMPLIFIED_MODE_BAKE)
   // Mode button detection is on the falling edge (button pressed).
   if((changes & MODE_INT_MASK) && !(pins & MODE_INT_MASK))
-    { startBakeFromInt(); }
+    { valveUI.startBakeFromInt(); }
 #endif // defined(ENABLE_SIMPLIFIED_MODE_BAKE)
 
 #if defined(ENABLE_VOICE_SENSOR)
@@ -1891,7 +1889,7 @@ void loopOpenTRV()
   // for automatic recovery after any crash and restart.
   if(ValveDirect.isWaitingForValveToBeFitted())
       {
-      if(veryRecentUIControlUse() || (minuteCount > 15))
+      if(valveUI.veryRecentUIControlUse() || (minuteCount > 15))
           { ValveDirect.signalValveFitted(); }
       }
   // Provide regular poll to motor driver.

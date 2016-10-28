@@ -158,11 +158,12 @@ class SimpleValveSchedule : public OTV0P2BASE::SimpleValveScheduleEEPROM
             }
     };
 // Singleton scheduler instance.
-extern SimpleValveSchedule Scheduler;
+typedef SimpleValveSchedule Scheduler_t;
 #else
 // Dummy scheduler to simplify coding.
-extern OTV0P2BASE::NULLValveSchedule Scheduler;
+typedef OTV0P2BASE::NULLValveSchedule Scheduler_t;
 #endif // defined(ENABLE_SINGLETON_SCHEDULE)
+extern Scheduler_t Scheduler;
 
 
 #if defined(ENABLE_LOCAL_TRV)
