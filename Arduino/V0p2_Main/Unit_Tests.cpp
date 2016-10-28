@@ -307,10 +307,6 @@ static void testFastDigitalIOCalcs()
 
 
 
-
-
-
-
 #if !defined(DISABLE_SENSOR_UNIT_TESTS)
 // Test temperature sensor returns value in reasonable bounds for a test environment.
 // Attempts to test that the sensor is actually present.
