@@ -49,38 +49,38 @@ static bool isBoilerOn();
 // Radiator valve mode (FROST, WARM, BAKE).
 OTRadValve::ValveMode valveMode;
 
-// Start/cancel WARM mode in one call, driven by manual UI input.
-static void setWarmModeFromManualUI(const bool warm)
-  {
-  // Give feedback when changing WARM mode.
-  if(warm != valveMode.inWarmMode()) { markUIControlUsedSignificant(); }
-  // Now set/cancel WARM.
-  valveMode.setWarmModeDebounced(warm);
-  }
+//// Start/cancel WARM mode in one call, driven by manual UI input.
+//static void setWarmModeFromManualUI(const bool warm)
+//  {
+//  // Give feedback when changing WARM mode.
+//  if(warm != valveMode.inWarmMode()) { markUIControlUsedSignificant(); }
+//  // Now set/cancel WARM.
+//  valveMode.setWarmModeDebounced(warm);
+//  }
 
-#if defined(ENABLE_SIMPLIFIED_MODE_BAKE)
-// Start BAKE from manual UI interrupt; marks UI as used also.
-// Vetos switch to BAKE mode if a temp pot/dial is present and at the low end stop, ie in FROST position.
-// Is thread-/ISR- safe.
-static void startBakeFromInt()
-  {
-#ifdef TEMP_POT_AVAILABLE
-  // Veto if dial is at FROST position.
-  const bool isLo = TempPot.isAtLoEndStop(); // ISR-safe.
-  if(isLo) { markUIControlUsed(); return; }
-#endif
-  valveMode.startBake();
-  markUIControlUsedSignificant();
-  }
-#endif // defined(ENABLE_SIMPLIFIED_MODE_BAKE)
-// Start/cancel BAKE mode in one call, driven by manual UI input.
-void setBakeModeFromManualUI(const bool start)
-  {
-  // Give feedback when changing BAKE mode.
-  if(valveMode.inBakeMode() != start) { markUIControlUsedSignificant(); }
-  // Now set/cancel BAKE.
-  if(start) { valveMode.startBake(); } else { valveMode.cancelBakeDebounced(); }
-  }
+//#if defined(ENABLE_SIMPLIFIED_MODE_BAKE)
+//// Start BAKE from manual UI interrupt; marks UI as used also.
+//// Vetos switch to BAKE mode if a temp pot/dial is present and at the low end stop, ie in FROST position.
+//// Is thread-/ISR- safe.
+//static void startBakeFromInt()
+//  {
+//#ifdef TEMP_POT_AVAILABLE
+//  // Veto if dial is at FROST position.
+//  const bool isLo = TempPot.isAtLoEndStop(); // ISR-safe.
+//  if(isLo) { markUIControlUsed(); return; }
+//#endif
+//  valveMode.startBake();
+//  markUIControlUsedSignificant();
+//  }
+//#endif // defined(ENABLE_SIMPLIFIED_MODE_BAKE)
+//// Start/cancel BAKE mode in one call, driven by manual UI input.
+//void setBakeModeFromManualUI(const bool start)
+//  {
+//  // Give feedback when changing BAKE mode.
+//  if(valveMode.inBakeMode() != start) { valveUI.markUIControlUsedSignificant(); }
+//  // Now set/cancel BAKE.
+//  if(start) { valveMode.startBake(); } else { valveMode.cancelBakeDebounced(); }
+//  }
 
 
 // Temperature control object.
@@ -217,7 +217,7 @@ uint8_t ModelledRadValve::computeTargetTemp()
     // this is assuming that the room temperature can be raised by ~1C/h.
     // See the effect of going from 2C to 1C setback: http://www.earth.org.uk/img/20160110-vat-b.png
     // (A very long pre-warm time may confuse or distress users, eg waking them in the morning.)
-    if(!Occupancy.longVacant() && Scheduler.isAnyScheduleOnWARMSoon() && !recentUIControlUse())
+    if(!Occupancy.longVacant() && Scheduler.isAnyScheduleOnWARMSoon() && !valveUI.recentUIControlUse())
       {
       const uint8_t warmTarget = tempControl.getWARMTargetC();
       // Compute putative pre-warm temperature, usually only just below WARM target.
@@ -285,7 +285,7 @@ uint8_t ModelledRadValve::computeTargetTemp()
     const uint8_t minLightsOffForSetbackMins = ecoBias ? 10 : 20;
     if(longVacant ||
        ((notLikelyOccupiedSoon || (dm > minLightsOffForSetbackMins) || (ecoBias && (Occupancy.getVacancyH() > 0) && (0 == OTV0P2BASE::getByHourStat(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR, OTV0P2BASE::STATS_SPECIAL_HOUR_CURRENT_HOUR)))) &&
-           !Scheduler.isAnyScheduleOnWARMNow() && !recentUIControlUse()))
+           !Scheduler.isAnyScheduleOnWARMNow() && !valveUI.recentUIControlUse()))
       {
       // Use a default minimal non-annoying setback if:
       //   in upper part of comfort range
@@ -352,7 +352,7 @@ void ModelledRadValve::computeTargetTemperature()
   inputState.inBakeMode = valveMode.inBakeMode();
   inputState.hasEcoBias = tempControl.hasEcoBias();
   // Request a fast response from the valve if user is manually adjusting controls.
-  const bool veryRecentUIUse = veryRecentUIControlUse();
+  const bool veryRecentUIUse = valveUI.veryRecentUIControlUse();
   inputState.fastResponseRequired = veryRecentUIUse;
   // Widen the allowed deadband significantly in an unlit/quiet/vacant room (TODO-383, TODO-593, TODO-786)
   // (or in FROST mode, or if temperature is jittery eg changing fast and filtering has been engaged)
@@ -1037,10 +1037,11 @@ static void wireComponentsTogether()
 #if defined(TEMP_POT_AVAILABLE)
 //  TempPot.setOccCallback(genericMarkAsOccupied); // markUIControlUsed
   // Mark UI as used and indirectly mark occupancy when control is used.
-  TempPot.setOccCallback(markUIControlUsed);
+  TempPot.setOccCallback([]{valveUI.markUIControlUsed();});
   // Callbacks to set various mode combinations.
   // Typically at most one call would be made on any appropriate pot adjustment.
-  TempPot.setWFBCallbacks(setWarmModeFromManualUI, setBakeModeFromManualUI);
+  TempPot.setWFBCallbacks([](bool x){valveUI.setWarmModeFromManualUI(x);},
+                          [](bool x){valveUI.setBakeModeFromManualUI(x);});
 #endif // TEMP_POT_AVAILABLE
 
 #if V0p2_REV == 14
@@ -1798,7 +1799,7 @@ void loopOpenTRV()
     {
 #ifdef ENABLE_FULL_OT_UI
     // Run the OpenTRV button/LED UI if required.
-    if(tickUI(TIME_LSD))
+    if(0 != valveUI.read()) // if(tickUI(TIME_LSD))
       {
       showStatus = true;
       recompute = true;
@@ -1811,7 +1812,7 @@ void loopOpenTRV()
 
 
 #ifdef ENABLE_MODELLED_RAD_VALVE
-  if(recompute || veryRecentUIControlUse())
+  if(recompute || valveUI.veryRecentUIControlUse())
     {
     // Force immediate recompute of target temperature for (UI) responsiveness.
     NominalRadValve.computeTargetTemperature();

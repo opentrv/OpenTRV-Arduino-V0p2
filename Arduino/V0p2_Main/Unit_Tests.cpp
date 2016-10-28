@@ -130,7 +130,6 @@ static void testOnOffBoilerDriverLogic()
 #endif
 
 
-
 // Test for general sanity of computation of desired valve position.
 static void testComputeRequiredTRVPercentOpen()
   {
