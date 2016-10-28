@@ -116,7 +116,18 @@ void genericMarkAsPossiblyOccupied() { Occupancy.markAsPossiblyOccupied(); }
 
 #ifdef ENABLE_MODELLED_RAD_VALVE
 // Internal model of controlled radiator valve position.
-ModelledRadValve NominalRadValve;
+ModelledRadValve NominalRadValve(
+  #ifdef TRV_SLEW_GLACIAL
+    true,
+  #else
+    false,
+  #endif
+  #ifdef TRV_MAX_PC_OPEN
+    TRV_MAX_PC_OPEN
+  #else
+    100
+  #endif
+  );
 // Cache initially unset.
 uint8_t ModelledRadValve::mVPRO_cache = 0;
 

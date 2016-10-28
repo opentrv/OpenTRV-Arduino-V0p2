@@ -178,19 +178,27 @@ class ModelledRadValve : public OTRadValve::AbstractRadValve
 
     // True if this node is calling for heat.
     // Marked volatile for thread-safe lock-free access.
-    volatile bool callingForHeat;
+    volatile bool callingForHeat = false;
 
     // True if the room/ambient temperature is below target, enough to likely call for heat.
     // Marked volatile for thread-safe lock-free access.
-    volatile bool underTarget;
+    volatile bool underTarget = false;
 
     // The current automated setback (if any) in the direction of energy saving in C; non-negative.
     // Not intended for ISR/threaded access.
-    uint8_t setbackC;
+    uint8_t setbackC = 0;
+
+    // True if akways in glacial mode.
+    // TODO: not fully implemented.
+    const bool alwaysGlacial;
 
     // True if in glacial mode.
     // TODO: not fully implemented.
     bool glacial;
+
+    // Maximum percentage valve is allowed to be open [0,100].
+    // Usually 100, but special circumstances may require otherwise.
+    const uint8_t maxPCOpen;
 
     // Cache of minValvePcReallyOpen value [0,99] to save some EEPROM access.
     // A value of 0 means not yet loaded from EEPROM.
@@ -207,15 +215,10 @@ class ModelledRadValve : public OTRadValve::AbstractRadValve
     void computeCallForHeat();
 
   public:
-    ModelledRadValve()
-      : inputState(0),
-        callingForHeat(false), underTarget(false),
-        setbackC(0),
-#if defined(TRV_SLEW_GLACIAL)
-        glacial(true)
-#else
-        glacial(false)
-#endif
+    // Create an instance.
+    ModelledRadValve(const bool _alwaysGlacial = false, const uint8_t _maxPCOpen = 100)
+      : alwaysGlacial(_alwaysGlacial), glacial(_alwaysGlacial),
+        maxPCOpen(OTV0P2BASE::fnmin(_maxPCOpen, (uint8_t)100U))
       { }
 
     // Force a read/poll/recomputation of the target position and call for heat.
@@ -231,7 +234,6 @@ class ModelledRadValve : public OTRadValve::AbstractRadValve
     // Returns a suggested (JSON) tag/field/key name including units of get(); NULL means no recommended tag.
     // The lifetime of the pointed-to text must be at least that of the Sensor instance.
     virtual const char *tag() const { return("v|%"); }
-
 
     // Returns true if (re)calibrating/(re)initialising/(re)syncing.
     // The target valve position is not lost while this is true.
@@ -265,11 +267,7 @@ class ModelledRadValve : public OTRadValve::AbstractRadValve
     // This may be important for systems such as district heat systems that charge by flow,
     // and other systems that prefer return temperatures to be as low as possible,
     // such as condensing boilers.
-#if defined(TRV_MAX_PC_OPEN)
-    uint8_t getMaxPercentageOpenAllowed() const { return(TRV_MAX_PC_OPEN); }
-#else
-    uint8_t getMaxPercentageOpenAllowed() const { return(100); } // TODO: make settable/persistent.
-#endif
+    uint8_t getMaxPercentageOpenAllowed() const { return(maxPCOpen); }
 
     // Enable/disable 'glacial' mode (default false/off).
     // For heat-pump, district-heating and similar slow-reponse and pay-by-volume environments.
