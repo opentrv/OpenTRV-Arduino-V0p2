@@ -35,7 +35,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 
 #if defined(valveUI_DEFINED)
 // WIP: valve physical UI controller.
-OTRadValve::ModeButtonAndPotActuatorPhysicalUI valveUI(
+valveUI_t valveUI(
   &valveMode,
   &tempControl,
   &NominalRadValve,
@@ -46,13 +46,7 @@ OTRadValve::ModeButtonAndPotActuatorPhysicalUI valveUI(
 #else
       NULL,
 #endif
-  OTV0P2BASE::LED_HEATCALL_ON, OTV0P2BASE::LED_HEATCALL_OFF, OTV0P2BASE::LED_HEATCALL_ON_ISR_SAFE,
-#if !defined(ENABLE_SIMPLIFIED_MODE_BAKE) 
-      true // Mode button cycles through modes, eg REV1/REV2.
-#else
-      false // Mode button is 'BAKE' and interrupt driven, eg REV7 (TRV1).
-#endif
-  );
+  OTV0P2BASE::LED_HEATCALL_ON, OTV0P2BASE::LED_HEATCALL_OFF, OTV0P2BASE::LED_HEATCALL_ON_ISR_SAFE);
 #endif // valveUI_DEFINED
 
 
