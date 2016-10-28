@@ -678,31 +678,6 @@ static void testSensorMocking()
   AssertIsTrue(getWARMTargetC() >= BIASCOM_WARM);
   _TEST_set_basetemp_override(_btoUT_normal); // Override off.
   }
-  
-// Test basic behaviour of system mode setting and some basic parameters.
-static void testModeControls()
-  {
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("ModeControls");
-  AssertIsTrue(!(inBakeMode() && !inWarmMode())); // Check not in initial illegal combination.
-  setWarmModeDebounced(false);
-  AssertIsTrue(!inWarmMode());
-  AssertIsTrue(!inBakeMode());
-  setWarmModeDebounced(true);
-  AssertIsTrue(inWarmMode());
-  AssertIsTrue(!inBakeMode());
-  setWarmModeDebounced(false);
-  AssertIsTrue(!inWarmMode());
-  AssertIsTrue(!inBakeMode());
-  startBake();
-  AssertIsTrue(inWarmMode());
-  AssertIsTrue(inBakeMode());
-  cancelBakeDebounced();
-  AssertIsTrue(inWarmMode());
-  AssertIsTrue(!inBakeMode());
-  setWarmModeDebounced(false);
-  AssertIsTrue(!inWarmMode());
-  AssertIsTrue(!inBakeMode());
-  }
 
 // Test handling of JSON stats.
 static void testJSONStats()
@@ -1147,7 +1122,6 @@ void loopUnitTest()
   testComputeRequiredTRVPercentOpen();
   testFastDigitalIOCalcs();
   testTargetComputation();
-  testModeControls();
   testJSONStats(); // FIXME: move to portable unit tests.
   testJSONForTX(); // FIXME: move to portable unit tests.
   testFullStatsMessageCoreEncDec(); // FIXME: move to portable unit tests.

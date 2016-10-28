@@ -108,7 +108,6 @@ OTV0P2BASE::TemperatureC16_DS18B20 extDS18B20_0(MinOW_DEFAULT, 0);
 #endif
 
 
-
 #if defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21)
 // Singleton implementation/instance.
 OTV0P2BASE::HumiditySensorSHT21 RelHumidity;
