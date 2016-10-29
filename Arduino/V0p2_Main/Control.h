@@ -124,10 +124,7 @@ typedef OTV0P2BASE::DummySensorOccupancyTracker OccupancyTracker;
 #endif
 // Singleton implementation for entire node.
 extern OccupancyTracker Occupancy;
-// Single generic occupancy callback for occupied for this instance.
-void genericMarkAsOccupied();
-// Single generic occupancy callback for 'possibly occupied' for this instance.
-void genericMarkAsPossiblyOccupied();
+
 
 #if defined(ENABLE_SINGLETON_SCHEDULE)
 #define SCHEDULER_AVAILABLE

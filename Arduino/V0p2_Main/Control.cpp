@@ -105,10 +105,6 @@ void setMinBoilerOnMinutes(uint8_t mins) { OTV0P2BASE::eeprom_smart_update_byte(
 #ifdef ENABLE_OCCUPANCY_SUPPORT
 // Singleton implementation for entire node.
 OccupancyTracker Occupancy;
-// Single generic occupancy callback for occupied for this instance.
-void genericMarkAsOccupied() { Occupancy.markAsOccupied(); }
-// Single generic occupancy callback for 'possibly occupied' for this instance.
-void genericMarkAsPossiblyOccupied() { Occupancy.markAsPossiblyOccupied(); }
 #endif
 
 
@@ -736,11 +732,11 @@ static void wireComponentsTogether()
 #endif // ENABLE_FHT8VSIMPLE
 
 #if defined(ENABLE_OCCUPANCY_SUPPORT) && defined(ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT)
-  AmbLight.setPossOccCallback(genericMarkAsPossiblyOccupied);
+  AmbLight.setPossOccCallback([]{Occupancy.markAsPossiblyOccupied();});
 #endif // ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
 
 #if defined(ENABLE_OCCUPANCY_SUPPORT) && defined(ENABLE_OCCUPANCY_DETECTION_FROM_VOICE)
-  Voice.setPossOccCallback(genericMarkAsPossiblyOccupied);
+  Voice.setPossOccCallback([]{Occupancy.markAsPossiblyOccupied();});
 #endif // ENABLE_OCCUPANCY_DETECTION_FROM_VOICE
 
 #if defined(TEMP_POT_AVAILABLE)
