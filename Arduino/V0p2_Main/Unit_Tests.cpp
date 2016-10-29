@@ -277,17 +277,6 @@ void testSleepUntilSubCycleTime()
 #endif
   }
 
-// Test that the simple smoothing function never generates an out of range value.
-// In particular, with a legitimate value range of [0,254]
-// smoothStatsValue() must never generate 255 (0xff) which looks like an uninitialised EEPROM value,
-// nor wrap around in either direction.
-static void testSmoothStatsValue()
-  {
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("SmoothStatsValue");
-  // Covers the key cases 0 and 254 in particular.
-  for(int i = 256; --i >= 0; ) { AssertIsTrue((uint8_t)i == smoothStatsValue((uint8_t)i, (uint8_t)i)); }
-  }
-
 
 // Test some of the mask/port calculations.
 static void testFastDigitalIOCalcs()
@@ -410,7 +399,6 @@ void loopUnitTest()
   testLibVersions();
   testFastDigitalIOCalcs();
   testFullStatsMessageCoreEncDec(); // FIXME: move to portable unit tests.
-  testSmoothStatsValue(); // FIXME: move to portable unit tests.
   testSleepUntilSubCycleTime();
 
 

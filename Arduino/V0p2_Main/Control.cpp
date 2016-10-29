@@ -140,30 +140,8 @@ OTRadValve::ModelledRadValve NominalRadValve(
 #endif // ENABLE_MODELLED_RAD_VALVE
 
 
-// The STATS_SMOOTH_SHIFT is chosen to retain some reasonable precision within a byte and smooth over a weekly cycle.
-#define STATS_SMOOTH_SHIFT 3 // Number of bits of shift for smoothed value: larger => larger time-constant; strictly positive.
-
 // If defined, limit to stats sampling to one pre-sample and the final sample, to simplify/speed code.
 #define STATS_MAX_2_SAMPLES
-
-// Compute new linearly-smoothed value given old smoothed value and new value.
-// Guaranteed not to produce a value higher than the max of the old smoothed value and the new value.
-// Uses stochastic rounding to nearest to allow nominally sub-lsb values to have an effect over time.
-// Usually only made public for unit testing.
-uint8_t smoothStatsValue(const uint8_t oldSmoothed, const uint8_t newValue)
-  {
-  if(oldSmoothed == newValue) { return(oldSmoothed); } // Optimisation: smoothed value is unchanged if new value is the same as extant.
-  // Compute and update with new stochastically-rounded exponentially-smoothed ("Brown's simple exponential smoothing") value.
-  // Stochastic rounding allows sub-lsb values to have an effect over time.
-  const uint8_t stocAdd = OTV0P2BASE::randRNG8() & ((1 << STATS_SMOOTH_SHIFT) - 1); // Allows sub-lsb values to have an effect over time.
-#if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("stocAdd=");
-  DEBUG_SERIAL_PRINT(stocAdd);
-  DEBUG_SERIAL_PRINTLN();
-#endif
-  // Do arithmetic in 16 bits to avoid over-/under- flows.
-  return((uint8_t) (((((uint16_t) oldSmoothed) << STATS_SMOOTH_SHIFT) - ((uint16_t)oldSmoothed) + ((uint16_t)newValue) + stocAdd) >> STATS_SMOOTH_SHIFT));
-  }
 
 // Do an efficient division of an int total by small positive count to give a uint8_t mean.
 //  * total running total, no higher than 255*sampleCount
@@ -201,7 +179,7 @@ static void simpleUpdateStatsPair_(uint8_t * const lastEEPtr, const uint8_t valu
   uint8_t * const pS = lastEEPtr + 24;
   const uint8_t smoothed = eeprom_read_byte(pS);
   if(0xff == smoothed) { OTV0P2BASE::eeprom_smart_update_byte(pS, value); }
-  else { OTV0P2BASE::eeprom_smart_update_byte(pS, smoothStatsValue(smoothed, value)); }
+  else { OTV0P2BASE::eeprom_smart_update_byte(pS, OTV0P2BASE::NVByHourByteStatsBase::smoothStatsValue(smoothed, value)); }
   }
 // Get some constant calculation done at compile time,
 //   * lastSetN  is the set number for the 'last' values, with 'smoothed' assumed to be the next set.

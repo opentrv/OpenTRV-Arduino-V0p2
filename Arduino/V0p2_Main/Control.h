@@ -186,14 +186,6 @@ extern OTRadValve::ModelledRadValve NominalRadValve;
 void sampleStats(bool fullSample);
 
 
-#ifdef UNIT_TESTS
-// Compute new linearly-smoothed value given old smoothed value and new value.
-// Guaranteed not to produce a value higher than the max of the old smoothed value and the new value.
-// Uses stochastic rounding to nearest to allow nominally sub-lsb values to have an effect over time.
-// Usually only made public for unit testing.
-uint8_t smoothStatsValue(uint8_t oldSmoothed, uint8_t newValue);
-#endif
-
 #ifdef ENABLE_FS20_ENCODING_SUPPORT
 // Clear and populate core stats structure with information from this node.
 // Exactly what gets filled in will depend on sensors on the node,
