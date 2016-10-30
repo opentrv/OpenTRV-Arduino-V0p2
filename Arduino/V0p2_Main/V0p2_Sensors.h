@@ -111,7 +111,8 @@ extern OTV0P2BASE::RoomTemperatureC16_TMP112 TemperatureC16;
 
 #if defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21)
 // Singleton implementation/instance.
-extern OTV0P2BASE::HumiditySensorSHT21 RelHumidity;
+typedef OTV0P2BASE::HumiditySensorSHT21 RelHumidity_t;
+extern RelHumidity_t RelHumidity;
 #else
 // Dummy implementation to minimise coding changes.
 extern OTV0P2BASE::DummyHumiditySensorSHT21 RelHumidity;

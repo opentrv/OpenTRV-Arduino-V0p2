@@ -68,7 +68,7 @@ extern OTRadValve::ValveMode valveMode;
 // Choose which subtype to use depending on enabled settings and board type.
 #if defined(TEMP_POT_AVAILABLE) // Eg REV2/REV7.
   #if defined(HUMIDITY_SENSOR_SUPPORT)
-  typedef OTRadValve::TempControlTempPot<&TempPot, PARAMS, typeof(RelHumidity), &RelHumidity, PARAMS> TempControl_t;
+  typedef OTRadValve::TempControlTempPot<&TempPot, PARAMS, decltype(RelHumidity), &RelHumidity> TempControl_t;
   #else
   typedef OTRadValve::TempControlTempPot<&TempPot, PARAMS> TempControl_t;
   #endif
