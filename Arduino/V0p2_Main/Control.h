@@ -65,17 +65,19 @@ typedef OTRadValve::DEFAULT_DHW_ValveControlParameters PARAMS;
 extern OTRadValve::ValveMode valveMode;
 
 
-// WIP: temperature control object.
 // Choose which subtype to use depending on enabled settings and board type.
 #if defined(TEMP_POT_AVAILABLE) // Eg REV2/REV7.
-typedef OTRadValve::TempControlTempPot<&TempPot, PARAMS> TempControl_t;
+  #if defined(HUMIDITY_SENSOR_SUPPORT)
+  typedef OTRadValve::TempControlTempPot<&TempPot, PARAMS, typeof(RelHumidity), &RelHumidity, PARAMS> TempControl_t;
+  #else
+  typedef OTRadValve::TempControlTempPot<&TempPot, PARAMS> TempControl_t;
+  #endif
 #elif defined(ENABLE_SETTABLE_TARGET_TEMPERATURES) // Eg REV1.
 typedef OTRadValve::TempControlSimpleEEPROMBacked<PARAMS> TempControl_t;
 #else
 #error No temperature control type selected.
 // typedef OTRadValve::TempControlBase TempControl_t;
 #endif
-// defined(TEMP_POT_AVAILABLE) .. defined(ENABLE_SETTABLE_TARGET_TEMPERATURES)
 extern TempControl_t tempControl;
 
 
@@ -129,7 +131,7 @@ extern OccupancyTracker Occupancy;
 #if defined(ENABLE_SINGLETON_SCHEDULE)
 #define SCHEDULER_AVAILABLE
 // Customised scheduler for the current OpenTRV application.
-class SimpleValveSchedule : public OTV0P2BASE::SimpleValveScheduleEEPROM
+class SimpleValveSchedule final : public OTV0P2BASE::SimpleValveScheduleEEPROM
     {
     public:
         // Allow scheduled on time to dynamically depend on comfort level.
@@ -220,7 +222,6 @@ void bareStatsTX(bool allowDoubleTX, bool doBinary);
 // Does not have to be thread-/ISR- safe.
 void remoteCallForHeatRX(uint16_t id, uint8_t percentOpen);
 #endif
-
 
 
 #endif

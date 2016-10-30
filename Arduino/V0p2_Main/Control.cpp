@@ -47,47 +47,9 @@ static bool isBoilerOn();
 // Radiator valve mode (FROST, WARM, BAKE).
 OTRadValve::ValveMode valveMode;
 
-//// Start/cancel WARM mode in one call, driven by manual UI input.
-//static void setWarmModeFromManualUI(const bool warm)
-//  {
-//  // Give feedback when changing WARM mode.
-//  if(warm != valveMode.inWarmMode()) { markUIControlUsedSignificant(); }
-//  // Now set/cancel WARM.
-//  valveMode.setWarmModeDebounced(warm);
-//  }
-
-//#if defined(ENABLE_SIMPLIFIED_MODE_BAKE)
-//// Start BAKE from manual UI interrupt; marks UI as used also.
-//// Vetos switch to BAKE mode if a temp pot/dial is present and at the low end stop, ie in FROST position.
-//// Is thread-/ISR- safe.
-//static void startBakeFromInt()
-//  {
-//#ifdef TEMP_POT_AVAILABLE
-//  // Veto if dial is at FROST position.
-//  const bool isLo = TempPot.isAtLoEndStop(); // ISR-safe.
-//  if(isLo) { markUIControlUsed(); return; }
-//#endif
-//  valveMode.startBake();
-//  markUIControlUsedSignificant();
-//  }
-//#endif // defined(ENABLE_SIMPLIFIED_MODE_BAKE)
-//// Start/cancel BAKE mode in one call, driven by manual UI input.
-//void setBakeModeFromManualUI(const bool start)
-//  {
-//  // Give feedback when changing BAKE mode.
-//  if(valveMode.inBakeMode() != start) { valveUI.markUIControlUsedSignificant(); }
-//  // Now set/cancel BAKE.
-//  if(start) { valveMode.startBake(); } else { valveMode.cancelBakeDebounced(); }
-//  }
-
 
 // Temperature control object.
-// Choose which subtype to use depending on board type...
-#if defined(TEMP_POT_AVAILABLE) && defined(HUMIDITY_SENSOR_SUPPORT)
-TempControl_t tempControl(&RelHumidity);
-#else
 TempControl_t tempControl;
-#endif // defined(TEMP_POT_AVAILABLE)
 
 
 #ifndef getMinBoilerOnMinutes
