@@ -73,9 +73,16 @@ OccupancyTracker Occupancy;
 #ifdef ENABLE_MODELLED_RAD_VALVE
 static OTRadValve::ValveControlParametersRT<PARAMS> vct;
 static OTV0P2BASE::EEPROMByHourByteStats ebhs;
-// Internal model of controlled radiator valve position.
-OTRadValve::ModelledRadValve NominalRadValve(
-  static_cast<const OTRadValve::ValveControlParametersRTBase*>(&vct),
+// Create setback lockout if needed.
+  typedef bool(*setbackLockout_t)();
+#if defined(ENABLE_SETBACK_LOCKOUT_COUNTDOWN) && defined(ARDUINO_ARCH_AVR)
+  // If allowing setback lockout, eg for testing, then inject suitable lambda.
+  static bool setbackLockout() {return(0xff != eeprom_read_byte((uint8_t *)OTV0P2BASE::V0P2BASE_EE_START_SETBACK_LOCKOUT_COUNTDOWN_D_INV));}
+#else
+  static constexpr setbackLockout_t setbackLockout = NULL;
+#endif
+// Sensor and control inputs for ModelledRadValve.
+OTRadValve::ModelledRadValveSensorCtrlStats scs(
   &valveMode,
   &TemperatureC16,
   &tempControl,
@@ -83,7 +90,28 @@ OTRadValve::ModelledRadValve NominalRadValve(
   &AmbLight,
   &valveUI,
   &Scheduler,
-  &ebhs,
+  &ebhs
+  );
+// Algorithm for computing target temperature.
+OTRadValve::ModelledRadValveComputeTargetTempBasic<
+  PARAMS,
+  &valveMode,
+  decltype(TemperatureC16),   &TemperatureC16,
+  decltype(tempControl),      &tempControl,
+  decltype(Occupancy),        &Occupancy,
+  decltype(AmbLight),         &AmbLight,
+  decltype(valveUI),          &valveUI,
+  decltype(Scheduler),        &Scheduler,
+  decltype(ebhs),             &ebhs,
+  setbackLockout
+  >
+  cttBasic;
+// Internal model of controlled radiator valve position.
+OTRadValve::ModelledRadValve NominalRadValve(
+  &cttBasic,
+  &vct,
+  &valveMode,
+  &scs,
   #ifdef TRV_SLEW_GLACIAL
     true,
   #else
