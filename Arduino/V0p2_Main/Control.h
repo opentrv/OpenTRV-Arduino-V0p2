@@ -75,8 +75,8 @@ extern OTRadValve::ValveMode valveMode;
 #elif defined(ENABLE_SETTABLE_TARGET_TEMPERATURES) // Eg REV1.
 typedef OTRadValve::TempControlSimpleEEPROMBacked<PARAMS> TempControl_t;
 #else
-#error No temperature control type selected.
-// typedef OTRadValve::TempControlBase TempControl_t;
+// Dummy temperature control.
+typedef OTRadValve::TempControlBase TempControl_t;
 #endif
 extern TempControl_t tempControl;
 
