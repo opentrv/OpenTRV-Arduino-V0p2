@@ -109,7 +109,6 @@ OTRadValve::ModelledRadValveComputeTargetTempBasic<
 // Internal model of controlled radiator valve position.
 OTRadValve::ModelledRadValve NominalRadValve(
   &cttBasic,
-  &vct,
   &valveMode,
   &scs,
   #ifdef TRV_SLEW_GLACIAL
