@@ -129,34 +129,14 @@ extern OccupancyTracker Occupancy;
 
 #if defined(ENABLE_SINGLETON_SCHEDULE)
 #define SCHEDULER_AVAILABLE
-// Customised scheduler for the current OpenTRV application.
-class SimpleValveSchedule final : public OTV0P2BASE::SimpleValveScheduleEEPROM
-    {
-    public:
-        // Allow scheduled on time to dynamically depend on comfort level.
-        virtual uint8_t onTime() const override
-            {
-#if LEARNED_ON_PERIOD_M == LEARNED_ON_PERIOD_COMFORT_M
-            // Simplify the logic where no variation in on time is required.
-            return(LEARNED_ON_PERIOD_M);
-#else // LEARNED_ON_PERIOD_M != LEARNED_ON_PERIOD_COMFORT_M
-            // Variable 'on' time depending on how 'eco' the settings are.
-            // Three-way split based on current WARM target temperature,
-            // for a relatively gentle change in behaviour along the valve dial for example.
-            const uint8_t wt = tempControl.getWARMTargetC();
-            if(tempControl.isEcoTemperature(wt)) { return(LEARNED_ON_PERIOD_M); }
-            else if(tempControl.isComfortTemperature(wt)) { return(LEARNED_ON_PERIOD_COMFORT_M); }
-#if defined(ENABLE_OCCUPANCY_SUPPORT)
-            // If vacant for a long time (>1d) and not at maximum comfort end of scale
-            // then truncate the on period to the minimum to attempt to save energy.
-            else if(Occupancy.longVacant()) { return(LEARNED_ON_PERIOD_M); }
-#endif
-            else { return((LEARNED_ON_PERIOD_M + LEARNED_ON_PERIOD_COMFORT_M) / 2); }
-#endif // LEARNED_ON_PERIOD_M == LEARNED_ON_PERIOD_COMFORT_M
-            }
-    };
 // Singleton scheduler instance.
-typedef SimpleValveSchedule Scheduler_t;
+typedef OTV0P2BASE::SimpleValveSchedule<
+    LEARNED_ON_PERIOD_M, LEARNED_ON_PERIOD_COMFORT_M,
+    decltype(tempControl), &tempControl,
+#if defined(ENABLE_OCCUPANCY_SUPPORT)
+    decltype(Occupancy), &Occupancy
+#endif
+    > Scheduler_t;
 #else
 // Dummy scheduler to simplify coding.
 typedef OTV0P2BASE::NULLValveSchedule Scheduler_t;
