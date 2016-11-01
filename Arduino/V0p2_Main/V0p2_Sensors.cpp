@@ -36,12 +36,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
 
 
 // Sensor for supply (eg battery) voltage in millivolts.
-// Singleton implementation/instance.
 OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
 
-
 #ifdef TEMP_POT_AVAILABLE
-// Singleton implementation/instance.
 #if defined(TEMP_POT_REVERSE)
 OTV0P2BASE::SensorTemperaturePot TempPot(OTV0P2BASE::SensorTemperaturePot::TEMP_POT_RAW_MAX, 0);
 #else
@@ -57,7 +54,6 @@ OTV0P2BASE::SensorTemperaturePot TempPot(REV7_pot_low, REV7_pot_high);
 #endif // (V0p2_REV != 7)
 #endif // defined(TEMP_POT_REVERSE)
 #endif
-
 
 #ifdef ENABLE_AMBLIGHT_SENSOR
 // Normal 2 bit shift between raw and externally-presented values.
@@ -93,20 +89,16 @@ static const int LDR_THR_LOW = 160U; // Was 30.
 static const int LDR_THR_HIGH = 200U; // Was 35.
 #endif // ENABLE_AMBLIGHT_EXTRA_SENSITIVE
 #endif // ENABLE_AMBIENT_LIGHT_SENSOR_PHOTOTRANS_TEPT4400
-// Singleton implementation/instance.
 AmbientLight AmbLight(LDR_THR_HIGH >> shiftRawScaleTo8Bit);
 #endif // ENABLE_AMBLIGHT_SENSOR
-
 
 #if defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
 OTV0P2BASE::MinimalOneWire<> MinOW_DEFAULT;
 #endif
 
-
 #if defined(SENSOR_EXTERNAL_DS18B20_ENABLE_0) // Enable sensor zero.
 OTV0P2BASE::TemperatureC16_DS18B20 extDS18B20_0(MinOW_DEFAULT, 0);
 #endif
-
 
 #if defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21)
 // Singleton implementation/instance.
@@ -114,7 +106,6 @@ OTV0P2BASE::HumiditySensorSHT21 RelHumidity;
 #else
 OTV0P2BASE::DummyHumiditySensorSHT21 RelHumidity;
 #endif
-
 
 // Ambient/room temperature sensor, usually on main board.
 #if defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21)
@@ -128,15 +119,11 @@ OTV0P2BASE::TemperatureC16_DS18B20 TemperatureC16(MinOW_DEFAULT, OTV0P2BASE::Tem
 OTV0P2BASE::RoomTemperatureC16_TMP112 TemperatureC16;
 #endif
 
-
 #ifdef ENABLE_VOICE_SENSOR
-// TODO
 OTV0P2BASE::VoiceDetectionQM1 Voice;
 #endif
 
-
 ////////////////////////// Actuators
-
 
 // DORM1/REV7 direct drive actuator.
 #ifdef HAS_DORM1_VALVE_DRIVE
@@ -148,7 +135,6 @@ OTRadValve::ValveMotorDirectV1<MOTOR_DRIVE_ML, MOTOR_DRIVE_MR, MOTOR_DRIVE_MI_AI
 OTRadValve::ValveMotorDirectV1<MOTOR_DRIVE_MR, MOTOR_DRIVE_ML, MOTOR_DRIVE_MI_AIN, MOTOR_DRIVE_MC_AIN> ValveDirect;
 #endif // HAS_DORM1_MOTOR_REVERSED
 #endif
-
 
 // FHT8V radio-controlled actuator.
 #ifdef ENABLE_FHT8VSIMPLE
