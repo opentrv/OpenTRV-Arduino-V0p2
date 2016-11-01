@@ -101,7 +101,6 @@ void panic(const __FlashStringHelper *s)
 //   * Each of the 5 main sections of Power On Self Test is 1 second LED on, 0.5 second off, n short flashes separated by 0.25s off, then 0.5s off, then 1s on.
 //     The value of n is 1, 2, 3, 4, 5.
 //   * The LED should then go off except for optional faint flickers as the radio is being driven if set up to do so.
-#ifndef ALT_MAIN_LOOP
 #define PP_OFF_MS 250
 static void posPOST(const uint8_t position, const __FlashStringHelper *s = NULL)
   {
@@ -138,7 +137,6 @@ static void posPOST(const uint8_t position, const __FlashStringHelper *s = NULL)
   OTV0P2BASE::LED_HEATCALL_ON();
   OTV0P2BASE::sleepLowPowerMs(1000); // TODO: use this time to gather entropy.
   }
-#endif // ALT_MAIN_LOOP
 
 
 // Pick an appropriate radio config for RFM23 (if it is the primary radio).
@@ -222,9 +220,6 @@ static bool FilterRXISR(const volatile uint8_t *buf, volatile uint8_t &buflen)
 #define FilterRXISR NULL
 #endif
 
-// Optional Power-On Self Test routines.
-// Aborts with a call to panic() if a test fails.
-#if !defined(ALT_MAIN_LOOP)
 void optionalPOST()
   {
   // Have 32678Hz clock at least running before going any further.
@@ -305,7 +300,6 @@ void optionalPOST()
 //  // Single/main POST checkpoint for speed.
 //  posPOST(1 /* , F("POST OK") */ );
   }
-#endif // !defined(ALT_MAIN_LOOP)
 
 
 // Setup routine: runs once after reset.
@@ -358,7 +352,6 @@ void setup()
   DEBUG_SERIAL_PRINT_FLASHSTRING("Resets: ");
   DEBUG_SERIAL_PRINT(oldResetCount);
   DEBUG_SERIAL_PRINTLN();
-#if !defined(ALT_MAIN_LOOP)
   const uint8_t overruns = (~eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_OVERRUN_COUNTER)) & 0xff;
   if(0 != overruns)
     {
@@ -366,7 +359,6 @@ void setup()
     DEBUG_SERIAL_PRINT(overruns);
     DEBUG_SERIAL_PRINTLN();
     }
-#endif
 #if 0 && defined(DEBUG)
   // Compute approx free RAM: see http://jeelabs.org/2011/05/22/atmega-memory-use/
   DEBUG_SERIAL_PRINT_FLASHSTRING("Free RAM: ");
@@ -375,19 +367,9 @@ void setup()
   DEBUG_SERIAL_PRINT((int) &x - (__brkval == 0 ? (int) &__heap_start : (int) __brkval));
   DEBUG_SERIAL_PRINTLN();
 #endif
-#if defined(ALT_MAIN_LOOP)
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("ALTERNATE MAIN LOOP...");
-#endif
 #endif
 
-// Do not do normal POST if running alternate main loop.
-// POST may take too long and do unwanted things,
-// especially for non-standard hardware setup.
-#if defined(ALT_MAIN_LOOP)
-  POSTalt(); // Do alternate POST and setup if required.
-#else
   optionalPOST();
-#endif
 
   // Collect full set of environmental values before entering loop() in normal mode.
   // This should also help ensure that sensors are properly initialised.
@@ -395,7 +377,6 @@ void setup()
   // No external sensors are *assumed* present if running alt main loop.
   // This may mean that the alt loop/POST will have to initialise them explicitly,
   // and the initial seed entropy may be marginally reduced also.
-#if !defined(ALT_MAIN_LOOP)
   const int heat = TemperatureC16.read();
 #if 0 && defined(DEBUG) && !defined(ENABLE_TRIMMED_MEMORY)
   DEBUG_SERIAL_PRINT_FLASHSTRING("T: ");
@@ -426,9 +407,7 @@ void setup()
   DEBUG_SERIAL_PRINTLN();
 #endif
 #endif
-#endif
 
-#if !defined(ALT_MAIN_LOOP)
   const uint16_t Vcc = Supply_cV.read();
 #if 1 && defined(DEBUG) && !defined(ENABLE_TRIMMED_MEMORY)
   // Get current power supply voltage (internal sensor).
@@ -448,16 +427,13 @@ void setup()
 #if !defined(ENABLE_MIN_ENERGY_BOOT)
   OTV0P2BASE::seedPRNGs();
 #endif
-#endif
 
-#if !defined(ALT_MAIN_LOOP)
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("Computing initial target/demand...");
 #endif
 #if defined(ENABLE_NOMINAL_RAD_VALVE)
   // Update targets, output to TRV and boiler, etc, to be sensible before main loop starts.
   NominalRadValve.read();
-#endif
 #endif
 
   // Ensure that the unique node ID is set up (mainly on first use).
@@ -472,19 +448,17 @@ void setup()
   // Initialised: turn main/heatcall UI LED off.
   OTV0P2BASE::LED_HEATCALL_OFF();
 
-#if defined(ENABLE_CLI) && defined(ENABLE_CLI_HELP) && !defined(ALT_MAIN_LOOP) && !defined(ENABLE_TRIMMED_MEMORY)
+#if defined(ENABLE_CLI) && defined(ENABLE_CLI_HELP) && !defined(ENABLE_TRIMMED_MEMORY)
   // Help user get to CLI.
   OTV0P2BASE::serialPrintlnAndFlush(F("At CLI > prompt enter ? for help"));
 #endif
 
-#if !defined(ALT_MAIN_LOOP)
 #if !defined(ENABLE_TRIMMED_MEMORY)
   // Report initial status.
   serialStatusReport();
 #endif
   // Do OpenTRV-specific (late) setup.
   setupOpenTRV();
-#endif
   }
 
 
@@ -498,11 +472,7 @@ void loop()
   const unsigned long usStart = micros();
 #endif
 
-#if defined(ALT_MAIN_LOOP) // Run alternative main loop.
-  loopAlt();
-#else // Normal OpenTRV usage.
   loopOpenTRV();
-#endif
 
 #if defined(EST_CPU_DUTYCYCLE)
   const unsigned long usEnd = micros();

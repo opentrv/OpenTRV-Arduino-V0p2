@@ -29,7 +29,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 
 // GLOBAL flags that alter system build and behaviour.
 //#define DEBUG // If defined, do extra checks and serial logging.  Will take more code space and power.
-//#define ALT_MAIN_LOOP // If defined, normal main loop and POST are REPLACED with alternates, for non-OpenTRV builds.
 //#define EST_CPU_DUTYCYCLE // If defined, estimate CPU duty cycle and thus base power consumption.
 
 //#define COMPAT_UNO // If defined, allow code to run on stock Arduino UNO board.  NOT IMPLEMENTED
