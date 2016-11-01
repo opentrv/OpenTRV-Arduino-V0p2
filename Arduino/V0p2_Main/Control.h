@@ -24,19 +24,14 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #define CONTROL_H
 
 #include <stdint.h>
-
 #include <OTV0p2Base.h>
-
 #include "V0p2_Main.h"
 #include "Messaging.h"
 
-
 // Special setup for OpenTRV beyond generic hardware setup.
 void setupOpenTRV();
-
 // Main loop for OpenTRV radiator control.
 void loopOpenTRV();
-
 
 // Select basic parameter set to use (or could define new set here).
 #ifndef DHW_TEMPERATURES
@@ -47,22 +42,8 @@ typedef OTRadValve::DEFAULT_ValveControlParameters PARAMS;
 typedef OTRadValve::DEFAULT_DHW_ValveControlParameters PARAMS;
 #endif
 
-
-// Period in minutes for simple learned on-time; strictly positive (and less than 256).
-#ifndef LEARNED_ON_PERIOD_M
-#define LEARNED_ON_PERIOD_M 60
-#endif
-// Period in minutes for simple learned on-time with comfort bias; strictly positive (and less than 256).
-// Defaults to twice LEARNED_ON_PERIOD_M.
-// Should be no shorter/less than LEARNED_ON_PERIOD_M to avoid confusion.
-#ifndef LEARNED_ON_PERIOD_COMFORT_M
-#define LEARNED_ON_PERIOD_COMFORT_M (min(2*(LEARNED_ON_PERIOD_M),255))
-#endif
-
-
 // Radiator valve mode (FROST, WARM, BAKE).
 extern OTRadValve::ValveMode valveMode;
-
 
 // Choose which subtype to use depending on enabled settings and board type.
 #if defined(TEMP_POT_AVAILABLE) // Eg REV2/REV7.
@@ -78,7 +59,6 @@ typedef OTRadValve::TempControlSimpleEEPROMBacked<PARAMS> TempControl_t;
 typedef OTRadValve::TempControlBase TempControl_t;
 #endif
 extern TempControl_t tempControl;
-
 
 // Default minimum on/off time in minutes for the boiler relay.
 // Set to 5 as the default valve Tx cycle is 4 mins and 5 mins is a good amount for most boilers.
@@ -126,7 +106,16 @@ typedef OTV0P2BASE::DummySensorOccupancyTracker OccupancyTracker;
 // Singleton implementation for entire node.
 extern OccupancyTracker Occupancy;
 
-
+// Period in minutes for simple learned on-time; strictly positive (and less than 256).
+#ifndef LEARNED_ON_PERIOD_M
+#define LEARNED_ON_PERIOD_M 60
+#endif
+// Period in minutes for simple learned on-time with comfort bias; strictly positive (and less than 256).
+// Defaults to twice LEARNED_ON_PERIOD_M.
+// Should be no shorter/less than LEARNED_ON_PERIOD_M to avoid confusion.
+#ifndef LEARNED_ON_PERIOD_COMFORT_M
+#define LEARNED_ON_PERIOD_COMFORT_M (min(2*(LEARNED_ON_PERIOD_M),255))
+#endif
 #if defined(ENABLE_SINGLETON_SCHEDULE)
 #define SCHEDULER_AVAILABLE
 // Singleton scheduler instance.
@@ -142,7 +131,6 @@ typedef OTV0P2BASE::SimpleValveSchedule<
 typedef OTV0P2BASE::NULLValveSchedule Scheduler_t;
 #endif // defined(ENABLE_SINGLETON_SCHEDULE)
 extern Scheduler_t Scheduler;
-
 
 #if defined(ENABLE_LOCAL_TRV)
 #define ENABLE_MODELLED_RAD_VALVE
@@ -162,7 +150,6 @@ extern OTRadValve::ModelledRadValve NominalRadValve;
 // with fullSample=false to sub-sample (and these may receive lower weighting or be ignored).
 // (EEPROM wear should not be an issue at this update rate in normal use.)
 void sampleStats(bool fullSample);
-
 
 #ifdef ENABLE_FS20_ENCODING_SUPPORT
 // Clear and populate core stats structure with information from this node.
