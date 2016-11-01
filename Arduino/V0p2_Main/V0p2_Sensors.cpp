@@ -161,7 +161,7 @@ uint8_t *appendStatsToTXBufferWithFF(uint8_t *bptr, const uint8_t bufSize)
 #endif
   {
     // Assume enough space in buffer for largest possible stats message.
-    bptr = encodeFullStatsMessageCore(bptr, bufSize, OTV0P2BASE::getStatsTXLevel(), false, &trailer);
+    bptr = OTV0P2BASE::encodeFullStatsMessageCore(bptr, bufSize, OTV0P2BASE::getStatsTXLevel(), false, &trailer);
   }
   return (bptr);
 }

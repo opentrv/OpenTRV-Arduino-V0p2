@@ -325,7 +325,7 @@ void populateCoreStats(OTV0P2BASE::FullStatsMessageCore_t *const content)
   content->ambL = OTV0P2BASE::fnmax((uint8_t)1, OTV0P2BASE::fnmin((uint8_t)254, AmbLight.get())); // Coerce to allowed value in range [1,254]. Bug-fix (twice! TODO-510) c/o Gary Gladman!
   content->containsAmbL = true;
   // OC1/OC2 = Occupancy: 00 not disclosed, 01 not occupied, 10 possibly occupied, 11 probably occupied.
-  // The encodeFullStatsMessageCore() route should omit data not appopriate for security reasons.
+  // The encodeFullStatsMessageCore() route should omit data not appopriate for the privacy level, etc.
 #ifdef ENABLE_OCCUPANCY_SUPPORT
   content->occ = Occupancy.twoBitOccupancyValue();
 #else
@@ -426,7 +426,7 @@ void bareStatsTX(const bool allowDoubleTX, const bool doBinary)
     // Gather core stats.
     OTV0P2BASE::FullStatsMessageCore_t content;
     populateCoreStats(&content);
-    const uint8_t *msg1 = encodeFullStatsMessageCore(buf + STATS_MSG_START_OFFSET, sizeof(buf) - STATS_MSG_START_OFFSET, OTV0P2BASE::getStatsTXLevel(), false, &content);
+    const uint8_t *msg1 = OTV0P2BASE::encodeFullStatsMessageCore(buf + STATS_MSG_START_OFFSET, sizeof(buf) - STATS_MSG_START_OFFSET, OTV0P2BASE::getStatsTXLevel(), false, &content);
     if(NULL == msg1)
       {
 #if 0
