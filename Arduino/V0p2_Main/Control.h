@@ -26,7 +26,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #include <stdint.h>
 
 #include <OTV0p2Base.h>
-#include "V0p2_Sensors.h"
 
 #include "V0p2_Main.h"
 #include "Messaging.h"

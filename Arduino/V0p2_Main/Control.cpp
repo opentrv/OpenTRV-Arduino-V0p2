@@ -20,14 +20,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 /*
  Control/model for TRV and boiler.
  */
-#include <util/atomic.h>
 
 #include "V0p2_Main.h"
 
 #include "Control.h"
-
-#include "V0p2_Sensors.h"
-#include "UI_Minimal.h"
 
 #if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) || defined(ENABLE_SECURE_RADIO_BEACON)
 #include <OTAESGCM.h>

@@ -38,10 +38,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
 #include <OTV0p2Base.h>
 #include <OTRadioLink.h>
 #include <OTRFM23BLink.h>
-//#include <OTNullRadioLink.h>
 #include <OTSIM900Link.h>
 #include <OTRN2483Link.h>
-
 
 
 #ifdef ENABLE_RADIO_PRIMARY_MODULE

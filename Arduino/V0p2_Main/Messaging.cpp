@@ -32,12 +32,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
 
 #include <OTRadioLink.h>
 
-#include <util/atomic.h>
-
 #include "Control.h"
-#include "UI_Minimal.h"
-
-#include "V0p2_Sensors.h"
 
 
 #ifdef ENABLE_RADIO_SIM900

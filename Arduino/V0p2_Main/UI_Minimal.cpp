@@ -20,21 +20,17 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
  Implementation of minimal UI using single LED and one or more momentary push-buttons, etc, plus CLI.
  */
 
-#include <util/atomic.h>
-
 #include <Arduino.h>
 #include <string.h>
 
 #include "V0p2_Main.h"
 #include <OTV0p2_Board_IO_Config.h> // I/O pin allocation and setup: include ahead of I/O module headers.
-#include "V0p2_Sensors.h"
 #include "Control.h"
 #include "Messaging.h"
-#include "UI_Minimal.h"
 
 
 #if defined(valveUI_DEFINED)
-// WIP: valve physical UI controller.
+// Valve physical UI controller.
 valveUI_t valveUI(
   &valveMode,
   &tempControl,
