@@ -358,7 +358,7 @@ void setup()
   DEBUG_SERIAL_PRINT_FLASHSTRING("Resets: ");
   DEBUG_SERIAL_PRINT(oldResetCount);
   DEBUG_SERIAL_PRINTLN();
-#if !defined(ALT_MAIN_LOOP) && !defined(UNIT_TESTS)
+#if !defined(ALT_MAIN_LOOP)
   const uint8_t overruns = (~eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_OVERRUN_COUNTER)) & 0xff;
   if(0 != overruns)
     {
@@ -377,8 +377,6 @@ void setup()
 #endif
 #if defined(ALT_MAIN_LOOP)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("ALTERNATE MAIN LOOP...");
-#elif defined(UNIT_TESTS)
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("UNIT TESTS...");
 #endif
 #endif
 
@@ -397,7 +395,7 @@ void setup()
   // No external sensors are *assumed* present if running alt main loop.
   // This may mean that the alt loop/POST will have to initialise them explicitly,
   // and the initial seed entropy may be marginally reduced also.
-#if !defined(ALT_MAIN_LOOP) && !defined(UNIT_TESTS)
+#if !defined(ALT_MAIN_LOOP)
   const int heat = TemperatureC16.read();
 #if 0 && defined(DEBUG) && !defined(ENABLE_TRIMMED_MEMORY)
   DEBUG_SERIAL_PRINT_FLASHSTRING("T: ");
@@ -430,7 +428,7 @@ void setup()
 #endif
 #endif
 
-#if !defined(ALT_MAIN_LOOP) && !defined(UNIT_TESTS)
+#if !defined(ALT_MAIN_LOOP)
   const uint16_t Vcc = Supply_cV.read();
 #if 1 && defined(DEBUG) && !defined(ENABLE_TRIMMED_MEMORY)
   // Get current power supply voltage (internal sensor).
@@ -452,7 +450,7 @@ void setup()
 #endif
 #endif
 
-#if !defined(ALT_MAIN_LOOP) && !defined(UNIT_TESTS)
+#if !defined(ALT_MAIN_LOOP)
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("Computing initial target/demand...");
 #endif
@@ -474,12 +472,12 @@ void setup()
   // Initialised: turn main/heatcall UI LED off.
   OTV0P2BASE::LED_HEATCALL_OFF();
 
-#if defined(ENABLE_CLI) && defined(ENABLE_CLI_HELP) && !defined(ALT_MAIN_LOOP) && !defined(UNIT_TESTS) && !defined(ENABLE_TRIMMED_MEMORY)
+#if defined(ENABLE_CLI) && defined(ENABLE_CLI_HELP) && !defined(ALT_MAIN_LOOP) && !defined(ENABLE_TRIMMED_MEMORY)
   // Help user get to CLI.
   OTV0P2BASE::serialPrintlnAndFlush(F("At CLI > prompt enter ? for help"));
 #endif
 
-#if !defined(ALT_MAIN_LOOP) && !defined(UNIT_TESTS)
+#if !defined(ALT_MAIN_LOOP)
 #if !defined(ENABLE_TRIMMED_MEMORY)
   // Report initial status.
   serialStatusReport();
@@ -500,9 +498,7 @@ void loop()
   const unsigned long usStart = micros();
 #endif
 
-#if defined(UNIT_TESTS) // Run unit tests *instead* of normal loop() code.
-  loopUnitTest();
-#elif defined(ALT_MAIN_LOOP) // Run alternative main loop.
+#if defined(ALT_MAIN_LOOP) // Run alternative main loop.
   loopAlt();
 #else // Normal OpenTRV usage.
   loopOpenTRV();
