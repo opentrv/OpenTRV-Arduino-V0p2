@@ -22,31 +22,23 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
  */
 
 #include "V0p2_Main.h"
-
-#include "Control.h"
-
 #if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) || defined(ENABLE_SECURE_RADIO_BEACON)
 #include <OTAESGCM.h>
 #endif
 
-
 // Singleton scheduler instance.
 Scheduler_t Scheduler;
-
 
 #ifdef ENABLE_BOILER_HUB
 // True if boiler should be on.
 static bool isBoilerOn();
 #endif
 
-
 // Radiator valve mode (FROST, WARM, BAKE).
 OTRadValve::ValveMode valveMode;
 
-
 // Temperature control object.
 TempControl_t tempControl;
-
 
 #ifndef getMinBoilerOnMinutes
 // Get minimum on (and off) time for pointer (minutes); zero if not in hub mode.

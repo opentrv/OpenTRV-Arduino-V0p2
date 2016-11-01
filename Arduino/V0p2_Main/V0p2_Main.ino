@@ -36,20 +36,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 
 #include "V0p2_Main.h"
 
-#include "V0p2_Generic_Config.h"
-#include <OTV0p2_Board_IO_Config.h> // I/O pin allocation and setup: include ahead of I/O module headers.
-
-// Arduino libraries imported here (even for use in other .cpp files).
-#include <SPI.h>
-#include <Wire.h>
-#include <OTRadioLink.h>
-#include <OTSIM900Link.h>
-#include <OTRN2483Link.h>
-#include <OTRadValve.h>
-
-#include "Control.h"
-
-
 // Indicate that the system is broken in an obvious way (distress flashing the main LED).
 // DOES NOT RETURN.
 // Tries to turn off most stuff safely that will benefit from doing so, but nothing too complex.

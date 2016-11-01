@@ -21,19 +21,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
 /*
  Generic messaging and radio/comms support for OpenTRV.
  */
-
-#include "Messaging.h"
-
-#include <OTV0p2_Board_IO_Config.h> // I/O pin allocation and setup: include ahead of I/O module headers.
-
-#if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) || defined(ENABLE_SECURE_RADIO_BEACON)
-#include <OTAESGCM.h>
-#endif
-
-#include <OTRadioLink.h>
-
-#include "Control.h"
-
+#include "V0p2_Main.h"
 
 #ifdef ENABLE_RADIO_SIM900
 //For EEPROM: TODO make a spec for how config should be stored in EEPROM to make changing them easy
