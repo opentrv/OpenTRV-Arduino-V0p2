@@ -31,10 +31,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define DEBUG // If defined, do extra checks and serial logging.  Will take more code space and power.
 //#define EST_CPU_DUTYCYCLE // If defined, estimate CPU duty cycle and thus base power consumption.
 
-//#define COMPAT_UNO // If defined, allow code to run on stock Arduino UNO board.  NOT IMPLEMENTED
-
-//#define DONT_USE_TIMER0 // Avoid using timer 0 and thus delay(), millis(), PWM pins 5&6, etc.
-
 #ifndef BAUD
 #define BAUD 4800 // Ensure that OpenTRV 'standard' UART speed is set unless explicitly overridden.
 #endif
@@ -45,12 +41,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #include <OTRadValve.h>
 #include "V0p2_Generic_Config.h" // Config switches and module dependencies.
 #include <OTV0p2_Board_IO_Config.h> // I/O pin allocation and setup: include ahead of I/O module headers.
-
-// Link in support for alternate Power On Self-Test (startup) and main loop if required.
-#if defined(ALT_MAIN_LOOP) // Exclude code from production systems.
-extern void POSTalt();
-extern void loopAlt();
-#endif
 
 
 // Indicate that the system is broken in an obvious way (distress flashing of the main UI LED).
@@ -70,17 +60,6 @@ void panic(const __FlashStringHelper *s);
 // Not thread-safe, eg not to be called from within an ISR.
 // NOTE: implementation may not be in power-management module.
 bool pollIO(bool force = false);
-
-// Call this to productively burn tens to hundreds of CPU cycles, and poll I/O, eg in a busy-wait loop.
-// This may churn PRNGs or gather entropy for example.
-// This call should typically take << 1ms at 1MHz CPU.
-// Does not change CPU clock speeds, mess with interrupts (other than possible brief blocking), or sleep.
-// May capture some entropy in secure and non-secure PRNGs.
-inline void burnHundredsOfCyclesProductivelyAndPoll()
-  {
-  if(pollIO()) { OTV0P2BASE::seedRNG8(OTV0P2BASE::getCPUCycleCount(), 37 /* _watchdogFired */, OTV0P2BASE::_getSubCycleTime()); }
-  else { OTV0P2BASE::captureEntropy1(); }
-  }
 
 #ifndef DEBUG
 #define DEBUG_SERIAL_PRINT(s) // Do nothing.
