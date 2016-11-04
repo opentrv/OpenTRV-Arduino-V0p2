@@ -461,10 +461,14 @@ extern OTV0P2BASE::VoiceDetectionQM1 Voice;
 #define HAS_DORM1_VALVE_DRIVE
 // Singleton implementation/instance.
 #ifdef ENABLE_DORM1_MOTOR_REVERSED // Reversed vs sample 2015/12.
-extern OTRadValve::ValveMotorDirectV1<MOTOR_DRIVE_ML, MOTOR_DRIVE_MR, MOTOR_DRIVE_MI_AIN, MOTOR_DRIVE_MC_AIN> ValveDirect;
+  static constexpr uint8_t m1 = MOTOR_DRIVE_ML;
+  static constexpr uint8_t m2 = MOTOR_DRIVE_MR;
 #else
-extern OTRadValve::ValveMotorDirectV1<MOTOR_DRIVE_MR, MOTOR_DRIVE_ML, MOTOR_DRIVE_MI_AIN, MOTOR_DRIVE_MC_AIN> ValveDirect;
+  static constexpr uint8_t m1 = MOTOR_DRIVE_MR;
+  static constexpr uint8_t m2 = MOTOR_DRIVE_ML;
 #endif // HAS_DORM1_MOTOR_REVERSED
+typedef OTRadValve::ValveMotorDirectV1<m1, MOTOR_DRIVE_MR, m2, MOTOR_DRIVE_MC_AIN, decltype(Supply_cV), &Supply_cV> ValveDirect_t;
+extern ValveDirect_t ValveDirect;
 #endif
 
 // Singleton FHT8V valve instance (to control remote FHT8V valve by radio).

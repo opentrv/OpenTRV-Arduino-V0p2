@@ -539,13 +539,9 @@ OTV0P2BASE::VoiceDetectionQM1 Voice;
 
 // DORM1/REV7 direct drive actuator.
 #ifdef HAS_DORM1_VALVE_DRIVE
-//#ifdef ENABLE_V1_DIRECT_MOTOR_DRIVE
 // Singleton implementation/instance.
-#ifdef ENABLE_DORM1_MOTOR_REVERSED // Reversed vs sample 2015/12.
-OTRadValve::ValveMotorDirectV1<MOTOR_DRIVE_ML, MOTOR_DRIVE_MR, MOTOR_DRIVE_MI_AIN, MOTOR_DRIVE_MC_AIN> ValveDirect;
-#else
-OTRadValve::ValveMotorDirectV1<MOTOR_DRIVE_MR, MOTOR_DRIVE_ML, MOTOR_DRIVE_MI_AIN, MOTOR_DRIVE_MC_AIN> ValveDirect;
-#endif // HAS_DORM1_MOTOR_REVERSED
+// Suppress unnecessary activity when room dark.
+ValveDirect_t ValveDirect([](){return(AmbLight.isRoomDark());});
 #endif
 
 // FHT8V radio-controlled actuator.
