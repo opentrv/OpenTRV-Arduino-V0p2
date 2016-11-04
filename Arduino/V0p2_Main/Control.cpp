@@ -69,17 +69,6 @@ static OTV0P2BASE::EEPROMByHourByteStats ebhs;
 #else
   static constexpr setbackLockout_t setbackLockout = NULL;
 #endif
-// Sensor and control inputs for ModelledRadValve.
-OTRadValve::ModelledRadValveSensorCtrlStats scs(
-  &valveMode,
-  &TemperatureC16,
-  &tempControl,
-  &Occupancy,
-  &AmbLight,
-  &valveUI,
-  &Scheduler,
-  &ebhs
-  );
 // Algorithm for computing target temperature.
 OTRadValve::ModelledRadValveComputeTargetTempBasic<
   PARAMS,
@@ -98,7 +87,7 @@ OTRadValve::ModelledRadValveComputeTargetTempBasic<
 OTRadValve::ModelledRadValve NominalRadValve(
   &cttBasic,
   &valveMode,
-  &scs,
+  &tempControl,
   #ifdef TRV_SLEW_GLACIAL
     true,
   #else
