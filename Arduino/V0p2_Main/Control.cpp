@@ -1835,12 +1835,15 @@ void loopOpenTRV()
 #endif
   // If waiting for for verification that the valve has been fitted
   // then accept any manual interaction with controls as that signal.
-  // ('Any' manual interaction may prove too sensitive.)
-  // Also have a timeout of somewhat over ~10m from startup
-  // for automatic recovery after any crash and restart.
+  // Also have a backup timeout of at least ~10m from startup
+  // for automatic recovery after a crash and restart,
+  // or where fitter simply forgets to initiate cablibration.
   if(ValveDirect.isWaitingForValveToBeFitted())
       {
-      if(valveUI.veryRecentUIControlUse() || (minuteCount > 15))
+      // Defer automatic recovery when battery low or in dark in case crashing/restarting
+      // to try to avoid disturbing/waking occupants and/or entering battery death spiral.  (TODO-1037, TODO-963)
+      const bool delayRecalibration = batteryLow || AmbLight.isRoomDark();
+      if(valveUI.veryRecentUIControlUse() || (minuteCount > (delayRecalibration ? 200 : 15)))
           { ValveDirect.signalValveFitted(); }
       }
   // Provide regular poll to motor driver.
