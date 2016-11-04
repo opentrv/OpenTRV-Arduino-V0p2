@@ -261,28 +261,6 @@ void sampleStats(const bool fullSample)
   simpleUpdateStatsPair(V0P2BASE_EE_STATS_SET_RHPC_BY_HOUR, hh, smartDivToU8(rhpcTotal, sc));
 #endif
 
-#if defined(EE_STATS_SET_WARMMODE_BY_HOUR_OF_WK)
-  // Update sampled WARM-mode value.
-  // 0xff when unset/erased; first use will set all history bits to the initial sample value.
-  // When in use, bit 7 (msb) is always 0 (to distinguish from unset).
-  // Bit 6 is 1 if most recent day's sample was in WARM (or BAKE) mode, 0 if in FROST mode.
-  // At each new sampling, bits 6--1 are shifted down and the new bit 6 set as above.
-  // Designed to enable low-wear no-write or selective erase/write use much of the time;
-  // periods which are always the same mode will achieve a steady-state value (eliminating most EEPROM wear)
-  // while even some of the rest (while switching over from all-WARM to all-FROST) will only need pure writes (no erase).
-  uint8_t *const phW = (uint8_t *)(V0P2BASE_EE_STATS_START_ADDR(EE_STATS_SET_WARMMODE_BY_HOUR_OF_WK) + hh);
-  const uint8_t warmHistory = eeprom_read_byte(phW);
-  if(warmHistory & 0x80) { eeprom_smart_clear_bits(phW, inWarmMode() ? 0x7f : 0); } // First use sets all history bits to current sample value.
-  else // Shift in today's sample bit value for this hour at bit 6...
-    {
-    uint8_t newWarmHistory = (warmHistory >> 1) & 0x3f;
-    if(warmCount > 0) { newWarmHistory |= 0x40; } // Treat as warm iff more WARM than FROST (sub-)samples.
-    eeprom_smart_update_byte(phW, newWarmHistory);
-    }
-  // Reset WARM sub-sample count after full sample.
-  warmCount = 0;
-#endif
-
   // TODO: other stats measures...
   }
 
