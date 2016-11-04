@@ -35,6 +35,7 @@ valveUI_t valveUI(
 #else
       NULL,
 #endif
+  &Supply_cV,
   OTV0P2BASE::LED_HEATCALL_ON, OTV0P2BASE::LED_HEATCALL_OFF, OTV0P2BASE::LED_HEATCALL_ON_ISR_SAFE);
 #endif // valveUI_DEFINED
 
