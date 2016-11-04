@@ -202,7 +202,7 @@ void serialStatusReport()
 #endif
 
   // *S* section: settable target/threshold temperatures, current target, and eco/smart/occupied flags.
-#ifdef ENABLE_SETTABLE_TARGET_TEMPERATURES // Show thresholds and current target since no longer so easily deduced.
+#if defined(ENABLE_SETTABLE_TARGET_TEMPERATURES) || defined(TEMP_POT_AVAILABLE)
   Serial.print(';'); // Terminate previous section.
   Serial.print('S'); // Current settable temperature target, and FROST and WARM settings.
 #ifdef ENABLE_LOCAL_TRV

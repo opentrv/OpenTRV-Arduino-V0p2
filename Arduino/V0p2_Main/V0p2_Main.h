@@ -175,6 +175,79 @@ bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadi
 #endif
 
 
+////// SENSORS
+
+// Sensor for supply (eg battery) voltage in millivolts.
+// Singleton implementation/instance.
+extern OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
+
+#ifdef ENABLE_TEMP_POT_IF_PRESENT
+#if (V0p2_REV >= 2) && defined(TEMP_POT_AIN) // Only supported in REV2/3/4/7.
+#define TEMP_POT_AVAILABLE
+// Sensor for temperature potentiometer/dial.
+extern OTV0P2BASE::SensorTemperaturePot TempPot;
+#endif
+#endif // ENABLE_TEMP_POT_IF_PRESENT
+
+// Sense ambient lighting level.
+#ifdef ENABLE_AMBLIGHT_SENSOR
+// Sensor for ambient light level; 0 is dark, 255 is bright.
+typedef OTV0P2BASE::SensorAmbientLight AmbientLight;
+#else // !defined(ENABLE_AMBLIGHT_SENSOR)
+typedef OTV0P2BASE::DummySensorAmbientLight AmbientLight; // Dummy stand-in.
+#endif // ENABLE_AMBLIGHT_SENSOR
+// Singleton implementation/instance.
+extern AmbientLight AmbLight;
+
+// Create very light-weight standard-speed OneWire(TM) support if a pin has been allocated to it.
+// Meant to be similar to use to OneWire library V2.2.
+// Supports search but not necessarily CRC.
+// Designed to work with 1MHz/1MIPS CPU clock.
+#if defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
+#define SUPPORTS_MINIMAL_ONEWIRE
+extern OTV0P2BASE::MinimalOneWire<> MinOW_DEFAULT_OWDQ;
+#endif
+
+// Cannot have internal and external use of same DS18B20 at same time...
+#if defined(ENABLE_EXTERNAL_TEMP_SENSOR_DS18B20) && !defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20) && defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
+#define SENSOR_EXTERNAL_DS18B20_ENABLE_0 // Enable sensor zero.
+extern OTV0P2BASE::TemperatureC16_DS18B20 extDS18B20_0;
+#endif
+
+// Ambient/room temperature sensor, usually on main board.
+#if defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21)
+extern OTV0P2BASE::RoomTemperatureC16_SHT21 TemperatureC16; // SHT21 impl.
+#elif defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20)
+  #if defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
+  // DSB18B20 temperature impl, with slightly reduced precision to improve speed.
+  extern OTV0P2BASE::TemperatureC16_DS18B20 TemperatureC16;
+  #endif // defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
+#else // Don't use TMP112 if SHT21 or DS18B20 have been selected.
+extern OTV0P2BASE::RoomTemperatureC16_TMP112 TemperatureC16;
+#endif
+
+// HUMIDITY_SENSOR_SUPPORT is defined if at least one humidity sensor has support compiled in.
+// Simple implementations can assume that the sensor will be present if defined;
+// more sophisticated implementations may wish to make run-time checks.
+// If SHT21 support is enabled at compile-time then its humidity sensor may be used at run-time.
+#if defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21)
+#define HUMIDITY_SENSOR_SUPPORT // Humidity sensing available.
+#endif
+
+#if defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21)
+// Singleton implementation/instance.
+typedef OTV0P2BASE::HumiditySensorSHT21 RelHumidity_t;
+extern RelHumidity_t RelHumidity;
+#else
+// Dummy implementation to minimise coding changes.
+extern OTV0P2BASE::DummyHumiditySensorSHT21 RelHumidity;
+#endif
+
+#ifdef ENABLE_VOICE_SENSOR
+extern OTV0P2BASE::VoiceDetectionQM1 Voice;
+#endif
+
+
 /////// CONTROL
 
 // Special setup for OpenTRV beyond generic hardware setup.
@@ -381,85 +454,11 @@ bool isCLIActive();
 // NOT RENTRANT (eg uses static state for speed and code space).
 void pollCLI(uint8_t maxSCT, bool startOfMinute);
 
-
-////// SENSORS
-
-// Sensor for supply (eg battery) voltage in millivolts.
-// Singleton implementation/instance.
-extern OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
-
-#ifdef ENABLE_TEMP_POT_IF_PRESENT
-#if (V0p2_REV >= 2) && defined(TEMP_POT_AIN) // Only supported in REV2/3/4/7.
-#define TEMP_POT_AVAILABLE
-// Sensor for temperature potentiometer/dial.
-extern OTV0P2BASE::SensorTemperaturePot TempPot;
-#endif
-#endif // ENABLE_TEMP_POT_IF_PRESENT
-
-// Sense ambient lighting level.
-#ifdef ENABLE_AMBLIGHT_SENSOR
-// Sensor for ambient light level; 0 is dark, 255 is bright.
-typedef OTV0P2BASE::SensorAmbientLight AmbientLight;
-#else // !defined(ENABLE_AMBLIGHT_SENSOR)
-typedef OTV0P2BASE::DummySensorAmbientLight AmbientLight; // Dummy stand-in.
-#endif // ENABLE_AMBLIGHT_SENSOR
-// Singleton implementation/instance.
-extern AmbientLight AmbLight;
-
-// Create very light-weight standard-speed OneWire(TM) support if a pin has been allocated to it.
-// Meant to be similar to use to OneWire library V2.2.
-// Supports search but not necessarily CRC.
-// Designed to work with 1MHz/1MIPS CPU clock.
-#if defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
-#define SUPPORTS_MINIMAL_ONEWIRE
-extern OTV0P2BASE::MinimalOneWire<> MinOW_DEFAULT_OWDQ;
-#endif
-
-// Cannot have internal and external use of same DS18B20 at same time...
-#if defined(ENABLE_EXTERNAL_TEMP_SENSOR_DS18B20) && !defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20) && defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
-#define SENSOR_EXTERNAL_DS18B20_ENABLE_0 // Enable sensor zero.
-extern OTV0P2BASE::TemperatureC16_DS18B20 extDS18B20_0;
-#endif
-
-// Ambient/room temperature sensor, usually on main board.
-#if defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21)
-extern OTV0P2BASE::RoomTemperatureC16_SHT21 TemperatureC16; // SHT21 impl.
-#elif defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20)
-  #if defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
-  // DSB18B20 temperature impl, with slightly reduced precision to improve speed.
-  extern OTV0P2BASE::TemperatureC16_DS18B20 TemperatureC16;
-  #endif // defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
-#else // Don't use TMP112 if SHT21 or DS18B20 have been selected.
-extern OTV0P2BASE::RoomTemperatureC16_TMP112 TemperatureC16;
-#endif
-
-// HUMIDITY_SENSOR_SUPPORT is defined if at least one humidity sensor has support compiled in.
-// Simple implementations can assume that the sensor will be present if defined;
-// more sophisticated implementations may wish to make run-time checks.
-// If SHT21 support is enabled at compile-time then its humidity sensor may be used at run-time.
-#if defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21)
-#define HUMIDITY_SENSOR_SUPPORT // Humidity sensing available.
-#endif
-
-#if defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21)
-// Singleton implementation/instance.
-typedef OTV0P2BASE::HumiditySensorSHT21 RelHumidity_t;
-extern RelHumidity_t RelHumidity;
-#else
-// Dummy implementation to minimise coding changes.
-extern OTV0P2BASE::DummyHumiditySensorSHT21 RelHumidity;
-#endif
-
-#ifdef ENABLE_VOICE_SENSOR
-extern OTV0P2BASE::VoiceDetectionQM1 Voice;
-#endif
-
 ////////////////////////// Actuators
 
 // DORM1/REV7 direct drive motor actuator.
 #if /* defined(ENABLE_LOCAL_TRV) && */ defined(ENABLE_V1_DIRECT_MOTOR_DRIVE)
 #define HAS_DORM1_VALVE_DRIVE
-// Singleton implementation/instance.
 #ifdef ENABLE_DORM1_MOTOR_REVERSED // Reversed vs sample 2015/12.
   static constexpr uint8_t m1 = MOTOR_DRIVE_ML;
   static constexpr uint8_t m2 = MOTOR_DRIVE_MR;

@@ -85,6 +85,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define CONFIG_DORM1_MUT // REV7 / DORM1 Winter 2014/2015 minimal for unit testing.
 //#define CONFIG_REV7N // REV7 with external "Model N" valve.
 //#define CONFIG_REV7_AS_SENSOR // REV7 as JSON-only stats/sensor leaf.
+//#define CONFIG_REV7_AS_SECURE_SENSOR // REV7 as JSON-only stats/sensor leaf with secure comms.
 //#define CONFIG_REV7_EEPROM_TEST // for testing key loss issues
 //#define CONFIG_REV9_STATS // REV9 as stats node, cut 2 of the board.
 //#define CONFIG_DE_TESTLAB // Deniz's test environment.
