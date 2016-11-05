@@ -483,7 +483,7 @@ void pollCLI(uint8_t maxSCT, bool startOfMinute, char *buf, uint8_t bufsize);
 #ifdef ENABLE_PROPORTIONAL_VALVE_CONTROL
 static constexpr bool binaryOnlyValveControl = false;
 #else
-static constexpr bool binaryOnlyValveControl = false; // FIXME true;
+static constexpr bool binaryOnlyValveControl = true;
 #endif
 #if /* defined(ENABLE_LOCAL_TRV) && */ defined(ENABLE_V1_DIRECT_MOTOR_DRIVE)
 #define HAS_DORM1_VALVE_DRIVE
