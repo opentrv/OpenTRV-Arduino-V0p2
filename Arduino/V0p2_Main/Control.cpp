@@ -346,7 +346,7 @@ void bareStatsTX(const bool allowDoubleTX, const bool doBinary)
 #endif
 
 #if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
-  const bool doEnc = false; //  FIXME    true;
+  const bool doEnc = true;
 #else
   const bool doEnc = false;
 #endif
