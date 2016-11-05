@@ -649,11 +649,11 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
 #endif
         {
         // Send directly to the primary radio...
-        PrimaryRadio.queueToSend(realTXFrameStart, wrote);
+        if(!PrimaryRadio.queueToSend(realTXFrameStart, wrote)) { sendingJSONFailed = true; }
         }
       }
 
-#if 1 && defined(DEBUG)
+#if 1 // && defined(DEBUG)
     if(sendingJSONFailed) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("!failed JSON TX"); }
 #endif
     }
