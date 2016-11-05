@@ -88,6 +88,7 @@ OTRadValve::ModelledRadValve NominalRadValve(
   &cttBasic,
   &valveMode,
   &tempControl,
+  &ValveDirect,
   #ifdef TRV_SLEW_GLACIAL
     true,
   #else
@@ -1794,7 +1795,7 @@ void loopOpenTRV()
   // Handle local direct-drive valve, eg DORM1.
 #if defined(ENABLE_NOMINAL_RAD_VALVE)
   // Get current modelled valve position into abstract driver.
-  ValveDirect.set(NominalRadValve.get());
+//  ValveDirect.set(NominalRadValve.get());
 #endif
   // If waiting for for verification that the valve has been fitted
   // then accept any manual interaction with controls as that signal.

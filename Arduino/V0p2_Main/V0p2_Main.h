@@ -480,6 +480,11 @@ void pollCLI(uint8_t maxSCT, bool startOfMinute, char *buf, uint8_t bufsize);
 ////////////////////////// Actuators
 
 // DORM1/REV7 direct drive motor actuator.
+#ifdef ENABLE_PROPORTIONAL_VALVE_CONTROL
+static constexpr bool binaryOnlyValveControl = false;
+#else
+static constexpr bool binaryOnlyValveControl = false; // FIXME true;
+#endif
 #if /* defined(ENABLE_LOCAL_TRV) && */ defined(ENABLE_V1_DIRECT_MOTOR_DRIVE)
 #define HAS_DORM1_VALVE_DRIVE
 #ifdef ENABLE_DORM1_MOTOR_REVERSED // Reversed vs sample 2015/12.
@@ -489,7 +494,7 @@ void pollCLI(uint8_t maxSCT, bool startOfMinute, char *buf, uint8_t bufsize);
   static constexpr uint8_t m1 = MOTOR_DRIVE_MR;
   static constexpr uint8_t m2 = MOTOR_DRIVE_ML;
 #endif // HAS_DORM1_MOTOR_REVERSED
-typedef OTRadValve::ValveMotorDirectV1<m1, m2, MOTOR_DRIVE_MI_AIN, MOTOR_DRIVE_MC_AIN, decltype(Supply_cV), &Supply_cV> ValveDirect_t;
+typedef OTRadValve::ValveMotorDirectV1<m1, m2, MOTOR_DRIVE_MI_AIN, MOTOR_DRIVE_MC_AIN, decltype(Supply_cV), &Supply_cV, binaryOnlyValveControl> ValveDirect_t;
 extern ValveDirect_t ValveDirect;
 #endif
 
