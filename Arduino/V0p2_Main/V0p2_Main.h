@@ -175,6 +175,23 @@ bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadi
 #endif
 
 
+/////// CONTROL (EARLY, NOT DEPENDENT ON OTHER SENSORS)
+
+// Radiator valve mode (FROST, WARM, BAKE).
+extern OTRadValve::ValveMode valveMode;
+
+// FIXME Moved up from line 464 to fix compilation errors (OccupancyTracker needed on line 261)
+// IF DEFINED: support for general timed and multi-input occupancy detection / use.
+#ifdef ENABLE_OCCUPANCY_SUPPORT
+typedef OTV0P2BASE::PseudoSensorOccupancyTracker OccupancyTracker;
+#else
+// Placeholder class with dummy static status methods to reduce code complexity.
+typedef OTV0P2BASE::DummySensorOccupancyTracker OccupancyTracker;
+#endif
+// Singleton implementation for entire node.
+extern OccupancyTracker Occupancy;
+
+
 ////// SENSORS
 
 // Sensor for supply (eg battery) voltage in millivolts.
@@ -185,7 +202,17 @@ extern OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
 #if (V0p2_REV >= 2) && defined(TEMP_POT_AIN) // Only supported in REV2/3/4/7.
 #define TEMP_POT_AVAILABLE
 // Sensor for temperature potentiometer/dial.
-extern OTV0P2BASE::SensorTemperaturePot TempPot;
+typedef OTV0P2BASE::SensorTemperaturePot
+    <
+    decltype(Occupancy), &Occupancy,
+#if (V0p2_REV == 7)
+    48, 296, // Correct for DORM1/TRV1 with embedded REV7.
+    false // REV7 does not drive pot from IO_POWER_U.
+#elif defined(TEMP_POT_REVERSE)
+    1023, 0
+#endif
+    > TempPot_t;
+extern TempPot_t TempPot;
 #endif
 #endif // ENABLE_TEMP_POT_IF_PRESENT
 
@@ -264,15 +291,12 @@ typedef OTRadValve::DEFAULT_ValveControlParameters PARAMS;
 typedef OTRadValve::DEFAULT_DHW_ValveControlParameters PARAMS;
 #endif
 
-// Radiator valve mode (FROST, WARM, BAKE).
-extern OTRadValve::ValveMode valveMode;
-
 // Choose which subtype to use depending on enabled settings and board type.
 #if defined(TEMP_POT_AVAILABLE) // Eg REV2/REV7.
   #if defined(HUMIDITY_SENSOR_SUPPORT)
-  typedef OTRadValve::TempControlTempPot<&TempPot, PARAMS, decltype(RelHumidity), &RelHumidity> TempControl_t;
+  typedef OTRadValve::TempControlTempPot<decltype(TempPot), &TempPot, PARAMS, decltype(RelHumidity), &RelHumidity> TempControl_t;
   #else
-  typedef OTRadValve::TempControlTempPot<&TempPot, PARAMS> TempControl_t;
+  typedef OTRadValve::TempControlTempPot<decltype(TempPot), &TempPot, PARAMS> TempControl_t;
   #endif
 #elif defined(ENABLE_SETTABLE_TARGET_TEMPERATURES) // Eg REV1.
 typedef OTRadValve::TempControlSimpleEEPROMBacked<PARAMS> TempControl_t;
@@ -317,17 +341,6 @@ void setMinBoilerOnMinutes(uint8_t mins);
 #define inStatsHubMode() (1 == getMinBoilerOnMinutes())
 #endif // defined(ENABLE_DEFAULT_ALWAYS_RX)
 
-// FIXME Moved up from line 464 to fix compilation errors (OccupancyTracker needed on line 261)
-// IF DEFINED: support for general timed and multi-input occupancy detection / use.
-#ifdef ENABLE_OCCUPANCY_SUPPORT
-typedef OTV0P2BASE::PseudoSensorOccupancyTracker OccupancyTracker;
-#else
-// Placeholder class with dummy static status methods to reduce code complexity.
-typedef OTV0P2BASE::DummySensorOccupancyTracker OccupancyTracker;
-#endif
-// Singleton implementation for entire node.
-extern OccupancyTracker Occupancy;
-
 // Period in minutes for simple learned on-time; strictly positive (and less than 256).
 #ifndef LEARNED_ON_PERIOD_M
 #define LEARNED_ON_PERIOD_M 60
@@ -341,7 +354,8 @@ extern OccupancyTracker Occupancy;
 #if defined(ENABLE_SINGLETON_SCHEDULE)
 #define SCHEDULER_AVAILABLE
 // Singleton scheduler instance.
-typedef OTV0P2BASE::SimpleValveSchedule<
+typedef OTV0P2BASE::SimpleValveSchedule
+    <
     LEARNED_ON_PERIOD_M, LEARNED_ON_PERIOD_COMFORT_M,
     decltype(tempControl), &tempControl,
 #if defined(ENABLE_OCCUPANCY_SUPPORT)

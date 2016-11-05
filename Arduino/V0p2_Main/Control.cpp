@@ -346,7 +346,7 @@ void bareStatsTX(const bool allowDoubleTX, const bool doBinary)
 #endif
 
 #if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
-  const bool doEnc = true;
+  const bool doEnc = false; //  FIXME    true;
 #else
   const bool doEnc = false;
 #endif
@@ -664,8 +664,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
 #endif // defined(ENABLE_STATS_TX)
 
 
-
-// Wire components directly together, eg for occupancy sensing.
+// Wire components together, eg for occupancy sensing.
 static void wireComponentsTogether()
   {
 #ifdef ENABLE_FHT8VSIMPLE
@@ -684,9 +683,6 @@ static void wireComponentsTogether()
 #endif // ENABLE_OCCUPANCY_DETECTION_FROM_VOICE
 
 #if defined(TEMP_POT_AVAILABLE)
-//  TempPot.setOccCallback(genericMarkAsOccupied); // markUIControlUsed
-  // Mark UI as used and indirectly mark occupancy when control is used.
-  TempPot.setOccCallback([]{valveUI.markUIControlUsed();});
   // Callbacks to set various mode combinations.
   // Typically at most one call would be made on any appropriate pot adjustment.
   TempPot.setWFBCallbacks([](bool x){valveUI.setWarmModeFromManualUI(x);},
