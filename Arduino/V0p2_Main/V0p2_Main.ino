@@ -60,9 +60,9 @@ void panic()
   for( ; ; )
     {
     OTV0P2BASE::LED_HEATCALL_ON();
-    OTRadValve::ModeButtonAndPotActuatorPhysicalUI::tinyPause();
+    OTV0P2BASE::nap(WDTO_15MS);
     OTV0P2BASE::LED_HEATCALL_OFF();
-    OTRadValve::ModeButtonAndPotActuatorPhysicalUI::bigPause();
+    OTV0P2BASE::nap(WDTO_120MS);
     }
   }
 
@@ -111,7 +111,7 @@ static void posPOST(const uint8_t position, const __FlashStringHelper *s = NULL)
     for(int i = position; --i >= 0; )
       {
       OTV0P2BASE::LED_HEATCALL_ON();
-      OTRadValve::ModeButtonAndPotActuatorPhysicalUI::tinyPause();
+      OTV0P2BASE::nap(WDTO_15MS);
       OTV0P2BASE::LED_HEATCALL_OFF();
       OTV0P2BASE::sleepLowPowerMs(PP_OFF_MS); // TODO: use this time to gather entropy.
       }
