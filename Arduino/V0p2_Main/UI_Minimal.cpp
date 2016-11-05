@@ -383,18 +383,18 @@ static void dumpCLIUsage(const uint8_t stopBy)
   Serial.println();
   }
 
-#if defined(ENABLE_EXTENDED_CLI) || defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
-static const uint8_t MAXIMUM_CLI_RESPONSE_CHARS = 1 + OTV0P2BASE::CLI::MAX_TYPICAL_CLI_BUFFER;
-#else
-static const uint8_t MAXIMUM_CLI_RESPONSE_CHARS = 1 + OTV0P2BASE::CLI::MIN_TYPICAL_CLI_BUFFER;
-#endif
+//#if defined(ENABLE_EXTENDED_CLI) || defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
+//static const uint8_t MAXIMUM_CLI_RESPONSE_CHARS = 1 + OTV0P2BASE::CLI::MAX_TYPICAL_CLI_BUFFER;
+//#else
+//static const uint8_t MAXIMUM_CLI_RESPONSE_CHARS = 1 + OTV0P2BASE::CLI::MIN_TYPICAL_CLI_BUFFER;
+//#endif
 // Used to poll user side for CLI input until specified sub-cycle time.
 // Commands should be sent terminated by CR *or* LF; both may prevent 'E' (exit) from working properly.
 // A period of less than (say) 500ms will be difficult for direct human response on a raw terminal.
 // A period of less than (say) 100ms is not recommended to avoid possibility of overrun on long interactions.
 // Times itself out after at least a minute or two of inactivity. 
 // NOT RENTRANT (eg uses static state for speed and code space).
-void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
+void pollCLI(const uint8_t maxSCT, const bool startOfMinute, char *const buf, const uint8_t bufsize)
   {
   // Perform any once-per-minute operations.
   if(startOfMinute)
@@ -412,8 +412,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute)
   // Read a line up to a terminating CR, either on its own or as part of CRLF.
   // (Note that command content and timing may be useful to fold into PRNG entropy pool.)
   // A static buffer generates better code but permanently consumes previous SRAM.
-  char buf[MAXIMUM_CLI_RESPONSE_CHARS+1]; // Space for terminating '\0'.
-  const uint8_t n = OTV0P2BASE::CLI::promptAndReadCommandLine(maxSCT, buf, sizeof(buf), pollIO);
+  const uint8_t n = OTV0P2BASE::CLI::promptAndReadCommandLine(maxSCT, buf, bufsize, pollIO);
 
   if(n > 0)
     {

@@ -494,8 +494,9 @@ OTV0P2BASE::VoiceDetectionQM1 Voice;
 // DORM1/REV7 direct drive actuator.
 #ifdef HAS_DORM1_VALVE_DRIVE
 // Singleton implementation/instance.
-// Suppress unnecessary activity when room dark.
-ValveDirect_t ValveDirect([](){return(AmbLight.isRoomDark());});
+// Suppress unnecessary activity when room dark, eg to avoid disturbance if device crashes/restarts,
+// unless recent UI use because value is being fitted/adjusted.
+ValveDirect_t ValveDirect([](){return((!valveUI.veryRecentUIControlUse()) && AmbLight.isRoomDark());});
 #endif
 
 // FHT8V radio-controlled actuator.

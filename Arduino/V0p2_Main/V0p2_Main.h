@@ -461,12 +461,21 @@ void resetCLIActiveTimer();
 // Thread-safe.
 bool isCLIActive();
 
+// Suggested minimum buffer size for pollUI() to ensure maximum-sized commands can be received.
+#if defined(ENABLE_EXTENDED_CLI) || defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
+static constexpr uint8_t MAXIMUM_CLI_RESPONSE_CHARS = 1 + OTV0P2BASE::CLI::MAX_TYPICAL_CLI_BUFFER;
+#else
+static constexpr uint8_t MAXIMUM_CLI_RESPONSE_CHARS = 1 + OTV0P2BASE::CLI::MIN_TYPICAL_CLI_BUFFER;
+#endif
+static constexpr uint8_t BUFSIZ_pollUI = 1 + MAXIMUM_CLI_RESPONSE_CHARS;
+
 // Used to poll user side for CLI input until specified sub-cycle time.
 // A period of less than (say) 500ms will be difficult for direct human response on a raw terminal.
 // A period of less than (say) 100ms is not recommended to avoid possibility of overrun on long interactions.
 // Times itself out after at least a minute or two of inactivity. 
 // NOT RENTRANT (eg uses static state for speed and code space).
-void pollCLI(uint8_t maxSCT, bool startOfMinute);
+void pollCLI(uint8_t maxSCT, bool startOfMinute, char *buf, uint8_t bufsize);
+
 
 ////////////////////////// Actuators
 
