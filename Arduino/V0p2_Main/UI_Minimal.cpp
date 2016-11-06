@@ -444,8 +444,12 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute, char *const buf, co
       case 'G': { showStatus = OTV0P2BASE::CLI::GenericParam().doCommand(buf, n); break; }
 #endif
 
-      // Set or display new random ID.
+      // Reset or display ID.
+#ifdef ENABLE_ID_SET_FROM_CLI
+      case 'I': { showStatus = OTV0P2BASE::CLI::NodeIDWithSet().doCommand(buf, n); break; }
+#else
       case 'I': { showStatus = OTV0P2BASE::CLI::NodeID().doCommand(buf, n); break; }
+#endif
 
       // Status line and optional smart/scheduled warming prediction request.
       case 'S':
