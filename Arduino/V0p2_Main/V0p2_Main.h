@@ -475,7 +475,7 @@ static constexpr uint8_t BUFSIZ_pollUI = 1 + MAXIMUM_CLI_RESPONSE_CHARS;
 // A period of less than (say) 100ms is not recommended to avoid possibility of overrun on long interactions.
 // Times itself out after at least a minute or two of inactivity. 
 // NOT RENTRANT (eg uses static state for speed and code space).
-void pollCLI(uint8_t maxSCT, bool startOfMinute, char *buf, uint8_t bufsize);
+void pollCLI(uint8_t maxSCT, bool startOfMinute, const OTV0P2BASE::ScratchSpace &s);
 
 
 ////////////////////////// Actuators
@@ -504,7 +504,7 @@ extern ValveDirect_t ValveDirect;
 static const uint8_t _FHT8V_MAX_EXTRA_TRAILER_BYTES = (1 + max(OTV0P2BASE::MESSAGING_TRAILING_MINIMAL_STATS_PAYLOAD_BYTES, OTV0P2BASE::FullStatsMessageCore_MAX_BYTES_ON_WIRE));
 extern OTRadValve::FHT8VRadValve<_FHT8V_MAX_EXTRA_TRAILER_BYTES, OTRadValve::FHT8VRadValveBase::RFM23_PREAMBLE_BYTES, OTRadValve::FHT8VRadValveBase::RFM23_PREAMBLE_BYTE> FHT8V;
 #if defined(ENABLE_LOCAL_TRV) || defined(ENABLE_SLAVE_TRV)
-inline bool localFHT8VTRVEnabled() { return(!FHT8V.isUnavailable()); }
+inline bool localFHT8VTRVEnabled() { return(FHT8V.isAvailable()); }
 #else
 #define localFHT8VTRVEnabled() (false) // Local FHT8V TRV disabled.
 #endif

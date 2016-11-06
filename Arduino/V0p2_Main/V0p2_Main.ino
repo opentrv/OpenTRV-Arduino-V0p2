@@ -75,7 +75,6 @@ void panic(const __FlashStringHelper *s)
   panic();
   }
 
-
 // Signal position in basic POST sequence as a small positive integer, or zero for done/none.
 // Simple count of position in ON flashes.
 // LED is assumed to be ON upon entry, and is left ON at exit.
@@ -285,6 +284,104 @@ void optionalPOST()
 //  posPOST(1 /* , F("POST OK") */ );
   }
 
+
+/////// SENSORS
+
+// Sensor for supply (eg battery) voltage in millivolts.
+OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
+
+#ifdef TEMP_POT_AVAILABLE
+TempPot_t TempPot;
+#endif
+
+#ifdef ENABLE_AMBLIGHT_SENSOR
+AmbientLight AmbLight;
+#endif // ENABLE_AMBLIGHT_SENSOR
+
+#if defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
+OTV0P2BASE::MinimalOneWire<> MinOW_DEFAULT;
+#endif
+
+#if defined(SENSOR_EXTERNAL_DS18B20_ENABLE_0) // Enable sensor zero.
+OTV0P2BASE::TemperatureC16_DS18B20 extDS18B20_0(MinOW_DEFAULT, 0);
+#endif
+
+#if defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21)
+// Singleton implementation/instance.
+OTV0P2BASE::HumiditySensorSHT21 RelHumidity;
+#else
+OTV0P2BASE::DummyHumiditySensorSHT21 RelHumidity;
+#endif
+
+// Ambient/room temperature sensor, usually on main board.
+#if defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21)
+OTV0P2BASE::RoomTemperatureC16_SHT21 TemperatureC16; // SHT21 impl.
+#elif defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20)
+#if defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
+// DSB18B20 temperature impl, with slightly reduced precision to improve speed.
+OTV0P2BASE::TemperatureC16_DS18B20 TemperatureC16(MinOW_DEFAULT, OTV0P2BASE::TemperatureC16_DS18B20::MAX_PRECISION - 1);
+#endif
+#else // Don't use TMP112 if SHT21 or DS18B20 are selected.
+OTV0P2BASE::RoomTemperatureC16_TMP112 TemperatureC16;
+#endif
+
+#ifdef ENABLE_VOICE_SENSOR
+OTV0P2BASE::VoiceDetectionQM1 Voice;
+#endif
+
+////////////////////////// Actuators
+
+// DORM1/REV7 direct drive actuator.
+#ifdef HAS_DORM1_VALVE_DRIVE
+// Singleton implementation/instance.
+// Suppress unnecessary activity when room dark, eg to avoid disturbance if device crashes/restarts,
+// unless recent UI use because value is being fitted/adjusted.
+ValveDirect_t ValveDirect([](){return((!valveUI.veryRecentUIControlUse()) && AmbLight.isRoomDark());});
+#endif
+
+// FHT8V radio-controlled actuator.
+#ifdef ENABLE_FHT8VSIMPLE
+// Function to append stats trailer (and 0xff) to FHT8V/FS20 TX buffer.
+// Assume enough space in buffer for largest possible stats message.
+#if defined(ENABLE_STATS_TX)
+uint8_t *appendStatsToTXBufferWithFF(uint8_t *bptr, const uint8_t bufSize)
+{
+  OTV0P2BASE::FullStatsMessageCore_t trailer;
+  populateCoreStats(&trailer);
+  // Ensure that no ID is encoded in the message sent on the air since it would be a repeat from the FHT8V frame.
+  trailer.containsID = false;
+
+#if defined(ENABLE_MINIMAL_STATS_TXRX)
+  // As bandwidth optimisation just write minimal trailer if only temp&power available.
+  if (trailer.containsTempAndPower &&
+      !trailer.containsID && !trailer.containsAmbL)
+  {
+    writeTrailingMinimalStatsPayload(bptr, &(trailer.tempAndPower));
+    bptr += 3;
+    *bptr = (uint8_t)0xff; // Terminate TX bytes.
+  }
+  else
+#endif
+  {
+    // Assume enough space in buffer for largest possible stats message.
+    bptr = OTV0P2BASE::encodeFullStatsMessageCore(bptr, bufSize, OTV0P2BASE::getStatsTXLevel(), false, &trailer);
+  }
+  return (bptr);
+}
+#else
+#define appendStatsToTXBufferWithFF NULL // Do not append stats.
+#endif
+#endif // ENABLE_FHT8VSIMPLE
+
+#ifdef ENABLE_FHT8VSIMPLE
+OTRadValve::FHT8VRadValve<_FHT8V_MAX_EXTRA_TRAILER_BYTES, OTRadValve::FHT8VRadValveBase::RFM23_PREAMBLE_BYTES, OTRadValve::FHT8VRadValveBase::RFM23_PREAMBLE_BYTE> FHT8V(appendStatsToTXBufferWithFF);
+#endif // ENABLE_FHT8VSIMPLE
+
+
+//========================================
+// SETUP
+//========================================
+
 // Setup routine: runs once after reset.
 // Does some limited board self-test and will panic() if anything is obviously broken.
 void setup()
@@ -444,100 +541,6 @@ void setup()
   setupOpenTRV();
   }
 
-
-/////// SENSORS
-
-// Sensor for supply (eg battery) voltage in millivolts.
-OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
-
-#ifdef TEMP_POT_AVAILABLE
-TempPot_t TempPot;
-#endif
-
-#ifdef ENABLE_AMBLIGHT_SENSOR
-AmbientLight AmbLight;
-#endif // ENABLE_AMBLIGHT_SENSOR
-
-#if defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
-OTV0P2BASE::MinimalOneWire<> MinOW_DEFAULT;
-#endif
-
-#if defined(SENSOR_EXTERNAL_DS18B20_ENABLE_0) // Enable sensor zero.
-OTV0P2BASE::TemperatureC16_DS18B20 extDS18B20_0(MinOW_DEFAULT, 0);
-#endif
-
-#if defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21)
-// Singleton implementation/instance.
-OTV0P2BASE::HumiditySensorSHT21 RelHumidity;
-#else
-OTV0P2BASE::DummyHumiditySensorSHT21 RelHumidity;
-#endif
-
-// Ambient/room temperature sensor, usually on main board.
-#if defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21)
-OTV0P2BASE::RoomTemperatureC16_SHT21 TemperatureC16; // SHT21 impl.
-#elif defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20)
-#if defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
-// DSB18B20 temperature impl, with slightly reduced precision to improve speed.
-OTV0P2BASE::TemperatureC16_DS18B20 TemperatureC16(MinOW_DEFAULT, OTV0P2BASE::TemperatureC16_DS18B20::MAX_PRECISION - 1);
-#endif
-#else // Don't use TMP112 if SHT21 or DS18B20 are selected.
-OTV0P2BASE::RoomTemperatureC16_TMP112 TemperatureC16;
-#endif
-
-#ifdef ENABLE_VOICE_SENSOR
-OTV0P2BASE::VoiceDetectionQM1 Voice;
-#endif
-
-////////////////////////// Actuators
-
-// DORM1/REV7 direct drive actuator.
-#ifdef HAS_DORM1_VALVE_DRIVE
-// Singleton implementation/instance.
-// Suppress unnecessary activity when room dark, eg to avoid disturbance if device crashes/restarts,
-// unless recent UI use because value is being fitted/adjusted.
-ValveDirect_t ValveDirect([](){return((!valveUI.veryRecentUIControlUse()) && AmbLight.isRoomDark());});
-#endif
-
-// FHT8V radio-controlled actuator.
-#ifdef ENABLE_FHT8VSIMPLE
-// Function to append stats trailer (and 0xff) to FHT8V/FS20 TX buffer.
-// Assume enough space in buffer for largest possible stats message.
-#if defined(ENABLE_STATS_TX)
-uint8_t *appendStatsToTXBufferWithFF(uint8_t *bptr, const uint8_t bufSize)
-{
-  OTV0P2BASE::FullStatsMessageCore_t trailer;
-  populateCoreStats(&trailer);
-  // Ensure that no ID is encoded in the message sent on the air since it would be a repeat from the FHT8V frame.
-  trailer.containsID = false;
-
-#if defined(ENABLE_MINIMAL_STATS_TXRX)
-  // As bandwidth optimisation just write minimal trailer if only temp&power available.
-  if (trailer.containsTempAndPower &&
-      !trailer.containsID && !trailer.containsAmbL)
-  {
-    writeTrailingMinimalStatsPayload(bptr, &(trailer.tempAndPower));
-    bptr += 3;
-    *bptr = (uint8_t)0xff; // Terminate TX bytes.
-  }
-  else
-#endif
-  {
-    // Assume enough space in buffer for largest possible stats message.
-    bptr = OTV0P2BASE::encodeFullStatsMessageCore(bptr, bufSize, OTV0P2BASE::getStatsTXLevel(), false, &trailer);
-  }
-  return (bptr);
-}
-#else
-#define appendStatsToTXBufferWithFF NULL // Do not append stats.
-#endif
-#endif // ENABLE_FHT8VSIMPLE
-
-#ifdef ENABLE_FHT8VSIMPLE
-OTRadValve::FHT8VRadValve<_FHT8V_MAX_EXTRA_TRAILER_BYTES, OTRadValve::FHT8VRadValveBase::RFM23_PREAMBLE_BYTES, OTRadValve::FHT8VRadValveBase::RFM23_PREAMBLE_BYTE> FHT8V(appendStatsToTXBufferWithFF);
-#endif // ENABLE_FHT8VSIMPLE
-
-
 //========================================
 // MAIN LOOP
 //========================================
@@ -547,6 +550,14 @@ void loop()
 #if defined(EST_CPU_DUTYCYCLE)
   const unsigned long usStart = micros();
 #endif
+
+  // Force restart if SPAM/heap/stack likely corrupt.
+  OTV0P2BASE::MemoryChecks::forceResetIfStackOverflow();
+
+  // Complain and keep complaining when getting near stack overflow.
+  // TODO: make DEBUG-only when confident all configs OK.
+  const int16_t minsp = OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd();
+  /*if(minsp < 64)*/ { OTV0P2BASE::serialPrintAndFlush(F("!SP ")); OTV0P2BASE::serialPrintAndFlush(OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd()); OTV0P2BASE::serialPrintlnAndFlush(); }
 
   loopOpenTRV();
 

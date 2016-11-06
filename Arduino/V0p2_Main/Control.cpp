@@ -1839,7 +1839,8 @@ void loopOpenTRV()
     {
     const uint8_t stopBy = nearOverrunThreshold - 1;
     char buf[BUFSIZ_pollUI];
-    pollCLI(stopBy, 0 == TIME_LSD, buf, sizeof(buf));
+    OTV0P2BASE::ScratchSpace s((uint8_t*)buf, sizeof(buf));
+    pollCLI(stopBy, 0 == TIME_LSD, s);
     }
 #endif
 

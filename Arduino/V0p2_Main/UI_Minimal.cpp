@@ -394,7 +394,7 @@ static void dumpCLIUsage(const uint8_t stopBy)
 // A period of less than (say) 100ms is not recommended to avoid possibility of overrun on long interactions.
 // Times itself out after at least a minute or two of inactivity. 
 // NOT RENTRANT (eg uses static state for speed and code space).
-void pollCLI(const uint8_t maxSCT, const bool startOfMinute, char *const buf, const uint8_t bufsize)
+void pollCLI(const uint8_t maxSCT, const bool startOfMinute, const OTV0P2BASE::ScratchSpace &s)
   {
   // Perform any once-per-minute operations.
   if(startOfMinute)
@@ -412,7 +412,9 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute, char *const buf, co
   // Read a line up to a terminating CR, either on its own or as part of CRLF.
   // (Note that command content and timing may be useful to fold into PRNG entropy pool.)
   // A static buffer generates better code but permanently consumes previous SRAM.
-  const uint8_t n = OTV0P2BASE::CLI::promptAndReadCommandLine(maxSCT, buf, bufsize, pollIO);
+  const uint8_t n = OTV0P2BASE::CLI::promptAndReadCommandLine(maxSCT, s, [](){pollIO();});
+  const char *buf = (char *)s.buf;
+  const uint8_t bufsize = s.bufsize;
 
   if(n > 0)
     {
