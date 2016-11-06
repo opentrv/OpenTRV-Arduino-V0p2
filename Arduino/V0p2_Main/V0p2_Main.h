@@ -201,13 +201,13 @@ extern OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
 #ifdef ENABLE_TEMP_POT_IF_PRESENT
 #if (V0p2_REV >= 2) && defined(TEMP_POT_AIN) // Only supported in REV2/3/4/7.
 #define TEMP_POT_AVAILABLE
-// Sensor for temperature potentiometer/dial.
+// Sensor for temperature potentiometer/dial UI control.
 typedef OTV0P2BASE::SensorTemperaturePot
     <
     decltype(Occupancy), &Occupancy,
 #if (V0p2_REV == 7)
     48, 296, // Correct for DORM1/TRV1 with embedded REV7.
-    false // REV7 does not drive pot from IO_POWER_U.
+    false // REV7 does not drive pot from IO_POWER_UP.
 #elif defined(TEMP_POT_REVERSE)
     1023, 0
 #endif
