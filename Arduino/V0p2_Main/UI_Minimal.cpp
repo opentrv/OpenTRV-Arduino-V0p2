@@ -451,7 +451,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute, char *const buf, co
       case 'I': { showStatus = OTV0P2BASE::CLI::NodeID().doCommand(buf, n); break; }
 #endif
 
-      // Status line and optional smart/scheduled warming prediction request.
+      // Status line stats print and TX.
       case 'S':
         {
 #if !defined(ENABLE_WATCHDOG_SLOW)
@@ -467,6 +467,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute, char *const buf, co
         Serial.print(overrunCount);
 #endif // !defined(ENABLE_WATCHDOG_SLOW)
         Serial.println();
+        bareStatsTX(); // Default light-weight print and TX of stats.
         break; // Note that status is by default printed after processing input line.
         }
 

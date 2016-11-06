@@ -414,7 +414,7 @@ void populateCoreStats(OTV0P2BASE::FullStatsMessageCore_t *content);
 // Sends stats on primary radio channel 0 with possible duplicate to secondary channel.
 // If sending encrypted then ID/counter fields (eg @ and + for JSON) are omitted
 // as assumed supplied by security layer to remote recipent.
-void bareStatsTX(bool allowDoubleTX, bool doBinary);
+void bareStatsTX(bool allowDoubleTX = false, bool doBinary = false);
 
 #ifdef ENABLE_BOILER_HUB
 // Raw notification of received call for heat from remote (eg FHT8V) unit.
