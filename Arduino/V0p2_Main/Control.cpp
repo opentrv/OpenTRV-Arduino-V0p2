@@ -88,7 +88,11 @@ OTRadValve::ModelledRadValve NominalRadValve(
   &cttBasic,
   &valveMode,
   &tempControl,
+#ifdef HAS_DORM1_VALVE_DRIVE
   &ValveDirect,
+#else
+  NULL,
+#endif
   #ifdef TRV_SLEW_GLACIAL
     true,
   #else
