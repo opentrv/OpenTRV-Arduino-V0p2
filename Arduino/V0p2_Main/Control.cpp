@@ -653,7 +653,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
         }
       }
 
-#if 1 // && defined(DEBUG)
+#if 1 && defined(DEBUG)
     if(sendingJSONFailed) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("!failed JSON TX"); }
 #endif
     }
@@ -732,7 +732,7 @@ static void endOfHourTasks()
 static void endOfDayTasks()
   {
 #if defined(ENABLE_SETBACK_LOCKOUT_COUNTDOWN)
-    // Count down the lockout if not finished...  (TODO-786, TDO-906)
+    // Count down the lockout if not finished...  (TODO-786, TODO-906)
     const uint8_t sloInv = eeprom_read_byte((uint8_t *)OTV0P2BASE::V0P2BASE_EE_START_SETBACK_LOCKOUT_COUNTDOWN_D_INV);
     if(0xff != sloInv)
       {
