@@ -304,6 +304,7 @@ typedef OTRadValve::TempControlSimpleEEPROMBacked<PARAMS> TempControl_t;
 // Dummy temperature control.
 typedef OTRadValve::TempControlBase TempControl_t;
 #endif
+#define TempControl_DEFINED
 extern TempControl_t tempControl;
 
 // Default minimum on/off time in minutes for the boiler relay.
