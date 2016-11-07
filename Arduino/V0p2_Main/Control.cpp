@@ -973,6 +973,7 @@ ISR(PCINT2_vect)
 #endif // defined(ENABLE_VOICE_SENSOR)
 
   // If an interrupt arrived from the serial RX then wake up the CLI.
+  // Use a nominally rising edge to avoid spurious trigger when other interrupts are handled.
   // The will ensure that it is possible to wake the CLI subsystem with an extra CR or LF.
   // It is OK to trigger this from other things such as button presses.
   // TODO: ensure that resetCLIActiveTimer() is inlineable to minimise ISR prologue/epilogue time and space.
