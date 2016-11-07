@@ -557,7 +557,7 @@ void loop()
   // Complain and keep complaining when getting near stack overflow.
   // TODO: make DEBUG-only when confident all configs OK.
   const int16_t minsp = OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd();
-  if(minsp < 64) { OTV0P2BASE::serialPrintAndFlush(F("!SP ")); OTV0P2BASE::serialPrintAndFlush(OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd()); OTV0P2BASE::serialPrintlnAndFlush(); }
+  if(minsp < 64) { OTV0P2BASE::serialPrintlnAndFlush(F("!SH")); }
 
   loopOpenTRV();
 
