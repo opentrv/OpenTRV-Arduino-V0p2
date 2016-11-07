@@ -424,7 +424,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 #else
     if(doEnc)
 #endif // defined(ENABLE_JSON_SUPPRESSED_ID)
-        { static const char nul[1] = {}; ss1.setID(nul); }
+        { ss1.setID(F("")); }
     else
       {
 #if defined(ENABLE_FHT8VSIMPLE)
@@ -498,7 +498,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 #endif // defined(ENABLE_LOCAL_TRV)
 #ifdef ENABLE_SETBACK_LOCKOUT_COUNTDOWN // fixme should this be ENABLE_CONTROL_MODE?
     // Show state of setback lockout.
-    ss1.put("gE", getSetbackLockout(), true);
+    ss1.put(V0p2_SENSOR_TAG_F("gE"), getSetbackLockout(), true);
 #endif // ENABLE_SETBACK_LOCKOUT_COUNTDOWN
 #if defined(ENABLE_ALWAYS_TX_ALL_STATS)
     const uint8_t privacyLevel = OTV0P2BASE::stTXalwaysAll;
