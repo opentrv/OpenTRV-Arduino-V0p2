@@ -36,22 +36,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 
 #include "V0p2_Main.h"
 
-#include "V0p2_Generic_Config.h"
-#include <OTV0p2_Board_IO_Config.h> // I/O pin allocation and setup: include ahead of I/O module headers.
-
-// Arduino libraries imported here (even for use in other .cpp files).
-#include <SPI.h>
-#include <Wire.h>
-#include <OTRadioLink.h>
-#include <OTSIM900Link.h>
-#include <OTRN2483Link.h>
-#include <OTRadValve.h>
-
-#include "V0p2_Sensors.h"
-#include "Control.h"
-#include "UI_Minimal.h"
-
-
 // Indicate that the system is broken in an obvious way (distress flashing the main LED).
 // DOES NOT RETURN.
 // Tries to turn off most stuff safely that will benefit from doing so, but nothing too complex.
@@ -68,17 +52,17 @@ void panic()
 #endif
   // Power down almost everything else...
   OTV0P2BASE::minimisePowerWithoutSleep();
-#ifdef LED_HEATCALL
-  pinMode(LED_HEATCALL, OUTPUT);
+#ifndef V0P2BASE_LED_HEATCALL_IS_L
+  pinMode(OTV0P2BASE::LED_HEATCALL, OUTPUT);
 #else
-  pinMode(LED_HEATCALL_L, OUTPUT);
+  pinMode(OTV0P2BASE::LED_HEATCALL_L, OUTPUT);
 #endif
   for( ; ; )
     {
-    LED_HEATCALL_ON();
-    tinyPause();
-    LED_HEATCALL_OFF();
-    bigPause();
+    OTV0P2BASE::LED_HEATCALL_ON();
+    OTV0P2BASE::nap(WDTO_15MS);
+    OTV0P2BASE::LED_HEATCALL_OFF();
+    OTV0P2BASE::nap(WDTO_120MS);
     }
   }
 
@@ -91,7 +75,6 @@ void panic(const __FlashStringHelper *s)
   panic();
   }
 
-
 // Signal position in basic POST sequence as a small positive integer, or zero for done/none.
 // Simple count of position in ON flashes.
 // LED is assumed to be ON upon entry, and is left ON at exit.
@@ -101,7 +84,6 @@ void panic(const __FlashStringHelper *s)
 //   * Each of the 5 main sections of Power On Self Test is 1 second LED on, 0.5 second off, n short flashes separated by 0.25s off, then 0.5s off, then 1s on.
 //     The value of n is 1, 2, 3, 4, 5.
 //   * The LED should then go off except for optional faint flickers as the radio is being driven if set up to do so.
-#ifndef ALT_MAIN_LOOP
 #define PP_OFF_MS 250
 static void posPOST(const uint8_t position, const __FlashStringHelper *s = NULL)
   {
@@ -119,7 +101,7 @@ static void posPOST(const uint8_t position, const __FlashStringHelper *s = NULL)
 //  OTV0P2BASE::serialPrintlnAndFlush(s);
 #endif
 //  pinMode(LED_HEATCALL, OUTPUT);
-  LED_HEATCALL_OFF();
+  OTV0P2BASE::LED_HEATCALL_OFF();
 
   // Skip much of lightshow if '0'/end/none position.
   if(position > 0)
@@ -127,18 +109,17 @@ static void posPOST(const uint8_t position, const __FlashStringHelper *s = NULL)
     OTV0P2BASE::sleepLowPowerMs(2*PP_OFF_MS); // TODO: use this time to gather entropy.
     for(int i = position; --i >= 0; )
       {
-      LED_HEATCALL_ON();
-      tinyPause();
-      LED_HEATCALL_OFF();
+      OTV0P2BASE::LED_HEATCALL_ON();
+      OTV0P2BASE::nap(WDTO_15MS);
+      OTV0P2BASE::LED_HEATCALL_OFF();
       OTV0P2BASE::sleepLowPowerMs(PP_OFF_MS); // TODO: use this time to gather entropy.
       }
     }
 
   OTV0P2BASE::sleepLowPowerMs(PP_OFF_MS); // TODO: use this time to gather entropy.
-  LED_HEATCALL_ON();
+  OTV0P2BASE::LED_HEATCALL_ON();
   OTV0P2BASE::sleepLowPowerMs(1000); // TODO: use this time to gather entropy.
   }
-#endif // ALT_MAIN_LOOP
 
 
 // Pick an appropriate radio config for RFM23 (if it is the primary radio).
@@ -222,9 +203,6 @@ static bool FilterRXISR(const volatile uint8_t *buf, volatile uint8_t &buflen)
 #define FilterRXISR NULL
 #endif
 
-// Optional Power-On Self Test routines.
-// Aborts with a call to panic() if a test fails.
-#if !defined(ALT_MAIN_LOOP)
 void optionalPOST()
   {
   // Have 32678Hz clock at least running before going any further.
@@ -305,8 +283,104 @@ void optionalPOST()
 //  // Single/main POST checkpoint for speed.
 //  posPOST(1 /* , F("POST OK") */ );
   }
-#endif // !defined(ALT_MAIN_LOOP)
 
+
+/////// SENSORS
+
+// Sensor for supply (eg battery) voltage in millivolts.
+OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
+
+#ifdef TEMP_POT_AVAILABLE
+TempPot_t TempPot;
+#endif
+
+#ifdef ENABLE_AMBLIGHT_SENSOR
+AmbientLight AmbLight;
+#endif // ENABLE_AMBLIGHT_SENSOR
+
+#if defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
+OTV0P2BASE::MinimalOneWire<> MinOW_DEFAULT;
+#endif
+
+#if defined(SENSOR_EXTERNAL_DS18B20_ENABLE_0) // Enable sensor zero.
+OTV0P2BASE::TemperatureC16_DS18B20 extDS18B20_0(MinOW_DEFAULT, 0);
+#endif
+
+#if defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21)
+// Singleton implementation/instance.
+OTV0P2BASE::HumiditySensorSHT21 RelHumidity;
+#else
+OTV0P2BASE::DummyHumiditySensorSHT21 RelHumidity;
+#endif
+
+// Ambient/room temperature sensor, usually on main board.
+#if defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21)
+OTV0P2BASE::RoomTemperatureC16_SHT21 TemperatureC16; // SHT21 impl.
+#elif defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20)
+#if defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
+// DSB18B20 temperature impl, with slightly reduced precision to improve speed.
+OTV0P2BASE::TemperatureC16_DS18B20 TemperatureC16(MinOW_DEFAULT, OTV0P2BASE::TemperatureC16_DS18B20::MAX_PRECISION - 1);
+#endif
+#else // Don't use TMP112 if SHT21 or DS18B20 are selected.
+OTV0P2BASE::RoomTemperatureC16_TMP112 TemperatureC16;
+#endif
+
+#ifdef ENABLE_VOICE_SENSOR
+OTV0P2BASE::VoiceDetectionQM1 Voice;
+#endif
+
+////////////////////////// Actuators
+
+// DORM1/REV7 direct drive actuator.
+#ifdef HAS_DORM1_VALVE_DRIVE
+// Singleton implementation/instance.
+// Suppress unnecessary activity when room dark, eg to avoid disturbance if device crashes/restarts,
+// unless recent UI use because value is being fitted/adjusted.
+ValveDirect_t ValveDirect([](){return((!valveUI.veryRecentUIControlUse()) && AmbLight.isRoomDark());});
+#endif
+
+// FHT8V radio-controlled actuator.
+#ifdef ENABLE_FHT8VSIMPLE
+// Function to append stats trailer (and 0xff) to FHT8V/FS20 TX buffer.
+// Assume enough space in buffer for largest possible stats message.
+#if defined(ENABLE_STATS_TX)
+uint8_t *appendStatsToTXBufferWithFF(uint8_t *bptr, const uint8_t bufSize)
+{
+  OTV0P2BASE::FullStatsMessageCore_t trailer;
+  populateCoreStats(&trailer);
+  // Ensure that no ID is encoded in the message sent on the air since it would be a repeat from the FHT8V frame.
+  trailer.containsID = false;
+
+#if defined(ENABLE_MINIMAL_STATS_TXRX)
+  // As bandwidth optimisation just write minimal trailer if only temp&power available.
+  if (trailer.containsTempAndPower &&
+      !trailer.containsID && !trailer.containsAmbL)
+  {
+    writeTrailingMinimalStatsPayload(bptr, &(trailer.tempAndPower));
+    bptr += 3;
+    *bptr = (uint8_t)0xff; // Terminate TX bytes.
+  }
+  else
+#endif
+  {
+    // Assume enough space in buffer for largest possible stats message.
+    bptr = OTV0P2BASE::encodeFullStatsMessageCore(bptr, bufSize, OTV0P2BASE::getStatsTXLevel(), false, &trailer);
+  }
+  return (bptr);
+}
+#else
+#define appendStatsToTXBufferWithFF NULL // Do not append stats.
+#endif
+#endif // ENABLE_FHT8VSIMPLE
+
+#ifdef ENABLE_FHT8VSIMPLE
+OTRadValve::FHT8VRadValve<_FHT8V_MAX_EXTRA_TRAILER_BYTES, OTRadValve::FHT8VRadValveBase::RFM23_PREAMBLE_BYTES, OTRadValve::FHT8VRadValveBase::RFM23_PREAMBLE_BYTE> FHT8V(appendStatsToTXBufferWithFF);
+#endif // ENABLE_FHT8VSIMPLE
+
+
+//========================================
+// SETUP
+//========================================
 
 // Setup routine: runs once after reset.
 // Does some limited board self-test and will panic() if anything is obviously broken.
@@ -358,7 +432,6 @@ void setup()
   DEBUG_SERIAL_PRINT_FLASHSTRING("Resets: ");
   DEBUG_SERIAL_PRINT(oldResetCount);
   DEBUG_SERIAL_PRINTLN();
-#if !defined(ALT_MAIN_LOOP) && !defined(UNIT_TESTS)
   const uint8_t overruns = (~eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_OVERRUN_COUNTER)) & 0xff;
   if(0 != overruns)
     {
@@ -366,7 +439,6 @@ void setup()
     DEBUG_SERIAL_PRINT(overruns);
     DEBUG_SERIAL_PRINTLN();
     }
-#endif
 #if 0 && defined(DEBUG)
   // Compute approx free RAM: see http://jeelabs.org/2011/05/22/atmega-memory-use/
   DEBUG_SERIAL_PRINT_FLASHSTRING("Free RAM: ");
@@ -375,21 +447,9 @@ void setup()
   DEBUG_SERIAL_PRINT((int) &x - (__brkval == 0 ? (int) &__heap_start : (int) __brkval));
   DEBUG_SERIAL_PRINTLN();
 #endif
-#if defined(ALT_MAIN_LOOP)
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("ALTERNATE MAIN LOOP...");
-#elif defined(UNIT_TESTS)
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("UNIT TESTS...");
-#endif
 #endif
 
-// Do not do normal POST if running alternate main loop.
-// POST may take too long and do unwanted things,
-// especially for non-standard hardware setup.
-#if defined(ALT_MAIN_LOOP)
-  POSTalt(); // Do alternate POST and setup if required.
-#else
   optionalPOST();
-#endif
 
   // Collect full set of environmental values before entering loop() in normal mode.
   // This should also help ensure that sensors are properly initialised.
@@ -397,7 +457,6 @@ void setup()
   // No external sensors are *assumed* present if running alt main loop.
   // This may mean that the alt loop/POST will have to initialise them explicitly,
   // and the initial seed entropy may be marginally reduced also.
-#if !defined(ALT_MAIN_LOOP) && !defined(UNIT_TESTS)
   const int heat = TemperatureC16.read();
 #if 0 && defined(DEBUG) && !defined(ENABLE_TRIMMED_MEMORY)
   DEBUG_SERIAL_PRINT_FLASHSTRING("T: ");
@@ -428,9 +487,7 @@ void setup()
   DEBUG_SERIAL_PRINTLN();
 #endif
 #endif
-#endif
 
-#if !defined(ALT_MAIN_LOOP) && !defined(UNIT_TESTS)
   const uint16_t Vcc = Supply_cV.read();
 #if 1 && defined(DEBUG) && !defined(ENABLE_TRIMMED_MEMORY)
   // Get current power supply voltage (internal sensor).
@@ -450,16 +507,13 @@ void setup()
 #if !defined(ENABLE_MIN_ENERGY_BOOT)
   OTV0P2BASE::seedPRNGs();
 #endif
-#endif
 
-#if !defined(ALT_MAIN_LOOP) && !defined(UNIT_TESTS)
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("Computing initial target/demand...");
 #endif
 #if defined(ENABLE_NOMINAL_RAD_VALVE)
   // Update targets, output to TRV and boiler, etc, to be sensible before main loop starts.
   NominalRadValve.read();
-#endif
 #endif
 
   // Ensure that the unique node ID is set up (mainly on first use).
@@ -472,23 +526,20 @@ void setup()
     }
 
   // Initialised: turn main/heatcall UI LED off.
-  LED_HEATCALL_OFF();
+  OTV0P2BASE::LED_HEATCALL_OFF();
 
-#if defined(ENABLE_CLI) && defined(ENABLE_CLI_HELP) && !defined(ALT_MAIN_LOOP) && !defined(UNIT_TESTS) && !defined(ENABLE_TRIMMED_MEMORY)
+#if defined(ENABLE_CLI) && defined(ENABLE_CLI_HELP) && !defined(ENABLE_TRIMMED_MEMORY)
   // Help user get to CLI.
   OTV0P2BASE::serialPrintlnAndFlush(F("At CLI > prompt enter ? for help"));
 #endif
 
-#if !defined(ALT_MAIN_LOOP) && !defined(UNIT_TESTS)
 #if !defined(ENABLE_TRIMMED_MEMORY)
   // Report initial status.
   serialStatusReport();
 #endif
   // Do OpenTRV-specific (late) setup.
   setupOpenTRV();
-#endif
   }
-
 
 //========================================
 // MAIN LOOP
@@ -500,13 +551,15 @@ void loop()
   const unsigned long usStart = micros();
 #endif
 
-#if defined(UNIT_TESTS) // Run unit tests *instead* of normal loop() code.
-  loopUnitTest();
-#elif defined(ALT_MAIN_LOOP) // Run alternative main loop.
-  loopAlt();
-#else // Normal OpenTRV usage.
+  // Force restart if SPAM/heap/stack likely corrupt.
+  OTV0P2BASE::MemoryChecks::forceResetIfStackOverflow();
+
+  // Complain and keep complaining when getting near stack overflow.
+  // TODO: make DEBUG-only when confident all configs OK.
+  const int16_t minsp = OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd();
+  if(minsp < 64) { OTV0P2BASE::serialPrintAndFlush(F("!SP ")); OTV0P2BASE::serialPrintAndFlush(OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd()); OTV0P2BASE::serialPrintlnAndFlush(); }
+
   loopOpenTRV();
-#endif
 
 #if defined(EST_CPU_DUTYCYCLE)
   const unsigned long usEnd = micros();

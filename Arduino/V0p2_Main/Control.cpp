@@ -20,256 +20,25 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 /*
  Control/model for TRV and boiler.
  */
-#include <util/atomic.h>
 
 #include "V0p2_Main.h"
-
-#include "Control.h"
-
-#include "V0p2_Sensors.h"
-#include "UI_Minimal.h"
-
 #if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) || defined(ENABLE_SECURE_RADIO_BEACON)
 #include <OTAESGCM.h>
 #endif
 
-
-#if defined(SCHEDULER_AVAILABLE)
 // Singleton scheduler instance.
-SimpleValveSchedule Scheduler;
-#endif
-
+Scheduler_t Scheduler;
 
 #ifdef ENABLE_BOILER_HUB
 // True if boiler should be on.
 static bool isBoilerOn();
 #endif
 
-
 // Radiator valve mode (FROST, WARM, BAKE).
 OTRadValve::ValveMode valveMode;
 
-// Start/cancel WARM mode in one call, driven by manual UI input.
-static void setWarmModeFromManualUI(const bool warm)
-  {
-  // Give feedback when changing WARM mode.
-  if(warm != valveMode.inWarmMode()) { markUIControlUsedSignificant(); }
-  // Now set/cancel WARM.
-  valveMode.setWarmModeDebounced(warm);
-  }
-
-#if defined(ENABLE_SIMPLIFIED_MODE_BAKE)
-// Start BAKE from manual UI interrupt; marks UI as used also.
-// Vetos switch to BAKE mode if a temp pot/dial is present and at the low end stop, ie in FROST position.
-// Is thread-/ISR- safe.
-static void startBakeFromInt()
-  {
-#ifdef TEMP_POT_AVAILABLE
-  // Veto if dial is at FROST position.
-  const bool isLo = TempPot.isAtLoEndStop(); // ISR-safe.
-  if(isLo) { markUIControlUsed(); return; }
-#endif
-  valveMode.startBake();
-  markUIControlUsedSignificant();
-  }
-#endif // defined(ENABLE_SIMPLIFIED_MODE_BAKE)
-// Start/cancel BAKE mode in one call, driven by manual UI input.
-void setBakeModeFromManualUI(const bool start)
-  {
-  // Give feedback when changing BAKE mode.
-  if(valveMode.inBakeMode() != start) { markUIControlUsedSignificant(); }
-  // Now set/cancel BAKE.
-  if(start) { valveMode.startBake(); } else { valveMode.cancelBakeDebounced(); }
-  }
-
-
-// Get 'FROST' protection target in C; no higher than getWARMTargetC() returns, strictly positive, in range [MIN_TARGET_C,MAX_TARGET_C].
-#if defined(TEMP_POT_AVAILABLE)
-// Derived from temperature pot position.
-uint8_t getFROSTTargetC()
-  {
-  // Prevent falling to lowest frost temperature if relative humidity is high (eg to avoid mould).
-  const uint8_t result = (!hasEcoBias() || (RelHumidity.isAvailable() && RelHumidity.isRHHighWithHyst())) ? PARAMS::FROST_ECO : PARAMS::FROST_COM;
-#if defined(ENABLE_SETTABLE_TARGET_TEMPERATURES)
-  const uint8_t stored = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_FROST_C);
-  // If stored value is set and in bounds and higher than computed value then use stored value instead.
-  if((stored >= OTRadValve::MIN_TARGET_C) && (stored <= OTRadValve::MAX_TARGET_C) && (stored > result)) { return(stored); }
-#endif
-  return(result);
-  }
-#elif defined(ENABLE_SETTABLE_TARGET_TEMPERATURES)
-// Note that this value is non-volatile (stored in EEPROM).
-uint8_t getFROSTTargetC()
-  {
-  // Get persisted value, if any.
-  const uint8_t stored = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_FROST_C);
-  // If out of bounds or no stored value then use default.
-  if((stored < OTRadValve::MIN_TARGET_C) || (stored > OTRadValve::MAX_TARGET_C)) { return(PARAMS::FROST); }
-  // TODO-403: cannot use hasEcoBias() with RH% as that would cause infinite recursion!
-  // Return valid persisted value.
-  return(stored);
-  }
-#else
-#define getFROSTTargetC() (PARAMS::FROST) // Fixed value.
-#endif
-
-// Get 'WARM' target in C; no lower than getFROSTTargetC() returns, strictly positive, in range [MIN_TARGET_C,MAX_TARGET_C].
-#if defined(TEMP_POT_AVAILABLE)
-// Derived from temperature pot position, 0 for coldest (most eco), 255 for hottest (comfort).
-// Temp ranges from eco-1C to comfort+1C levels across full (reduced jitter) [0,255] pot range.
-// Everything beyond the lo/hi end-stop thresholds is forced to the appropriate end temperature.
-// May be fastest computing values at the extreme ends of the range.
-// Exposed for unit testing.
-uint8_t computeWARMTargetC(const uint8_t pot, const uint8_t loEndStop, const uint8_t hiEndStop)
-  {
-//#if defined(V0p2_REV)
-//#if 7 == V0p2_REV // Must match DORM1 scale 1+7+1 position scale FROST|16|17|18|19|20|21|22|BOOST.
-//#if (16 != TEMP_SCALE_MIN) || (22 != TEMP_SCALE_MAX)
-//#error Temperature scale must run from 16 to 22 inclusive for REV7 / DORM1 unit.
-//#endif
-//#endif
-//#endif
-
-#if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("cWT(): ");
-  DEBUG_SERIAL_PRINT(pot);
-  DEBUG_SERIAL_PRINTLN();
-#endif
-
-  // Everything in the end-stop regions is assigned to the appropriate end temperature.
-  // As a tiny optimisation we note that the in-scale end points must be the end temperatures also.
-  if(pot <= loEndStop) { return(PARAMS::TEMP_SCALE_MIN); } // At/near bottom...
-  if(pot >= hiEndStop) { return(PARAMS::TEMP_SCALE_MAX); } // At/near top...
-
-  // Allow actual full temp range between low and high end points,
-  // plus possibly a little more wiggle-room / manufacturing tolerance.
-  // Range is number of actual distinct temperatures on scale between end-stop regions.
-  const uint8_t usefulScale = hiEndStop - loEndStop + 1;
-  static const uint8_t DIAL_TEMPS = PARAMS::TEMP_SCALE_MAX - PARAMS::TEMP_SCALE_MIN + 1;
-  const uint8_t range = DIAL_TEMPS;
-#if defined(V0p2_REV) && (7 == V0p2_REV) // Force to DORM1 scale 1+7+1 position scale FROST|16|17|18|19|20|21|22|BOOST.
-  // REV7 / DORM1 case, with usefulScale ~ 47 as of 20160212 on first sample unit.
-#define DIAL_TEMPS_SHIM
-  const uint8_t rangeUsed = 8;
-  const uint8_t band = (usefulScale+4) >> 3; // Width of band for each degree C...
-#else
-  // General case.
-  const uint8_t rangeUsed = range;
-  const uint8_t band = (usefulScale+(rangeUsed/2)) / rangeUsed; // Width of band for each degree C...
-#endif
-
-#if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("cWT(): ");
-  DEBUG_SERIAL_PRINT(pot);
-  DEBUG_SERIAL_PRINT(' ');
-  DEBUG_SERIAL_PRINT(loEndStop);
-  DEBUG_SERIAL_PRINT(' ');
-  DEBUG_SERIAL_PRINT(hiEndStop);
-  DEBUG_SERIAL_PRINTLN();
-#endif
-
-  // Adjust for actual bottom of useful range...
-  const uint8_t ppotBasic = pot - loEndStop;
-#ifndef DIAL_TEMPS_SHIM
-  const uint8_t ppot = ppotBasic;
-#else
-  const uint8_t shim = (band >> 1);
-  if(ppotBasic <= shim) { return(PARAMS::TEMP_SCALE_MIN); }
-  const uint8_t ppot = ppotBasic - shim; // Shift up by half a slot... (using n temps in space for n+1)
-#endif
-
-  // If there are is relatively small number of distinct temperature values
-  // then compute the result iteratively...
-#if DIAL_TEMPS < 10
-    {
-    uint8_t result = PARAMS::TEMP_SCALE_MIN;
-    uint8_t bottomOfNextBand = band;
-    while((ppot >= bottomOfNextBand) && (result < PARAMS::TEMP_SCALE_MAX))
-      {
-      ++result;
-      bottomOfNextBand += band;
-      }
-    return(result);
-    }
-#else  // ...else do it in one step with a division.
-  return((ppot / band) + TEMP_SCALE_MIN); // Intermediate (requires expensive run-time division).
-#endif
-  }
-
-// Exposed implementation.
-// Uses cache to avoid expensive recomputation.
-// NOT safe in face of interrupts.
-uint8_t getWARMTargetC()
-  {
-  const uint8_t pot = TempPot.get();
-
-  // Cached input and result values; initially zero.
-  static uint8_t potLast;
-  static uint8_t resultLast;
-  // Force recomputation if pot value changed
-  // or apparently no calc done yet (unlikely/impossible zero cached result).
-  if((potLast != pot) || (0 == resultLast))
-    {
-    const uint8_t result = computeWARMTargetC(pot, TempPot.loEndStop, TempPot.hiEndStop);
-    // Cache input/result.
-    resultLast = result;
-    potLast = pot;
-    return(result);
-    }
-
-  // Return cached result.
-  return(resultLast);
-  }
-#elif defined(ENABLE_SETTABLE_TARGET_TEMPERATURES)
-// Note that this value is non-volatile (stored in EEPROM).
-uint8_t getWARMTargetC()
-  {
-  // Get persisted value, if any.
-  const uint8_t stored = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_WARM_C);
-  // If out of bounds or no stored value then use default (or frost value if set and higher).
-  if((stored < OTRadValve::MIN_TARGET_C) || (stored > OTRadValve::MAX_TARGET_C)) { return(OTV0P2BASE::fnmax(PARAMS::WARM, getFROSTTargetC())); }
-  // Return valid persisted value (or frost value if set and higher).
-  return(OTV0P2BASE::fnmax(stored, getFROSTTargetC()));
-  }
-#else
-uint8_t getWARMTargetC() { return((uint8_t) (PARAMS::WARM)); } // Fixed value.
-#endif
-
-#if defined(ENABLE_SETTABLE_TARGET_TEMPERATURES)
-// Set (non-volatile) 'FROST' protection target in C; no higher than getWARMTargetC() returns, strictly positive, in range [MIN_TARGET_C,MAX_TARGET_C].
-// Can also be used, even when a temperature pot is present, to set a floor setback temperature.
-// Returns false if not set, eg because outside range [MIN_TARGET_C,MAX_TARGET_C], else returns true.
-bool setFROSTTargetC(uint8_t tempC)
-  {
-  if((tempC < OTRadValve::MIN_TARGET_C) || (tempC > OTRadValve::MAX_TARGET_C)) { return(false); } // Invalid temperature.
-  if(tempC > getWARMTargetC()) { return(false); } // Cannot set above WARM target.
-  OTV0P2BASE::eeprom_smart_update_byte((uint8_t *)V0P2BASE_EE_START_FROST_C, tempC); // Update in EEPROM if necessary.
-  return(true); // Assume value correctly written.
-  }
-#endif
-#if defined(ENABLE_SETTABLE_TARGET_TEMPERATURES) && !defined(TEMP_POT_AVAILABLE)
-// Set 'WARM' target in C; no lower than getFROSTTargetC() returns, strictly positive, in range [MIN_TARGET_C,MAX_TARGET_C].
-// Returns false if not set, eg because below FROST setting or outside range [MIN_TARGET_C,MAX_TARGET_C], else returns true.
-bool setWARMTargetC(uint8_t tempC)
-  {
-  if((tempC < OTRadValve::MIN_TARGET_C) || (tempC > OTRadValve::MAX_TARGET_C)) { return(false); } // Invalid temperature.
-  if(tempC < getFROSTTargetC()) { return(false); } // Cannot set below FROST target.
-  OTV0P2BASE::eeprom_smart_update_byte((uint8_t *)V0P2BASE_EE_START_WARM_C, tempC); // Update in EEPROM if necessary.
-  return(true); // Assume value correctly written.
-  }
-#endif
-
-
-// If true (the default) then the system has an 'Eco' energy-saving bias, else it has a 'comfort' bias.
-// Several system parameters are adjusted depending on the bias,
-// with 'eco' slanted toward saving energy, eg with lower target temperatures and shorter on-times.
-#ifndef hasEcoBias // If not a macro...
-// True if WARM temperature at/below halfway mark between eco and comfort levels.
-// Midpoint should be just in eco part to provide a system bias toward eco.
-bool hasEcoBias() { return(getWARMTargetC() <= PARAMS::TEMP_SCALE_MID); }
-//#endif
-#endif
-
+// Temperature control object.
+TempControl_t tempControl;
 
 #ifndef getMinBoilerOnMinutes
 // Get minimum on (and off) time for pointer (minutes); zero if not in hub mode.
@@ -286,332 +55,60 @@ void setMinBoilerOnMinutes(uint8_t mins) { OTV0P2BASE::eeprom_smart_update_byte(
 #ifdef ENABLE_OCCUPANCY_SUPPORT
 // Singleton implementation for entire node.
 OccupancyTracker Occupancy;
-// Single generic occupancy callback for occupied for this instance.
-void genericMarkAsOccupied() { Occupancy.markAsOccupied(); }
-// Single generic occupancy callback for 'possibly occupied' for this instance.
-void genericMarkAsPossiblyOccupied() { Occupancy.markAsPossiblyOccupied(); }
 #endif
 
 
 #ifdef ENABLE_MODELLED_RAD_VALVE
+static OTRadValve::ValveControlParametersRT<PARAMS> vct;
+static OTV0P2BASE::EEPROMByHourByteStats ebhs;
+// Create setback lockout if needed.
+  typedef bool(*setbackLockout_t)();
+#if defined(ENABLE_SETBACK_LOCKOUT_COUNTDOWN) && defined(ARDUINO_ARCH_AVR)
+  // If allowing setback lockout, eg for testing, then inject suitable lambda.
+  static bool setbackLockout() {return(0xff != eeprom_read_byte((uint8_t *)OTV0P2BASE::V0P2BASE_EE_START_SETBACK_LOCKOUT_COUNTDOWN_D_INV));}
+#else
+  static constexpr setbackLockout_t setbackLockout = NULL;
+#endif
+// Algorithm for computing target temperature.
+OTRadValve::ModelledRadValveComputeTargetTempBasic<
+  PARAMS,
+  &valveMode,
+  decltype(TemperatureC16),   &TemperatureC16,
+  decltype(tempControl),      &tempControl,
+  decltype(Occupancy),        &Occupancy,
+  decltype(AmbLight),         &AmbLight,
+  decltype(valveUI),          &valveUI,
+  decltype(Scheduler),        &Scheduler,
+  decltype(ebhs),             &ebhs,
+  setbackLockout
+  >
+  cttBasic;
 // Internal model of controlled radiator valve position.
-ModelledRadValve NominalRadValve;
-// Cache initially unset.
-uint8_t ModelledRadValve::mVPRO_cache = 0;
-
-// Return minimum valve percentage open to be considered actually/significantly open; [1,100].
-// At the boiler hub this is also the threshold percentage-open on eavesdropped requests that will call for heat.
-// If no override is set then OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN is used.
-// NOTE: raising this value temporarily (and shutting down the boiler immediately if possible) is one way to implement dynamic demand.
-uint8_t ModelledRadValve::getMinValvePcReallyOpen()
-  {
-  if(0 != mVPRO_cache) { return(mVPRO_cache); } // Return cached value if possible.
-  const uint8_t stored = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_MIN_VALVE_PC_REALLY_OPEN);
-  const uint8_t result = ((stored > 0) && (stored <= 100)) ? stored : OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN;
-  mVPRO_cache = result; // Cache it.
-  return(result);
-  }
-
-// Set and cache minimum valve percentage open to be considered really open.
-// Applies to local valve and, at hub, to calls for remote calls for heat.
-// Any out-of-range value (eg >100) clears the override and OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN will be used.
-void ModelledRadValve::setMinValvePcReallyOpen(const uint8_t percent)
-  {
-  if((percent > 100) || (percent == 0) || (percent == OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN))
-    {
-    // Bad / out-of-range / default value so erase stored value if not already so.
-    OTV0P2BASE::eeprom_smart_erase_byte((uint8_t *)V0P2BASE_EE_START_MIN_VALVE_PC_REALLY_OPEN);
-    // Cache logical default value.
-    mVPRO_cache = OTRadValve::DEFAULT_VALVE_PC_MIN_REALLY_OPEN;
-    return;
-    }
-  // Store specified value with as low wear as possible.
-  OTV0P2BASE::eeprom_smart_update_byte((uint8_t *)V0P2BASE_EE_START_MIN_VALVE_PC_REALLY_OPEN, percent);
-  // Cache it.
-  mVPRO_cache = percent;
-  }
-
-// True if the controlled physical valve is thought to be at least partially open right now.
-// If multiple valves are controlled then is this true only if all are at least partially open.
-// Used to help avoid running boiler pump against closed valves.
-// The default is to use the check the current computed position
-// against the minimum open percentage.
-bool ModelledRadValve::isControlledValveReallyOpen() const
-  {
-  if(isRecalibrating()) { return(false); }
-#ifdef ENABLE_FHT8VSIMPLE
-  if(!FHT8V.isControlledValveReallyOpen()) { return(false); }
+OTRadValve::ModelledRadValve NominalRadValve(
+  &cttBasic,
+  &valveMode,
+  &tempControl,
+#ifdef HAS_DORM1_VALVE_DRIVE
+  &ValveDirect,
+#else
+  NULL,
 #endif
-  return(value >= getMinPercentOpen());
-  }
-  
-// Returns true if (re)calibrating/(re)initialising/(re)syncing.
-// The target valve position is not lost while this is true.
-// By default there is no recalibration step.
-bool ModelledRadValve::isRecalibrating() const
-  {
-#ifdef ENABLE_FHT8VSIMPLE
-  if(!FHT8V.isInNormalRunState()) { return(true); }
-#endif
-  return(false);
-  }
+  #ifdef TRV_SLEW_GLACIAL
+    true,
+  #else
+    false,
+  #endif
+  #ifdef TRV_MAX_PC_OPEN
+    TRV_MAX_PC_OPEN
+  #else
+    100
+  #endif
+  );
+#endif // ENABLE_MODELLED_RAD_VALVE
 
-// If possible exercise the valve to avoid pin sticking and recalibrate valve travel.
-// Default does nothing.
-void ModelledRadValve::recalibrate()
-  {
-#ifdef ENABLE_FHT8VSIMPLE
-  FHT8V.resyncWithValve(); // Should this be decalcinate instead/also/first?
-#endif
-  }
-
-
-// Compute target temperature (stateless).
-// Can be called as often as required though may be slow/expensive.
-// Will be called by computeCallForHeat().
-// One aim is to allow reasonable energy savings (10--30%+)
-// even if the device is left in WARM mode all the time,
-// using occupancy/light/etc to determine when temperature can be set back
-// without annoying users.
-//
-// Attempts in WARM mode to make the deepest reasonable cuts to maximise savings
-// when the room is vacant and not likely to become occupied again soon,
-// ie this looks ahead to give the room time to recover to target before occupancy.
-//
-// TODO: unit tests confirming that it is possible to reach all setback levels other than at highest comfort settings.
-uint8_t ModelledRadValve::computeTargetTemp()
-  {
-  // In FROST mode.
-  if(!valveMode.inWarmMode())
-    {
-    const uint8_t frostC = getFROSTTargetC();
-
-    // If scheduled WARM is due soon then ensure that room is at least at setback temperature
-    // to give room a chance to hit the target, and for furniture and surfaces to be warm, etc, on time.
-    // Don't do this if the room has been vacant for a long time (eg so as to avoid pre-warm being higher than WARM ever).
-    // Don't do this if there has been recent manual intervention, eg to allow manual 'cancellation' of pre-heat (TODO-464).
-    // Only do this if the target WARM temperature is NOT an 'eco' temperature (ie very near the bottom of the scale).
-    // If well into the 'eco' zone go for a larger-than-usual setback, else go for usual small setback.
-    // Note: when pre-warm and warm time for schedule is ~1.5h, and default setback 1C,
-    // this is assuming that the room temperature can be raised by ~1C/h.
-    // See the effect of going from 2C to 1C setback: http://www.earth.org.uk/img/20160110-vat-b.png
-    // (A very long pre-warm time may confuse or distress users, eg waking them in the morning.)
-    if(!Occupancy.longVacant() && Scheduler.isAnyScheduleOnWARMSoon() && !recentUIControlUse())
-      {
-      const uint8_t warmTarget = getWARMTargetC();
-      // Compute putative pre-warm temperature, usually only just below WARM target.
-      const uint8_t preWarmTempC = OTV0P2BASE::fnmax((uint8_t)(warmTarget - (isEcoTemperature(warmTarget) ? PARAMS::SETBACK_ECO : PARAMS::SETBACK_DEFAULT)), frostC);
-      if(frostC < preWarmTempC) // && (!isEcoTemperature(warmTarget)))
-        { return(preWarmTempC); }
-      }
-
-    // Apply FROST safety target temperature by default in FROST mode.
-    return(frostC);
-    }
-
-  else if(valveMode.inBakeMode()) // If in BAKE mode then use elevated target.
-    {
-    return(OTV0P2BASE::fnmin((uint8_t)(getWARMTargetC() + PARAMS::BAKE_UPLIFT), OTRadValve::MAX_TARGET_C)); // No setbacks apply in BAKE mode.
-    }
-
-  else // In 'WARM' mode with possible setback.
-    {
-    const uint8_t wt = getWARMTargetC();
-
-#if defined(ENABLE_SETBACK_LOCKOUT_COUNTDOWN)
-    // If smart setbacks are locked out then return WARM temperature as-is.  (TODO-786, TODO-906)
-    if(0xff != eeprom_read_byte((uint8_t *)OTV0P2BASE::V0P2BASE_EE_START_SETBACK_LOCKOUT_COUNTDOWN_D_INV))
-      {
-      OTV0P2BASE::serialPrintlnAndFlush("?SLO");
-      return(wt);
-      }
-#endif
-
-    // Set back target the temperature a little if the room seems to have been vacant for a long time (TODO-107)
-    // or it is too dark for anyone to be active or the room is not likely occupied at this time
-    // or the room was apparently not occupied at thus time yesterday (and is not now).
-    //   AND no WARM schedule is active now (TODO-111)
-    //   AND no recent manual interaction with the unit's local UI (TODO-464) indicating local settings override.
-    // The notion of "not likely occupied" is "not now"
-    // AND less likely than not at this hour of the day AND an hour ahead (TODO-758).
-    // Note that this mainly has to work in domestic settings in winter (with ~8h of daylight)
-    // but should ideally also work in artificially-lit offices (maybe ~12h continuous lighting).
-    // No 'lights-on' signal for a whole day is a fairly strong indication that the heat can be turned down.
-    // TODO-451: TODO-453: ignore a short lights-off, eg from someone briefly leaving room or a transient shadow.
-    // TODO: consider bottom quartile of ambient light as alternative setback trigger for near-continuously-lit spaces (aiming to spot daylight signature).
-    // Look ahead to next time period (as well as current) to determine notLikelyOccupiedSoon
-    // but suppress lookahead of occupancy when its been dark for many hours (eg overnight) to avoid disturbing/waking.  (TODO-792)
-    // Note that deeper setbacks likely offer more savings than faster (but shallower) setbacks.
-    const bool longLongVacant = Occupancy.longLongVacant();
-    const bool longVacant = longLongVacant || Occupancy.longVacant();
-    const bool likelyVacantNow = longVacant || Occupancy.isLikelyUnoccupied();
-    const bool ecoBias = hasEcoBias();
-    // True if the room has been dark long enough to indicate night.  (TODO-792)
-    const uint8_t dm = AmbLight.getDarkMinutes();
-    const bool darkForHours = dm > 245; // A little over 4h, not quite max 255.
-    // Be more ready to decide room not likely occupied soon if eco-biased.
-    // Note that this value is likely to be used +/- 1 so must be in range [1,23].
-    const uint8_t thisHourNLOThreshold = ecoBias ? 15 : 12;
-    const uint8_t hoursLessOccupiedThanThis = OTV0P2BASE::countStatSamplesBelow(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::getByHourStat(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::STATS_SPECIAL_HOUR_CURRENT_HOUR));
-    const uint8_t hoursLessOccupiedThanNext = OTV0P2BASE::countStatSamplesBelow(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::getByHourStat(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR_SMOOTHED, OTV0P2BASE::STATS_SPECIAL_HOUR_NEXT_HOUR));
-    const bool notLikelyOccupiedSoon = longLongVacant ||
-        (likelyVacantNow &&
-        // No more than about half the hours to be less occupied than this hour to be considered unlikely to be occupied.
-        (hoursLessOccupiedThanThis < thisHourNLOThreshold) &&
-        // Allow to be a little bit more occupied for the next hour than the current hour.
-        // Suppress occupancy lookahead if room has been dark for several hours, eg overnight.  (TODO-792)
-        (darkForHours || (hoursLessOccupiedThanNext < (thisHourNLOThreshold+1))));
-    const uint8_t minLightsOffForSetbackMins = ecoBias ? 10 : 20;
-    if(longVacant ||
-       ((notLikelyOccupiedSoon || (dm > minLightsOffForSetbackMins) || (ecoBias && (Occupancy.getVacancyH() > 0) && (0 == OTV0P2BASE::getByHourStat(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR, OTV0P2BASE::STATS_SPECIAL_HOUR_CURRENT_HOUR)))) &&
-           !Scheduler.isAnyScheduleOnWARMNow() && !recentUIControlUse()))
-      {
-      // Use a default minimal non-annoying setback if:
-      //   in upper part of comfort range
-      //   or if the room is likely occupied now
-      //   or if the room is not known to be dark and hasn't been vacant for a long time ie ~1d and not in the very bottom range occupancy (TODO-107, TODO-758)
-      //      TODO POSSIBLY: limit to (say) 3--4h light time for when someone out but room daylit, but note that detecting occupancy will be harder too in daylight.
-      //      TODO POSSIBLY: after ~3h vacancy AND apparent smoothed occupancy non-zero (so some can be detected) AND ambient light in top quartile or in middle of typical bright part of cycle (assume peak of daylight) then being lit is not enough to prevent a deeper setback.
-      //   or is fairly likely to be occupied in the next hour (to pre-warm) and the room hasn't been dark for hours and vacant for a long time
-      //   or if a scheduled WARM period is due soon and the room hasn't been vacant for a long time,
-      // else usually use a somewhat bigger 'eco' setback
-      // else use an even bigger 'full' setback for maximum savings if in the eco region and
-      //   the room has been vacant for a very long time
-      //   or is unlikely to be unoccupied at this time of day and
-      //     has been vacant and dark for a while or is in the lower part of the 'eco' range.
-      // This final dark/vacant timeout to enter FULL fallback while in mild eco mode
-      // should probably be longer than required to watch a typical movie or go to sleep (~2h) for example,
-      // but short enough to take effect overnight and to be in effect a reasonable fraction of a (~8h) night.
-      const uint8_t minVacantAndDarkForFULLSetbackH = 2; // Hours; strictly positive, typically 1--4.
-      const uint8_t setback = (isComfortTemperature(wt) ||
-                               Occupancy.isLikelyOccupied() ||
-                               (!longVacant && !AmbLight.isRoomDark() && (hoursLessOccupiedThanThis > 4)) ||
-                               (!longVacant && !darkForHours && (hoursLessOccupiedThanNext >= thisHourNLOThreshold-1)) ||
-                               (!longVacant && Scheduler.isAnyScheduleOnWARMSoon())) ?
-              PARAMS::SETBACK_DEFAULT :
-          ((ecoBias && (longLongVacant ||
-              (notLikelyOccupiedSoon && (isEcoTemperature(wt) ||
-                  ((dm > (uint8_t)min(254, 60*minVacantAndDarkForFULLSetbackH)) && (Occupancy.getVacancyH() >= minVacantAndDarkForFULLSetbackH)))))) ?
-              PARAMS::SETBACK_FULL : PARAMS::SETBACK_ECO);
-
-      // Target must never be set low enough to create a frost/freeze hazard.
-      const uint8_t newTarget = OTV0P2BASE::fnmax((uint8_t)(wt - setback), getFROSTTargetC());
-
-      return(newTarget);
-      }
-    // Else use WARM target as-is.
-    return(wt);
-    }
-  }
-
-
-// Compute/update target temperature and set up state for tick()/computeRequiredTRVPercentOpen().
-//
-// Will clear any BAKE mode if the newly-computed target temperature is already exceeded.
-void ModelledRadValve::computeTargetTemperature()
-  {
-  // Compute basic target temperature statelessly.
-  const uint8_t newTarget = computeTargetTemp();
-
-  // Explicitly compute the actual setback when in WARM mode for monitoring purposes.
-  // TODO: also consider showing full setback to FROST when a schedule is set but not on.
-  // By default, the setback is regarded as zero/off.
-  setbackC = 0;
-  if(valveMode.inWarmMode())
-    {
-    const uint8_t wt = getWARMTargetC();
-    if(newTarget < wt) { setbackC = wt - newTarget; }
-    }
-
-  // Set up state for computeRequiredTRVPercentOpen().
-  inputState.targetTempC = newTarget;
-  inputState.minPCOpen = getMinPercentOpen();
-  inputState.maxPCOpen = getMaxPercentageOpenAllowed();
-  inputState.glacial = glacial;
-  inputState.inBakeMode = valveMode.inBakeMode();
-  inputState.hasEcoBias = hasEcoBias();
-  // Request a fast response from the valve if user is manually adjusting controls.
-  const bool veryRecentUIUse = veryRecentUIControlUse();
-  inputState.fastResponseRequired = veryRecentUIUse;
-  // Widen the allowed deadband significantly in an unlit/quiet/vacant room (TODO-383, TODO-593, TODO-786)
-  // (or in FROST mode, or if temperature is jittery eg changing fast and filtering has been engaged)
-  // to attempt to reduce the total number and size of adjustments and thus reduce noise/disturbance (and battery drain).
-  // The wider deadband (less good temperature regulation) might be noticeable/annoying to sensitive occupants.
-  // With a wider deadband may also simply suppress any movement/noise on some/most minutes while close to target temperature.
-  // For responsiveness, don't widen the deadband immediately after manual controls have been used (TODO-593).
-  //
-  // Minimum number of hours vacant to force wider deadband in ECO mode, else a full day ('long vacant') is the threshold.
-  // May still have to back this off if only automatic occupancy input is ambient light and day >> 6h, ie other than deep winter.
-  const uint8_t minVacancyHoursForWideningECO = 3;
-  inputState.widenDeadband = (!veryRecentUIUse) &&
-      (retainedState.isFiltering ||
-      (!valveMode.inWarmMode()) ||
-      AmbLight.isRoomDark() || // Must be false if light sensor not usable.
-      Occupancy.longVacant() || (hasEcoBias() && (Occupancy.getVacancyH() >= minVacancyHoursForWideningECO)));
-  // Capture adjusted reference/room temperatures
-  // and set callingForHeat flag also using same outline logic as computeRequiredTRVPercentOpen() will use.
-  inputState.setReferenceTemperatures(TemperatureC16.get());
-  // True if the target temperature has not been met.
-  const bool targetNotReached = (newTarget >= (inputState.refTempC16 >> 4));
-  underTarget = targetNotReached;
-  // If the target temperature is already reached then cancel any BAKE mode in progress (TODO-648).
-  if(!targetNotReached) { valveMode.cancelBakeDebounced(); }
-  // Only report as calling for heat when actively doing so.
-  // (Eg opening the valve a little in case the boiler is already running does not count.)
-  callingForHeat = targetNotReached &&
-    (value >= OTRadValve::DEFAULT_VALVE_PC_SAFER_OPEN) &&
-    isControlledValveReallyOpen();
-  }
-
-// Compute target temperature and set heat demand for TRV and boiler; update state.
-// CALL REGULARLY APPROXIMATELY ONCE PER MINUTE TO ALLOW SIMPLE TIME-BASED CONTROLS.
-// Inputs are inWarmMode(), isRoomLit().
-// The inputs must be valid (and recent).
-// Values set are targetTempC, value (TRVPercentOpen).
-// This may also prepare data such as TX command sequences for the TRV, boiler, etc.
-// This routine may take significant CPU time; no I/O is done, only internal state is updated.
-// Returns true if valve target changed and thus messages may need to be recomputed/sent/etc.
-void ModelledRadValve::computeCallForHeat()
-  {
-  valveMode.read();
-//  ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
-//    {
-//    // Run down BAKE mode timer if need be, one tick per minute.
-//    if(bakeCountdownM > 0) { --bakeCountdownM; }
-//    }
-
-  // Compute target and ensure that required input state is set for computeRequiredTRVPercentOpen().
-  computeTargetTemperature();
-  retainedState.tick(value, inputState);
-  }
-//#endif // ENABLE_MODELLED_RAD_VALVE
-#endif
-
-
-// The STATS_SMOOTH_SHIFT is chosen to retain some reasonable precision within a byte and smooth over a weekly cycle.
-#define STATS_SMOOTH_SHIFT 3 // Number of bits of shift for smoothed value: larger => larger time-constant; strictly positive.
 
 // If defined, limit to stats sampling to one pre-sample and the final sample, to simplify/speed code.
 #define STATS_MAX_2_SAMPLES
-
-// Compute new linearly-smoothed value given old smoothed value and new value.
-// Guaranteed not to produce a value higher than the max of the old smoothed value and the new value.
-// Uses stochastic rounding to nearest to allow nominally sub-lsb values to have an effect over time.
-// Usually only made public for unit testing.
-uint8_t smoothStatsValue(const uint8_t oldSmoothed, const uint8_t newValue)
-  {
-  if(oldSmoothed == newValue) { return(oldSmoothed); } // Optimisation: smoothed value is unchanged if new value is the same as extant.
-  // Compute and update with new stochastically-rounded exponentially-smoothed ("Brown's simple exponential smoothing") value.
-  // Stochastic rounding allows sub-lsb values to have an effect over time.
-  const uint8_t stocAdd = OTV0P2BASE::randRNG8() & ((1 << STATS_SMOOTH_SHIFT) - 1); // Allows sub-lsb values to have an effect over time.
-#if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("stocAdd=");
-  DEBUG_SERIAL_PRINT(stocAdd);
-  DEBUG_SERIAL_PRINTLN();
-#endif
-  // Do arithmetic in 16 bits to avoid over-/under- flows.
-  return((uint8_t) (((((uint16_t) oldSmoothed) << STATS_SMOOTH_SHIFT) - ((uint16_t)oldSmoothed) + ((uint16_t)newValue) + stocAdd) >> STATS_SMOOTH_SHIFT));
-  }
 
 // Do an efficient division of an int total by small positive count to give a uint8_t mean.
 //  * total running total, no higher than 255*sampleCount
@@ -649,7 +146,7 @@ static void simpleUpdateStatsPair_(uint8_t * const lastEEPtr, const uint8_t valu
   uint8_t * const pS = lastEEPtr + 24;
   const uint8_t smoothed = eeprom_read_byte(pS);
   if(0xff == smoothed) { OTV0P2BASE::eeprom_smart_update_byte(pS, value); }
-  else { OTV0P2BASE::eeprom_smart_update_byte(pS, smoothStatsValue(smoothed, value)); }
+  else { OTV0P2BASE::eeprom_smart_update_byte(pS, OTV0P2BASE::NVByHourByteStatsBase::smoothStatsValue(smoothed, value)); }
   }
 // Get some constant calculation done at compile time,
 //   * lastSetN  is the set number for the 'last' values, with 'smoothed' assumed to be the next set.
@@ -758,28 +255,6 @@ void sampleStats(const bool fullSample)
   simpleUpdateStatsPair(V0P2BASE_EE_STATS_SET_RHPC_BY_HOUR, hh, smartDivToU8(rhpcTotal, sc));
 #endif
 
-#if defined(EE_STATS_SET_WARMMODE_BY_HOUR_OF_WK)
-  // Update sampled WARM-mode value.
-  // 0xff when unset/erased; first use will set all history bits to the initial sample value.
-  // When in use, bit 7 (msb) is always 0 (to distinguish from unset).
-  // Bit 6 is 1 if most recent day's sample was in WARM (or BAKE) mode, 0 if in FROST mode.
-  // At each new sampling, bits 6--1 are shifted down and the new bit 6 set as above.
-  // Designed to enable low-wear no-write or selective erase/write use much of the time;
-  // periods which are always the same mode will achieve a steady-state value (eliminating most EEPROM wear)
-  // while even some of the rest (while switching over from all-WARM to all-FROST) will only need pure writes (no erase).
-  uint8_t *const phW = (uint8_t *)(V0P2BASE_EE_STATS_START_ADDR(EE_STATS_SET_WARMMODE_BY_HOUR_OF_WK) + hh);
-  const uint8_t warmHistory = eeprom_read_byte(phW);
-  if(warmHistory & 0x80) { eeprom_smart_clear_bits(phW, inWarmMode() ? 0x7f : 0); } // First use sets all history bits to current sample value.
-  else // Shift in today's sample bit value for this hour at bit 6...
-    {
-    uint8_t newWarmHistory = (warmHistory >> 1) & 0x3f;
-    if(warmCount > 0) { newWarmHistory |= 0x40; } // Treat as warm iff more WARM than FROST (sub-)samples.
-    eeprom_smart_update_byte(phW, newWarmHistory);
-    }
-  // Reset WARM sub-sample count after full sample.
-  warmCount = 0;
-#endif
-
   // TODO: other stats measures...
   }
 
@@ -810,7 +285,7 @@ void populateCoreStats(OTV0P2BASE::FullStatsMessageCore_t *const content)
   content->ambL = OTV0P2BASE::fnmax((uint8_t)1, OTV0P2BASE::fnmin((uint8_t)254, AmbLight.get())); // Coerce to allowed value in range [1,254]. Bug-fix (twice! TODO-510) c/o Gary Gladman!
   content->containsAmbL = true;
   // OC1/OC2 = Occupancy: 00 not disclosed, 01 not occupied, 10 possibly occupied, 11 probably occupied.
-  // The encodeFullStatsMessageCore() route should omit data not appopriate for security reasons.
+  // The encodeFullStatsMessageCore() route should omit data not appopriate for the privacy level, etc.
 #ifdef ENABLE_OCCUPANCY_SUPPORT
   content->occ = Occupancy.twoBitOccupancyValue();
 #else
@@ -911,7 +386,7 @@ void bareStatsTX(const bool allowDoubleTX, const bool doBinary)
     // Gather core stats.
     OTV0P2BASE::FullStatsMessageCore_t content;
     populateCoreStats(&content);
-    const uint8_t *msg1 = encodeFullStatsMessageCore(buf + STATS_MSG_START_OFFSET, sizeof(buf) - STATS_MSG_START_OFFSET, OTV0P2BASE::getStatsTXLevel(), false, &content);
+    const uint8_t *msg1 = OTV0P2BASE::encodeFullStatsMessageCore(buf + STATS_MSG_START_OFFSET, sizeof(buf) - STATS_MSG_START_OFFSET, OTV0P2BASE::getStatsTXLevel(), false, &content);
     if(NULL == msg1)
       {
 #if 0
@@ -949,7 +424,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 #else
     if(doEnc)
 #endif // defined(ENABLE_JSON_SUPPRESSED_ID)
-        { static const char nul[1] = {}; ss1.setID(nul); }
+        { ss1.setID(F("")); }
     else
       {
 #if defined(ENABLE_FHT8VSIMPLE)
@@ -1023,7 +498,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 #endif // defined(ENABLE_LOCAL_TRV)
 #ifdef ENABLE_SETBACK_LOCKOUT_COUNTDOWN // fixme should this be ENABLE_CONTROL_MODE?
     // Show state of setback lockout.
-    ss1.put("gE", getSetbackLockout(), true);
+    ss1.put(V0p2_SENSOR_TAG_F("gE"), getSetbackLockout(), true);
 #endif // ENABLE_SETBACK_LOCKOUT_COUNTDOWN
 #if defined(ENABLE_ALWAYS_TX_ALL_STATS)
     const uint8_t privacyLevel = OTV0P2BASE::stTXalwaysAll;
@@ -1178,7 +653,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
 #endif
         {
         // Send directly to the primary radio...
-        PrimaryRadio.queueToSend(realTXFrameStart, wrote);
+        if(!PrimaryRadio.queueToSend(realTXFrameStart, wrote)) { sendingJSONFailed = true; }
         }
       }
 
@@ -1194,8 +669,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
 #endif // defined(ENABLE_STATS_TX)
 
 
-
-// Wire components directly together, eg for occupancy sensing.
+// Wire components together, eg for occupancy sensing.
 static void wireComponentsTogether()
   {
 #ifdef ENABLE_FHT8VSIMPLE
@@ -1206,20 +680,18 @@ static void wireComponentsTogether()
 #endif // ENABLE_FHT8VSIMPLE
 
 #if defined(ENABLE_OCCUPANCY_SUPPORT) && defined(ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT)
-  AmbLight.setPossOccCallback(genericMarkAsPossiblyOccupied);
+  AmbLight.setPossOccCallback([]{Occupancy.markAsPossiblyOccupied();});
 #endif // ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
 
 #if defined(ENABLE_OCCUPANCY_SUPPORT) && defined(ENABLE_OCCUPANCY_DETECTION_FROM_VOICE)
-  Voice.setPossOccCallback(genericMarkAsPossiblyOccupied);
+  Voice.setPossOccCallback([]{Occupancy.markAsPossiblyOccupied();});
 #endif // ENABLE_OCCUPANCY_DETECTION_FROM_VOICE
 
 #if defined(TEMP_POT_AVAILABLE)
-//  TempPot.setOccCallback(genericMarkAsOccupied); // markUIControlUsed
-  // Mark UI as used and indirectly mark occupancy when control is used.
-  TempPot.setOccCallback(markUIControlUsed);
   // Callbacks to set various mode combinations.
   // Typically at most one call would be made on any appropriate pot adjustment.
-  TempPot.setWFBCallbacks(setWarmModeFromManualUI, setBakeModeFromManualUI);
+  TempPot.setWFBCallbacks([](bool x){valveUI.setWarmModeFromManualUI(x);},
+                          [](bool x){valveUI.setBakeModeFromManualUI(x);});
 #endif // TEMP_POT_AVAILABLE
 
 #if V0p2_REV == 14
@@ -1247,7 +719,7 @@ static void updateSensorsFromStats()
           OTV0P2BASE::getMaxByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR),
           OTV0P2BASE::getMinByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED),
           OTV0P2BASE::getMaxByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED),
-          !hasEcoBias());
+          !tempControl.hasEcoBias());
 #endif // ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
   }
 
@@ -1264,7 +736,7 @@ static void endOfHourTasks()
 static void endOfDayTasks()
   {
 #if defined(ENABLE_SETBACK_LOCKOUT_COUNTDOWN)
-    // Count down the lockout if not finished...  (TODO-786, TDO-906)
+    // Count down the lockout if not finished...  (TODO-786, TODO-906)
     const uint8_t sloInv = eeprom_read_byte((uint8_t *)OTV0P2BASE::V0P2BASE_EE_START_SETBACK_LOCKOUT_COUNTDOWN_D_INV);
     if(0xff != sloInv)
       {
@@ -1484,7 +956,7 @@ ISR(PCINT2_vect)
 #if defined(ENABLE_SIMPLIFIED_MODE_BAKE)
   // Mode button detection is on the falling edge (button pressed).
   if((changes & MODE_INT_MASK) && !(pins & MODE_INT_MASK))
-    { startBakeFromInt(); }
+    { valveUI.startBakeFromInt(); }
 #endif // defined(ENABLE_SIMPLIFIED_MODE_BAKE)
 
 #if defined(ENABLE_VOICE_SENSOR)
@@ -1977,7 +1449,7 @@ void loopOpenTRV()
     {
 #ifdef ENABLE_FULL_OT_UI
     // Run the OpenTRV button/LED UI if required.
-    if(tickUI(TIME_LSD))
+    if(0 != valveUI.read()) // if(tickUI(TIME_LSD))
       {
       showStatus = true;
       recompute = true;
@@ -1990,7 +1462,7 @@ void loopOpenTRV()
 
 
 #ifdef ENABLE_MODELLED_RAD_VALVE
-  if(recompute || veryRecentUIControlUse())
+  if(recompute || valveUI.veryRecentUIControlUse())
     {
     // Force immediate recompute of target temperature for (UI) responsiveness.
     NominalRadValve.computeTargetTemperature();
@@ -2172,10 +1644,10 @@ void loopOpenTRV()
     case 52:
       {
       // Force all UI lights off before sampling ambient light level.
-      LED_HEATCALL_OFF();
+      OTV0P2BASE::LED_HEATCALL_OFF();
 #if defined(LED_UI2_EXISTS) && defined(ENABLE_UI_LED_2_IF_AVAILABLE)
       // Turn off second UI LED if available.
-      LED_UI2_OFF();
+      OTV0P2BASE::LED_UI2_OFF();
 #endif
       AmbLight.read();
       break;
@@ -2327,16 +1799,19 @@ void loopOpenTRV()
   // Handle local direct-drive valve, eg DORM1.
 #if defined(ENABLE_NOMINAL_RAD_VALVE)
   // Get current modelled valve position into abstract driver.
-  ValveDirect.set(NominalRadValve.get());
+//  ValveDirect.set(NominalRadValve.get());
 #endif
   // If waiting for for verification that the valve has been fitted
   // then accept any manual interaction with controls as that signal.
-  // ('Any' manual interaction may prove too sensitive.)
-  // Also have a timeout of somewhat over ~10m from startup
-  // for automatic recovery after any crash and restart.
+  // Also have a backup timeout of at least ~10m from startup
+  // for automatic recovery after a crash and restart,
+  // or where fitter simply forgets to initiate cablibration.
   if(ValveDirect.isWaitingForValveToBeFitted())
       {
-      if(veryRecentUIControlUse() || (minuteCount > 15))
+      // Defer automatic recovery when battery low or in dark in case crashing/restarting
+      // to try to avoid disturbing/waking occupants and/or entering battery death spiral.  (TODO-1037, TODO-963)
+      const bool delayRecalibration = batteryLow || AmbLight.isRoomDark();
+      if(valveUI.veryRecentUIControlUse() || (minuteCount > (delayRecalibration ? 200 : 15)))
           { ValveDirect.signalValveFitted(); }
       }
   // Provide regular poll to motor driver.
@@ -2362,10 +1837,10 @@ void loopOpenTRV()
 #if 1 && defined(ENABLE_CLI)
   if(isCLIActive())
     {
-//    const uint8_t sct = OTV0P2BASE::getSubCycleTime();
-//    const uint8_t listenTime = OTV0P2BASE::CLI::MIN_CLI_POLL_SCT;
     const uint8_t stopBy = nearOverrunThreshold - 1;
-    pollCLI(stopBy, 0 == TIME_LSD);
+    char buf[BUFSIZ_pollUI];
+    OTV0P2BASE::ScratchSpace s((uint8_t*)buf, sizeof(buf));
+    pollCLI(stopBy, 0 == TIME_LSD, s);
     }
 #endif
 

@@ -21,24 +21,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
 /*
  Generic messaging and radio/comms support for OpenTRV.
  */
-
-#include "Messaging.h"
-
-#include <OTV0p2_Board_IO_Config.h> // I/O pin allocation and setup: include ahead of I/O module headers.
-
-#if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) || defined(ENABLE_SECURE_RADIO_BEACON)
-#include <OTAESGCM.h>
-#endif
-
-#include <OTRadioLink.h>
-
-#include <util/atomic.h>
-
-#include "Control.h"
-#include "UI_Minimal.h"
-
-#include "V0p2_Sensors.h"
-
+#include "V0p2_Main.h"
 
 #ifdef ENABLE_RADIO_SIM900
 //For EEPROM: TODO make a spec for how config should be stored in EEPROM to make changing them easy
@@ -103,7 +86,7 @@ OTRFM23BLink::OTRFM23BLink<OTV0P2BASE::V0p2_PIN_SPI_nSS, RFM23B_IRQ_PIN, RFM23B_
 #endif // ENABLE_RADIO_RFM23B
 #ifdef ENABLE_RADIO_SIM900
 //OTSIM900Link::OTSIM900Link SIM900(REGULATOR_POWERUP, RADIO_POWER_PIN, SOFTSERIAL_RX_PIN, SOFTSERIAL_TX_PIN);
-OTSIM900Link::OTSIM900Link<8, 5> SIM900(REGULATOR_POWERUP, RADIO_POWER_PIN);
+OTSIM900Link::OTSIM900Link<8, 5, RADIO_POWER_PIN> SIM900; // (REGULATOR_POWERUP, RADIO_POWER_PIN);
 #endif
 #ifdef ENABLE_RADIO_RN2483
 OTRN2483Link::OTRN2483Link RN2483( RADIO_POWER_PIN, SOFTSERIAL_RX_PIN, SOFTSERIAL_TX_PIN);
