@@ -207,10 +207,17 @@ void optionalPOST()
   {
   // Have 32678Hz clock at least running before going any further.
 #if defined(ENABLE_WAKEUP_32768HZ_XTAL)
+#ifdef ENABLE_TUNE_FAST_OSC_TO_RTC_SOURCE
+  // Check that the slow clock is running reasonably OK, and tune the fast one to it.
+  if(!::OTV0P2BASE::HWTEST::calibrateInternalOscWithExtOsc()) { panic(F("Xtal")); } // Async clock not running or can't tune.
+#else
+  // Just check that the slow clock is running reasonably OK.
   if(!::OTV0P2BASE::HWTEST::check32768HzOsc()) { panic(F("xtal")); } // Async clock not running correctly.
+#endif // ENABLE_TUNE_FAST_OSC_TO_RTC_SOURCE
+
 #else
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("(No xtal.)");
-#endif
+#endif // defined(ENABLE_WAKEUP_32768HZ_XTAL)
 
   // Signal that xtal is running AND give it time to settle.
   posPOST(0 /*, F("about to test radio module") */);
@@ -403,7 +410,6 @@ void setup()
 #if !defined(ENABLE_MIN_ENERGY_BOOT)
   // Restore previous RTC state if available.
   OTV0P2BASE::restoreRTC();
-  // TODO: consider code to calibrate the internal RC oscillator against the xtal, eg to keep serial comms happy, eg http://www.avrfreaks.net/index.php?name=PNphpBB2&file=printview&t=36237&start=0
 #endif
 
 #if !defined(ENABLE_MIN_ENERGY_BOOT)
@@ -557,7 +563,7 @@ void loop()
   // Complain and keep complaining when getting near stack overflow.
   // TODO: make DEBUG-only when confident all configs OK.
   const int16_t minsp = OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd();
-  if(minsp < 64) { OTV0P2BASE::serialPrintAndFlush(F("!SP ")); OTV0P2BASE::serialPrintAndFlush(OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd()); OTV0P2BASE::serialPrintlnAndFlush(); }
+  if(minsp < 64) { OTV0P2BASE::serialPrintlnAndFlush(F("!SH")); }
 
   loopOpenTRV();
 

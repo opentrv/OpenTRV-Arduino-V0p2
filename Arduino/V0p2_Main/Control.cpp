@@ -424,7 +424,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 #else
     if(doEnc)
 #endif // defined(ENABLE_JSON_SUPPRESSED_ID)
-        { ss1.setID(F("")); }
+        { ss1.setID(V0p2_SENSOR_TAG_F("")); }
     else
       {
 #if defined(ENABLE_FHT8VSIMPLE)
@@ -775,7 +775,8 @@ static uint8_t minuteCount;
 #define MASK_PC_BASIC 0b00000000 // Nothing.
 
 // Mask for Port D input change interrupts.
-#define MASK_PD_BASIC 0b00000001 // Serial RX by default.
+#define SERIALRX_INT_MASK 0b00000001 // Serial RX
+#define MASK_PD_BASIC SERIALRX_INT_MASK // Serial RX by default.
 #if defined(ENABLE_VOICE_SENSOR)
   #if VOICE_NIRQ > 7
     #error VOICE_NIRQ expected to be on port D
@@ -971,14 +972,13 @@ ISR(PCINT2_vect)
     { Voice.handleInterruptSimple(); }
 #endif // defined(ENABLE_VOICE_SENSOR)
 
-  // TODO: MODE button and other things...
-
-  // If an interrupt arrived from no other masked source then wake the CLI.
-  // The will ensure that the CLI is active, eg from RX activity,
-  // eg it is possible to wake the CLI subsystem with an extra CR or LF.
+  // If an interrupt arrived from the serial RX then wake up the CLI.
+  // Use a nominally rising edge to avoid spurious trigger when other interrupts are handled.
+  // The will ensure that it is possible to wake the CLI subsystem with an extra CR or LF.
   // It is OK to trigger this from other things such as button presses.
-  // FIXME: ensure that resetCLIActiveTimer() is inlineable to minimise ISR prologue/epilogue time and space.
-  if(!(changes & MASK_PD & ~1)) { resetCLIActiveTimer(); }
+  // TODO: ensure that resetCLIActiveTimer() is inlineable to minimise ISR prologue/epilogue time and space.
+  if((changes & SERIALRX_INT_MASK) && !(pins & SERIALRX_INT_MASK))
+    { resetCLIActiveTimer(); }
   }
 #endif
 

@@ -469,7 +469,10 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute, const OTV0P2BASE::S
         Serial.print(overrunCount);
 #endif // !defined(ENABLE_WATCHDOG_SLOW)
         Serial.println();
-        bareStatsTX(); // Default light-weight print and TX of stats.
+        // Show stack headroom.
+        OTV0P2BASE::serialPrintAndFlush(F("SH ")); OTV0P2BASE::serialPrintAndFlush(OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd()); OTV0P2BASE::serialPrintlnAndFlush();
+        // Default light-weight print and TX of stats.
+        bareStatsTX();
         break; // Note that status is by default printed after processing input line.
         }
 
