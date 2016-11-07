@@ -424,7 +424,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 #else
     if(doEnc)
 #endif // defined(ENABLE_JSON_SUPPRESSED_ID)
-        { ss1.setID(F("")); }
+        { ss1.setID(V0p2_SENSOR_TAG_F("")); }
     else
       {
 #if defined(ENABLE_FHT8VSIMPLE)
