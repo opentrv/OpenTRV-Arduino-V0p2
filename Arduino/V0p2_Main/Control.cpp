@@ -478,7 +478,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
     if(!Supply_cV.isMains()) { ss1.put(Supply_cV, true); } else { ss1.remove(Supply_cV.tag()); }
 #ifdef ENABLE_BOILER_HUB
     // Show boiler state for boiler hubs.
-    ss1.put("b", (int) isBoilerOn());
+    ss1.put(V0p2_SENSOR_TAG_F("b"), (int) isBoilerOn());
 #endif // ENABLE_BOILER_HUB
 #ifdef ENABLE_AMBLIGHT_SENSOR
     ss1.put(AmbLight); // Always send ambient light level (assuming sensor is present).
