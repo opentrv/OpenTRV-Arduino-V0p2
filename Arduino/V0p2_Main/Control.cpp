@@ -59,7 +59,6 @@ OccupancyTracker Occupancy;
 
 
 #ifdef ENABLE_MODELLED_RAD_VALVE
-static OTRadValve::ValveControlParametersRT<PARAMS> vct;
 static OTV0P2BASE::EEPROMByHourByteStats ebhs;
 // Create setback lockout if needed.
   typedef bool(*setbackLockout_t)();
@@ -70,7 +69,7 @@ static OTV0P2BASE::EEPROMByHourByteStats ebhs;
   static constexpr setbackLockout_t setbackLockout = NULL;
 #endif
 // Algorithm for computing target temperature.
-OTRadValve::ModelledRadValveComputeTargetTempBasic<
+constexpr OTRadValve::ModelledRadValveComputeTargetTempBasic<
   PARAMS,
   &valveMode,
   decltype(TemperatureC16),   &TemperatureC16,
