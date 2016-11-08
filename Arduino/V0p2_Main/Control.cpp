@@ -340,6 +340,9 @@ static OTV0P2BASE::SimpleStatsRotation<11> ss1; // Configured for maximum differ
 // as assumed supplied by security layer to remote recipent.
 void bareStatsTX(const bool allowDoubleTX, const bool doBinary)
   {
+  // Capture heavy stack usage from local allocations here.
+  OTV0P2BASE::MemoryChecks::recordIfMinSP();
+
   // Note if radio/comms channel is itself framed.
   const bool framed = !PrimaryRadio.getChannelConfig()->isUnframed;
 #if defined(ENABLE_RFM23B_FS20_RAW_PREAMBLE)
