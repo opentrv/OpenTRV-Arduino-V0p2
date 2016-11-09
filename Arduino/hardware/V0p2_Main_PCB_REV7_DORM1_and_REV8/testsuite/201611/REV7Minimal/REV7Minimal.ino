@@ -79,6 +79,19 @@ extern void _debug_serial_timestamp();
  * - UART       Disable
  */
 
+/**
+ * Dummy Types
+ */
+// Placeholder class with dummy static status methods to reduce code complexity.
+typedef OTV0P2BASE::DummySensorOccupancyTracker OccupancyTracker;
+
+/**
+ * Supply Voltage instance
+ */
+// Sensor for supply (eg battery) voltage in millivolts.
+// Singleton implementation/instance.
+OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
+
 /*
  * Radio instance
  */
@@ -114,12 +127,12 @@ RelHumidity_t RelHumidity;
 /**
  * Temp pot
  */
-//#define TEMP_POT_AVAILABLE
-//// Sensor for temperature potentiometer/dial UI control.
-//// Correct for DORM1/TRV1 with embedded REV7.
-//// REV7 does not drive pot from IO_POWER_UP.
-//typedef OTV0P2BASE::SensorTemperaturePot<decltype(Occupancy), &Occupancy, 48, 296, false> TempPot_t;
-//TempPot_t TempPot;
+#define TEMP_POT_AVAILABLE
+// Sensor for temperature potentiometer/dial UI control.
+// Correct for DORM1/TRV1 with embedded REV7.
+// REV7 does not drive pot from IO_POWER_UP.
+typedef OTV0P2BASE::SensorTemperaturePot<OccupancyTracker, nullptr, 48, 296, false> TempPot_t;
+TempPot_t TempPot;
 
 /**
  * Ambient Light Sensor
@@ -131,16 +144,16 @@ AmbientLight AmbLight;
 /**
  * Valve Actuator
  */
-//// DORM1/REV7 direct drive motor actuator.
-//static constexpr bool binaryOnlyValveControl = false;
-//#define HAS_DORM1_VALVE_DRIVE
-//static constexpr uint8_t m1 = MOTOR_DRIVE_ML;
-//static constexpr uint8_t m2 = MOTOR_DRIVE_MR;
-//typedef OTRadValve::ValveMotorDirectV1<m1, m2, MOTOR_DRIVE_MI_AIN, MOTOR_DRIVE_MC_AIN, decltype(Supply_cV), &Supply_cV, binaryOnlyValveControl> ValveDirect_t;
-//// Singleton implementation/instance.
-//// Suppress unnecessary activity when room dark, eg to avoid disturbance if device crashes/restarts,
-//// unless recent UI use because value is being fitted/adjusted.
-//ValveDirect_t ValveDirect([](){return((!valveUI.veryRecentUIControlUse()) && AmbLight.isRoomDark());});
+// DORM1/REV7 direct drive motor actuator.
+static constexpr bool binaryOnlyValveControl = false;
+#define HAS_DORM1_VALVE_DRIVE
+static constexpr uint8_t m1 = MOTOR_DRIVE_ML;
+static constexpr uint8_t m2 = MOTOR_DRIVE_MR;
+typedef OTRadValve::ValveMotorDirectV1<m1, m2, MOTOR_DRIVE_MI_AIN, MOTOR_DRIVE_MC_AIN, decltype(Supply_cV), &Supply_cV, binaryOnlyValveControl> ValveDirect_t;
+// Singleton implementation/instance.
+// Suppress unnecessary activity when room dark, eg to avoid disturbance if device crashes/restarts,
+// unless recent UI use because value is being fitted/adjusted.
+ValveDirect_t ValveDirect([](){return(AmbLight.isRoomDark());});
 
 // FUNCTIONS
 
@@ -223,25 +236,29 @@ void setup()
     // Collect full set of environmental values before entering loop() in normal mode.
     // This should also help ensure that sensors are properly initialised.
 
-    // No external sensors are *assumed* present if running alt main loop.
+    // No external sensors are *assumed* present if running alt main loop
     // This may mean that the alt loop/POST will have to initialise them explicitly,
     // and the initial seed entropy may be marginally reduced also.
+    const int cV = Supply_cV.read();
+    DEBUG_SERIAL_PRINT_FLASHSTRING("V: ");
+    DEBUG_SERIAL_PRINT(cV);
+    DEBUG_SERIAL_PRINTLN();
     const int heat = TemperatureC16.read();
     DEBUG_SERIAL_PRINT_FLASHSTRING("T: ");
     DEBUG_SERIAL_PRINT(heat);
-    DEBUG_SERIAL_PRINTLN();
-    const int light = AmbLight.read();
-    DEBUG_SERIAL_PRINT_FLASHSTRING("L: ");
-    DEBUG_SERIAL_PRINT(light);
     DEBUG_SERIAL_PRINTLN();
     const uint8_t rh = RelHumidity.read();
     DEBUG_SERIAL_PRINT_FLASHSTRING("RH%: ");
     DEBUG_SERIAL_PRINT(rh);
     DEBUG_SERIAL_PRINTLN();
-//    const int tempPot = TempPot.read();
-//    DEBUG_SERIAL_PRINT_FLASHSTRING("temp pot: ");
-//    DEBUG_SERIAL_PRINT(tempPot);
-//    DEBUG_SERIAL_PRINTLN();
+    const int light = AmbLight.read();
+    DEBUG_SERIAL_PRINT_FLASHSTRING("L: ");
+    DEBUG_SERIAL_PRINT(light);
+    DEBUG_SERIAL_PRINTLN();
+    const int tempPot = TempPot.read();
+    DEBUG_SERIAL_PRINT_FLASHSTRING("temp pot: ");
+    DEBUG_SERIAL_PRINT(tempPot);
+    DEBUG_SERIAL_PRINTLN();
 
     // Initialised: turn main/heatcall UI LED off.
     OTV0P2BASE::LED_HEATCALL_OFF();
