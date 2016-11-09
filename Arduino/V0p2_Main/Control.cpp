@@ -340,6 +340,9 @@ static OTV0P2BASE::SimpleStatsRotation<11> ss1; // Configured for maximum differ
 // as assumed supplied by security layer to remote recipent.
 void bareStatsTX(const bool allowDoubleTX, const bool doBinary)
   {
+  // Capture heavy stack usage from local allocations here.
+  OTV0P2BASE::MemoryChecks::recordIfMinSP();
+
   // Note if radio/comms channel is itself framed.
   const bool framed = !PrimaryRadio.getChannelConfig()->isUnframed;
 #if defined(ENABLE_RFM23B_FS20_RAW_PREAMBLE)
@@ -478,7 +481,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
     if(!Supply_cV.isMains()) { ss1.put(Supply_cV, true); } else { ss1.remove(Supply_cV.tag()); }
 #ifdef ENABLE_BOILER_HUB
     // Show boiler state for boiler hubs.
-    ss1.put("b", (int) isBoilerOn());
+    ss1.put(V0p2_SENSOR_TAG_F("b"), (int) isBoilerOn());
 #endif // ENABLE_BOILER_HUB
 #ifdef ENABLE_AMBLIGHT_SENSOR
     ss1.put(AmbLight); // Always send ambient light level (assuming sensor is present).
@@ -585,7 +588,13 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
     if(!sendingJSONFailed && doEnc)
       {
 #if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
-      const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEnc_ptr_t e = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_STATELESS;
+      // Explicit-workspace version of encryption.
+      const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEncWithWorkspace_ptr_t eW = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_WITH_WORKSPACE;
+      constexpr uint8_t workspaceSize = OTRadioLink::SimpleSecureFrame32or0BodyTXBase::generateSecureOFrameRawForTX_total_scratch_usage_OTAESGCM_2p0;
+      uint8_t workspace[workspaceSize];
+      OTV0P2BASE::ScratchSpace sW(workspace, workspaceSize);
+//      // Deprecated: on-stack hidden workspace.      
+//      const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEnc_ptr_t eS = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_STATELESS;
       const uint8_t txIDLen = OTRadioLink::ENC_BODY_DEFAULT_ID_BYTES;
       // When sending on a channel with framing, do not explicitly send the frame length byte.
       const uint8_t offset = framed ? 1 : 0;
@@ -597,9 +606,12 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
       // Distinguished 'invalid' valve position; never mistaken for a real valve.
       const uint8_t valvePC = 0x7f;
 #endif // defined(ENABLE_NOMINAL_RAD_VALVE)
+//      const uint8_t bodylen = OTRadioLink::SimpleSecureFrame32or0BodyTXV0p2::getInstance().generateSecureOFrameRawForTX(
+//            realTXFrameStart - offset, sizeof(buf) - (realTXFrameStart-buf) + offset,
+//            txIDLen, valvePC, (const char *)bufJSON, eS, NULL, key);
       const uint8_t bodylen = OTRadioLink::SimpleSecureFrame32or0BodyTXV0p2::getInstance().generateSecureOFrameRawForTX(
             realTXFrameStart - offset, sizeof(buf) - (realTXFrameStart-buf) + offset,
-            txIDLen, valvePC, (const char *)bufJSON, e, NULL, key);
+            txIDLen, valvePC, (const char *)bufJSON, eW, sW, key);
       sendingJSONFailed = (0 == bodylen);
       wrote = bodylen - offset;
 #else

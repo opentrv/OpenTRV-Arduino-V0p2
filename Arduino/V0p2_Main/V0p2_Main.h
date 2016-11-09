@@ -45,6 +45,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #include <OTRFM23BLink.h>
 #include <OTSIM900Link.h>
 #include <OTRN2483Link.h>
+#if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) || defined(ENABLE_SECURE_RADIO_BEACON)
+#include <OTAESGCM.h>
+#endif
 
 // Indicate that the system is broken in an obvious way (distress flashing of the main UI LED).
 // DOES NOT RETURN.
