@@ -260,6 +260,8 @@ void setup()
     DEBUG_SERIAL_PRINT(tempPot);
     DEBUG_SERIAL_PRINTLN();
 
+    ValveDirect.read();
+
     // Initialised: turn main/heatcall UI LED off.
     OTV0P2BASE::LED_HEATCALL_OFF();
 
