@@ -213,8 +213,8 @@ void setup()
 
     // Have 32678Hz clock at least running before going any further.
     // Check that the slow clock is running reasonably OK, and tune the fast one to it.
-//    if(!::OTV0P2BASE::HWTEST::calibrateInternalOscWithExtOsc()) { panic(F("Xtal")); } // Async clock not running or can't tune.
-    if(!::OTV0P2BASE::HWTEST::check32768HzOsc()) { panic(F("xtal")); } // Async clock not running correctly.
+    if(!::OTV0P2BASE::HWTEST::calibrateInternalOscWithExtOsc()) { panic(F("Xtal")); } // Async clock not running or can't tune.
+//    if(!::OTV0P2BASE::HWTEST::check32768HzOsc()) { panic(F("xtal")); } // Async clock not running correctly.
 
     // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
     PrimaryRadio.preinit(NULL);
@@ -286,8 +286,9 @@ void loop()
 
 /**
  * @note    Power consumption figures (all in mA).
- * Date:        Device: Wake (Sleep) @ Voltage
- * 20161111     REV7:   1.5 (1.1) @ 2.5V        REV11:  0.45 (0.03) @ 2.5 V
+ * Date/commit:         Device: Wake (Sleep) @ Voltage
+ * 20161111/0e6ec96     REV7:   1.5 (1.1) @ 2.5 V       REV11:  0.45 (0.03) @ 2.5 V
+ * 20161111/f2eed5e     REV7:   0.46 (0.04) @ 2.5 V
  */
 
 /**
@@ -305,5 +306,5 @@ void loop()
  * - All decoupling:        0.98 mA
  * - All H-Bridge resistors:0.98 mA
  * - Encoder:               0.98 mA
- * -
+ * - Some resistors:        0.48 mA
  */
