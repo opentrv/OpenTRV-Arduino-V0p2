@@ -413,7 +413,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute, const OTV0P2BASE::S
   // (Note that command content and timing may be useful to fold into PRNG entropy pool.)
   // A static buffer generates better code but permanently consumes previous SRAM.
   const uint8_t n = OTV0P2BASE::CLI::promptAndReadCommandLine(maxSCT, s, [](){pollIO();});
-  const char *buf = (char *)s.buf;
+  char *buf = (char *)s.buf;
   const uint8_t bufsize = s.bufsize;
 
   if(n > 0)
