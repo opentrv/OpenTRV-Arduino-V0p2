@@ -103,7 +103,6 @@ static constexpr int8_t RFM23B_IRQ_PIN = -1;// PIN_RFM_NIRQ;
 OTRFM23BLink::OTRFM23BLink<OTV0P2BASE::V0p2_PIN_SPI_nSS, RFM23B_IRQ_PIN, RFM23B_RX_QUEUE_SIZE, RFM23B_allowRX> PrimaryRadio;//RFM23B;
 ///* constexpr */ OTRadioLink::OTRadioLink &PrimaryRadio = RFM23B
 // Pick an appropriate radio config for RFM23 (if it is the primary radio).
-#define RADIO_CONFIG_NAME "GFSK"
 // Nodes talking on fast GFSK channel 0.
 static const uint8_t nPrimaryRadioChannels = 1;
 static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChannels] = {
@@ -119,7 +118,6 @@ OTV0P2BASE::RoomTemperatureC16_SHT21 TemperatureC16; // SHT21 impl.
 // Simple implementations can assume that the sensor will be present if defined;
 // more sophisticated implementations may wish to make run-time checks.
 // If SHT21 support is enabled at compile-time then its humidity sensor may be used at run-time.
-#define HUMIDITY_SENSOR_SUPPORT // Humidity sensing available.
 // Singleton implementation/instance.
 typedef OTV0P2BASE::HumiditySensorSHT21 RelHumidity_t;
 RelHumidity_t RelHumidity;
@@ -127,7 +125,6 @@ RelHumidity_t RelHumidity;
 /**
  * Temp pot
  */
-#define TEMP_POT_AVAILABLE
 // Sensor for temperature potentiometer/dial UI control.
 // Correct for DORM1/TRV1 with embedded REV7.
 // REV7 does not drive pot from IO_POWER_UP.
@@ -146,7 +143,6 @@ AmbientLight AmbLight;
  */
 // DORM1/REV7 direct drive motor actuator.
 static constexpr bool binaryOnlyValveControl = false;
-#define HAS_DORM1_VALVE_DRIVE
 static constexpr uint8_t m1 = MOTOR_DRIVE_ML;
 static constexpr uint8_t m2 = MOTOR_DRIVE_MR;
 typedef OTRadValve::ValveMotorDirectV1<m1, m2, MOTOR_DRIVE_MI_AIN, MOTOR_DRIVE_MC_AIN, decltype(Supply_cV), &Supply_cV, binaryOnlyValveControl> ValveDirect_t;
@@ -193,25 +189,6 @@ void panic(const __FlashStringHelper *s)
  * @brief   Set pins and on-board peripherals to safe low power state.
  */
 
-/**
- * @brief   Run POST.
- */
-void optionalPOST()
-{
-    // Have 32678Hz clock at least running before going any further.
-    // Check that the slow clock is running reasonably OK, and tune the fast one to it.
-    if(!::OTV0P2BASE::HWTEST::calibrateInternalOscWithExtOsc()) { panic(F("Xtal")); } // Async clock not running or can't tune.
-//    if(!::OTV0P2BASE::HWTEST::check32768HzOsc()) { panic(F("xtal")); } // Async clock not running correctly.
-
-    // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
-    PrimaryRadio.preinit(NULL);
-    // Check that the radio is correctly connected; panic if not...
-    if(!PrimaryRadio.configure(nPrimaryRadioChannels, RFM23BConfigs) || !PrimaryRadio.begin()) { panic(F("r1")); }
-
-    // Buttons should not be activated DURING boot for user-facing boards; an activated button implies a fault.
-    // Check buttons not stuck in the activated position.
-    if(fastDigitalRead(BUTTON_MODE_L) == LOW) { panic(F("b")); }
-}
 
 //========================================
 // SETUP
@@ -231,7 +208,22 @@ void setup()
 
     OTV0P2BASE::LED_HEATCALL_ON();
 
-    optionalPOST();
+    // Give plenty of time for the XTal to settle.
+    delay(1000);
+
+    // Have 32678Hz clock at least running before going any further.
+    // Check that the slow clock is running reasonably OK, and tune the fast one to it.
+//    if(!::OTV0P2BASE::HWTEST::calibrateInternalOscWithExtOsc()) { panic(F("Xtal")); } // Async clock not running or can't tune.
+    if(!::OTV0P2BASE::HWTEST::check32768HzOsc()) { panic(F("xtal")); } // Async clock not running correctly.
+
+    // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
+    PrimaryRadio.preinit(NULL);
+    // Check that the radio is correctly connected; panic if not...
+    if(!PrimaryRadio.configure(nPrimaryRadioChannels, RFM23BConfigs) || !PrimaryRadio.begin()) { panic(F("r1")); }
+
+    // Buttons should not be activated DURING boot for user-facing boards; an activated button implies a fault.
+    // Check buttons not stuck in the activated position.
+    if(fastDigitalRead(BUTTON_MODE_L) == LOW) { panic(F("b")); }
 
     // Collect full set of environmental values before entering loop() in normal mode.
     // This should also help ensure that sensors are properly initialised.
@@ -267,6 +259,9 @@ void setup()
 
     // Do OpenTRV-specific (late) setup.
     PrimaryRadio.listen(false);
+
+    // Long delay after everything set up to allow a non-sleep power measurement.
+    delay(10000);
 }
 
 
@@ -274,12 +269,23 @@ void setup()
 // MAIN LOOP
 //========================================
 /**
- * @brief   Loop endlessly doing nothing.
+ * @brief   Sleep in low power mode if not sleeping.
  */
-void loop() { }
+void loop()
+{
+    // Ensure that serial I/O is off while sleeping.
+    OTV0P2BASE::powerDownSerial();
+    // Power down most stuff (except radio for hub RX).
+    OTV0P2BASE::minimisePowerWithoutSleep();
+    // Normal long minimal-power sleep until wake-up interrupt.
+    // Rely on interrupt to force quick loop round to I/O poll.
+    OTV0P2BASE::sleepUntilInt();
+}
 
 
 
 /**
- * @note    Power consumption figures.
+ * @note    Power consumption figures (all in mA).
+ * Date:        Device: Wake (Sleep) @ Voltage
+ * 20161111     REV7:   1.5 (1.1) @ 2.5V        REV11:  0.45 (0.03) @ 2.5 V
  */
