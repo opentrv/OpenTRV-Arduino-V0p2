@@ -289,3 +289,11 @@ void loop()
  * Date:        Device: Wake (Sleep) @ Voltage
  * 20161111     REV7:   1.5 (1.1) @ 2.5V        REV11:  0.45 (0.03) @ 2.5 V
  */
+
+/**
+ * @note    REV7 Power consumption investigation
+ * Baseline:                1.1 mA
+ * - Motor decoupling caps: 1.1 mA
+ * - Potentiometer:         1.0 mA
+ *
+ */
