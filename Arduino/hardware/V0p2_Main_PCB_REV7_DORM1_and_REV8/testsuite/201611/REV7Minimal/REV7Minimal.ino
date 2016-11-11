@@ -291,9 +291,19 @@ void loop()
  */
 
 /**
- * @note    REV7 Power consumption investigation
- * Baseline:                1.1 mA
- * - Motor decoupling caps: 1.1 mA
- * - Potentiometer:         1.0 mA
- *
+ * @note    REV7 Power consumption investigation.
+ *          Figures are not overly accurate due to hot airgun changing board temp. Shouldn't make enough of a difference for our purposes.
+ * Baseline:                1.08 mA
+ * - Motor decoupling caps: 1.08 mA
+ * - Potentiometer:         1.02 mA
+ * - BAV99 Suppressors:     1.02 mA
+ * - TANT RF decoupling:    1.01 mA
+ * - Motor diodes:          1.01 mA
+ * - Op Amp:                0.99 mA
+ * - Inductor:              178 mA (I think this is due to ML+MR being held high)
+ * - H-Bridge Transistors:  0.99 mA
+ * - All decoupling:        0.98 mA
+ * - All H-Bridge resistors:0.98 mA
+ * - Encoder:               0.98 mA
+ * -
  */
