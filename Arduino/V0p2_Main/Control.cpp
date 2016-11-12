@@ -26,6 +26,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 #include <OTAESGCM.h>
 #endif
 
+// Singleton non-volatile stats store instance.
+OTV0P2BASE::EEPROMByHourByteStats eeStats;
+
 // Singleton scheduler instance.
 Scheduler_t Scheduler;
 
@@ -725,11 +728,11 @@ static void updateSensorsFromStats()
   // Update with rolling stats to adapt to sensors and local environment.
   // ...and prevailing mode, so may take a while to adjust.
   AmbLight.setTypMinMax(
-          OTV0P2BASE::getByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED),
-          OTV0P2BASE::getMinByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR),
-          OTV0P2BASE::getMaxByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR),
-          OTV0P2BASE::getMinByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED),
-          OTV0P2BASE::getMaxByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED),
+          eeStats.getByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED),
+          eeStats.getMinByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR),
+          eeStats.getMaxByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR),
+          eeStats.getMinByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED),
+          eeStats.getMaxByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED),
           !tempControl.hasEcoBias());
 #endif // ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
   }

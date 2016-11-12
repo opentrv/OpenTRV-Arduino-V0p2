@@ -178,6 +178,12 @@ bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadi
 #endif
 
 
+/////// STATS
+
+// Singleton non-volatile stats store instance.
+extern OTV0P2BASE::EEPROMByHourByteStats eeStats;
+
+
 /////// CONTROL (EARLY, NOT DEPENDENT ON OTHER SENSORS)
 
 // Radiator valve mode (FROST, WARM, BAKE).
