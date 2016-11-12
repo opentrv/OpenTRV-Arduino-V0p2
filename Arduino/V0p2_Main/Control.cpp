@@ -728,7 +728,7 @@ static void updateSensorsFromStats()
   // Update with rolling stats to adapt to sensors and local environment.
   // ...and prevailing mode, so may take a while to adjust.
   AmbLight.setTypMinMax(
-          eeStats.getByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED),
+          eeStats.getByHourStatRTC(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED),
           eeStats.getMinByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR),
           eeStats.getMaxByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR),
           eeStats.getMinByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED),
