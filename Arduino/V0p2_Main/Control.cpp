@@ -185,11 +185,6 @@ void sampleStats(const bool fullSample)
   if(!fullSample && (sampleCount_ != 0)) { return; }
 #endif
   const bool firstSample = (0 == sampleCount_++);
-#if defined(EE_STATS_SET_WARMMODE_BY_HOUR_OF_WK)
-  // WARM mode count.
-  static int8_t warmCount; // Sub-sample WARM count; initially zero, and zeroed after each full sample.
-  if(inWarmMode()) { ++warmCount; } else { --warmCount; }
-#endif
 #if defined(ENABLE_AMBLIGHT_SENSOR)
   // Ambient light.
   const uint16_t ambLight = OTV0P2BASE::fnmin(AmbLight.get(), OTV0P2BASE::MAX_STATS_AMBLIGHT); // Constrain value at top end to avoid 'not set' value.
@@ -240,21 +235,21 @@ void sampleStats(const bool fullSample)
   DEBUG_SERIAL_PRINT(expandTempC16(temp));
   DEBUG_SERIAL_PRINTLN();
 #endif
-  simpleUpdateStatsPair(V0P2BASE_EE_STATS_SET_TEMP_BY_HOUR, hh, temp);
+  simpleUpdateStatsPair(OTV0P2BASE::NVByHourByteStatsBase::STATS_SET_TEMP_BY_HOUR, hh, temp);
 
 #if defined(ENABLE_AMBLIGHT_SENSOR)
   // Ambient light; last and smoothed data sets,
-  simpleUpdateStatsPair(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR, hh, smartDivToU8(ambLightTotal, sc));
+  simpleUpdateStatsPair(OTV0P2BASE::NVByHourByteStatsBase::STATS_SET_AMBLIGHT_BY_HOUR, hh, smartDivToU8(ambLightTotal, sc));
 #endif
 
 #if defined(ENABLE_OCCUPANCY_SUPPORT)
   // Occupancy confidence percent, if supported; last and smoothed data sets,
-  simpleUpdateStatsPair(V0P2BASE_EE_STATS_SET_OCCPC_BY_HOUR, hh, smartDivToU8(occpcTotal, sc));
+  simpleUpdateStatsPair(OTV0P2BASE::NVByHourByteStatsBase::STATS_SET_OCCPC_BY_HOUR, hh, smartDivToU8(occpcTotal, sc));
 #endif 
 
 #if defined(HUMIDITY_SENSOR_SUPPORT)
   // Relative humidity percent, if supported; last and smoothed data sets,
-  simpleUpdateStatsPair(V0P2BASE_EE_STATS_SET_RHPC_BY_HOUR, hh, smartDivToU8(rhpcTotal, sc));
+  simpleUpdateStatsPair(OTV0P2BASE::NVByHourByteStatsBase::STATS_SET_RHPC_BY_HOUR, hh, smartDivToU8(rhpcTotal, sc));
 #endif
 
   // TODO: other stats measures...
@@ -728,11 +723,11 @@ static void updateSensorsFromStats()
   // Update with rolling stats to adapt to sensors and local environment.
   // ...and prevailing mode, so may take a while to adjust.
   AmbLight.setTypMinMax(
-          eeStats.getByHourStatRTC(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED),
-          eeStats.getMinByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR),
-          eeStats.getMaxByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR),
-          eeStats.getMinByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED),
-          eeStats.getMaxByHourStat(V0P2BASE_EE_STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED),
+          eeStats.getByHourStatRTC(OTV0P2BASE::NVByHourByteStatsBase::STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED),
+          eeStats.getMinByHourStat(OTV0P2BASE::NVByHourByteStatsBase::STATS_SET_AMBLIGHT_BY_HOUR),
+          eeStats.getMaxByHourStat(OTV0P2BASE::NVByHourByteStatsBase::STATS_SET_AMBLIGHT_BY_HOUR),
+          eeStats.getMinByHourStat(OTV0P2BASE::NVByHourByteStatsBase::STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED),
+          eeStats.getMaxByHourStat(OTV0P2BASE::NVByHourByteStatsBase::STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED),
           !tempControl.hasEcoBias());
 #endif // ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
   }
@@ -1680,31 +1675,6 @@ void loopOpenTRV()
       {
 #if defined(ENABLE_OCCUPANCY_SUPPORT)
       // Update occupancy measures that partially use rolling stats.
-#if defined(ENABLE_OCCUPANCY_DETECTION_FROM_RH) && defined(HUMIDITY_SENSOR_SUPPORT)
-      // If RH% is rising fast enough then take this a mild occupancy indicator.
-      // Suppress this if temperature is falling since RH% change may be misleading.  (TODO-696)
-      // Suppress this in the dark to avoid nuisance behaviour
-      // (if there is a working ambient light sensor, else don't suppress),
-      // even if not a false positive (ie the room is occupied, by a sleeper),
-      // such as a valve opening and/or the boiler firing up at night.
-      // Use a guard formulated to allow the RH%-based detection to work
-      // if ambient light sensing is disabled,
-      // eg allow RH%-based sensing unless known to be dark.
-      if(runAll && // Only if all sensors have been refreshed.
-         !AmbLight.isRoomDark()) // Only if room not known to be dark, from a working sensor.
-        {
-        // Only continue if temperature appears not to be falling compared to previous hour (TODO-696).
-        // No previous temperature will show as a very large number so should fail safe.
-        // Note use of compress/expand to try to get round companding granularity issues.
-        if(OTV0P2BASE::expandTempC16(OTV0P2BASE::compressTempC16(TemperatureC16.get())) >= OTV0P2BASE::expandTempC16(OTV0P2BASE::getByHourStat(V0P2BASE_EE_STATS_SET_TEMP_BY_HOUR, OTV0P2BASE::getPrevHourLT())))
-          {
-          const uint8_t lastRH = OTV0P2BASE::getByHourStat(V0P2BASE_EE_STATS_SET_RHPC_BY_HOUR, OTV0P2BASE::getPrevHourLT());
-          if((OTV0P2BASE::STATS_UNSET_BYTE != lastRH) &&
-             (RelHumidity.get() >= lastRH + OTV0P2BASE::HumiditySensorSHT21::HUMIDITY_OCCUPANCY_PC_MIN_RISE_PER_H))
-            { Occupancy.markAsPossiblyOccupied(); }
-          }
-        }
-#endif // defined(ENABLE_OCCUPANCY_DETECTION_FROM_RH) && defined(HUMIDITY_SENSOR_SUPPORT)
 
       // Update occupancy status (fresh for target recomputation) at a fixed rate.
       Occupancy.read();
