@@ -29,6 +29,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 // Singleton non-volatile stats store instance.
 OTV0P2BASE::EEPROMByHourByteStats eeStats;
 
+// Stats updater singleton.
+StatsU_t statsU;
+
 // Singleton scheduler instance.
 Scheduler_t Scheduler;
 
@@ -107,153 +110,6 @@ OTRadValve::ModelledRadValve NominalRadValve(
   #endif
   );
 #endif // ENABLE_MODELLED_RAD_VALVE
-
-
-// If defined, limit to stats sampling to one pre-sample and the final sample, to simplify/speed code.
-#define STATS_MAX_2_SAMPLES
-
-// Do an efficient division of an int total by small positive count to give a uint8_t mean.
-//  * total running total, no higher than 255*sampleCount
-//  * sampleCount small (<128) strictly positive number
-static uint8_t smartDivToU8(const uint16_t total, const uint8_t sampleCount)
-  {
-#if 0 && defined(DEBUG) // Extra arg validation during dev.
-  if(0 == sampleCount) { panic(); }
-#endif
-  if(1 == sampleCount) { return((uint8_t) total); } // No division required.
-#if !defined(STATS_MAX_2_SAMPLES)
-  // Generic divide (slow).
-  if(2 != sampleCount) { return((uint8_t) ((total + (sampleCount>>1)) / sampleCount)); }
-#elif 0 && defined(DEBUG)
-  if(2 != sampleCount) { panic(); }
-#endif
-  // 2 samples.
-  return((uint8_t) ((total+1) >> 1)); // Fast shift for 2 samples instead of slow divide.
-  }
-
-// Do simple update of last and smoothed stats numeric values.
-// This assumes that the 'last' set is followed by the smoothed set.
-// This autodetects unset values in the smoothed set and replaces them completely.
-//   * lastSetPtr  is the offset in EEPROM of the 'last' value, with 'smoothed' assumed to be 24 bytes later.
-//   * value  new stats value in range [0,254]
-static void simpleUpdateStatsPair_(uint8_t * const lastEEPtr, const uint8_t value)
-  {
-#if 0 && defined(DEBUG) // Extra arg validation during dev.
-  if((((int)lastEEPtr) < EE_START_STATS) || (((int)lastEEPtr)+24 > EE_END_STATS)) { panic(); }
-  if(0xff == value) { panic(); }
-#endif
-  // Update the last-sample slot using the mean samples value.
-  OTV0P2BASE::eeprom_smart_update_byte(lastEEPtr, value);
-  // If existing smoothed value unset or invalid, use new one as is, else fold in.
-  uint8_t * const pS = lastEEPtr + 24;
-  const uint8_t smoothed = eeprom_read_byte(pS);
-  if(0xff == smoothed) { OTV0P2BASE::eeprom_smart_update_byte(pS, value); }
-  else { OTV0P2BASE::eeprom_smart_update_byte(pS, OTV0P2BASE::NVByHourByteStatsBase::smoothStatsValue(smoothed, value)); }
-  }
-// Get some constant calculation done at compile time,
-//   * lastSetN  is the set number for the 'last' values, with 'smoothed' assumed to be the next set.
-//   * hh  hour for these stats [0,23].
-//   * value  new stats value in range [0,254].
-static inline void simpleUpdateStatsPair(const uint8_t lastSetN, const uint8_t hh, const uint8_t value)
-  {
-#if 0 && defined(DEBUG)
-    DEBUG_SERIAL_PRINT_FLASHSTRING("stats update for set ");
-    DEBUG_SERIAL_PRINT(lastSetN);
-    DEBUG_SERIAL_PRINT_FLASHSTRING(" @");
-    DEBUG_SERIAL_PRINT(hh);
-    DEBUG_SERIAL_PRINT_FLASHSTRING("h = ");
-    DEBUG_SERIAL_PRINT(value);
-    DEBUG_SERIAL_PRINTLN();
-#endif
-  simpleUpdateStatsPair_((uint8_t *)(V0P2BASE_EE_STATS_START_ADDR(lastSetN) + (hh)), (value));
-  }
-
-// Sample statistics once per hour as background to simple monitoring and adaptive behaviour.
-// Call this once per hour with fullSample==true, as near the end of the hour as possible;
-// this will update the non-volatile stats record for the current hour.
-// Optionally call this at a small (2--10) even number of evenly-spaced number of other times thoughout the hour
-// with fullSample=false to sub-sample (and these may receive lower weighting or be ignored).
-// (EEPROM wear should not be an issue at this update rate in normal use.)
-void sampleStats(const bool fullSample)
-  {
-  // (Sub-)sample processing.
-  // In general, keep running total of sub-samples in a way that should not overflow
-  // and use the mean to update the non-volatile EEPROM values on the fullSample call.
-  static uint8_t sampleCount_; // General sub-sample count; initially zero after boot, and zeroed after each full sample.
-#if defined(STATS_MAX_2_SAMPLES)
-  // Ensure maximum of two samples used: optional non-full sample then full/final one.
-  if(!fullSample && (sampleCount_ != 0)) { return; }
-#endif
-  const bool firstSample = (0 == sampleCount_++);
-#if defined(ENABLE_AMBLIGHT_SENSOR)
-  // Ambient light.
-  const uint16_t ambLight = OTV0P2BASE::fnmin(AmbLight.get(), OTV0P2BASE::MAX_STATS_AMBLIGHT); // Constrain value at top end to avoid 'not set' value.
-  static uint16_t ambLightTotal;
-  ambLightTotal = firstSample ? ambLight : (ambLightTotal + ambLight);
-#endif
-  const int tempC16 = TemperatureC16.get();
-  static int tempC16Total;
-  tempC16Total = firstSample ? tempC16 : (tempC16Total + tempC16);
-#if defined(ENABLE_OCCUPANCY_SUPPORT)
-  const uint16_t occpc = Occupancy.get();
-  static uint16_t occpcTotal;
-  occpcTotal = firstSample ? occpc : (occpcTotal + occpc);
-#endif
-#if defined(HUMIDITY_SENSOR_SUPPORT)
-  // Assume for now RH% always available (compile-time determined) or not; not intermittent.
-  // TODO: allow this to work with at least start-up-time availability detection.
-  const uint16_t rhpc = OTV0P2BASE::fnmin(RelHumidity.get(), (uint8_t)100); // Fail safe.
-  static uint16_t rhpcTotal;
-  rhpcTotal = firstSample ? rhpc : (rhpcTotal + rhpc);
-#endif
-  if(!fullSample) { return; } // Only accumulate values cached until a full sample.
-  // Catpure sample count to use below.
-  const uint8_t sc = sampleCount_; 
-  // Reset generic sub-sample count to initial state after fill sample.
-  sampleCount_ = 0;
-
-  // Get the current local-time hour...
-  const uint_least8_t hh = OTV0P2BASE::getHoursLT(); 
-
-  // Scale and constrain last-read temperature to valid range for stats.
-#if defined(STATS_MAX_2_SAMPLES)
-  const int tempCTotal = (1==sc)?tempC16Total:((tempC16Total+1)>>1);
-#else
-  const int tempCTotal = (1==sc)?tempC16Total:
-                         ((2==sc)?((tempC16Total+1)>>1):
-                                  ((tempC16Total + (sc>>1)) / sc));
-#endif
-  const uint8_t temp = OTV0P2BASE::compressTempC16(tempCTotal);
-#if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("SU tempC16Total=");
-  DEBUG_SERIAL_PRINT(tempC16Total);
-  DEBUG_SERIAL_PRINT_FLASHSTRING(", tempCTotal=");
-  DEBUG_SERIAL_PRINT(tempCTotal);
-  DEBUG_SERIAL_PRINT_FLASHSTRING(", temp=");
-  DEBUG_SERIAL_PRINT(temp);
-  DEBUG_SERIAL_PRINT_FLASHSTRING(", expanded=");
-  DEBUG_SERIAL_PRINT(expandTempC16(temp));
-  DEBUG_SERIAL_PRINTLN();
-#endif
-  simpleUpdateStatsPair(OTV0P2BASE::NVByHourByteStatsBase::STATS_SET_TEMP_BY_HOUR, hh, temp);
-
-#if defined(ENABLE_AMBLIGHT_SENSOR)
-  // Ambient light; last and smoothed data sets,
-  simpleUpdateStatsPair(OTV0P2BASE::NVByHourByteStatsBase::STATS_SET_AMBLIGHT_BY_HOUR, hh, smartDivToU8(ambLightTotal, sc));
-#endif
-
-#if defined(ENABLE_OCCUPANCY_SUPPORT)
-  // Occupancy confidence percent, if supported; last and smoothed data sets,
-  simpleUpdateStatsPair(OTV0P2BASE::NVByHourByteStatsBase::STATS_SET_OCCPC_BY_HOUR, hh, smartDivToU8(occpcTotal, sc));
-#endif 
-
-#if defined(HUMIDITY_SENSOR_SUPPORT)
-  // Relative humidity percent, if supported; last and smoothed data sets,
-  simpleUpdateStatsPair(OTV0P2BASE::NVByHourByteStatsBase::STATS_SET_RHPC_BY_HOUR, hh, smartDivToU8(rhpcTotal, sc));
-#endif
-
-  // TODO: other stats measures...
-  }
 
 
 #ifdef ENABLE_FS20_ENCODING_SUPPORT
@@ -427,7 +283,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
         { ss1.setID(V0p2_SENSOR_TAG_F("")); }
     else
       {
-#if defined(ENABLE_FHT8VSIMPLE)
+#if defined(ENABLE_FHT8VSIMPLE) && 0 // FIXME: find alternative
       // Insert FHT8V-style ID in stats messages if appropriate.
       // Will not be appropriate if primary channel provides ID itself.
       static char idBuf[5]; // Static so as to have lifetime no shorter than ss1.
@@ -1735,11 +1591,11 @@ void loopOpenTRV()
         switch(mm)
           {
           case 26: case 27: case 28: case 29:
-            { if(!batteryLow) { sampleStats(false); } break; } // Skip sub-samples if short of energy.
+            { if(!batteryLow) { statsU.sampleStats(false, OTV0P2BASE::getHoursLT()); } break; } // Skip sub-samples if short of energy.
           case 56: case 57: case 58: case 59:
             {
             // Always take the full sample at the end of each hour.
-            sampleStats(true);
+            statsU.sampleStats(true, OTV0P2BASE::getHoursLT());
             // Feed back rolling stats to sensors to set noise floors, adapt to sensors and local env...
             updateSensorsFromStats();
             break;
