@@ -393,7 +393,11 @@ extern OTV0P2BASE::EEPROMByHourByteStats eeStats;
 typedef 
     OTV0P2BASE::ByHourSimpleStatsUpdaterSampleStats <
       decltype(eeStats), &eeStats,
-      decltype(Occupancy), &Occupancy,
+#if defined(ENABLE_OCCUPANCY_SUPPORT)
+      decltype(Occupancy), &Occupancy
+#else
+      OTV0P2BASE::SimpleTSUint8Sensor, static_cast<OTV0P2BASE::SimpleTSUint8Sensor*>(NULL), // Save code space when no occupancy tracking.
+#endif
       decltype(AmbLight), &AmbLight,
       decltype(TemperatureC16), &TemperatureC16,
 #if defined(HUMIDITY_SENSOR_SUPPORT)
