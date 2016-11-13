@@ -394,7 +394,7 @@ typedef
     OTV0P2BASE::ByHourSimpleStatsUpdaterSampleStats <
       decltype(eeStats), &eeStats,
 #if defined(ENABLE_OCCUPANCY_SUPPORT)
-      decltype(Occupancy), &Occupancy
+      decltype(Occupancy), &Occupancy,
 #else
       OTV0P2BASE::SimpleTSUint8Sensor, static_cast<OTV0P2BASE::SimpleTSUint8Sensor*>(NULL), // Save code space when no occupancy tracking.
 #endif
