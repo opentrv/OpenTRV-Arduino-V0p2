@@ -383,13 +383,32 @@ extern OTRadValve::ModelledRadValve NominalRadValve;
 #define NominalRadValve FHT8V
 #endif
 
-// Sample statistics once per hour as background to simple monitoring and adaptive behaviour.
-// Call this once per hour with fullSample==true, as near the end of the hour as possible;
-// this will update the non-volatile stats record for the current hour.
-// Optionally call this at a small (2--10) even number of evenly-spaced number of other times throughout the hour
-// with fullSample=false to sub-sample (and these may receive lower weighting or be ignored).
-// (EEPROM wear should not be an issue at this update rate in normal use.)
-void sampleStats(bool fullSample);
+
+/////// STATS
+
+// Singleton non-volatile stats store instance.
+extern OTV0P2BASE::EEPROMByHourByteStats eeStats;
+
+// Singleton stats-updater object.
+typedef 
+    OTV0P2BASE::ByHourSimpleStatsUpdaterSampleStats <
+      decltype(eeStats), &eeStats,
+#if defined(ENABLE_OCCUPANCY_SUPPORT)
+      decltype(Occupancy), &Occupancy,
+#else
+      OTV0P2BASE::SimpleTSUint8Sensor, static_cast<OTV0P2BASE::SimpleTSUint8Sensor*>(NULL), // Save code space when no occupancy tracking.
+#endif
+      decltype(AmbLight), &AmbLight,
+      decltype(TemperatureC16), &TemperatureC16,
+#if defined(HUMIDITY_SENSOR_SUPPORT)
+      decltype(RelHumidity), &RelHumidity,
+#else
+      OTV0P2BASE::SimpleTSUint8Sensor, static_cast<OTV0P2BASE::SimpleTSUint8Sensor*>(NULL), // Save code space when no RH sensor.
+#endif
+      2
+      > StatsU_t;
+extern StatsU_t statsU;
+
 
 #ifdef ENABLE_FS20_ENCODING_SUPPORT
 // Clear and populate core stats structure with information from this node.
