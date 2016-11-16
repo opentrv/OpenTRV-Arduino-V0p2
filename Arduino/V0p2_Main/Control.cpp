@@ -1404,7 +1404,7 @@ void loopOpenTRV()
       // Stats TX in the minute after all sensors should have been polled (so that readings are fresh).
       // Usually send one frame every 4 minutes, else abort,
       // but occasionally send otherwise to make (secure) traffic analysis harder,
-      // though not enough to make a vast increase in bandwidth (<10%).
+      // though not enough to make a vast increase in bandwidth (~10%).
       // Send slightly more often when changed stats are pending to send upstream.
       // Since change in any transmitted stat can trigger this,
       // including (say) the target temperature during BAKE,
