@@ -1404,7 +1404,7 @@ void loopOpenTRV()
       // Stats TX in the minute after all sensors should have been polled (so that readings are fresh).
       // Usually send one frame every 4 minutes, else abort,
       // but occasionally send otherwise to make (secure) traffic analysis harder,
-      // though not enough to make a vast increase in bandwidth (~10%).
+      // though not enough to make a vast increase in bandwidth (<10%).
       // Send slightly more often when changed stats are pending to send upstream.
       // Since change in any transmitted stat can trigger this,
       // including (say) the target temperature during BAKE,
@@ -1413,7 +1413,7 @@ void loopOpenTRV()
       // but interesting data and manual requests should get TXed faster.
       // Note that all O frames contain the current valve percentage,
       // which implies that any extra stats TX also speeds response to call-for-heat changes.
-      if(!minute1From4AfterSensors && (OTV0P2BASE::randRNG8() > (ss1.changedValue() ? 13 : 3))) { break; }
+      if(!minute1From4AfterSensors && (OTV0P2BASE::randRNG8() > (ss1.changedValue() ? 11 : 3))) { break; }
 #endif
 
       // Abort if not allowed to send stats at all.
