@@ -85,6 +85,7 @@ constexpr OTRadValve::ModelledRadValveComputeTargetTempBasic<
   decltype(valveUI),          &valveUI,
   decltype(Scheduler),        &Scheduler,
   decltype(ebhs),             &ebhs,
+  decltype(RelHumidity),      &RelHumidity,
   setbackLockout
   >
   cttBasic;

@@ -296,11 +296,7 @@ typedef OTRadValve::DEFAULT_DHW_ValveControlParameters PARAMS;
 
 // Choose which subtype to use depending on enabled settings and board type.
 #if defined(TEMP_POT_AVAILABLE) // Eg REV2/REV7.
-  #if defined(HUMIDITY_SENSOR_SUPPORT)
-  typedef OTRadValve::TempControlTempPot<decltype(TempPot), &TempPot, PARAMS, decltype(RelHumidity), &RelHumidity> TempControl_t;
-  #else
-  typedef OTRadValve::TempControlTempPot<decltype(TempPot), &TempPot, PARAMS> TempControl_t;
-  #endif
+typedef OTRadValve::TempControlTempPot<decltype(TempPot), &TempPot, PARAMS, decltype(RelHumidity), &RelHumidity> TempControl_t;
 #elif defined(ENABLE_SETTABLE_TARGET_TEMPERATURES) // Eg REV1.
 typedef OTRadValve::TempControlSimpleEEPROMBacked<PARAMS> TempControl_t;
 #else
@@ -400,11 +396,7 @@ typedef
 #endif
       decltype(AmbLight), &AmbLight,
       decltype(TemperatureC16), &TemperatureC16,
-#if defined(HUMIDITY_SENSOR_SUPPORT)
       decltype(RelHumidity), &RelHumidity,
-#else
-      OTV0P2BASE::SimpleTSUint8Sensor, static_cast<OTV0P2BASE::SimpleTSUint8Sensor*>(NULL), // Save code space when no RH sensor.
-#endif
       2
       > StatsU_t;
 extern StatsU_t statsU;
