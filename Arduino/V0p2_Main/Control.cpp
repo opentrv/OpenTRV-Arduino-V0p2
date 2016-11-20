@@ -328,7 +328,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 #if defined(ENABLE_OCCUPANCY_SUPPORT)
     ss1.put(Occupancy.twoBitTag(), Occupancy.twoBitOccupancyValue()); // Reduce spurious TX cf percentage.
 #if !defined(ENABLE_TRIMMED_BANDWIDTH)
-    ss1.put(Occupancy.vacHTag(), Occupancy.getVacancyH(), true); // Low priority as notionally redundant.
+    ss1.put(Occupancy.vacHSubSensor);
 #endif // !defined(ENABLE_TRIMMED_BANDWIDTH)
 #endif // defined(ENABLE_OCCUPANCY_SUPPORT)
     // OPTIONAL items
@@ -347,13 +347,13 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 #if defined(ENABLE_LOCAL_TRV)
     // Show TRV-related stats since enabled.
     ss1.put(NominalRadValve);
-    ss1.put(NominalRadValve.tagTTC(), NominalRadValve.getTargetTempC());
-    ss1.put(NominalRadValve.tagTSC(), NominalRadValve.getSetbackC(), true); // Low priority; depth matters more than speed.
+    ss1.put(NominalRadValve.targetTemperatureSubSensor);
+    ss1.put(NominalRadValve.setbackSubSensor);
 #if !defined(ENABLE_TRIMMED_BANDWIDTH)
-    ss1.put(NominalRadValve.tagCMPC(), NominalRadValve.getCumulativeMovementPC(), true); // Low priority as notionally redundant.
+    ss1.put(NominalRadValve.cumulativeMovementSubSensor);
 #endif // !defined(ENABLE_TRIMMED_BANDWIDTH)
 #endif // defined(ENABLE_LOCAL_TRV)
-#ifdef ENABLE_SETBACK_LOCKOUT_COUNTDOWN // fixme should this be ENABLE_CONTROL_MODE?
+#ifdef ENABLE_SETBACK_LOCKOUT_COUNTDOWN
     // Show state of setback lockout.
     ss1.put(V0p2_SENSOR_TAG_F("gE"), getSetbackLockout(), true);
 #endif // ENABLE_SETBACK_LOCKOUT_COUNTDOWN
