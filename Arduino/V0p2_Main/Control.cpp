@@ -85,6 +85,7 @@ constexpr OTRadValve::ModelledRadValveComputeTargetTempBasic<
   decltype(valveUI),          &valveUI,
   decltype(Scheduler),        &Scheduler,
   decltype(ebhs),             &ebhs,
+  decltype(RelHumidity),      &RelHumidity,
   setbackLockout
   >
   cttBasic;
@@ -327,7 +328,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 #if defined(ENABLE_OCCUPANCY_SUPPORT)
     ss1.put(Occupancy.twoBitTag(), Occupancy.twoBitOccupancyValue()); // Reduce spurious TX cf percentage.
 #if !defined(ENABLE_TRIMMED_BANDWIDTH)
-    ss1.put(Occupancy.vacHTag(), Occupancy.getVacancyH(), true); // Low priority as notionally redundant.
+    ss1.put(Occupancy.vacHSubSensor);
 #endif // !defined(ENABLE_TRIMMED_BANDWIDTH)
 #endif // defined(ENABLE_OCCUPANCY_SUPPORT)
     // OPTIONAL items
@@ -346,13 +347,13 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 #if defined(ENABLE_LOCAL_TRV)
     // Show TRV-related stats since enabled.
     ss1.put(NominalRadValve);
-    ss1.put(NominalRadValve.tagTTC(), NominalRadValve.getTargetTempC());
-    ss1.put(NominalRadValve.tagTSC(), NominalRadValve.getSetbackC(), true); // Low priority; depth matters more than speed.
+    ss1.put(NominalRadValve.targetTemperatureSubSensor);
+    ss1.put(NominalRadValve.setbackSubSensor);
 #if !defined(ENABLE_TRIMMED_BANDWIDTH)
-    ss1.put(NominalRadValve.tagCMPC(), NominalRadValve.getCumulativeMovementPC(), true); // Low priority as notionally redundant.
+    ss1.put(NominalRadValve.cumulativeMovementSubSensor);
 #endif // !defined(ENABLE_TRIMMED_BANDWIDTH)
 #endif // defined(ENABLE_LOCAL_TRV)
-#ifdef ENABLE_SETBACK_LOCKOUT_COUNTDOWN // fixme should this be ENABLE_CONTROL_MODE?
+#ifdef ENABLE_SETBACK_LOCKOUT_COUNTDOWN
     // Show state of setback lockout.
     ss1.put(V0p2_SENSOR_TAG_F("gE"), getSetbackLockout(), true);
 #endif // ENABLE_SETBACK_LOCKOUT_COUNTDOWN
@@ -1404,10 +1405,16 @@ void loopOpenTRV()
       // Stats TX in the minute after all sensors should have been polled (so that readings are fresh).
       // Usually send one frame every 4 minutes, else abort,
       // but occasionally send otherwise to make (secure) traffic analysis harder,
-      // though not enough to make a significant difference to bandwidth.
-      // Send very slightly more often when changed stats pending to send upstream.
-      // TODO: send immediately with 100% valve payload when user puts system into BAKE mode for fast response.
-      if(!minute1From4AfterSensors && (OTV0P2BASE::randRNG8() > (ss1.changedValue() ? 4 : 3))) { break; }
+      // though not enough to make a vast increase in bandwidth (<10%).
+      // Send slightly more often when changed stats are pending to send upstream.
+      // Since change in any transmitted stat can trigger this,
+      // including (say) the target temperature during BAKE,
+      // then relatively little information should be leaked to traffic analysis
+      // if the frame content itself is encrypted,
+      // but interesting data and manual requests should get TXed faster.
+      // Note that all O frames contain the current valve percentage,
+      // which implies that any extra stats TX also speeds response to call-for-heat changes.
+      if(!minute1From4AfterSensors && (OTV0P2BASE::randRNG8() > (ss1.changedValue() ? 11 : 3))) { break; }
 #endif
 
       // Abort if not allowed to send stats at all.
