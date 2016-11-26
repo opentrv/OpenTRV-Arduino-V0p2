@@ -546,7 +546,7 @@ static void wireComponentsTogether()
 #endif // ENABLE_FHT8VSIMPLE
 
 #if defined(ENABLE_OCCUPANCY_SUPPORT) && defined(ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT)
-  AmbLight.setPossOccCallback([]{Occupancy.markAsPossiblyOccupied();});
+  AmbLight.setOccCallbackOpt([](bool prob){if(prob){Occupancy.markAsPossiblyOccupied();}else{Occupancy.markAsJustPossiblyOccupied();}});
 #endif // ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT
 
 #if defined(ENABLE_OCCUPANCY_SUPPORT) && defined(ENABLE_OCCUPANCY_DETECTION_FROM_VOICE)
