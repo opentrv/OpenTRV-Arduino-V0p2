@@ -68,19 +68,19 @@ OTRadioLink::OTNullRadioLink NullRadio;
 // Brings in necessary radio libs.
 #ifdef ENABLE_RADIO_RFM23B
 #if defined(ENABLE_TRIMMED_MEMORY) && !defined(ENABLE_DEFAULT_ALWAYS_RX) && !defined(ENABLE_CONTINUOUS_RX)
-static const uint8_t RFM23B_RX_QUEUE_SIZE = max(2, OTRFM23BLink::DEFAULT_RFM23B_RX_QUEUE_CAPACITY) - 1;
+static constexpr uint8_t RFM23B_RX_QUEUE_SIZE = OTV0P2BASE::fnmax(uint8_t(2), uint8_t(OTRFM23BLink::DEFAULT_RFM23B_RX_QUEUE_CAPACITY)) - 1;
 #else
-static const uint8_t RFM23B_RX_QUEUE_SIZE = OTRFM23BLink::DEFAULT_RFM23B_RX_QUEUE_CAPACITY;
+static constexpr uint8_t RFM23B_RX_QUEUE_SIZE = OTRFM23BLink::DEFAULT_RFM23B_RX_QUEUE_CAPACITY;
 #endif
 #if defined(PIN_RFM_NIRQ)
-static const int8_t RFM23B_IRQ_PIN = PIN_RFM_NIRQ;
+static constexpr int8_t RFM23B_IRQ_PIN = PIN_RFM_NIRQ;
 #else
-static const int8_t RFM23B_IRQ_PIN = -1;
+static constexpr int8_t RFM23B_IRQ_PIN = -1;
 #endif
 #if defined(ENABLE_RADIO_RX)
-static const bool RFM23B_allowRX = true;
+static constexpr bool RFM23B_allowRX = true;
 #else
-static const bool RFM23B_allowRX = false;
+static constexpr bool RFM23B_allowRX = false;
 #endif
 OTRFM23BLink::OTRFM23BLink<OTV0P2BASE::V0p2_PIN_SPI_nSS, RFM23B_IRQ_PIN, RFM23B_RX_QUEUE_SIZE, RFM23B_allowRX> RFM23B;
 #endif // ENABLE_RADIO_RFM23B
@@ -89,7 +89,7 @@ OTRFM23BLink::OTRFM23BLink<OTV0P2BASE::V0p2_PIN_SPI_nSS, RFM23B_IRQ_PIN, RFM23B_
 OTSIM900Link::OTSIM900Link<8, 5, RADIO_POWER_PIN, OTV0P2BASE::getSecondsLT> SIM900; // (REGULATOR_POWERUP, RADIO_POWER_PIN);
 #endif
 #ifdef ENABLE_RADIO_RN2483
-OTRN2483Link::OTRN2483Link RN2483( RADIO_POWER_PIN, SOFTSERIAL_RX_PIN, SOFTSERIAL_TX_PIN);
+OTRN2483Link::OTRN2483Link RN2483(RADIO_POWER_PIN, SOFTSERIAL_RX_PIN, SOFTSERIAL_TX_PIN);
 #endif // ENABLE_RADIO_RN2483
 
 // Assigns radio to PrimaryRadio alias
