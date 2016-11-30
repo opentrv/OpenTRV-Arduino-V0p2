@@ -301,7 +301,7 @@ typedef OTRadValve::TempControlTempPot<decltype(TempPot), &TempPot, PARAMS, decl
 typedef OTRadValve::TempControlSimpleEEPROMBacked<PARAMS> TempControl_t;
 #else
 // Dummy temperature control.
-typedef OTRadValve::TempControlBase TempControl_t;
+typedef OTRadValve::NULLTempControl TempControl_t;
 #endif
 #define TempControl_DEFINED
 extern TempControl_t tempControl;

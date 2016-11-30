@@ -128,7 +128,7 @@ static void posPOST(const uint8_t position, const __FlashStringHelper *s = NULL)
 #if defined(ENABLE_FAST_FRAMED_CARRIER_SUPPORT)
 #define RADIO_CONFIG_NAME "GFSK"
 // Nodes talking on fast GFSK channel 0.
-static const uint8_t nPrimaryRadioChannels = 1;
+static constexpr uint8_t nPrimaryRadioChannels = 1;
 static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChannels] =
   {
   // GFSK channel 0 full config, RX/TX, not in itself secure.
@@ -137,7 +137,7 @@ static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChanne
 #else // !defined(ENABLE_FAST_FRAMED_CARRIER_SUPPORT)
 #define RADIO_CONFIG_NAME "OOK"
 // Nodes talking (including to to FHT8V) on slow OOK.
-static const uint8_t nPrimaryRadioChannels = 1;
+static constexpr uint8_t nPrimaryRadioChannels = 1;
 static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChannels] =
   {
   // FS20/FHT8V compatible channel 0 partial/minimal single-channel register config; RX/TX, not secure, unframed.
