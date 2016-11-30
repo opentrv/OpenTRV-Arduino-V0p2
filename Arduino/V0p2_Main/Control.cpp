@@ -577,12 +577,10 @@ static void wireComponentsTogether()
 static void updateSensorsFromStats()
   {
 #if defined(ENABLE_AMBLIGHT_SENSOR) && defined(ENABLE_OCCUPANCY_DETECTION_FROM_AMBLIGHT)
-  // Update with rolling stats to adapt to sensors and local environment.
-  // ...and prevailing mode, so may take a while to adjust.
+  // Update with rolling stats to adapt to sensors and local environment...
+  // ...and prevailing bias, so may take a while to adjust.
   AmbLight.setTypMinMax(
           eeStats.getByHourStatRTC(OTV0P2BASE::NVByHourByteStatsBase::STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED),
-          eeStats.getMinByHourStat(OTV0P2BASE::NVByHourByteStatsBase::STATS_SET_AMBLIGHT_BY_HOUR),
-          eeStats.getMaxByHourStat(OTV0P2BASE::NVByHourByteStatsBase::STATS_SET_AMBLIGHT_BY_HOUR),
           eeStats.getMinByHourStat(OTV0P2BASE::NVByHourByteStatsBase::STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED),
           eeStats.getMaxByHourStat(OTV0P2BASE::NVByHourByteStatsBase::STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED),
           !tempControl.hasEcoBias());
