@@ -203,3 +203,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 
 #endif
 
+
+
+// Define to force data out once-per-minute for debugging and algorithm development.
+//#define ENABLE_FREQUENT_STATS_TX
