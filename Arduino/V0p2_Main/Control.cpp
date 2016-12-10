@@ -1311,7 +1311,7 @@ void loopOpenTRV()
   if(0 == (TIME_LSD & 1))
 #endif
     {
-#ifdef ENABLE_FULL_OT_UI
+#if defined(ENABLE_FULL_OT_UI) && defined(valveUI_DEFINED)
     // Run the OpenTRV button/LED UI if required.
     if(0 != valveUI.read()) // if(tickUI(TIME_LSD))
       {
