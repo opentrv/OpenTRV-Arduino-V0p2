@@ -1590,9 +1590,11 @@ void loopOpenTRV()
       // Update non-volatile stats.
       // Make the final update as near the end of the hour as possible to reduce glitches (TODO-1086),
       // and with other optional non-full samples evenly spaced throughout the hour.
-      const uint_least8_t mm = OTV0P2BASE::getMinutesLT();
-      if(59 == mm) { statsU.sampleStats(true, OTV0P2BASE::getHoursLT()); }
-      else if((statsU.maxSamplesPerHour > 1) && (29 == mm)) { statsU.sampleStats(false, OTV0P2BASE::getHoursLT()); }
+      // Race-free.
+      const uint_least16_t msm = OTV0P2BASE::getMinutesSinceMidnightLT();
+      const uint8_t mm = msm % 60;
+      if(59 == mm) { statsU.sampleStats(true, uint8_t(msm / 60)); }
+      else if((statsU.maxSamplesPerHour > 1) && (29 == mm)) { statsU.sampleStats(false, uint8_t(msm / 60)); }
       break;
       }
     }
