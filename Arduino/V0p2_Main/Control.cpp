@@ -1311,7 +1311,7 @@ void loopOpenTRV()
   if(0 == (TIME_LSD & 1))
 #endif
     {
-#ifdef ENABLE_FULL_OT_UI
+#if defined(ENABLE_FULL_OT_UI) && defined(valveUI_DEFINED)
     // Run the OpenTRV button/LED UI if required.
     if(0 != valveUI.read()) // if(tickUI(TIME_LSD))
       {
@@ -1587,26 +1587,14 @@ void loopOpenTRV()
     // Stats samples; should never be missed.
     case 58:
       {
-      // Take full stats sample as near the end of the hour as reasonably possible (without danger of overrun),
-      // and with other optional non-full samples evenly spaced throughout the hour (if not low on battery).
-      // A small even number of samples (or 1 sample) is probably most efficient; the system supports 2 max as of 20150329.
-      if(minute0From4ForSensors) // Use lowest-noise samples just taken in the special 0 minute out of each 4.
-        {
-        const uint_least8_t mm = OTV0P2BASE::getMinutesLT();
-        switch(mm)
-          {
-          case 26: case 27: case 28: case 29:
-            { if(!batteryLow) { statsU.sampleStats(false, OTV0P2BASE::getHoursLT()); } break; } // Skip sub-samples if short of energy.
-          case 56: case 57: case 58: case 59:
-            {
-            // Always take the full sample at the end of each hour.
-            statsU.sampleStats(true, OTV0P2BASE::getHoursLT());
-            // Feed back rolling stats to sensors to set noise floors, adapt to sensors and local env...
-            updateSensorsFromStats();
-            break;
-            }
-          }
-        }
+      // Update non-volatile stats.
+      // Make the final update as near the end of the hour as possible to reduce glitches (TODO-1086),
+      // and with other optional non-full samples evenly spaced throughout the hour.
+      // Race-free.
+      const uint_least16_t msm = OTV0P2BASE::getMinutesSinceMidnightLT();
+      const uint8_t mm = msm % 60;
+      if(59 == mm) { statsU.sampleStats(true, uint8_t(msm / 60)); }
+      else if((statsU.maxSamplesPerHour > 1) && (29 == mm)) { statsU.sampleStats(false, uint8_t(msm / 60)); }
       break;
       }
     }
