@@ -13,10 +13,12 @@ KIND, either express or implied. See the Licence for the
 specific language governing permissions and limitations
 under the Licence.
 
-Author(s) / Copyright (s): Deniz Erbilgin 2016
+Author(s) / Copyright (s): Deniz Erbilgin 2016--2017
+                           Damon Hart-Davis 2017
 */
+
 /**
- * Minimal REV7 config for testing power consumption.
+ * Minimal REV8 config for testing basics such as radio and relay.
  * Aim is to:
  *     - todo init GPIO pins to safe mode.
  *     - todo init peripherals to safe low power mode.
@@ -26,12 +28,12 @@ Author(s) / Copyright (s): Deniz Erbilgin 2016
 // INCLUDES & DEFINES
 // Debug output flag
 #define DEBUG
-// REV7 / DORM1 all-in-one valve unit, secure TX.
-#define CONFIG_DORM1
+// REV8 / DORM1 boiler uint, secure TX.
+#define CONFIG_XXXX
 // Get defaults for valve applications.
 #include <OTV0p2_valve_ENABLE_defaults.h>
 // All-in-one valve unit (DORM1).
-#include <OTV0p2_CONFIG_REV7.h>
+#include <OTV0p2_CONFIG_REV8.h>
 // I/O pin allocation and setup: include ahead of I/O module headers.
 #include <OTV0p2_Board_IO_Config.h>
 // OTV0p2Base Libraries
