@@ -23,6 +23,9 @@ Author(s) / Copyright (s): Deniz Erbilgin 2016--2017
  *     - todo init GPIO pins to safe mode.
  *     - todo init peripherals to safe low power mode.
  *     - loop endlessly.
+ *
+ * See also, for previous version of this code:
+ *     Arduino/snapshots/20150110-r4107-V0p2-Arduino-REV8-boiler-relay-test/
  */
 
 // INCLUDES & DEFINES
