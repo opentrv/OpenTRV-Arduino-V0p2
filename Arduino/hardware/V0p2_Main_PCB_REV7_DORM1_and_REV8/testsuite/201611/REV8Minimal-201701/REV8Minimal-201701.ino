@@ -31,8 +31,8 @@ Author(s) / Copyright (s): Deniz Erbilgin 2016--2017
 // INCLUDES & DEFINES
 // Debug output flag
 #define DEBUG
-// REV8 / DORM1 boiler uint, secure TX.
-#define CONFIG_XXXX
+// REV8 / DORM1 boiler controller and secure hub, secure TX.
+#define CONFIG_REV8_SECURE_BHR
 // Get defaults for valve applications.
 #include <OTV0p2_valve_ENABLE_defaults.h>
 // All-in-one valve unit (DORM1).
@@ -71,17 +71,14 @@ extern void _debug_serial_timestamp();
 
 // OBJECTS & VARIABLES
 /**
- * Peripherals present on REV7
- * - Pot        Set input to Hi-Z?  +
- * - PHT        IO_POWER_UP LOW
- * - Encoder    IO_POWER_UP LOW
- * - LED        Set pin HIGH?
- * - Button     Set to INPUT
- * - H-Bridge   Control pins HIGH, Current sense set to input.  +
- * - SHT21      read() once.        +
- * - RFM23B     ??                  +
- * - XTAL       Setup and leave running?
- * - UART       Disable
+ * Peripherals present on REV8
+ * - LED          Toggle in antiphase to relay.
+ * - Buttons      MODE + LEARN + LEARN2
+ * - SHT21        read() once.        +
+ * - TMP112       read() once.        +
+ * - RFM23B       ??                  +
+ * - XTAL         Setup and leave running.
+ * - Boiler relay Toggle back and forth.
  */
 
 /**
@@ -127,34 +124,6 @@ OTV0P2BASE::RoomTemperatureC16_SHT21 TemperatureC16; // SHT21 impl.
 typedef OTV0P2BASE::HumiditySensorSHT21 RelHumidity_t;
 RelHumidity_t RelHumidity;
 
-/**
- * Temp pot
- */
-// Sensor for temperature potentiometer/dial UI control.
-// Correct for DORM1/TRV1 with embedded REV7.
-// REV7 does not drive pot from IO_POWER_UP.
-typedef OTV0P2BASE::SensorTemperaturePot<OccupancyTracker, nullptr, 48, 296, false> TempPot_t;
-TempPot_t TempPot;
-
-/**
- * Ambient Light Sensor
- */
-typedef OTV0P2BASE::SensorAmbientLight AmbientLight;
-// Singleton implementation/instance.
-AmbientLight AmbLight;
-
-/**
- * Valve Actuator
- */
-// DORM1/REV7 direct drive motor actuator.
-static constexpr bool binaryOnlyValveControl = false;
-static constexpr uint8_t m1 = MOTOR_DRIVE_ML;
-static constexpr uint8_t m2 = MOTOR_DRIVE_MR;
-typedef OTRadValve::ValveMotorDirectV1<m1, m2, MOTOR_DRIVE_MI_AIN, MOTOR_DRIVE_MC_AIN, decltype(Supply_cV), &Supply_cV, binaryOnlyValveControl> ValveDirect_t;
-// Singleton implementation/instance.
-// Suppress unnecessary activity when room dark, eg to avoid disturbance if device crashes/restarts,
-// unless recent UI use because value is being fitted/adjusted.
-ValveDirect_t ValveDirect([](){return(AmbLight.isRoomDark());});
 
 // FUNCTIONS
 
@@ -213,13 +182,13 @@ void setup()
 
     OTV0P2BASE::LED_HEATCALL_ON();
 
-    // Give plenty of time for the XTal to settle.
-    delay(1000);
+    // Give plenty of time for the Xtal to settle.
+    delay(5000);
 
     // Have 32678Hz clock at least running before going any further.
+//    if(!::OTV0P2BASE::HWTEST::check32768HzOsc()) { panic(F("xtal")); } // Async clock not running correctly.
     // Check that the slow clock is running reasonably OK, and tune the fast one to it.
     if(!::OTV0P2BASE::HWTEST::calibrateInternalOscWithExtOsc()) { panic(F("Xtal")); } // Async clock not running or can't tune.
-//    if(!::OTV0P2BASE::HWTEST::check32768HzOsc()) { panic(F("xtal")); } // Async clock not running correctly.
 
     // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
     PrimaryRadio.preinit(NULL);
@@ -248,16 +217,6 @@ void setup()
     DEBUG_SERIAL_PRINT_FLASHSTRING("RH%: ");
     DEBUG_SERIAL_PRINT(rh);
     DEBUG_SERIAL_PRINTLN();
-    const int light = AmbLight.read();
-    DEBUG_SERIAL_PRINT_FLASHSTRING("L: ");
-    DEBUG_SERIAL_PRINT(light);
-    DEBUG_SERIAL_PRINTLN();
-    const int tempPot = TempPot.read();
-    DEBUG_SERIAL_PRINT_FLASHSTRING("temp pot: ");
-    DEBUG_SERIAL_PRINT(tempPot);
-    DEBUG_SERIAL_PRINTLN();
-
-    ValveDirect.read();
 
     // Initialised: turn main/heatcall UI LED off.
     OTV0P2BASE::LED_HEATCALL_OFF();
@@ -274,10 +233,17 @@ void setup()
 // MAIN LOOP
 //========================================
 /**
- * @brief   Sleep in low power mode if not sleeping.
+ * @brief   Sleep in low power mode, toggle LEDs every 2s.
  */
 void loop()
 {
+    static bool LED_on;
+
+    // Toggle LED and boiler relay (with its LED) in antiphase.
+    if(LED_on) { OTV0P2BASE::LED_HEATCALL_ON(); }
+    else { OTV0P2BASE::LED_HEATCALL_OFF(); }
+    fastDigitalWrite(OUT_HEATCALL, !LED_on ? HIGH : LOW);
+
     // Ensure that serial I/O is off while sleeping.
     OTV0P2BASE::powerDownSerial();
     // Power down most stuff (except radio for hub RX).
@@ -285,6 +251,8 @@ void loop()
     // Normal long minimal-power sleep until wake-up interrupt.
     // Rely on interrupt to force quick loop round to I/O poll.
     OTV0P2BASE::sleepUntilInt();
+
+    LED_on = !LED_on;
 }
 
 
