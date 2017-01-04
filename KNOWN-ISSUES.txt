@@ -1,16 +1,38 @@
-A selection of key issue outstanding.
+A selection of key issue outstanding in production branches.
+
+
+Summary: valve can hover, still closed, calling for heat
+Product: Sunamp / Energy Solutions (TRV1 / TRV1.5) trials
+Branch: TRV1.5-rc3
+Tag: 20161211-RC3b
+Repo(s): OpenTRV-Arduino-V0p2 (+ OTRadioLink, OTAESGCM)
+Hardware: REV10 (boiler controller)
+Date reported: 2016/09/21
+Bug tracker URL: https://opentrv.atlassian.net/browse/TODO-1096
+Fixed at tag / branch / date : 20170102-reduced-valve-movement / master / 20170102
+Description:
+In a very still room with stable temperatures,
+depending on the physical valve base in use,
+for TRV1.5 to continue to call for heat indefinitely
+but without the valve actually allowing water to pass
+so the room temperature does not rise to stop the call for heat.
+Workaround:
+A valve head shim may help.
 
 
 Summary: combined boiler hub / stats relay / boiler control does not send own stats over GSM
 Product: Sunamp / Energy Solutions (TRV1 / TRV1.5) trials
 Branch: TRV1.5-rc1
 Tag: TRV1.5-rv1-gE-20160919
-Repo(s): OpenTRV-Arduino-V0p2
+Repo(s): OpenTRV-Arduino-V0p2 (+ OTRadioLink, OTAESGCM)
 Hardware: REV10 (boiler controller)
 Date reported: 2016/09/21
 Bug tracker URL: https://opentrv.atlassian.net/browse/TODO-978
+Fixed at tag / date:
 Description:
 REV10 relays stats correctly from REV7s, but does not relay its own,
 preventing direct remote tracking of when boiler is being run.
 May also be failing to send its stats over local ISM radio,
 preventing tracking by local separate stats hub.
+Workaround:
+

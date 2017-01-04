@@ -182,7 +182,7 @@ bool pollIO(const bool force)
 #ifdef ENABLE_STATS_TX
 #if defined(ENABLE_JSON_OUTPUT)
 // Managed JSON stats.
-static OTV0P2BASE::SimpleStatsRotation<11> ss1; // Configured for maximum different stats.	// FIXME increased for voice & for setback lockout
+static OTV0P2BASE::SimpleStatsRotation<12> ss1; // Configured for maximum different stats.	// FIXME increased for voice & for setback lockout
 #endif // ENABLE_STATS_TX
 // Do bare stats transmission.
 // Output should be filtered for items appropriate
@@ -321,6 +321,9 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 //      {
 //      // Perform run-once operations...
 //      }
+#ifdef OTV0P2BASE_ErrorReport_DEFINED
+    ss1.put(OTV0P2BASE::ErrorReporter);
+#endif
     ss1.put(TemperatureC16);
 #if defined(HUMIDITY_SENSOR_SUPPORT)
     ss1.put(RelHumidity);
@@ -346,7 +349,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 #endif // ENABLE_VOICE_STATS
 #if defined(ENABLE_LOCAL_TRV)
     // Show TRV-related stats since enabled.
-    ss1.put(NominalRadValve);
+    ss1.put(*NominalRadValve.getPhysicalDevice());
     ss1.put(NominalRadValve.targetTemperatureSubSensor);
     ss1.put(NominalRadValve.setbackSubSensor);
 #if !defined(ENABLE_TRIMMED_BANDWIDTH)
