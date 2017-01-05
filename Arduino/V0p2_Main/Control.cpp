@@ -1537,6 +1537,11 @@ void loopOpenTRV()
     // This should happen as soon after the latest readings as possible (temperature especially).
     case 56:
       {
+#if defined(OTV0P2BASE_ErrorReport_DEFINED)
+      // Age errors/warnings.
+      OTV0P2BASE::ErrorReporter.read();
+#endif
+
 #if defined(ENABLE_OCCUPANCY_SUPPORT)
       // Update occupancy measures that partially use rolling stats.
 
