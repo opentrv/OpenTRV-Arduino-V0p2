@@ -322,7 +322,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 //      // Perform run-once operations...
 //      }
 #ifdef OTV0P2BASE_ErrorReport_DEFINED
-    ss1.put(OTV0P2BASE::ErrorReporter);
+    ss1.putOrRemove(OTV0P2BASE::ErrorReporter);
 #endif
     ss1.put(TemperatureC16);
 #if defined(HUMIDITY_SENSOR_SUPPORT)
