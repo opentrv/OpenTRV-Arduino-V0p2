@@ -1638,10 +1638,6 @@ void loopOpenTRV()
 
 #if defined(HAS_DORM1_VALVE_DRIVE) && defined(ENABLE_LOCAL_TRV)
   // Handle local direct-drive valve, eg DORM1.
-#if defined(ENABLE_NOMINAL_RAD_VALVE)
-  // Get current modelled valve position into abstract driver.
-//  ValveDirect.set(NominalRadValve.get());
-#endif
   // If waiting for for verification that the valve has been fitted
   // then accept any manual interaction with controls as that signal.
   // Also have a backup timeout of at least ~10m from startup
@@ -1667,7 +1663,6 @@ void loopOpenTRV()
   // Only calling this after most other heavy-lifting work is likely done.
   // Note that FHT8V sync will take up at least the first 1s of a 2s subcycle.
   if(!showStatus &&
-     // (ValveDirect.isInNormalRunState() || (0 == (3 & TIME_LSD))) &&
      (OTV0P2BASE::getSubCycleTime() < ((OTV0P2BASE::GSCT_MAX/4)*3)))
     { ValveDirect.read(); }
 #endif
