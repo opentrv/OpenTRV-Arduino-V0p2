@@ -1651,8 +1651,11 @@ void loopOpenTRV()
       {
       // Defer automatic recovery when battery low or in dark in case crashing/restarting
       // to try to avoid disturbing/waking occupants and/or entering battery death spiral.  (TODO-1037, TODO-963)
+      // The initial minuteCount value can be anywhere in the range [0,3];
+      // pick threshold to give user at least a couple of minutes to fit the device
+      // if they do so with the battery in place.
       const bool delayRecalibration = batteryLow || AmbLight.isRoomDark();
-      if(valveUI.veryRecentUIControlUse() || (minuteCount > (delayRecalibration ? 200 : 15)))
+      if(valveUI.veryRecentUIControlUse() || (minuteCount >= (delayRecalibration ? 240 : 5)))
           { ValveDirect.signalValveFitted(); }
       }
   // Provide regular poll to motor driver.
