@@ -19,13 +19,15 @@ Author(s) / Copyright (s): Deniz Erbilgin 2016--2017
 
 /**
  * Minimal REV8 config for testing basics such as radio and relay.
+ *
  * Aim is to:
- *     - todo init GPIO pins to safe mode.
- *     - todo init peripherals to safe low power mode.
- *     - loop endlessly.
+ *     - init GPIO pins to safe mode.
+ *     - init peripherals to safe low power mode.
+ *     - toggle LEDs and relay
+ *     - loop endlessly, toggling LED/relay, reading sensors and listening on radio.
  *
  * See also, for previous version of this code:
- *     Arduino/snapshots/20150110-r4107-V0p2-Arduino-REV8-boiler-relay-test/
+ *     Arduino/snapshots/20150110-r4107-V0p2-Arduino-REV8-boiler-relay-test
  */
 
 // INCLUDES & DEFINES
@@ -97,11 +99,10 @@ OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
 /*
  * Radio instance
  */
-static constexpr bool RFM23B_allowRX = false;
+static constexpr bool RFM23B_allowRX = true;
  
 static constexpr uint8_t RFM23B_RX_QUEUE_SIZE = OTRFM23BLink::DEFAULT_RFM23B_RX_QUEUE_CAPACITY;
-static constexpr int8_t RFM23B_IRQ_PIN = -1;// PIN_RFM_NIRQ;
-// XXX Is it really worth having a separate primary radio in this case?
+static constexpr int8_t RFM23B_IRQ_PIN = PIN_RFM_NIRQ;
 OTRFM23BLink::OTRFM23BLink<OTV0P2BASE::V0p2_PIN_SPI_nSS, RFM23B_IRQ_PIN, RFM23B_RX_QUEUE_SIZE, RFM23B_allowRX> PrimaryRadio;//RFM23B;
 ///* constexpr */ OTRadioLink::OTRadioLink &PrimaryRadio = RFM23B
 // Pick an appropriate radio config for RFM23 (if it is the primary radio).
@@ -111,9 +112,7 @@ static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChanne
     // GFSK channel 0 full config, RX/TX, not in itself secure.
     OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsGFSK57600, true), };
 
-/*
- * SHT21 instance
- */
+// SHT21 temperature sensor instance
 OTV0P2BASE::RoomTemperatureC16_SHT21 TemperatureC16; // SHT21 impl.
 
 // HUMIDITY_SENSOR_SUPPORT is defined if at least one humidity sensor has support compiled in.
@@ -123,6 +122,9 @@ OTV0P2BASE::RoomTemperatureC16_SHT21 TemperatureC16; // SHT21 impl.
 // Singleton implementation/instance.
 typedef OTV0P2BASE::HumiditySensorSHT21 RelHumidity_t;
 RelHumidity_t RelHumidity;
+
+// TMP112 temperature sensor instance
+OTV0P2BASE::RoomTemperatureC16_TMP112 TemperatureC16TMP112; // TMP112 impl.
 
 
 // FUNCTIONS
@@ -202,9 +204,7 @@ void setup()
     // Collect full set of environmental values before entering loop() in normal mode.
     // This should also help ensure that sensors are properly initialised.
 
-    // No external sensors are *assumed* present if running alt main loop
-    // This may mean that the alt loop/POST will have to initialise them explicitly,
-    // and the initial seed entropy may be marginally reduced also.
+    // Use the sensors on the TMP112: supply (internal), SHT21, TMP112.
     const int cV = Supply_cV.read();
     DEBUG_SERIAL_PRINT_FLASHSTRING("V: ");
     DEBUG_SERIAL_PRINT(cV);
@@ -217,15 +217,16 @@ void setup()
     DEBUG_SERIAL_PRINT_FLASHSTRING("RH%: ");
     DEBUG_SERIAL_PRINT(rh);
     DEBUG_SERIAL_PRINTLN();
+    const int heatTMP112 = TemperatureC16TMP112.read();
+    DEBUG_SERIAL_PRINT_FLASHSTRING("T(TMP112): ");
+    DEBUG_SERIAL_PRINT(heatTMP112);
+    DEBUG_SERIAL_PRINTLN();
 
     // Initialised: turn main/heatcall UI LED off.
     OTV0P2BASE::LED_HEATCALL_OFF();
 
-    // Do OpenTRV-specific (late) setup.
-    PrimaryRadio.listen(false);
-
-    // Long delay after everything set up to allow a non-sleep power measurement.
-    delay(10000);
+    // Set up the radio to listen on standard OpenTRV GFSK57600 channel in band 14.
+    PrimaryRadio.listen(true);
 }
 
 
@@ -239,11 +240,47 @@ void loop()
 {
     static bool LED_on;
 
-    // Toggle LED and boiler relay (with its LED) in antiphase.
+    // Toggle (primary, red0 LED and boiler relay (with its LED) in antiphase.
     if(LED_on) { OTV0P2BASE::LED_HEATCALL_ON(); }
     else { OTV0P2BASE::LED_HEATCALL_OFF(); }
     fastDigitalWrite(OUT_HEATCALL, !LED_on ? HIGH : LOW);
 
+    // Toggle second (green) LED along with first.
+    if(LED_on) { OTV0P2BASE::LED_UI2_ON(); }
+    else { OTV0P2BASE::LED_UI2_OFF(); }
+
+    // Repeatedly read and print sensor values for fun.
+    const int heat = TemperatureC16.read();
+    DEBUG_SERIAL_PRINT_FLASHSTRING("T: ");
+    DEBUG_SERIAL_PRINT(heat);
+    DEBUG_SERIAL_PRINTLN();
+    const uint8_t rh = RelHumidity.read();
+    DEBUG_SERIAL_PRINT_FLASHSTRING("RH%: ");
+    DEBUG_SERIAL_PRINT(rh);
+    DEBUG_SERIAL_PRINTLN();
+    const int heatTMP112 = TemperatureC16TMP112.read();
+    DEBUG_SERIAL_PRINT_FLASHSTRING("T(TMP112): ");
+    DEBUG_SERIAL_PRINT(heatTMP112);
+    DEBUG_SERIAL_PRINTLN();
+
+    // Very crude poll/RX; likely to miss plenty.
+    PrimaryRadio.poll();
+    const uint8_t rxed = PrimaryRadio.getRXMsgsQueued();
+    DEBUG_SERIAL_PRINT_FLASHSTRING("RXED: ");
+    DEBUG_SERIAL_PRINT(rxed);
+    DEBUG_SERIAL_PRINTLN();
+    if(0 != rxed)
+      {
+      DEBUG_SERIAL_PRINT_FLASHSTRING("RX 1st byte: ");
+      DEBUG_SERIAL_PRINTFMT(*PrimaryRadio.peekRXMsg(), HEX);
+      DEBUG_SERIAL_PRINTLN();
+      PrimaryRadio.removeRXMsg();
+      }
+
+
+    // =====
+    // To sleep, perchance to dream...
+    
     // Ensure that serial I/O is off while sleeping.
     OTV0P2BASE::powerDownSerial();
     // Power down most stuff (except radio for hub RX).
@@ -255,29 +292,27 @@ void loop()
     LED_on = !LED_on;
 }
 
+/*
+ * Output from running board should look something like this:
 
 
-/**
- * @note    Power consumption figures (all in mA).
- * Date/commit:         Device: Wake (Sleep) @ Voltage
- * 20161111/0e6ec96     REV7:   1.5 (1.1) @ 2.5 V       REV11:  0.45 (0.03) @ 2.5 V
- * 20161111/f2eed5e     REV7:   0.46 (0.04) @ 2.5 V
- */
+OpenTRV: board V0.2 REV8 2017/Jan/08 18:34:37
+V: 321
+T: 401
+RH%: 61
+T(TMP112): 393
+T: 401
+RH%: 61
+T(TMP112): 393
+RXED: 0
+T: 401
+RH%: 61
+T(TMP112): 393
+RXED: 1
+RX 1st byte: CF
+T: 400
+RH%: 61
+T(TMP112): 393
+RXED: 0
 
-/**
- * @note    REV7 Power consumption investigation.
- *          Figures are not overly accurate due to hot airgun changing board temp. Shouldn't make enough of a difference for our purposes.
- * Baseline:                1.08 mA
- * - Motor decoupling caps: 1.08 mA
- * - Potentiometer:         1.02 mA
- * - BAV99 Suppressors:     1.02 mA
- * - TANT RF decoupling:    1.01 mA
- * - Motor diodes:          1.01 mA
- * - Op Amp:                0.99 mA
- * - Inductor:              178 mA (I think this is due to ML+MR being held high)
- * - H-Bridge Transistors:  0.99 mA
- * - All decoupling:        0.98 mA
- * - All H-Bridge resistors:0.98 mA
- * - Encoder:               0.98 mA
- * - Some resistors:        0.48 mA
  */
