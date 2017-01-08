@@ -19,6 +19,9 @@ Author(s) / Copyright (s): Deniz Erbilgin 2016--2017
 
 /**
  * Minimal REV8 config for testing basics such as radio and relay.
+ * 
+ * See tag 20170108-REV8-basic-hardware-test-code in
+ * this repo, OTRadioLink and OTAESGCM.
  *
  * Aim is to:
  *     - init GPIO pins to safe mode.
