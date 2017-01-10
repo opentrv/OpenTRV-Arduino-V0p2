@@ -322,7 +322,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 //      // Perform run-once operations...
 //      }
 #ifdef OTV0P2BASE_ErrorReport_DEFINED
-    ss1.put(OTV0P2BASE::ErrorReporter);
+    ss1.putOrRemove(OTV0P2BASE::ErrorReporter);
 #endif
     ss1.put(TemperatureC16);
 #if defined(HUMIDITY_SENSOR_SUPPORT)
@@ -1537,6 +1537,11 @@ void loopOpenTRV()
     // This should happen as soon after the latest readings as possible (temperature especially).
     case 56:
       {
+#if defined(OTV0P2BASE_ErrorReport_DEFINED)
+      // Age errors/warnings.
+      OTV0P2BASE::ErrorReporter.read();
+#endif
+
 #if defined(ENABLE_OCCUPANCY_SUPPORT)
       // Update occupancy measures that partially use rolling stats.
 
@@ -1633,10 +1638,6 @@ void loopOpenTRV()
 
 #if defined(HAS_DORM1_VALVE_DRIVE) && defined(ENABLE_LOCAL_TRV)
   // Handle local direct-drive valve, eg DORM1.
-#if defined(ENABLE_NOMINAL_RAD_VALVE)
-  // Get current modelled valve position into abstract driver.
-//  ValveDirect.set(NominalRadValve.get());
-#endif
   // If waiting for for verification that the valve has been fitted
   // then accept any manual interaction with controls as that signal.
   // Also have a backup timeout of at least ~10m from startup
@@ -1646,8 +1647,11 @@ void loopOpenTRV()
       {
       // Defer automatic recovery when battery low or in dark in case crashing/restarting
       // to try to avoid disturbing/waking occupants and/or entering battery death spiral.  (TODO-1037, TODO-963)
+      // The initial minuteCount value can be anywhere in the range [0,3];
+      // pick threshold to give user at least a couple of minutes to fit the device
+      // if they do so with the battery in place.
       const bool delayRecalibration = batteryLow || AmbLight.isRoomDark();
-      if(valveUI.veryRecentUIControlUse() || (minuteCount > (delayRecalibration ? 200 : 15)))
+      if(valveUI.veryRecentUIControlUse() || (minuteCount >= (delayRecalibration ? 240 : 5)))
           { ValveDirect.signalValveFitted(); }
       }
   // Provide regular poll to motor driver.
@@ -1659,7 +1663,6 @@ void loopOpenTRV()
   // Only calling this after most other heavy-lifting work is likely done.
   // Note that FHT8V sync will take up at least the first 1s of a 2s subcycle.
   if(!showStatus &&
-     // (ValveDirect.isInNormalRunState() || (0 == (3 & TIME_LSD))) &&
      (OTV0P2BASE::getSubCycleTime() < ((OTV0P2BASE::GSCT_MAX/4)*3)))
     { ValveDirect.read(); }
 #endif

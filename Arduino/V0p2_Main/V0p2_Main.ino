@@ -13,7 +13,7 @@ KIND, either express or implied. See the Licence for the
 specific language governing permissions and limitations
 under the Licence.
 
-Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
+Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
                            Deniz Erbilgin 2015--2016
 */
 
@@ -570,7 +570,7 @@ void loop()
 #if defined(EST_CPU_DUTYCYCLE)
   const unsigned long usEnd = micros();
   // Nominal loop time should be 2s x 1MHz clock, ie 2,000,000 if CPU running all the time.
-  // Should generally be <2000 (<0.1%) for leaf, <20000 (<1%) for hub.
+  // Should generally be <2000 (us) (<0.1%) for leaf, <20000 (<1%) for hub.
   // Example output.
 //us apparent: 4544
 //us apparent: 25280
