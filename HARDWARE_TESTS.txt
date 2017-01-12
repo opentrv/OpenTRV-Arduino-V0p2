@@ -1,0 +1,26 @@
+Hardware and Tests
+==================
+DHD20170112
+
+Schematics and PCB designs for AVR/ATMega board XXX are generally under:
+
+    Arduino/hardware/XXX
+    
+Within each board area should be a subdirectory XXXHardwareTest
+containing a XXXHardwareTest.ino source file to safely test an XXX board.
+
+Also present should be output .hex files (with and without bootloader),
+to enable testing of hardware with only avrdude or equivalent to hand,
+ie without having to set up an entire development environment.
+
+The test routines should (eg) show useful stuff on the serial connection,
+including sensor readings to show that any sensors are working.
+
+The test may also listen on the radio if that board is typically used
+as a receiver/hub.
+
+The test will not do anything that might be unfriendly, such as transmitting,
+since the band (etc) used may not be legal everywhere.
+
+The .ino file will often also be used in CI (continuous integration)
+at least to check for the ability to compile.
