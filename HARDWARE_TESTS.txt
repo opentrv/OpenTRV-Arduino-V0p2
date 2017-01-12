@@ -1,23 +1,32 @@
 Hardware and Tests
 ==================
 DHD20170112
+DE20170112
 
 Schematics and PCB designs for AVR/ATMega board XXX are generally under:
 
     Arduino/hardware/XXX
     
-Within each board area should be a subdirectory XXXHardwareTest
-containing a XXXHardwareTest.ino source file to safely test an XXX board.
+Within each board area should be a subdirectory XXXHardwareTest, for the
+basic hardware tests for the board. The folder should contain the following:
+- XXXHardwareTest.ino
+    - An Arduino source file. 
+    - This can be compiled and loaded using the Arduino IDE and a FTDI cable.
+- XXXHardwareTest.ino.hex
+    - A binary of the test, precompiled for ATMega328P.
+    - This can be loaded using avrdude and an ISP programmer.
+- XXXHardwareTest.ino.with_bootloader.hex
+    - A binary of the test, precompiled for ATMega328P.
+    - This can be loaded using avrdude and an ISP programmer.
 
-Also present should be output .hex files (with and without bootloader),
-to enable testing of hardware with only avrdude or equivalent to hand,
-ie without having to set up an entire development environment.
+NOTE! need to specify which binary to use and when!
 
-The test routines should (eg) show useful stuff on the serial connection,
-including sensor readings to show that any sensors are working.
-
-The test may also listen on the radio if that board is typically used
-as a receiver/hub.
+The test routines should exercise all peripherals on present on the board,
+printing an output to serial where appropriate. This includes:
+- Readings from all on board sensors.
+- Radio Rx data on boards typically used as recievers or hubs.
+- Verifying the onboard realtime clock source runs.
+- Flashing LEDs where present.
 
 The test will not do anything that might be unfriendly, such as transmitting,
 since the band (etc) used may not be legal everywhere.
