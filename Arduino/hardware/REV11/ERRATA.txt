@@ -1,0 +1,9 @@
+20170112: Capacitor C11 in series with nRESET line
+Problem Description:
+Capacitor C11 is in series with the ICSP nRESET line. This prevents the board
+from being programmed over ICSP with, for example, a bootloader.
+Fix:
+1) The board can be programmed by using a pair of tweezers to short across C11.
+2) Alternatively, C11 can be replaced with a jumper (e.g. pads shorted with a
+solder blob). Note that this means that an external ~100 nF capacitor will be
+required in series with the RTS line when programming with a serial adaptor.
