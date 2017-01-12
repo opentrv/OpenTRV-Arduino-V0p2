@@ -27,7 +27,7 @@ Author(s) / Copyright (s): Deniz Erbilgin 2017
 // Debug output flag
 #define DEBUG
 // REV11 as Sensor with secure TX.
-#define CONFIG_REV11_SECURE_SENSOR //XXX
+#define CONFIG_REV11_SECURE_STATSHUB
 // Get defaults for valve applications.
 #include <OTV0p2_valve_ENABLE_defaults.h>
 // All-in-one valve unit (DORM1).
@@ -67,7 +67,6 @@ extern void _debug_serial_timestamp();
 // OBJECTS & VARIABLES
 /**
  * Peripherals present on REV7
- * - Pot        Set input to Hi-Z?  +
  * - PHT        IO_POWER_UP LOW
  * - Encoder    IO_POWER_UP LOW
  * - LED        Set pin HIGH?
@@ -189,7 +188,7 @@ void setup()
 
     // Have 32678Hz clock at least running before going any further.
     // Check that the slow clock is running reasonably OK, and tune the fast one to it.
-    if(!::OTV0P2BASE::HWTEST::calibrateInternalOscWithExtOsc()) { panic(F("Xtal")); } // Async clock not running or can't tune.
+//    if(!::OTV0P2BASE::HWTEST::calibrateInternalOscWithExtOsc()) { panic(F("Xtal")); } // Async clock not running or can't tune.
 //    if(!::OTV0P2BASE::HWTEST::check32768HzOsc()) { panic(F("xtal")); } // Async clock not running correctly.
 
     // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
@@ -224,10 +223,7 @@ void setup()
     OTV0P2BASE::LED_HEATCALL_OFF();
 
     // Do OpenTRV-specific (late) setup.
-    PrimaryRadio.listen(false);
-
-    // Long delay after everything set up to allow a non-sleep power measurement.
-    delay(10000);
+    PrimaryRadio.listen(true);
 }
 
 
@@ -239,6 +235,44 @@ void setup()
  */
 void loop()
 {
+    static bool LED_on;
+
+    // Toggle LED.
+    if(LED_on) { OTV0P2BASE::LED_HEATCALL_ON(); }
+    else { OTV0P2BASE::LED_HEATCALL_OFF(); }
+
+    // Repeatedly read and print sensor values for fun.
+    const int heat = TemperatureC16.read();
+    DEBUG_SERIAL_PRINT_FLASHSTRING("T: ");
+    DEBUG_SERIAL_PRINT(heat);
+    DEBUG_SERIAL_PRINTLN();
+    const uint8_t rh = RelHumidity.read();
+    DEBUG_SERIAL_PRINT_FLASHSTRING("RH%: ");
+    DEBUG_SERIAL_PRINT(rh);
+    DEBUG_SERIAL_PRINTLN();
+    const int light = AmbLight.read();
+    DEBUG_SERIAL_PRINT_FLASHSTRING("L: ");
+    DEBUG_SERIAL_PRINT(light);
+    DEBUG_SERIAL_PRINTLN();
+
+    // Very crude poll/RX; likely to miss plenty.
+    PrimaryRadio.poll();
+    const uint8_t rxed = PrimaryRadio.getRXMsgsQueued();
+    DEBUG_SERIAL_PRINT_FLASHSTRING("RXED: ");
+    DEBUG_SERIAL_PRINT(rxed);
+    DEBUG_SERIAL_PRINTLN();
+    if(0 != rxed)
+      {
+      DEBUG_SERIAL_PRINT_FLASHSTRING("RX 1st byte: ");
+      DEBUG_SERIAL_PRINTFMT(*PrimaryRadio.peekRXMsg(), HEX);
+      DEBUG_SERIAL_PRINTLN();
+      PrimaryRadio.removeRXMsg();
+      }
+
+
+    // =====
+    // To sleep, perchance to dream...
+
     // Ensure that serial I/O is off while sleeping.
     OTV0P2BASE::powerDownSerial();
     // Power down most stuff (except radio for hub RX).
@@ -246,6 +280,8 @@ void loop()
     // Normal long minimal-power sleep until wake-up interrupt.
     // Rely on interrupt to force quick loop round to I/O poll.
     OTV0P2BASE::sleepUntilInt();
+
+    LED_on = !LED_on;
 }
 
 
