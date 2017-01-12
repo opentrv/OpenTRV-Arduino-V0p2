@@ -188,7 +188,7 @@ void setup()
 
     // Have 32678Hz clock at least running before going any further.
     // Check that the slow clock is running reasonably OK, and tune the fast one to it.
-//    if(!::OTV0P2BASE::HWTEST::calibrateInternalOscWithExtOsc()) { panic(F("Xtal")); } // Async clock not running or can't tune.
+    if(!::OTV0P2BASE::HWTEST::calibrateInternalOscWithExtOsc()) { panic(F("Xtal")); } // Async clock not running or can't tune.
 //    if(!::OTV0P2BASE::HWTEST::check32768HzOsc()) { panic(F("xtal")); } // Async clock not running correctly.
 
     // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
