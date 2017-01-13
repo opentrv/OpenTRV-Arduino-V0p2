@@ -8,9 +8,9 @@ Fix:
 solder blob). Note that this means that an external ~100 nF capacitor will be
 required in series with the RTS line when programming with a serial adaptor.
 
-20170112: photodiode orientation
+20170112: phototransistor orientation
 Problem Description:
-Confusion in the schematic and at assembly time means that the photodiode
+Confusion in the schematic and at assembly time means that the phototransistor
 may be fitted in the wrong orientation and thus appear to not work
 or be very insensitive..
 Fix:
