@@ -7,3 +7,12 @@ Fix:
 2) Alternatively, C11 can be replaced with a jumper (e.g. pads shorted with a
 solder blob). Note that this means that an external ~100 nF capacitor will be
 required in series with the RTS line when programming with a serial adaptor.
+
+20170112: photodiode orientation
+Problem Description:
+Confusion in the schematic and at assembly time means that the photodiode
+may be fitted in the wrong orientation and thus appear to not work
+or be very insensitive..
+Fix:
+1) Correct the orientation.
+
