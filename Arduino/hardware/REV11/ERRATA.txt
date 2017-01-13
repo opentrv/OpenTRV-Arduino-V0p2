@@ -15,4 +15,3 @@ may be fitted in the wrong orientation and thus appear to not work
 or be very insensitive..
 Fix:
 1) Correct the orientation.
-
