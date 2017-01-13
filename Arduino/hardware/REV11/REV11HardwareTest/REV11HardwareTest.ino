@@ -20,7 +20,8 @@ Author(s) / Copyright (s): Deniz Erbilgin 2017
  * Aim is to:
  *     - init GPIO pins to safe mode.
  *     - init peripherals to safe low power mode.
- *     - loop endlessly.
+ *     - toggle LED
+ *     - loop endlessly, toggling LED, reading sensors and listening on radio.
  */
 
 // INCLUDES & DEFINES
@@ -71,7 +72,6 @@ extern void _debug_serial_timestamp();
  * - Encoder    IO_POWER_UP LOW
  * - LED        Set pin HIGH?
  * - Button     Set to INPUT
- * - H-Bridge   Control pins HIGH, Current sense set to input.  +
  * - SHT21      read() once.        +
  * - RFM23B     ??                  +
  * - XTAL       Setup and leave running?
@@ -94,10 +94,10 @@ OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
 /*
  * Radio instance
  */
-static constexpr bool RFM23B_allowRX = false;
+static constexpr bool RFM23B_allowRX = true;
  
 static constexpr uint8_t RFM23B_RX_QUEUE_SIZE = OTRFM23BLink::DEFAULT_RFM23B_RX_QUEUE_CAPACITY;
-static constexpr int8_t RFM23B_IRQ_PIN = -1;// PIN_RFM_NIRQ;
+static constexpr int8_t RFM23B_IRQ_PIN = PIN_RFM_NIRQ;
 OTRFM23BLink::OTRFM23BLink<OTV0P2BASE::V0p2_PIN_SPI_nSS, RFM23B_IRQ_PIN, RFM23B_RX_QUEUE_SIZE, RFM23B_allowRX> PrimaryRadio;
 // Pick an appropriate radio config for RFM23 (if it is the primary radio).
 // Nodes talking on fast GFSK channel 0.
@@ -284,11 +284,3 @@ void loop()
     LED_on = !LED_on;
 }
 
-
-
-/**
- * @note    Power consumption figures (all in mA).
- * Date/commit:         Device: Wake (Sleep) @ Voltage
- * 20161111/0e6ec96     REV7:   1.5 (1.1) @ 2.5 V       REV11:  0.45 (0.03) @ 2.5 V
- * 20161111/f2eed5e     REV7:   0.46 (0.04) @ 2.5 V
- */
