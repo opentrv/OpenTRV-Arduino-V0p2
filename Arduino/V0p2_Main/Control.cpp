@@ -1403,21 +1403,14 @@ void loopOpenTRV()
 #endif
 
 #if !defined(ENABLE_FREQUENT_STATS_TX) // If ENABLE_FREQUENT_STATS_TX then send every minute regardless.
-      // Stats TX in the minute after all sensors should have been polled
-      // (so that readings are fresh) and evenly betweem.
-      // Usually send one frame every 2 minutes, else abort,
-      // but occasionally send otherwise to make (secure) traffic analysis harder,
-      // though not enough to make a vast increase in bandwidth (<10%).
-      // Send slightly more often when changed stats are pending to send upstream.
-      // Since change in any transmitted stat can trigger this,
-      // including (say) the target temperature during BAKE,
-      // then relatively little information should be leaked to traffic analysis
-      // if the frame content itself is encrypted,
-      // but interesting data and manual requests should get TXed faster.
+      // Stats TX in the minute (#1) after all sensors should have been polled
+      // (so that readings are fresh) and evenly between.
+      // Usually send one frame every 2 minutes.
+      // No extra stats TX for changed data to reduce information/activity leakage.
       // Note that all O frames contain the current valve percentage,
       // which implies that any extra stats TX also speeds response to call-for-heat changes.
       // DHD20170113: was once every 4 minutes, but can make boiler response too slow.
-      if((0 == (minuteFrom4 & 1)) && (OTV0P2BASE::randRNG8() > (ss1.changedValue() ? 11 : 3))) { break; }
+      if(0 == (minuteFrom4 & 1)) { break; }
 #endif
 
       // Abort if not allowed to send stats at all.
