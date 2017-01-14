@@ -1405,12 +1405,16 @@ void loopOpenTRV()
 #if !defined(ENABLE_FREQUENT_STATS_TX) // If ENABLE_FREQUENT_STATS_TX then send every minute regardless.
       // Stats TX in the minute (#1) after all sensors should have been polled
       // (so that readings are fresh) and evenly between.
-      // Usually send one frame every 2 minutes.
+      // Usually send one frame every 4 minutes, 2 if this is a valve.
       // No extra stats TX for changed data to reduce information/activity leakage.
       // Note that all O frames contain the current valve percentage,
       // which implies that any extra stats TX also speeds response to call-for-heat changes.
+#ifdef ENABLE_NOMINAL_RAD_VALVE
       // DHD20170113: was once every 4 minutes, but can make boiler response too slow.
       if(0 == (minuteFrom4 & 1)) { break; }
+#else
+      if(!minute1From4AfterSensors) { break; }
+#endif
 #endif
 
       // Abort if not allowed to send stats at all.
