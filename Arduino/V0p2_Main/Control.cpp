@@ -349,7 +349,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 #endif // ENABLE_VOICE_STATS
 #if defined(ENABLE_LOCAL_TRV)
     // Show TRV-related stats since enabled.
-    ss1.put(*NominalRadValve.getPhysicalDevice());
+    ss1.put(NominalRadValve); // Show modelled value to be able to deduce call-for-heat.
     ss1.put(NominalRadValve.targetTemperatureSubSensor);
     ss1.put(NominalRadValve.setbackSubSensor);
 #if !defined(ENABLE_TRIMMED_BANDWIDTH)
