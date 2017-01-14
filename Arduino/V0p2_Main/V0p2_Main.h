@@ -13,7 +13,7 @@ KIND, either express or implied. See the Licence for the
 specific language governing permissions and limitations
 under the Licence.
 
-Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
+Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 */
 
 /*
@@ -32,7 +32,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
 //#define EST_CPU_DUTYCYCLE // If defined, estimate CPU duty cycle and thus base power consumption.
 
 #ifndef BAUD
-#define BAUD 4800 // Ensure that OpenTRV 'standard' UART speed is set unless explicitly overridden.
+// Ensure that OpenTRV 'standard' UART speed is set unless explicitly overridden.
+#define BAUD 4800
 #endif
 
 #include "V0p2_Generic_Config.h" // Config switches and module dependencies.

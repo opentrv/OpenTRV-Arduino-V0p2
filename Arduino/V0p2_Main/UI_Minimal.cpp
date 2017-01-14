@@ -13,11 +13,12 @@ KIND, either express or implied. See the Licence for the
 specific language governing permissions and limitations
 under the Licence.
 
-Author(s) / Copyright (s): Damon Hart-Davis 2013--2016
+Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 */
 
 /*
- Implementation of minimal UI using single LED and one or more momentary push-buttons, etc, plus CLI.
+ Implementation of minimal UI using single LED
+ and one or more momentary push-buttons, etc, plus CLI.
  */
 
 #include "V0p2_Main.h"
