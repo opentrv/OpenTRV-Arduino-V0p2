@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh -e
 #
 # Set up OpenTRV Arduino IDE environment and verify compilation.
 # Exits 0 on success.
@@ -24,9 +24,11 @@ SKETCH_PATH=$PWD/Arduino/hardware  # Path to hardware directory
 # Verify sketch compiles.
 #$ARDUINO_PATH/arduino --verify --board $BUILD_TARGET $SKETCH_PATH
 
+(
 # Verify REV7 minimal test.
 arduino --verify --board $BUILD_TARGET $SKETCH_PATH/V0p2_Main_PCB_REV7_DORM1_and_REV8/REV7HardwareTest/REV7HardwareTest.ino
 # Verify REV8 minimal test.
 arduino --verify --board $BUILD_TARGET $SKETCH_PATH/V0p2_Main_PCB_REV7_DORM1_and_REV8/REV8HardwareTest/REV8HardwareTest.ino
 # Verify REV11 minimal test.
 arduino --verify --board $BUILD_TARGET $SKETCH_PATH/REV11/REV11HardwareTest/REV11HardwareTest.ino
+)
