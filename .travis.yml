@@ -13,11 +13,8 @@ before_install:
   - sudo ln -s /usr/local/share/arduino/arduino /usr/local/bin/arduino
 install:
   - arduino --pref "boardsmanager.additional.urls=https://raw.githubusercontent.com/opentrv/OpenTRV-Config/master/Arduino/package_opentrv_index.json" --save-prefs
-  #- ln -s $PWD /usr/local/share/arduino/libraries/
   - arduino --install-boards "opentrv:avr"
   - arduino --pref "boardsmanager.additional.urls=" --save-prefs
-  #- arduino --install-library "OTRadioLink"
-  #- arduino --install-library "OTAESGCM"
   - ls -al
   - ln -s $PWD/OTAESGCM-master/content/OTAESGCM /usr/local/share/arduino/libraries/OTAESGCM
   - ln -s $PWD/OTRadioLink-master/content/OTRadioLink /usr/local/share/arduino/libraries/OTRadioLink
