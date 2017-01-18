@@ -23,7 +23,7 @@ install:
   - ln -s $PWD/OTRadioLink-master/content/OTRadioLink /usr/local/share/arduino/libraries/OTRadioLink
 
 script:
-  - arduino --verify --board opentrv:avr:opentrv_v0p2 $PWD/Arduino/V0p2_Main/V0p2_Main.ino --verbose-build
+  - arduino --verify --board opentrv:avr:opentrv_v0p2 $PWD/Arduino/V0p2_Main/V0p2_Main.ino
   - ./v0p2_compilation_test.sh
 notifications:
   email:
