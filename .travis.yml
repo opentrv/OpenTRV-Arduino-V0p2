@@ -27,5 +27,7 @@ script:
   - exec v0p2_compilations_tests.sh
 notifications:
   email:
+    recipients:
+      - ci@opentrv.uk
     on_success: change
-on_failure: change
+    on_failure: always
