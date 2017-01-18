@@ -1,0 +1,30 @@
+language: cpp
+before_install:
+  - "/sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_1.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :1 -ac -screen 0 1280x1024x16 -extension RANDR"
+  - sleep 3
+  - export DISPLAY=:1.0
+  - wget http://downloads.arduino.cc/arduino-1.6.8-linux64.tar.xz
+  - wget https://github.com/opentrv/OTRadioLink/archive/master.zip
+  - wget https://github.com/opentrv/OTAESGCM/archive/master.zip
+  - tar xf arduino-1.6.8-linux64.tar.xz
+  - unzip master.zip
+  - unzip master.zip.1
+  - sudo mv arduino-1.6.8 /usr/local/share/arduino
+  - sudo ln -s /usr/local/share/arduino/arduino /usr/local/bin/arduino
+install:
+  - arduino --pref "boardsmanager.additional.urls=https://raw.githubusercontent.com/opentrv/OpenTRV-Config/master/Arduino/package_opentrv_index.json" --save-prefs
+  - ln -s $PWD /usr/local/share/arduino/libraries/
+  - arduino --install-boards "opentrv:avr"
+  - arduino --pref "boardsmanager.additional.urls=" --save-prefs
+  #- arduino --install-library "OTRadioLink"
+  #- arduino --install-library "OTAESGCM"
+  - ls -al
+  - ln -s $PWD/OTAESGCM-master/content/OTAESGCM /usr/local/share/arduino/libraries/OTAESGCM
+  - ln -s $PWD/OTRadioLink-master/content/OTRadioLink /usr/local/share/arduino/libraries/OTRadioLink
+
+script:
+  - arduino --verify --board opentrv:avr:opentrv_v0p2 $PWD/Arduino/V0p2_Main/V0p2_Main.ino --verbose-build
+notifications:
+  email:
+    on_success: change
+on_failure: change
