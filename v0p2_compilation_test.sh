@@ -21,9 +21,6 @@
 BUILD_TARGET=opentrv:avr:opentrv_v0p2  # Target board to build for.
 SKETCH_PATH=$PWD/Arduino/hardware  # Path to hardware directory
 
-# Make script terminate when something returns false.
-set -e
-
 # Verify sketch compiles.
 #$ARDUINO_PATH/arduino --verify --board $BUILD_TARGET $SKETCH_PATH
 
