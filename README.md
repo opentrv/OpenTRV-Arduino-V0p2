@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/opentrv/OpenTRV-Arduino-V0p2.svg?branch=master)](https://travis-ci.org/opentrv/OpenTRV-Arduino-V0p2)
+
 This is the OpenTRV (Open-Source Thermostatic Radiator Valve) project.
 
 See http://www.earth.org.uk/open-source-programmable-thermostatic-radiator-valve.html for more.
