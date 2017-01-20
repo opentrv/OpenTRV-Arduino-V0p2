@@ -28,7 +28,7 @@ Author(s) / Copyright (s): Deniz Erbilgin 2017
 // Debug output flag
 #define DEBUG
 // REV11 as Sensor with secure TX.
-#define CONFIG_REV11_SECURE_STATSHUB
+#define CONFIG_REV10_SECURE_BHR
 // Get defaults for valve applications.
 #include <OTV0p2_valve_ENABLE_defaults.h>
 // All-in-one valve unit (DORM1).
@@ -107,17 +107,9 @@ static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChanne
     OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsGFSK57600, true), };
 
 /*
- * SHT21 instance
+ * TMP112 instance
  */
-OTV0P2BASE::RoomTemperatureC16_SHT21 TemperatureC16; // SHT21 impl.
-
-// HUMIDITY_SENSOR_SUPPORT is defined if at least one humidity sensor has support compiled in.
-// Simple implementations can assume that the sensor will be present if defined;
-// more sophisticated implementations may wish to make run-time checks.
-// If SHT21 support is enabled at compile-time then its humidity sensor may be used at run-time.
-// Singleton implementation/instance.
-typedef OTV0P2BASE::HumiditySensorSHT21 RelHumidity_t;
-RelHumidity_t RelHumidity;
+OTV0P2BASE::RoomTemperatureC16_TMP112 TemperatureC16;
 
 /**
  * Ambient Light Sensor
@@ -209,10 +201,6 @@ void setup()
     const int heat = TemperatureC16.read();
     DEBUG_SERIAL_PRINT_FLASHSTRING("T: ");
     DEBUG_SERIAL_PRINT(heat);
-    DEBUG_SERIAL_PRINTLN();
-    const uint8_t rh = RelHumidity.read();
-    DEBUG_SERIAL_PRINT_FLASHSTRING("RH%: ");
-    DEBUG_SERIAL_PRINT(rh);
     DEBUG_SERIAL_PRINTLN();
     const int light = AmbLight.read();
     DEBUG_SERIAL_PRINT_FLASHSTRING("L: ");
