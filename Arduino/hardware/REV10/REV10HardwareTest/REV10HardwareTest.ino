@@ -68,14 +68,14 @@ extern void _debug_serial_timestamp();
 // OBJECTS & VARIABLES
 /**
  * Peripherals present on REV7
- * - PHT        IO_POWER_UP LOW
- * - LED        Set pin HIGH?
- * - TMP112     read() once.
- * - RFM23B     ??
- * - SIM900     ??
- * - Boiler     ??
+ * - PHT        read from in loop
+ * - LED        Toggle
+ * - TMP112     read from in loop.
+ * - RFM23B     read from in loop
+ * - SIM900     TODO
+ * - Boiler     TODO
  * - XTAL       Setup and leave running?
- * - UART       Disable
+ * - UART       print sensor values
  */
 
 /**
@@ -92,7 +92,7 @@ typedef OTV0P2BASE::DummySensorOccupancyTracker OccupancyTracker;
 OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
 
 /*
- * Radio instance
+ * RFM23B instance
  */
 static constexpr bool RFM23B_allowRX = true;
  
@@ -105,6 +105,26 @@ static const uint8_t nPrimaryRadioChannels = 1;
 static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChannels] = {
     // GFSK channel 0 full config, RX/TX, not in itself secure.
     OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsGFSK57600, true), };
+
+
+/**
+ * SIM900 instance
+ */
+// SIM card configs
+static const char SIM900_PIN[5] PROGMEM       = "1111";
+static const char SIM900_APN[] PROGMEM      = "\"mobiledata\""; // GeoSIM
+// UDP Configs - Edit SIM900_UDP_ADDR for relevant server. NOTE: The server IP address should never be committed to GitHub.
+static const char SIM900_UDP_ADDR[16] PROGMEM = ""; // Of form "1.2.3.4".
+static const char SIM900_UDP_PORT[5] PROGMEM = "9999";             // Standard port for OpenTRV servers
+const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config(
+                                                false,
+                                                SIM900_PIN,
+                                                SIM900_APN,
+                                                SIM900_UDP_ADDR,
+                                                SIM900_UDP_PORT);
+OTSIM900Link::OTSIM900Link<8, 5, RADIO_POWER_PIN, OTV0P2BASE::getSecondsLT> SecondaryRadio; // (REGULATOR_POWERUP, RADIO_POWER_PIN);
+
+
 
 /*
  * TMP112 instance
@@ -188,6 +208,16 @@ void setup()
     // Check that the radio is correctly connected; panic if not...
     if(!PrimaryRadio.configure(nPrimaryRadioChannels, RFM23BConfigs) || !PrimaryRadio.begin()) { panic(F("r1")); }
 
+  // Turn power on for SIM900 with PFET for secondary power control.
+    fastDigitalWrite(A3, 0);
+    pinMode(A3, OUTPUT);
+  // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
+    SecondaryRadio.preinit(NULL);
+//  DEBUG_SERIAL_PRINTLN_FLASHSTRING("R2");
+  // Check that the radio is correctly connected; panic if not...
+    if(!SecondaryRadio.configure(1, &SecondaryRadioConfig) || !SecondaryRadio.begin()) { panic(F("r2")); }
+  // Assume no RX nor filtering on secondary radio.
+
     // Collect full set of environmental values before entering loop() in normal mode.
     // This should also help ensure that sensors are properly initialised.
 
@@ -212,6 +242,7 @@ void setup()
 
     // Do OpenTRV-specific (late) setup.
     PrimaryRadio.listen(true);
+    SecondaryRadio.listen(false);
 }
 
 
@@ -256,7 +287,7 @@ void loop()
       DEBUG_SERIAL_PRINTLN();
       PrimaryRadio.removeRXMsg();
       }
-
+    SecondaryRadio.poll();
 
     // =====
     // To sleep, perchance to dream...
