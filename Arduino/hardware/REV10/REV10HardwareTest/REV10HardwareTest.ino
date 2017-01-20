@@ -32,7 +32,7 @@ Author(s) / Copyright (s): Deniz Erbilgin 2017
 // Get defaults for valve applications.
 #include <OTV0p2_valve_ENABLE_defaults.h>
 // All-in-one valve unit (DORM1).
-#include <OTV0p2_CONFIG_REV11.h>
+#include <OTV0p2_CONFIG_REV10.h>
 // I/O pin allocation and setup: include ahead of I/O module headers.
 #include <OTV0p2_Board_IO_Config.h>
 // OTV0p2Base Libraries
@@ -40,6 +40,7 @@ Author(s) / Copyright (s): Deniz Erbilgin 2017
 // Radio Libraries
 //#include <OTRadioLink.h>
 #include <OTRFM23BLink.h>
+#include <OTSIM900Link.h>
 // RadValve libraries
 #include <OTRadValve.h>
 
@@ -122,6 +123,7 @@ const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config(
                                                 SIM900_APN,
                                                 SIM900_UDP_ADDR,
                                                 SIM900_UDP_PORT);
+static const OTRadioLink::OTRadioChannelConfig SecondaryRadioConfig(&SIM900Config, true, true, true);
 OTSIM900Link::OTSIM900Link<8, 5, RADIO_POWER_PIN, OTV0P2BASE::getSecondsLT> SecondaryRadio; // (REGULATOR_POWERUP, RADIO_POWER_PIN);
 
 
@@ -264,10 +266,6 @@ void loop()
     const int heat = TemperatureC16.read();
     DEBUG_SERIAL_PRINT_FLASHSTRING("T: ");
     DEBUG_SERIAL_PRINT(heat);
-    DEBUG_SERIAL_PRINTLN();
-    const uint8_t rh = RelHumidity.read();
-    DEBUG_SERIAL_PRINT_FLASHSTRING("RH%: ");
-    DEBUG_SERIAL_PRINT(rh);
     DEBUG_SERIAL_PRINTLN();
     const int light = AmbLight.read();
     DEBUG_SERIAL_PRINT_FLASHSTRING("L: ");
