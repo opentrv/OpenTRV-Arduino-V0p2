@@ -13,7 +13,7 @@ KIND, either express or implied. See the Licence for the
 specific language governing permissions and limitations
 under the Licence.
 
-Author(s) / Copyright (s): Damon Hart-Davis 2014--2016
+Author(s) / Copyright (s): Damon Hart-Davis 2014--2017
                            Gary Gladman 2015
                            Mike Stirling 2013
 */
