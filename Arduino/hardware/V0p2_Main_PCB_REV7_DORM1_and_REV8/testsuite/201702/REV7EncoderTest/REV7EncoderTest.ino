@@ -144,7 +144,7 @@ static constexpr uint8_t m2 = MOTOR_DRIVE_MR;
 OTRadValve::ValveMotorDirectV1HardwareDriver<m1, m2, MOTOR_DRIVE_MI_AIN, MOTOR_DRIVE_MC_AIN> motorDriver;
 OTRadValve::TestValveMotor ValveDirect((OTRadValve::HardwareMotorDriverInterface *)(&motorDriver));
 
-
+static constexpr uint8_t adcSetting = (1 << 6) | (MOTOR_DRIVE_MC_AIN & 7);
 
 // FUNCTIONS
 
@@ -255,8 +255,13 @@ void setup()
 
     // Long delay after everything set up to allow a non-sleep power measurement.
     delay(1000);
-
+ 
+    OTV0P2BASE::powerUpADCIfDisabled();
+    
+    pinMode(IO_POWER_UP, OUTPUT);
     fastDigitalWrite(IO_POWER_UP, HIGH);
+    pinMode(m1, OUTPUT);
+    fastDigitalWrite(m1, LOW);
 }
 
 
@@ -268,36 +273,40 @@ void setup()
  */
 void loop()
 {
-    ValveDirect.poll();
+//    ValveDirect.poll();
     // Capture and print encoder state.
-    const uint16_t encoderLevel = OTV0P2BASE::analogueNoiseReducedRead(MOTOR_DRIVE_MC_AIN, DEFAULT);
-    OTV0P2BASE::serialPrintAndFlush(encoderLevel, HEX);
+//    const uint8_t encoderLevel = OTV0P2BASE::analogueNoiseReducedRead(MOTOR_DRIVE_MC_AIN, INTERNAL)  & 0xff;
+    uint16_t counter = 0;
+    bool oldLevel = false;
+    const int startTime = millis();
+    for(uint8_t i = 0; i < 255; ++i) {
+//        const uint8_t encoderLevel = OTV0P2BASE::analogueNoiseReducedRead(adcSetting, 1)  & 0xff;
+        const uint8_t encoderLevel = OTV0P2BASE::analogueNoiseReducedRead(MOTOR_DRIVE_MC_AIN, INTERNAL)  & 0xff;
+        bool newLevel = encoderLevel > 80;
+        counter = (newLevel != oldLevel) ? counter + 1 : counter;
+        oldLevel = newLevel;
+//        OTV0P2BASE::serialPrintAndFlush(encoderLevel);
+//        OTV0P2BASE::serialPrintlnAndFlush();
+    }
+    OTV0P2BASE::serialPrintAndFlush("dT: ");
+    OTV0P2BASE::serialPrintAndFlush(millis() - startTime);
+    OTV0P2BASE::serialPrintAndFlush("\tCount: ");
+    OTV0P2BASE::serialPrintAndFlush(counter);
     OTV0P2BASE::serialPrintlnAndFlush();
+//    fastDigitalWrite(m1, HIGH);
+//    while(true) {}
 }
 
 
 
 /**
- * @note    Power consumption figures (all in mA).
- * Date/commit:         Device: Wake (Sleep) @ Voltage
- * 20161111/0e6ec96     REV7:   1.5 (1.1) @ 2.5 V       REV11:  0.45 (0.03) @ 2.5 V
- * 20161111/f2eed5e     REV7:   0.46 (0.04) @ 2.5 V
- */
-
-/**
- * @note    REV7 Power consumption investigation.
- *          Figures are not overly accurate due to hot airgun changing board temp. Shouldn't make enough of a difference for our purposes.
- * Baseline:                1.08 mA
- * - Motor decoupling caps: 1.08 mA
- * - Potentiometer:         1.02 mA
- * - BAV99 Suppressors:     1.02 mA
- * - TANT RF decoupling:    1.01 mA
- * - Motor diodes:          1.01 mA
- * - Op Amp:                0.99 mA
- * - Inductor:              178 mA (I think this is due to ML+MR being held high)
- * - H-Bridge Transistors:  0.99 mA
- * - All decoupling:        0.98 mA
- * - All H-Bridge resistors:0.98 mA
- * - Encoder:               0.98 mA
- * - Some resistors:        0.48 mA
+ * @brief    Motor encoder test (VCC ref) (DE201702)
+ * Vcc: 2.57
+ * State      read    Voltage (V)
+ * white,     24-28   ~0.06
+ * black,     42      ~0.1
+ * daylight*, > 600   > 1.5
+ * @note  - *: PCB removed from battery compartment + encoder pointed at window.
+ *        - When PCB is attached to battery compartment, encoder is unaffected by daylight, even with valve not put together.
+ *        - Increase in detected IR is decrease in measured value.
  */
