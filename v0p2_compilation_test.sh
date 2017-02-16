@@ -24,6 +24,8 @@ SKETCH_PATH=$PWD/Arduino/hardware  # Path to hardware directory
 # Verify sketch compiles.
 #$ARDUINO_PATH/arduino --verify --board $BUILD_TARGET $SKETCH_PATH
 
+echo STAGE 1 DONE
+
 (
 # Verify REV7 minimal test.
 arduino --verify --board $BUILD_TARGET $SKETCH_PATH/V0p2_Main_PCB_REV7_DORM1_and_REV8/REV7HardwareTest/REV7HardwareTest.ino
