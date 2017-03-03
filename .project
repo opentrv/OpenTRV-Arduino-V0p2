@@ -3,6 +3,8 @@
 	<name>OpenTRV-Arduino-V0p2</name>
 	<comment></comment>
 	<projects>
+		<project>OTAESGCM</project>
+		<project>OTRadioLink</project>
 	</projects>
 	<buildSpec>
 	</buildSpec>
