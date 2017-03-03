@@ -26,25 +26,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 #include <OTAESGCM.h>
 #endif
 
-// Singleton non-volatile stats store instance.
-OTV0P2BASE::EEPROMByHourByteStats eeStats;
-
-// Stats updater singleton.
-StatsU_t statsU;
-
-// Singleton scheduler instance.
-Scheduler_t Scheduler;
-
 #ifdef ENABLE_BOILER_HUB
 // True if boiler should be on.
 static bool isBoilerOn();
 #endif
-
-// Radiator valve mode (FROST, WARM, BAKE).
-OTRadValve::ValveMode valveMode;
-
-// Temperature control object.
-TempControl_t tempControl;
 
 #ifndef getMinBoilerOnMinutes
 // Get minimum on (and off) time for pointer (minutes); zero if not in hub mode.
@@ -56,13 +41,6 @@ uint8_t getMinBoilerOnMinutes() { return(~eeprom_read_byte((uint8_t *)V0P2BASE_E
 // Suggested minimum of 4 minutes for gas combi; much longer for heat pumps for example.
 void setMinBoilerOnMinutes(uint8_t mins) { OTV0P2BASE::eeprom_smart_update_byte((uint8_t *)V0P2BASE_EE_START_MIN_BOILER_ON_MINS_INV, ~(mins)); }
 #endif
-
-
-#ifdef ENABLE_OCCUPANCY_SUPPORT
-// Singleton implementation for entire node.
-OccupancyTracker Occupancy;
-#endif
-
 
 #ifdef ENABLE_MODELLED_RAD_VALVE
 static OTV0P2BASE::EEPROMByHourByteStats ebhs;

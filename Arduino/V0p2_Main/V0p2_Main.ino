@@ -384,6 +384,28 @@ uint8_t *appendStatsToTXBufferWithFF(uint8_t *bptr, const uint8_t bufSize)
 OTRadValve::FHT8VRadValve<_FHT8V_MAX_EXTRA_TRAILER_BYTES, OTRadValve::FHT8VRadValveBase::RFM23_PREAMBLE_BYTES, OTRadValve::FHT8VRadValveBase::RFM23_PREAMBLE_BYTE> FHT8V(appendStatsToTXBufferWithFF);
 #endif // ENABLE_FHT8VSIMPLE
 
+////////////////////////// CONTROL
+
+// Singleton non-volatile stats store instance.
+OTV0P2BASE::EEPROMByHourByteStats eeStats;
+
+// Stats updater singleton.
+StatsU_t statsU;
+
+// Singleton scheduler instance.
+Scheduler_t Scheduler;
+
+// Radiator valve mode (FROST, WARM, BAKE).
+OTRadValve::ValveMode valveMode;
+
+// Temperature control object.
+TempControl_t tempControl;
+
+#ifdef ENABLE_OCCUPANCY_SUPPORT
+// Singleton implementation for entire node.
+OccupancyTracker Occupancy;
+#endif
+
 
 //========================================
 // SETUP
