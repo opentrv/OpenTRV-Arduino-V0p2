@@ -354,7 +354,12 @@ ValveDirect_t ValveDirect([](){return((!valveUI.veryRecentUIControlUse()) && Amb
 uint8_t *appendStatsToTXBufferWithFF(uint8_t *bptr, const uint8_t bufSize)
 {
   OTV0P2BASE::FullStatsMessageCore_t trailer;
-  populateCoreStats(&trailer);
+  OTRadValve::populateCoreStats(&trailer,
+                    (localFHT8VTRVEnabled() ? &FHT8V : NULL),
+                    TemperatureC16.get(),
+                    Supply_cV.isSupplyVoltageLow(),
+                    AmbLight.get(),
+                    Occupancy.twoBitOccupancyValue());
   // Ensure that no ID is encoded in the message sent on the air since it would be a repeat from the FHT8V frame.
   trailer.containsID = false;
 

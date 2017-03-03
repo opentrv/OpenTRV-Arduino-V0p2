@@ -91,42 +91,6 @@ OTRadValve::ModelledRadValve NominalRadValve(
 #endif // ENABLE_MODELLED_RAD_VALVE
 
 
-#ifdef ENABLE_FS20_ENCODING_SUPPORT
-// Clear and populate core stats structure with information from this node.
-// Exactly what gets filled in will depend on sensors on the node,
-// and may depend on stats TX security level (eg if collecting some sensitive items is also expensive).
-void populateCoreStats(OTV0P2BASE::FullStatsMessageCore_t *const content)
-  {
-  clearFullStatsMessageCore(content); // Defensive programming: all fields should be set explicitly below.
-  if(localFHT8VTRVEnabled())
-    {
-    // Use FHT8V house codes if available.
-    content->id0 = FHT8V.nvGetHC1();
-    content->id1 = FHT8V.nvGetHC2();
-    }
-  else
-    {
-    // Use OpenTRV unique ID if no other higher-priority ID.
-    content->id0 = eeprom_read_byte(0 + (uint8_t *)V0P2BASE_EE_START_ID);
-    content->id1 = eeprom_read_byte(1 + (uint8_t *)V0P2BASE_EE_START_ID);
-    }
-  content->containsID = true;
-  content->tempAndPower.tempC16 = TemperatureC16.get();
-  content->tempAndPower.powerLow = Supply_cV.isSupplyVoltageLow();
-  content->containsTempAndPower = true;
-  content->ambL = OTV0P2BASE::fnmax((uint8_t)1, OTV0P2BASE::fnmin((uint8_t)254, AmbLight.get())); // Coerce to allowed value in range [1,254]. Bug-fix (twice! TODO-510) c/o Gary Gladman!
-  content->containsAmbL = true;
-  // OC1/OC2 = Occupancy: 00 not disclosed, 01 not occupied, 10 possibly occupied, 11 probably occupied.
-  // The encodeFullStatsMessageCore() route should omit data not appopriate for the privacy level, etc.
-#ifdef ENABLE_OCCUPANCY_SUPPORT
-  content->occ = Occupancy.twoBitOccupancyValue();
-#else
-  content->occ = 0; // Not supported.
-#endif
-  }
-#endif // ENABLE_FS20_ENCODING_SUPPORT
-
-
 // Call this to do an I/O poll if needed; returns true if something useful definitely happened.
 // This call should typically take << 1ms at 1MHz CPU.
 // Does not change CPU clock speeds, mess with interrupts (other than possible brief blocking), or sleep.

@@ -403,13 +403,6 @@ typedef
 extern StatsU_t statsU;
 
 
-#ifdef ENABLE_FS20_ENCODING_SUPPORT
-// Clear and populate core stats structure with information from this node.
-// Exactly what gets filled in will depend on sensors on the node,
-// and may depend on stats TX security level (if collecting some sensitive items is also expensive).
-void populateCoreStats(OTV0P2BASE::FullStatsMessageCore_t *content);
-#endif // ENABLE_FS20_ENCODING_SUPPORT
-
 #ifdef ENABLE_SETBACK_LOCKOUT_COUNTDOWN // TODO Move this into OTRadioLink for mainline version.
     /**
      * @brief   Retrieve the current setback lockout value from the EEPROM.
