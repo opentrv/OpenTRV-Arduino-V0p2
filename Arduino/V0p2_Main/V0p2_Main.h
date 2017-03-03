@@ -462,14 +462,6 @@ void serialStatusReport();
 #define serialStatusReport() { }
 #endif
 
-// Reset CLI active timer to the full whack before it goes inactive again (ie makes CLI active for a while).
-// Thread-safe.
-void resetCLIActiveTimer();
-
-// Returns true if the CLI is (or should currently be) active, at least intermittently.
-// Thread-safe.
-bool isCLIActive();
-
 // Suggested minimum buffer size for pollUI() to ensure maximum-sized commands can be received.
 #if defined(ENABLE_EXTENDED_CLI) || defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
 static constexpr uint8_t MAXIMUM_CLI_RESPONSE_CHARS = 1 + OTV0P2BASE::CLI::MAX_TYPICAL_CLI_BUFFER;

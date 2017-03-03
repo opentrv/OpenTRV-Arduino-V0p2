@@ -41,20 +41,6 @@ valveUI_t valveUI(
 #endif // valveUI_DEFINED
 
 
-// Remaining minutes to keep CLI active; zero implies inactive.
-// Starts up with zero value (CLI off) to avoid taking too many startup cycles from calibration, etc.
-// Marked volatile for thread-safe lock-free non-read-modify-write access to byte-wide value.
-// Compound operations on this value must block interrupts.
-static constexpr uint8_t CLI_DEFAULT_TIMEOUT_M = 2;
-static volatile uint8_t CLITimeoutM;
-// Reset CLI active timer to the full whack before it goes inactive again (ie makes CLI active for a while).
-// Thread-safe.
-void resetCLIActiveTimer() { CLITimeoutM = CLI_DEFAULT_TIMEOUT_M; }
-// Returns true if the CLI is active, at least intermittently.
-// Thread-safe.
-bool isCLIActive() { return(0 != CLITimeoutM); }
-
-
 // Check/apply the user's schedule, at least once each minute, and act on any timed events.
 #if !defined(checkUserSchedule)
 void checkUserSchedule()
@@ -399,13 +385,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute, const OTV0P2BASE::S
   {
   // Perform any once-per-minute operations.
   if(startOfMinute)
-    {
-    ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
-      {
-      // Run down CLI timer if need be.
-      if(CLITimeoutM > 0) { --CLITimeoutM; }
-      }
-    }
+    { OTV0P2BASE::CLI::countDownCLI(); }
 
   const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled<V0P2_UART_BAUD>();
 
@@ -420,7 +400,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute, const OTV0P2BASE::S
   if(n > 0)
     {
     // Got plausible input so keep the CLI awake a little longer.
-    resetCLIActiveTimer();
+    OTV0P2BASE::CLI::resetCLIActiveTimer();
 
     // Process the input received, with action based on the first char...
     bool showStatus = true; // Default to showing status.
@@ -433,7 +413,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute, const OTV0P2BASE::S
       // Exit/deactivate CLI immediately.
       // This should be followed by JUST CR ('\r') OR LF ('\n')
       // else the second will wake the CLI up again.
-      case 'E': { CLITimeoutM = 0; break; }
+      case 'E': { OTV0P2BASE::CLI::makeCLIInactive(); break; }
 
 #if defined(ENABLE_FHT8VSIMPLE) && (defined(ENABLE_LOCAL_TRV) || defined(ENABLE_SLAVE_TRV))
       // H [nn nn]

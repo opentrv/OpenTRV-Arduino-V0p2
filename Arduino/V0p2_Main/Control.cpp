@@ -787,7 +787,7 @@ ISR(PCINT2_vect)
   // It is OK to trigger this from other things such as button presses.
   // TODO: ensure that resetCLIActiveTimer() is inlineable to minimise ISR prologue/epilogue time and space.
   if((changes & SERIALRX_INT_MASK) && !(pins & SERIALRX_INT_MASK))
-    { resetCLIActiveTimer(); }
+    { OTV0P2BASE::CLI::resetCLIActiveTimer(); }
   }
 #endif
 
@@ -1615,7 +1615,7 @@ void loopOpenTRV()
   // using a timeout which should safely avoid overrun, ie missing the next basic tick,
   // and which should also allow some energy-saving sleep.
 #if 1 && defined(ENABLE_CLI)
-  if(isCLIActive())
+  if(OTV0P2BASE::CLI::isCLIActive())
     {
     const uint8_t stopBy = nearOverrunThreshold - 1;
     char buf[BUFSIZ_pollUI];
