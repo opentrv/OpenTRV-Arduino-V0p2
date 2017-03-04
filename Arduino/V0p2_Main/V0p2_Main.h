@@ -402,6 +402,26 @@ typedef
 extern StatsU_t statsU;
 
 
+// Mechanism to generate '=' stats line, if enabled.
+#if defined(ENABLE_SERIAL_STATUS_REPORT)
+typedef OTV0P2BASE::SystemStatsLine<
+      decltype(valveMode), &valveMode,
+      decltype(NominalRadValve), &NominalRadValve,
+      decltype(TemperatureC16), &TemperatureC16,
+      decltype(RelHumidity), &RelHumidity,
+      decltype(AmbLight), &AmbLight,
+      decltype(Occupancy), &Occupancy,
+      decltype(Scheduler), &Scheduler,
+#if defined(ENABLE_JSON_OUTPUT) && !defined(ENABLE_TRIMMED_MEMORY)
+      true // Enable JSON stats.
+#else
+      true // Disable JSON stats.
+#endif
+      > StatsLine_t;
+extern StatsLine_t statsLine;
+#endif // defined(ENABLE_SERIAL_STATUS_REPORT)
+
+
 #ifdef ENABLE_SETBACK_LOCKOUT_COUNTDOWN // TODO Move this into OTRadioLink for mainline version.
     /**
      * @brief   Retrieve the current setback lockout value from the EEPROM.
@@ -456,7 +476,7 @@ void checkUserSchedule();
 // Sends a short 1-line CRLF-terminated status report on the serial connection (at 'standard' baud).
 // Should be similar to PICAXE V0.1 output to allow the same parser to handle either.
 #ifdef ENABLE_SERIAL_STATUS_REPORT
-void serialStatusReport();
+inline void serialStatusReport() { statsLine.serialStatusReport(); }
 #else
 #define serialStatusReport() { }
 #endif

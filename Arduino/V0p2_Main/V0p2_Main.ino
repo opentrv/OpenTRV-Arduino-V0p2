@@ -411,6 +411,10 @@ TempControl_t tempControl;
 OccupancyTracker Occupancy;
 #endif
 
+// Mechanism to generate '=' stats line, if enabled.
+#if defined(ENABLE_SERIAL_STATUS_REPORT)
+StatsLine_t statsLine;
+#endif // defined(ENABLE_SERIAL_STATUS_REPORT)
 
 //========================================
 // SETUP
