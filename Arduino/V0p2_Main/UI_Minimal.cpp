@@ -279,11 +279,11 @@ void serialStatusReport()
 
 #if defined(ENABLE_CLI_HELP) && !defined(ENABLE_TRIMMED_MEMORY)
 #define _CLI_HELP_
-#define SYNTAX_COL_WIDTH 10 // Width of 'syntax' column; strictly positive.
+static constexpr uint8_t SYNTAX_COL_WIDTH = 10; // Width of 'syntax' column; strictly positive.
 // Estimated maximum overhead in sub-cycle ticks to print full line and all trailing CLI summary info.
-#define CLI_PRINT_OH_SCT ((uint8_t)(OTV0P2BASE::GSCT_MAX/4))
+static constexpr uint8_t CLI_PRINT_OH_SCT = ((uint8_t)(OTV0P2BASE::GSCT_MAX/4));
 // Deadline in minor cycle by which to stop printing description.
-#define STOP_PRINTING_DESCRIPTION_AT ((uint8_t)(OTV0P2BASE::GSCT_MAX-CLI_PRINT_OH_SCT))
+static constexpr uint8_t STOP_PRINTING_DESCRIPTION_AT = ((uint8_t)(OTV0P2BASE::GSCT_MAX-CLI_PRINT_OH_SCT));
 // Efficiently print a single line given the syntax element and the description, both non-null.
 // NOTE: will skip the description if getting close to the end of the time deadline, in order to avoid overrun.
 static void printCLILine(const uint8_t deadline, __FlashStringHelper const *syntax, __FlashStringHelper const *description)
