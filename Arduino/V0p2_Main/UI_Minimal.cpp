@@ -81,9 +81,6 @@ static bool extCLIHandler(Print *const p, char *const buf, const uint8_t n)
 #endif 
 
 
-// Prints a single space to Serial (which must be up and running).
-static void Serial_print_space() { Serial.print(' '); }
-
 #if defined(ENABLE_SERIAL_STATUS_REPORT) && !defined(serialStatusReport)
 // Sends a short 1-line CRLF-terminated status report on the serial connection (at 'standard' baud).
 // Ideally should be similar to PICAXE V0.1 output to allow the same parser to handle either.
@@ -138,11 +135,7 @@ void serialStatusReport()
   // Stats line starts with distinguished marker character.
   // Initial '=' section with common essentials.
   Serial.print((char) OTV0P2BASE::SERLINE_START_CHAR_STATS);
-//#ifdef SUPPORT_BAKE
   Serial.print(valveMode.inWarmMode() ? (valveMode.inBakeMode() ? 'B' : 'W') : 'F');
-//#else
-//  Serial.print(inWarmMode() ? 'W' : 'F');
-//#endif
 #if defined(ENABLE_NOMINAL_RAD_VALVE)
   Serial.print(NominalRadValve.get()); Serial.print('%'); // Target valve position.
 #endif
@@ -166,23 +159,23 @@ void serialStatusReport()
   const uint_least8_t hh = OTV0P2BASE::getHoursLT();
   const uint_least8_t mm = OTV0P2BASE::getMinutesLT();
   Serial.print(';'); // End previous section.
-  Serial.print('T'); Serial.print(hh); Serial_print_space(); Serial.print(mm);
+  Serial.print('T'); Serial.print(hh); OTV0P2BASE::Serial_print_space(); Serial.print(mm);
 #if defined(SCHEDULER_AVAILABLE)
   // Show all schedules set.
   for(uint8_t scheduleNumber = 0; scheduleNumber < Scheduler.MAX_SIMPLE_SCHEDULES; ++scheduleNumber)
     {
-    Serial_print_space();
+    OTV0P2BASE::Serial_print_space();
     uint_least16_t startMinutesSinceMidnightLT = Scheduler.getSimpleScheduleOn(scheduleNumber);
     const bool invalidStartTime = startMinutesSinceMidnightLT >= OTV0P2BASE::MINS_PER_DAY;
     const int startH = invalidStartTime ? 255 : (startMinutesSinceMidnightLT / 60);
     const int startM = invalidStartTime ? 0 : (startMinutesSinceMidnightLT % 60);
-    Serial.print('W'); Serial.print(startH); Serial_print_space(); Serial.print(startM);
-    Serial_print_space();
+    Serial.print('W'); Serial.print(startH); OTV0P2BASE::Serial_print_space(); Serial.print(startM);
+    OTV0P2BASE::Serial_print_space();
     uint_least16_t endMinutesSinceMidnightLT = Scheduler.getSimpleScheduleOff(scheduleNumber);
     const bool invalidEndTime = endMinutesSinceMidnightLT >= OTV0P2BASE::MINS_PER_DAY;
     const int endH = invalidEndTime ? 255 : (endMinutesSinceMidnightLT / 60);
     const int endM = invalidEndTime ? 0 : (endMinutesSinceMidnightLT % 60);
-    Serial.print('F'); Serial.print(endH); Serial_print_space(); Serial.print(endM);
+    Serial.print('F'); Serial.print(endH); OTV0P2BASE::Serial_print_space(); Serial.print(endM);
     }
   if(Scheduler.isAnyScheduleOnWARMNow()) { Serial.print('*'); } // Indicate that at least one schedule is active now.
 #endif // ENABLE_SINGLETON_SCHEDULE
@@ -195,14 +188,14 @@ void serialStatusReport()
 #ifdef ENABLE_LOCAL_TRV
   Serial.print(NominalRadValve.getTargetTempC());
 #endif // ENABLE_LOCAL_TRV
-  Serial_print_space();
+  OTV0P2BASE::Serial_print_space();
   Serial.print(tempControl.getFROSTTargetC());
-  Serial_print_space();
+  OTV0P2BASE::Serial_print_space();
   const uint8_t wt = tempControl.getWARMTargetC();
   Serial.print(wt);
 #ifdef ENABLE_FULL_OT_CLI
   // Show bias.
-  Serial_print_space();
+  OTV0P2BASE::Serial_print_space();
   Serial.print(tempControl.hasEcoBias() ? (tempControl.isEcoTemperature(wt) ? 'E' : 'e') : (tempControl.isComfortTemperature(wt) ? 'C': 'c')); // Show eco/comfort bias.
 #endif // ENABLE_FULL_OT_CLI
 #endif // ENABLE_SETTABLE_TARGET_TEMPERATURES
@@ -227,11 +220,11 @@ void serialStatusReport()
     {
     Serial.print(F(";HC"));
     Serial.print(hc1);
-    Serial_print_space();
+    OTV0P2BASE::Serial_print_space();
     Serial.print(FHT8V.nvGetHC2());
     if(!FHT8V.isInNormalRunState())
       {
-      Serial_print_space();
+      OTV0P2BASE::Serial_print_space();
       Serial.print('s'); // Indicate syncing with trailing lower-case 's' in field...
       }
     }
@@ -291,7 +284,7 @@ static void printCLILine(const uint8_t deadline, __FlashStringHelper const *synt
   Serial.print(syntax);
   OTV0P2BASE::flushSerialProductive(); // Ensure all pending output is flushed before sampling current position in minor cycle.
   if(OTV0P2BASE::getSubCycleTime() >= deadline) { Serial.println(); return; }
-  for(int8_t padding = SYNTAX_COL_WIDTH - strlen_P((const char *)syntax); --padding >= 0; ) { Serial_print_space(); }
+  for(int8_t padding = SYNTAX_COL_WIDTH - strlen_P((const char *)syntax); --padding >= 0; ) { OTV0P2BASE::Serial_print_space(); }
   Serial.println(description);
   }
 // Efficiently print a single line given a single-char syntax element and the description, both non-null.
@@ -301,7 +294,7 @@ static void printCLILine(const uint8_t deadline, const char syntax, __FlashStrin
   Serial.print(syntax);
   OTV0P2BASE::flushSerialProductive(); // Ensure all pending output is flushed before sampling current position in minor cycle.
   if(OTV0P2BASE::getSubCycleTime() >= deadline) { Serial.println(); return; }
-  for(int8_t padding = SYNTAX_COL_WIDTH - 1; --padding >= 0; ) { Serial_print_space(); }
+  for(int8_t padding = SYNTAX_COL_WIDTH - 1; --padding >= 0; ) { OTV0P2BASE::Serial_print_space(); }
   Serial.println(description);
   }
 #endif // defined(ENABLE_CLI_HELP) && !defined(ENABLE_TRIMMED_MEMORY)
@@ -522,7 +515,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute, const OTV0P2BASE::S
 //          {
 //          const uint8_t setN = (uint8_t) atoi(tok1);
 //          for(uint8_t hh = 0; hh < 24; ++hh)
-//            { Serial.print(getByHourStat(setN, hh)); Serial_print_space(); }
+//            { Serial.print(getByHourStat(setN, hh)); OTV0P2BASE::Serial_print_space(); }
 //          Serial.println();
 //          }
 //        break;

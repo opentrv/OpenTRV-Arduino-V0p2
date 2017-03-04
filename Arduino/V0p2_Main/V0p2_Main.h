@@ -184,7 +184,6 @@ bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadi
 // Radiator valve mode (FROST, WARM, BAKE).
 extern OTRadValve::ValveMode valveMode;
 
-// FIXME Moved up from line 464 to fix compilation errors (OccupancyTracker needed on line 261)
 // IF DEFINED: support for general timed and multi-input occupancy detection / use.
 #ifdef ENABLE_OCCUPANCY_SUPPORT
 typedef OTV0P2BASE::PseudoSensorOccupancyTracker OccupancyTracker;
