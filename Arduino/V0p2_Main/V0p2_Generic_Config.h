@@ -105,9 +105,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 //#define CONFIG_REV14 // REV14 w/ light sensor, SHT21 and voice sensor.
 //#define CONFIG_BAREBONES // No peripherals / on breadboard.
 
-
-
-
 // --------------------------------------------
 
 // Breadboard/stripboard/minimal designs.
@@ -140,66 +137,17 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 // REV14 w/ LoRa, TMP, SHT and QM-1.
 #include <OTV0p2_CONFIG_REV14.h>
 
-
-
-
-
-
-
-
-
-
-
-
 // --------------------------------------------
-// CONSEQUENTIAL DEFINITIONS ARISING FROM ABOVE
-// (Don't fiddle with these unless you are sure of module interdependencies, etc!)
+
+// Fixups to apply after loading the target config.
+#include <OTV0p2_valve_ENABLE_fixups.h>
 
 
-
-// If ENABLE_LEARN_BUTTON then in the absence of anything better ENABLE_SINGLETON_SCHEDULE should be supported.
-#ifdef ENABLE_LEARN_BUTTON
-#ifndef ENABLE_SINGLETON_SCHEDULE
-#define ENABLE_SINGLETON_SCHEDULE
-#endif
-#endif
-
-// For now (DHD20150927) allowing stats TX forces allowing JSON stats.
-// IF DEFINED: allow TX of stats frames.
-#ifdef ENABLE_STATS_TX
-// IF DEFINED: allow JSON stats frames alongside binary ones.
-#define ENABLE_JSON_OUTPUT
-#endif
-
-// If a stats or boiler hub, define ENABLE_HUB_LISTEN.
-#if defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)
-#define ENABLE_HUB_LISTEN
-// Force-enable RX if not already so.
-#define ENABLE_RADIO_RX
-#endif
-
-// If (potentially) needing to run in some sort of continuous RX mode, define a flag.
-#if defined(ENABLE_HUB_LISTEN) || defined(ENABLE_DEFAULT_ALWAYS_RX)
-#define ENABLE_CONTINUOUS_RX // was #define CONFIG_IMPLIES_MAY_NEED_CONTINUOUS_RX true
-#endif
-
-// By default (up to 2015), use the RFM22/RFM23 module to talk to an FHT8V wireless radiator valve.
-#ifdef ENABLE_FHT8VSIMPLE
-#define ENABLE_RADIO_RFM23B
-#define ENABLE_FS20_CARRIER_SUPPORT
-#define ENABLE_FS20_ENCODING_SUPPORT
-// If this can be a hub, enable extra RX code.
-#if defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)
-#define ENABLE_FHT8VSIMPLE_RX
-#endif // defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)
-#if defined(ENABLE_STATS_RX)
-#define ENABLE_FS20_NATIVE_AND_BINARY_STATS_RX
-#endif // defined(ENABLE_STATS_RX)
-#endif // ENABLE_FHT8VSIMPLE
-
-#endif
-
-
+// Trailing one-off fixup.
 
 // Define to force data out once-per-minute for debugging and algorithm development.
 //#define ENABLE_FREQUENT_STATS_TX
+
+
+#endif
+
