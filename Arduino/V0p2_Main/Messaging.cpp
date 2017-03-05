@@ -128,8 +128,6 @@ OTRadioLink::OTRadioLink &SecondaryRadio = NullRadio;
 //   * RFM23BfriendlyPremable  if true then add an extra preamble
 //     to allow RFM23B-based receiver to RX this
 // This will use whichever transmission medium/carrier/etc is available.
-//#define STATS_MSG_START_OFFSET (RFM22_PREAMBLE_BYTES + RFM22_SYNC_MIN_BYTES)
-//#define STATS_MSG_MAX_LEN (64 - STATS_MSG_START_OFFSET)
 void RFM22RawStatsTXFFTerminated(uint8_t * const buf, const bool doubleTX, bool RFM23BFramed)
   {
   if(RFM23BFramed) RFM22RXPreambleAdd(buf);     // Only needed for RFM23B. This should be made more clear when refactoring

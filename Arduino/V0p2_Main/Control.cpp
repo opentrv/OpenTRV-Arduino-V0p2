@@ -155,13 +155,10 @@ void bareStatsTX(const bool allowDoubleTX, const bool doBinary)
   const bool doEnc = false;
 #endif
 
-  const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled<V0P2_UART_BAUD>(); // FIXME
-#if (FullStatsMessageCore_MAX_BYTES_ON_WIRE > STATS_MSG_MAX_LEN)
-#error FullStatsMessageCore_MAX_BYTES_ON_WIRE too big
-#endif // FullStatsMessageCore_MAX_BYTES_ON_WIRE > STATS_MSG_MAX_LEN
-#if (MSG_JSON_MAX_LENGTH+1 > STATS_MSG_MAX_LEN) // Allow 1 for trailing CRC.
-#error MSG_JSON_MAX_LENGTH too big
-#endif // MSG_JSON_MAX_LENGTH+1 > STATS_MSG_MAX_LEN
+  const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled<>();
+  
+static_assert(OTV0P2BASE::FullStatsMessageCore_MAX_BYTES_ON_WIRE <= STATS_MSG_MAX_LEN, "FullStatsMessageCore_MAX_BYTES_ON_WIRE too big");
+static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_MAX_LENGTH too big"); // Allow 1 for trailing CRC.
 
   // Allow space in buffer for:
   //   * buffer offset/preamble
@@ -171,10 +168,6 @@ void bareStatsTX(const bool allowDoubleTX, const bool doBinary)
   // Buffer need be no larger than leading length byte + typical 64-byte radio module TX buffer limit + optional terminator.
   const uint8_t MSG_BUF_SIZE = 1 + 64 + 1;
   uint8_t buf[MSG_BUF_SIZE];
-#if 0
-  // Make sure buffer is cleared for debug purposes
-  memset(buf, 0, sizeof(buf));
-#endif // 0
 
 #if defined(ENABLE_JSON_OUTPUT)
   if(doBinary && !doEnc) // Note that binary form is not secure, so not permitted for secure systems.
@@ -378,9 +371,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
       if(!OTV0P2BASE::getPrimaryBuilding16ByteSecretKey(key))
         {
         sendingJSONFailed = true;
-#if 1 // && defined(DEBUG)
         OTV0P2BASE::serialPrintlnAndFlush(F("!TX key")); // Know why TX failed.
-#endif
         }
 #else
       sendingJSONFailed = true; // Crypto support may not be available.
@@ -397,8 +388,6 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
       constexpr uint8_t workspaceSize = OTRadioLink::SimpleSecureFrame32or0BodyTXBase::generateSecureOFrameRawForTX_total_scratch_usage_OTAESGCM_2p0;
       uint8_t workspace[workspaceSize];
       OTV0P2BASE::ScratchSpace sW(workspace, workspaceSize);
-//      // Deprecated: on-stack hidden workspace.      
-//      const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEnc_ptr_t eS = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_STATELESS;
       const uint8_t txIDLen = OTRadioLink::ENC_BODY_DEFAULT_ID_BYTES;
       // When sending on a channel with framing, do not explicitly send the frame length byte.
       const uint8_t offset = framed ? 1 : 0;
@@ -410,9 +399,6 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
       // Distinguished 'invalid' valve position; never mistaken for a real valve.
       const uint8_t valvePC = 0x7f;
 #endif // defined(ENABLE_NOMINAL_RAD_VALVE)
-//      const uint8_t bodylen = OTRadioLink::SimpleSecureFrame32or0BodyTXV0p2::getInstance().generateSecureOFrameRawForTX(
-//            realTXFrameStart - offset, sizeof(buf) - (realTXFrameStart-buf) + offset,
-//            txIDLen, valvePC, (const char *)bufJSON, eS, NULL, key);
       const uint8_t bodylen = OTRadioLink::SimpleSecureFrame32or0BodyTXV0p2::getInstance().generateSecureOFrameRawForTX(
             realTXFrameStart - offset, sizeof(buf) - (realTXFrameStart-buf) + offset,
             txIDLen, valvePC, (const char *)bufJSON, eW, sW, key);

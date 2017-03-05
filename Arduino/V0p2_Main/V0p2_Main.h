@@ -88,11 +88,11 @@ extern OTRadioLink::OTRadioLink &SecondaryRadio;
 extern const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config;
 #endif // ENABLE_RADIO_SIM900
 
-#define RFM22_PREAMBLE_BYTE 0xaa // Preamble byte for RFM22/23 reception.
-#define RFM22_PREAMBLE_MIN_BYTES 4 // Minimum number of preamble bytes for reception.
-#define RFM22_PREAMBLE_BYTES 5 // Recommended number of preamble bytes for reliable reception.
-#define RFM22_SYNC_BYTE 0xcc // Sync-word trailing byte (with FHT8V primarily).
-#define RFM22_SYNC_MIN_BYTES 3 // Minimum number of sync bytes.
+static constexpr uint8_t RFM22_PREAMBLE_BYTE = 0xaa; // Preamble byte for RFM22/23 reception.
+static constexpr uint8_t RFM22_PREAMBLE_MIN_BYTES = 4; // Minimum number of preamble bytes for reception.
+static constexpr uint8_t RFM22_PREAMBLE_BYTES = 5; // Recommended number of preamble bytes for reliable reception.
+static constexpr uint8_t RFM22_SYNC_BYTE = 0xcc; // Sync-word trailing byte (with FHT8V primarily).
+static constexpr uint8_t RFM22_SYNC_MIN_BYTES = 3; // Minimum number of sync bytes.
 
 // Send the underlying stats binary/text 'whitened' message.
 // This must be terminated with an 0xff (which is not sent),
@@ -105,8 +105,8 @@ extern const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config;
 //   * RFM23BfriendlyPremable  if true then add an extra preamble
 //     to allow RFM23B-based receiver to RX this
 // This will use whichever transmission medium/carrier/etc is available.
-#define STATS_MSG_START_OFFSET (RFM22_PREAMBLE_BYTES + RFM22_SYNC_MIN_BYTES)
-#define STATS_MSG_MAX_LEN (64 - STATS_MSG_START_OFFSET)
+static constexpr uint8_t STATS_MSG_START_OFFSET = (RFM22_PREAMBLE_BYTES + RFM22_SYNC_MIN_BYTES);
+static constexpr uint8_t STATS_MSG_MAX_LEN = (64 - STATS_MSG_START_OFFSET);
 #if defined(ENABLE_RFM23B_FS20_RAW_PREAMBLE)
 void RFM22RawStatsTXFFTerminated(uint8_t *buf, bool doubleTX, bool RFM23BFramed = true);
 #endif
