@@ -538,7 +538,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute, const OTV0P2BASE::S
           Occupancy.setHolidayMode();
           }
 #endif
-#if defined(ENABLE_SETTABLE_TARGET_TEMPERATURES)
+#if defined(ENABLE_SETTABLE_TARGET_TEMPERATURES) && !defined(TEMP_POT_AVAILABLE)
         char *last; // Used by strtok_r().
         char *tok1;
         if((n >= 3) && (NULL != (tok1 = strtok_r(buf+2, " ", &last))))

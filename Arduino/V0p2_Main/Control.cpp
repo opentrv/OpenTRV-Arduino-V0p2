@@ -184,8 +184,12 @@ void bareStatsTX(const bool allowDoubleTX, const bool doBinary)
     // Send binary message first (insecure, FS20-piggyback format).
     // Gather core stats.
     OTV0P2BASE::FullStatsMessageCore_t content;
-    populateCoreStats(&content);
-    const uint8_t *msg1 = OTV0P2BASE::encodeFullStatsMessageCore(buf + STATS_MSG_START_OFFSET, sizeof(buf) - STATS_MSG_START_OFFSET, OTV0P2BASE::getStatsTXLevel(), false, &content);
+    OTRadValve::populateCoreStats(&content,
+                    (localFHT8VTRVEnabled() ? &FHT8V : NULL),
+                    TemperatureC16.get(),
+                    Supply_cV.isSupplyVoltageLow(),
+                    AmbLight.get(),
+                    Occupancy.twoBitOccupancyValue());    const uint8_t *msg1 = OTV0P2BASE::encodeFullStatsMessageCore(buf + STATS_MSG_START_OFFSET, sizeof(buf) - STATS_MSG_START_OFFSET, OTV0P2BASE::getStatsTXLevel(), false, &content);
     if(NULL == msg1)
       {
 #if 0

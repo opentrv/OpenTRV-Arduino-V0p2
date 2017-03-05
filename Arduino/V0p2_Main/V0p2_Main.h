@@ -408,7 +408,11 @@ typedef OTV0P2BASE::SystemStatsLine<
       decltype(valveMode), &valveMode,
       decltype(NominalRadValve), &NominalRadValve,
       decltype(TemperatureC16), &TemperatureC16,
+#if defined(HUMIDITY_SENSOR_SUPPORT)
       decltype(RelHumidity), &RelHumidity,
+#else
+      OTV0P2BASE::HumiditySensorBase, (OTV0P2BASE::HumiditySensorBase *)NULL,
+#endif // defined(HUMIDITY_SENSOR_SUPPORT)
       decltype(AmbLight), &AmbLight,
       decltype(Occupancy), &Occupancy,
       decltype(Scheduler), &Scheduler,
