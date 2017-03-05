@@ -157,7 +157,7 @@ static const OTRadioLink::OTRadioChannelConfig SecondaryRadioConfig(NULL, true);
 #if defined(ENABLE_STATS_RX) && defined(ENABLE_FS20_ENCODING_SUPPORT)
 
 // If in stats or boiler hub mode, and with an FS20 OOK carrier, then apply a trailing-zeros RX filter.
-#if (defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)) && defined(LISTEN_FOR_FTp2_FS20_native)
+#if (defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)) && defined(ENABLE_FHT8VSIMPLE_RX)
 #define CONFIG_TRAILING_ZEROS_FILTER_RX
 #endif
 

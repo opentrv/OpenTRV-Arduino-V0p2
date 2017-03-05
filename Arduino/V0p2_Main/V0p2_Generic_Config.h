@@ -191,7 +191,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 // If this can be a hub, enable extra RX code.
 #if defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)
 #define ENABLE_FHT8VSIMPLE_RX
-#define LISTEN_FOR_FTp2_FS20_native
 #endif // defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)
 #if defined(ENABLE_STATS_RX)
 #define ENABLE_FS20_NATIVE_AND_BINARY_STATS_RX
