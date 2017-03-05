@@ -406,7 +406,11 @@ extern StatsU_t statsU;
 #if defined(ENABLE_SERIAL_STATUS_REPORT)
 typedef OTV0P2BASE::SystemStatsLine<
       decltype(valveMode), &valveMode,
+#if defined(ENABLE_LOCAL_TRV)
       decltype(NominalRadValve), &NominalRadValve,
+#else
+      OTRadValve::AbstractRadValve, (OTRadValve::AbstractRadValve *)NULL,
+#endif // defined(ENABLE_LOCAL_TRV)
       decltype(TemperatureC16), &TemperatureC16,
 #if defined(HUMIDITY_SENSOR_SUPPORT)
       decltype(RelHumidity), &RelHumidity,
