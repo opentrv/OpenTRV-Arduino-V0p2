@@ -542,10 +542,10 @@ static void endOfDayTasks()
 
 
 // Controller's view of Least Significant Digits of the current (local) time, in this case whole seconds.
-// See PICAXE V0.1/V0.09/DHD201302L0 code.
-#define TIME_LSD_IS_BINARY // TIME_LSD is in binary (cf BCD).
-#define TIME_CYCLE_S 60 // TIME_LSD ranges from 0 to TIME_CYCLE_S-1, also major cycle length.
-static uint_fast8_t TIME_LSD; // Controller's notion of seconds within major cycle.
+// TIME_LSD ranges from 0 to TIME_CYCLE_S-1, also major cycle length.
+static constexpr uint_fast8_t TIME_CYCLE_S = 60;
+// Controller's notion/cache of seconds within major cycle.
+static uint_fast8_t TIME_LSD;
 
 // 'Elapsed minutes' count of minute/major cycles; cheaper than accessing RTC and not tied to real time.
 // Starts at or just above zero (within the first 4-minute cycle) to help avoid collisions between units after mass power-up.
@@ -665,7 +665,6 @@ void setupOpenTRV()
       bareStatsTX(true, false);
       if(!ss1.changedValue()) { break; }
       }
-  //  nap(WDTO_120MS, false);
     }
 #endif
 
