@@ -41,31 +41,6 @@ valveUI_t valveUI(
 #endif // valveUI_DEFINED
 
 
-// Check/apply the user's schedule, at least once each minute, and act on any timed events.
-#if !defined(checkUserSchedule)
-void checkUserSchedule()
-  {
-  // Get minutes since midnight local time [0,1439].
-  const uint_least16_t msm = OTV0P2BASE::getMinutesSinceMidnightLT();
-
-  // Check all available schedules.
-  // FIXME: probably will NOT work as expected for overlapping schedules (ie will got to FROST at end of first one).
-  for(uint8_t which = 0; which < Scheduler.MAX_SIMPLE_SCHEDULES; ++which)
-    {
-    // Check if now is the simple scheduled off time, as minutes after midnight [0,1439]; invalid (eg ~0) if none set.
-    // Programmed off/frost takes priority over on/warm if same to bias towards energy-saving.
-    // Note that in the presence of multiple overlapping schedules only the last 'off' applies however.
-    if(((Scheduler.MAX_SIMPLE_SCHEDULES < 1) || !Scheduler.isAnyScheduleOnWARMNow()) &&
-       (msm == Scheduler.getSimpleScheduleOff(which)))
-      { valveMode.setWarmModeDebounced(false); }
-    // Check if now is the simple scheduled on time.
-    else if(msm == Scheduler.getSimpleScheduleOn(which))
-      { valveMode.setWarmModeDebounced(true); }
-    }
-  }
-#endif // !defined(checkUserSchedule)
-
-
 #ifdef ENABLE_EXTENDED_CLI
 // Handle CLI extension commands.
 // Commands of form:

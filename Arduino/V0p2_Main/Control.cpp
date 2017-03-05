@@ -1314,7 +1314,8 @@ void loopOpenTRV()
       {
       // Tasks that must be run every minute.
       ++minuteCount; // Note simple roll-over to 0 at max value.
-      checkUserSchedule(); // Force to user's programmed settings, if any, at the correct time.
+      // Force to user's programmed schedule(s), if any, at the correct time.
+      Scheduler.applyUserSchedule(&valveMode, OTV0P2BASE::getMinutesSinceMidnightLT());
       // Ensure that the RTC has been persisted promptly when necessary.
       OTV0P2BASE::persistRTC();
       // Run hourly tasks at the end of the hour.

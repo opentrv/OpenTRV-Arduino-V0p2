@@ -354,7 +354,7 @@ void setMinBoilerOnMinutes(uint8_t mins);
 #if defined(ENABLE_SINGLETON_SCHEDULE)
 #define SCHEDULER_AVAILABLE
 // Singleton scheduler instance.
-typedef OTV0P2BASE::SimpleValveSchedule
+typedef OTRadValve::SimpleValveSchedule
     <
     LEARNED_ON_PERIOD_M, LEARNED_ON_PERIOD_COMFORT_M,
     decltype(tempControl), &tempControl,
@@ -473,13 +473,6 @@ void remoteCallForHeatRX(uint16_t id, uint8_t percentOpen);
   #endif
 extern valveUI_t valveUI;
 #endif // ENABLE_LOCAL_TRV && !NO_UI_SUPPORT
-
-// Check/apply the user's schedule, at least once each minute, and act on any timed events.
-#if defined(SCHEDULER_AVAILABLE)
-void checkUserSchedule();
-#else
-#define checkUserSchedule() // Reduce to a no-op.
-#endif // defined(SCHEDULER_AVAILABLE)
 
 // Sends a short 1-line CRLF-terminated status report on the serial connection (at 'standard' baud).
 // Should be similar to PICAXE V0.1 output to allow the same parser to handle either.
