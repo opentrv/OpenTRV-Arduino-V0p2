@@ -364,7 +364,7 @@ typedef OTRadValve::SimpleValveSchedule
     > Scheduler_t;
 #else
 // Dummy scheduler to simplify coding.
-typedef OTV0P2BASE::NULLValveSchedule Scheduler_t;
+typedef OTRadValve::NULLValveSchedule Scheduler_t;
 #endif // defined(ENABLE_SINGLETON_SCHEDULE)
 extern Scheduler_t Scheduler;
 

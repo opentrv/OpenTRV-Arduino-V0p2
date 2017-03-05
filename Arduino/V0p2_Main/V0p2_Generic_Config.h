@@ -60,8 +60,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 //#define CONFIG_Trial2013Winter_Round2_LVBH // REV2 cut4 local valve control and boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as plain boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
-#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
-//#define CONFIG_DORM1 // REV7 / DORM1 / TRV1.x all-in-one valve unit, secure TX.
+//#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
+#define CONFIG_DORM1 // REV7 / DORM1 / TRV1.x all-in-one valve unit, secure TX.
 //#define CONFIG_DORM1_BOILER // REV8 / DORM1 boiler-control unit.
 //#define CONFIG_REV8_SECURE_BHR // REV8 secure boiler controller and stats hub.
 //#define CONFIG_REV10_AS_GSM_RELAY_ONLY // REV10: stats relay only.
@@ -83,25 +83,22 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 //#define CONFIG_BH_DHW // Bo's hot water.
 //#define CONFIG_BH_TESTLAB // Bo's test environment.
 //#define CONFIG_DORM1_SECURE_AND_FS20 // REV7 / DORM1 / TRV1.x all-in-one valve unit, secure + FS20 non-secure comms.
-//#define CONFIG_DORM1_SANS32K // REV7 / DORM1 without working 32768Hz clock.
-//#define CONFIG_DORM1_MUT // REV7 / DORM1 Winter 2014/2015 minimal for unit testing.
 //#define CONFIG_REV7N // REV7 with external "Model N" valve.
 //#define CONFIG_REV7_AS_SENSOR // REV7 as JSON-only stats/sensor leaf.
 //#define CONFIG_REV7_AS_SECURE_SENSOR // REV7 as JSON-only stats/sensor leaf with secure comms.
-//#define CONFIG_REV7_EEPROM_TEST // for testing key loss issues
 //#define CONFIG_REV9_STATS // REV9 as stats node, cut 2 of the board.
 //#define CONFIG_DE_TESTLAB // Deniz's test environment.
-//#define CONFIG_REV10_STRIPBOARD // REV10-based stripboard precursor for bus shelters
-//#define CONFIG_REV10 // Generic REV10 config
+//#define CONFIG_REV10_STRIPBOARD // REV10-based stripboard precursor for bus shelters.
+//#define CONFIG_REV10 // Generic REV10 config.
 //#define CONFIG_REV10_BHR // REV10: boiler hub and stats relay.
 //#define CONFIG_REV10_SECURE_BOILERHUB_GSM_SECURE // REV10 PCB boiler hub, relay to GSM, 2015/12 secure protocol.
 //#define CONFIG_REV10_SECURE_BHR_NULLRADIO// REV10: boiler hub and stats relay with AESGCM and a null secondary radio.
-//#define CONFIG_REV11_RFM23BTEST // Basic test to see if stats send
+//#define CONFIG_REV11_RFM23BTEST // Basic test to see if stats send.
 //#define CONFIG_REV11_SECURE_SENSOR
 //#define CONFIG_REV11_SENSOR
 //#define CONFIG_REV11_SECURE_STATSHUB
 //#define CONFIG_REV11_STATSHUB
-//#define CONFIG_REV14_PROTO  // Prototype REV14 w/ LoRa, TMP, SHT and QM-1
+//#define CONFIG_REV14_PROTO  // Prototype REV14 w/ LoRa, TMP, SHT and QM-1.
 //#define CONFIG_REV14 // REV14 w/ light sensor, SHT21 and voice sensor.
 //#define CONFIG_BAREBONES // No peripherals / on breadboard.
 
@@ -116,8 +113,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 // For trial over winter of 2013--4, second round (REV2).
 #include <OTV0p2_CONFIG_REV2.h>
 
-// All-in-one valve unit.
-#include <OTV0p2_CONFIG_REV4.h>
+//// All-in-one valve unit.
+//#include <OTV0p2_CONFIG_REV4.h>
 
 // All-in-one valve unit (DORM1).
 #include <OTV0p2_CONFIG_REV7.h>
@@ -143,7 +140,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 #include <OTV0p2_valve_ENABLE_fixups.h>
 
 
-// Trailing one-off fixup.
+// --------------------------------------------
+// Trailing one-off local fixups.
 
 // Define to force data out once-per-minute for debugging and algorithm development.
 //#define ENABLE_FREQUENT_STATS_TX
