@@ -155,6 +155,12 @@ static const OTRadioLink::OTRadioChannelConfig SecondaryRadioConfig(NULL, true);
 
 
 #if defined(ENABLE_STATS_RX) && defined(ENABLE_FS20_ENCODING_SUPPORT)
+
+// If in stats or boiler hub mode, and with an FS20 OOK carrier, then apply a trailing-zeros RX filter.
+#if (defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)) && defined(LISTEN_FOR_FTp2_FS20_native)
+#define CONFIG_TRAILING_ZEROS_FILTER_RX
+#endif
+
 // If using FS20-based non-secured messaging...
 // If a stats hub then be prepared to accept a wide variety of binary and JSON message types.
 // It may yet be good to trim the smaller message types down to size in particular to help queueing.
