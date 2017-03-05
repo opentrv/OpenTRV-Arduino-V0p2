@@ -48,7 +48,7 @@ static OTV0P2BASE::EEPROMByHourByteStats ebhs;
   typedef bool(*setbackLockout_t)();
 #if defined(ENABLE_SETBACK_LOCKOUT_COUNTDOWN) && defined(ARDUINO_ARCH_AVR)
   // If allowing setback lockout, eg for testing, then inject suitable lambda.
-  static bool setbackLockout() {return(0xff != eeprom_read_byte((uint8_t *)OTV0P2BASE::V0P2BASE_EE_START_SETBACK_LOCKOUT_COUNTDOWN_D_INV));}
+  static bool setbackLockout() { return(0 != OTRadValve::getSetbackLockout()); }
 #else
   static constexpr setbackLockout_t setbackLockout = NULL;
 #endif
@@ -304,7 +304,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 #endif // defined(ENABLE_LOCAL_TRV)
 #ifdef ENABLE_SETBACK_LOCKOUT_COUNTDOWN
     // Show state of setback lockout.
-    ss1.put(V0p2_SENSOR_TAG_F("gE"), getSetbackLockout(), true);
+    ss1.put(V0p2_SENSOR_TAG_F("gE"), OTRadValve::getSetbackLockout(), true);
 #endif // ENABLE_SETBACK_LOCKOUT_COUNTDOWN
 #if defined(ENABLE_ALWAYS_TX_ALL_STATS)
     const uint8_t privacyLevel = OTV0P2BASE::stTXalwaysAll;

@@ -68,26 +68,6 @@ void panic(const __FlashStringHelper *s);
 // NOTE: implementation may not be in power-management module.
 bool pollIO(bool force = false);
 
-#ifndef DEBUG
-#define DEBUG_SERIAL_PRINT(s) // Do nothing.
-#define DEBUG_SERIAL_PRINTFMT(s, format) // Do nothing.
-#define DEBUG_SERIAL_PRINT_FLASHSTRING(fs) // Do nothing.
-#define DEBUG_SERIAL_PRINTLN_FLASHSTRING(fs) // Do nothing.
-#define DEBUG_SERIAL_PRINTLN() // Do nothing.
-#define DEBUG_SERIAL_TIMESTAMP() // Do nothing.
-#else
-// Send simple string or numeric to serial port and wait for it to have been sent.
-// Make sure that Serial.begin() has been invoked, etc.
-#define DEBUG_SERIAL_PRINT(s) { OTV0P2BASE::serialPrintAndFlush(s); }
-#define DEBUG_SERIAL_PRINTFMT(s, fmt) { OTV0P2BASE::serialPrintAndFlush((s), (fmt)); }
-#define DEBUG_SERIAL_PRINT_FLASHSTRING(fs) { OTV0P2BASE::serialPrintAndFlush(F(fs)); }
-#define DEBUG_SERIAL_PRINTLN_FLASHSTRING(fs) { OTV0P2BASE::serialPrintlnAndFlush(F(fs)); }
-#define DEBUG_SERIAL_PRINTLN() { OTV0P2BASE::serialPrintlnAndFlush(); }
-// Print timestamp with no newline in format: MinutesSinceMidnight:Seconds:SubCycleTime
-extern void _debug_serial_timestamp();
-#define DEBUG_SERIAL_TIMESTAMP() _debug_serial_timestamp()
-#endif // DEBUG
-
 
 ////// MESSAGING
 
@@ -427,21 +407,15 @@ typedef OTV0P2BASE::SystemStatsLine<
 #endif
       > StatsLine_t;
 extern StatsLine_t statsLine;
+// Send a short 1-line CRLF-terminated status report on the serial connection (at 'standard' baud).
+// Should be similar to PICAXE V0.1 output to allow the same parser to handle either.
+inline void serialStatusReport() { statsLine.serialStatusReport(); }
+#else
+#define serialStatusReport() { }
 #endif // defined(ENABLE_SERIAL_STATUS_REPORT)
 
-
-#ifdef ENABLE_SETBACK_LOCKOUT_COUNTDOWN // TODO Move this into OTRadioLink for mainline version.
-    /**
-     * @brief   Retrieve the current setback lockout value from the EEPROM.
-     * @retval  The number of days left of the setback lockout. Setback lockout is disabled when this reaches 0.
-     * @note    The value is stored inverted in EEPROM.
-     * @note    This is stored as G 0 for TRV1.5 devices, but may change in future.
-     */
-    static inline uint8_t getSetbackLockout() { return ~(eeprom_read_byte((uint8_t *)OTV0P2BASE::V0P2BASE_EE_START_SETBACK_LOCKOUT_COUNTDOWN_D_INV)); }
-#endif // ENABLE_SETBACK_LOCKOUT_COUNTDOWN
-
 // Do bare stats transmission.
-// Output should be filtered for items appropriate
+// Output should be filtered for items appModelledRadValveComputeTargetTempBasicropriate
 // to current channel security and sensitivity level.
 // This may be binary or JSON format.
 //   * allowDoubleTX  allow double TX to increase chance of successful reception
@@ -474,13 +448,6 @@ void remoteCallForHeatRX(uint16_t id, uint8_t percentOpen);
 extern valveUI_t valveUI;
 #endif // ENABLE_LOCAL_TRV && !NO_UI_SUPPORT
 
-// Sends a short 1-line CRLF-terminated status report on the serial connection (at 'standard' baud).
-// Should be similar to PICAXE V0.1 output to allow the same parser to handle either.
-#ifdef ENABLE_SERIAL_STATUS_REPORT
-inline void serialStatusReport() { statsLine.serialStatusReport(); }
-#else
-#define serialStatusReport() { }
-#endif
 
 // Suggested minimum buffer size for pollUI() to ensure maximum-sized commands can be received.
 #if defined(ENABLE_EXTENDED_CLI) || defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
@@ -491,10 +458,12 @@ static constexpr uint8_t MAXIMUM_CLI_RESPONSE_CHARS = 1 + OTV0P2BASE::CLI::MIN_T
 static constexpr uint8_t BUFSIZ_pollUI = 1 + MAXIMUM_CLI_RESPONSE_CHARS;
 
 // Used to poll user side for CLI input until specified sub-cycle time.
-// A period of less than (say) 500ms will be difficult for direct human response on a raw terminal.
-// A period of less than (say) 100ms is not recommended to avoid possibility of overrun on long interactions.
+// A period of less than (say) 500ms will be difficult for
+// direct human response on a raw terminal.
+// A period of less than (say) 100ms is not recommended to avoid
+// possibility of overrun on long interactions.
 // Times itself out after at least a minute or two of inactivity. 
-// NOT RENTRANT (eg uses static state for speed and code space).
+// NOT RE-ENTRANT (eg uses static state for speed and code space).
 void pollCLI(uint8_t maxSCT, bool startOfMinute, const OTV0P2BASE::ScratchSpace &s);
 
 
