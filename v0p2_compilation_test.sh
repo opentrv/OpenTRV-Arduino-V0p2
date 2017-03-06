@@ -34,19 +34,8 @@ PARTPATHS="
 # Note which one is being tested to make clear which one has failed, if any.
 for pp in $PARTPATHS;
 do
-    echo Testing $SKETCH_PATH/$pp
+    echo "@@@@@@" Testing $SKETCH_PATH/$pp
     arduino --verify --board $BUILD_TARGET $SKETCH_PATH/$pp
 done
 
-# Tests
-# Script uses sh -e which will cause silent fail if test is not enclosed within the brackets below.
-#(  # Put tests inside these brackets!
-# Verify REV7 minimal test.
-#arduino --verify --board $BUILD_TARGET $SKETCH_PATH/V0p2_Main_PCB_REV7_DORM1_and_REV8/REV7HardwareTest/REV7HardwareTest.ino
-# Verify REV8 minimal test.
-#arduino --verify --board $BUILD_TARGET $SKETCH_PATH/V0p2_Main_PCB_REV7_DORM1_and_REV8/REV8HardwareTest/REV8HardwareTest.ino
-# Verify REV10 minimal test.
-#arduino --verify --board $BUILD_TARGET $SKETCH_PATH/REV10/REV10HardwareTest/REV10HardwareTest.ino
-# Verify REV11 minimal test.
-#arduino --verify --board $BUILD_TARGET $SKETCH_PATH/REV11/REV11HardwareTest/REV11HardwareTest.ino
-#)
+exit 0
