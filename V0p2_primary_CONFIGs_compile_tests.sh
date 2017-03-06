@@ -8,11 +8,32 @@
 # Name of generic config header which should #define one CONFIG_...
 GENERICCONFIGHEADER=V0p2_Generic_Config.h
 
-# Name of sketch.
+# Name of main sketch.
 SKETCHNAME=V0p2_Main
 
-# Path to V0p2_Main sketch.
-MAIN=$PWD/Arduino/V0p2_Main
+# Relative path to V0p2_Main sketch.
+MAIN=Arduino/$SKETCHNAME
 
-echo Hello world
+# Target copy of main sketch to update.
+# MUST NEVER BE EMPTY!
+WORKINGDIR=$PWD/tmp/build-area
+
+if [ -e $WORKINGDIR ]; then
+    echo Temporary working copy directory $WORKINGDIR exists, aborting.
+    exit 3
+fi
+
+# Create the temporary directory.
+mkdir -p $WORKINGDIR
+
+# Copy the main sketch to the working area.
+cp -rp $PWD/$MAIN $WORKINGDIR
+
+echo @@@@@@ Testing primary target as-is.
+arduino --verify --board $BUILD_TARGET $WORKINGDIR/$SKETCHNAME/$SKETCHNAME.ino
+
+# Tidy up: delete the working directory.
+rm -rf $WORKINGDIR
+
+
 exit 0
