@@ -36,7 +36,36 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 #define BAUD 4800
 #endif
 
-#include "V0p2_Generic_Config.h" // Config switches and module dependencies.
+// Get defaults for valve applications.
+#include <OTV0p2_valve_ENABLE_defaults.h>
+// --------------------------------------------
+// Main config switches and module dependencies.
+#include "V0p2_Generic_Config.h"
+// --------------------------------------------
+// Breadboard/stripboard/minimal designs.
+#include <OTV0p2_CONFIG_REV0.h>
+// For trial over winter of 2013--4, first round (REV1).
+#include <OTV0p2_CONFIG_REV1.h>
+// For trial over winter of 2013--4, second round (REV2).
+#include <OTV0p2_CONFIG_REV2.h>
+//// All-in-one valve unit.
+//#include <OTV0p2_CONFIG_REV4.h>
+// All-in-one valve unit (DORM1).
+#include <OTV0p2_CONFIG_REV7.h>
+// Boiler controller for all-in-one valve unit (DORM1).
+#include <OTV0p2_CONFIG_REV8.h>
+//// COHEAT radio relay.
+//#include <OTV0p2_CONFIG_REV9.h>
+// REV8 + GSM Arduino shield + I2CEXT, see TODO-551.
+#include <OTV0p2_CONFIG_REV10.h>
+// REV4 (ie SHT21 sensor and phototransistor) + PCB antenna + PCB battery pack (probably AAA), see TODO-566
+#include <OTV0p2_CONFIG_REV11.h>
+// REV14 w/ LoRa, TMP, SHT and QM-1.
+#include <OTV0p2_CONFIG_REV14.h>
+// --------------------------------------------
+// Fixups to apply after loading the target config.
+#include <OTV0p2_valve_ENABLE_fixups.h>
+
 #include <OTV0p2_Board_IO_Config.h> // I/O pin allocation and setup: include ahead of I/O module headers.
 
 #include <Arduino.h>
