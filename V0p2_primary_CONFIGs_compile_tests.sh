@@ -52,6 +52,28 @@ else
     STATUS=1
 fi
 
+# Fetch all primary configs.
+CONFIGS="`$PWD/V0p2_list_primary_CONFIGs.sh`"
+if [ "X" = "X$CONFIGS" ]; then
+    echo No primary configs found, aborting.
+    exit 99
+fi
+
+# Test each of the primary configs.
+for config in $CONFIGS;
+do
+    echo @@@@@@ Testimg config $config
+    # Overwrite generic config header with single #define for this config.
+    echo "#define $config" > $WORKINGDIR/$SKETCHNAME/$GENERICCONFIGHEADER
+    # Compile...
+    if arduino --verify --board $BUILD_TARGET $WORKINGDIR/$SKETCHNAME/$SKETCHNAME.ino; then
+        echo OK
+	else
+	    echo FAILED $config
+	    STATUS=2
+	fi
+done
+
 # Tidy up: delete the working directory.
 rm -rf $WORKINGDIR
 
