@@ -64,7 +64,7 @@ fi
 # Test each of the primary configs.
 for config in $CONFIGS;
 do
-    echo @@@@@@ Testimg config $config
+    echo @@@@@@ Testing config $config
     # Overwrite generic config header with single #define for this config.
     echo "#define $config" > $WORKINGDIR/$SKETCHNAME/$GENERICCONFIGHEADER
     # Compile...
