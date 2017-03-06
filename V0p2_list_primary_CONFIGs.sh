@@ -21,7 +21,7 @@
 # #define CONFIG_DORM1 // REV7 / DORM1 / TRV1.x all-in-one valve unit, secure TX.
 # //#define CONFIG_DORM1_BOILER // REV8 / DORM1 boiler-control unit.
 
-HEADER=$PWD/Arduino/V0p2_Main/V0p2_Generic_Config.h
+HEADER=Arduino/V0p2_Main/V0p2_Generic_Config.h
 
 # Extract config name from lines starting //#define CONFIG_ or #define CONFIG_
 exec awk < $HEADER '/^(\/){0,2}#define CONFIG_/ { print $2; }'

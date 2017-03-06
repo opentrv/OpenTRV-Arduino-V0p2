@@ -55,7 +55,7 @@ else
 fi
 
 # Fetch all primary configs.
-CONFIGS="`sh -c $PWD/V0p2_list_primary_CONFIGs.sh`"
+CONFIGS="`./V0p2_list_primary_CONFIGs.sh`"
 if [ "X" = "X$CONFIGS" ]; then
     echo No primary configs found, aborting.
     exit 99
