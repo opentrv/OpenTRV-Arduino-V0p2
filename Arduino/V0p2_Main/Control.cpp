@@ -26,25 +26,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 #include <OTAESGCM.h>
 #endif
 
-// Singleton non-volatile stats store instance.
-OTV0P2BASE::EEPROMByHourByteStats eeStats;
-
-// Stats updater singleton.
-StatsU_t statsU;
-
-// Singleton scheduler instance.
-Scheduler_t Scheduler;
-
 #ifdef ENABLE_BOILER_HUB
 // True if boiler should be on.
 static bool isBoilerOn();
 #endif
-
-// Radiator valve mode (FROST, WARM, BAKE).
-OTRadValve::ValveMode valveMode;
-
-// Temperature control object.
-TempControl_t tempControl;
 
 #ifndef getMinBoilerOnMinutes
 // Get minimum on (and off) time for pointer (minutes); zero if not in hub mode.
@@ -57,20 +42,13 @@ uint8_t getMinBoilerOnMinutes() { return(~eeprom_read_byte((uint8_t *)V0P2BASE_E
 void setMinBoilerOnMinutes(uint8_t mins) { OTV0P2BASE::eeprom_smart_update_byte((uint8_t *)V0P2BASE_EE_START_MIN_BOILER_ON_MINS_INV, ~(mins)); }
 #endif
 
-
-#ifdef ENABLE_OCCUPANCY_SUPPORT
-// Singleton implementation for entire node.
-OccupancyTracker Occupancy;
-#endif
-
-
 #ifdef ENABLE_MODELLED_RAD_VALVE
 static OTV0P2BASE::EEPROMByHourByteStats ebhs;
 // Create setback lockout if needed.
   typedef bool(*setbackLockout_t)();
 #if defined(ENABLE_SETBACK_LOCKOUT_COUNTDOWN) && defined(ARDUINO_ARCH_AVR)
   // If allowing setback lockout, eg for testing, then inject suitable lambda.
-  static bool setbackLockout() {return(0xff != eeprom_read_byte((uint8_t *)OTV0P2BASE::V0P2BASE_EE_START_SETBACK_LOCKOUT_COUNTDOWN_D_INV));}
+  static bool setbackLockout() { return(0 != OTRadValve::getSetbackLockout()); }
 #else
   static constexpr setbackLockout_t setbackLockout = NULL;
 #endif
@@ -111,42 +89,6 @@ OTRadValve::ModelledRadValve NominalRadValve(
   #endif
   );
 #endif // ENABLE_MODELLED_RAD_VALVE
-
-
-#ifdef ENABLE_FS20_ENCODING_SUPPORT
-// Clear and populate core stats structure with information from this node.
-// Exactly what gets filled in will depend on sensors on the node,
-// and may depend on stats TX security level (eg if collecting some sensitive items is also expensive).
-void populateCoreStats(OTV0P2BASE::FullStatsMessageCore_t *const content)
-  {
-  clearFullStatsMessageCore(content); // Defensive programming: all fields should be set explicitly below.
-  if(localFHT8VTRVEnabled())
-    {
-    // Use FHT8V house codes if available.
-    content->id0 = FHT8V.nvGetHC1();
-    content->id1 = FHT8V.nvGetHC2();
-    }
-  else
-    {
-    // Use OpenTRV unique ID if no other higher-priority ID.
-    content->id0 = eeprom_read_byte(0 + (uint8_t *)V0P2BASE_EE_START_ID);
-    content->id1 = eeprom_read_byte(1 + (uint8_t *)V0P2BASE_EE_START_ID);
-    }
-  content->containsID = true;
-  content->tempAndPower.tempC16 = TemperatureC16.get();
-  content->tempAndPower.powerLow = Supply_cV.isSupplyVoltageLow();
-  content->containsTempAndPower = true;
-  content->ambL = OTV0P2BASE::fnmax((uint8_t)1, OTV0P2BASE::fnmin((uint8_t)254, AmbLight.get())); // Coerce to allowed value in range [1,254]. Bug-fix (twice! TODO-510) c/o Gary Gladman!
-  content->containsAmbL = true;
-  // OC1/OC2 = Occupancy: 00 not disclosed, 01 not occupied, 10 possibly occupied, 11 probably occupied.
-  // The encodeFullStatsMessageCore() route should omit data not appopriate for the privacy level, etc.
-#ifdef ENABLE_OCCUPANCY_SUPPORT
-  content->occ = Occupancy.twoBitOccupancyValue();
-#else
-  content->occ = 0; // Not supported.
-#endif
-  }
-#endif // ENABLE_FS20_ENCODING_SUPPORT
 
 
 // Call this to do an I/O poll if needed; returns true if something useful definitely happened.
@@ -213,13 +155,10 @@ void bareStatsTX(const bool allowDoubleTX, const bool doBinary)
   const bool doEnc = false;
 #endif
 
-  const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled<V0P2_UART_BAUD>(); // FIXME
-#if (FullStatsMessageCore_MAX_BYTES_ON_WIRE > STATS_MSG_MAX_LEN)
-#error FullStatsMessageCore_MAX_BYTES_ON_WIRE too big
-#endif // FullStatsMessageCore_MAX_BYTES_ON_WIRE > STATS_MSG_MAX_LEN
-#if (MSG_JSON_MAX_LENGTH+1 > STATS_MSG_MAX_LEN) // Allow 1 for trailing CRC.
-#error MSG_JSON_MAX_LENGTH too big
-#endif // MSG_JSON_MAX_LENGTH+1 > STATS_MSG_MAX_LEN
+  const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled<>();
+  
+static_assert(OTV0P2BASE::FullStatsMessageCore_MAX_BYTES_ON_WIRE <= STATS_MSG_MAX_LEN, "FullStatsMessageCore_MAX_BYTES_ON_WIRE too big");
+static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_MAX_LENGTH too big"); // Allow 1 for trailing CRC.
 
   // Allow space in buffer for:
   //   * buffer offset/preamble
@@ -229,10 +168,6 @@ void bareStatsTX(const bool allowDoubleTX, const bool doBinary)
   // Buffer need be no larger than leading length byte + typical 64-byte radio module TX buffer limit + optional terminator.
   const uint8_t MSG_BUF_SIZE = 1 + 64 + 1;
   uint8_t buf[MSG_BUF_SIZE];
-#if 0
-  // Make sure buffer is cleared for debug purposes
-  memset(buf, 0, sizeof(buf));
-#endif // 0
 
 #if defined(ENABLE_JSON_OUTPUT)
   if(doBinary && !doEnc) // Note that binary form is not secure, so not permitted for secure systems.
@@ -242,8 +177,12 @@ void bareStatsTX(const bool allowDoubleTX, const bool doBinary)
     // Send binary message first (insecure, FS20-piggyback format).
     // Gather core stats.
     OTV0P2BASE::FullStatsMessageCore_t content;
-    populateCoreStats(&content);
-    const uint8_t *msg1 = OTV0P2BASE::encodeFullStatsMessageCore(buf + STATS_MSG_START_OFFSET, sizeof(buf) - STATS_MSG_START_OFFSET, OTV0P2BASE::getStatsTXLevel(), false, &content);
+    OTRadValve::populateCoreStats(&content,
+                    (localFHT8VTRVEnabled() ? &FHT8V : NULL),
+                    TemperatureC16.get(),
+                    Supply_cV.isSupplyVoltageLow(),
+                    AmbLight.get(),
+                    Occupancy.twoBitOccupancyValue());    const uint8_t *msg1 = OTV0P2BASE::encodeFullStatsMessageCore(buf + STATS_MSG_START_OFFSET, sizeof(buf) - STATS_MSG_START_OFFSET, OTV0P2BASE::getStatsTXLevel(), false, &content);
     if(NULL == msg1)
       {
 #if 0
@@ -358,7 +297,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 #endif // defined(ENABLE_LOCAL_TRV)
 #ifdef ENABLE_SETBACK_LOCKOUT_COUNTDOWN
     // Show state of setback lockout.
-    ss1.put(V0p2_SENSOR_TAG_F("gE"), getSetbackLockout(), true);
+    ss1.put(V0p2_SENSOR_TAG_F("gE"), OTRadValve::getSetbackLockout(), true);
 #endif // ENABLE_SETBACK_LOCKOUT_COUNTDOWN
 #if defined(ENABLE_ALWAYS_TX_ALL_STATS)
     const uint8_t privacyLevel = OTV0P2BASE::stTXalwaysAll;
@@ -432,9 +371,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
       if(!OTV0P2BASE::getPrimaryBuilding16ByteSecretKey(key))
         {
         sendingJSONFailed = true;
-#if 1 // && defined(DEBUG)
         OTV0P2BASE::serialPrintlnAndFlush(F("!TX key")); // Know why TX failed.
-#endif
         }
 #else
       sendingJSONFailed = true; // Crypto support may not be available.
@@ -451,8 +388,6 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
       constexpr uint8_t workspaceSize = OTRadioLink::SimpleSecureFrame32or0BodyTXBase::generateSecureOFrameRawForTX_total_scratch_usage_OTAESGCM_2p0;
       uint8_t workspace[workspaceSize];
       OTV0P2BASE::ScratchSpace sW(workspace, workspaceSize);
-//      // Deprecated: on-stack hidden workspace.      
-//      const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEnc_ptr_t eS = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_STATELESS;
       const uint8_t txIDLen = OTRadioLink::ENC_BODY_DEFAULT_ID_BYTES;
       // When sending on a channel with framing, do not explicitly send the frame length byte.
       const uint8_t offset = framed ? 1 : 0;
@@ -464,9 +399,6 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
       // Distinguished 'invalid' valve position; never mistaken for a real valve.
       const uint8_t valvePC = 0x7f;
 #endif // defined(ENABLE_NOMINAL_RAD_VALVE)
-//      const uint8_t bodylen = OTRadioLink::SimpleSecureFrame32or0BodyTXV0p2::getInstance().generateSecureOFrameRawForTX(
-//            realTXFrameStart - offset, sizeof(buf) - (realTXFrameStart-buf) + offset,
-//            txIDLen, valvePC, (const char *)bufJSON, eS, NULL, key);
       const uint8_t bodylen = OTRadioLink::SimpleSecureFrame32or0BodyTXV0p2::getInstance().generateSecureOFrameRawForTX(
             realTXFrameStart - offset, sizeof(buf) - (realTXFrameStart-buf) + offset,
             txIDLen, valvePC, (const char *)bufJSON, eW, sW, key);
@@ -556,7 +488,7 @@ static void wireComponentsTogether()
   Voice.setPossOccCallback([]{Occupancy.markAsPossiblyOccupied();});
 #endif // ENABLE_OCCUPANCY_DETECTION_FROM_VOICE
 
-#if defined(TEMP_POT_AVAILABLE)
+#if defined(TEMP_POT_AVAILABLE) && defined(valveUI_DEFINED)
   // Callbacks to set various mode combinations.
   // Typically at most one call would be made on any appropriate pot adjustment.
   TempPot.setWFBCallbacks([](bool x){valveUI.setWarmModeFromManualUI(x);},
@@ -603,23 +535,17 @@ static void endOfHourTasks()
 static void endOfDayTasks()
   {
 #if defined(ENABLE_SETBACK_LOCKOUT_COUNTDOWN)
-    // Count down the lockout if not finished...  (TODO-786, TODO-906)
-    const uint8_t sloInv = eeprom_read_byte((uint8_t *)OTV0P2BASE::V0P2BASE_EE_START_SETBACK_LOCKOUT_COUNTDOWN_D_INV);
-    if(0xff != sloInv)
-      {
-      // Logically decrement the inverted value, invert it and store it back.
-      const uint8_t updated = ~((~sloInv)-1);
-      OTV0P2BASE::eeprom_smart_update_byte((uint8_t *)OTV0P2BASE::V0P2BASE_EE_START_SETBACK_LOCKOUT_COUNTDOWN_D_INV, updated);
-      }
+    // Count down the setback lockout if not finished...  (TODO-786, TODO-906)
+    OTRadValve::countDownSetbackLockout();
 #endif
   }
 
 
 // Controller's view of Least Significant Digits of the current (local) time, in this case whole seconds.
-// See PICAXE V0.1/V0.09/DHD201302L0 code.
-#define TIME_LSD_IS_BINARY // TIME_LSD is in binary (cf BCD).
-#define TIME_CYCLE_S 60 // TIME_LSD ranges from 0 to TIME_CYCLE_S-1, also major cycle length.
-static uint_fast8_t TIME_LSD; // Controller's notion of seconds within major cycle.
+// TIME_LSD ranges from 0 to TIME_CYCLE_S-1, also major cycle length.
+static constexpr uint_fast8_t TIME_CYCLE_S = 60;
+// Controller's notion/cache of seconds within major cycle.
+static uint_fast8_t TIME_LSD;
 
 // 'Elapsed minutes' count of minute/major cycles; cheaper than accessing RTC and not tied to real time.
 // Starts at or just above zero (within the first 4-minute cycle) to help avoid collisions between units after mass power-up.
@@ -739,7 +665,6 @@ void setupOpenTRV()
       bareStatsTX(true, false);
       if(!ss1.changedValue()) { break; }
       }
-  //  nap(WDTO_120MS, false);
     }
 #endif
 
@@ -845,7 +770,7 @@ ISR(PCINT2_vect)
   // It is OK to trigger this from other things such as button presses.
   // TODO: ensure that resetCLIActiveTimer() is inlineable to minimise ISR prologue/epilogue time and space.
   if((changes & SERIALRX_INT_MASK) && !(pins & SERIALRX_INT_MASK))
-    { resetCLIActiveTimer(); }
+    { OTV0P2BASE::CLI::resetCLIActiveTimer(); }
   }
 #endif
 
@@ -1368,7 +1293,8 @@ void loopOpenTRV()
       {
       // Tasks that must be run every minute.
       ++minuteCount; // Note simple roll-over to 0 at max value.
-      checkUserSchedule(); // Force to user's programmed settings, if any, at the correct time.
+      // Force to user's programmed schedule(s), if any, at the correct time.
+      Scheduler.applyUserSchedule(&valveMode, OTV0P2BASE::getMinutesSinceMidnightLT());
       // Ensure that the RTC has been persisted promptly when necessary.
       OTV0P2BASE::persistRTC();
       // Run hourly tasks at the end of the hour.
@@ -1673,7 +1599,7 @@ void loopOpenTRV()
   // using a timeout which should safely avoid overrun, ie missing the next basic tick,
   // and which should also allow some energy-saving sleep.
 #if 1 && defined(ENABLE_CLI)
-  if(isCLIActive())
+  if(OTV0P2BASE::CLI::isCLIActive())
     {
     const uint8_t stopBy = nearOverrunThreshold - 1;
     char buf[BUFSIZ_pollUI];

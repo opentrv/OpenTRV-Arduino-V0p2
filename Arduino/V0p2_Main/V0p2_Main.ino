@@ -155,6 +155,12 @@ static const OTRadioLink::OTRadioChannelConfig SecondaryRadioConfig(NULL, true);
 
 
 #if defined(ENABLE_STATS_RX) && defined(ENABLE_FS20_ENCODING_SUPPORT)
+
+// If in stats or boiler hub mode, and with an FS20 OOK carrier, then apply a trailing-zeros RX filter.
+#if (defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)) && defined(ENABLE_FHT8VSIMPLE_RX)
+#define CONFIG_TRAILING_ZEROS_FILTER_RX
+#endif
+
 // If using FS20-based non-secured messaging...
 // If a stats hub then be prepared to accept a wide variety of binary and JSON message types.
 // It may yet be good to trim the smaller message types down to size in particular to help queueing.
@@ -354,7 +360,12 @@ ValveDirect_t ValveDirect([](){return((!valveUI.veryRecentUIControlUse()) && Amb
 uint8_t *appendStatsToTXBufferWithFF(uint8_t *bptr, const uint8_t bufSize)
 {
   OTV0P2BASE::FullStatsMessageCore_t trailer;
-  populateCoreStats(&trailer);
+  OTRadValve::populateCoreStats(&trailer,
+                    (localFHT8VTRVEnabled() ? &FHT8V : NULL),
+                    TemperatureC16.get(),
+                    Supply_cV.isSupplyVoltageLow(),
+                    AmbLight.get(),
+                    Occupancy.twoBitOccupancyValue());
   // Ensure that no ID is encoded in the message sent on the air since it would be a repeat from the FHT8V frame.
   trailer.containsID = false;
 
@@ -384,6 +395,32 @@ uint8_t *appendStatsToTXBufferWithFF(uint8_t *bptr, const uint8_t bufSize)
 OTRadValve::FHT8VRadValve<_FHT8V_MAX_EXTRA_TRAILER_BYTES, OTRadValve::FHT8VRadValveBase::RFM23_PREAMBLE_BYTES, OTRadValve::FHT8VRadValveBase::RFM23_PREAMBLE_BYTE> FHT8V(appendStatsToTXBufferWithFF);
 #endif // ENABLE_FHT8VSIMPLE
 
+////////////////////////// CONTROL
+
+// Singleton non-volatile stats store instance.
+OTV0P2BASE::EEPROMByHourByteStats eeStats;
+
+// Stats updater singleton.
+StatsU_t statsU;
+
+// Singleton scheduler instance.
+Scheduler_t Scheduler;
+
+// Radiator valve mode (FROST, WARM, BAKE).
+OTRadValve::ValveMode valveMode;
+
+// Temperature control object.
+TempControl_t tempControl;
+
+#ifdef ENABLE_OCCUPANCY_SUPPORT
+// Singleton implementation for entire node.
+OccupancyTracker Occupancy;
+#endif
+
+// Mechanism to generate '=' stats line, if enabled.
+#if defined(ENABLE_SERIAL_STATUS_REPORT)
+StatsLine_t statsLine;
+#endif // defined(ENABLE_SERIAL_STATUS_REPORT)
 
 //========================================
 // SETUP

@@ -21,7 +21,8 @@ install:
 
 script:
   - arduino --verify --board opentrv:avr:opentrv_v0p2 $PWD/Arduino/V0p2_Main/V0p2_Main.ino
-  - ./v0p2_compilation_test.sh
+  - ./V0p2_primary_CONFIGs_compile_tests.sh
+  - ./V0p2_minimal_hw_compilation_tests.sh
 notifications:
   email:
     recipients:

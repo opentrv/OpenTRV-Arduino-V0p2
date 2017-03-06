@@ -36,7 +36,36 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 #define BAUD 4800
 #endif
 
-#include "V0p2_Generic_Config.h" // Config switches and module dependencies.
+// Get defaults for valve applications.
+#include <OTV0p2_valve_ENABLE_defaults.h>
+// --------------------------------------------
+// Main config switches and module dependencies.
+#include "V0p2_Generic_Config.h"
+// --------------------------------------------
+// Breadboard/stripboard/minimal designs.
+#include <OTV0p2_CONFIG_REV0.h>
+// For trial over winter of 2013--4, first round (REV1).
+#include <OTV0p2_CONFIG_REV1.h>
+// For trial over winter of 2013--4, second round (REV2).
+#include <OTV0p2_CONFIG_REV2.h>
+//// All-in-one valve unit.
+//#include <OTV0p2_CONFIG_REV4.h>
+// All-in-one valve unit (DORM1).
+#include <OTV0p2_CONFIG_REV7.h>
+// Boiler controller for all-in-one valve unit (DORM1).
+#include <OTV0p2_CONFIG_REV8.h>
+//// COHEAT radio relay.
+//#include <OTV0p2_CONFIG_REV9.h>
+// REV8 + GSM Arduino shield + I2CEXT, see TODO-551.
+#include <OTV0p2_CONFIG_REV10.h>
+// REV4 (ie SHT21 sensor and phototransistor) + PCB antenna + PCB battery pack (probably AAA), see TODO-566
+#include <OTV0p2_CONFIG_REV11.h>
+// REV14 w/ LoRa, TMP, SHT and QM-1.
+#include <OTV0p2_CONFIG_REV14.h>
+// --------------------------------------------
+// Fixups to apply after loading the target config.
+#include <OTV0p2_valve_ENABLE_fixups.h>
+
 #include <OTV0p2_Board_IO_Config.h> // I/O pin allocation and setup: include ahead of I/O module headers.
 
 #include <Arduino.h>
@@ -68,26 +97,6 @@ void panic(const __FlashStringHelper *s);
 // NOTE: implementation may not be in power-management module.
 bool pollIO(bool force = false);
 
-#ifndef DEBUG
-#define DEBUG_SERIAL_PRINT(s) // Do nothing.
-#define DEBUG_SERIAL_PRINTFMT(s, format) // Do nothing.
-#define DEBUG_SERIAL_PRINT_FLASHSTRING(fs) // Do nothing.
-#define DEBUG_SERIAL_PRINTLN_FLASHSTRING(fs) // Do nothing.
-#define DEBUG_SERIAL_PRINTLN() // Do nothing.
-#define DEBUG_SERIAL_TIMESTAMP() // Do nothing.
-#else
-// Send simple string or numeric to serial port and wait for it to have been sent.
-// Make sure that Serial.begin() has been invoked, etc.
-#define DEBUG_SERIAL_PRINT(s) { OTV0P2BASE::serialPrintAndFlush(s); }
-#define DEBUG_SERIAL_PRINTFMT(s, fmt) { OTV0P2BASE::serialPrintAndFlush((s), (fmt)); }
-#define DEBUG_SERIAL_PRINT_FLASHSTRING(fs) { OTV0P2BASE::serialPrintAndFlush(F(fs)); }
-#define DEBUG_SERIAL_PRINTLN_FLASHSTRING(fs) { OTV0P2BASE::serialPrintlnAndFlush(F(fs)); }
-#define DEBUG_SERIAL_PRINTLN() { OTV0P2BASE::serialPrintlnAndFlush(); }
-// Print timestamp with no newline in format: MinutesSinceMidnight:Seconds:SubCycleTime
-extern void _debug_serial_timestamp();
-#define DEBUG_SERIAL_TIMESTAMP() _debug_serial_timestamp()
-#endif // DEBUG
-
 
 ////// MESSAGING
 
@@ -108,11 +117,11 @@ extern OTRadioLink::OTRadioLink &SecondaryRadio;
 extern const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config;
 #endif // ENABLE_RADIO_SIM900
 
-#define RFM22_PREAMBLE_BYTE 0xaa // Preamble byte for RFM22/23 reception.
-#define RFM22_PREAMBLE_MIN_BYTES 4 // Minimum number of preamble bytes for reception.
-#define RFM22_PREAMBLE_BYTES 5 // Recommended number of preamble bytes for reliable reception.
-#define RFM22_SYNC_BYTE 0xcc // Sync-word trailing byte (with FHT8V primarily).
-#define RFM22_SYNC_MIN_BYTES 3 // Minimum number of sync bytes.
+static constexpr uint8_t RFM22_PREAMBLE_BYTE = 0xaa; // Preamble byte for RFM22/23 reception.
+static constexpr uint8_t RFM22_PREAMBLE_MIN_BYTES = 4; // Minimum number of preamble bytes for reception.
+static constexpr uint8_t RFM22_PREAMBLE_BYTES = 5; // Recommended number of preamble bytes for reliable reception.
+static constexpr uint8_t RFM22_SYNC_BYTE = 0xcc; // Sync-word trailing byte (with FHT8V primarily).
+static constexpr uint8_t RFM22_SYNC_MIN_BYTES = 3; // Minimum number of sync bytes.
 
 // Send the underlying stats binary/text 'whitened' message.
 // This must be terminated with an 0xff (which is not sent),
@@ -125,8 +134,8 @@ extern const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config;
 //   * RFM23BfriendlyPremable  if true then add an extra preamble
 //     to allow RFM23B-based receiver to RX this
 // This will use whichever transmission medium/carrier/etc is available.
-#define STATS_MSG_START_OFFSET (RFM22_PREAMBLE_BYTES + RFM22_SYNC_MIN_BYTES)
-#define STATS_MSG_MAX_LEN (64 - STATS_MSG_START_OFFSET)
+static constexpr uint8_t STATS_MSG_START_OFFSET = (RFM22_PREAMBLE_BYTES + RFM22_SYNC_MIN_BYTES);
+static constexpr uint8_t STATS_MSG_MAX_LEN = (64 - STATS_MSG_START_OFFSET);
 #if defined(ENABLE_RFM23B_FS20_RAW_PREAMBLE)
 void RFM22RawStatsTXFFTerminated(uint8_t *buf, bool doubleTX, bool RFM23BFramed = true);
 #endif
@@ -184,7 +193,6 @@ bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadi
 // Radiator valve mode (FROST, WARM, BAKE).
 extern OTRadValve::ValveMode valveMode;
 
-// FIXME Moved up from line 464 to fix compilation errors (OccupancyTracker needed on line 261)
 // IF DEFINED: support for general timed and multi-input occupancy detection / use.
 #ifdef ENABLE_OCCUPANCY_SUPPORT
 typedef OTV0P2BASE::PseudoSensorOccupancyTracker OccupancyTracker;
@@ -355,7 +363,7 @@ void setMinBoilerOnMinutes(uint8_t mins);
 #if defined(ENABLE_SINGLETON_SCHEDULE)
 #define SCHEDULER_AVAILABLE
 // Singleton scheduler instance.
-typedef OTV0P2BASE::SimpleValveSchedule
+typedef OTRadValve::SimpleValveSchedule
     <
     LEARNED_ON_PERIOD_M, LEARNED_ON_PERIOD_COMFORT_M,
     decltype(tempControl), &tempControl,
@@ -365,7 +373,7 @@ typedef OTV0P2BASE::SimpleValveSchedule
     > Scheduler_t;
 #else
 // Dummy scheduler to simplify coding.
-typedef OTV0P2BASE::NULLValveSchedule Scheduler_t;
+typedef OTRadValve::NULLValveSchedule Scheduler_t;
 #endif // defined(ENABLE_SINGLETON_SCHEDULE)
 extern Scheduler_t Scheduler;
 
@@ -403,25 +411,40 @@ typedef
 extern StatsU_t statsU;
 
 
-#ifdef ENABLE_FS20_ENCODING_SUPPORT
-// Clear and populate core stats structure with information from this node.
-// Exactly what gets filled in will depend on sensors on the node,
-// and may depend on stats TX security level (if collecting some sensitive items is also expensive).
-void populateCoreStats(OTV0P2BASE::FullStatsMessageCore_t *content);
-#endif // ENABLE_FS20_ENCODING_SUPPORT
-
-#ifdef ENABLE_SETBACK_LOCKOUT_COUNTDOWN // TODO Move this into OTRadioLink for mainline version.
-    /**
-     * @brief   Retrieve the current setback lockout value from the EEPROM.
-     * @retval  The number of days left of the setback lockout. Setback lockout is disabled when this reaches 0.
-     * @note    The value is stored inverted in EEPROM.
-     * @note    This is stored as G 0 for TRV1.5 devices, but may change in future.
-     */
-    static inline uint8_t getSetbackLockout() { return ~(eeprom_read_byte((uint8_t *)OTV0P2BASE::V0P2BASE_EE_START_SETBACK_LOCKOUT_COUNTDOWN_D_INV)); }
-#endif // ENABLE_SETBACK_LOCKOUT_COUNTDOWN
+// Mechanism to generate '=' stats line, if enabled.
+#if defined(ENABLE_SERIAL_STATUS_REPORT)
+typedef OTV0P2BASE::SystemStatsLine<
+      decltype(valveMode), &valveMode,
+#if defined(ENABLE_LOCAL_TRV)
+      decltype(NominalRadValve), &NominalRadValve,
+#else
+      OTRadValve::AbstractRadValve, (OTRadValve::AbstractRadValve *)NULL,
+#endif // defined(ENABLE_LOCAL_TRV)
+      decltype(TemperatureC16), &TemperatureC16,
+#if defined(HUMIDITY_SENSOR_SUPPORT)
+      decltype(RelHumidity), &RelHumidity,
+#else
+      OTV0P2BASE::HumiditySensorBase, (OTV0P2BASE::HumiditySensorBase *)NULL,
+#endif // defined(HUMIDITY_SENSOR_SUPPORT)
+      decltype(AmbLight), &AmbLight,
+      decltype(Occupancy), &Occupancy,
+      decltype(Scheduler), &Scheduler,
+#if defined(ENABLE_JSON_OUTPUT) && !defined(ENABLE_TRIMMED_MEMORY)
+      true // Enable JSON stats.
+#else
+      true // Disable JSON stats.
+#endif
+      > StatsLine_t;
+extern StatsLine_t statsLine;
+// Send a short 1-line CRLF-terminated status report on the serial connection (at 'standard' baud).
+// Should be similar to PICAXE V0.1 output to allow the same parser to handle either.
+inline void serialStatusReport() { statsLine.serialStatusReport(); }
+#else
+#define serialStatusReport() { }
+#endif // defined(ENABLE_SERIAL_STATUS_REPORT)
 
 // Do bare stats transmission.
-// Output should be filtered for items appropriate
+// Output should be filtered for items appModelledRadValveComputeTargetTempBasicropriate
 // to current channel security and sensitivity level.
 // This may be binary or JSON format.
 //   * allowDoubleTX  allow double TX to increase chance of successful reception
@@ -454,28 +477,6 @@ void remoteCallForHeatRX(uint16_t id, uint8_t percentOpen);
 extern valveUI_t valveUI;
 #endif // ENABLE_LOCAL_TRV && !NO_UI_SUPPORT
 
-// Check/apply the user's schedule, at least once each minute, and act on any timed events.
-#if defined(SCHEDULER_AVAILABLE)
-void checkUserSchedule();
-#else
-#define checkUserSchedule() // Reduce to a no-op.
-#endif // defined(SCHEDULER_AVAILABLE)
-
-// Sends a short 1-line CRLF-terminated status report on the serial connection (at 'standard' baud).
-// Should be similar to PICAXE V0.1 output to allow the same parser to handle either.
-#ifdef ENABLE_SERIAL_STATUS_REPORT
-void serialStatusReport();
-#else
-#define serialStatusReport() { }
-#endif
-
-// Reset CLI active timer to the full whack before it goes inactive again (ie makes CLI active for a while).
-// Thread-safe.
-void resetCLIActiveTimer();
-
-// Returns true if the CLI is (or should currently be) active, at least intermittently.
-// Thread-safe.
-bool isCLIActive();
 
 // Suggested minimum buffer size for pollUI() to ensure maximum-sized commands can be received.
 #if defined(ENABLE_EXTENDED_CLI) || defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
@@ -486,10 +487,12 @@ static constexpr uint8_t MAXIMUM_CLI_RESPONSE_CHARS = 1 + OTV0P2BASE::CLI::MIN_T
 static constexpr uint8_t BUFSIZ_pollUI = 1 + MAXIMUM_CLI_RESPONSE_CHARS;
 
 // Used to poll user side for CLI input until specified sub-cycle time.
-// A period of less than (say) 500ms will be difficult for direct human response on a raw terminal.
-// A period of less than (say) 100ms is not recommended to avoid possibility of overrun on long interactions.
+// A period of less than (say) 500ms will be difficult for
+// direct human response on a raw terminal.
+// A period of less than (say) 100ms is not recommended to avoid
+// possibility of overrun on long interactions.
 // Times itself out after at least a minute or two of inactivity. 
-// NOT RENTRANT (eg uses static state for speed and code space).
+// NOT RE-ENTRANT (eg uses static state for speed and code space).
 void pollCLI(uint8_t maxSCT, bool startOfMinute, const OTV0P2BASE::ScratchSpace &s);
 
 
