@@ -54,8 +54,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 ////#define CONFIG_GENERIC_RANDB_NODE
 ////#define CONFIG_GENERIC_DHW_NODE
 
-// Production/primary configs
-//---------------------------
+// Production/primary/supported configs
+//-------------------------------------
 // Keep exactly of the form //#define CONFIG_ or without // for current live config.
 // Configs TEMPORARILY pending fixes can be doubly commented out with ////.
 //#define CONFIG_Trial2013Winter_Round1 // REV1 default config.
