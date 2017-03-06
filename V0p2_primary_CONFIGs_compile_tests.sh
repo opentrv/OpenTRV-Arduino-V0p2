@@ -7,6 +7,8 @@
 #
 # Shows all failures before exiting (no -e flag)
 
+echo Test compilation of primary configs of main Arduino projects.
+
 # Target Arduino board to build for.
 BUILD_TARGET=opentrv:avr:opentrv_v0p2
 
@@ -53,7 +55,7 @@ else
 fi
 
 # Fetch all primary configs.
-CONFIGS="`$PWD/V0p2_list_primary_CONFIGs.sh`"
+CONFIGS="`sh -c $PWD/V0p2_list_primary_CONFIGs.sh`"
 if [ "X" = "X$CONFIGS" ]; then
     echo No primary configs found, aborting.
     exit 99
