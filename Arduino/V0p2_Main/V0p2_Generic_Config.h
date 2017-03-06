@@ -56,15 +56,14 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 
 // Production configs
 // Keep exactly of the form //#define CONFIG_ or without // for current live config.
-////#define CONFIG_Trial2013Winter_Round1 // REV1 default config.
-////#define CONFIG_Trial2013Winter_Round1_LVBHSH // REV1: local valve control, boiler hub, stats hub & TX.
+// Configs TEMPORARILY pending fixes can be doubly commented out with ////.
+//#define CONFIG_Trial2013Winter_Round1 // REV1 default config.
 //#define CONFIG_Trial2013Winter_Round1_BOILERHUB // REV1 as plain boiler node.
 //#define CONFIG_Trial2013Winter_Round1_NOHUB // REV1 as TX-only leaf node.
-////#define CONFIG_Trial2013Winter_Round2 // REV2 cut4 default config.
-////#define CONFIG_Trial2013Winter_Round2_LVBHSH // REV2 cut4: local valve control, boiler hub, stats hub & TX.
+//#define CONFIG_Trial2013Winter_Round2 // REV2 cut4 default config.
 //#define CONFIG_Trial2013Winter_Round2_LVBH // REV2 cut4 local valve control and boiler hub.
-////#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as plain boiler hub.
-////#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
+//// FIXME #define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as plain boiler hub.
+//// FIXME #define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
 //#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
 #define CONFIG_DORM1 // REV7 / DORM1 / TRV1.x all-in-one valve unit, secure TX.
 //#define CONFIG_DORM1_BOILER // REV8 / DORM1 boiler-control unit.
@@ -75,7 +74,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 // One-offs and special cases.
 //// Keep doubly commented out (////#define CONFIG_) unless to be tested in CI.
 ////#define CONFIG_DHD_TESTLAB_REV0 // REV0 / breadboard.
+////#define CONFIG_Trial2013Winter_Round1_LVBHSH // REV1: local valve control, boiler hub, stats hub & TX.
 ////#define CONFIG_Trial2013Winter_Round1_STATSHUB // REV1 as stats hub.
+////#define CONFIG_Trial2013Winter_Round2_LVBHSH // REV2 cut4: local valve control, boiler hub, stats hub & TX.
 ////#define CONFIG_Trial2013Winter_Round2_BHR // REV2 cut4: boiler hub and stats relay.
 ////#define CONFIG_Trial2013Winter_Round1_SECURE_STATSHUB // REV1 as secure stats hub.
 ////#define CONFIG_Trial2013Winter_Round1_SECURE_SENSOR // REV1 as secure sensor node.
