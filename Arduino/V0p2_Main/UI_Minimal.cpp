@@ -29,15 +29,25 @@ valveUI_t valveUI(
   &valveMode,
   &tempControl,
   &NominalRadValve,
+#ifdef ENABLE_OCCUPANCY_SUPPORT
   &Occupancy,
-  &AmbLight,
-#if defined(TEMP_POT_AVAILABLE) // Eg REV2/REV7.
-      &TempPot,
 #else
-      NULL,
+  (OTV0P2BASE::PseudoSensorOccupancyTracker*)NULL,
+#endif
+#ifdef ENABLE_AMBLIGHT_SENSOR
+  &AmbLight,
+#else
+  (OTV0P2BASE::SensorAmbientLight *)NULL,
+#endif
+#if defined(TEMP_POT_AVAILABLE) // Eg REV2/REV7.
+  &TempPot,
+#else
+  NULL,
 #endif
   &Supply_cV,
-  OTV0P2BASE::LED_HEATCALL_ON, OTV0P2BASE::LED_HEATCALL_OFF, OTV0P2BASE::LED_HEATCALL_ON_ISR_SAFE);
+  OTV0P2BASE::LED_HEATCALL_ON,
+  OTV0P2BASE::LED_HEATCALL_OFF,
+  OTV0P2BASE::LED_HEATCALL_ON_ISR_SAFE);
 #endif // valveUI_DEFINED
 
 
