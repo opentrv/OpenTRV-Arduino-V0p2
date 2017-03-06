@@ -23,5 +23,5 @@
 
 HEADER=Arduino/V0p2_Main/V0p2_Generic_Config.h
 
-# Extract config name from lines starting //#define CONFIG_ or #define CONFIG_
-awk < $HEADER '/^(\/){0,2}#define CONFIG_/ { print $2; }'
+# Extract config names from lines starting //#define CONFIG_ or #define CONFIG_
+awk < $HEADER '/^((\/\/)|())#define CONFIG_/ { print $2; }'
