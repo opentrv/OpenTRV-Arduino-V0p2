@@ -18,7 +18,7 @@ MAIN=Arduino/$SKETCHNAME
 
 # Target copy of main sketch to update.
 # MUST NEVER BE EMPTY!
-WORKINGDIR=$PWD/tmp/build-area
+WORKINGDIR=$PWD/tmp-build-area
 
 if [ -e $WORKINGDIR ]; then
     echo Temporary working copy directory $WORKINGDIR exists, aborting.
@@ -31,6 +31,14 @@ mkdir -p $WORKINGDIR || exit 1
 # Copy the main sketch to the working area.
 cp -rp $PWD/$MAIN $WORKINGDIR || exit 1
 
+ls $WORKINGDIR/$SKETCHNAME/
+TARGETINO=$WORKINGDIR/$SKETCHNAME/$SKETCHNAME.ino
+if [ ! -f $TARGETINO ]; then
+    echo Missing $TARGETINO
+    exit 99
+fi
+
+# Set status non-zero if a test/compilation fails.
 STATUS=0
 
 echo @@@@@@ Testing default target: $WORKINGDIR/$SKETCHNAME/$SKETCHNAME.ino
