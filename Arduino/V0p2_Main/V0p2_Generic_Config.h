@@ -34,16 +34,20 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 
 
 // Define/uncomment exactly one of the CONFIG_XXX flags below
-// to enable a standard configuration set.
+// to enable a default working standard configuration set.
 // Some can be specific to particular locations and boards,
 // others can be vanilla ready to be configured by the end-user one way or another.
 // As far as possible the configs should simply #define/#undef a set of ENABLE_XXX flags.
 // There is a set of 'default' ENABLE_XXX flags which will evolve over time,
 // requiring alterations to them to be tracked in individual configs.
 
-// Any lines starting exactly with //#define CONFIG_ will be taken to be primary configurations
-// an all may be synamically uncommented and tested in turn in CI scripts for viability
-// while all other #define CONFIG_ lines man be commented out including any current 'live' config.
+// Any lines starting exactly with //#define CONFIG_ are primary configurations
+// (plus any single 'live' config line starting #define CONFIG_)
+// and all may be dynamically uncommented and tested in CI scripts for viability
+// while all other #define CONFIG_ lines will be commented out
+// including any current 'live' config.
+// There must be at least once space after the CONFIG_XXX token before any trailing comment.
+// (None of these dynamic changes should ever be checked back in.)
 
 ////#define CONFIG_GENERIC_ROOM_NODE
 ////#define CONFIG_GENERIC_BOILER_NODE
