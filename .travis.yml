@@ -23,7 +23,7 @@ script:
   - echo Test compilation of main Arduino project as-is.
   - arduino --verify --board opentrv:avr:opentrv_v0p2 $PWD/Arduino/V0p2_Main/V0p2_Main.ino
   - echo Test compilation of primary configs of main Arduino projects.
-  - ./V0p2_primary_CONFIGs_tests.sh
+  - ./V0p2_primary_CONFIGs_compile_tests.sh
   - echo Test compilation of minimal hardware test suites.
   - ./V0p2_minimal_hw_compilation_tests.sh
 notifications:

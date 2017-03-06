@@ -8,6 +8,9 @@
 # Name of generic config header which should #define one CONFIG_...
 GENERICCONFIGHEADER=V0p2_Generic_Config.h
 
+# Name of sketch.
+SKETCHNAME=V0p2_Main
+
 # Path to V0p2_Main sketch.
 MAIN=$PWD/Arduino/V0p2_Main
 
