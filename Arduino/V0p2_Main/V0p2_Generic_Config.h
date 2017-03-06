@@ -71,6 +71,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 //#define CONFIG_REV8_SECURE_BHR // REV8 secure boiler controller and stats hub.
 //#define CONFIG_REV10_AS_GSM_RELAY_ONLY // REV10: stats relay only.
 //#define CONFIG_REV10_SECURE_BHR // REV10: secure stats relay and boiler hub.
+////#define CONFIG_BH_DHW // Bo's hot water.
 
 // One-offs and special cases
 //---------------------------
@@ -86,7 +87,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 ////#define CONFIG_Trial2013Winter_Round2_SECURE_STATSHUB // REV2 cut4 hub (boiler/stats) 2015/12 secure protocol.
 ////#define CONFIG_DHD_TESTLAB_REV4 // REV4 cut2.
 ////#define CONFIG_DHD_TESTLAB_REV4_NOHUB // REV4 cut2, no hub.
-////#define CONFIG_BH_DHW // Bo's hot water.
 ////#define CONFIG_BH_TESTLAB // Bo's test environment.
 ////#define CONFIG_DORM1_SECURE_AND_FS20 // REV7 / DORM1 / TRV1.x all-in-one valve unit, secure + FS20 non-secure comms.
 ////#define CONFIG_REV7N // REV7 with external "Model N" valve.

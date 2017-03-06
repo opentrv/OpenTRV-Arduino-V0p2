@@ -369,6 +369,8 @@ typedef OTRadValve::SimpleValveSchedule
     decltype(tempControl), &tempControl,
 #if defined(ENABLE_OCCUPANCY_SUPPORT)
     decltype(Occupancy), &Occupancy
+#else
+    OTRadValve::SimpleValveSchedule_PseudoSensorOccupancyTracker, (OTRadValve::SimpleValveSchedule_PseudoSensorOccupancyTracker*)NULL
 #endif
     > Scheduler_t;
 #else
@@ -426,8 +428,16 @@ typedef OTV0P2BASE::SystemStatsLine<
 #else
       OTV0P2BASE::HumiditySensorBase, (OTV0P2BASE::HumiditySensorBase *)NULL,
 #endif // defined(HUMIDITY_SENSOR_SUPPORT)
+#ifdef ENABLE_AMBLIGHT_SENSOR
       decltype(AmbLight), &AmbLight,
+#else
+      OTV0P2BASE::SensorAmbientLight, (OTV0P2BASE::SensorAmbientLight *)NULL,
+#endif
+#ifdef ENABLE_OCCUPANCY_SUPPORT
       decltype(Occupancy), &Occupancy,
+#else
+      OTV0P2BASE::PseudoSensorOccupancyTracker, (OTV0P2BASE::PseudoSensorOccupancyTracker*)NULL,
+#endif
       decltype(Scheduler), &Scheduler,
 #if defined(ENABLE_JSON_OUTPUT) && !defined(ENABLE_TRIMMED_MEMORY)
       true // Enable JSON stats.
