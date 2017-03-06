@@ -46,7 +46,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 // and all may be dynamically uncommented and tested in CI scripts for viability
 // while all other #define CONFIG_ lines will be commented out
 // including any current 'live' config.
-// There must be at least once space after the CONFIG_XXX token before any trailing comment.
+// Leave space after the CONFIG_XXX token before any trailing comment.
 // (None of these dynamic changes should ever be checked back in.)
 
 ////#define CONFIG_GENERIC_ROOM_NODE
@@ -56,25 +56,23 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 
 // Production configs
 // Keep exactly of the form //#define CONFIG_ or without // for current live config.
-//#define CONFIG_Trial2013Winter_Round1 // REV1 default config.
-//#define CONFIG_Trial2013Winter_Round1_LVBHSH // REV1: local valve control, boiler hub, stats hub & TX.
+////#define CONFIG_Trial2013Winter_Round1 // REV1 default config.
+////#define CONFIG_Trial2013Winter_Round1_LVBHSH // REV1: local valve control, boiler hub, stats hub & TX.
 //#define CONFIG_Trial2013Winter_Round1_BOILERHUB // REV1 as plain boiler node.
 //#define CONFIG_Trial2013Winter_Round1_NOHUB // REV1 as TX-only leaf node.
-//#define CONFIG_Trial2013Winter_Round2 // REV2 cut4 default config.
-//#define CONFIG_Trial2013Winter_Round2_LVBHSH // REV2 cut4: local valve control, boiler hub, stats hub & TX.
+////#define CONFIG_Trial2013Winter_Round2 // REV2 cut4 default config.
+////#define CONFIG_Trial2013Winter_Round2_LVBHSH // REV2 cut4: local valve control, boiler hub, stats hub & TX.
 //#define CONFIG_Trial2013Winter_Round2_LVBH // REV2 cut4 local valve control and boiler hub.
-//#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as plain boiler hub.
-//#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
+////#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as plain boiler hub.
+////#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
 //#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
 #define CONFIG_DORM1 // REV7 / DORM1 / TRV1.x all-in-one valve unit, secure TX.
 //#define CONFIG_DORM1_BOILER // REV8 / DORM1 boiler-control unit.
 //#define CONFIG_REV8_SECURE_BHR // REV8 secure boiler controller and stats hub.
 //#define CONFIG_REV10_AS_GSM_RELAY_ONLY // REV10: stats relay only.
 //#define CONFIG_REV10_SECURE_BHR // REV10: secure stats relay and boiler hub.
-//#define CONFIG_REV11_RAW_JSON // REV11 as raw JSON-only stats/sensor leaf.
-//#define CONFIG_REV14_WORKSHOP // REV14 w/ light sensor, SHT21, for Launchpad workshop.
 
-//// One-offs and special cases.
+// One-offs and special cases.
 //// Keep doubly commented out (////#define CONFIG_) unless to be tested in CI.
 ////#define CONFIG_DHD_TESTLAB_REV0 // REV0 / breadboard.
 ////#define CONFIG_Trial2013Winter_Round1_STATSHUB // REV1 as stats hub.
@@ -103,6 +101,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 ////#define CONFIG_REV11_SENSOR
 ////#define CONFIG_REV11_SECURE_STATSHUB
 ////#define CONFIG_REV11_STATSHUB
+////#define CONFIG_REV11_RAW_JSON // REV11 as raw JSON-only stats/sensor leaf.
+////#define CONFIG_REV14_WORKSHOP // REV14 w/ light sensor, SHT21, for Launchpad workshop.
 ////#define CONFIG_REV14_PROTO  // Prototype REV14 w/ LoRa, TMP, SHT and QM-1.
 ////#define CONFIG_REV14 // REV14 w/ light sensor, SHT21 and voice sensor.
 ////#define CONFIG_BAREBONES // No peripherals / on breadboard.
