@@ -20,8 +20,12 @@ install:
   - ln -s $PWD/OTRadioLink-master/content/OTRadioLink /usr/local/share/arduino/libraries/OTRadioLink
 
 script:
+  - echo Test compilation of main Arduino project as-is.
   - arduino --verify --board opentrv:avr:opentrv_v0p2 $PWD/Arduino/V0p2_Main/V0p2_Main.ino
-  - ./v0p2_compilation_test.sh
+  - echo Test compilation of primary configs of main Arduino projects.
+  - ./V0p2_primary_CONFIGs_tests.sh
+  - echo Test compilation of minimal hardware test suites.
+  - ./V0p2_minimal_hw_compilation_tests.sh
 notifications:
   email:
     recipients:
