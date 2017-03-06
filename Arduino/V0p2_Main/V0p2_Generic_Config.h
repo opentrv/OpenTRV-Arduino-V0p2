@@ -54,7 +54,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 ////#define CONFIG_GENERIC_RANDB_NODE
 ////#define CONFIG_GENERIC_DHW_NODE
 
-// Production configs
+// Production/primary configs
+//---------------------------
 // Keep exactly of the form //#define CONFIG_ or without // for current live config.
 // Configs TEMPORARILY pending fixes can be doubly commented out with ////.
 //#define CONFIG_Trial2013Winter_Round1 // REV1 default config.
@@ -71,7 +72,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 //#define CONFIG_REV10_AS_GSM_RELAY_ONLY // REV10: stats relay only.
 //#define CONFIG_REV10_SECURE_BHR // REV10: secure stats relay and boiler hub.
 
-// One-offs and special cases.
+// One-offs and special cases
+//---------------------------
 //// Keep doubly commented out (////#define CONFIG_) unless to be tested in CI.
 ////#define CONFIG_DHD_TESTLAB_REV0 // REV0 / breadboard.
 ////#define CONFIG_Trial2013Winter_Round1_LVBHSH // REV1: local valve control, boiler hub, stats hub & TX.
