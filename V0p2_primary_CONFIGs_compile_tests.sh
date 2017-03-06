@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -e
 #
 # Test all primary configurations of V0p2_Main to be tested during CI.
 #
@@ -6,6 +6,9 @@
 # and adjusts its generic config header to test all primary configs in turn.
 #
 # Shows all failures before exiting (no -e flag)
+
+# Target Arduino board to build for.
+BUILD_TARGET=opentrv:avr:opentrv_v0p2
 
 # Name of generic config header which should #define one CONFIG_...
 GENERICCONFIGHEADER=V0p2_Generic_Config.h
@@ -26,10 +29,10 @@ if [ -e $WORKINGDIR ]; then
 fi
 
 # Create the temporary directory.
-mkdir -p $WORKINGDIR || exit 1
+mkdir -p $WORKINGDIR
 
 # Copy the main sketch to the working area.
-cp -rp $PWD/$MAIN $WORKINGDIR || exit 1
+cp -rp $PWD/$MAIN $WORKINGDIR
 
 ls $WORKINGDIR/$SKETCHNAME/
 TARGETINO=$WORKINGDIR/$SKETCHNAME/$SKETCHNAME.ino
