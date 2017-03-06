@@ -231,8 +231,10 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute, const OTV0P2BASE::S
         Serial.println();
         // Show stack headroom.
         OTV0P2BASE::serialPrintAndFlush(F("SH ")); OTV0P2BASE::serialPrintAndFlush(OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd()); OTV0P2BASE::serialPrintlnAndFlush();
+#if defined(ENABLE_STATS_TX)
         // Default light-weight print and TX of stats.
         bareStatsTX();
+#endif
         break; // Note that status is by default printed after processing input line.
         }
 

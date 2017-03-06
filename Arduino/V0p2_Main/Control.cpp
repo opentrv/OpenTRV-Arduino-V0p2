@@ -488,7 +488,7 @@ static void wireComponentsTogether()
   Voice.setPossOccCallback([]{Occupancy.markAsPossiblyOccupied();});
 #endif // ENABLE_OCCUPANCY_DETECTION_FROM_VOICE
 
-#if defined(TEMP_POT_AVAILABLE)
+#if defined(TEMP_POT_AVAILABLE) && defined(valveUI_DEFINED)
   // Callbacks to set various mode combinations.
   // Typically at most one call would be made on any appropriate pot adjustment.
   TempPot.setWFBCallbacks([](bool x){valveUI.setWarmModeFromManualUI(x);},
