@@ -71,12 +71,13 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 //#define CONFIG_REV8_SECURE_BHR // REV8 secure boiler controller and stats hub.
 //#define CONFIG_REV10_AS_GSM_RELAY_ONLY // REV10: stats relay only.
 //#define CONFIG_REV10_SECURE_BHR // REV10: secure stats relay and boiler hub.
-//#define CONFIG_BH_DHW // Bo's hot water.
 
 // One-offs and special cases
 //---------------------------
 //// Keep doubly commented out (////#define CONFIG_) unless to be tested in CI.
+//// Configs not for wide use but still to be tested by CI should be double-commented.
 ////#define CONFIG_DHD_TESTLAB_REV0 // REV0 / breadboard.
+//#define CONFIG_BH_DHW // Bo's hot water, REV1 variant.
 ////#define CONFIG_Trial2013Winter_Round1_LVBHSH // REV1: local valve control, boiler hub, stats hub & TX.
 ////#define CONFIG_Trial2013Winter_Round1_STATSHUB // REV1 as stats hub.
 ////#define CONFIG_Trial2013Winter_Round2_LVBHSH // REV2 cut4: local valve control, boiler hub, stats hub & TX.
