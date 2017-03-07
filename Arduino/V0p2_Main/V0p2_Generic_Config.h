@@ -71,7 +71,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 //#define CONFIG_REV8_SECURE_BHR // REV8 secure boiler controller and stats hub.
 //#define CONFIG_REV10_AS_GSM_RELAY_ONLY // REV10: stats relay only.
 //#define CONFIG_REV10_SECURE_BHR // REV10: secure stats relay and boiler hub.
-////#define CONFIG_BH_DHW // Bo's hot water.
+//#define CONFIG_BH_DHW // Bo's hot water.
 
 // One-offs and special cases
 //---------------------------
