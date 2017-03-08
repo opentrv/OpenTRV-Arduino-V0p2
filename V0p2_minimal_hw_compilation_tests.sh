@@ -23,9 +23,10 @@ echo Test compilation of minimal hardware test suites.
 BUILD_TARGET=opentrv:avr:opentrv_v0p2  # Target board to build for.
 SKETCH_PATH=$PWD/Arduino/hardware  # Path to hardware directory
 
-# List of minimal hardware configurations to be tested.
+# List of hardware configurations to be tested.
 # Partial paths to the individual .ino files under $SKETCH_PATH.
 PARTPATHS="
+    V0p2_Main_PCB_REV7_DORM1_and_REV8/testsuite/201702/REV7EncoderTest/REV7EncoderTest.ino
     V0p2_Main_PCB_REV7_DORM1_and_REV8/REV7HardwareTest/REV7HardwareTest.ino
     V0p2_Main_PCB_REV7_DORM1_and_REV8/REV8HardwareTest/REV8HardwareTest.ino
     REV10/REV10HardwareTest/REV10HardwareTest.ino
