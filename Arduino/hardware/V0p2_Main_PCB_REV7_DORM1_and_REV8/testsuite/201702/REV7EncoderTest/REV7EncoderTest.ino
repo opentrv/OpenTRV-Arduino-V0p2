@@ -141,7 +141,7 @@ AmbientLight AmbLight;
 static constexpr bool binaryOnlyValveControl = false;
 static constexpr uint8_t m1 = MOTOR_DRIVE_ML;
 static constexpr uint8_t m2 = MOTOR_DRIVE_MR;
-OTRadValve::ValveMotorDirectV1HardwareDriver<m1, m2, MOTOR_DRIVE_MI_AIN, MOTOR_DRIVE_MC_AIN> motorDriver;
+OTRadValve::ValveMotorDirectV1HardwareDriver<m1, m2, MOTOR_DRIVE_MI_AIN, MOTOR_DRIVE_MC_AIN, OTRadValve::MOTOR_DRIVE_NSLEEP_UNUSED> motorDriver;
 OTRadValve::TestValveMotor ValveDirect((OTRadValve::HardwareMotorDriverInterface *)(&motorDriver));
 
 static constexpr uint8_t adcSetting = (1 << 6) | (MOTOR_DRIVE_MC_AIN & 7);
