@@ -141,7 +141,7 @@ AmbientLight AmbLight;
 static constexpr bool binaryOnlyValveControl = false;
 static constexpr uint8_t m1 = MOTOR_DRIVE_ML;
 static constexpr uint8_t m2 = MOTOR_DRIVE_MR;
-OTRadValve::ValveMotorDirectV1HardwareDriver<m1, m2, MOTOR_DRIVE_MI_AIN, MOTOR_DRIVE_MC_AIN> motorDriver;
+OTRadValve::ValveMotorDirectV1HardwareDriver<m1, m2, MOTOR_DRIVE_MI_AIN, MOTOR_DRIVE_MC_AIN, OTRadValve::MOTOR_DRIVE_NSLEEP_UNUSED> motorDriver;
 OTRadValve::TestValveMotor ValveDirect((OTRadValve::HardwareMotorDriverInterface *)(&motorDriver));
 
 static constexpr uint8_t adcSetting = (1 << 6) | (MOTOR_DRIVE_MC_AIN & 7);
@@ -256,12 +256,12 @@ void setup()
     // Long delay after everything set up to allow a non-sleep power measurement.
     delay(1000);
  
-    OTV0P2BASE::powerUpADCIfDisabled();
-    
-    pinMode(IO_POWER_UP, OUTPUT);
-    fastDigitalWrite(IO_POWER_UP, HIGH);
-    pinMode(m1, OUTPUT);
-    fastDigitalWrite(m1, LOW);
+//    OTV0P2BASE::powerUpADCIfDisabled();
+//    
+//    pinMode(IO_POWER_UP, OUTPUT);
+//    fastDigitalWrite(IO_POWER_UP, HIGH);
+//    pinMode(m1, OUTPUT);
+//    fastDigitalWrite(m1, LOW);
 }
 
 
@@ -273,27 +273,27 @@ void setup()
  */
 void loop()
 {
-//    ValveDirect.poll();
+    ValveDirect.poll();
     // Capture and print encoder state.
-//    const uint8_t encoderLevel = OTV0P2BASE::analogueNoiseReducedRead(MOTOR_DRIVE_MC_AIN, INTERNAL)  & 0xff;
-    uint16_t counter = 0;
-    bool oldLevel = false;
-    const int startTime = millis();
-    for(uint8_t i = 0; i < 255; ++i) {
-//        const uint8_t encoderLevel = OTV0P2BASE::analogueNoiseReducedRead(adcSetting, 1)  & 0xff;
-        const uint8_t encoderLevel = OTV0P2BASE::analogueNoiseReducedRead(MOTOR_DRIVE_MC_AIN, INTERNAL)  & 0xff;
-        bool newLevel = encoderLevel > 80;
-        counter = (newLevel != oldLevel) ? counter + 1 : counter;
-        oldLevel = newLevel;
-//        OTV0P2BASE::serialPrintAndFlush(encoderLevel);
-//        OTV0P2BASE::serialPrintlnAndFlush();
-    }
-    OTV0P2BASE::serialPrintAndFlush("dT: ");
-    OTV0P2BASE::serialPrintAndFlush(millis() - startTime);
-    OTV0P2BASE::serialPrintAndFlush("\tCount: ");
-    OTV0P2BASE::serialPrintAndFlush(counter);
-    OTV0P2BASE::serialPrintlnAndFlush();
-//    fastDigitalWrite(m1, HIGH);
+//    const uint16_t encoderLevel = (OTV0P2BASE::analogueNoiseReducedRead(MOTOR_DRIVE_MC_AIN, DEFAULT) >> 2);
+//    OTV0P2BASE::serialPrintAndFlush(encoderLevel);
+//    uint16_t counter = 0;
+//    bool oldLevel = false;
+//    const int startTime = millis();
+//    for(uint8_t i = 0; i < 255; ++i) {
+//        const uint8_t encoderLevel = OTV0P2BASE::analogueNoiseReducedRead(MOTOR_DRIVE_MC_AIN, DEFAULT)  & 0xff;
+//        bool newLevel = encoderLevel > 100;
+//        counter = (newLevel != oldLevel) ? counter + 1 : counter;
+//        oldLevel = newLevel;
+////        OTV0P2BASE::serialPrintAndFlush(encoderLevel);
+////        OTV0P2BASE::serialPrintlnAndFlush();
+//    }
+//    fastDigitalWrite(m2, HIGH);
+//    OTV0P2BASE::serialPrintAndFlush("dT: ");
+//    OTV0P2BASE::serialPrintAndFlush(millis() - startTime);
+//    OTV0P2BASE::serialPrintAndFlush("\tCount: ");
+//    OTV0P2BASE::serialPrintAndFlush(counter);
+//    OTV0P2BASE::serialPrintlnAndFlush();
 //    while(true) {}
 }
 

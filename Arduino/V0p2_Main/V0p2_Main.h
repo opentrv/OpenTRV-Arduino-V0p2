@@ -523,7 +523,8 @@ static constexpr bool binaryOnlyValveControl = true;
   static constexpr uint8_t m1 = MOTOR_DRIVE_MR;
   static constexpr uint8_t m2 = MOTOR_DRIVE_ML;
 #endif // HAS_DORM1_MOTOR_REVERSED
-typedef OTRadValve::ValveMotorDirectV1<m1, m2, MOTOR_DRIVE_MI_AIN, MOTOR_DRIVE_MC_AIN, decltype(Supply_cV), &Supply_cV, binaryOnlyValveControl> ValveDirect_t;
+typedef OTRadValve::ValveMotorDirectV1<OTRadValve::ValveMotorDirectV1HardwareDriver, m1, m2, MOTOR_DRIVE_MI_AIN, MOTOR_DRIVE_MC_AIN, OTRadValve::MOTOR_DRIVE_NSLEEP_UNUSED, decltype(Supply_cV), &Supply_cV> ValveDirect_t;
+
 extern ValveDirect_t ValveDirect;
 #endif
 

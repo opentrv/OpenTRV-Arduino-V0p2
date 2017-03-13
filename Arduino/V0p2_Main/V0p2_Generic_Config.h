@@ -71,6 +71,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 //#define CONFIG_REV8_SECURE_BHR // REV8 secure boiler controller and stats hub.
 //#define CONFIG_REV10_AS_GSM_RELAY_ONLY // REV10: stats relay only.
 //#define CONFIG_REV10_SECURE_BHR // REV10: secure stats relay and boiler hub.
+//#define CONFIG_REV11_SECURE_STATSHUB // REV11 as secure stats hub.
 
 // One-offs and special cases
 //---------------------------
@@ -103,7 +104,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 ////#define CONFIG_REV11_RFM23BTEST // Basic test to see if stats send.
 ////#define CONFIG_REV11_SECURE_SENSOR
 ////#define CONFIG_REV11_SENSOR
-////#define CONFIG_REV11_SECURE_STATSHUB
 ////#define CONFIG_REV11_STATSHUB
 ////#define CONFIG_REV11_RAW_JSON // REV11 as raw JSON-only stats/sensor leaf.
 ////#define CONFIG_REV14_WORKSHOP // REV14 w/ light sensor, SHT21, for Launchpad workshop.

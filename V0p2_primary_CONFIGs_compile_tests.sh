@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/sh
 #
 # Test all primary configurations of V0p2_Main to be tested during CI.
 #
