@@ -182,7 +182,8 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
                     TemperatureC16.get(),
                     Supply_cV.isSupplyVoltageLow(),
                     AmbLight.get(),
-                    Occupancy.twoBitOccupancyValue());    const uint8_t *msg1 = OTV0P2BASE::encodeFullStatsMessageCore(buf + STATS_MSG_START_OFFSET, sizeof(buf) - STATS_MSG_START_OFFSET, OTV0P2BASE::getStatsTXLevel(), false, &content);
+                    Occupancy.twoBitOccupancyValue());
+    const uint8_t *msg1 = OTV0P2BASE::encodeFullStatsMessageCore(buf + STATS_MSG_START_OFFSET, sizeof(buf) - STATS_MSG_START_OFFSET, OTV0P2BASE::getStatsTXLevel(), false, &content);
     if(NULL == msg1)
       {
 #if 0

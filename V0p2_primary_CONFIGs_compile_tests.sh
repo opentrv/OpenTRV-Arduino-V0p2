@@ -46,13 +46,13 @@ fi
 # Set status non-zero if a test/compilation fails.
 STATUS=0
 
-echo @@@@@@ Testing default target: $WORKINGDIR/$SKETCHNAME/$SKETCHNAME.ino
-if arduino --verify --board $BUILD_TARGET $WORKINGDIR/$SKETCHNAME/$SKETCHNAME.ino; then
-    echo OK
-else
-    echo FAILED
-    STATUS=1
-fi
+#echo @@@@@@ Testing default target: $WORKINGDIR/$SKETCHNAME/$SKETCHNAME.ino
+#if arduino --verify --board $BUILD_TARGET $WORKINGDIR/$SKETCHNAME/$SKETCHNAME.ino; then
+#    echo OK
+#else
+#    echo FAILED
+#    STATUS=1
+#fi
 
 # Fetch all primary configs.
 CONFIGS="`./V0p2_list_primary_CONFIGs.sh`"
@@ -60,6 +60,8 @@ if [ "X" = "X$CONFIGS" ]; then
     echo No primary configs found, aborting.
     exit 99
 fi
+echo All primary configs:
+echo $CONFIGS
 
 # Test each of the primary configs.
 for config in $CONFIGS;

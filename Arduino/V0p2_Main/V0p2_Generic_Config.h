@@ -54,8 +54,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 ////#define CONFIG_GENERIC_RANDB_NODE
 ////#define CONFIG_GENERIC_DHW_NODE
 
-// Production/primary configs
-//---------------------------
+// Production/primary/supported configs
+//-------------------------------------
 // Keep exactly of the form //#define CONFIG_ or without // for current live config.
 // Configs TEMPORARILY pending fixes can be doubly commented out with ////.
 //#define CONFIG_Trial2013Winter_Round1 // REV1 default config.
@@ -76,7 +76,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 // One-offs and special cases
 //---------------------------
 //// Keep doubly commented out (////#define CONFIG_) unless to be tested in CI.
+//// Configs not for wide use but still to be tested by CI should be double-commented.
 ////#define CONFIG_DHD_TESTLAB_REV0 // REV0 / breadboard.
+//#define CONFIG_BH_DHW // Bo's hot water, REV1 variant.
 ////#define CONFIG_Trial2013Winter_Round1_LVBHSH // REV1: local valve control, boiler hub, stats hub & TX.
 ////#define CONFIG_Trial2013Winter_Round1_STATSHUB // REV1 as stats hub.
 ////#define CONFIG_Trial2013Winter_Round2_LVBHSH // REV2 cut4: local valve control, boiler hub, stats hub & TX.
@@ -87,7 +89,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 ////#define CONFIG_Trial2013Winter_Round2_SECURE_STATSHUB // REV2 cut4 hub (boiler/stats) 2015/12 secure protocol.
 ////#define CONFIG_DHD_TESTLAB_REV4 // REV4 cut2.
 ////#define CONFIG_DHD_TESTLAB_REV4_NOHUB // REV4 cut2, no hub.
-////#define CONFIG_BH_DHW // Bo's hot water.
 ////#define CONFIG_BH_TESTLAB // Bo's test environment.
 ////#define CONFIG_DORM1_SECURE_AND_FS20 // REV7 / DORM1 / TRV1.x all-in-one valve unit, secure + FS20 non-secure comms.
 ////#define CONFIG_REV7N // REV7 with external "Model N" valve.
