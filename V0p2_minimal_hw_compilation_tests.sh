@@ -38,7 +38,7 @@ PARTPATHS="
 for pp in $PARTPATHS;
 do
     echo "@@@@@@" Testing $SKETCH_PATH/$pp
-    arduino --verify --board $BUILD_TARGET $SKETCH_PATH/$pp
+    arduino --verify --board $BUILD_TARGET $SKETCH_PATH/$pp || exit 2
 done
 
 exit 0
