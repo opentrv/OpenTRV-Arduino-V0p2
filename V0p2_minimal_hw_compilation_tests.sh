@@ -30,6 +30,7 @@ PARTPATHS="
     V0p2_Main_PCB_REV7_DORM1_and_REV8/REV7HardwareTest/REV7HardwareTest.ino
     V0p2_Main_PCB_REV7_DORM1_and_REV8/REV8HardwareTest/REV8HardwareTest.ino
     REV10/REV10HardwareTest/REV10HardwareTest.ino
+    REV10/REV10RadioTest/REV10RadioTest.ino 
     REV11/REV11HardwareTest/REV11HardwareTest.ino
     "
 
