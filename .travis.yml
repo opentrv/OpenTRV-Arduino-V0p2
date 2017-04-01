@@ -29,3 +29,7 @@ notifications:
       - ci@opentrv.uk
     on_success: change
     on_failure: always
+  irc:
+    channels: "irc.z.je#opentrv"
+    on_success: change
+    on_failure: change
