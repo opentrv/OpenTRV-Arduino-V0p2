@@ -92,24 +92,6 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute, const OTV0P2BASE::S
       // Set new node association (nodes to accept frames from).
       // Only needed if able to RX and/or some sort of hub.
      case 'A': { showStatus = OTV0P2BASE::CLI::SetNodeAssoc().doCommand(buf, n); break; }
-
-// XXX
-//#if defined(ENABLE_RADIO_RX) && (defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)) && !defined(ENABLE_DEFAULT_ALWAYS_RX)
-//      // C M
-//      // Set central-hub boiler minimum on (and off) time; 0 to disable.
-//      case 'C':
-//        {
-//        char *last; // Used by strtok_r().
-//        char *tok1;
-//        // Minimum 3 character sequence makes sense and is safe to tokenise, eg "C 0".
-//        if((n >= 3) && (NULL != (tok1 = strtok_r(buf+2, " ", &last))))
-//          {
-//          const uint8_t m = (uint8_t) atoi(tok1);
-//          setMinBoilerOnMinutes(m);
-//          }
-//        break;
-//        }
-//#endif
  
       // Set secret key.
       /**
