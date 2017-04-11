@@ -39,12 +39,11 @@ void setMinBoilerOnMinutes(uint8_t mins) { OTV0P2BASE::eeprom_smart_update_byte(
 //   * force if true then force full poll on every call (ie do not internally rate-limit)
 // Note that radio poll() can be for TX as well as RX activity.
 // Not thread-safe, eg not to be called from within an ISR.
-bool pollIO(const bool force)
-  {  static volatile uint8_t _pO_lastPoll;
+void pollIO()
+  { 
+    static volatile uint8_t _pO_lastPoll;
   // Poll RX at most about every ~8ms.
   const uint8_t sct = OTV0P2BASE::getSubCycleTime();
-  if(force || (sct != _pO_lastPoll))
-    {
     _pO_lastPoll = sct;
     // Poll for inbound frames.
     // If RX is not interrupt-driven then
@@ -52,8 +51,6 @@ bool pollIO(const bool force)
     // before getting an RX overrun or dropped frame.
     PrimaryRadio.poll();
     SecondaryRadio.poll();
-    }
-  return(false);
   }
 
 // Managed JSON stats.
@@ -425,12 +422,6 @@ static bool isBoilerOn() { return(0 != boilerCountdownTicks); }
 // Does not roll once at its maximum value (255).
 // DHD20160124: starting at zero forces at least for off time after power-up before firing up boiler (good after power-cut).
 static uint8_t boilerNoCallM;
-// Reducing listening if quiet for a while helps reduce self-heating temperature error
-// (~2C as of 2013/12/24 at 100% RX, ~100mW heat dissipation in V0.2 REV1 box) and saves some energy.
-// Time thresholds could be affected by eco/comfort switch.
-//#define RX_REDUCE_MIN_M 20 // Minimum minutes quiet before considering reducing RX duty cycle listening for call for heat; [1--255], 10--60 typical.
-// IF DEFINED then give backoff threshold to minimise duty cycle.
-//#define RX_REDUCE_MAX_M 240 // Minutes quiet before considering maximally reducing RX duty cycle; ]RX_REDUCE_MIN_M--255], 30--240 typical.
 
 // Set true on receipt of plausible call for heat,
 // to be polled, evaluated and cleared by the main control routine.
@@ -457,8 +448,8 @@ void remoteCallForHeatRX(const uint16_t id, const uint8_t percentOpen)
   // Somewhat higher than typical per-valve minimum,
   // to help provide boiler with an opportunity to dump heat before switching off.
   // May be too high to respond to valves with restricted max-open / range.
-  const uint8_t default_minimum = OTRadValve::DEFAULT_VALVE_PC_SAFER_OPEN;
-  const uint8_t minvro = default_minimum;
+  constexpr uint8_t default_minimum = OTRadValve::DEFAULT_VALVE_PC_SAFER_OPEN;
+  constexpr uint8_t minvro = default_minimum;
 
   // TODO-553: after over an hour of continuous boiler running
   // raise the percentage threshold to successfully call for heat (for a while).
@@ -473,7 +464,7 @@ void remoteCallForHeatRX(const uint16_t id, const uint8_t percentOpen)
   // in 'off' period even during the day for many many years!
   //
   // Note: could also consider pause if mains frequency is low indicating grid stress.
-  const uint8_t boilerCycleWindowMask = 0x3f;
+  constexpr uint8_t boilerCycleWindowMask = 0x3f;
   const uint8_t boilerCycleWindow = (minuteCount & boilerCycleWindowMask);
   const bool considerPause = (boilerCycleWindow < (boilerCycleWindowMask >> 2));
 
@@ -500,24 +491,6 @@ void remoteCallForHeatRX(const uint16_t id, const uint8_t percentOpen)
     receivedCallForHeat = true; // FIXME
     receivedCallForHeatID = id;
     }
-  }
-
-// Returns true if continuous background RX has been set up.
-static bool setUpContinuousRX()
-  {
-  // Possible paranoia...
-  // Periodically (every few hours) force radio off or at least to be not listening.
-  if((30 == TIME_LSD) && (128 == minuteCount)) { PrimaryRadio.listen(false); }
-
-  // IF IN CENTRAL HUB MODE: listen out for OpenTRV units calling for heat.
-  // Power optimisation 1: when >> 1 TX cycle (of ~2mins) need not listen, ie can avoid enabling receiver.
-  // Power optimisation 2: TODO: when (say) >>30m since last call for heat then only sample listen for (say) 3 minute in 10 (not at a TX cycle multiple).
-  // TODO: These optimisation are more important when hub unit is running a local valve
-  // to avoid temperature over-estimates from self-heating,
-  // and could be disabled if no local valve is being run to provide better response to remote nodes.
-  // Act on eavesdropping need, setting up or clearing down hooks as required.
-  PrimaryRadio.listen(true);
-  return(true);
   }
 
 // Process calls for heat, ie turn boiler on and off as appropriate.
@@ -626,7 +599,10 @@ void loopOpenTRV()
   // Conversely, if not true, should have time to safely log outputs, etc.
   const uint8_t nearOverrunThreshold = OTV0P2BASE::GSCT_MAX - 8; // ~64ms/~32 serial TX chars of grace time...
 
-  setUpContinuousRX();
+  // Possible paranoia...
+  // Periodically (every few hours) force radio off or at least to be not listening.
+  if((30 == TIME_LSD) && (128 == minuteCount)) { PrimaryRadio.listen(false); }
+  PrimaryRadio.listen(true);
 
   // Set BOILER_OUT as appropriate for calls for heat.
   processCallsForHeat(second0);

@@ -82,14 +82,9 @@ OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
 
 OTV0P2BASE::RoomTemperatureC16_TMP112 TemperatureC16;
 
-////////////////////////// CONTROL
-
-// Singleton non-volatile stats store instance.
+// 
 OTV0P2BASE::EEPROMByHourByteStats eeStats;
-
-// Stats updater singleton.
 StatsU_t statsU;
-
 
 //========================================
 // SETUP
@@ -114,7 +109,7 @@ void setup()
   const uint8_t oldResetCount = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_RESET_COUNT);
   eeprom_write_byte((uint8_t *)V0P2BASE_EE_START_RESET_COUNT, 1 + oldResetCount);
   
-    // Have 32678Hz clock at least running before going any further.
+  // Have 32678Hz clock at least running before going any further.
   // Check that the slow clock is running reasonably OK, and tune the fast one to it.
   if(!::OTV0P2BASE::HWTEST::calibrateInternalOscWithExtOsc()) { panic(F("Xtal")); } // Async clock not running or can't tune.
 
@@ -173,10 +168,8 @@ void setup()
 
 void loop()
   {
-
   // Force restart if SPAM/heap/stack likely corrupt.
   OTV0P2BASE::MemoryChecks::forceResetIfStackOverflow();
-
   // Complain and keep complaining when getting near stack overflow.
   // TODO: make DEBUG-only when confident all configs OK.
   const int16_t minsp = OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd();

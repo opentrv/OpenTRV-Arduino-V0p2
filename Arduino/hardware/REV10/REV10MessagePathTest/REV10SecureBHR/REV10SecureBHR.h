@@ -70,7 +70,7 @@ void panic(const __FlashStringHelper *s);
 //   * force if true then force full poll on every call (ie do not internally rate-limit)
 // Not thread-safe, eg not to be called from within an ISR.
 // NOTE: implementation may not be in power-management module.
-bool pollIO(bool force = false);
+void pollIO();
 
 
 ////// MESSAGING
@@ -154,7 +154,7 @@ void loopOpenTRV();
 static const constexpr uint8_t DEFAULT_MIN_BOILER_ON_MINS = 5;
 #define getMinBoilerOnMinutes() (DEFAULT_MIN_BOILER_ON_MINS)
 
-/////// STATS
+/////// STATS. XXX only used in loopOpenTRV
 
 // Singleton non-volatile stats store instance.
 extern OTV0P2BASE::EEPROMByHourByteStats eeStats;
