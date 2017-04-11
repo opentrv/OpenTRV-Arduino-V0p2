@@ -100,7 +100,6 @@ static void posPOST(const uint8_t position, const __FlashStringHelper *s = NULL)
 
 
 // Pick an appropriate radio config for RFM23 (if it is the primary radio).
-#define RADIO_CONFIG_NAME "GFSK"
 // Nodes talking on fast GFSK channel 0.
 static constexpr uint8_t nPrimaryRadioChannels = 1;
 static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChannels] =
@@ -111,18 +110,11 @@ static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChanne
 
 static const OTRadioLink::OTRadioChannelConfig SecondaryRadioConfig(&SIM900Config, true);
 
-// XXX
-// NO RADIO RX FILTERING BY DEFAULT
-#define NO_RX_FILTER
-#define FilterRXISR NULL
-
 void optionalPOST()
   {
   // Have 32678Hz clock at least running before going any further.
   // Check that the slow clock is running reasonably OK, and tune the fast one to it.
-  // FIXME
-  //if(!::OTV0P2BASE::HWTEST::calibrateInternalOscWithExtOsc()) { panic(F("Xtal")); } // Async clock not running or can't tune.
-    if(!::OTV0P2BASE::HWTEST::check32768HzOsc()) { panic(F("xtal")); } // Async clock not running correctly.
+  if(!::OTV0P2BASE::HWTEST::calibrateInternalOscWithExtOsc()) { panic(F("Xtal")); } // Async clock not running or can't tune.
 
   // Signal that xtal is running AND give it time to settle.
   posPOST(0 /*, F("about to test radio module") */);
@@ -140,11 +132,6 @@ void optionalPOST()
   SecondaryRadio.preinit(NULL);
   // Check that the radio is correctly connected; panic if not...
   if(!SecondaryRadio.configure(1, &SecondaryRadioConfig) || !SecondaryRadio.begin()) { panic(F("r2")); }
-  // Assume no RX nor filtering on secondary radio.
-
-// Save space (and time) by avoiding the second POST sequence; LED will be turned off anyway.
-//  // Single/main POST checkpoint for speed.
-//  posPOST(1 /* , F("POST OK") */ );
   }
 
 
@@ -153,12 +140,7 @@ void optionalPOST()
 // Sensor for supply (eg battery) voltage in millivolts.
 OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
 
-OTV0P2BASE::DummyHumiditySensorSHT21 RelHumidity;
-
 OTV0P2BASE::RoomTemperatureC16_TMP112 TemperatureC16;
-
-////////////////////////// Actuators
-
 
 ////////////////////////// CONTROL
 
@@ -167,9 +149,6 @@ OTV0P2BASE::EEPROMByHourByteStats eeStats;
 
 // Stats updater singleton.
 StatsU_t statsU;
-
-// Singleton scheduler instance.
-Scheduler_t Scheduler;
 
 // Radiator valve mode (FROST, WARM, BAKE).
 OTRadValve::ValveMode valveMode;

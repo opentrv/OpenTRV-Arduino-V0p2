@@ -180,8 +180,8 @@ static const constexpr uint8_t DEFAULT_MIN_BOILER_ON_MINS = 5;
 #define inStatsHubMode() (true)
 
 // Dummy scheduler to simplify coding.
-typedef OTRadValve::NULLValveSchedule Scheduler_t;
-extern Scheduler_t Scheduler;
+//typedef OTRadValve::NULLValveSchedule Scheduler_t;
+//extern Scheduler_t Scheduler;
 
 
 /////// STATS
@@ -201,41 +201,6 @@ typedef
       2
       > StatsU_t;
 extern StatsU_t statsU;
-
-
-// Mechanism to generate '=' stats line, if enabled.
-#define serialStatusReport() { }
-
-// FIXME I think there is an error in the original!
-//#if defined(ENABLE_SERIAL_STATUS_REPORT)
-//typedef OTV0P2BASE::SystemStatsLine<
-//      decltype(valveMode), &valveMode,
-//      OTRadValve::AbstractRadValve, (OTRadValve::AbstractRadValve *)NULL,
-//      decltype(TemperatureC16), &TemperatureC16,
-//      OTV0P2BASE::HumiditySensorBase, (OTV0P2BASE::HumiditySensorBase *)NULL,
-// XXX
-//#ifdef ENABLE_AMBLIGHT_SENSOR
-//      decltype(AmbLight), &AmbLight,
-//#else
-//      OTV0P2BASE::SensorAmbientLight, (OTV0P2BASE::SensorAmbientLight *)NULL,
-//#endif
-//// XXX
-//#ifdef ENABLE_OCCUPANCY_SUPPORT
-//      decltype(Occupancy), &Occupancy,
-//#else
-//      OTV0P2BASE::PseudoSensorOccupancyTracker, (OTV0P2BASE::PseudoSensorOccupancyTracker*)NULL,
-//#endif
-//      decltype(Scheduler), &Scheduler,
-//#if defined(ENABLE_JSON_OUTPUT) && !defined(ENABLE_TRIMMED_MEMORY)
-//      true // Enable JSON stats.
-//#else
-//      true // Disable JSON stats. // FIXME
-//#endif
-//      > StatsLine_t;
-//extern StatsLine_t statsLine;
-//// Send a short 1-line CRLF-terminated status report on the serial connection (at 'standard' baud).
-//// Should be similar to PICAXE V0.1 output to allow the same parser to handle either.
-//inline void serialStatusReport() { statsLine.serialStatusReport(); }
 
 // Do bare stats transmission.
 // Output should be filtered for items appModelledRadValveComputeTargetTempBasicropriate

@@ -76,8 +76,6 @@ void bareStatsTX(const bool allowDoubleTX, const bool doBinary)
   const bool framed = !PrimaryRadio.getChannelConfig()->isUnframed;
   const bool RFM23BFramed = false; // Never use this raw framing unless enabled explicitly.
 
-  const bool doEnc = true;
-
   const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled<>();
   
 static_assert(OTV0P2BASE::FullStatsMessageCore_MAX_BYTES_ON_WIRE <= STATS_MSG_MAX_LEN, "FullStatsMessageCore_MAX_BYTES_ON_WIRE too big");
@@ -92,11 +90,7 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
   const uint8_t MSG_BUF_SIZE = 1 + 64 + 1;
   uint8_t buf[MSG_BUF_SIZE];
 
-// XXX
-  if(doBinary && !doEnc) // Note that binary form is not secure, so not permitted for secure systems.
-    {
-    }
-  else // Send binary *or* JSON on each attempt so as not to overwhelm the receiver.
+  // Send binary *or* JSON on each attempt so as not to overwhelm the receiver.
     {
     // Send JSON message.
     bool sendingJSONFailed = false; // Set true and stop attempting JSON send in case of error.
@@ -112,8 +106,7 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
     // If forcing encryption or if unconditionally suppressed
     // then suppress the "@" ID field entirely,
     // assuming that the encrypted commands will carry the ID, ie in the 'envelope'.
-    if(doEnc)
-        { ss1.setID(V0p2_SENSOR_TAG_F("")); }
+    ss1.setID(V0p2_SENSOR_TAG_F(""));
 
     // Managed JSON stats.
     // Make best use of available bandwidth...
@@ -121,7 +114,7 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
     // Enable "+" count field for diagnostic purposes, eg while TX is lossy,
     // if the primary radio channel does not include a sequence number itself.
     // Assume that an encrypted channel will provide its own (visible) sequence counter.
-    ss1.enableCount(!doEnc); 
+    ss1.enableCount(false); 
     ss1.putOrRemove(OTV0P2BASE::ErrorReporter);
     ss1.put(TemperatureC16);
     // OPTIONAL items
@@ -143,8 +136,8 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
     static const uint8_t max_plaintext_JSON_len = OTV0P2BASE::MSG_JSON_MAX_LENGTH;
 
     // Redirect JSON output appropriately.
-    uint8_t *const bufJSON = doEnc ? ptextBuf : bptr;
-    const uint8_t bufJSONlen = doEnc ? sizeof(ptextBuf) : min(max_plaintext_JSON_len+2, sizeof(buf) - (bptr-buf));
+    uint8_t *const bufJSON = ptextBuf;
+    const uint8_t bufJSONlen = sizeof(ptextBuf);
 
     // Number of bytes written for body.
     // For non-secure, this is the size of the JSON text.
@@ -166,23 +159,18 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
     // Push the JSON output to Serial.
     if(!sendingJSONFailed)
       {
-      if(doEnc)
-        {
         // Insert synthetic full ID/@ field for local stats, but no sequence number for now.
         Serial.print(F("{\"@\":\""));
         for(int i = 0; i < OTV0P2BASE::OpenTRV_Node_ID_Bytes; ++i) { Serial.print(eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_ID+i), HEX); }
         Serial.print(F("\","));
         Serial.write(bufJSON+1, wrote-1);
         Serial.println();
-        }
-      else
-        { OTV0P2BASE::outputJSONStats(&Serial, true, bufJSON, bufJSONlen); } // Serial must already be running!
       OTV0P2BASE::flushSerialSCTSensitive(); // Ensure all flushed since system clock may be messed with...
       }
 
     // Get the 'building' key for stats sending.
     uint8_t key[16];
-    if(!sendingJSONFailed && doEnc)
+    if(!sendingJSONFailed)
       {
       if(!OTV0P2BASE::getPrimaryBuilding16ByteSecretKey(key))
         {
@@ -193,7 +181,7 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
 
     // If doing encryption
     // then build encrypted frame from raw JSON.
-    if(!sendingJSONFailed && doEnc)
+    if(!sendingJSONFailed)
       {
       // Explicit-workspace version of encryption.
       const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEncWithWorkspace_ptr_t eW = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_WITH_WORKSPACE;
@@ -224,24 +212,8 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
 
     if(!sendingJSONFailed)
       {
-      // If not encrypting, adjust the JSON for transmission and add a CRC.
-      // (Set high-bit on final closing brace to make it unique, and compute (non-0xff) CRC.)
-      if(!doEnc)
-          {
-          const uint8_t crc = OTV0P2BASE::adjustJSONMsgForTXAndComputeCRC((char *)bptr);
-          if(0xff == crc) { sendingJSONFailed = true; }
-          else
-            {
-            bptr += wrote;
-            *bptr++ = crc; // Add 7-bit CRC for on-the-wire check.
-            ++wrote;
-            }
-          }
-
-        {
         // Send directly to the primary radio...
         if(!PrimaryRadio.queueToSend(realTXFrameStart, wrote)) { sendingJSONFailed = true; }
-        }
       }
     }
 
@@ -787,7 +759,6 @@ void loopOpenTRV()
       // Tasks that must be run every minute.
       ++minuteCount; // Note simple roll-over to 0 at max value.
       // Force to user's programmed schedule(s), if any, at the correct time.
-      Scheduler.applyUserSchedule(&valveMode, OTV0P2BASE::getMinutesSinceMidnightLT());
       // Ensure that the RTC has been persisted promptly when necessary.
       OTV0P2BASE::persistRTC();
       // Run hourly tasks at the end of the hour.
@@ -892,9 +863,6 @@ void loopOpenTRV()
       break;
       }
     }
-
-  // Generate periodic status reports.
-  if(showStatus) { serialStatusReport(); }
 
   // End-of-loop processing, that may be slow.
   // Ensure progress on queued messages ahead of slow work.  (TODO-867)
