@@ -52,7 +52,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 #include <OTRadioLink.h>
 #include <OTRFM23BLink.h>
 #include <OTSIM900Link.h>
-#include <OTRN2483Link.h>
 #include <OTAESGCM.h>
 
 // Indicate that the system is broken in an obvious way (distress flashing of the main UI LED).

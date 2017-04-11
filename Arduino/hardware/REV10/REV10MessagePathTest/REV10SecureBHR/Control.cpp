@@ -22,7 +22,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
  */
 
 #include "REV10SecureBHR.h"
-#include <OTAESGCM.h>
 
 // True if boiler should be on.
 static bool isBoilerOn();
@@ -912,6 +911,5 @@ void loopOpenTRV()
     const uint8_t stopBy = nearOverrunThreshold - 1;
     char buf[BUFSIZ_pollUI];
     OTV0P2BASE::ScratchSpace s((uint8_t*)buf, sizeof(buf));
-    pollCLI(stopBy, 0 == TIME_LSD, s);
     }
   }
