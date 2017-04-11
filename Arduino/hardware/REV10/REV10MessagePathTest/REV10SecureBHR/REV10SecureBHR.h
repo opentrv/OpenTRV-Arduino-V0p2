@@ -86,13 +86,6 @@ extern OTRadioLink::OTRadioLink &SecondaryRadio;
 extern const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config;
 
 // XXX
-static constexpr uint8_t RFM22_PREAMBLE_BYTE = 0xaa; // Preamble byte for RFM22/23 reception.
-static constexpr uint8_t RFM22_PREAMBLE_MIN_BYTES = 4; // Minimum number of preamble bytes for reception.
-static constexpr uint8_t RFM22_PREAMBLE_BYTES = 5; // Recommended number of preamble bytes for reliable reception.
-static constexpr uint8_t RFM22_SYNC_BYTE = 0xcc; // Sync-word trailing byte (with FHT8V primarily).
-static constexpr uint8_t RFM22_SYNC_MIN_BYTES = 3; // Minimum number of sync bytes.
-
-// XXX
 // Send the underlying stats binary/text 'whitened' message.
 // This must be terminated with an 0xff (which is not sent),
 // and no longer than STATS_MSG_MAX_LEN bytes long in total (excluding the terminating 0xff).
@@ -104,6 +97,8 @@ static constexpr uint8_t RFM22_SYNC_MIN_BYTES = 3; // Minimum number of sync byt
 //   * RFM23BfriendlyPremable  if true then add an extra preamble
 //     to allow RFM23B-based receiver to RX this
 // This will use whichever transmission medium/carrier/etc is available.
+static constexpr uint8_t RFM22_PREAMBLE_BYTES = 5; // Recommended number of preamble bytes for reliable reception.
+static constexpr uint8_t RFM22_SYNC_MIN_BYTES = 3; // Minimum number of sync bytes.
 static constexpr uint8_t STATS_MSG_START_OFFSET = (RFM22_PREAMBLE_BYTES + RFM22_SYNC_MIN_BYTES);
 static constexpr uint8_t STATS_MSG_MAX_LEN = (64 - STATS_MSG_START_OFFSET);
 
@@ -134,12 +129,8 @@ bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadi
 extern OTRadValve::ValveMode valveMode;
 
 // IF DEFINED: support for general timed and multi-input occupancy detection / use.
-#ifdef ENABLE_OCCUPANCY_SUPPORT
-typedef OTV0P2BASE::PseudoSensorOccupancyTracker OccupancyTracker;
-#else
 // Placeholder class with dummy static status methods to reduce code complexity.
 typedef OTV0P2BASE::DummySensorOccupancyTracker OccupancyTracker;
-#endif
 // Singleton implementation for entire node.
 extern OccupancyTracker Occupancy;
 
@@ -153,32 +144,15 @@ extern OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
 
 // XXX
 // Sense ambient lighting level.
-#ifdef ENABLE_AMBLIGHT_SENSOR
-// Sensor for ambient light level; 0 is dark, 255 is bright.
-typedef OTV0P2BASE::SensorAmbientLight AmbientLight;
-#else // !defined(ENABLE_AMBLIGHT_SENSOR)
 typedef OTV0P2BASE::DummySensorAmbientLight AmbientLight; // Dummy stand-in.
-#endif // ENABLE_AMBLIGHT_SENSOR
 // Singleton implementation/instance.
 extern AmbientLight AmbLight;
 
-// XXX
 // Ambient/room temperature sensor, usually on main board.
-#if defined(ENABLE_PRIMARY_TEMP_SENSOR_SHT21)
-extern OTV0P2BASE::RoomTemperatureC16_SHT21 TemperatureC16; // SHT21 impl.
-#elif defined(ENABLE_PRIMARY_TEMP_SENSOR_DS18B20)
-  #if defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
-  // DSB18B20 temperature impl, with slightly reduced precision to improve speed.
-  extern OTV0P2BASE::TemperatureC16_DS18B20 TemperatureC16;
-  #endif // defined(ENABLE_MINIMAL_ONEWIRE_SUPPORT)
-#else // Don't use TMP112 if SHT21 or DS18B20 have been selected.
 extern OTV0P2BASE::RoomTemperatureC16_TMP112 TemperatureC16;
-#endif
 
 // Dummy implementation to minimise coding changes.
 extern OTV0P2BASE::DummyHumiditySensorSHT21 RelHumidity;
-
-
 
 /////// CONTROL
 
@@ -187,88 +161,27 @@ void setupOpenTRV();
 // Main loop for OpenTRV radiator control.
 void loopOpenTRV();
 
-// XXX
 // Select basic parameter set to use (or could define new set here).
-#ifndef DHW_TEMPERATURES
 // Settings for room TRV.
 typedef OTRadValve::DEFAULT_ValveControlParameters PARAMS;
-#else
-// Default settings for DHW control.
-typedef OTRadValve::DEFAULT_DHW_ValveControlParameters PARAMS;
-#endif
-
 
 // Dummy temperature control.
 typedef OTRadValve::NULLTempControl TempControl_t;
-// XXX
-#define TempControl_DEFINED
-extern TempControl_t tempControl;
 
 // XXX
 // Default minimum on/off time in minutes for the boiler relay.
 // Set to 5 as the default valve Tx cycle is 4 mins and 5 mins is a good amount for most boilers.
 // This constant is necessary as if V0P2BASE_EE_START_MIN_BOILER_ON_MINS_INV is not set, the boiler relay will never be turned on.
 static const constexpr uint8_t DEFAULT_MIN_BOILER_ON_MINS = 5;
-#if defined(ENABLE_DEFAULT_ALWAYS_RX)
 #define getMinBoilerOnMinutes() (DEFAULT_MIN_BOILER_ON_MINS)
-#elif defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)
-// Get minimum on (and off) time for pointer (minutes); zero if not in hub mode.
-uint8_t getMinBoilerOnMinutes();
-// Set minimum on (and off) time for pointer (minutes); zero to disable hub mode.
-// Suggested minimum of 4 minutes for gas combi; much longer for heat pumps for example.
-void setMinBoilerOnMinutes(uint8_t mins);
-#else
-#define getMinBoilerOnMinutes() (0) // Always disabled.
-#define setMinBoilerOnMinutes(mins) {} // Do nothing.
-#endif
 
-// XXX
-#if defined(ENABLE_DEFAULT_ALWAYS_RX)
 // True: always in central hub/listen mode.
 #define inHubMode() (true)
 // True: always in stats hub/listen mode.
 #define inStatsHubMode() (true)
-#elif !defined(ENABLE_RADIO_RX)
-// No RX/listening allowed, so never in hub mode.
-// False: never in central hub/listen mode.
-#define inHubMode() (false)
-// False: never in stats hub/listen mode.
-#define inStatsHubMode() (false)
-#else
-// True if in central hub/listen mode (possibly with local radiator also).
-#define inHubMode() (0 != getMinBoilerOnMinutes())
-// True if in stats hub/listen mode (minimum timeout).
-#define inStatsHubMode() (1 == getMinBoilerOnMinutes())
-#endif // defined(ENABLE_DEFAULT_ALWAYS_RX)
 
-// XXX
-// Period in minutes for simple learned on-time; strictly positive (and less than 256).
-#ifndef LEARNED_ON_PERIOD_M
-#define LEARNED_ON_PERIOD_M 60
-#endif
-// Period in minutes for simple learned on-time with comfort bias; strictly positive (and less than 256).
-// Defaults to twice LEARNED_ON_PERIOD_M.
-// Should be no shorter/less than LEARNED_ON_PERIOD_M to avoid confusion.
-#ifndef LEARNED_ON_PERIOD_COMFORT_M
-#define LEARNED_ON_PERIOD_COMFORT_M (min(2*(LEARNED_ON_PERIOD_M),255))
-#endif
-#if defined(ENABLE_SINGLETON_SCHEDULE)
-#define SCHEDULER_AVAILABLE
-// Singleton scheduler instance.
-typedef OTRadValve::SimpleValveSchedule
-    <
-    LEARNED_ON_PERIOD_M, LEARNED_ON_PERIOD_COMFORT_M,
-    decltype(tempControl), &tempControl,
-#if defined(ENABLE_OCCUPANCY_SUPPORT)
-    decltype(Occupancy), &Occupancy
-#else
-    OTRadValve::SimpleValveSchedule_PseudoSensorOccupancyTracker, (OTRadValve::SimpleValveSchedule_PseudoSensorOccupancyTracker*)NULL
-#endif
-    > Scheduler_t;
-#else
 // Dummy scheduler to simplify coding.
 typedef OTRadValve::NULLValveSchedule Scheduler_t;
-#endif // defined(ENABLE_SINGLETON_SCHEDULE)
 extern Scheduler_t Scheduler;
 
 
@@ -282,11 +195,7 @@ typedef
     OTV0P2BASE::ByHourSimpleStatsUpdaterSampleStats <
       decltype(eeStats), &eeStats,
       // XXX
-#if defined(ENABLE_OCCUPANCY_SUPPORT)
-      decltype(Occupancy), &Occupancy,
-#else
       OTV0P2BASE::SimpleTSUint8Sensor, static_cast<OTV0P2BASE::SimpleTSUint8Sensor*>(NULL), // Save code space when no occupancy tracking.
-#endif
       decltype(AmbLight), &AmbLight,
       decltype(TemperatureC16), &TemperatureC16,
       decltype(RelHumidity), &RelHumidity,
@@ -294,40 +203,40 @@ typedef
       > StatsU_t;
 extern StatsU_t statsU;
 
-// XXX
+
 // Mechanism to generate '=' stats line, if enabled.
-#if defined(ENABLE_SERIAL_STATUS_REPORT)
-typedef OTV0P2BASE::SystemStatsLine<
-      decltype(valveMode), &valveMode,
-      OTRadValve::AbstractRadValve, (OTRadValve::AbstractRadValve *)NULL,
-      decltype(TemperatureC16), &TemperatureC16,
-      OTV0P2BASE::HumiditySensorBase, (OTV0P2BASE::HumiditySensorBase *)NULL,
-// XXX
-#ifdef ENABLE_AMBLIGHT_SENSOR
-      decltype(AmbLight), &AmbLight,
-#else
-      OTV0P2BASE::SensorAmbientLight, (OTV0P2BASE::SensorAmbientLight *)NULL,
-#endif
-// XXX
-#ifdef ENABLE_OCCUPANCY_SUPPORT
-      decltype(Occupancy), &Occupancy,
-#else
-      OTV0P2BASE::PseudoSensorOccupancyTracker, (OTV0P2BASE::PseudoSensorOccupancyTracker*)NULL,
-#endif
-      decltype(Scheduler), &Scheduler,
-#if defined(ENABLE_JSON_OUTPUT) && !defined(ENABLE_TRIMMED_MEMORY)
-      true // Enable JSON stats.
-#else
-      true // Disable JSON stats. // FIXME
-#endif
-      > StatsLine_t;
-extern StatsLine_t statsLine;
-// Send a short 1-line CRLF-terminated status report on the serial connection (at 'standard' baud).
-// Should be similar to PICAXE V0.1 output to allow the same parser to handle either.
-inline void serialStatusReport() { statsLine.serialStatusReport(); }
-#else
 #define serialStatusReport() { }
-#endif // defined(ENABLE_SERIAL_STATUS_REPORT)
+
+// FIXME I think there is an error in the original!
+//#if defined(ENABLE_SERIAL_STATUS_REPORT)
+//typedef OTV0P2BASE::SystemStatsLine<
+//      decltype(valveMode), &valveMode,
+//      OTRadValve::AbstractRadValve, (OTRadValve::AbstractRadValve *)NULL,
+//      decltype(TemperatureC16), &TemperatureC16,
+//      OTV0P2BASE::HumiditySensorBase, (OTV0P2BASE::HumiditySensorBase *)NULL,
+// XXX
+//#ifdef ENABLE_AMBLIGHT_SENSOR
+//      decltype(AmbLight), &AmbLight,
+//#else
+//      OTV0P2BASE::SensorAmbientLight, (OTV0P2BASE::SensorAmbientLight *)NULL,
+//#endif
+//// XXX
+//#ifdef ENABLE_OCCUPANCY_SUPPORT
+//      decltype(Occupancy), &Occupancy,
+//#else
+//      OTV0P2BASE::PseudoSensorOccupancyTracker, (OTV0P2BASE::PseudoSensorOccupancyTracker*)NULL,
+//#endif
+//      decltype(Scheduler), &Scheduler,
+//#if defined(ENABLE_JSON_OUTPUT) && !defined(ENABLE_TRIMMED_MEMORY)
+//      true // Enable JSON stats.
+//#else
+//      true // Disable JSON stats. // FIXME
+//#endif
+//      > StatsLine_t;
+//extern StatsLine_t statsLine;
+//// Send a short 1-line CRLF-terminated status report on the serial connection (at 'standard' baud).
+//// Should be similar to PICAXE V0.1 output to allow the same parser to handle either.
+//inline void serialStatusReport() { statsLine.serialStatusReport(); }
 
 // Do bare stats transmission.
 // Output should be filtered for items appModelledRadValveComputeTargetTempBasicropriate
@@ -349,13 +258,8 @@ void bareStatsTX(bool allowDoubleTX = false, bool doBinary = false);
 void remoteCallForHeatRX(uint16_t id, uint8_t percentOpen);
 
 ////// UI
-// XXX
 // Suggested minimum buffer size for pollUI() to ensure maximum-sized commands can be received.
-#if defined(ENABLE_EXTENDED_CLI) || defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
 static constexpr uint8_t MAXIMUM_CLI_RESPONSE_CHARS = 1 + OTV0P2BASE::CLI::MAX_TYPICAL_CLI_BUFFER;
-#else
-static constexpr uint8_t MAXIMUM_CLI_RESPONSE_CHARS = 1 + OTV0P2BASE::CLI::MIN_TYPICAL_CLI_BUFFER;
-#endif
 static constexpr uint8_t BUFSIZ_pollUI = 1 + MAXIMUM_CLI_RESPONSE_CHARS;
 
 // Used to poll user side for CLI input until specified sub-cycle time.
@@ -366,13 +270,6 @@ static constexpr uint8_t BUFSIZ_pollUI = 1 + MAXIMUM_CLI_RESPONSE_CHARS;
 // Times itself out after at least a minute or two of inactivity. 
 // NOT RE-ENTRANT (eg uses static state for speed and code space).
 void pollCLI(uint8_t maxSCT, bool startOfMinute, const OTV0P2BASE::ScratchSpace &s);
-
-
-////////////////////////// Actuators
-
-// XXX
-// DORM1/REV7 direct drive motor actuator.
-static constexpr bool binaryOnlyValveControl = true;
 
 
 #endif // REV10_SECURE_BHR_H
