@@ -78,6 +78,7 @@ OTRadioLink::OTRadioLink &SecondaryRadio = SIM900;
 static bool decodeAndHandleOTSecureableFrame(Print *p, const bool secure, const uint8_t * const msg)
   {
   const uint8_t msglen = msg[-1];
+  if(msglen < 2) { return false; } // Too short to be useful, so ignore.
   const uint8_t firstByte = msg[0];
 
   // Validate structure of header/frame first.
@@ -136,7 +137,7 @@ static bool decodeAndHandleOTSecureableFrame(Print *p, const bool secure, const 
 
   if(!isOK) { return(false); } // Stop if not OK.
 
-  switch(firstByte) // Switch on type.
+  switch(firstByte) // Switch on type. XXX
     {
     case 'O' | 0x80: // Basic OpenTRV secure frame...
       {
@@ -179,28 +180,6 @@ static bool decodeAndHandleOTSecureableFrame(Print *p, const bool secure, const 
   return(false);
   }
 
-// Decode and handle inbound raw message (msg[-1] contains the count of bytes received).
-// A message may contain trailing garbage at the end; the decoder/router should cope.
-// The buffer may be reused when this returns,
-// so a copy should be taken of anything that needs to be retained.
-// If secure is true then this message arrived over an inherently secure channel.
-// This will write any output to the supplied Print object,
-// typically the Serial output (which must be running if so).
-// This routine is NOT allowed to alter in any way the content of the buffer passed.
-static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uint8_t * const msg)
-  {
-  const uint8_t msglen = msg[-1];
-
-  // TODO: consider extracting hash of all message data (good/bad) and injecting into entropy pool.
-  if(msglen < 2) { return; } // Too short to be useful, so ignore.
-
-   // Length-first OpenTRV secureable-frame format...
-  if(decodeAndHandleOTSecureableFrame(p, secure, msg)) { return; }
-  const uint8_t firstByte = msg[0];
-  // Unparseable frame: drop it; possibly log it as an error.
-  return;
-  }
-
 // Incrementally process I/O and queued messages, including from the radio link.
 // This may mean printing them to Serial (which the passed Print object usually is),
 // or adjusting system parameters,
@@ -237,7 +216,7 @@ bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadi
     if(!neededWaking && wakeSerialIfNeeded && OTV0P2BASE::powerUpSerialIfDisabled<V0P2_UART_BAUD>()) { neededWaking = true; } // FIXME
     // Don't currently regard anything arriving over the air as 'secure'.
     // FIXME: shouldn't have to cast away volatile to process the message content.
-    decodeAndHandleRawRXedMessage(p, false, (const uint8_t *)pb);
+    decodeAndHandleOTSecureableFrame(p, false, (const uint8_t *)pb);
     rl->removeRXMsg();
     // Note that some work has been done.
     workDone = true;
