@@ -60,22 +60,9 @@ static const char SIM900_APN[] PROGMEM      = "\"mobiledata\""; // GeoSIM
 
 
 // Brings in necessary radio libs.
-// XXX
-#if defined(ENABLE_TRIMMED_MEMORY) && !defined(ENABLE_DEFAULT_ALWAYS_RX) && !defined(ENABLE_CONTINUOUS_RX)
-static constexpr uint8_t RFM23B_RX_QUEUE_SIZE = OTV0P2BASE::fnmax(uint8_t(2), uint8_t(OTRFM23BLink::DEFAULT_RFM23B_RX_QUEUE_CAPACITY)) - 1;
-#else
 static constexpr uint8_t RFM23B_RX_QUEUE_SIZE = OTRFM23BLink::DEFAULT_RFM23B_RX_QUEUE_CAPACITY;
-#endif
-#if defined(PIN_RFM_NIRQ)
 static constexpr int8_t RFM23B_IRQ_PIN = PIN_RFM_NIRQ;
-#else
-static constexpr int8_t RFM23B_IRQ_PIN = -1;
-#endif
-#if defined(ENABLE_RADIO_RX)
 static constexpr bool RFM23B_allowRX = true;
-#else
-static constexpr bool RFM23B_allowRX = false;
-#endif
 OTRFM23BLink::OTRFM23BLink<OTV0P2BASE::V0p2_PIN_SPI_nSS, RFM23B_IRQ_PIN, RFM23B_RX_QUEUE_SIZE, RFM23B_allowRX> RFM23B;
 //OTSIM900Link::OTSIM900Link SIM900(REGULATOR_POWERUP, RADIO_POWER_PIN, SOFTSERIAL_RX_PIN, SOFTSERIAL_TX_PIN);
 OTSIM900Link::OTSIM900Link<8, 5, RADIO_POWER_PIN, OTV0P2BASE::getSecondsLT> SIM900; // (REGULATOR_POWERUP, RADIO_POWER_PIN);
@@ -155,9 +142,6 @@ static bool decodeAndHandleOTSecureableFrame(Print *p, const bool secure, const 
       {
       if(decryptedBodyOutSize < 2)
         {
-#if 1 && defined(DEBUG)
-DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX O short"); // "O' frame too short.
-#endif
         break;
         }
       // If acting as a boiler hub
@@ -171,21 +155,18 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("!RX O short"); // "O' frame too short.
       // else print directly to console/Serial.
       if((0 != (secBodyBuf[1] & 0x10)) && (decryptedBodyOutSize > 3) && ('{' == secBodyBuf[2]))
         {
-#ifdef ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY
         SecondaryRadio.queueToSend(msg, msglen); 
-#else // Don't write to console/Serial also if relayed.
-        // Write out the JSON message, inserting synthetic ID/@ and seq/+.
-        Serial.print(F("{\"@\":\""));
-        for(int i = 0; i < OTV0P2BASE::OpenTRV_Node_ID_Bytes; ++i) { Serial.print(senderNodeID[i], HEX); }
-        Serial.print(F("\",\"+\":"));
-        Serial.print(sfh.getSeq());
-        Serial.print(',');
-        Serial.write(secBodyBuf + 3, decryptedBodyOutSize - 3);
-        Serial.println('}');
-//        OTV0P2BASE::outputJSONStats(&Serial, secure, msg, msglen);
-        // Attempt to ensure that trailing characters are pushed out fully.
-        OTV0P2BASE::flushSerialProductive();
-#endif // ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY
+//        // Write out the JSON message, inserting synthetic ID/@ and seq/+.
+//        Serial.print(F("{\"@\":\""));
+//        for(int i = 0; i < OTV0P2BASE::OpenTRV_Node_ID_Bytes; ++i) { Serial.print(senderNodeID[i], HEX); }
+//        Serial.print(F("\",\"+\":"));
+//        Serial.print(sfh.getSeq());
+//        Serial.print(',');
+//        Serial.write(secBodyBuf + 3, decryptedBodyOutSize - 3);
+//        Serial.println('}');
+////        OTV0P2BASE::outputJSONStats(&Serial, secure, msg, msglen);
+//        // Attempt to ensure that trailing characters are pushed out fully.
+//        OTV0P2BASE::flushSerialProductive();
         }
       return(true);
       }
