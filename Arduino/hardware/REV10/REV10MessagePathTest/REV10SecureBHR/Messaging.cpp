@@ -73,7 +73,6 @@ OTRadioLink::OTRadioLink &PrimaryRadio = RFM23B;
 // Assign radio to SecondaryRadio alias.
 OTRadioLink::OTRadioLink &SecondaryRadio = SIM900;
 
-// Handle FS20/FHT8V traffic including binary stats.
 // Returns true on successful frame type match, false if no suitable frame was found/decoded and another parser should be tried.
 static bool decodeAndHandleOTSecureableFrame(Print *p, const bool secure, const uint8_t * const msg)
   {
@@ -204,16 +203,18 @@ bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadi
   if(sctStart >= ((OTV0P2BASE::GSCT_MAX/4)*3)) { return(false); }
 
   // Deal with any I/O that is queued.
-  bool workDone = pollIO(true);
+  pollIO();
 
   // Check for activity on the radio link.
   rl->poll();
 
+  // XXX can probably strip these out.
+  bool workDone = false;
   bool neededWaking = false; // Set true once this routine wakes Serial.
   const volatile uint8_t *pb;
   if(NULL != (pb = rl->peekRXMsg()))
     {
-    if(!neededWaking && wakeSerialIfNeeded && OTV0P2BASE::powerUpSerialIfDisabled<V0P2_UART_BAUD>()) { neededWaking = true; } // FIXME
+    if(wakeSerialIfNeeded && OTV0P2BASE::powerUpSerialIfDisabled<V0P2_UART_BAUD>()) { neededWaking = true; } // FIXME
     // Don't currently regard anything arriving over the air as 'secure'.
     // FIXME: shouldn't have to cast away volatile to process the message content.
     decodeAndHandleOTSecureableFrame(p, false, (const uint8_t *)pb);
