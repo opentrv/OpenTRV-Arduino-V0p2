@@ -21,7 +21,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
  Control/model for TRV and boiler.
  */
 
-#include "V0p2_Main.h"
+#include "REV10SecureBHR.h"
 #if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) || defined(ENABLE_SECURE_RADIO_BEACON)
 #include <OTAESGCM.h>
 #endif

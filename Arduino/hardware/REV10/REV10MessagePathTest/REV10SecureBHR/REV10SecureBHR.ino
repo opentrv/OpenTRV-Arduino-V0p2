@@ -34,7 +34,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 #include <OTAESGCM.h>
 #endif
 
-#include "V0p2_Main.h"
+#include "REV10SecureBHR.h"
 
 // Indicate that the system is broken in an obvious way (distress flashing the main LED).
 // DOES NOT RETURN.

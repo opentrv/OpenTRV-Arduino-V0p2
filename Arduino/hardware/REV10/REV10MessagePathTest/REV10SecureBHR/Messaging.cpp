@@ -21,7 +21,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2017
 /*
  Generic messaging and radio/comms support for OpenTRV.
  */
-#include "V0p2_Main.h"
+#include "REV10SecureBHR.h"
 
 #ifdef ENABLE_RADIO_SIM900
 //For EEPROM: TODO make a spec for how config should be stored in EEPROM to make changing them easy

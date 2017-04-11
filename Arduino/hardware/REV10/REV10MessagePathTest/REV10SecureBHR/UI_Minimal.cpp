@@ -21,7 +21,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
  and one or more momentary push-buttons, etc, plus CLI.
  */
 
-#include "V0p2_Main.h"
+#include "REV10SecureBHR.h"
 
 #if defined(valveUI_DEFINED)
 // Valve physical UI controller.
