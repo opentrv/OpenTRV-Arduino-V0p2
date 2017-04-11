@@ -122,18 +122,6 @@ static constexpr uint8_t STATS_MSG_MAX_LEN = (64 - STATS_MSG_START_OFFSET);
 bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadioLink *rl);
 
 
-/////// CONTROL (EARLY, NOT DEPENDENT ON OTHER SENSORS)
-// XXX
-// Radiator valve mode (FROST, WARM, BAKE).
-extern OTRadValve::ValveMode valveMode;
-
-// IF DEFINED: support for general timed and multi-input occupancy detection / use.
-// Placeholder class with dummy static status methods to reduce code complexity.
-typedef OTV0P2BASE::DummySensorOccupancyTracker OccupancyTracker;
-// Singleton implementation for entire node.
-extern OccupancyTracker Occupancy;
-
-
 ////// SENSORS
 
 // Sensor for supply (eg battery) voltage in millivolts.
@@ -160,29 +148,11 @@ void setupOpenTRV();
 // Main loop for OpenTRV radiator control.
 void loopOpenTRV();
 
-// Select basic parameter set to use (or could define new set here).
-// Settings for room TRV.
-typedef OTRadValve::DEFAULT_ValveControlParameters PARAMS;
-
-// Dummy temperature control.
-typedef OTRadValve::NULLTempControl TempControl_t;
-
-// XXX
 // Default minimum on/off time in minutes for the boiler relay.
 // Set to 5 as the default valve Tx cycle is 4 mins and 5 mins is a good amount for most boilers.
 // This constant is necessary as if V0P2BASE_EE_START_MIN_BOILER_ON_MINS_INV is not set, the boiler relay will never be turned on.
 static const constexpr uint8_t DEFAULT_MIN_BOILER_ON_MINS = 5;
 #define getMinBoilerOnMinutes() (DEFAULT_MIN_BOILER_ON_MINS)
-
-// True: always in central hub/listen mode.
-#define inHubMode() (true)
-// True: always in stats hub/listen mode.
-#define inStatsHubMode() (true)
-
-// Dummy scheduler to simplify coding.
-//typedef OTRadValve::NULLValveSchedule Scheduler_t;
-//extern Scheduler_t Scheduler;
-
 
 /////// STATS
 
@@ -193,7 +163,6 @@ extern OTV0P2BASE::EEPROMByHourByteStats eeStats;
 typedef 
     OTV0P2BASE::ByHourSimpleStatsUpdaterSampleStats <
       decltype(eeStats), &eeStats,
-      // XXX
       OTV0P2BASE::SimpleTSUint8Sensor, static_cast<OTV0P2BASE::SimpleTSUint8Sensor*>(NULL), // Save code space when no occupancy tracking.
       decltype(AmbLight), &AmbLight,
       decltype(TemperatureC16), &TemperatureC16,
@@ -220,21 +189,6 @@ void bareStatsTX(bool allowDoubleTX = false, bool doBinary = false);
 // This is not filtered, and can be delivered at any time from RX data, from a non-ISR thread.
 // Does not have to be thread-/ISR- safe.
 void remoteCallForHeatRX(uint16_t id, uint8_t percentOpen);
-
-////// UI
-// Suggested minimum buffer size for pollUI() to ensure maximum-sized commands can be received.
-static constexpr uint8_t MAXIMUM_CLI_RESPONSE_CHARS = 1 + OTV0P2BASE::CLI::MAX_TYPICAL_CLI_BUFFER;
-static constexpr uint8_t BUFSIZ_pollUI = 1 + MAXIMUM_CLI_RESPONSE_CHARS;
-
-// Used to poll user side for CLI input until specified sub-cycle time.
-// A period of less than (say) 500ms will be difficult for
-// direct human response on a raw terminal.
-// A period of less than (say) 100ms is not recommended to avoid
-// possibility of overrun on long interactions.
-// Times itself out after at least a minute or two of inactivity. 
-// NOT RE-ENTRANT (eg uses static state for speed and code space).
-void pollCLI(uint8_t maxSCT, bool startOfMinute, const OTV0P2BASE::ScratchSpace &s);
-
 
 #endif // REV10_SECURE_BHR_H
 

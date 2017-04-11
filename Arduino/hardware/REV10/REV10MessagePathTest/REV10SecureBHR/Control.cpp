@@ -221,39 +221,6 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
   if(neededWaking) { OTV0P2BASE::flushSerialProductive(); OTV0P2BASE::powerDownSerial(); }
   }
 
-
-// Wire components together, eg for occupancy sensing.
-// XXX
-static void wireComponentsTogether()
-  {
-
-  }
-
-
-// Update sensors with historic/trailing statistics information where needed.
-// Should be called at least hourly after all stats have been updated,
-// but can also be called whenever the user adjusts settings for example.
-static void updateSensorsFromStats()
-  {
-
-  }
-
-// Run tasks needed at the end of each hour.
-// Should be run once at a fixed slot in the last minute of each hour.
-// Will be run after all stats for the current hour have been updated.
-static void endOfHourTasks()
-  {
-  }
-
-// Run tasks needed at the end of each day (nominal midnight).
-// Should be run once at a fixed slot in the last minute of the last hour of each day.
-// Will be run after all stats for the current hour have been updated.
-static void endOfDayTasks()
-  {
-
-  }
-
-
 // Controller's view of Least Significant Digits of the current (local) time, in this case whole seconds.
 // TIME_LSD ranges from 0 to TIME_CYCLE_S-1, also major cycle length.
 static constexpr uint_fast8_t TIME_CYCLE_S = 60;
@@ -338,12 +305,6 @@ void setupOpenTRV()
     PCMSK2 = MASK_PD;
 #endif
     }
-
-  // Wire components directly together, eg for occupancy sensing.
-  wireComponentsTogether();
-
-  // Initialise sensors with stats info where needed.
-  updateSensorsFromStats();
 
   // Do early 'wake-up' stats transmission if possible
   // when everything else is set up and ready and allowed (TODO-636)
@@ -554,19 +515,15 @@ static bool setUpContinuousRX()
   // TODO: These optimisation are more important when hub unit is running a local valve
   // to avoid temperature over-estimates from self-heating,
   // and could be disabled if no local valve is being run to provide better response to remote nodes.
-  const bool needsToListen = true; // By default listen if always doing RX.
-
   // Act on eavesdropping need, setting up or clearing down hooks as required.
-  PrimaryRadio.listen(needsToListen);
-  return(needsToListen);
+  PrimaryRadio.listen(true);
+  return(true);
   }
 
 // Process calls for heat, ie turn boiler on and off as appropriate.
 // Has control of OUT_HEATCALL if defined(ENABLE_BOILER_HUB).
 static void processCallsForHeat(const bool second0)
   {
-  if(inHubMode())
-    {
     // Check if call-for-heat has been received, and clear the flag.
     bool _h;
     uint16_t _hID; // Only valid if _h is true.
@@ -636,9 +593,6 @@ static void processCallsForHeat(const bool second0)
     // Set BOILER_OUT as appropriate for calls for heat.
     // Local calls for heat come via the same route (TODO-607).
     fastDigitalWrite(OUT_HEATCALL, (isBoilerOn() ? HIGH : LOW));
-    }
-  // Force boiler off when not in hub mode.
-  else { fastDigitalWrite(OUT_HEATCALL, LOW); }
   }
 
 
@@ -667,19 +621,12 @@ void loopOpenTRV()
   // Note last-measured battery status.
   const bool batteryLow = Supply_cV.isSupplyVoltageLow();
 
-  // Run some tasks less often when not demanding heat (at the valve or boiler), so as to conserve battery/energy.
-  // Spare the batteries if they are low, or the unit is in FROST mode, or if the room/area appears to be vacant.
-  // Stay responsive if the valve is open and/or we are otherwise calling for heat.
-  const bool conserveBattery =
-    (batteryLow || !valveMode.inWarmMode() || Occupancy.longVacant()) &&
-    (!isBoilerOn()) && // Unless the boiler is off, stay responsive.
-    true; // Allow local power conservation if all other factors are right.
     
   // Try if very near to end of cycle and thus causing an overrun.
   // Conversely, if not true, should have time to safely log outputs, etc.
   const uint8_t nearOverrunThreshold = OTV0P2BASE::GSCT_MAX - 8; // ~64ms/~32 serial TX chars of grace time...
 
-  const bool needsToListen = setUpContinuousRX();
+  setUpContinuousRX();
 
   // Set BOILER_OUT as appropriate for calls for heat.
   processCallsForHeat(second0);
@@ -703,22 +650,9 @@ void loopOpenTRV()
     // Come back and have another go immediately until no work remaining.
     if(handleQueuedMessages(&Serial, true, &PrimaryRadio)) { continue; }
 
-// If missing h/w interrupts for anything that needs rapid response
-// then AVOID the lowest-power long sleep.
-    if(false)
-      {
-      // If there is not hardware interrupt wakeup on receipt of a frame,
-      // then this can only sleep for a short time between explicit poll()s,
-      // though in any case allow wake on interrupt to minimise loop timing jitter
-      // when the slow RTC 'end of sleep' tick arrives.
-      OTV0P2BASE::nap(WDTO_15MS, true);
-      }
-    else
-      {
-      // Normal long minimal-power sleep until wake-up interrupt.
-      // Rely on interrupt to force quick loop round to I/O poll.
-      OTV0P2BASE::sleepUntilInt();
-      }
+    // Normal long minimal-power sleep until wake-up interrupt.
+    // Rely on interrupt to force quick loop round to I/O poll.
+    OTV0P2BASE::sleepUntilInt();
     }
   TIME_LSD = newTLSD;
   // Reset and immediately re-prime the RTC-based watchdog.
@@ -729,28 +663,25 @@ void loopOpenTRV()
   // START LOOP BODY
   // ===============
 
-
-//  // Warn if too near overrun before.
-//  if(tooNearOverrun) { OTV0P2BASE::serialPrintlnAndFlush(F("?near overrun")); }
-
-
   // High-priority UI handing, every other/even second.
   // Show status if the user changed something significant.
   // Must take ~300ms or less so as not to run over into next half second if two TXs are done.
-  bool recompute = false; // Set true if an extra recompute of target temperature should be done.
 
   // Handling the UI may have taken a little while, so process I/O a little.
   handleQueuedMessages(&Serial, true, &PrimaryRadio); // Deal with any pending I/O.
 
   // DO SCHEDULING
-
+  
+  // Run some tasks less often when not demanding heat (at the valve or boiler), so as to conserve battery/energy.
+  // Spare the batteries if they are low, or the unit is in FROST mode, or if the room/area appears to be vacant.
+  // Stay responsive if the valve is open and/or we are otherwise calling for heat.
   // Once-per-minute tasks: all must take << 0.3s unless particular care is taken.
   // Run tasks spread throughout the minute to be as kind to batteries (etc) as possible.
   // Only when runAll is true run less-critical tasks that be skipped sometimes when particularly conserving energy.
   // Run all for first full 4-minute cycle, eg because unit may start anywhere in it.
   // Note: ensure only take ambient light reading at times when all LEDs are off (or turn them off).
   // TODO: coordinate temperature reading with time when radio and other heat-generating items are off for more accurate readings.
-  const bool runAll = (!conserveBattery) || minute0From4ForSensors || (minuteCount < 4);
+  const bool runAll = isBoilerOn() || minute0From4ForSensors || (minuteCount < 4);
 
   switch(TIME_LSD) // With V0P2BASE_TWO_S_TICK_RTC_SUPPORT only even seconds are available.
     {
@@ -758,16 +689,6 @@ void loopOpenTRV()
       {
       // Tasks that must be run every minute.
       ++minuteCount; // Note simple roll-over to 0 at max value.
-      // Force to user's programmed schedule(s), if any, at the correct time.
-      // Ensure that the RTC has been persisted promptly when necessary.
-      OTV0P2BASE::persistRTC();
-      // Run hourly tasks at the end of the hour.
-      if(59 == OTV0P2BASE::getMinutesLT())
-          {
-          endOfHourTasks();
-          if(23 == OTV0P2BASE::getHoursLT())
-              { endOfDayTasks(); }
-          }
       break;
       }
 
@@ -819,7 +740,7 @@ void loopOpenTRV()
       // Ie, if doesn't have a local TRV then it must send binary some of the time.
       // Any recently-changed stats value is a hint that a strong transmission might be a good idea.
       const bool doBinary = false;
-      bareStatsTX(!batteryLow && !inHubMode() && ss1.changedValue(), doBinary);
+      bareStatsTX(false, doBinary);
       break;
       }
 
@@ -867,17 +788,4 @@ void loopOpenTRV()
   // End-of-loop processing, that may be slow.
   // Ensure progress on queued messages ahead of slow work.  (TODO-867)
   handleQueuedMessages(&Serial, true, &PrimaryRadio); // Deal with any pending I/O.
-
-  // Command-Line Interface (CLI) polling.
-  // If a reasonable chunk of the minor cycle remains after all other work is done
-  // AND the CLI is / should be active OR a status line has just been output
-  // then poll/prompt the user for input
-  // using a timeout which should safely avoid overrun, ie missing the next basic tick,
-  // and which should also allow some energy-saving sleep.
-  if(OTV0P2BASE::CLI::isCLIActive())
-    {
-    const uint8_t stopBy = nearOverrunThreshold - 1;
-    char buf[BUFSIZ_pollUI];
-    OTV0P2BASE::ScratchSpace s((uint8_t*)buf, sizeof(buf));
-    }
   }
