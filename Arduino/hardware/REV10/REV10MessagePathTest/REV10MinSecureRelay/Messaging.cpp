@@ -183,10 +183,12 @@ bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadi
   if(sctStart >= ((OTV0P2BASE::GSCT_MAX/4)*3)) { return(false); }
 
   // Deal with any I/O that is queued.
-  pollIO();
-
-  // Check for activity on the radio link.
-  rl->poll();
+    // Poll for inbound frames.
+    // If RX is not interrupt-driven then
+    // there will usually be little time to do this
+    // before getting an RX overrun or dropped frame.
+    PrimaryRadio.poll();
+    SecondaryRadio.poll();
 
   // XXX can probably strip these out.
   bool workDone = false;

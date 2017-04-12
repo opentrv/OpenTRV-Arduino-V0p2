@@ -222,13 +222,6 @@ void loop()
 //  const bool sensorReading30s = (TIME_LSD >= 30);
   // Sensor readings and (stats transmissions) are nominally on a 4-minute cycle.
   const uint8_t minuteFrom4 = (minuteCount & 3);
-  // The 0th minute in each group of four is always used for measuring where possible (possibly amongst others)
-  // and where possible locally-generated noise and heat and light should be minimised in this minute
-  // to give the best possible readings.
-  // True if this is the first (0th) minute in each group of four.
-  const bool minute0From4ForSensors = (0 == minuteFrom4);
-  // True if this is the minute after all sensors should have been sampled.
-  const bool minute1From4AfterSensors = (1 == minuteFrom4);
     
   // Try if very near to end of cycle and thus causing an overrun.
   // Conversely, if not true, should have time to safely log outputs, etc.
@@ -273,17 +266,6 @@ void loop()
   handleQueuedMessages(&Serial, true, &PrimaryRadio); // Deal with any pending I/O.
 
   // DO SCHEDULING
-  
-  // Run some tasks less often when not demanding heat (at the valve or boiler), so as to conserve battery/energy.
-  // Spare the batteries if they are low, or the unit is in FROST mode, or if the room/area appears to be vacant.
-  // Stay responsive if the valve is open and/or we are otherwise calling for heat.
-  // Once-per-minute tasks: all must take << 0.3s unless particular care is taken.
-  // Run tasks spread throughout the minute to be as kind to batteries (etc) as possible.
-  // Only when runAll is true run less-critical tasks that be skipped sometimes when particularly conserving energy.
-  // Run all for first full 4-minute cycle, eg because unit may start anywhere in it.
-  // Note: ensure only take ambient light reading at times when all LEDs are off (or turn them off).
-  // TODO: coordinate temperature reading with time when radio and other heat-generating items are off for more accurate readings.
-  const bool runAll = minute0From4ForSensors || (minuteCount < 4);
 
   switch(TIME_LSD) // With V0P2BASE_TWO_S_TICK_RTC_SUPPORT only even seconds are available.
     {
@@ -295,38 +277,12 @@ void loop()
       }
 
     // Churn/reseed PRNG(s) a little to improve unpredictability in use: should be lightweight.
-    case 2: { if(runAll) { OTV0P2BASE::seedRNG8(minuteCount ^ OTV0P2BASE::getCPUCycleCount(), OTV0P2BASE::_getSubCycleTime(), 0xff); } break; }
+    case 2: { if(minuteFrom4) { OTV0P2BASE::seedRNG8(minuteCount ^ OTV0P2BASE::getCPUCycleCount(), OTV0P2BASE::_getSubCycleTime(), 0xff); } break; }
 
     // Periodic transmission of stats if NOT driving a local valve (else stats can be piggybacked onto that).
     // Randomised somewhat between slots and also within the slot to help avoid collisions.
     static uint8_t txTick;
     case 6: { txTick = OTV0P2BASE::randRNG8() & 7; break; } // Pick which of the 8 slots to use.
-    case 8: case 10: case 12: case 14: case 16: case 18: case 20: case 22:
-      {
-      // Only the slot where txTick is zero is used.
-      if(0 != txTick--) { break; }
-
-      // Stats TX in the minute (#1) after all sensors should have been polled
-      // (so that readings are fresh) and evenly between.
-      // Usually send one frame every 4 minutes, 2 if this is a valve.
-      // No extra stats TX for changed data to reduce information/activity leakage.
-      // Note that all O frames contain the current valve percentage,
-      // which implies that any extra stats TX also speeds response to call-for-heat changes.
-      if(!minute1From4AfterSensors) { break; }
-
-      // Sleep randomly up to ~25% of the minor cycle
-      // to spread transmissions and thus help avoid collisions.
-      // (Longer than 25%/0.5s could interfere with other ops such as FHT8V TXes.)
-      const uint8_t stopBy = 1 + (((OTV0P2BASE::GSCT_MAX >> 2) | 7) & OTV0P2BASE::randRNG8());
-      while(OTV0P2BASE::getSubCycleTime() <= stopBy)
-        {
-        // Handle any pending I/O while waiting.
-        if(handleQueuedMessages(&Serial, true, &PrimaryRadio)) { continue; }
-        // Sleep a little.
-        OTV0P2BASE::nap(WDTO_15MS, true);
-        }
-      break;
-      }
     case 56:
       {
       // Age errors/warnings.
@@ -358,21 +314,3 @@ ISR(PCINT0_vect)
     { PrimaryRadio.handleInterruptSimple(); }
   }
 
-
-  // Call this to do an I/O poll if needed; returns true if something useful definitely happened.
-// This call should typically take << 1ms at 1MHz CPU.
-// Does not change CPU clock speeds, mess with interrupts (other than possible brief blocking), or sleep.
-// Should also do nothing that interacts with Serial.
-// Limits actual poll rate to something like once every 8ms, unless force is true.
-//   * force if true then force full poll on every call (ie do not internally rate-limit)
-// Note that radio poll() can be for TX as well as RX activity.
-// Not thread-safe, eg not to be called from within an ISR.
-void pollIO()
-  { 
-    // Poll for inbound frames.
-    // If RX is not interrupt-driven then
-    // there will usually be little time to do this
-    // before getting an RX overrun or dropped frame.
-    PrimaryRadio.poll();
-    SecondaryRadio.poll();
-  }

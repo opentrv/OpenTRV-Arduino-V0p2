@@ -52,24 +52,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 #include <OTSIM900Link.h>
 #include <OTAESGCM.h>
 
-// Indicate that the system is broken in an obvious way (distress flashing of the main UI LED).
-// DOES NOT RETURN.
-// Tries to turn off most stuff safely that will benefit from doing so, but nothing too complex.
-// Tries not to use lots of energy so as to keep the distress beacon running for a while.
-void panic();
-// Panic with fixed message.
-void panic(const __FlashStringHelper *s);
-
-// Call this to do an I/O poll if needed; returns true if something useful happened.
-// This call should typically take << 1ms at 1MHz CPU.
-// Does not change CPU clock speeds, mess with interrupts (other than possible brief blocking), or sleep.
-// Should also do nothing that interacts with Serial.
-// Limits actual poll rate to something like once every 8ms, unless force is true.
-//   * force if true then force full poll on every call (ie do not internally rate-limit)
-// Not thread-safe, eg not to be called from within an ISR.
-// NOTE: implementation may not be in power-management module.
-void pollIO();
-
 
 ////// MESSAGING
 extern OTRadioLink::OTRadioLink &PrimaryRadio;
@@ -81,23 +63,6 @@ extern OTRadioLink::OTRadioLink &SecondaryRadio;
 //- You can program the eeprom using ./OTRadioLink/dev/utils/sim900eepromWrite.ino
 
 extern const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config;
-
-// XXX
-// Send the underlying stats binary/text 'whitened' message.
-// This must be terminated with an 0xff (which is not sent),
-// and no longer than STATS_MSG_MAX_LEN bytes long in total (excluding the terminating 0xff).
-// This must not contain any 0xff and should not contain long runs of 0x00 bytes.
-// The message to be sent must be written at an offset of STATS_MSG_START_OFFSET from the start of the buffer.
-// This routine will alter the content of the buffer for transmission,
-// and the buffer should not be re-used as is.
-//   * doubleTX  double TX to increase chance of successful reception
-//   * RFM23BfriendlyPremable  if true then add an extra preamble
-//     to allow RFM23B-based receiver to RX this
-// This will use whichever transmission medium/carrier/etc is available.
-static constexpr uint8_t RFM22_PREAMBLE_BYTES = 5; // Recommended number of preamble bytes for reliable reception.
-static constexpr uint8_t RFM22_SYNC_MIN_BYTES = 3; // Minimum number of sync bytes.
-static constexpr uint8_t STATS_MSG_START_OFFSET = (RFM22_PREAMBLE_BYTES + RFM22_SYNC_MIN_BYTES);
-static constexpr uint8_t STATS_MSG_MAX_LEN = (64 - STATS_MSG_START_OFFSET);
 
 
 // Incrementally poll and process I/O and queued messages, including from the radio link.
