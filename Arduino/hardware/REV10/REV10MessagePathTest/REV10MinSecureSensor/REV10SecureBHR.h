@@ -53,25 +53,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 #include <OTSIM900Link.h>
 #include <OTAESGCM.h>
 
-// Indicate that the system is broken in an obvious way (distress flashing of the main UI LED).
-// DOES NOT RETURN.
-// Tries to turn off most stuff safely that will benefit from doing so, but nothing too complex.
-// Tries not to use lots of energy so as to keep the distress beacon running for a while.
-void panic();
-// Panic with fixed message.
-void panic(const __FlashStringHelper *s);
-
-// Call this to do an I/O poll if needed; returns true if something useful happened.
-// This call should typically take << 1ms at 1MHz CPU.
-// Does not change CPU clock speeds, mess with interrupts (other than possible brief blocking), or sleep.
-// Should also do nothing that interacts with Serial.
-// Limits actual poll rate to something like once every 8ms, unless force is true.
-//   * force if true then force full poll on every call (ie do not internally rate-limit)
-// Not thread-safe, eg not to be called from within an ISR.
-// NOTE: implementation may not be in power-management module.
-void pollIO();
-
-
 ////// MESSAGING
 extern OTRadioLink::OTRadioLink &PrimaryRadio;
 extern OTRadioLink::OTRadioLink &SecondaryRadio;
@@ -99,21 +80,6 @@ static constexpr uint8_t RFM22_PREAMBLE_BYTES = 5; // Recommended number of prea
 static constexpr uint8_t RFM22_SYNC_MIN_BYTES = 3; // Minimum number of sync bytes.
 static constexpr uint8_t STATS_MSG_START_OFFSET = (RFM22_PREAMBLE_BYTES + RFM22_SYNC_MIN_BYTES);
 static constexpr uint8_t STATS_MSG_MAX_LEN = (64 - STATS_MSG_START_OFFSET);
-
-
-// Incrementally poll and process I/O and queued messages, including from the radio link.
-// Returns true if some work was done.
-// This may mean printing them to Serial (which the passed Print object usually is),
-// or adjusting system parameters,
-// or relaying them elsewhere, for example.
-// This will write any output to the supplied Print object,
-// typically the Serial output (which must be running if so).
-// This will attempt to process messages in such a way
-// as to avoid internal overflows or other resource exhaustion,
-// which may mean deferring work at certain times
-// such as the end of minor cycle.
-// The Print object pointer must not be NULL.
-bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadioLink *rl);
 
 
 ////// SENSORS
@@ -158,17 +124,6 @@ typedef
       2
       > StatsU_t;
 extern StatsU_t statsU;
-
-// Do bare stats transmission.
-// Output should be filtered for items appModelledRadValveComputeTargetTempBasicropriate
-// to current channel security and sensitivity level.
-// This may be binary or JSON format.
-//   * allowDoubleTX  allow double TX to increase chance of successful reception
-//   * doBinary  send binary form if supported, else JSON form if supported
-// Sends stats on primary radio channel 0 with possible duplicate to secondary channel.
-// If sending encrypted then ID/counter fields (eg @ and + for JSON) are omitted
-// as assumed supplied by security layer to remote recipent.
-void bareStatsTX();
 
 #endif // REV10_SECURE_BHR_H
 
