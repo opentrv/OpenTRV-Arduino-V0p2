@@ -187,7 +187,7 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
       SecondaryRadio.queueToSend(realTXFrameStart, wrote);
       }
 
-    handleQueuedMessages(&Serial, false, &PrimaryRadio); // Serial must already be running!
+    pollIO(); // Serial must already be running!
 
     if(!sendingJSONFailed)
       {
@@ -328,7 +328,7 @@ void loopOpenTRV()
     // or the in a previous orbit of this loop sleep or nap was terminated by an I/O interrupt.
     // May generate output to host on Serial.
     // Come back and have another go immediately until no work remaining.
-    if(handleQueuedMessages(&Serial, true, &PrimaryRadio)) { continue; }
+    pollIO();
 
     // Normal long minimal-power sleep until wake-up interrupt.
     // Rely on interrupt to force quick loop round to I/O poll.
@@ -348,7 +348,7 @@ void loopOpenTRV()
   // Must take ~300ms or less so as not to run over into next half second if two TXs are done.
 
   // Handling the UI may have taken a little while, so process I/O a little.
-  handleQueuedMessages(&Serial, true, &PrimaryRadio); // Deal with any pending I/O.
+  pollIO(); // Deal with any pending I/O.
 
   // DO SCHEDULING
   
@@ -401,7 +401,7 @@ void loopOpenTRV()
       while(OTV0P2BASE::getSubCycleTime() <= stopBy)
         {
         // Handle any pending I/O while waiting.
-        if(handleQueuedMessages(&Serial, true, &PrimaryRadio)) { continue; }
+        pollIO();
         // Sleep a little.
         OTV0P2BASE::nap(WDTO_15MS, true);
         }
@@ -463,5 +463,5 @@ void loopOpenTRV()
 
   // End-of-loop processing, that may be slow.
   // Ensure progress on queued messages ahead of slow work.  (TODO-867)
-  handleQueuedMessages(&Serial, true, &PrimaryRadio); // Deal with any pending I/O.
+  pollIO();; // Deal with any pending I/O.
   }

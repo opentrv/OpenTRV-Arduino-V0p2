@@ -31,8 +31,83 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
  */
 
 #include "REV10SecureBHR.h"
+#include "ipAddress.h"  // IP adress in seperate header to avoid accidentally committing.
 
+/////// RADIOS
+//For EEPROM: TODO make a spec for how config should be stored in EEPROM to make changing them easy
+//- Set the first field of SIM900LinkConfig to true.
+//- The configs are stored as \0 terminated strings starting at 0x300.
+//- You can program the eeprom using ./OTRadioLink/dev/utils/sim900eepromWrite.ino
+//  static const void *SIM900_PIN      = (void *)0x0300;
+//  static const void *SIM900_APN      = (void *)0x0305;
+//  static const void *SIM900_UDP_ADDR = (void *)0x031B;
+//  static const void *SIM900_UDP_PORT = (void *)0x0329;
+//  const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config(
+//                                                  true,
+//                                                  SIM900_PIN,
+//                                                  SIM900_APN,
+//                                                  SIM900_UDP_ADDR,
+//                                                  SIM900_UDP_PORT);
+//For Flash:
+//- Set the first field of SIM900LinkConfig to false.
+//- The configs are stored as \0 terminated strings.
+//- Where multiple options are available, uncomment whichever you want
+  static const char SIM900_PIN[5] PROGMEM       = "1111";
 
+// APN Configs - Uncomment based on what SIM you are using
+//  static const char SIM900_APN[] PROGMEM      = "\"everywhere\",\"eesecure\",\"secure\""; // EE
+//static const char SIM900_APN[] PROGMEM      = "\"arkessa.net\",\"arkessa\",\"arkessa\""; // Arkessa
+static const char SIM900_APN[] PROGMEM      = "\"mobiledata\""; // GeoSIM
+
+// UDP Configs - Edit SIM900_UDP_ADDR for relevant server. NOTE: The server IP address should never be committed to GitHub.
+// IP adress in seperate header to avoid accidentally committing.
+//static const char SIM900_UDP_ADDR[16] PROGMEM = ""; // Of form "1.2.3.4". 
+static const char SIM900_UDP_PORT[5] PROGMEM = "9999";             // Standard port for OpenTRV servers
+const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config(
+                                                false,
+                                                SIM900_PIN,
+                                                SIM900_APN,
+                                                SIM900_UDP_ADDR,
+                                                SIM900_UDP_PORT);
+
+// Pick an appropriate radio config for RFM23 (if it is the primary radio).
+// Nodes talking on fast GFSK channel 0.
+static constexpr uint8_t nPrimaryRadioChannels = 1;
+static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChannels] =
+  {
+  // GFSK channel 0 full config, RX/TX, not in itself secure.
+  OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsGFSK57600, true),
+  };
+
+static const OTRadioLink::OTRadioChannelConfig SecondaryRadioConfig(&SIM900Config, true);
+
+// Brings in necessary radio libs.
+static constexpr uint8_t RFM23B_RX_QUEUE_SIZE = OTRFM23BLink::DEFAULT_RFM23B_RX_QUEUE_CAPACITY;
+static constexpr int8_t RFM23B_IRQ_PIN = PIN_RFM_NIRQ;
+static constexpr bool RFM23B_allowRX = true;
+OTRFM23BLink::OTRFM23BLink<OTV0P2BASE::V0p2_PIN_SPI_nSS, RFM23B_IRQ_PIN, RFM23B_RX_QUEUE_SIZE, RFM23B_allowRX> RFM23B;
+OTSIM900Link::OTSIM900Link<8, 5, RADIO_POWER_PIN, OTV0P2BASE::getSecondsLT> SIM900; // (REGULATOR_POWERUP, RADIO_POWER_PIN);
+
+// Assigns radio to PrimaryRadio alias
+OTRadioLink::OTRadioLink &PrimaryRadio = RFM23B;
+
+// Assign radio to SecondaryRadio alias.
+OTRadioLink::OTRadioLink &SecondaryRadio = SIM900;
+
+/////// SENSORS
+
+// Sensor for supply (eg battery) voltage in millivolts.
+OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
+
+OTV0P2BASE::RoomTemperatureC16_TMP112 TemperatureC16;
+
+// 
+OTV0P2BASE::EEPROMByHourByteStats eeStats;
+StatsU_t statsU;
+
+//========================================
+// LOCAL FUNCTIONS
+//========================================
 // Indicate that the system is broken in an obvious way (distress flashing the main LED).
 // DOES NOT RETURN.
 // Tries to turn off most stuff safely that will benefit from doing so, but nothing too complex.
@@ -54,7 +129,6 @@ void panic()
     OTV0P2BASE::nap(WDTO_120MS);
     }
   }
-
 // Panic with fixed message.
 void panic(const __FlashStringHelper *s)
   {
@@ -64,27 +138,6 @@ void panic(const __FlashStringHelper *s)
   panic();
   }
 
-// Pick an appropriate radio config for RFM23 (if it is the primary radio).
-// Nodes talking on fast GFSK channel 0.
-static constexpr uint8_t nPrimaryRadioChannels = 1;
-static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChannels] =
-  {
-  // GFSK channel 0 full config, RX/TX, not in itself secure.
-  OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsGFSK57600, true),
-  };
-
-static const OTRadioLink::OTRadioChannelConfig SecondaryRadioConfig(&SIM900Config, true);
-
-/////// SENSORS
-
-// Sensor for supply (eg battery) voltage in millivolts.
-OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
-
-OTV0P2BASE::RoomTemperatureC16_TMP112 TemperatureC16;
-
-// 
-OTV0P2BASE::EEPROMByHourByteStats eeStats;
-StatsU_t statsU;
 
 //========================================
 // SETUP
