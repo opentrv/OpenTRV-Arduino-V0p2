@@ -48,7 +48,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 
 #include <Arduino.h>
 #include <OTV0p2Base.h>
-#include <OTRadValve.h>
 #include <OTRadioLink.h>
 #include <OTRFM23BLink.h>
 #include <OTSIM900Link.h>
@@ -169,7 +168,7 @@ extern StatsU_t statsU;
 // Sends stats on primary radio channel 0 with possible duplicate to secondary channel.
 // If sending encrypted then ID/counter fields (eg @ and + for JSON) are omitted
 // as assumed supplied by security layer to remote recipent.
-void bareStatsTX(bool allowDoubleTX = false, bool doBinary = false);
+void bareStatsTX();
 
 #endif // REV10_SECURE_BHR_H
 

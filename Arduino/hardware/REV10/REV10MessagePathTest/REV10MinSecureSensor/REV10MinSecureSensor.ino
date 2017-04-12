@@ -193,8 +193,8 @@ void setup()
   //----------- Init sensors
   // Collect full set of environmental values before entering loop() in normal mode.
   // This should also help ensure that sensors are properly initialised.
-  const int heat = TemperatureC16.read();
-  const uint16_t Vcc = Supply_cV.read();
+  TemperatureC16.read();
+  Supply_cV.read();
 
   OTV0P2BASE::seedPRNGs();
 

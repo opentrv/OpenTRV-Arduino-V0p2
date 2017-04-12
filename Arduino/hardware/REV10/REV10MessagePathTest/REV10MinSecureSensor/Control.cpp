@@ -53,7 +53,7 @@ static OTV0P2BASE::SimpleStatsRotation<12> ss1; // Configured for maximum differ
 // Sends stats on primary radio channel 0 with possible duplicate to secondary channel.
 // If sending encrypted then ID/counter fields (eg @ and + for JSON) are omitted
 // as assumed supplied by security layer to remote recipent.
-void bareStatsTX(const bool allowDoubleTX, const bool doBinary)
+void bareStatsTX()
   {
   // Capture heavy stack usage from local allocations here.
   OTV0P2BASE::MemoryChecks::recordIfMinSP();
@@ -108,10 +108,6 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
     const uint8_t maxSecureJSONSize = OTRadioLink::ENC_BODY_SMALL_FIXED_PTEXT_MAX_SIZE - 2 + 1;
     // writeJSON() requires two further bytes including one for the trailing '\0'.
     uint8_t ptextBuf[maxSecureJSONSize + 2];
-
-    // Allow for a cap on JSON TX size, eg where TX is lossy for near-maximum sizes.
-    // This can only reduce the maximum size, and it should not try to make it silly small.
-    static const uint8_t max_plaintext_JSON_len = OTV0P2BASE::MSG_JSON_MAX_LENGTH;
 
     // Redirect JSON output appropriately.
     uint8_t *const bufJSON = ptextBuf;
@@ -222,15 +218,10 @@ void setupOpenTRV()
 
   // Set up async edge interrupts.
   ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
-    {
-    //PCMSK0 = PB; PCINT  0--7    (LEARN1 and Radio)
-    //PCMSK1 = PC; PCINT  8--15
-    //PCMSK2 = PD; PCINT 16--24   (Serial RX and LEARN2 and MODE and Voice)
-    PCICR = 1 ;//| 4;  // 0x1 enables PB/PCMSK0. 0x4 enables PD/PCMSK2.
-
-    PCMSK0 = RFM23B_INT_MASK;
-//    PCMSK2 = SERIALRX_INT_MASK;
-    }
+  { 
+      PCICR = 1 ;//| 4;  // 0x1 enables PB/PCMSK0. 0x4 enables PD/PCMSK2.
+      PCMSK0 = RFM23B_INT_MASK; 
+  }
 
   // Do early 'wake-up' stats transmission if possible
   // when everything else is set up and ready and allowed (TODO-636)
@@ -238,16 +229,15 @@ void setupOpenTRV()
   // Attempt to maximise chance of reception with a double TX.
   // Assume not in hub mode (yet).
   // Send all possible formats, binary first (assumed complete in one message).
-  bareStatsTX(true, true);
+  bareStatsTX();
   // Send JSON stats repeatedly (typically once or twice)
   // until all values pushed out (no 'changed' values unsent)
   // or limit reached.
-  for(uint8_t i = 5; --i > 0; )
-    {
-    ::OTV0P2BASE::nap(WDTO_120MS, false); // Sleep long enough for receiver to have a chance to process previous TX.
-    bareStatsTX(true, false);
-    if(!ss1.changedValue()) { break; }
-    }
+  for(uint8_t i = 5; --i > 0; ) {
+      ::OTV0P2BASE::nap(WDTO_120MS, false); // Sleep long enough for receiver to have a chance to process previous TX.
+      bareStatsTX();
+      if(!ss1.changedValue()) { break; }
+  }
 
   PrimaryRadio.listen(true);  // XXX may be switched off and left that way somewhere
   
@@ -286,11 +276,6 @@ ISR(PCINT0_vect)
 // Note: exiting and re-entering can take a little while, handling Arduino background tasks such as serial.
 void loopOpenTRV()
   {
-  // Set up some variables before sleeping to minimise delay/jitter after the RTC tick.
-  bool showStatus = false; // Show status at end of loop?
-
-  // Use the zeroth second in each minute to force extra deep device sleeps/resets, etc.
-  const bool second0 = (0 == TIME_LSD);
   // Sensor readings are taken late in each minute (where they are taken)
   // and if possible noise and heat and light should be minimised in this part of each minute to improve readings.
 //  const bool sensorReading30s = (TIME_LSD >= 30);
@@ -303,14 +288,6 @@ void loopOpenTRV()
   const bool minute0From4ForSensors = (0 == minuteFrom4);
   // True if this is the minute after all sensors should have been sampled.
   const bool minute1From4AfterSensors = (1 == minuteFrom4);
-
-  // Note last-measured battery status.
-  const bool batteryLow = Supply_cV.isSupplyVoltageLow();
-
-    
-  // Try if very near to end of cycle and thus causing an overrun.
-  // Conversely, if not true, should have time to safely log outputs, etc.
-  const uint8_t nearOverrunThreshold = OTV0P2BASE::GSCT_MAX - 8; // ~64ms/~32 serial TX chars of grace time...
 
   // Sleep in low-power mode (waiting for interrupts) until seconds roll.
   // NOTE: sleep at the top of the loop to minimise timing jitter/delay from Arduino background activity after loop() returns.
@@ -352,7 +329,7 @@ void loopOpenTRV()
 
   // DO SCHEDULING
   
-  // Run some tasks less often when not demanding heat (at the valve or boiler), so as to conserve battery/energy.
+  // Run some tasks less often when not demanding heat (at the valve or boiler), so as to conserve/energy.
   // Spare the batteries if they are low, or the unit is in FROST mode, or if the room/area appears to be vacant.
   // Stay responsive if the valve is open and/or we are otherwise calling for heat.
   // Once-per-minute tasks: all must take << 0.3s unless particular care is taken.
@@ -415,8 +392,7 @@ void loopOpenTRV()
       // if this is controlling a local FHT8V on which the binary stats can be piggybacked.
       // Ie, if doesn't have a local TRV then it must send binary some of the time.
       // Any recently-changed stats value is a hint that a strong transmission might be a good idea.
-      const bool doBinary = false;
-      bareStatsTX(false, doBinary);
+      bareStatsTX();
       break;
       }
 
@@ -440,9 +416,6 @@ void loopOpenTRV()
       {
       // Age errors/warnings.
       OTV0P2BASE::ErrorReporter.read();
-
-      // Show current status if appropriate.
-      if(runAll) { showStatus = true; }
       break;
       }
 
