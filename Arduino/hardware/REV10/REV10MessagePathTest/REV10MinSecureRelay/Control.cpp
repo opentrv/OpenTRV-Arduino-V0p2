@@ -127,10 +127,6 @@ void loopOpenTRV()
   const bool minute0From4ForSensors = (0 == minuteFrom4);
   // True if this is the minute after all sensors should have been sampled.
   const bool minute1From4AfterSensors = (1 == minuteFrom4);
-
-  // Note last-measured battery status.
-  const bool batteryLow = Supply_cV.isSupplyVoltageLow();
-
     
   // Try if very near to end of cycle and thus causing an overrun.
   // Conversely, if not true, should have time to safely log outputs, etc.
@@ -197,9 +193,7 @@ void loopOpenTRV()
       }
 
     // Churn/reseed PRNG(s) a little to improve unpredictability in use: should be lightweight.
-    case 2: { if(runAll) { OTV0P2BASE::seedRNG8(minuteCount ^ OTV0P2BASE::getCPUCycleCount() ^ (uint8_t)Supply_cV.get(), OTV0P2BASE::_getSubCycleTime() ^ AmbLight.get(), (uint8_t)TemperatureC16.get()); } break; }
-    // Force read of supply/battery voltage; measure and recompute status (etc) less often when already thought to be low, eg when conserving.
-    case 4: { if(runAll) { Supply_cV.read(); } break; }
+    case 2: { if(runAll) { OTV0P2BASE::seedRNG8(minuteCount ^ OTV0P2BASE::getCPUCycleCount(), OTV0P2BASE::_getSubCycleTime(), 0xff); } break; }
 
     // Periodic transmission of stats if NOT driving a local valve (else stats can be piggybacked onto that).
     // Randomised somewhat between slots and also within the slot to help avoid collisions.
@@ -239,13 +233,6 @@ void loopOpenTRV()
 // and to allow randomisation of the start-up cycle position in the first 32s to help avoid inter-unit collisions.
 // Also all sources of noise, self-heating, etc, may be turned off for the 'sensor read minute'
 // and thus will have diminished by this point.
-
-    // At a hub, sample temperature regularly as late as possible in the minute just before recomputing valve position.
-    // Force a regular read to make stats such as rate-of-change simple and to minimise lag.
-    // TODO: optimise to reduce power consumption when not calling for heat.
-    // TODO: optimise to reduce self-heating jitter when in hub/listen/RX mode.
-    case 54: { TemperatureC16.read(); break; }
-
     // Compute targets and heat demand based on environmental inputs and occupancy.
     // This should happen as soon after the latest readings as possible (temperature especially).
     case 56:
@@ -255,20 +242,6 @@ void loopOpenTRV()
 
       // Show current status if appropriate.
       if(runAll) { showStatus = true; }
-      break;
-      }
-
-    // Stats samples; should never be missed.
-    case 58:
-      {
-      // Update non-volatile stats.
-      // Make the final update as near the end of the hour as possible to reduce glitches (TODO-1086),
-      // and with other optional non-full samples evenly spaced throughout the hour.
-      // Race-free.
-      const uint_least16_t msm = OTV0P2BASE::getMinutesSinceMidnightLT();
-      const uint8_t mm = msm % 60;
-      if(59 == mm) { statsU.sampleStats(true, uint8_t(msm / 60)); }
-      else if((statsU.maxSamplesPerHour > 1) && (29 == mm)) { statsU.sampleStats(false, uint8_t(msm / 60)); }
       break;
       }
     }

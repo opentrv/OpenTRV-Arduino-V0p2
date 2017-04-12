@@ -116,49 +116,12 @@ static constexpr uint8_t STATS_MSG_MAX_LEN = (64 - STATS_MSG_START_OFFSET);
 // The Print object pointer must not be NULL.
 bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadioLink *rl);
 
-
-////// SENSORS
-
-// Sensor for supply (eg battery) voltage in millivolts.
-// Singleton implementation/instance.
-extern OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
-
-
-// XXX
-// Sense ambient lighting level.
-typedef OTV0P2BASE::DummySensorAmbientLight AmbientLight; // Dummy stand-in.
-// Singleton implementation/instance.
-extern AmbientLight AmbLight;
-
-// Ambient/room temperature sensor, usually on main board.
-extern OTV0P2BASE::RoomTemperatureC16_TMP112 TemperatureC16;
-
-// Dummy implementation to minimise coding changes.
-extern OTV0P2BASE::DummyHumiditySensorSHT21 RelHumidity;
-
 /////// CONTROL
 
 // Special setup for OpenTRV beyond generic hardware setup.
 void setupOpenTRV();
 // Main loop for OpenTRV radiator control.
 void loopOpenTRV();
-
-/////// STATS. XXX only used in loopOpenTRV
-
-// Singleton non-volatile stats store instance.
-extern OTV0P2BASE::EEPROMByHourByteStats eeStats;
-
-// Singleton stats-updater object.
-typedef 
-    OTV0P2BASE::ByHourSimpleStatsUpdaterSampleStats <
-      decltype(eeStats), &eeStats,
-      OTV0P2BASE::SimpleTSUint8Sensor, static_cast<OTV0P2BASE::SimpleTSUint8Sensor*>(NULL), // Save code space when no occupancy tracking.
-      decltype(AmbLight), &AmbLight,
-      decltype(TemperatureC16), &TemperatureC16,
-      decltype(RelHumidity), &RelHumidity,
-      2
-      > StatsU_t;
-extern StatsU_t statsU;
 
 #endif // REV10_SECURE_BHR_H
 

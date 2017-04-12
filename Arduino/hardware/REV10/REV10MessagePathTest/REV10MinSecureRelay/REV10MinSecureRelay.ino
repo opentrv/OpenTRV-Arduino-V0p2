@@ -82,10 +82,6 @@ OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
 
 OTV0P2BASE::RoomTemperatureC16_TMP112 TemperatureC16;
 
-// 
-OTV0P2BASE::EEPROMByHourByteStats eeStats;
-StatsU_t statsU;
-
 //========================================
 // SETUP
 //========================================
