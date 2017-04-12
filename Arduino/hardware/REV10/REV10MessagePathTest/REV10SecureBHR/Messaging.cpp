@@ -22,6 +22,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2017
  Generic messaging and radio/comms support for OpenTRV.
  */
 #include "REV10SecureBHR.h"
+#include "ipAddress.h"  // IP adress in seperate header to avoid accidentally committing.
 
 //For EEPROM: TODO make a spec for how config should be stored in EEPROM to make changing them easy
 //- Set the first field of SIM900LinkConfig to true.
@@ -49,14 +50,15 @@ Author(s) / Copyright (s): Damon Hart-Davis 2014--2017
 static const char SIM900_APN[] PROGMEM      = "\"mobiledata\""; // GeoSIM
 
 // UDP Configs - Edit SIM900_UDP_ADDR for relevant server. NOTE: The server IP address should never be committed to GitHub.
-  static const char SIM900_UDP_ADDR[16] PROGMEM = ""; // Of form "1.2.3.4".
-  static const char SIM900_UDP_PORT[5] PROGMEM = "9999";             // Standard port for OpenTRV servers
-  const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config(
-                                                  false,
-                                                  SIM900_PIN,
-                                                  SIM900_APN,
-                                                  SIM900_UDP_ADDR,
-                                                  SIM900_UDP_PORT);
+// IP adress in seperate header to avoid accidentally committing.
+//static const char SIM900_UDP_ADDR[16] PROGMEM = ""; // Of form "1.2.3.4". 
+static const char SIM900_UDP_PORT[5] PROGMEM = "9999";             // Standard port for OpenTRV servers
+const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config(
+                                                false,
+                                                SIM900_PIN,
+                                                SIM900_APN,
+                                                SIM900_UDP_ADDR,
+                                                SIM900_UDP_PORT);
 
 
 // Brings in necessary radio libs.
