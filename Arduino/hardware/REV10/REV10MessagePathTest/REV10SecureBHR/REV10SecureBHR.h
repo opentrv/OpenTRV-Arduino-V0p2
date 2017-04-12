@@ -101,11 +101,6 @@ static constexpr uint8_t RFM22_SYNC_MIN_BYTES = 3; // Minimum number of sync byt
 static constexpr uint8_t STATS_MSG_START_OFFSET = (RFM22_PREAMBLE_BYTES + RFM22_SYNC_MIN_BYTES);
 static constexpr uint8_t STATS_MSG_MAX_LEN = (64 - STATS_MSG_START_OFFSET);
 
-// Returns true if an unencrypted trailing static payload and similar (eg bare stats transmission) is permitted.
-// True if the TX_ENABLE value is no higher than stTXmostUnsec.
-// Some filtering may be required even if this is true.
-#define enableTrailingStatsPayload() (true) // Always allow at least some stats to be TXed.
-
 
 // Incrementally poll and process I/O and queued messages, including from the radio link.
 // Returns true if some work was done.

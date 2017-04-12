@@ -41,10 +41,6 @@ void setMinBoilerOnMinutes(uint8_t mins) { OTV0P2BASE::eeprom_smart_update_byte(
 // Not thread-safe, eg not to be called from within an ISR.
 void pollIO()
   { 
-    static volatile uint8_t _pO_lastPoll;
-  // Poll RX at most about every ~8ms.
-  const uint8_t sct = OTV0P2BASE::getSubCycleTime();
-    _pO_lastPoll = sct;
     // Poll for inbound frames.
     // If RX is not interrupt-driven then
     // there will usually be little time to do this
@@ -106,8 +102,6 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
     ss1.setID(V0p2_SENSOR_TAG_F(""));
 
     // Managed JSON stats.
-    // Make best use of available bandwidth...
-    const bool maximise = true;
     // Enable "+" count field for diagnostic purposes, eg while TX is lossy,
     // if the primary radio channel does not include a sequence number itself.
     // Assume that an encrypted channel will provide its own (visible) sequence counter.
@@ -146,7 +140,7 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
       {
       // Generate JSON and write to appropriate buffer:
       // direct to TX buffer if not encrypting, else to separate buffer.
-      wrote = ss1.writeJSON(bufJSON, bufJSONlen, privacyLevel, maximise); //!allowDoubleTX && randRNG8NextBoolean());
+      wrote = ss1.writeJSON(bufJSON, bufJSONlen, privacyLevel, true);
       if(0 == wrote)
         {
         sendingJSONFailed = true;
@@ -231,41 +225,10 @@ static uint8_t minuteCount;
 
 // XXX
 // Mask for Port B input change interrupts.
-#define MASK_PB_BASIC 0b00000000 // Nothing.
-#if defined(PIN_RFM_NIRQ) && defined(ENABLE_RADIO_RX) // RFM23B IRQ only used for RX.
-  #if (PIN_RFM_NIRQ < 8) || (PIN_RFM_NIRQ > 15)
-    #error PIN_RFM_NIRQ expected to be on port B
-  #endif
-  #define RFM23B_INT_MASK (1 << (PIN_RFM_NIRQ&7))
-  #define MASK_PB (MASK_PB_BASIC | RFM23B_INT_MASK)
-#else
-  #define MASK_PB MASK_PB_BASIC
-#endif
-
-// Mask for Port C input change interrupts.
-#define MASK_PC_BASIC 0b00000000 // Nothing.
+static constexpr uint8_t RFM23B_INT_MASK = (1 << (PIN_RFM_NIRQ&7));
 
 // Mask for Port D input change interrupts.
-#define SERIALRX_INT_MASK 0b00000001 // Serial RX
-#define MASK_PD_BASIC SERIALRX_INT_MASK // Serial RX by default.
-#if defined(ENABLE_VOICE_SENSOR)
-  #if VOICE_NIRQ > 7
-    #error VOICE_NIRQ expected to be on port D
-  #endif
-  #define VOICE_INT_MASK (1 << (VOICE_NIRQ&7))
-  #define MASK_PD1 (MASK_PD_BASIC | VOICE_INT_MASK)
-#else
-  #define MASK_PD1 MASK_PD_BASIC // Just serial RX, no voice.
-#endif
-#if defined(ENABLE_SIMPLIFIED_MODE_BAKE)
-#if BUTTON_MODE_L > 7
-  #error BUTTON_MODE_L expected to be on port D
-#endif
-  #define MODE_INT_MASK (1 << (BUTTON_MODE_L&7))
-  #define MASK_PD (MASK_PD1 | MODE_INT_MASK) // MODE button interrupt (et al).
-#else
-  #define MASK_PD MASK_PD1 // No MODE button interrupt.
-#endif
+static constexpr uint8_t SERIALRX_INT_MASK = 0b00000001; // Serial RX
 
 void setupOpenTRV()
   {
@@ -279,48 +242,27 @@ void setupOpenTRV()
     //PCMSK0 = PB; PCINT  0--7    (LEARN1 and Radio)
     //PCMSK1 = PC; PCINT  8--15
     //PCMSK2 = PD; PCINT 16--24   (Serial RX and LEARN2 and MODE and Voice)
-// XXX
-    PCICR =
-#if defined(MASK_PB) && (MASK_PB != 0) // If PB interrupts required.
-        1 | // 0x1 enables PB/PCMSK0.
-#endif
-#if defined(MASK_PC) && (MASK_PC != 0) // If PC interrupts required.
-        2 | // 0x2 enables PC/PCMSK1.
-#endif
-#if defined(MASK_PD) && (MASK_PD != 0) // If PD interrupts required.
-        4 | // 0x4 enables PD/PCMSK2.
-#endif
-        0;
+    PCICR = 1 | 4;  // 0x1 enables PB/PCMSK0. 0x4 enables PD/PCMSK2.
 
-#if defined(MASK_PB) && (MASK_PB != 0) // If PB interrupts required.
-    PCMSK0 = MASK_PB;
-#endif
-#if defined(MASK_PC) && (MASK_PC != 0) // If PC interrupts required.
-    PCMSK1 = MASK_PC;
-#endif
-#if defined(MASK_PD) && (MASK_PD != 0) // If PD interrupts required.
-    PCMSK2 = MASK_PD;
-#endif
+    PCMSK0 = RFM23B_INT_MASK;
+    PCMSK2 = SERIALRX_INT_MASK;
     }
 
   // Do early 'wake-up' stats transmission if possible
   // when everything else is set up and ready and allowed (TODO-636)
   // including all set-up and inter-wiring of sensors/actuators.
-  if(enableTrailingStatsPayload())
+  // Attempt to maximise chance of reception with a double TX.
+  // Assume not in hub mode (yet).
+  // Send all possible formats, binary first (assumed complete in one message).
+  bareStatsTX(true, true);
+  // Send JSON stats repeatedly (typically once or twice)
+  // until all values pushed out (no 'changed' values unsent)
+  // or limit reached.
+  for(uint8_t i = 5; --i > 0; )
     {
-    // Attempt to maximise chance of reception with a double TX.
-    // Assume not in hub mode (yet).
-    // Send all possible formats, binary first (assumed complete in one message).
-    bareStatsTX(true, true);
-    // Send JSON stats repeatedly (typically once or twice)
-    // until all values pushed out (no 'changed' values unsent)
-    // or limit reached.
-    for(uint8_t i = 5; --i > 0; )
-      {
-      ::OTV0P2BASE::nap(WDTO_120MS, false); // Sleep long enough for receiver to have a chance to process previous TX.
-      bareStatsTX(true, false);
-      if(!ss1.changedValue()) { break; }
-      }
+    ::OTV0P2BASE::nap(WDTO_120MS, false); // Sleep long enough for receiver to have a chance to process previous TX.
+    bareStatsTX(true, false);
+    if(!ss1.changedValue()) { break; }
     }
 
   // Start local counters in randomised positions to help avoid inter-unit collisions,
@@ -336,8 +278,6 @@ void setupOpenTRV()
   TIME_LSD = OTV0P2BASE::getSecondsLT();
   }
 
-// XXX
-#if defined(MASK_PB) && (MASK_PB != 0) // If PB interrupts required.
 //// Interrupt count.  Marked volatile so safe to read without a lock as is a single byte.
 //static volatile uint8_t intCountPB;
 // Previous state of port B pins to help detect changes.
@@ -349,32 +289,13 @@ ISR(PCINT0_vect)
   const uint8_t pins = PINB;
   const uint8_t changes = pins ^ prevStatePB;
   prevStatePB = pins;
-
-#if defined(RFM23B_INT_MASK)
   // RFM23B nIRQ falling edge is of interest.
   // Handler routine not required/expected to 'clear' this interrupt.
   // TODO: try to ensure that OTRFM23BLink.handleInterruptSimple() is inlineable to minimise ISR prologue/epilogue time and space.
   if((changes & RFM23B_INT_MASK) && !(pins & RFM23B_INT_MASK))
     { PrimaryRadio.handleInterruptSimple(); }
-#endif
   }
-#endif
 
-#if defined(MASK_PC) && (MASK_PC != 0) // If PC interrupts required.
-// Previous state of port C pins to help detect changes.
-static volatile uint8_t prevStatePC;
-// Interrupt service routine for PC I/O port transition changes.
-ISR(PCINT1_vect)
-  {
-//  const uint8_t pins = PINC;
-//  const uint8_t changes = pins ^ prevStatePC;
-//  prevStatePC = pins;
-//
-// ...
-  }
-#endif
-
-#if defined(MASK_PD) && (MASK_PD != 0) // If PD interrupts required.
 // Previous state of port D pins to help detect changes.
 static volatile uint8_t prevStatePD;
 // Interrupt service routine for PD I/O port transition changes (including RX).
@@ -383,25 +304,6 @@ ISR(PCINT2_vect)
   const uint8_t pins = PIND;
   const uint8_t changes = pins ^ prevStatePD;
   prevStatePD = pins;
-
-#if defined(ENABLE_SIMPLIFIED_MODE_BAKE)
-  // Mode button detection is on the falling edge (button pressed).
-  if((changes & MODE_INT_MASK) && !(pins & MODE_INT_MASK))
-    { valveUI.startBakeFromInt(); }
-#endif // defined(ENABLE_SIMPLIFIED_MODE_BAKE)
-
-#if defined(ENABLE_VOICE_SENSOR)
-//  // Voice detection is a falling edge.
-//  // Handler routine not required/expected to 'clear' this interrupt.
-//  // FIXME: ensure that Voice.handleInterruptSimple() is inlineable to minimise ISR prologue/epilogue time and space.
-//  if((changes & VOICE_INT_MASK) && !(pins & VOICE_INT_MASK))
-  // Voice detection is a RISING edge.
-  // Handler routine not required/expected to 'clear' this interrupt.
-  // FIXME: ensure that Voice.handleInterruptSimple() is inlineable to minimise ISR prologue/epilogue time and space.
-  if((changes & VOICE_INT_MASK) && (pins & VOICE_INT_MASK))
-    { Voice.handleInterruptSimple(); }
-#endif // defined(ENABLE_VOICE_SENSOR)
-
   // If an interrupt arrived from the serial RX then wake up the CLI.
   // Use a nominally rising edge to avoid spurious trigger when other interrupts are handled.
   // The will ensure that it is possible to wake the CLI subsystem with an extra CR or LF.
@@ -410,7 +312,6 @@ ISR(PCINT2_vect)
   if((changes & SERIALRX_INT_MASK) && !(pins & SERIALRX_INT_MASK))
     { OTV0P2BASE::CLI::resetCLIActiveTimer(); }
   }
-#endif
 
 // Ticks until locally-controlled boiler should be turned off; boiler should be on while this is positive.
 // Ticks are of the main loop, ie 2s (almost always).
@@ -689,10 +590,6 @@ void loopOpenTRV()
       // Note that all O frames contain the current valve percentage,
       // which implies that any extra stats TX also speeds response to call-for-heat changes.
       if(!minute1From4AfterSensors) { break; }
-
-      // Abort if not allowed to send stats at all.
-      // FIXME: fix this to send bare calls for heat / valve % instead from valves for secure non-FHT8V comms.
-      if(!enableTrailingStatsPayload()) { break; }
 
       // Sleep randomly up to ~25% of the minor cycle
       // to spread transmissions and thus help avoid collisions.
