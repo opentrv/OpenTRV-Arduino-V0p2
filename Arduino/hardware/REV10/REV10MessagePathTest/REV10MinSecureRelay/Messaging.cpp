@@ -143,36 +143,14 @@ static bool decodeAndHandleOTSecureableFrame(Print *p, const bool secure, const 
     case 'O' | 0x80: // Basic OpenTRV secure frame...
       {
       if(decryptedBodyOutSize < 2)
-        {
-        break;
-        }
-      // If acting as a boiler hub
-      // then extract the valve %age and pass to boiler controller
-      // but use only if valid.
-      // Ignore explicit call-for-heat flag for now.
-      const uint8_t percentOpen = secBodyBuf[0];
-      if(percentOpen <= 100) { remoteCallForHeatRX(0, percentOpen); } // todo call for heat valve id not passed in.
+        { break; }
       // If the frame contains JSON stats
       // then forward entire secure frame as-is across the secondary radio relay link,
       // else print directly to console/Serial.
       if((0 != (secBodyBuf[1] & 0x10)) && (decryptedBodyOutSize > 3) && ('{' == secBodyBuf[2]))
-        {
-        SecondaryRadio.queueToSend(msg, msglen); 
-//        // Write out the JSON message, inserting synthetic ID/@ and seq/+.
-//        Serial.print(F("{\"@\":\""));
-//        for(int i = 0; i < OTV0P2BASE::OpenTRV_Node_ID_Bytes; ++i) { Serial.print(senderNodeID[i], HEX); }
-//        Serial.print(F("\",\"+\":"));
-//        Serial.print(sfh.getSeq());
-//        Serial.print(',');
-//        Serial.write(secBodyBuf + 3, decryptedBodyOutSize - 3);
-//        Serial.println('}');
-////        OTV0P2BASE::outputJSONStats(&Serial, secure, msg, msglen);
-//        // Attempt to ensure that trailing characters are pushed out fully.
-//        OTV0P2BASE::flushSerialProductive();
-        }
+        { SecondaryRadio.queueToSend(msg, msglen); }
       return(true);
       }
-
     // Reject unrecognised type, though fall through potentially to recognise other encodings.
     default: break;
     }

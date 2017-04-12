@@ -18,7 +18,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 */
 
 /*
-  V0p2 (V0.2) core.
+  Test of minimum relay code path.
 
   DHD20130417: hardware setup on bare board.
     * 1MHz CPU clock (from 8MHz internal RC clock with /8 prescaler) ATmega328P running at 1.8V--5V (typically 2V--3.3V).
