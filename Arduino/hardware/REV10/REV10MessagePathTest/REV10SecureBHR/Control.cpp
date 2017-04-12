@@ -66,9 +66,6 @@ void bareStatsTX(const bool allowDoubleTX, const bool doBinary)
   OTV0P2BASE::MemoryChecks::recordIfMinSP();
 
   // Note if radio/comms channel is itself framed.
-  const bool framed = !PrimaryRadio.getChannelConfig()->isUnframed;
-  const bool RFM23BFramed = false; // Never use this raw framing unless enabled explicitly.
-
   const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled<>();
   
 static_assert(OTV0P2BASE::FullStatsMessageCore_MAX_BYTES_ON_WIRE <= STATS_MSG_MAX_LEN, "FullStatsMessageCore_MAX_BYTES_ON_WIRE too big");
@@ -90,9 +87,8 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
 
     // Set pointer location based on whether start of message will have preamble TODO move to OTRFM23BLink queueToSend?
     uint8_t *bptr = buf;
-    if(RFM23BFramed) { bptr += STATS_MSG_START_OFFSET; }
     // Leave space for possible leading frame-length byte, eg for encrypted frame.
-    else { ++bptr; }
+    ++bptr;
     // Where to write the real frame content.
     uint8_t *const realTXFrameStart = bptr;
 
@@ -181,7 +177,8 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
       OTV0P2BASE::ScratchSpace sW(workspace, workspaceSize);
       const uint8_t txIDLen = OTRadioLink::ENC_BODY_DEFAULT_ID_BYTES;
       // When sending on a channel with framing, do not explicitly send the frame length byte.
-      const uint8_t offset = framed ? 1 : 0;
+      constexpr uint8_t offset = 1;
+      
       // Assumed to be at least one free writeable byte ahead of bptr.
       // Distinguished 'invalid' valve position; never mistaken for a real valve.
       const uint8_t valvePC = 0x7f;
@@ -242,10 +239,10 @@ void setupOpenTRV()
     //PCMSK0 = PB; PCINT  0--7    (LEARN1 and Radio)
     //PCMSK1 = PC; PCINT  8--15
     //PCMSK2 = PD; PCINT 16--24   (Serial RX and LEARN2 and MODE and Voice)
-    PCICR = 1 | 4;  // 0x1 enables PB/PCMSK0. 0x4 enables PD/PCMSK2.
+    PCICR = 1 ;//| 4;  // 0x1 enables PB/PCMSK0. 0x4 enables PD/PCMSK2.
 
     PCMSK0 = RFM23B_INT_MASK;
-    PCMSK2 = SERIALRX_INT_MASK;
+//    PCMSK2 = SERIALRX_INT_MASK;
     }
 
   // Do early 'wake-up' stats transmission if possible
@@ -265,6 +262,8 @@ void setupOpenTRV()
     if(!ss1.changedValue()) { break; }
     }
 
+  PrimaryRadio.listen(true);  // XXX may be switched off and left that way somewhere
+  
   // Start local counters in randomised positions to help avoid inter-unit collisions,
   // eg for mains-powered units starting up together after a power cut,
   // but without (eg) breaking any of the logic about what order things will be run first time through.
@@ -296,22 +295,22 @@ ISR(PCINT0_vect)
     { PrimaryRadio.handleInterruptSimple(); }
   }
 
-// Previous state of port D pins to help detect changes.
-static volatile uint8_t prevStatePD;
-// Interrupt service routine for PD I/O port transition changes (including RX).
-ISR(PCINT2_vect)
-  {
-  const uint8_t pins = PIND;
-  const uint8_t changes = pins ^ prevStatePD;
-  prevStatePD = pins;
-  // If an interrupt arrived from the serial RX then wake up the CLI.
-  // Use a nominally rising edge to avoid spurious trigger when other interrupts are handled.
-  // The will ensure that it is possible to wake the CLI subsystem with an extra CR or LF.
-  // It is OK to trigger this from other things such as button presses.
-  // TODO: ensure that resetCLIActiveTimer() is inlineable to minimise ISR prologue/epilogue time and space.
-  if((changes & SERIALRX_INT_MASK) && !(pins & SERIALRX_INT_MASK))
-    { OTV0P2BASE::CLI::resetCLIActiveTimer(); }
-  }
+//// Previous state of port D pins to help detect changes.
+//static volatile uint8_t prevStatePD;
+//// Interrupt service routine for PD I/O port transition changes (including RX).
+//ISR(PCINT2_vect)
+//  {
+//  const uint8_t pins = PIND;
+//  const uint8_t changes = pins ^ prevStatePD;
+//  prevStatePD = pins;
+//  // If an interrupt arrived from the serial RX then wake up the CLI.
+//  // Use a nominally rising edge to avoid spurious trigger when other interrupts are handled.
+//  // The will ensure that it is possible to wake the CLI subsystem with an extra CR or LF.
+//  // It is OK to trigger this from other things such as button presses.
+//  // TODO: ensure that resetCLIActiveTimer() is inlineable to minimise ISR prologue/epilogue time and space.
+//  if((changes & SERIALRX_INT_MASK) && !(pins & SERIALRX_INT_MASK))  // XXX
+//    { OTV0P2BASE::CLI::resetCLIActiveTimer(); }
+//  }
 
 // Ticks until locally-controlled boiler should be turned off; boiler should be on while this is positive.
 // Ticks are of the main loop, ie 2s (almost always).
@@ -499,11 +498,6 @@ void loopOpenTRV()
   // Try if very near to end of cycle and thus causing an overrun.
   // Conversely, if not true, should have time to safely log outputs, etc.
   const uint8_t nearOverrunThreshold = OTV0P2BASE::GSCT_MAX - 8; // ~64ms/~32 serial TX chars of grace time...
-
-  // Possible paranoia...
-  // Periodically (every few hours) force radio off or at least to be not listening.
-  if((30 == TIME_LSD) && (128 == minuteCount)) { PrimaryRadio.listen(false); }
-  PrimaryRadio.listen(true);
 
   // Set BOILER_OUT as appropriate for calls for heat.
   processCallsForHeat(second0);
