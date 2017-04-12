@@ -160,16 +160,5 @@ typedef
       > StatsU_t;
 extern StatsU_t statsU;
 
-// Do bare stats transmission.
-// Output should be filtered for items appModelledRadValveComputeTargetTempBasicropriate
-// to current channel security and sensitivity level.
-// This may be binary or JSON format.
-//   * allowDoubleTX  allow double TX to increase chance of successful reception
-//   * doBinary  send binary form if supported, else JSON form if supported
-// Sends stats on primary radio channel 0 with possible duplicate to secondary channel.
-// If sending encrypted then ID/counter fields (eg @ and + for JSON) are omitted
-// as assumed supplied by security layer to remote recipent.
-void bareStatsTX(bool allowDoubleTX = false, bool doBinary = false);
-
 #endif // REV10_SECURE_BHR_H
 
