@@ -29,7 +29,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 
 // GLOBAL flags that alter system build and behaviour.
 //#define DEBUG // If defined, do extra checks and serial logging.  Will take more code space and power.
-//#define EST_CPU_DUTYCYCLE // If defined, estimate CPU duty cycle and thus base power consumption.
 
 // Ensure that OpenTRV 'standard' UART speed is set unless explicitly overridden.
 #define BAUD 4800
@@ -48,7 +47,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 
 #include <Arduino.h>
 #include <OTV0p2Base.h>
-#include <OTRadValve.h>
 #include <OTRadioLink.h>
 #include <OTRFM23BLink.h>
 #include <OTSIM900Link.h>
@@ -115,13 +113,6 @@ static constexpr uint8_t STATS_MSG_MAX_LEN = (64 - STATS_MSG_START_OFFSET);
 // such as the end of minor cycle.
 // The Print object pointer must not be NULL.
 bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadioLink *rl);
-
-/////// CONTROL
-
-// Special setup for OpenTRV beyond generic hardware setup.
-void setupOpenTRV();
-// Main loop for OpenTRV radiator control.
-void loopOpenTRV();
 
 #endif // REV10_SECURE_BHR_H
 
