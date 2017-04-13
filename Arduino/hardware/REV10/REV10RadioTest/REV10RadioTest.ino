@@ -102,15 +102,27 @@ static constexpr int8_t RFM23B_IRQ_PIN = PIN_RFM_NIRQ;
 OTRFM23BLink::OTRFM23BLink<OTV0P2BASE::V0p2_PIN_SPI_nSS, RFM23B_IRQ_PIN, RFM23B_RX_QUEUE_SIZE, RFM23B_allowRX> PrimaryRadio;
 // Pick an appropriate radio config for RFM23 (if it is the primary radio).
 // Nodes talking on fast GFSK channel 0.
+// Freq ~= 868.4 MHz
+// F_deviation = 28.750 kHz
+// Baud = 57.602 kbps,
 static constexpr uint8_t nPrimaryRadioChannels = 1;
 //static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChannels] = {
 //    // GFSK channel 0 full config, RX/TX, not in itself secure.
 //    OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsGFSK57600, true)
 //};
-// Nodes talking (including to to FHT8V) on slow OOK.
+//// Nodes talking (including to to FHT8V) on slow OOK. Freq = 868.25 MHz, Baud = 5 Kbps.
+//static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChannels] = {
+//  // FS20/FHT8V compatible channel 0 partial/minimal single-channel register config; RX/TX, not secure, unframed.
+//  OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::FHT8V_RFM23_Reg_Values, false, true, true, false, false, true)
+//};
+// JeeLabs/OEM compatible config.
+// Nodes talking on 2FSK
+// Freq = 868.0 MHz
+// F_deviation = 90 kHz
+// Baud 49.261 kHz
 static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChannels] = {
-  // FS20/FHT8V compatible channel 0 partial/minimal single-channel register config; RX/TX, not secure, unframed.
-  OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::FHT8V_RFM23_Reg_Values, false, true, true, false, false, true)
+    // GFSK channel 0 full config, RX/TX, not in itself secure.
+    OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsJeeLabs, true)
 };
 
 /*
@@ -261,12 +273,13 @@ void loop()
     // =====
     // To sleep, perchance to dream...
     // Ensure that serial I/O is off while sleeping.
-    OTV0P2BASE::powerDownSerial();
+//    OTV0P2BASE::powerDownSerial();
     // Power down most stuff (except radio for hub RX).
-    OTV0P2BASE::minimisePowerWithoutSleep();
+//    OTV0P2BASE::minimisePowerWithoutSleep();
     // Normal long minimal-power sleep until wake-up interrupt.
     // Rely on interrupt to force quick loop round to I/O poll.
-    OTV0P2BASE::sleepUntilInt();
+//    OTV0P2BASE::sleepUntilInt();
+    delay(200);
     LED_on = !LED_on;
 }
 
