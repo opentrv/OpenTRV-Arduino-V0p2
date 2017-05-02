@@ -1,0 +1,7 @@
+- Add 1K resistors to make serial usb and FTDI safe to plug in at the same time.
+- Buffers on lines going to I2CEXT.
+- PTC fuse on VCC net.
+- RJ12 for pogo pin connector
+- Write that I2CEXT Power Select sets supply to I2CEXT VCC pin more explicitly
+- Better label on battery connection
+- Clean up text about ISP jumper
