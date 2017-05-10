@@ -179,15 +179,16 @@ static void decodeAndHandleOTSecureableFrame(const uint8_t * const msg)
     const uint8_t msglen = msg[-1];
     if(msglen < 2) { return; } // Too short to be useful, so ignore.
     const uint8_t firstByte = msg[0];
-  
     // Validate structure of header/frame first.
     // This is quick and checks for insane/dangerous values throughout.
     OTRadioLink::SecurableFrameHeader sfh;
+    OTV0P2BASE::MemoryChecks::setHighRisk(2);
     const uint8_t l = sfh.checkAndDecodeSmallFrameHeader(msg-1, msglen+1);
+    OTV0P2BASE::MemoryChecks::clearHighRisk(2);
     // If isOK flag is set false for any reason, frame is broken/unsafe/unauth.
     bool isOK = (l > 0);
     // If failed this early and this badly, let someone else try parsing the message buffer...
-    if(!isOK) { return; }
+    if(!isOK) {  return; }
   
     // Buffer for receiving secure frame body.
     // (Non-secure frame bodies should be read directly from the frame buffer.)
@@ -195,16 +196,20 @@ static void decodeAndHandleOTSecureableFrame(const uint8_t * const msg)
     uint8_t decryptedBodyOutSize = 0;
   
     // Validate integrity of frame (CRC for non-secure, auth for secure).
+    OTV0P2BASE::MemoryChecks::setHighRisk(3);
     const bool secureFrame = sfh.isSecure();
+    OTV0P2BASE::MemoryChecks::clearHighRisk(3);
     // TODO: validate entire message, eg including auth, or CRC if insecure msg rcvd&allowed.
     // Validate (authenticate) and decrypt body of secure frames.
     uint8_t key[16];
     if(secureFrame && isOK) {
         // Get the 'building' key.
+        OTV0P2BASE::MemoryChecks::setHighRisk(4);
         if(!OTV0P2BASE::getPrimaryBuilding16ByteSecretKey(key)) {
             isOK = false;
             OTV0P2BASE::serialPrintlnAndFlush(F("!RX key"));
         }
+        OTV0P2BASE::MemoryChecks::clearHighRisk(4);
     }
     uint8_t senderNodeID[OTV0P2BASE::OpenTRV_Node_ID_Bytes];
     if(secureFrame && isOK) {
@@ -212,12 +217,14 @@ static void decodeAndHandleOTSecureableFrame(const uint8_t * const msg)
         // validate RX message counter,
         // authenticate and decrypt,
         // update RX message counter.
+        OTV0P2BASE::MemoryChecks::setHighRisk(5);
         isOK = (0 != OTRadioLink::SimpleSecureFrame32or0BodyRXV0p2::getInstance().decodeSecureSmallFrameSafely(&sfh, msg-1, msglen+1,
                                                 OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_STATELESS,
                                                 NULL, key,
                                                 secBodyBuf, sizeof(secBodyBuf), decryptedBodyOutSize,
                                                 senderNodeID,
                                                 true));
+        OTV0P2BASE::MemoryChecks::clearHighRisk(5);
         if(!isOK) {
             // Useful brief network diagnostics: a couple of bytes of the claimed ID of rejected frames.
             // Warnings rather than errors because there may legitimately be multiple disjoint networks.
@@ -227,7 +234,7 @@ static void decodeAndHandleOTSecureableFrame(const uint8_t * const msg)
             OTV0P2BASE::serialPrintlnAndFlush();
         }
     }
-    if(!isOK) { return; } // Stop if not OK.
+    if(!isOK) {  return; } // Stop if not OK.
     switch(firstByte) { // Switch on type. XXX
         case 'O' | 0x80: // Basic OpenTRV secure frame...
         {
@@ -235,8 +242,11 @@ static void decodeAndHandleOTSecureableFrame(const uint8_t * const msg)
             // If the frame contains JSON stats
             // then forward entire secure frame as-is across the secondary radio relay link,
             // else print directly to console/Serial.
-            if((0 != (secBodyBuf[1] & 0x10)) && (decryptedBodyOutSize > 3) && ('{' == secBodyBuf[2]))
-                { SecondaryRadio.queueToSend(msg, msglen); }
+            if((0 != (secBodyBuf[1] & 0x10)) && (decryptedBodyOutSize > 3) && ('{' == secBodyBuf[2])) { 
+                  OTV0P2BASE::MemoryChecks::setHighRisk(6);
+                  SecondaryRadio.queueToSend(msg, msglen);
+                  OTV0P2BASE::MemoryChecks::clearHighRisk(6);
+            }
         }
         // Reject unrecognised type, though fall through potentially to recognise other encodings.
         default: break;
@@ -280,7 +290,9 @@ static bool handleQueuedMessages(Print *p, OTRadioLink::OTRadioLink *rl)
         if(OTV0P2BASE::powerUpSerialIfDisabled<V0P2_UART_BAUD>()) { neededWaking = true; } // FIXME
         // Don't currently regard anything arriving over the air as 'secure'.
         // FIXME: shouldn't have to cast away volatile to process the message content.
+        OTV0P2BASE::MemoryChecks::setHighRisk(1);
         decodeAndHandleOTSecureableFrame((const uint8_t *)pb);
+        OTV0P2BASE::MemoryChecks::clearHighRisk(1);
         rl->removeRXMsg();
         // Turn off serial at end, if this routine woke it.
         if(neededWaking) { OTV0P2BASE::flushSerialProductive(); OTV0P2BASE::powerDownSerial(); } // XXX move into if clause
@@ -406,10 +418,24 @@ void loop()
     // ===============
     // Force restart if SPAM/heap/stack likely corrupt.
     OTV0P2BASE::MemoryChecks::forceResetIfStackOverflow();
+
     // Complain and keep complaining when getting near stack overflow.
     // TODO: make DEBUG-only when confident all configs OK.
     const int16_t minsp = OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd();
-    if(minsp < 64) { OTV0P2BASE::serialPrintlnAndFlush(F("!SH")); }
+    // high risk functions
+    uint8_t highRisk[OTV0P2BASE::MemoryChecks::highRiskSize];
+    OTV0P2BASE::serialPrintAndFlush(OTV0P2BASE::MemoryChecks::getLocation());
+    OTV0P2BASE::serialPrintAndFlush(F(" "));
+    OTV0P2BASE::serialPrintAndFlush(minsp);
+    OTV0P2BASE::serialPrintAndFlush(F(" "));
+    OTV0P2BASE::MemoryChecks::getHighRisk(highRisk);
+    for (auto ip = &highRisk[0]; ip != &highRisk[sizeof(highRisk)];) {
+        OTV0P2BASE::serialPrintAndFlush(*ip++);
+    }
+    if(minsp < 400) OTV0P2BASE::serialPrintAndFlush(F(" !SH"));
+    OTV0P2BASE::serialPrintlnAndFlush();
+
+    OTV0P2BASE::MemoryChecks::resetMinSP();
   
     // SLEEP
     // ===============

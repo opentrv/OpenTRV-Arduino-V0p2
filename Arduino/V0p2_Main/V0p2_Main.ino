@@ -594,15 +594,21 @@ void loop()
 #if defined(EST_CPU_DUTYCYCLE)
   const unsigned long usStart = micros();
 #endif
-
   // Force restart if SPAM/heap/stack likely corrupt.
   OTV0P2BASE::MemoryChecks::forceResetIfStackOverflow();
 
   // Complain and keep complaining when getting near stack overflow.
   // TODO: make DEBUG-only when confident all configs OK.
   const int16_t minsp = OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd();
-  if(minsp < 128) { OTV0P2BASE::serialPrintlnAndFlush(F("!SH")); }
+  if(minsp < 256) {
+    OTV0P2BASE::serialPrintAndFlush(F("!SH "));
+    OTV0P2BASE::serialPrintAndFlush(OTV0P2BASE::MemoryChecks::getLocation());
+    OTV0P2BASE::serialPrintAndFlush(F(" "));
+    OTV0P2BASE::serialPrintAndFlush(minsp);
+    OTV0P2BASE::serialPrintlnAndFlush();
+  }
 
+  OTV0P2BASE::MemoryChecks::resetMinSP();
   loopOpenTRV();
 
 #if defined(EST_CPU_DUTYCYCLE)
