@@ -261,7 +261,9 @@ static void decodeAndHandleRawRXedMessage(Print *p, const bool secure, const uin
 
    // Length-first OpenTRV secureable-frame format...
 #if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) // && defined(ENABLE_FAST_FRAMED_CARRIER_SUPPORT)
-  if(OTRadioLink::decodeAndHandleOTSecureableFrame(p, secure, msg, SecondaryRadio)) { return; }
+constexpr bool allowOTSecureFrameRX = false; // ENABLE_OTSECUREFRAME_INSECURE_RX_PERMITTED  FIXME!
+constexpr bool enableRadioRelay = true; // ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY  FIXME!
+  if(OTRadioLink::decodeAndHandleOTSecureableFrame<allowOTSecureFrameRX, enableRadioRelay>(p, secure, msg, SecondaryRadio)) { return; }  // XXX
 #endif // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
 
   const uint8_t firstByte = msg[0];
