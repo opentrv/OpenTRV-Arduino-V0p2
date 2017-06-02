@@ -315,22 +315,22 @@ typedef OTRadValve::NULLTempControl TempControl_t;
 #define TempControl_DEFINED
 extern TempControl_t tempControl;
 
-// Default minimum on/off time in minutes for the boiler relay.
-// Set to 5 as the default valve Tx cycle is 4 mins and 5 mins is a good amount for most boilers.
-// This constant is necessary as if V0P2BASE_EE_START_MIN_BOILER_ON_MINS_INV is not set, the boiler relay will never be turned on.
-static const constexpr uint8_t DEFAULT_MIN_BOILER_ON_MINS = 5;
-#if defined(ENABLE_DEFAULT_ALWAYS_RX)
-#define getMinBoilerOnMinutes() (DEFAULT_MIN_BOILER_ON_MINS)
-#elif defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)
-// Get minimum on (and off) time for pointer (minutes); zero if not in hub mode.
-uint8_t getMinBoilerOnMinutes();
-// Set minimum on (and off) time for pointer (minutes); zero to disable hub mode.
-// Suggested minimum of 4 minutes for gas combi; much longer for heat pumps for example.
-void setMinBoilerOnMinutes(uint8_t mins);
-#else
-#define getMinBoilerOnMinutes() (0) // Always disabled.
-#define setMinBoilerOnMinutes(mins) {} // Do nothing.
-#endif
+//// Default minimum on/off time in minutes for the boiler relay.
+//// Set to 5 as the default valve Tx cycle is 4 mins and 5 mins is a good amount for most boilers.
+//// This constant is necessary as if V0P2BASE_EE_START_MIN_BOILER_ON_MINS_INV is not set, the boiler relay will never be turned on.
+//static const constexpr uint8_t DEFAULT_MIN_BOILER_ON_MINS = 5;
+//#if defined(ENABLE_DEFAULT_ALWAYS_RX)
+//#define getMinBoilerOnMinutes() (DEFAULT_MIN_BOILER_ON_MINS)
+//#elif defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)
+//// Get minimum on (and off) time for pointer (minutes); zero if not in hub mode.
+//uint8_t getMinBoilerOnMinutes();
+//// Set minimum on (and off) time for pointer (minutes); zero to disable hub mode.
+//// Suggested minimum of 4 minutes for gas combi; much longer for heat pumps for example.
+//void setMinBoilerOnMinutes(uint8_t mins);
+//#else
+//#define getMinBoilerOnMinutes() (0) // Always disabled.
+//#define setMinBoilerOnMinutes(mins) {} // Do nothing.
+//#endif
 
 #if defined(ENABLE_DEFAULT_ALWAYS_RX)
 // True: always in central hub/listen mode.
@@ -389,7 +389,6 @@ extern OTRadValve::ModelledRadValve NominalRadValve;
 // Simply alias directly to FHT8V for REV9 slave for example.
 #define NominalRadValve FHT8V
 #endif
-
 
 /////// STATS
 
@@ -465,13 +464,8 @@ inline void serialStatusReport() { statsLine.serialStatusReport(); }
 void bareStatsTX(bool allowDoubleTX = false, bool doBinary = false);
 
 #ifdef ENABLE_BOILER_HUB
-// Raw notification of received call for heat from remote (eg FHT8V) unit.
-// This form has a 16-bit ID (eg FHT8V housecode) and percent-open value [0,100].
-// Note that this may include 0 percent values for a remote unit explicitly confirming
-// that is is not, or has stopped, calling for heat (eg instead of replying on a timeout).
-// This is not filtered, and can be delivered at any time from RX data, from a non-ISR thread.
-// Does not have to be thread-/ISR- safe.
-void remoteCallForHeatRX(uint16_t id, uint8_t percentOpen);
+// FIXME
+extern OTRadValve::BoilerCallForHeat BoilerHub;
 #endif
 
 ////// UI
