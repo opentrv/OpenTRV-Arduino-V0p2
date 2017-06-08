@@ -26,18 +26,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 #include <OTAESGCM.h>
 #endif
 
-//
-//#ifndef getMinBoilerOnMinutes
-//// Get minimum on (and off) time for pointer (minutes); zero if not in hub mode.
-//uint8_t getMinBoilerOnMinutes() { return(~eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_MIN_BOILER_ON_MINS_INV)); }
-//#endif
-//
-//#ifndef setMinBoilerOnMinutes
-//// Set minimum on (and off) time for pointer (minutes); zero to disable hub mode.
-//// Suggested minimum of 4 minutes for gas combi; much longer for heat pumps for example.
-//void setMinBoilerOnMinutes(uint8_t mins) { OTV0P2BASE::eeprom_smart_update_byte((uint8_t *)V0P2BASE_EE_START_MIN_BOILER_ON_MINS_INV, ~(mins)); }
-//#endif
-
 #ifdef ENABLE_MODELLED_RAD_VALVE
 static OTV0P2BASE::EEPROMByHourByteStats ebhs;
 // Create setback lockout if needed.
@@ -118,8 +106,15 @@ bool pollIO(const bool force)
   }
 
 #ifdef ENABLE_BOILER_HUB
-OTRadValve::BoilerCallForHeat BoilerHub;
+OTRadValve::BoilerCallForHeat<OUT_HEATCALL> BoilerHub;
 #endif // ENABLE_BOILER_HUB
+// FIXME deal with these
+// Get minimum on (and off) time for pointer (minutes); zero if not in hub mode.
+uint8_t getMinBoilerOnMinutes() { return(~eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_MIN_BOILER_ON_MINS_INV)); }
+// Set minimum on (and off) time for pointer (minutes); zero to disable hub mode.
+// Suggested minimum of 4 minutes for gas combi; much longer for heat pumps for example.
+void setMinBoilerOnMinutes(uint8_t mins) { OTV0P2BASE::eeprom_smart_update_byte((uint8_t *)V0P2BASE_EE_START_MIN_BOILER_ON_MINS_INV, ~(mins)); }
+//#endif // ENABLE_BOILER_HUB
 
 #ifdef ENABLE_STATS_TX
 #if defined(ENABLE_JSON_OUTPUT)
@@ -195,7 +190,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
     RFM22RawStatsTXFFTerminated(buf, allowDoubleTX);
     // Record stats as if remote, and treat channel as secure.
     outputCoreStats(&Serial, true, &content);
-    handleQueuedMessages(&Serial, false, &PrimaryRadio); // Serial must already be running!
+    messageQueue.handle(false, &PrimaryRadio); // Serial must already be running!
 #endif // defined(ENABLE_BINARY_STATS_TX) ...
     }
 
@@ -425,7 +420,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
 #endif // ENABLE_RADIO_SECONDARY_MODULE
 
 #ifdef ENABLE_RADIO_RX
-    handleQueuedMessages(&Serial, false, &PrimaryRadio); // Serial must already be running!
+    messageQueue.handle(false, &PrimaryRadio); // Serial must already be running!
 #endif
 
     if(!sendingJSONFailed)
@@ -923,7 +918,7 @@ void loopOpenTRV()
 
 #if defined(ENABLE_BOILER_HUB)
   // Set BOILER_OUT as appropriate for calls for heat.
-  processCallsForHeat(second0);
+  BoilerHub.processCallsForHeat(second0, inHubMode());
 #endif
 
 
@@ -949,7 +944,7 @@ void loopOpenTRV()
     // or the in a previous orbit of this loop sleep or nap was terminated by an I/O interrupt.
     // May generate output to host on Serial.
     // Come back and have another go immediately until no work remaining.
-    if(handleQueuedMessages(&Serial, true, &PrimaryRadio)) { continue; }
+    if(messageQueue.handle(true, &PrimaryRadio)) { continue; }
 #endif
 
 // If missing h/w interrupts for anything that needs rapid response
@@ -1063,7 +1058,7 @@ void loopOpenTRV()
     }
 
   // Handling the UI may have taken a little while, so process I/O a little.
-  handleQueuedMessages(&Serial, true, &PrimaryRadio); // Deal with any pending I/O.
+  messageQueue.handle(true, &PrimaryRadio); // Deal with any pending I/O.
 
 
 #ifdef ENABLE_MODELLED_RAD_VALVE
@@ -1085,7 +1080,7 @@ void loopOpenTRV()
     useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8V.FHT8VPollSyncAndTX_Next(doubleTXForFTH8V);
 //    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@1"); }
     // Handling the FHT8V may have taken a little while, so process I/O a little.
-    handleQueuedMessages(&Serial, true, &PrimaryRadio); // Deal with any pending I/O.
+    messageQueue.handle(true, &PrimaryRadio); // Deal with any pending I/O.
     }
 #endif
 
@@ -1167,7 +1162,7 @@ void loopOpenTRV()
       while(OTV0P2BASE::getSubCycleTime() <= stopBy)
         {
         // Handle any pending I/O while waiting.
-        if(handleQueuedMessages(&Serial, true, &PrimaryRadio)) { continue; }
+        if(messageQueue.handle(true, &PrimaryRadio)) { continue; }
         // Sleep a little.
         OTV0P2BASE::nap(WDTO_15MS, true);
         }
@@ -1306,12 +1301,12 @@ void loopOpenTRV()
 #if defined(ENABLE_BOILER_HUB)
       // Feed in the local valve position when calling for heat just as if over the air.
       // (Does not arrive with the normal FHT8V timing of 2-minute gaps so boiler may turn off out of sync.)
-      if(FHT8V.isControlledValveReallyOpen()) { remoteCallForHeatRX(FHT8V.nvGetHC(), FHT8V.get()); }
+      if(FHT8V.isControlledValveReallyOpen()) { BoilerHub.remoteCallForHeatRX(FHT8V.nvGetHC(), FHT8V.get(), minuteCount); }
 #endif // defined(ENABLE_BOILER_HUB)
 #elif defined(ENABLE_NOMINAL_RAD_VALVE) && defined(ENABLE_LOCAL_TRV) // Other local valve types, simulate a remote call for heat with a fake ID.
 #if defined(ENABLE_BOILER_HUB)
       // Feed in the local valve position when calling for heat just as if over the air.
-      if(NominalRadValve.isControlledValveReallyOpen()) { remoteCallForHeatRX(~0, NominalRadValve.get()); }
+      if(NominalRadValve.isControlledValveReallyOpen()) { BoilerHub.remoteCallForHeatRX(~0, NominalRadValve.get(), minuteCount); }
 #endif // defined(ENABLE_BOILER_HUB)
 #endif
 
@@ -1352,7 +1347,7 @@ void loopOpenTRV()
     useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8V.FHT8VPollSyncAndTX_Next(doubleTXForFTH8V);
 //    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@2"); }
     // Handling the FHT8V may have taken a little while, so process I/O a little.
-    handleQueuedMessages(&Serial, true, &PrimaryRadio); // Deal with any pending I/O.
+    messageQueue.handle(true, &PrimaryRadio); // Deal with any pending I/O.
     }
 #endif
 
@@ -1366,13 +1361,13 @@ void loopOpenTRV()
     useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8V.FHT8VPollSyncAndTX_Next(doubleTXForFTH8V);
 //    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@3"); }
     // Handling the FHT8V may have taken a little while, so process I/O a little.
-    handleQueuedMessages(&Serial, true, &PrimaryRadio); // Deal with any pending I/O.
+    messageQueue.handle(true, &PrimaryRadio); // Deal with any pending I/O.
     }
 #endif
 
   // End-of-loop processing, that may be slow.
   // Ensure progress on queued messages ahead of slow work.  (TODO-867)
-  handleQueuedMessages(&Serial, true, &PrimaryRadio); // Deal with any pending I/O.
+  messageQueue.handle(true, &PrimaryRadio); // Deal with any pending I/O.
 
 #if defined(HAS_DORM1_VALVE_DRIVE) && defined(ENABLE_LOCAL_TRV)
   // Handle local direct-drive valve, eg DORM1.

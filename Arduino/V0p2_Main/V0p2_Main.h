@@ -170,21 +170,23 @@ inline bool enableTrailingStatsPayload() { return(OTV0P2BASE::getStatsTXLevel() 
 #endif
 
 #if defined(ENABLE_RADIO_RX)
-// Incrementally poll and process I/O and queued messages, including from the radio link.
-// Returns true if some work was done.
-// This may mean printing them to Serial (which the passed Print object usually is),
-// or adjusting system parameters,
-// or relaying them elsewhere, for example.
-// This will write any output to the supplied Print object,
-// typically the Serial output (which must be running if so).
-// This will attempt to process messages in such a way
-// as to avoid internal overflows or other resource exhaustion,
-// which may mean deferring work at certain times
-// such as the end of minor cycle.
-// The Print object pointer must not be NULL.
-bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadioLink *rl);
+//// Incrementally poll and process I/O and queued messages, including from the radio link.
+//// Returns true if some work was done.
+//// This may mean printing them to Serial (which the passed Print object usually is),
+//// or adjusting system parameters,
+//// or relaying them elsewhere, for example.
+//// This will write any output to the supplied Print object,
+//// typically the Serial output (which must be running if so).
+//// This will attempt to process messages in such a way
+//// as to avoid internal overflows or other resource exhaustion,
+//// which may mean deferring work at certain times
+//// such as the end of minor cycle.
+//// The Print object pointer must not be NULL.
+//bool handleQueuedMessages(bool wakeSerialIfNeeded, OTRadioLink::OTRadioLink *rl);
+extern OTRadioLink::OTMessageQueueHandlerBase &messageQueue;
 #else
-#define handleQueuedMessages(p, wakeSerialIfNeeded, rl) (false)
+extern OTRadioLink::OTMessageQueueHandlerBase messageQueue;
+//#define handleQueuedMessages(wakeSerialIfNeeded, rl) (false)
 #endif
 
 
@@ -315,22 +317,13 @@ typedef OTRadValve::NULLTempControl TempControl_t;
 #define TempControl_DEFINED
 extern TempControl_t tempControl;
 
-//// Default minimum on/off time in minutes for the boiler relay.
-//// Set to 5 as the default valve Tx cycle is 4 mins and 5 mins is a good amount for most boilers.
-//// This constant is necessary as if V0P2BASE_EE_START_MIN_BOILER_ON_MINS_INV is not set, the boiler relay will never be turned on.
-//static const constexpr uint8_t DEFAULT_MIN_BOILER_ON_MINS = 5;
-//#if defined(ENABLE_DEFAULT_ALWAYS_RX)
-//#define getMinBoilerOnMinutes() (DEFAULT_MIN_BOILER_ON_MINS)
-//#elif defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)
-//// Get minimum on (and off) time for pointer (minutes); zero if not in hub mode.
-//uint8_t getMinBoilerOnMinutes();
-//// Set minimum on (and off) time for pointer (minutes); zero to disable hub mode.
-//// Suggested minimum of 4 minutes for gas combi; much longer for heat pumps for example.
-//void setMinBoilerOnMinutes(uint8_t mins);
-//#else
-//#define getMinBoilerOnMinutes() (0) // Always disabled.
-//#define setMinBoilerOnMinutes(mins) {} // Do nothing.
-//#endif
+//#ifndef ENABLE_BOILER_HUB // ENABLE_BOILER_HUB
+// Get minimum on (and off) time for pointer (minutes); zero if not in hub mode.
+extern uint8_t getMinBoilerOnMinutes();
+// Set minimum on (and off) time for pointer (minutes); zero to disable hub mode.
+// Suggested minimum of 4 minutes for gas combi; much longer for heat pumps for example.
+extern void setMinBoilerOnMinutes(uint8_t mins);
+//#endif // ENABLE_BOILER_HUB
 
 #if defined(ENABLE_DEFAULT_ALWAYS_RX)
 // True: always in central hub/listen mode.
@@ -465,7 +458,7 @@ void bareStatsTX(bool allowDoubleTX = false, bool doBinary = false);
 
 #ifdef ENABLE_BOILER_HUB
 // FIXME
-extern OTRadValve::BoilerCallForHeat BoilerHub;
+extern OTRadValve::BoilerCallForHeat<OUT_HEATCALL> BoilerHub;
 #endif
 
 ////// UI
