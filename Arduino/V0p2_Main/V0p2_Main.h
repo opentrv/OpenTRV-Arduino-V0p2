@@ -136,9 +136,9 @@ static constexpr uint8_t RFM22_SYNC_MIN_BYTES = 3; // Minimum number of sync byt
 // This will use whichever transmission medium/carrier/etc is available.
 static constexpr uint8_t STATS_MSG_START_OFFSET = (RFM22_PREAMBLE_BYTES + RFM22_SYNC_MIN_BYTES);
 static constexpr uint8_t STATS_MSG_MAX_LEN = (64 - STATS_MSG_START_OFFSET);
-#if defined(ENABLE_RFM23B_FS20_RAW_PREAMBLE)
-void RFM22RawStatsTXFFTerminated(uint8_t *buf, bool doubleTX, bool RFM23BFramed = true);
-#endif
+//#if defined(ENABLE_RFM23B_FS20_RAW_PREAMBLE)
+//void RFM22RawStatsTXFFTerminated(uint8_t *buf, bool doubleTX, bool RFM23BFramed = true);
+//#endif
 #if defined(ENABLE_RFM23B_FS20_RAW_PREAMBLE)
 // Adds the STATS_MSG_START_OFFSET preamble to enable reception by a remote RFM22B/RFM23B.
 // Returns the first free byte after the preamble.
@@ -170,23 +170,11 @@ inline bool enableTrailingStatsPayload() { return(OTV0P2BASE::getStatsTXLevel() 
 #endif
 
 #if defined(ENABLE_RADIO_RX)
-//// Incrementally poll and process I/O and queued messages, including from the radio link.
-//// Returns true if some work was done.
-//// This may mean printing them to Serial (which the passed Print object usually is),
-//// or adjusting system parameters,
-//// or relaying them elsewhere, for example.
-//// This will write any output to the supplied Print object,
-//// typically the Serial output (which must be running if so).
-//// This will attempt to process messages in such a way
-//// as to avoid internal overflows or other resource exhaustion,
-//// which may mean deferring work at certain times
-//// such as the end of minor cycle.
-//// The Print object pointer must not be NULL.
-//bool handleQueuedMessages(bool wakeSerialIfNeeded, OTRadioLink::OTRadioLink *rl);
+// Reference to messageQueue handler. Defined in Messaging.cpp
 extern OTRadioLink::OTMessageQueueHandlerBase &messageQueue;
 #else
+// Stub version for when RX not enabled.
 extern OTRadioLink::OTMessageQueueHandlerBase messageQueue;
-//#define handleQueuedMessages(wakeSerialIfNeeded, rl) (false)
 #endif
 
 
@@ -457,7 +445,6 @@ inline void serialStatusReport() { statsLine.serialStatusReport(); }
 void bareStatsTX(bool allowDoubleTX = false, bool doBinary = false);
 
 #ifdef ENABLE_BOILER_HUB
-// FIXME
 extern OTRadValve::BoilerCallForHeat<OUT_HEATCALL> BoilerHub;
 #endif
 

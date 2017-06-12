@@ -83,6 +83,7 @@ OTRadValve::ModelledRadValve NominalRadValve(
 //   * force if true then force full poll on every call (ie do not internally rate-limit)
 // Note that radio poll() can be for TX as well as RX activity.
 // Not thread-safe, eg not to be called from within an ISR.
+// FIXME trying to move into utils (for the time being.)
 bool pollIO(const bool force)
   {
 #ifdef ENABLE_RADIO_PRIMARY_MODULE
@@ -105,9 +106,6 @@ bool pollIO(const bool force)
   return(false);
   }
 
-#ifdef ENABLE_BOILER_HUB
-OTRadValve::BoilerCallForHeat<OUT_HEATCALL> BoilerHub;
-#endif // ENABLE_BOILER_HUB
 // FIXME deal with these
 // Get minimum on (and off) time for pointer (minutes); zero if not in hub mode.
 uint8_t getMinBoilerOnMinutes() { return(~eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_MIN_BOILER_ON_MINS_INV)); }
@@ -115,6 +113,39 @@ uint8_t getMinBoilerOnMinutes() { return(~eeprom_read_byte((uint8_t *)V0P2BASE_E
 // Suggested minimum of 4 minutes for gas combi; much longer for heat pumps for example.
 void setMinBoilerOnMinutes(uint8_t mins) { OTV0P2BASE::eeprom_smart_update_byte((uint8_t *)V0P2BASE_EE_START_MIN_BOILER_ON_MINS_INV, ~(mins)); }
 //#endif // ENABLE_BOILER_HUB
+
+
+#if defined(ENABLE_RFM23B_FS20_RAW_PREAMBLE)
+// Send the underlying stats binary/text 'whitened' message.
+// This must be terminated with an 0xff (which is not sent),
+// and no longer than STATS_MSG_MAX_LEN bytes long in total (excluding the terminating 0xff).
+// This must not contain any 0xff and should not contain long runs of 0x00 bytes.
+// The message to be sent must be written at an offset of STATS_MSG_START_OFFSET from the start of the buffer.
+// This routine will alter the content of the buffer for transmission,
+// and the buffer should not be re-used as is.
+//   * doubleTX  double TX to increase chance of successful reception
+//   * RFM23BfriendlyPremable  if true then add an extra preamble
+//     to allow RFM23B-based receiver to RX this
+// This will use whichever transmission medium/carrier/etc is available.
+static void RFM22RawStatsTXFFTerminated(uint8_t * const buf, const bool doubleTX, bool RFM23BFramed = true)
+  {
+  if(RFM23BFramed) RFM22RXPreambleAdd(buf);     // Only needed for RFM23B. This should be made more clear when refactoring
+  const uint8_t buflen = OTRadioLink::frameLenFFTerminated(buf);
+#if 0 && defined(DEBUG)
+    DEBUG_SERIAL_PRINT_FLASHSTRING("buflen=");
+    DEBUG_SERIAL_PRINT(buflen);
+    DEBUG_SERIAL_PRINTLN();
+#endif // DEBUG
+  if(!PrimaryRadio.queueToSend(buf, buflen, 0, (doubleTX ? OTRadioLink::OTRadioLink::TXmax : OTRadioLink::OTRadioLink::TXnormal)))
+    {
+#if 0 && defined(DEBUG)
+    DEBUG_SERIAL_PRINTLN_FLASHSTRING("!TX failed");
+#endif
+    } // DEBUG
+  //DEBUG_SERIAL_PRINTLN_FLASHSTRING("RS");
+  }
+#endif // defined(ENABLE_RFM23B_FS20_RAW_PREAMBLE)
+
 
 #ifdef ENABLE_STATS_TX
 #if defined(ENABLE_JSON_OUTPUT)
