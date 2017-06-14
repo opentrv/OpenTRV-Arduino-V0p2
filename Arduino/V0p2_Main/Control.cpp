@@ -221,7 +221,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
     RFM22RawStatsTXFFTerminated(buf, allowDoubleTX);
     // Record stats as if remote, and treat channel as secure.
     outputCoreStats(&Serial, true, &content);
-    messageQueue.handle(false, &PrimaryRadio); // Serial must already be running!
+    messageQueue.handle(false, PrimaryRadio); // Serial must already be running!
 #endif // defined(ENABLE_BINARY_STATS_TX) ...
     }
 
@@ -1111,7 +1111,7 @@ void loopOpenTRV()
     useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8V.FHT8VPollSyncAndTX_Next(doubleTXForFTH8V);
 //    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@1"); }
     // Handling the FHT8V may have taken a little while, so process I/O a little.
-    messageQueue.handle(true, &PrimaryRadio); // Deal with any pending I/O.
+    messageQueue.handle(true, PrimaryRadio); // Deal with any pending I/O.
     }
 #endif
 
@@ -1378,7 +1378,7 @@ void loopOpenTRV()
     useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8V.FHT8VPollSyncAndTX_Next(doubleTXForFTH8V);
 //    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@2"); }
     // Handling the FHT8V may have taken a little while, so process I/O a little.
-    messageQueue.handle(true, &PrimaryRadio); // Deal with any pending I/O.
+    messageQueue.handle(true, PrimaryRadio); // Deal with any pending I/O.
     }
 #endif
 
@@ -1392,7 +1392,7 @@ void loopOpenTRV()
     useExtraFHT8VTXSlots = localFHT8VTRVEnabled() && FHT8V.FHT8VPollSyncAndTX_Next(doubleTXForFTH8V);
 //    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@3"); }
     // Handling the FHT8V may have taken a little while, so process I/O a little.
-    messageQueue.handle(true, &PrimaryRadio); // Deal with any pending I/O.
+    messageQueue.handle(true, PrimaryRadio); // Deal with any pending I/O.
     }
 #endif
 

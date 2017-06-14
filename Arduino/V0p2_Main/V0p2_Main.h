@@ -174,7 +174,7 @@ inline bool enableTrailingStatsPayload() { return(OTV0P2BASE::getStatsTXLevel() 
 extern OTRadioLink::OTMessageQueueHandlerBase &messageQueue;
 #else
 // Stub version for when RX not enabled.
-extern OTRadioLink::OTMessageQueueHandlerBase messageQueue;
+extern OTRadioLink::OTMessageQueueHandlerNull messageQueue;
 #endif
 
 
