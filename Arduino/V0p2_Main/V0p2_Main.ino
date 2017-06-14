@@ -543,18 +543,22 @@ constexpr uint8_t allowInsecureRX = false;
 OTRadioLink::OTMessageQueueHandlerDual<decltype(radioHandler), radioHandler, 'O',
                                    decltype(boilerHandler), boilerHandler, 'O',
                                    pollIO, V0P2_UART_BAUD,
+                                   OTV0P2BASE::getPrimaryBuilding16ByteSecretKey,
                                    allowInsecureRX> actualMessageQueue;
 #elif defined(ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY)
 OTRadioLink::OTMessageQueueHandlerSingle<decltype(radioHandler), radioHandler, 'O',
                                    pollIO, V0P2_UART_BAUD,
+                                   OTV0P2BASE::getPrimaryBuilding16ByteSecretKey,
                                    allowInsecureRX> actualMessageQueue;
 #elif defined(ENABLE_BOILER_HUB)
 OTRadioLink::OTMessageQueueHandlerSingle<decltype(boilerHandler), boilerHandler, 'O',
                                    pollIO, V0P2_UART_BAUD,
+                                   OTV0P2BASE::getPrimaryBuilding16ByteSecretKey,
                                    allowInsecureRX> actualMessageQueue;
 #else
 OTRadioLink::OTMessageQueueHandlerSingle<decltype(serialHandler), serialHandler, 'O',
                                    pollIO, V0P2_UART_BAUD,
+                                   OTV0P2BASE::getPrimaryBuilding16ByteSecretKey,
                                    allowInsecureRX> actualMessageQueue;
 #endif // defined(ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY) && (ENABLE_BOILER_HUB)
 OTRadioLink::OTMessageQueueHandlerBase &messageQueue = actualMessageQueue;

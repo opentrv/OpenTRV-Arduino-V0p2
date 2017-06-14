@@ -451,7 +451,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
 #endif // ENABLE_RADIO_SECONDARY_MODULE
 
 #ifdef ENABLE_RADIO_RX
-    messageQueue.handle(false, &PrimaryRadio); // Serial must already be running!
+    messageQueue.handle(false, PrimaryRadio); // Serial must already be running!
 #endif
 
     if(!sendingJSONFailed)
@@ -975,7 +975,7 @@ void loopOpenTRV()
     // or the in a previous orbit of this loop sleep or nap was terminated by an I/O interrupt.
     // May generate output to host on Serial.
     // Come back and have another go immediately until no work remaining.
-    if(messageQueue.handle(true, &PrimaryRadio)) { continue; }
+    if(messageQueue.handle(true, PrimaryRadio)) { continue; }
 #endif
 
 // If missing h/w interrupts for anything that needs rapid response
@@ -1089,7 +1089,7 @@ void loopOpenTRV()
     }
 
   // Handling the UI may have taken a little while, so process I/O a little.
-  messageQueue.handle(true, &PrimaryRadio); // Deal with any pending I/O.
+  messageQueue.handle(true, PrimaryRadio); // Deal with any pending I/O.
 
 
 #ifdef ENABLE_MODELLED_RAD_VALVE
@@ -1193,7 +1193,7 @@ void loopOpenTRV()
       while(OTV0P2BASE::getSubCycleTime() <= stopBy)
         {
         // Handle any pending I/O while waiting.
-        if(messageQueue.handle(true, &PrimaryRadio)) { continue; }
+        if(messageQueue.handle(true, PrimaryRadio)) { continue; }
         // Sleep a little.
         OTV0P2BASE::nap(WDTO_15MS, true);
         }
@@ -1398,7 +1398,7 @@ void loopOpenTRV()
 
   // End-of-loop processing, that may be slow.
   // Ensure progress on queued messages ahead of slow work.  (TODO-867)
-  messageQueue.handle(true, &PrimaryRadio); // Deal with any pending I/O.
+  messageQueue.handle(true, PrimaryRadio); // Deal with any pending I/O.
 
 #if defined(HAS_DORM1_VALVE_DRIVE) && defined(ENABLE_LOCAL_TRV)
   // Handle local direct-drive valve, eg DORM1.
