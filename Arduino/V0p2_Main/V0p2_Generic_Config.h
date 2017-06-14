@@ -70,7 +70,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 //#define CONFIG_DORM1_BOILER // REV8 / DORM1 boiler-control unit.
 //#define CONFIG_REV8_SECURE_BHR // REV8 secure boiler controller and stats hub.
 //#define CONFIG_REV10_AS_GSM_RELAY_ONLY // REV10: stats relay only.
-//#define CONFIG_REV10_SECURE_BHR // REV10: secure stats relay and boiler hub.
+#define CONFIG_REV10_SECURE_BHR // REV10: secure stats relay and boiler hub.
 //#define CONFIG_REV11_SECURE_STATSHUB // REV11 as secure stats hub.
 
 // One-offs and special cases
