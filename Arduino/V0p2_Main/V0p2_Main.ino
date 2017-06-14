@@ -396,7 +396,7 @@ OTRadValve::FHT8VRadValve<_FHT8V_MAX_EXTRA_TRAILER_BYTES, OTRadValve::FHT8VRadVa
 #endif // ENABLE_FHT8VSIMPLE
 
 #ifdef ENABLE_BOILER_HUB
-OTRadValve::BoilerCallForHeat<OUT_HEATCALL> BoilerHub;
+OTRadValve::OnOffBoilerDriverLogic<OUT_HEATCALL> BoilerHub;
 #endif // ENABLE_BOILER_HUB
 
 ////////////////////////// CONTROL

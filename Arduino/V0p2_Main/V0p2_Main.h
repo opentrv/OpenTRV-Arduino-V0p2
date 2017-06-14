@@ -445,7 +445,7 @@ inline void serialStatusReport() { statsLine.serialStatusReport(); }
 void bareStatsTX(bool allowDoubleTX = false, bool doBinary = false);
 
 #ifdef ENABLE_BOILER_HUB
-extern OTRadValve::BoilerCallForHeat<OUT_HEATCALL> BoilerHub;
+extern OTRadValve::OnOffBoilerDriverLogic<OUT_HEATCALL> BoilerHub;
 #endif
 
 ////// UI
