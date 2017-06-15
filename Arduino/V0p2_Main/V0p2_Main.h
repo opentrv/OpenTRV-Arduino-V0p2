@@ -168,14 +168,13 @@ inline bool enableTrailingStatsPayload() { return(OTV0P2BASE::getStatsTXLevel() 
 #else
 #define enableTrailingStatsPayload() (false)
 #endif
-
-#if defined(ENABLE_RADIO_RX)
+#if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) && defined(ENABLE_RADIO_RX)
 // Reference to messageQueue handler. Defined in Messaging.cpp
 extern OTRadioLink::OTMessageQueueHandlerBase &messageQueue;
-#else
+#else  // defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
 // Stub version for when RX not enabled.
 extern OTRadioLink::OTMessageQueueHandlerNull messageQueue;
-#endif
+#endif  // defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
 
 
 /////// CONTROL (EARLY, NOT DEPENDENT ON OTHER SENSORS)

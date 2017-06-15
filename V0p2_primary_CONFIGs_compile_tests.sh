@@ -21,6 +21,9 @@ SKETCHNAME=V0p2_Main
 # Relative path to V0p2_Main sketch.
 MAIN=Arduino/$SKETCHNAME
 
+# Path to arduino binary
+ARDUINO=/home/denzo/arduino/arduino
+
 # Target copy of main sketch to update.
 # MUST NEVER BE EMPTY!
 WORKINGDIR=$PWD/tmp-build-area
@@ -70,7 +73,7 @@ do
     # Overwrite generic config header with single #define for this config.
     echo "#define $config" > $WORKINGDIR/$SKETCHNAME/$GENERICCONFIGHEADER
     # Compile...
-    if arduino --verify --board $BUILD_TARGET $WORKINGDIR/$SKETCHNAME/$SKETCHNAME.ino; then
+    if $ARDUINO --verify --board $BUILD_TARGET $WORKINGDIR/$SKETCHNAME/$SKETCHNAME.ino; then
         echo OK
 	else
 	    echo FAILED $config
