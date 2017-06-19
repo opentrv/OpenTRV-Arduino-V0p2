@@ -151,7 +151,7 @@ static void RFM22RawStatsTXFFTerminated(uint8_t * const buf, const bool doubleTX
 #if defined(ENABLE_JSON_OUTPUT)
 // Managed JSON stats.
 static OTV0P2BASE::SimpleStatsRotation<12> ss1; // Configured for maximum different stats.	// FIXME increased for voice & for setback lockout
-#endif // ENABLE_STATS_TX
+#endif // ENABLE_JSON_OUTPUT
 // Do bare stats transmission.
 // Output should be filtered for items appropriate
 // to current channel security and sensitivity level.

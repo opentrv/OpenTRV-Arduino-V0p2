@@ -99,9 +99,7 @@ static constexpr bool RFM23B_allowRX = false;
  
 static constexpr uint8_t RFM23B_RX_QUEUE_SIZE = OTRFM23BLink::DEFAULT_RFM23B_RX_QUEUE_CAPACITY;
 static constexpr int8_t RFM23B_IRQ_PIN = -1;// PIN_RFM_NIRQ;
-// XXX Is it really worth having a separate primary radio in this case?
 OTRFM23BLink::OTRFM23BLink<OTV0P2BASE::V0p2_PIN_SPI_nSS, RFM23B_IRQ_PIN, RFM23B_RX_QUEUE_SIZE, RFM23B_allowRX> PrimaryRadio;//RFM23B;
-///* constexpr */ OTRadioLink::OTRadioLink &PrimaryRadio = RFM23B
 // Pick an appropriate radio config for RFM23 (if it is the primary radio).
 // Nodes talking on fast GFSK channel 0.
 static const uint8_t nPrimaryRadioChannels = 1;
@@ -216,7 +214,6 @@ void setup()
     // Have 32678Hz clock at least running before going any further.
     // Check that the slow clock is running reasonably OK, and tune the fast one to it.
     if(!::OTV0P2BASE::HWTEST::calibrateInternalOscWithExtOsc()) { panic(F("Xtal")); } // Async clock not running or can't tune.
-//    if(!::OTV0P2BASE::HWTEST::check32768HzOsc()) { panic(F("xtal")); } // Async clock not running correctly.
 
     // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
     PrimaryRadio.preinit(NULL);
