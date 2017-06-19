@@ -106,14 +106,6 @@ bool pollIO(const bool force)
   return(false);
   }
 
-// FIXME deal with these
-// Get minimum on (and off) time for pointer (minutes); zero if not in hub mode.
-uint8_t getMinBoilerOnMinutes() { return(~eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_MIN_BOILER_ON_MINS_INV)); }
-// Set minimum on (and off) time for pointer (minutes); zero to disable hub mode.
-// Suggested minimum of 4 minutes for gas combi; much longer for heat pumps for example.
-void setMinBoilerOnMinutes(uint8_t mins) { OTV0P2BASE::eeprom_smart_update_byte((uint8_t *)V0P2BASE_EE_START_MIN_BOILER_ON_MINS_INV, ~(mins)); }
-//#endif // ENABLE_BOILER_HUB
-
 
 #if defined(ENABLE_RFM23B_FS20_RAW_PREAMBLE)
 // Send the underlying stats binary/text 'whitened' message.
@@ -821,7 +813,7 @@ static bool setUpContinuousRX()
 #ifdef ENABLE_DEFAULT_ALWAYS_RX
   const bool needsToListen = true; // By default listen if always doing RX.
 #else
-  bool needsToListen = inHubMode(); // By default assume no need to listen unless in hub mode.
+  bool needsToListen = hubManager.inHubMode(); // By default assume no need to listen unless in hub mode.
 #endif
 
 #if 0 && defined(DEBUG) && defined(ENABLE_DEFAULT_ALWAYS_RX)
@@ -949,7 +941,7 @@ void loopOpenTRV()
 
 #if defined(ENABLE_BOILER_HUB)
   // Set BOILER_OUT as appropriate for calls for heat.
-  BoilerHub.processCallsForHeat(second0, inHubMode());
+  BoilerHub.processCallsForHeat(second0, hubManager.inHubMode());
 #endif
 
 
@@ -1059,7 +1051,7 @@ void loopOpenTRV()
   //   * this is a hub and has to listen as much as possible
   // to conserve battery and bandwidth.
   #ifdef ENABLE_NOMINAL_RAD_VALVE
-  const bool doubleTXForFTH8V = !conserveBattery && !inHubMode() && (NominalRadValve.get() >= 50);
+  const bool doubleTXForFTH8V = !conserveBattery && !hubManager.inHubMode() && (NominalRadValve.get() >= 50);
   #else
   const bool doubleTXForFTH8V = false;
   #endif
@@ -1212,7 +1204,7 @@ void loopOpenTRV()
 #else
       const bool doBinary = false;
 #endif
-      bareStatsTX(!batteryLow && !inHubMode() && ss1.changedValue(), doBinary);
+      bareStatsTX(!batteryLow && !hubManager.inHubMode() && ss1.changedValue(), doBinary);
       break;
       }
 #endif // defined(ENABLE_STATS_TX)

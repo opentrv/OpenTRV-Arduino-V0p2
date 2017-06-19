@@ -305,31 +305,19 @@ typedef OTRadValve::NULLTempControl TempControl_t;
 #define TempControl_DEFINED
 extern TempControl_t tempControl;
 
-//#ifndef ENABLE_BOILER_HUB // ENABLE_BOILER_HUB
-// Get minimum on (and off) time for pointer (minutes); zero if not in hub mode.
-extern uint8_t getMinBoilerOnMinutes();
-// Set minimum on (and off) time for pointer (minutes); zero to disable hub mode.
-// Suggested minimum of 4 minutes for gas combi; much longer for heat pumps for example.
-extern void setMinBoilerOnMinutes(uint8_t mins);
-//#endif // ENABLE_BOILER_HUB
-
+// FIXME
 #if defined(ENABLE_DEFAULT_ALWAYS_RX)
-// True: always in central hub/listen mode.
-#define inHubMode() (true)
-// True: always in stats hub/listen mode.
-#define inStatsHubMode() (true)
-#elif !defined(ENABLE_RADIO_RX)
-// No RX/listening allowed, so never in hub mode.
-// False: never in central hub/listen mode.
-#define inHubMode() (false)
-// False: never in stats hub/listen mode.
-#define inStatsHubMode() (false)
+static constexpr bool enableDefaultAlwaysRX = true;
 #else
-// True if in central hub/listen mode (possibly with local radiator also).
-#define inHubMode() (0 != getMinBoilerOnMinutes())
-// True if in stats hub/listen mode (minimum timeout).
-#define inStatsHubMode() (1 == getMinBoilerOnMinutes())
+static constexpr bool enableDefaultAlwaysRX = false;
 #endif // defined(ENABLE_DEFAULT_ALWAYS_RX)
+#if defined(ENABLE_RADIO_RX)
+static constexpr bool enableRadioRX = true;
+#else
+static constexpr bool enableRadioRX = false;
+#endif // defined(ENABLE_RADIO_RX)
+static constexpr bool allowGetMinBoilerOnMFromEEPROM = false;
+extern OTRadValve::OTHubManager<enableDefaultAlwaysRX, enableRadioRX, allowGetMinBoilerOnMFromEEPROM> hubManager;
 
 // Period in minutes for simple learned on-time; strictly positive (and less than 256).
 #ifndef LEARNED_ON_PERIOD_M
@@ -445,7 +433,7 @@ inline void serialStatusReport() { statsLine.serialStatusReport(); }
 void bareStatsTX(bool allowDoubleTX = false, bool doBinary = false);
 
 #ifdef ENABLE_BOILER_HUB
-extern OTRadValve::OnOffBoilerDriverLogic<OUT_HEATCALL> BoilerHub;
+extern OTRadValve::BoilerLogic::OnOffBoilerDriverLogic<decltype(hubManager), hubManager, OUT_HEATCALL> BoilerHub;
 #endif
 
 ////// UI
