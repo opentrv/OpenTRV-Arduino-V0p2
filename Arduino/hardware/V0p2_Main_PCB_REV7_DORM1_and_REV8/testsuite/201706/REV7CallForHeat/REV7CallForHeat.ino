@@ -41,6 +41,7 @@ Author(s) / Copyright (s): Deniz Erbilgin 2016
 #include <OTRFM23BLink.h>
 // RadValve libraries
 #include <OTRadValve.h>
+#include <OTAESGCM.h>
 
 
 // Debugging output
@@ -95,6 +96,22 @@ OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
 /*
  * Radio instance
  */
+static constexpr uint8_t RFM22_PREAMBLE_BYTES = 5; // Recommended number of preamble bytes for reliable reception.
+static constexpr uint8_t RFM22_SYNC_MIN_BYTES = 3; // Minimum number of sync bytes.
+// Send the underlying stats binary/text 'whitened' message.
+// This must be terminated with an 0xff (which is not sent),
+// and no longer than STATS_MSG_MAX_LEN bytes long in total (excluding the terminating 0xff).
+// This must not contain any 0xff and should not contain long runs of 0x00 bytes.
+// The message to be sent must be written at an offset of STATS_MSG_START_OFFSET from the start of the buffer.
+// This routine will alter the content of the buffer for transmission,
+// and the buffer should not be re-used as is.
+//   * doubleTX  double TX to increase chance of successful reception
+//   * RFM23BfriendlyPremable  if true then add an extra preamble
+//     to allow RFM23B-based receiver to RX this
+// This will use whichever transmission medium/carrier/etc is available.
+static constexpr uint8_t STATS_MSG_START_OFFSET = (RFM22_PREAMBLE_BYTES + RFM22_SYNC_MIN_BYTES);
+static constexpr uint8_t STATS_MSG_MAX_LEN = (64 - STATS_MSG_START_OFFSET);
+ 
 static constexpr bool RFM23B_allowRX = false;
  
 static constexpr uint8_t RFM23B_RX_QUEUE_SIZE = OTRFM23BLink::DEFAULT_RFM23B_RX_QUEUE_CAPACITY;
@@ -144,9 +161,7 @@ static constexpr bool binaryOnlyValveControl = false;
 static constexpr uint8_t m1 = MOTOR_DRIVE_ML;
 static constexpr uint8_t m2 = MOTOR_DRIVE_MR;
 static constexpr uint8_t mSleep = OTRadValve::MOTOR_DRIVE_NSLEEP_UNUSED;
-typedef OTRadValve::ValveMotorDirectV1<OTRadValve::ValveMotorDirectV1HardwareDriver, m1, m2, MOTOR_DRIVE_MI_AIN, MOTOR_DRIVE_MC_AIN, mSleep, decltype(Supply_cV), &Supply_cV> ValveDirect_t;
-
-// Singleton implementation/instance.
+typedef OTRadValve::ValveMotorDirectV1<OTRadValve::ValveMotorDirectV1HardwareDriver, m1, m2, MOTOR_DRIVE_MI_AIN, MOTOR_DRIVE_MC_AIN, mSleep, decltype(Supply_cV), &Supply_cV> ValveDirect_t;// Singleton implementation/instance.
 // Suppress unnecessary activity when room dark, eg to avoid disturbance if device crashes/restarts,
 // unless recent UI use because value is being fitted/adjusted.
 ValveDirect_t ValveDirect([](){return(AmbLight.isRoomDark());});
@@ -189,6 +204,135 @@ void panic(const __FlashStringHelper *s)
  * @brief   Set pins and on-board peripherals to safe low power state.
  */
 
+
+// Managed JSON stats.
+static OTV0P2BASE::SimpleStatsRotation<12> ss1; // Configured for maximum different stats.  // FIXME increased for voice & for setback lockout
+// Do bare stats transmission.
+// Output should be filtered for items appropriate
+// to current channel security and sensitivity level.
+// This is JSON format.
+// Sends stats on primary radio channel 0 with possible duplicate to secondary channel.
+// If sending encrypted then ID/counter fields (eg @ and + for JSON) are omitted
+// as assumed supplied by security layer to remote recipent.
+void callForHeatTX()
+{
+    // Note if radio/comms channel is itself framed.
+    const bool framed = !PrimaryRadio.getChannelConfig()->isUnframed;
+    const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled<>();
+  
+static_assert(OTV0P2BASE::FullStatsMessageCore_MAX_BYTES_ON_WIRE <= STATS_MSG_MAX_LEN, "FullStatsMessageCore_MAX_BYTES_ON_WIRE too big");
+static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_MAX_LENGTH too big"); // Allow 1 for trailing CRC.
+
+    // Allow space in buffer for:
+    //   * buffer offset/preamble
+    //   * max binary length, or max JSON length + 1 for CRC + 1 to allow detection of oversize message
+    //   * terminating 0xff
+    //  uint8_t buf[STATS_MSG_START_OFFSET + max(FullStatsMessageCore_MAX_BYTES_ON_WIRE,  MSG_JSON_MAX_LENGTH+1) + 1];
+    // Buffer need be no larger than leading length byte + typical 64-byte radio module TX buffer limit + optional terminator.
+    const uint8_t MSG_BUF_SIZE = 1 + 64 + 1;
+    uint8_t buf[MSG_BUF_SIZE];
+    // Send JSON message.
+    bool sendingJSONFailed = false; // Set true and stop attempting JSON send in case of error.
+
+    // Set pointer location based on whether start of message will have preamble
+    uint8_t *bptr = buf;
+    bptr += STATS_MSG_START_OFFSET;
+    // Where to write the real frame content.
+    uint8_t *const realTXFrameStart = bptr;
+
+    // If forcing encryption or if unconditionally suppressed
+    // then suppress the "@" ID field entirely,
+    // assuming that the encrypted commands will carry the ID, ie in the 'envelope'.
+    ss1.setID(V0p2_SENSOR_TAG_F(""));
+
+    // Managed JSON stats.
+    // Make best use of available bandwidth...
+    constexpr bool maximise = true;
+    // Enable "+" count field for diagnostic purposes, eg while TX is lossy,
+    // if the primary radio channel does not include a sequence number itself.
+    // Assume that an encrypted channel will provide its own (visible) sequence counter.
+    ss1.enableCount(false); // as encrypted
+    ss1.put(TemperatureC16);
+    // OPTIONAL items
+    // Only TX supply voltage for units apparently not mains powered, and TX with low priority as slow changing.
+    constexpr uint8_t privacyLevel = OTV0P2BASE::stTXalwaysAll;
+
+    // Buffer to write JSON to before encryption.
+    // Size for JSON in 'O' frame is:
+    constexpr uint8_t maxSecureJSONSize = OTRadioLink::ENC_BODY_SMALL_FIXED_PTEXT_MAX_SIZE - 2 + 1;
+    // writeJSON() requires two further bytes including one for the trailing '\0'.
+    uint8_t ptextBuf[maxSecureJSONSize + 2];
+
+    // Redirect JSON output appropriately.
+    uint8_t *const bufJSON = ptextBuf;
+    const uint8_t bufJSONlen = sizeof(ptextBuf);
+
+    // Number of bytes written for body.
+    // For non-secure, this is the size of the JSON text.
+    // For secure this is overridden with the secure frame size.
+    int8_t wrote = 0;
+
+    // Generate JSON text.
+    if(!sendingJSONFailed)
+    {
+        // Generate JSON and write to appropriate buffer:
+        // direct to TX buffer if not encrypting, else to separate buffer.
+        wrote = ss1.writeJSON(bufJSON, bufJSONlen, privacyLevel, maximise);
+        if(0 == wrote) { sendingJSONFailed = true; }
+    }
+
+    // Push the JSON output to Serial.
+    if(!sendingJSONFailed)
+    {
+        // Insert synthetic full ID/@ field for local stats, but no sequence number for now.
+        Serial.print(F("{\"@\":\""));
+        for(int i = 0; i < OTV0P2BASE::OpenTRV_Node_ID_Bytes; ++i) { Serial.print(eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_ID+i), HEX); }
+        Serial.print(F("\","));
+        Serial.write(bufJSON+1, wrote-1);
+        Serial.println();
+        OTV0P2BASE::flushSerialSCTSensitive(); // Ensure all flushed since system clock may be messed with...
+    }
+
+    // Get the 'building' key for stats sending.
+    uint8_t key[16];
+    if(!sendingJSONFailed)
+    {
+        if(!OTV0P2BASE::getPrimaryBuilding16ByteSecretKey(key))
+        {
+            sendingJSONFailed = true;
+            OTV0P2BASE::serialPrintlnAndFlush(F("!TX key")); // Know why TX failed.
+        }
+    }
+
+    // If doing encryption
+    // then build encrypted frame from raw JSON.
+    if(!sendingJSONFailed)
+    {
+        // Explicit-workspace version of encryption.
+        const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEncWithWorkspace_ptr_t eW = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_WITH_WORKSPACE;
+        constexpr uint8_t workspaceSize = OTRadioLink::SimpleSecureFrame32or0BodyTXBase::generateSecureOFrameRawForTX_total_scratch_usage_OTAESGCM_2p0;
+        uint8_t workspace[workspaceSize];
+        OTV0P2BASE::ScratchSpace sW(workspace, workspaceSize);
+        constexpr uint8_t txIDLen = OTRadioLink::ENC_BODY_DEFAULT_ID_BYTES;
+        // When sending on a channel with framing, do not explicitly send the frame length byte.
+        const uint8_t offset = framed ? 1 : 0;
+        // Assumed to be at least one free writeable byte ahead of bptr.
+        // Force the valve to call for heat.
+        constexpr uint8_t valvePC = 99;
+        const uint8_t bodylen = OTRadioLink::SimpleSecureFrame32or0BodyTXV0p2::getInstance().generateSecureOFrameRawForTX(
+            realTXFrameStart - offset, sizeof(buf) - (realTXFrameStart-buf) + offset,
+            txIDLen, valvePC, (const char *)bufJSON, eW, sW, key);
+        sendingJSONFailed = (0 == bodylen);
+        wrote = bodylen - offset;
+    }
+
+    if(!sendingJSONFailed)
+    {
+        // Send directly to the primary radio...
+        PrimaryRadio.queueToSend(realTXFrameStart, wrote);
+    }
+    if(neededWaking) { OTV0P2BASE::flushSerialProductive(); OTV0P2BASE::powerDownSerial(); }
+}
 
 //========================================
 // SETUP
@@ -263,7 +407,6 @@ void setup()
     delay(10000);
 }
 
-
 //========================================
 // MAIN LOOP
 //========================================
@@ -272,6 +415,15 @@ void setup()
  */
 void loop()
 {
+    static uint8_t tickCounter = 0;
+    // TX every 30 cycles (1 min, assuming 2 second cycles)
+    // Too high for normal use, but convenient for testing purposes.
+    if(0 == tickCounter) {
+        callForHeatTX();
+        tickCounter = 30;
+    }
+    --tickCounter;
+    
     // Ensure that serial I/O is off while sleeping.
     OTV0P2BASE::powerDownSerial();
     // Power down most stuff (except radio for hub RX).
@@ -279,31 +431,6 @@ void loop()
     // Normal long minimal-power sleep until wake-up interrupt.
     // Rely on interrupt to force quick loop round to I/O poll.
     OTV0P2BASE::sleepUntilInt();
+    
 }
 
-
-
-/**
- * @note    Power consumption figures (all in mA).
- * Date/commit:         Device: Wake (Sleep) @ Voltage
- * 20161111/0e6ec96     REV7:   1.5 (1.1) @ 2.5 V       REV11:  0.45 (0.03) @ 2.5 V
- * 20161111/f2eed5e     REV7:   0.46 (0.04) @ 2.5 V
- */
-
-/**
- * @note    REV7 Power consumption investigation.
- *          Figures are not overly accurate due to hot airgun changing board temp. Shouldn't make enough of a difference for our purposes.
- * Baseline:                1.08 mA
- * - Motor decoupling caps: 1.08 mA
- * - Potentiometer:         1.02 mA
- * - BAV99 Suppressors:     1.02 mA
- * - TANT RF decoupling:    1.01 mA
- * - Motor diodes:          1.01 mA
- * - Op Amp:                0.99 mA
- * - Inductor:              178 mA (I think this is due to ML+MR being held high)
- * - H-Bridge Transistors:  0.99 mA
- * - All decoupling:        0.98 mA
- * - All H-Bridge resistors:0.98 mA
- * - Encoder:               0.98 mA
- * - Some resistors:        0.48 mA
- */

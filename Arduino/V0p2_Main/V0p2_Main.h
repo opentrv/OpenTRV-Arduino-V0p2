@@ -136,9 +136,9 @@ static constexpr uint8_t RFM22_SYNC_MIN_BYTES = 3; // Minimum number of sync byt
 // This will use whichever transmission medium/carrier/etc is available.
 static constexpr uint8_t STATS_MSG_START_OFFSET = (RFM22_PREAMBLE_BYTES + RFM22_SYNC_MIN_BYTES);
 static constexpr uint8_t STATS_MSG_MAX_LEN = (64 - STATS_MSG_START_OFFSET);
-#if defined(ENABLE_RFM23B_FS20_RAW_PREAMBLE)
-void RFM22RawStatsTXFFTerminated(uint8_t *buf, bool doubleTX, bool RFM23BFramed = true);
-#endif
+//#if defined(ENABLE_RFM23B_FS20_RAW_PREAMBLE)
+//void RFM22RawStatsTXFFTerminated(uint8_t *buf, bool doubleTX, bool RFM23BFramed = true);
+//#endif
 #if defined(ENABLE_RFM23B_FS20_RAW_PREAMBLE)
 // Adds the STATS_MSG_START_OFFSET preamble to enable reception by a remote RFM22B/RFM23B.
 // Returns the first free byte after the preamble.
@@ -168,24 +168,14 @@ inline bool enableTrailingStatsPayload() { return(OTV0P2BASE::getStatsTXLevel() 
 #else
 #define enableTrailingStatsPayload() (false)
 #endif
-
-#if defined(ENABLE_RADIO_RX)
-// Incrementally poll and process I/O and queued messages, including from the radio link.
-// Returns true if some work was done.
-// This may mean printing them to Serial (which the passed Print object usually is),
-// or adjusting system parameters,
-// or relaying them elsewhere, for example.
-// This will write any output to the supplied Print object,
-// typically the Serial output (which must be running if so).
-// This will attempt to process messages in such a way
-// as to avoid internal overflows or other resource exhaustion,
-// which may mean deferring work at certain times
-// such as the end of minor cycle.
-// The Print object pointer must not be NULL.
-bool handleQueuedMessages(Print *p, bool wakeSerialIfNeeded, OTRadioLink::OTRadioLink *rl);
-#else
-#define handleQueuedMessages(p, wakeSerialIfNeeded, rl) (false)
-#endif
+#if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) && defined(ENABLE_RADIO_RX)
+// Reference to messageQueue handler. Defined in Messaging.cpp
+extern OTRadioLink::OTMessageQueueHandlerBase &messageQueue;
+extern OTRadioLink::frameDecodeHandler_fn_t decodeAndHandleSecureFrame;
+#else  // defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
+// Stub version for when RX not enabled.
+extern OTRadioLink::OTMessageQueueHandlerNull messageQueue;
+#endif  // defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
 
 
 /////// CONTROL (EARLY, NOT DEPENDENT ON OTHER SENSORS)
@@ -315,40 +305,19 @@ typedef OTRadValve::NULLTempControl TempControl_t;
 #define TempControl_DEFINED
 extern TempControl_t tempControl;
 
-// Default minimum on/off time in minutes for the boiler relay.
-// Set to 5 as the default valve Tx cycle is 4 mins and 5 mins is a good amount for most boilers.
-// This constant is necessary as if V0P2BASE_EE_START_MIN_BOILER_ON_MINS_INV is not set, the boiler relay will never be turned on.
-static const constexpr uint8_t DEFAULT_MIN_BOILER_ON_MINS = 5;
+// FIXME
 #if defined(ENABLE_DEFAULT_ALWAYS_RX)
-#define getMinBoilerOnMinutes() (DEFAULT_MIN_BOILER_ON_MINS)
-#elif defined(ENABLE_BOILER_HUB) || defined(ENABLE_STATS_RX)
-// Get minimum on (and off) time for pointer (minutes); zero if not in hub mode.
-uint8_t getMinBoilerOnMinutes();
-// Set minimum on (and off) time for pointer (minutes); zero to disable hub mode.
-// Suggested minimum of 4 minutes for gas combi; much longer for heat pumps for example.
-void setMinBoilerOnMinutes(uint8_t mins);
+static constexpr bool enableDefaultAlwaysRX = true;
 #else
-#define getMinBoilerOnMinutes() (0) // Always disabled.
-#define setMinBoilerOnMinutes(mins) {} // Do nothing.
-#endif
-
-#if defined(ENABLE_DEFAULT_ALWAYS_RX)
-// True: always in central hub/listen mode.
-#define inHubMode() (true)
-// True: always in stats hub/listen mode.
-#define inStatsHubMode() (true)
-#elif !defined(ENABLE_RADIO_RX)
-// No RX/listening allowed, so never in hub mode.
-// False: never in central hub/listen mode.
-#define inHubMode() (false)
-// False: never in stats hub/listen mode.
-#define inStatsHubMode() (false)
-#else
-// True if in central hub/listen mode (possibly with local radiator also).
-#define inHubMode() (0 != getMinBoilerOnMinutes())
-// True if in stats hub/listen mode (minimum timeout).
-#define inStatsHubMode() (1 == getMinBoilerOnMinutes())
+static constexpr bool enableDefaultAlwaysRX = false;
 #endif // defined(ENABLE_DEFAULT_ALWAYS_RX)
+#if defined(ENABLE_RADIO_RX)
+static constexpr bool enableRadioRX = true;
+#else
+static constexpr bool enableRadioRX = false;
+#endif // defined(ENABLE_RADIO_RX)
+static constexpr bool allowGetMinBoilerOnMFromEEPROM = false;
+extern OTRadValve::OTHubManager<enableDefaultAlwaysRX, enableRadioRX, allowGetMinBoilerOnMFromEEPROM> hubManager;
 
 // Period in minutes for simple learned on-time; strictly positive (and less than 256).
 #ifndef LEARNED_ON_PERIOD_M
@@ -389,7 +358,6 @@ extern OTRadValve::ModelledRadValve NominalRadValve;
 // Simply alias directly to FHT8V for REV9 slave for example.
 #define NominalRadValve FHT8V
 #endif
-
 
 /////// STATS
 
@@ -465,13 +433,7 @@ inline void serialStatusReport() { statsLine.serialStatusReport(); }
 void bareStatsTX(bool allowDoubleTX = false, bool doBinary = false);
 
 #ifdef ENABLE_BOILER_HUB
-// Raw notification of received call for heat from remote (eg FHT8V) unit.
-// This form has a 16-bit ID (eg FHT8V housecode) and percent-open value [0,100].
-// Note that this may include 0 percent values for a remote unit explicitly confirming
-// that is is not, or has stopped, calling for heat (eg instead of replying on a timeout).
-// This is not filtered, and can be delivered at any time from RX data, from a non-ISR thread.
-// Does not have to be thread-/ISR- safe.
-void remoteCallForHeatRX(uint16_t id, uint8_t percentOpen);
+extern OTRadValve::BoilerLogic::OnOffBoilerDriverLogic<decltype(hubManager), hubManager, OUT_HEATCALL> BoilerHub;
 #endif
 
 ////// UI
