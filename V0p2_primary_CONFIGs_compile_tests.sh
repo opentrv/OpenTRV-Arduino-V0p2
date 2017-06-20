@@ -22,7 +22,7 @@ SKETCHNAME=V0p2_Main
 MAIN=Arduino/$SKETCHNAME
 
 # Path to arduino binary
-ARDUINO=/home/denzo/arduino/arduino
+ARDUINO=arduino
 
 # Target copy of main sketch to update.
 # MUST NEVER BE EMPTY!
