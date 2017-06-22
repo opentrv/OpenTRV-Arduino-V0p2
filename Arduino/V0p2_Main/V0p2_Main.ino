@@ -36,6 +36,45 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 
 #include "V0p2_Main.h"
 
+// Sat at the top to ease changing stuff when programming.
+// TODO move this out into a config header that isn't committed to git..
+#ifdef ENABLE_RADIO_SIM900
+//For EEPROM: TODO make a spec for how config should be stored in EEPROM to make changing them easy
+//- Set the first field of SIM900LinkConfig to true.
+//- The configs are stored as \0 terminated strings starting at 0x300.
+//- You can program the eeprom using ./OTRadioLink/dev/utils/sim900eepromWrite.ino
+//  static const void *SIM900_PIN      = (void *)0x0300;
+//  static const void *SIM900_APN      = (void *)0x0305;
+//  static const void *SIM900_UDP_ADDR = (void *)0x031B;
+//  static const void *SIM900_UDP_PORT = (void *)0x0329;
+//  const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config(
+//                                                  true,
+//                                                  SIM900_PIN,
+//                                                  SIM900_APN,
+//                                                  SIM900_UDP_ADDR,
+//                                                  SIM900_UDP_PORT);
+//For Flash:
+//- Set the first field of SIM900LinkConfig to false.
+//- The configs are stored as \0 terminated strings.
+//- Where multiple options are available, uncomment whichever you want
+static const char SIM900_PIN[5] PROGMEM       = "1111";
+
+// APN Configs - Uncomment based on what SIM you are using
+//  static const char SIM900_APN[] PROGMEM      = "\"everywhere\",\"eesecure\",\"secure\""; // EE
+//static const char SIM900_APN[] PROGMEM      = "\"arkessa.net\",\"arkessa\",\"arkessa\""; // Arkessa
+static const char SIM900_APN[] PROGMEM      = "\"mobiledata\""; // GeoSIM
+
+// UDP Configs - Edit SIM900_UDP_ADDR for relevant server. NOTE: The server IP address should never be committed to GitHub.
+static const char SIM900_UDP_ADDR[16] PROGMEM = ""; // Of form "1.2.3.4".
+static const char SIM900_UDP_PORT[5] PROGMEM = "9999";             // Standard port for OpenTRV servers
+const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config(
+                                              false,
+                                              SIM900_PIN,
+                                              SIM900_APN,
+                                              SIM900_UDP_ADDR,
+                                              SIM900_UDP_PORT);
+#endif // ENABLE_RADIO_SIM900
+
 // Indicate that the system is broken in an obvious way (distress flashing the main LED).
 // DOES NOT RETURN.
 // Tries to turn off most stuff safely that will benefit from doing so, but nothing too complex.
@@ -396,7 +435,7 @@ OTRadValve::FHT8VRadValve<_FHT8V_MAX_EXTRA_TRAILER_BYTES, OTRadValve::FHT8VRadVa
 #endif // ENABLE_FHT8VSIMPLE
 
 #ifdef ENABLE_BOILER_HUB
-OTRadValve::BoilerCallForHeat<OUT_HEATCALL> BoilerHub;
+OTRadValve::BoilerLogic::OnOffBoilerDriverLogic<decltype(hubManager), hubManager, OUT_HEATCALL> BoilerHub;
 #endif // ENABLE_BOILER_HUB
 
 ////////////////////////// CONTROL
@@ -416,6 +455,9 @@ OTRadValve::ValveMode valveMode;
 // Temperature control object.
 TempControl_t tempControl;
 
+// Manage EEPROM access for hub mode and boiler control.
+OTRadValve::OTHubManager<enableDefaultAlwaysRX, enableRadioRX, allowGetMinBoilerOnMFromEEPROM> hubManager;
+
 #ifdef ENABLE_OCCUPANCY_SUPPORT
 // Singleton implementation for entire node.
 OccupancyTracker Occupancy;
@@ -428,44 +470,6 @@ StatsLine_t statsLine;
 /////// RADIOS
 // To allow BoilerHub::remoteCallForHeatRX access to minuteCount in Control.cpp
 extern uint8_t minuteCount; // XXX
-
-#ifdef ENABLE_RADIO_SIM900
-//For EEPROM: TODO make a spec for how config should be stored in EEPROM to make changing them easy
-//- Set the first field of SIM900LinkConfig to true.
-//- The configs are stored as \0 terminated strings starting at 0x300.
-//- You can program the eeprom using ./OTRadioLink/dev/utils/sim900eepromWrite.ino
-//  static const void *SIM900_PIN      = (void *)0x0300;
-//  static const void *SIM900_APN      = (void *)0x0305;
-//  static const void *SIM900_UDP_ADDR = (void *)0x031B;
-//  static const void *SIM900_UDP_PORT = (void *)0x0329;
-//  const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config(
-//                                                  true,
-//                                                  SIM900_PIN,
-//                                                  SIM900_APN,
-//                                                  SIM900_UDP_ADDR,
-//                                                  SIM900_UDP_PORT);
-//For Flash:
-//- Set the first field of SIM900LinkConfig to false.
-//- The configs are stored as \0 terminated strings.
-//- Where multiple options are available, uncomment whichever you want
-static const char SIM900_PIN[5] PROGMEM       = "1111";
-
-// APN Configs - Uncomment based on what SIM you are using
-//  static const char SIM900_APN[] PROGMEM      = "\"everywhere\",\"eesecure\",\"secure\""; // EE
-//static const char SIM900_APN[] PROGMEM      = "\"arkessa.net\",\"arkessa\",\"arkessa\""; // Arkessa
-static const char SIM900_APN[] PROGMEM      = "\"mobiledata\""; // GeoSIM
-
-// UDP Configs - Edit SIM900_UDP_ADDR for relevant server. NOTE: The server IP address should never be committed to GitHub.
-static const char SIM900_UDP_ADDR[16] PROGMEM = ""; // Of form "1.2.3.4".
-static const char SIM900_UDP_PORT[5] PROGMEM = "9999";             // Standard port for OpenTRV servers
-const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config(
-                                              false,
-                                              SIM900_PIN,
-                                              SIM900_APN,
-                                              SIM900_UDP_ADDR,
-                                              SIM900_UDP_PORT);
-#endif // ENABLE_RADIO_SIM900
-
 
 #if defined(ENABLE_RADIO_NULL)
 OTRadioLink::OTNullRadioLink NullRadio;
@@ -521,18 +525,9 @@ OTRadioLink::OTRadioLink &SecondaryRadio = NullRadio;
 
 // RFM22 is apparently SPI mode 0 for Arduino library pov.
 
-#ifdef ENABLE_RADIO_RX
-// Define frame handlers:
-#ifdef ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY
-OTRadioLink::OTRadioHandler<decltype(SIM900), SIM900> radioHandler;
-#else
-OTRadioLink::OTSerialHandler<decltype(Serial), Serial> serialHandler;
-#endif //ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY
-#ifdef ENABLE_BOILER_HUB
-OTRadioLink::OTBoilerHandler<decltype(BoilerHub), BoilerHub, minuteCount> boilerHandler;
-#endif // ENABLE_BOILER_HUB
 
-constexpr uint8_t allowInsecureRX = false;
+// Setup frame RX handlers
+#if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) && defined(ENABLE_RADIO_RX)
 // Define queue handler
 // Currently 4 possible cases for RXing secure frames:
 // - Both relay and boiler hub present (e.g. CONFIG_REV10_AS_BHR)
@@ -540,33 +535,51 @@ constexpr uint8_t allowInsecureRX = false;
 // - Just boiler hub (e.g. CONFIG_REV8_SECURE_BHR)
 // - Unit acting as stats-hub (e.g. CONFIG_REV11_SECURE_STATSHUB)
 #if defined(ENABLE_RADIO_SECONDARY_SIM900) && defined(ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY) && defined(ENABLE_BOILER_HUB)
-OTRadioLink::OTMessageQueueHandlerDual<decltype(radioHandler), radioHandler, 'O',
-                                   decltype(boilerHandler), boilerHandler, 'O',
-                                   pollIO, V0P2_UART_BAUD,
-                                   OTV0P2BASE::getPrimaryBuilding16ByteSecretKey,
-                                   allowInsecureRX> actualMessageQueue;
+// relay + bh
+inline bool decodeAndHandleSecureFrame(volatile const uint8_t * const msg)
+{
+  return OTRadioLink::decodeAndHandleOTSecureOFrame<OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_STATELESS,
+                                                   OTV0P2BASE::getPrimaryBuilding16ByteSecretKey,
+                                                   OTRadioLink::relayFrameOperation<decltype(SIM900), SIM900>,
+                                                   OTRadioLink::boilerFrameOperation<decltype(BoilerHub), BoilerHub, minuteCount>
+                                                  >(msg);
+}
 #elif defined(ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY)
-OTRadioLink::OTMessageQueueHandlerSingle<decltype(radioHandler), radioHandler, 'O',
-                                   pollIO, V0P2_UART_BAUD,
-                                   OTV0P2BASE::getPrimaryBuilding16ByteSecretKey,
-                                   allowInsecureRX> actualMessageQueue;
+// relay
+inline bool decodeAndHandleSecureFrame(volatile const uint8_t * const msg)
+{
+  return OTRadioLink::decodeAndHandleOTSecureOFrame<OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_STATELESS,
+                                                   OTV0P2BASE::getPrimaryBuilding16ByteSecretKey,
+                                                   OTRadioLink::relayFrameOperation<decltype(SIM900), SIM900>
+                                                  >(msg);
+}
 #elif defined(ENABLE_BOILER_HUB)
-OTRadioLink::OTMessageQueueHandlerSingle<decltype(boilerHandler), boilerHandler, 'O',
-                                   pollIO, V0P2_UART_BAUD,
-                                   OTV0P2BASE::getPrimaryBuilding16ByteSecretKey,
-                                   allowInsecureRX> actualMessageQueue;
+// bh
+inline bool decodeAndHandleSecureFrame(volatile const uint8_t * const msg)
+{
+  return OTRadioLink::decodeAndHandleOTSecureOFrame<OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_STATELESS,
+                                                   OTV0P2BASE::getPrimaryBuilding16ByteSecretKey,
+                                                   OTRadioLink::boilerFrameOperation<decltype(BoilerHub), BoilerHub, minuteCount>
+                                                  >(msg);
+}
 #else
-OTRadioLink::OTMessageQueueHandlerSingle<decltype(serialHandler), serialHandler, 'O',
-                                   pollIO, V0P2_UART_BAUD,
-                                   OTV0P2BASE::getPrimaryBuilding16ByteSecretKey,
-                                   allowInsecureRX> actualMessageQueue;
+// serial
+inline bool decodeAndHandleSecureFrame(volatile const uint8_t * const msg)
+{
+  return OTRadioLink::decodeAndHandleOTSecureOFrame<OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_STATELESS,
+                                                   OTV0P2BASE::getPrimaryBuilding16ByteSecretKey,
+                                                   OTRadioLink::serialFrameOperation<decltype(Serial), Serial>
+                                                  >(msg);
+}
 #endif // defined(ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY) && (ENABLE_BOILER_HUB)
+OTRadioLink::OTMessageQueueHandler< pollIO, V0P2_UART_BAUD,
+                                    decodeAndHandleSecureFrame, OTRadioLink::decodeAndHandleDummyFrame
+                                   > actualMessageQueue;  //TODO change baud
 OTRadioLink::OTMessageQueueHandlerBase &messageQueue = actualMessageQueue;
-#else // ENABLE_RADIO_RX
+#else // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
 // When RX not enabled, switch in dummy version (base class implements stubs)
-OTRadioLink::OTMessageQueueHandlerBase messageQueue;
-#endif  // ENABLE_RADIO_RX
-
+OTRadioLink::OTMessageQueueHandlerNull messageQueue;
+#endif  // ENABLE_OTSECUREFRAME_ENCODING_SUPPORT
 
 
 

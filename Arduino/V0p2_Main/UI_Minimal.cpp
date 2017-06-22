@@ -296,7 +296,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute, const OTV0P2BASE::S
         if((n >= 3) && (NULL != (tok1 = strtok_r(buf+2, " ", &last))))
           {
           const uint8_t m = (uint8_t) atoi(tok1);
-          setMinBoilerOnMinutes(m);
+          hubManager.setMinBoilerOnMinutes(m);
           }
         break;
         }
