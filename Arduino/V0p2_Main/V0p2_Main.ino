@@ -538,7 +538,8 @@ OTRadioLink::OTRadioLink &SecondaryRadio = NullRadio;
 // relay + bh
 inline bool decodeAndHandleSecureFrame(volatile const uint8_t * const msg)
 {
-  return OTRadioLink::decodeAndHandleOTSecureOFrame<OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_STATELESS,
+  return OTRadioLink::decodeAndHandleOTSecureOFrame<OTRadioLink::SimpleSecureFrame32or0BodyRXV0p2,
+                                                    OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_STATELESS,
                                                    OTV0P2BASE::getPrimaryBuilding16ByteSecretKey,
                                                    OTRadioLink::relayFrameOperation<decltype(SIM900), SIM900>,
                                                    OTRadioLink::boilerFrameOperation<decltype(BoilerHub), BoilerHub, minuteCount>
@@ -548,7 +549,8 @@ inline bool decodeAndHandleSecureFrame(volatile const uint8_t * const msg)
 // relay
 inline bool decodeAndHandleSecureFrame(volatile const uint8_t * const msg)
 {
-  return OTRadioLink::decodeAndHandleOTSecureOFrame<OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_STATELESS,
+  return OTRadioLink::decodeAndHandleOTSecureOFrame<OTRadioLink::SimpleSecureFrame32or0BodyRXV0p2,
+                                                    OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_STATELESS,
                                                    OTV0P2BASE::getPrimaryBuilding16ByteSecretKey,
                                                    OTRadioLink::relayFrameOperation<decltype(SIM900), SIM900>
                                                   >(msg);
@@ -557,7 +559,8 @@ inline bool decodeAndHandleSecureFrame(volatile const uint8_t * const msg)
 // bh
 inline bool decodeAndHandleSecureFrame(volatile const uint8_t * const msg)
 {
-  return OTRadioLink::decodeAndHandleOTSecureOFrame<OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_STATELESS,
+  return OTRadioLink::decodeAndHandleOTSecureOFrame<OTRadioLink::SimpleSecureFrame32or0BodyRXV0p2,
+                                                    OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_STATELESS,
                                                    OTV0P2BASE::getPrimaryBuilding16ByteSecretKey,
                                                    OTRadioLink::boilerFrameOperation<decltype(BoilerHub), BoilerHub, minuteCount>
                                                   >(msg);
@@ -566,7 +569,8 @@ inline bool decodeAndHandleSecureFrame(volatile const uint8_t * const msg)
 // serial
 inline bool decodeAndHandleSecureFrame(volatile const uint8_t * const msg)
 {
-  return OTRadioLink::decodeAndHandleOTSecureOFrame<OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_STATELESS,
+  return OTRadioLink::decodeAndHandleOTSecureOFrame<OTRadioLink::SimpleSecureFrame32or0BodyRXV0p2,
+                                                    OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_STATELESS,
                                                    OTV0P2BASE::getPrimaryBuilding16ByteSecretKey,
                                                    OTRadioLink::serialFrameOperation<decltype(Serial), Serial>
                                                   >(msg);
