@@ -403,7 +403,7 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
       {
 #if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
       // Explicit-workspace version of encryption.
-      const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEncWithWorkspace_ptr_t eW = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_WITH_WORKSPACE;
+      const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEncWithLWorkspace_ptr_t eW = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_WITH_LWORKSPACE;
       constexpr uint8_t workspaceSize = OTRadioLink::SimpleSecureFrame32or0BodyTXBase::generateSecureOFrameRawForTX_total_scratch_usage_OTAESGCM_2p0;
       uint8_t workspace[workspaceSize];
       OTV0P2BASE::ScratchSpace sW(workspace, workspaceSize);
