@@ -173,122 +173,55 @@ static void panic(const __FlashStringHelper *s)
     panic();
 }
 
-// Returns true on successful frame type match, false if no suitable frame was found/decoded and another parser should be tried.
-static void decodeAndHandleOTSecureableFrame(const uint8_t * const msg)
-{
-    const uint8_t msglen = msg[-1];
-    if(msglen < 2) { return; } // Too short to be useful, so ignore.
-    const uint8_t firstByte = msg[0];
-  
-    // Validate structure of header/frame first.
-    // This is quick and checks for insane/dangerous values throughout.
-    OTRadioLink::SecurableFrameHeader sfh;
-    const uint8_t l = sfh.checkAndDecodeSmallFrameHeader(msg-1, msglen+1);
-    // If isOK flag is set false for any reason, frame is broken/unsafe/unauth.
-    bool isOK = (l > 0);
-    // If failed this early and this badly, let someone else try parsing the message buffer...
-    if(!isOK) { return; }
-  
-    // Buffer for receiving secure frame body.
-    // (Non-secure frame bodies should be read directly from the frame buffer.)
-    uint8_t secBodyBuf[OTRadioLink::ENC_BODY_SMALL_FIXED_PTEXT_MAX_SIZE];
-    uint8_t decryptedBodyOutSize = 0;
-  
-    // Validate integrity of frame (CRC for non-secure, auth for secure).
-    const bool secureFrame = sfh.isSecure();
-    // TODO: validate entire message, eg including auth, or CRC if insecure msg rcvd&allowed.
-    // Validate (authenticate) and decrypt body of secure frames.
-    uint8_t key[16];
-    if(secureFrame && isOK) {
-        // Get the 'building' key.
-        if(!OTV0P2BASE::getPrimaryBuilding16ByteSecretKey(key)) {
-            isOK = false;
-            OTV0P2BASE::serialPrintlnAndFlush(F("!RX key"));
-        }
-    }
-    uint8_t senderNodeID[OTV0P2BASE::OpenTRV_Node_ID_Bytes];
-    if(secureFrame && isOK) {
-        // Look up full ID in associations table,
-        // validate RX message counter,
-        // authenticate and decrypt,
-        // update RX message counter.
-        isOK = (0 != OTRadioLink::SimpleSecureFrame32or0BodyRXV0p2::getInstance().decodeSecureSmallFrameSafely(&sfh, msg-1, msglen+1,
-                                                OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_STATELESS,
-                                                NULL, key,
-                                                secBodyBuf, sizeof(secBodyBuf), decryptedBodyOutSize,
-                                                senderNodeID,
-                                                true));
-        if(!isOK) {
-            // Useful brief network diagnostics: a couple of bytes of the claimed ID of rejected frames.
-            // Warnings rather than errors because there may legitimately be multiple disjoint networks.
-            OTV0P2BASE::serialPrintAndFlush(F("?RX auth")); // Missing association or failed auth.
-            if(sfh.getIl() > 0) { OTV0P2BASE::serialPrintAndFlush(' '); OTV0P2BASE::serialPrintAndFlush(sfh.id[0], HEX); }
-            if(sfh.getIl() > 1) { OTV0P2BASE::serialPrintAndFlush(' '); OTV0P2BASE::serialPrintAndFlush(sfh.id[1], HEX); }
-            OTV0P2BASE::serialPrintlnAndFlush();
-        }
-    }
-    if(!isOK) { return; } // Stop if not OK.
-    switch(firstByte) { // Switch on type. XXX
-        case 'O' | 0x80: // Basic OpenTRV secure frame...
-        {
-            if(decryptedBodyOutSize < 2) { break; }
-            // If the frame contains JSON stats
-            // then forward entire secure frame as-is across the secondary radio relay link,
-            // else print directly to console/Serial.
-            if((0 != (secBodyBuf[1] & 0x10)) && (decryptedBodyOutSize > 3) && ('{' == secBodyBuf[2]))
-                { SecondaryRadio.queueToSend(msg, msglen); }
-        }
-        // Reject unrecognised type, though fall through potentially to recognise other encodings.
-        default: break;
-    }
-}
-
-// Incrementally process I/O and queued messages, including from the radio link.
-// This may mean printing them to Serial (which the passed Print object usually is),
-// or adjusting system parameters,
-// or relaying them elsewhere, for example.
-// This will write any output to the supplied Print object,
-// typically the Serial output (which must be running if so).
-// This will attempt to process messages in such a way
-// as to avoid internal overflows or other resource exhaustion,
-// which may mean deferring work at certain times
-// such as the end of minor cycle.
-// The Print object pointer must not be NULL.
-static bool handleQueuedMessages(Print *p, OTRadioLink::OTRadioLink *rl)
-{
-    // Avoid starting any potentially-slow processing very late in the minor cycle.
-    // This is to reduce the risk of loop overruns
-    // at the risk of delaying some processing
-    // or even dropping some incoming messages if queues fill up.
-    // Decoding (and printing to serial) a secure 'O' frame takes ~60 ticks (~0.47s).
-    // Allow for up to 0.5s of such processing worst-case,
-    // ie don't start processing anything later that 0.5s before the minor cycle end.
-    const uint8_t sctStart = OTV0P2BASE::getSubCycleTime();
-    if(sctStart >= ((OTV0P2BASE::GSCT_MAX/4)*3)) { return(false); }
-  
-    // Deal with any I/O that is queued.
+// Call this to do an I/O poll if needed; returns true if something useful definitely happened.
+// This call should typically take << 1ms at 1MHz CPU.
+// Does not change CPU clock speeds, mess with interrupts (other than possible brief blocking), or sleep.
+// Should also do nothing that interacts with Serial.
+// Limits actual poll rate to something like once every 8ms, unless force is true.
+//   * force if true then force full poll on every call (ie do not internally rate-limit)
+// Note that radio poll() can be for TX as well as RX activity.
+// Not thread-safe, eg not to be called from within an ISR.
+// FIXME trying to move into utils (for the time being.)
+bool pollIO(const bool force = false)
+  {
+  static volatile uint8_t _pO_lastPoll;
+  // Poll RX at most about every ~8ms.
+  const uint8_t sct = OTV0P2BASE::getSubCycleTime();
+  if(force || (sct != _pO_lastPoll))
+    {
+    _pO_lastPoll = sct;
     // Poll for inbound frames.
     // If RX is not interrupt-driven then
     // there will usually be little time to do this
     // before getting an RX overrun or dropped frame.
     PrimaryRadio.poll();
     SecondaryRadio.poll();
-  
-    const volatile uint8_t *pb; // XXX
-    if(NULL != (pb = rl->peekRXMsg())) {
-        bool neededWaking = false; // Set true once this routine wakes Serial.
-        if(OTV0P2BASE::powerUpSerialIfDisabled<V0P2_UART_BAUD>()) { neededWaking = true; } // FIXME
-        // Don't currently regard anything arriving over the air as 'secure'.
-        // FIXME: shouldn't have to cast away volatile to process the message content.
-        decodeAndHandleOTSecureableFrame((const uint8_t *)pb);
-        rl->removeRXMsg();
-        // Turn off serial at end, if this routine woke it.
-        if(neededWaking) { OTV0P2BASE::flushSerialProductive(); OTV0P2BASE::powerDownSerial(); } // XXX move into if clause
-        // Note that some work has been done.
-        return (true);
     }
-    return(false);
+  return(false);
+  }
+
+
+// Messaging
+// Setup frame RX handlers
+// Define queue handler
+// Currently 4 possible cases for RXing secure frames:
+// - Both relay and boiler hub present (e.g. CONFIG_REV10_AS_BHR)
+// - Just relay present (e.g. CONFIG_REV10_AS_GSM_RELAY_ONLY)
+// - Just boiler hub (e.g. CONFIG_REV8_SECURE_BHR)
+// - Unit acting as stats-hub (e.g. CONFIG_REV11_SECURE_STATSHUB)
+// relay
+inline bool decodeAndHandleSecureFrame(volatile const uint8_t * const msg)
+{
+  return OTRadioLink::decodeAndHandleOTSecureOFrame<OTRadioLink::SimpleSecureFrame32or0BodyRXV0p2,
+                                                    OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_STATELESS,
+                                                   OTV0P2BASE::getPrimaryBuilding16ByteSecretKey,
+                                                   OTRadioLink::relayFrameOperation<decltype(SIM900), SIM900>
+                                                  >(msg);
 }
+OTRadioLink::OTMessageQueueHandler< pollIO, V0P2_UART_BAUD,
+                                    decodeAndHandleSecureFrame, OTRadioLink::decodeAndHandleDummyFrame
+                                   > messageQueue;  //TODO change baud
+
 
 //========================================
 // INTERRUPT SERVICE ROUTINES
@@ -428,7 +361,7 @@ void loop()
         // or the in a previous orbit of this loop sleep or nap was terminated by an I/O interrupt.
         // May generate output to host on Serial.
         // Come back and have another go immediately until no work remaining.
-        if(handleQueuedMessages(&Serial, &PrimaryRadio)) { continue; }
+        if(messageQueue.handle(true, PrimaryRadio)) { continue; }
     
         // Normal long minimal-power sleep until wake-up interrupt.
         // Rely on interrupt to force quick loop round to I/O poll.
@@ -443,7 +376,7 @@ void loop()
     // START LOOP BODY
     // ===============  
     // Handling the UI may have taken a little while, so process I/O a little.
-    handleQueuedMessages(&Serial, &PrimaryRadio); // Deal with any pending I/O.
+    messageQueue.handle(true, PrimaryRadio); // Deal with any pending I/O.
     
     // High-priority UI handing, every other/even second.
     // Show status if the user changed something significant.
@@ -458,6 +391,6 @@ void loop()
     
     // End-of-loop processing, that may be slow.
     // Ensure progress on queued messages ahead of slow work.  (TODO-867)
-    handleQueuedMessages(&Serial, &PrimaryRadio); // Deal with any pending I/O.
+    messageQueue.handle(true, PrimaryRadio); // Deal with any pending I/O.
 }
 

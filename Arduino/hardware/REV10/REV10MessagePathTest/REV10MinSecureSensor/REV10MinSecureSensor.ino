@@ -55,7 +55,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 #include <OTSIM900Link.h>
 #include <OTAESGCM.h>
 
-#include "REV10SecureBHR.h"
 #include "ipAddress.h"  // IP adress in seperate header to avoid accidentally committing.
 
 /////// RADIOS
@@ -160,7 +159,6 @@ static void panic(const __FlashStringHelper *s)
     panic();
 }
 
-
 // Call this to do an I/O poll if needed; returns true if something useful definitely happened.
 // This call should typically take << 1ms at 1MHz CPU.
 // Does not change CPU clock speeds, mess with interrupts (other than possible brief blocking), or sleep.
@@ -169,17 +167,51 @@ static void panic(const __FlashStringHelper *s)
 //   * force if true then force full poll on every call (ie do not internally rate-limit)
 // Note that radio poll() can be for TX as well as RX activity.
 // Not thread-safe, eg not to be called from within an ISR.
-static inline void pollIO()
-{ 
+// FIXME trying to move into utils (for the time being.)
+bool pollIO(const bool force = false)
+  {
+  static volatile uint8_t _pO_lastPoll;
+  // Poll RX at most about every ~8ms.
+  const uint8_t sct = OTV0P2BASE::getSubCycleTime();
+  if(force || (sct != _pO_lastPoll))
+    {
+    _pO_lastPoll = sct;
     // Poll for inbound frames.
     // If RX is not interrupt-driven then
     // there will usually be little time to do this
     // before getting an RX overrun or dropped frame.
     PrimaryRadio.poll();
     SecondaryRadio.poll();
-}
+    }
+  return(false);
+  }
 
-  
+#if 0
+// Messaging
+// Setup frame RX handlers
+// Define queue handler
+// Currently 4 possible cases for RXing secure frames:
+// - Both relay and boiler hub present (e.g. CONFIG_REV10_AS_BHR)
+// - Just relay present (e.g. CONFIG_REV10_AS_GSM_RELAY_ONLY)
+// - Just boiler hub (e.g. CONFIG_REV8_SECURE_BHR)
+// - Unit acting as stats-hub (e.g. CONFIG_REV11_SECURE_STATSHUB)
+// relay
+inline bool decodeAndHandleSecureFrame(volatile const uint8_t * const msg)
+{
+  return OTRadioLink::decodeAndHandleOTSecureOFrame<OTRadioLink::SimpleSecureFrame32or0BodyRXV0p2,
+                                                    OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_STATELESS,
+                                                   OTV0P2BASE::getPrimaryBuilding16ByteSecretKey,
+                                                   OTRadioLink::relayFrameOperation<decltype(SIM900), SIM900>
+                                                  >(msg);
+}
+OTRadioLink::OTMessageQueueHandler< pollIO, V0P2_UART_BAUD,
+                                    decodeAndHandleSecureFrame, OTRadioLink::decodeAndHandleDummyFrame
+                                   > messageQueue;  //TODO change baud
+#endif
+
+//========================================
+// INTERRUPT SERVICE ROUTINES
+//========================================
 // Controller's view of Least Significant Digits of the current (local) time, in this case whole seconds.
 // TIME_LSD ranges from 0 to TIME_CYCLE_S-1, also major cycle length.
 static constexpr uint_fast8_t TIME_CYCLE_S = 60;
@@ -331,10 +363,10 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
         // then build encrypted frame from raw JSON.
         if(!sendingJSONFailed) {
             // Explicit-workspace version of encryption.
-            const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEncWithWorkspace_ptr_t eW = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_WITH_WORKSPACE;
+            const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEncWithLWorkspace_ptr_t eW = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_WITH_LWORKSPACE;
             constexpr uint8_t workspaceSize = OTRadioLink::SimpleSecureFrame32or0BodyTXBase::generateSecureOFrameRawForTX_total_scratch_usage_OTAESGCM_2p0;
             uint8_t workspace[workspaceSize];
-            OTV0P2BASE::ScratchSpace sW(workspace, workspaceSize);
+            OTV0P2BASE::ScratchSpaceL sW(workspace, workspaceSize);
             const uint8_t txIDLen = OTRadioLink::ENC_BODY_DEFAULT_ID_BYTES;
             // When sending on a channel with framing, do not explicitly send the frame length byte.
             constexpr uint8_t offset = 1;
