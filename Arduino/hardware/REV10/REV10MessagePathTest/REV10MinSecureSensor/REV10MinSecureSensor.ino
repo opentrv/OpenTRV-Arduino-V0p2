@@ -364,7 +364,7 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
         if(!sendingJSONFailed) {
             // Explicit-workspace version of encryption.
             const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEncWithLWorkspace_ptr_t eW = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_WITH_LWORKSPACE;
-            constexpr uint8_t workspaceSize = OTRadioLink::SimpleSecureFrame32or0BodyTXBase::generateSecureOFrameRawForTX_total_scratch_usage_OTAESGCM_2p0;
+            constexpr size_t workspaceSize = OTRadioLink::SimpleSecureFrame32or0BodyTXBase::generateSecureOFrameRawForTX_total_scratch_usage_OTAESGCM_2p0;
             uint8_t workspace[workspaceSize];
             OTV0P2BASE::ScratchSpaceL sW(workspace, workspaceSize);
             const uint8_t txIDLen = OTRadioLink::ENC_BODY_DEFAULT_ID_BYTES;
@@ -378,6 +378,7 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
                   realTXFrameStart - offset, sizeof(buf) - (realTXFrameStart-buf) + offset,
                   txIDLen, valvePC, (const char *)bufJSON, eW, sW, key);
             sendingJSONFailed = (0 == bodylen);
+            if (sendingJSONFailed) OTV0P2BASE::serialPrintlnAndFlush(F("!TX Enc")); // Know why TX failed.
             wrote = bodylen - offset;
         }
     

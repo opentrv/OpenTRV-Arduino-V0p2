@@ -333,16 +333,32 @@ void setup()
 //========================================
 // Main loop for OpenTRV radiator control.
 // Note: exiting and re-entering can take a little while, handling Arduino background tasks such as serial.
+#if 1
+inline void stackCheck()
+{
+    // Complain and keep complaining when getting near stack overflow.
+    // TODO: make DEBUG-only when confident all configs OK.
+    const int16_t minsp = OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd();
+    const uint8_t location = OTV0P2BASE::MemoryChecks::getLocation();
+    OTV0P2BASE::serialPrintAndFlush(F("minsp: "));
+    OTV0P2BASE::serialPrintAndFlush(minsp, HEX);
+    OTV0P2BASE::serialPrintAndFlush(F(" loc:"));
+    OTV0P2BASE::serialPrintAndFlush(location);
+    OTV0P2BASE::serialPrintlnAndFlush();
+
+    // Force restart if SPAM/heap/stack likely corrupt.
+//    OTV0P2BASE::MemoryChecks::forceResetIfStackOverflow();
+    if(OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd() <= 0) panic(F("!SOVF"));
+
+    OTV0P2BASE::MemoryChecks::resetMinSP();
+}
+#endif
 void loop()
 {
     // CHECK STACK
     // ===============
     // Force restart if SPAM/heap/stack likely corrupt.
-    OTV0P2BASE::MemoryChecks::forceResetIfStackOverflow();
-    // Complain and keep complaining when getting near stack overflow.
-    // TODO: make DEBUG-only when confident all configs OK.
-    const int16_t minsp = OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd();
-    if(minsp < 64) { OTV0P2BASE::serialPrintlnAndFlush(F("!SH")); }
+    stackCheck();
   
     // SLEEP
     // ===============
