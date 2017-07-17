@@ -534,46 +534,58 @@ OTRadioLink::OTRadioLink &SecondaryRadio = NullRadio;
 // - Just relay present (e.g. CONFIG_REV10_AS_GSM_RELAY_ONLY)
 // - Just boiler hub (e.g. CONFIG_REV8_SECURE_BHR)
 // - Unit acting as stats-hub (e.g. CONFIG_REV11_SECURE_STATSHUB)
+
+// Workspace for running the decode routine within.
+// FIXME workspaceRequiredDec seems to be 16 bytes too small. 58 bytes are for the SecureFrameImpl chain.
+constexpr size_t decodeWorkspaceSize = OTAESGCM::OTAES128GCMGenericWithWorkspace<>::workspaceRequiredDec + 58 + 16;
 #if defined(ENABLE_RADIO_SECONDARY_SIM900) && defined(ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY) && defined(ENABLE_BOILER_HUB)
 // relay + bh
 inline bool decodeAndHandleSecureFrame(volatile const uint8_t * const msg)
 {
-  return OTRadioLink::decodeAndHandleOTSecureOFrame<OTRadioLink::SimpleSecureFrame32or0BodyRXV0p2,
-                                                    OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_STATELESS,
+    uint8_t workspace[decodeWorkspaceSize];
+    OTV0P2BASE::ScratchSpaceL sW(workspace, sizeof(workspace));
+  return OTRadioLink::decodeAndHandleOTSecureOFrameWithWorkspace<OTRadioLink::SimpleSecureFrame32or0BodyRXV0p2,
+                                                    OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_WITH_LWORKSPACE,
                                                    OTV0P2BASE::getPrimaryBuilding16ByteSecretKey,
                                                    OTRadioLink::relayFrameOperation<decltype(SIM900), SIM900>,
                                                    OTRadioLink::boilerFrameOperation<decltype(BoilerHub), BoilerHub, minuteCount>
-                                                  >(msg);
+                                                  >(msg, sW);
 }
 #elif defined(ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY)
 // relay
 inline bool decodeAndHandleSecureFrame(volatile const uint8_t * const msg)
 {
-  return OTRadioLink::decodeAndHandleOTSecureOFrame<OTRadioLink::SimpleSecureFrame32or0BodyRXV0p2,
-                                                    OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_STATELESS,
+    uint8_t workspace[decodeWorkspaceSize];
+    OTV0P2BASE::ScratchSpaceL sW(workspace, sizeof(workspace));
+  return OTRadioLink::decodeAndHandleOTSecureOFrameWithWorkspace<OTRadioLink::SimpleSecureFrame32or0BodyRXV0p2,
+                                                    OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_WITH_LWORKSPACE,
                                                    OTV0P2BASE::getPrimaryBuilding16ByteSecretKey,
                                                    OTRadioLink::relayFrameOperation<decltype(SIM900), SIM900>
-                                                  >(msg);
+                                                  >(msg, sW);
 }
 #elif defined(ENABLE_BOILER_HUB)
 // bh
 inline bool decodeAndHandleSecureFrame(volatile const uint8_t * const msg)
 {
-  return OTRadioLink::decodeAndHandleOTSecureOFrame<OTRadioLink::SimpleSecureFrame32or0BodyRXV0p2,
-                                                    OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_STATELESS,
+    uint8_t workspace[decodeWorkspaceSize];
+    OTV0P2BASE::ScratchSpaceL sW(workspace, sizeof(workspace));
+  return OTRadioLink::decodeAndHandleOTSecureOFrameWithWorkspace<OTRadioLink::SimpleSecureFrame32or0BodyRXV0p2,
+                                                    OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_WITH_LWORKSPACE,
                                                    OTV0P2BASE::getPrimaryBuilding16ByteSecretKey,
                                                    OTRadioLink::boilerFrameOperation<decltype(BoilerHub), BoilerHub, minuteCount>
-                                                  >(msg);
+                                                  >(msg, sW);
 }
 #else
 // serial
 inline bool decodeAndHandleSecureFrame(volatile const uint8_t * const msg)
 {
-  return OTRadioLink::decodeAndHandleOTSecureOFrame<OTRadioLink::SimpleSecureFrame32or0BodyRXV0p2,
-                                                    OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_STATELESS,
+    uint8_t workspace[decodeWorkspaceSize];
+    OTV0P2BASE::ScratchSpaceL sW(workspace, sizeof(workspace));
+  return OTRadioLink::decodeAndHandleOTSecureOFrameWithWorkspace<OTRadioLink::SimpleSecureFrame32or0BodyRXV0p2,
+                                                    OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_WITH_LWORKSPACE,
                                                    OTV0P2BASE::getPrimaryBuilding16ByteSecretKey,
                                                    OTRadioLink::serialFrameOperation<decltype(Serial), Serial>
-                                                  >(msg);
+                                                  >(msg, sW);
 }
 #endif // defined(ENABLE_RADIO_SECONDARY_MODULE_AS_RELAY) && (ENABLE_BOILER_HUB)
 OTRadioLink::OTMessageQueueHandler< pollIO, V0P2_UART_BAUD,
@@ -753,6 +765,25 @@ void setup()
 //========================================
 // MAIN LOOP
 //========================================
+#if 0
+// More detailed stack usage output
+inline void stackCheck()
+{
+	// Force restart if SPAM/heap/stack likely corrupt.
+    OTV0P2BASE::MemoryChecks::forceResetIfStackOverflow();
+    
+    // Print max stack usage each cycle
+    const int16_t minsp = OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd();
+    const uint8_t location = OTV0P2BASE::MemoryChecks::getLocation();
+    OTV0P2BASE::serialPrintAndFlush(F("minsp: "));
+    OTV0P2BASE::serialPrintAndFlush(minsp, HEX);
+    OTV0P2BASE::serialPrintAndFlush(F(" loc:"));
+    OTV0P2BASE::serialPrintAndFlush(location);
+    OTV0P2BASE::serialPrintlnAndFlush();
+
+    OTV0P2BASE::MemoryChecks::resetMinSP();
+}
+#endif
 
 void loop()
   {
@@ -760,6 +791,7 @@ void loop()
   const unsigned long usStart = micros();
 #endif
 
+#if 1
   // Force restart if SPAM/heap/stack likely corrupt.
   OTV0P2BASE::MemoryChecks::forceResetIfStackOverflow();
 
@@ -767,6 +799,9 @@ void loop()
   // TODO: make DEBUG-only when confident all configs OK.
   const int16_t minsp = OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd();
   if(minsp < 64) { OTV0P2BASE::serialPrintlnAndFlush(F("!SH")); }
+#else
+  stackCheck();
+#endif
 
   loopOpenTRV();
 
