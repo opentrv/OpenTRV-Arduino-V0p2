@@ -55,7 +55,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 #include <OTSIM900Link.h>
 #include <OTAESGCM.h>
 
-#include "ipAddress.h"  // IP adress in seperate header to avoid accidentally committing.
+//#include "ipAddress.h"  // IP adress in seperate header to avoid accidentally committing.
 
 /////// RADIOS
 //For EEPROM: TODO make a spec for how config should be stored in EEPROM to make changing them easy
@@ -85,7 +85,7 @@ static const char SIM900_APN[] PROGMEM      = "\"mobiledata\""; // GeoSIM
 
 // UDP Configs - Edit SIM900_UDP_ADDR for relevant server. NOTE: The server IP address should never be committed to GitHub.
 // IP adress in seperate header to avoid accidentally committing.
-//static const char SIM900_UDP_ADDR[16] PROGMEM = ""; // Of form "1.2.3.4".
+static const char SIM900_UDP_ADDR[16] PROGMEM = ""; // Of form "1.2.3.4".
 static const char SIM900_UDP_PORT[5] PROGMEM = "9999";             // Standard port for OpenTRV servers
 const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config(
                                                 false,
@@ -220,12 +220,15 @@ bool pollIO(const bool force = false)
 // relay + bh
 inline bool decodeAndHandleSecureFrame(volatile const uint8_t * const msg)
 {
-  return OTRadioLink::decodeAndHandleOTSecureOFrame<OTRadioLink::SimpleSecureFrame32or0BodyRXV0p2,
-                                                    OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_STATELESS,
+    constexpr size_t workspaceSize = OTAESGCM::OTAES128GCMGenericWithWorkspace<>::workspaceRequiredDec + 74;
+    uint8_t workspace[workspaceSize];
+    OTV0P2BASE::ScratchSpaceL sW(workspace, workspaceSize);
+    return (OTRadioLink::decodeAndHandleOTSecureOFrameWithWorkspace<OTRadioLink::SimpleSecureFrame32or0BodyRXV0p2,
+                                                    OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_WITH_LWORKSPACE,
                                                    OTV0P2BASE::getPrimaryBuilding16ByteSecretKey,
                                                    OTRadioLink::relayFrameOperation<decltype(SIM900), SIM900>,
                                                    OTRadioLink::boilerFrameOperation<decltype(BoilerHub), BoilerHub, minuteCount>
-                                                  >(msg);
+                                                  >(msg, sW));
 }
 OTRadioLink::OTMessageQueueHandler< pollIO, V0P2_UART_BAUD,
                                     decodeAndHandleSecureFrame, OTRadioLink::decodeAndHandleDummyFrame
@@ -280,9 +283,6 @@ static OTV0P2BASE::SimpleStatsRotation<12> ss1; // Configured for maximum differ
 // as assumed supplied by security layer to remote recipent.
 static void bareStatsTX()
 {
-    // Capture heavy stack usage from local allocations here.
-    OTV0P2BASE::MemoryChecks::recordIfMinSP();
-
     // Note if radio/comms channel is itself framed.
     const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled<>();
 
@@ -326,13 +326,13 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
 
         // Buffer to write JSON to before encryption.
         // Size for JSON in 'O' frame is:
-        const uint8_t maxSecureJSONSize = OTRadioLink::ENC_BODY_SMALL_FIXED_PTEXT_MAX_SIZE - 2 + 1;
+        constexpr uint8_t maxSecureJSONSize = OTRadioLink::ENC_BODY_SMALL_FIXED_PTEXT_MAX_SIZE - 2 + 1;
         // writeJSON() requires two further bytes including one for the trailing '\0'.
         uint8_t ptextBuf[maxSecureJSONSize + 2];
 
         // Redirect JSON output appropriately.
         uint8_t *const bufJSON = ptextBuf;
-        const uint8_t bufJSONlen = sizeof(ptextBuf);
+        constexpr uint8_t bufJSONlen = sizeof(ptextBuf);
 
         // Number of bytes written for body.
         // For non-secure, this is the size of the JSON text.
@@ -374,21 +374,22 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
         if(!sendingJSONFailed) {
             // Explicit-workspace version of encryption.
             const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEncWithLWorkspace_ptr_t eW = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_WITH_LWORKSPACE;
-            constexpr uint8_t workspaceSize = OTRadioLink::SimpleSecureFrame32or0BodyTXBase::generateSecureOFrameRawForTX_total_scratch_usage_OTAESGCM_2p0;
+            constexpr size_t workspaceSize = OTRadioLink::SimpleSecureFrame32or0BodyTXBase::generateSecureOFrameRawForTX_total_scratch_usage_OTAESGCM_2p0;
             uint8_t workspace[workspaceSize];
             OTV0P2BASE::ScratchSpaceL sW(workspace, workspaceSize);
-            const uint8_t txIDLen = OTRadioLink::ENC_BODY_DEFAULT_ID_BYTES;
+            constexpr uint8_t txIDLen = OTRadioLink::ENC_BODY_DEFAULT_ID_BYTES;
             // When sending on a channel with framing, do not explicitly send the frame length byte.
             constexpr uint8_t offset = 1;
 
             // Assumed to be at least one free writeable byte ahead of bptr.
             // Distinguished 'invalid' valve position; never mistaken for a real valve.
-            const uint8_t valvePC = 0x7f;
+            constexpr uint8_t valvePC = 0x7f;
             const uint8_t bodylen = OTRadioLink::SimpleSecureFrame32or0BodyTXV0p2::getInstance().generateSecureOFrameRawForTX(
                   realTXFrameStart - offset, sizeof(buf) - (realTXFrameStart-buf) + offset,
                   txIDLen, valvePC, (const char *)bufJSON, eW, sW, key);
             sendingJSONFailed = (0 == bodylen);
             wrote = bodylen - offset;
+            if (sendingJSONFailed) OTV0P2BASE::serialPrintlnAndFlush(F("!TX Enc")); // Know why TX failed.
         }
 
         if(!sendingJSONFailed) {
@@ -396,7 +397,6 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
             // Assumes that framing (or not) of primary and secondary radios is the same (usually: both framed).
             SecondaryRadio.queueToSend(realTXFrameStart, wrote);
         }
-        pollIO(); // Serial must already be running!
         if(!sendingJSONFailed) {
             // Send directly to the primary radio...
             if(!PrimaryRadio.queueToSend(realTXFrameStart, wrote)) { sendingJSONFailed = true; }
@@ -487,7 +487,7 @@ void setup()
         PCICR = 1 ;//| 4;  // 0x1 enables PB/PCMSK0. 0x4 enables PD/PCMSK2.
         PCMSK0 = RFM23B_INT_MASK;
     }
-
+    PrimaryRadio.listen(true);
     // Do early 'wake-up' stats transmission if possible
     // when everything else is set up and ready and allowed (TODO-636)
     // including all set-up and inter-wiring of sensors/actuators.
@@ -521,14 +521,27 @@ void setup()
 // MAIN LOOP
 //========================================
 
-void loop()
+inline void stackCheck()
 {
     // Force restart if SPAM/heap/stack likely corrupt.
-    OTV0P2BASE::MemoryChecks::forceResetIfStackOverflow();
     // Complain and keep complaining when getting near stack overflow.
     // TODO: make DEBUG-only when confident all configs OK.
     const int16_t minsp = OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd();
-    if(minsp < 64) { OTV0P2BASE::serialPrintlnAndFlush(F("!SH")); }
+    const uint8_t location = OTV0P2BASE::MemoryChecks::getLocation();
+    OTV0P2BASE::serialPrintAndFlush(F("minsp: "));
+    OTV0P2BASE::serialPrintAndFlush(minsp, HEX);
+    OTV0P2BASE::serialPrintAndFlush(F(" loc:"));
+    OTV0P2BASE::serialPrintAndFlush(location);
+    OTV0P2BASE::serialPrintlnAndFlush();
+
+    OTV0P2BASE::MemoryChecks::forceResetIfStackOverflow();
+
+    OTV0P2BASE::MemoryChecks::resetMinSP();
+}
+
+void loop()
+{
+    stackCheck();
 
         // Sensor readings are taken late in each minute (where they are taken)
     // and if possible noise and heat and light should be minimised in this part of each minute to improve readings.
@@ -578,7 +591,6 @@ void loop()
 
     // Handling the UI may have taken a little while, so process I/O a little.
     pollIO(); // Deal with any pending I/O.
-    // Handling the UI may have taken a little while, so process I/O a little.
     messageQueue.handle(true, PrimaryRadio); // Deal with any pending I/O.
 
     // DO SCHEDULING
@@ -675,6 +687,6 @@ void loop()
 
     // End-of-loop processing, that may be slow.
     // Ensure progress on queued messages ahead of slow work.  (TODO-867)
-    messageQueue.handle(true, PrimaryRadio); // Deal with any pending I/O.
     pollIO();; // Deal with any pending I/O.
+    messageQueue.handle(true, PrimaryRadio); // Deal with any pending I/O.
 }
