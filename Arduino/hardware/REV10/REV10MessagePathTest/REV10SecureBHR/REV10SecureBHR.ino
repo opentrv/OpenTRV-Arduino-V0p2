@@ -218,11 +218,12 @@ bool pollIO(const bool force = false)
 // - Just boiler hub (e.g. CONFIG_REV8_SECURE_BHR)
 // - Unit acting as stats-hub (e.g. CONFIG_REV11_SECURE_STATSHUB)
 // relay + bh
+constexpr size_t RX_WorkspaceSize = OTAESGCM::OTAES128GCMGenericWithWorkspace<>::workspaceRequiredDec + 16 + 58;
 inline bool decodeAndHandleSecureFrame(volatile const uint8_t * const msg)
 {
-    constexpr size_t workspaceSize = OTAESGCM::OTAES128GCMGenericWithWorkspace<>::workspaceRequiredDec + 74;
-    uint8_t workspace[workspaceSize];
-    OTV0P2BASE::ScratchSpaceL sW(workspace, workspaceSize);
+//    constexpr size_t workspaceSize = OTAESGCM::OTAES128GCMGenericWithWorkspace<>::workspaceRequiredDec + 74;
+    uint8_t workspace[RX_WorkspaceSize];
+    OTV0P2BASE::ScratchSpaceL sW(workspace, sizeof(workspace));
     return (OTRadioLink::decodeAndHandleOTSecureOFrameWithWorkspace<OTRadioLink::SimpleSecureFrame32or0BodyRXV0p2,
                                                     OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_WITH_LWORKSPACE,
                                                    OTV0P2BASE::getPrimaryBuilding16ByteSecretKey,
@@ -281,6 +282,11 @@ static OTV0P2BASE::SimpleStatsRotation<12> ss1; // Configured for maximum differ
 // Sends stats on primary radio channel 0 with possible duplicate to secondary channel.
 // If sending encrypted then ID/counter fields (eg @ and + for JSON) are omitted
 // as assumed supplied by security layer to remote recipent.
+constexpr uint8_t TX_MSG_BUF_SIZE = 1 + 64 + 1;
+// Size for JSON in 'O' frame is:
+constexpr uint8_t bufJSONlen = OTRadioLink::ENC_BODY_SMALL_FIXED_PTEXT_MAX_SIZE - 2 + 1 + 2;  // Not sure what -2 + 1 + 2 is about. +2 is from the pTextBuffer definition.
+constexpr uint8_t TX_ScratchSpaceNeeded = TX_MSG_BUF_SIZE + bufJSONlen;
+constexpr size_t TX_WorkspaceSize = OTRadioLink::SimpleSecureFrame32or0BodyTXBase::generateSecureOFrameRawForTX_total_scratch_usage_OTAESGCM_2p0 + TX_ScratchSpaceNeeded;
 static void bareStatsTX()
 {
     // Note if radio/comms channel is itself framed.
@@ -294,16 +300,25 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
     //   * max binary length, or max JSON length + 1 for CRC + 1 to allow detection of oversize message
     //   * terminating 0xff
     // Buffer need be no larger than leading length byte + typical 64-byte radio module TX buffer limit + optional terminator.
-    const uint8_t MSG_BUF_SIZE = 1 + 64 + 1;
-    uint8_t buf[MSG_BUF_SIZE];
+//    constexpr uint8_t MSG_BUF_SIZE = 1 + 64 + 1;
+
+    // Allow space in workspace for:
+    //   * Msg buffer
+    //   *
+    //   * Decode routine
+//    constexpr uint8_t scratchSpaceNeededHere = MSG_BUF_SIZE;
+//    constexpr size_t workspaceSize = OTRadioLink::SimpleSecureFrame32or0BodyTXBase::generateSecureOFrameRawForTX_total_scratch_usage_OTAESGCM_2p0 + scratchSpaceNeededHere;
+    uint8_t workspace[TX_WorkspaceSize];
+    OTV0P2BASE::ScratchSpaceL sW(workspace, sizeof(workspace));
 
     // Send binary *or* JSON on each attempt so as not to overwhelm the receiver.
     {
         // Send JSON message.
         bool sendingJSONFailed = false; // Set true and stop attempting JSON send in case of error.
 
+
         // Set pointer location based on whether start of message will have preamble TODO move to OTRFM23BLink queueToSend?
-        uint8_t *bptr = buf;
+        uint8_t *bptr = sW.buf;
         // Leave space for possible leading frame-length byte, eg for encrypted frame.
         ++bptr;
         // Where to write the real frame content.
@@ -326,13 +341,14 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
 
         // Buffer to write JSON to before encryption.
         // Size for JSON in 'O' frame is:
-        constexpr uint8_t maxSecureJSONSize = OTRadioLink::ENC_BODY_SMALL_FIXED_PTEXT_MAX_SIZE - 2 + 1;
+//        constexpr uint8_t maxSecureJSONSize = OTRadioLink::ENC_BODY_SMALL_FIXED_PTEXT_MAX_SIZE - 2 + 1;
         // writeJSON() requires two further bytes including one for the trailing '\0'.
-        uint8_t ptextBuf[maxSecureJSONSize + 2];
+//        uint8_t ptextBuf[maxSecureJSONSize + 2];
 
         // Redirect JSON output appropriately.
-        uint8_t *const bufJSON = ptextBuf;
-        constexpr uint8_t bufJSONlen = sizeof(ptextBuf);
+//        uint8_t *const bufJSON = ptextBuf;
+        uint8_t *const bufJSON = sW.buf + TX_MSG_BUF_SIZE;
+//        constexpr uint8_t bufJSONlen = maxSecureJSONSize;
 
         // Number of bytes written for body.
         // For non-secure, this is the size of the JSON text.
@@ -352,10 +368,11 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
         // Push the JSON output to Serial.
         if(!sendingJSONFailed) {
             // Insert synthetic full ID/@ field for local stats, but no sequence number for now.
-            Serial.print(F("{\"@\":\""));
-            for(int i = 0; i < OTV0P2BASE::OpenTRV_Node_ID_Bytes; ++i) { Serial.print(eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_ID+i), HEX); }
-            Serial.print(F("\","));
-            Serial.write(bufJSON+1, wrote-1);
+//            Serial.print(F("{\"@\":\"")); \\ XXX
+//            for(int i = 0; i < OTV0P2BASE::OpenTRV_Node_ID_Bytes; ++i) { Serial.print(eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_ID+i), HEX); }
+//            Serial.print(F("\","));
+//            Serial.write(bufJSON+1, wrote-1);
+            Serial.write(bufJSON, wrote);
             Serial.println();
             OTV0P2BASE::flushSerialSCTSensitive(); // Ensure all flushed since system clock may be messed with...
         }
@@ -373,10 +390,9 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
         // then build encrypted frame from raw JSON.
         if(!sendingJSONFailed) {
             // Explicit-workspace version of encryption.
+            OTV0P2BASE::ScratchSpaceL subScratch(sW, TX_ScratchSpaceNeeded);
             const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEncWithLWorkspace_ptr_t eW = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_WITH_LWORKSPACE;
-            constexpr size_t workspaceSize = OTRadioLink::SimpleSecureFrame32or0BodyTXBase::generateSecureOFrameRawForTX_total_scratch_usage_OTAESGCM_2p0;
-            uint8_t workspace[workspaceSize];
-            OTV0P2BASE::ScratchSpaceL sW(workspace, workspaceSize);
+
             constexpr uint8_t txIDLen = OTRadioLink::ENC_BODY_DEFAULT_ID_BYTES;
             // When sending on a channel with framing, do not explicitly send the frame length byte.
             constexpr uint8_t offset = 1;
@@ -385,8 +401,8 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
             // Distinguished 'invalid' valve position; never mistaken for a real valve.
             constexpr uint8_t valvePC = 0x7f;
             const uint8_t bodylen = OTRadioLink::SimpleSecureFrame32or0BodyTXV0p2::getInstance().generateSecureOFrameRawForTX(
-                  realTXFrameStart - offset, sizeof(buf) - (realTXFrameStart-buf) + offset,
-                  txIDLen, valvePC, (const char *)bufJSON, eW, sW, key);
+                  realTXFrameStart - offset, TX_MSG_BUF_SIZE - (realTXFrameStart-sW.buf) + offset,
+                  txIDLen, valvePC, (const char *)bufJSON, eW, subScratch, key);
             sendingJSONFailed = (0 == bodylen);
             wrote = bodylen - offset;
             if (sendingJSONFailed) OTV0P2BASE::serialPrintlnAndFlush(F("!TX Enc")); // Know why TX failed.
@@ -396,10 +412,8 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
             // Write out unadjusted JSON or encrypted frame on secondary radio.
             // Assumes that framing (or not) of primary and secondary radios is the same (usually: both framed).
             SecondaryRadio.queueToSend(realTXFrameStart, wrote);
-        }
-        if(!sendingJSONFailed) {
             // Send directly to the primary radio...
-            if(!PrimaryRadio.queueToSend(realTXFrameStart, wrote)) { sendingJSONFailed = true; }
+            PrimaryRadio.queueToSend(realTXFrameStart, wrote);
         }
     }
     if(neededWaking) { OTV0P2BASE::flushSerialProductive(); OTV0P2BASE::powerDownSerial(); }
@@ -487,6 +501,20 @@ void setup()
         PCICR = 1 ;//| 4;  // 0x1 enables PB/PCMSK0. 0x4 enables PD/PCMSK2.
         PCMSK0 = RFM23B_INT_MASK;
     }
+
+
+
+    /****************************/
+    OTV0P2BASE::serialPrintAndFlush(F("scratchspace TX: "));
+    OTV0P2BASE::serialPrintAndFlush(((uint16_t) TX_WorkspaceSize));
+    OTV0P2BASE::serialPrintAndFlush(F(", RX: "));
+    OTV0P2BASE::serialPrintAndFlush(((uint16_t) RX_WorkspaceSize));
+    OTV0P2BASE::serialPrintlnAndFlush();
+    /****************************/
+
+
+
+
     PrimaryRadio.listen(true);
     // Do early 'wake-up' stats transmission if possible
     // when everything else is set up and ready and allowed (TODO-636)
@@ -529,7 +557,7 @@ inline void stackCheck()
     const int16_t minsp = OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd();
     const uint8_t location = OTV0P2BASE::MemoryChecks::getLocation();
     OTV0P2BASE::serialPrintAndFlush(F("minsp: "));
-    OTV0P2BASE::serialPrintAndFlush(minsp, HEX);
+    OTV0P2BASE::serialPrintAndFlush(minsp);
     OTV0P2BASE::serialPrintAndFlush(F(" loc:"));
     OTV0P2BASE::serialPrintAndFlush(location);
     OTV0P2BASE::serialPrintlnAndFlush();
