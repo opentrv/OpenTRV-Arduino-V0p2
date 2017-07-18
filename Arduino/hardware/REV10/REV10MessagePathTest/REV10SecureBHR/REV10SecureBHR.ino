@@ -284,8 +284,11 @@ static OTV0P2BASE::SimpleStatsRotation<12> ss1; // Configured for maximum differ
 // as assumed supplied by security layer to remote recipent.
 constexpr uint8_t TX_MSG_BUF_SIZE = 1 + 64 + 1;
 // Size for JSON in 'O' frame is:
-constexpr uint8_t bufJSONlen = OTRadioLink::ENC_BODY_SMALL_FIXED_PTEXT_MAX_SIZE - 2 + 1 + 2;  // Not sure what -2 + 1 + 2 is about. +2 is from the pTextBuffer definition.
-constexpr uint8_t TX_ScratchSpaceNeeded = TX_MSG_BUF_SIZE + bufJSONlen;
+//constexpr uint8_t bufJSONlen = OTRadioLink::ENC_BODY_SMALL_FIXED_PTEXT_MAX_SIZE - 2 + 1 + 2;  // Not sure what -2 + 1 + 2 is about. +2 is from the pTextBuffer definition.
+constexpr uint8_t bufJSONlen = OTRadioLink::ENC_BODY_SMALL_FIXED_PTEXT_MAX_SIZE + 1;  // 3 = '}' + 0x0 + ? FIXME whuut?
+constexpr uint8_t ptextBuflen = bufJSONlen + 2;  // 2 = valvePC + hasStats
+static_assert(ptextBuflen == 34, "ptextBuflen wrong");  // TODO make sure this is correct!
+constexpr uint8_t TX_ScratchSpaceNeeded = TX_MSG_BUF_SIZE + ptextBuflen;
 constexpr size_t TX_WorkspaceSize = OTRadioLink::SimpleSecureFrame32or0BodyTXBase::generateSecureOFrameRawForTX_total_scratch_usage_OTAESGCM_2p0 + TX_ScratchSpaceNeeded;
 static void bareStatsTX()
 {
@@ -346,8 +349,14 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
 //        uint8_t ptextBuf[maxSecureJSONSize + 2];
 
         // Redirect JSON output appropriately.
+        // Part of sW.
+        // |    0    |     1    | 2 |  3:n | n+1 | n+2 | n is the end of the stats message. n+2 <= 34
+        // | valvePC | hasStats | { | json | '}' | 0x0 |
 //        uint8_t *const bufJSON = ptextBuf;
-        uint8_t *const bufJSON = sW.buf + TX_MSG_BUF_SIZE;
+        // ptextBuf is the entire frame
+        uint8_t *const ptextBuf = sW.buf + TX_MSG_BUF_SIZE;
+        // bufJSON is just the stats message part of the frame. (valvePC and hasStats are not part of this).
+        uint8_t *const bufJSON = ptextBuf + 2;
 //        constexpr uint8_t bufJSONlen = maxSecureJSONSize;
 
         // Number of bytes written for body.
@@ -368,11 +377,10 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
         // Push the JSON output to Serial.
         if(!sendingJSONFailed) {
             // Insert synthetic full ID/@ field for local stats, but no sequence number for now.
-//            Serial.print(F("{\"@\":\"")); \\ XXX
-//            for(int i = 0; i < OTV0P2BASE::OpenTRV_Node_ID_Bytes; ++i) { Serial.print(eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_ID+i), HEX); }
-//            Serial.print(F("\","));
-//            Serial.write(bufJSON+1, wrote-1);
-            Serial.write(bufJSON, wrote);
+            Serial.print(F("{\"@\":\""));
+            for(int i = 0; i < OTV0P2BASE::OpenTRV_Node_ID_Bytes; ++i) { Serial.print(eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_ID+i), HEX); }
+            Serial.print(F("\","));
+            Serial.write(bufJSON+1, wrote-1);
             Serial.println();
             OTV0P2BASE::flushSerialSCTSensitive(); // Ensure all flushed since system clock may be messed with...
         }
@@ -402,7 +410,7 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
             constexpr uint8_t valvePC = 0x7f;
             const uint8_t bodylen = OTRadioLink::SimpleSecureFrame32or0BodyTXV0p2::getInstance().generateSecureOFrameRawForTX(
                   realTXFrameStart - offset, TX_MSG_BUF_SIZE - (realTXFrameStart-sW.buf) + offset,
-                  txIDLen, valvePC, (const char *)bufJSON, eW, subScratch, key);
+                  txIDLen, valvePC, (const char *)ptextBuf, eW, subScratch, key);
             sendingJSONFailed = (0 == bodylen);
             wrote = bodylen - offset;
             if (sendingJSONFailed) OTV0P2BASE::serialPrintlnAndFlush(F("!TX Enc")); // Know why TX failed.
