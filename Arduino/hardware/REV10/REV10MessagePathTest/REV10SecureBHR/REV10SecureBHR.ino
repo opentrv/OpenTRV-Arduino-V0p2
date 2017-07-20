@@ -410,7 +410,7 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
             constexpr uint8_t valvePC = 0x7f;
             const uint8_t bodylen = OTRadioLink::SimpleSecureFrame32or0BodyTXV0p2::getInstance().generateSecureOFrameRawForTX(
                   realTXFrameStart - offset, TX_MSG_BUF_SIZE - (realTXFrameStart-sW.buf) + offset,
-                  txIDLen, valvePC, (const char *)ptextBuf, eW, subScratch, key);
+                  txIDLen, valvePC, ptextBuf, eW, subScratch, key);
             sendingJSONFailed = (0 == bodylen);
             wrote = bodylen - offset;
             if (sendingJSONFailed) OTV0P2BASE::serialPrintlnAndFlush(F("!TX Enc")); // Know why TX failed.
