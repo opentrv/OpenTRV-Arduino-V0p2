@@ -675,7 +675,7 @@ void setupOpenTRV()
     // Attempt to maximise chance of reception with a double TX.
     // Assume not in hub mode (yet).
     // Send all possible formats, binary first (assumed complete in one message).
-    bareStatsTX(true, true);
+    bareStatsTX(true, true);  // XXX
     // Send JSON stats repeatedly (typically once or twice)
     // until all values pushed out (no 'changed' values unsent)
     // or limit reached.
@@ -685,7 +685,7 @@ void setupOpenTRV()
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING(" TX...");
 #endif
-      bareStatsTX(true, false);
+      bareStatsTX(true, false);  // XXX
       if(!ss1.changedValue()) { break; }
       }
     }
