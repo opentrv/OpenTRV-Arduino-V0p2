@@ -156,7 +156,7 @@ static OTV0P2BASE::SimpleStatsRotation<12> ss1; // Configured for maximum differ
 void bareStatsTX(const bool allowDoubleTX, const bool doBinary)
   {
   // Capture heavy stack usage from local allocations here.
-  OTV0P2BASE::MemoryChecks::recordIfMinSP();
+  OTV0P2BASE::MemoryChecks::recordIfMinSP(2);
 
   // Note if radio/comms channel is itself framed.
   const bool framed = !PrimaryRadio.getChannelConfig()->isUnframed;
@@ -213,7 +213,9 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
     RFM22RawStatsTXFFTerminated(buf, allowDoubleTX);
     // Record stats as if remote, and treat channel as secure.
     outputCoreStats(&Serial, true, &content);
+#if 0  // XXX Reduce stack usage of bareStatsTX.
     messageQueue.handle(false, PrimaryRadio); // Serial must already be running!
+#endif // 0
 #endif // defined(ENABLE_BINARY_STATS_TX) ...
     }
 
@@ -327,16 +329,16 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
     // Buffer to write JSON to before encryption.
     // Size for JSON in 'O' frame is:
     //    ENC_BODY_SMALL_FIXED_PTEXT_MAX_SIZE - 2 leading body bytes + for trailing '}' not sent.
-    const uint8_t maxSecureJSONSize = OTRadioLink::ENC_BODY_SMALL_FIXED_PTEXT_MAX_SIZE - 2 + 1;
+    constexpr uint8_t maxSecureJSONSize = OTRadioLink::ENC_BODY_SMALL_FIXED_PTEXT_MAX_SIZE - 2 + 1;
     // writeJSON() requires two further bytes including one for the trailing '\0'.
     uint8_t ptextBuf[maxSecureJSONSize + 2];
 
     // Allow for a cap on JSON TX size, eg where TX is lossy for near-maximum sizes.
     // This can only reduce the maximum size, and it should not try to make it silly small.
 #if defined(ENABLE_JSON_STATS_LEN_CAP)
-    static const uint8_t max_plaintext_JSON_len = min(OTV0P2BASE::MSG_JSON_MAX_LENGTH, ENABLE_JSON_STATS_LEN_CAP);
+    constexpr uint8_t max_plaintext_JSON_len = min(OTV0P2BASE::MSG_JSON_MAX_LENGTH, ENABLE_JSON_STATS_LEN_CAP);
 #else
-    static const uint8_t max_plaintext_JSON_len = OTV0P2BASE::MSG_JSON_MAX_LENGTH;
+    constexpr uint8_t max_plaintext_JSON_len = OTV0P2BASE::MSG_JSON_MAX_LENGTH;
 #endif
 
     // Redirect JSON output appropriately.
@@ -402,28 +404,30 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
     if(!sendingJSONFailed && doEnc)
       {
 #if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
+      // TODO Fold JSON
       // Explicit-workspace version of encryption.
       const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEncWithLWorkspace_ptr_t eW = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_WITH_LWORKSPACE;
-      constexpr uint8_t workspaceSize = OTRadioLink::SimpleSecureFrame32or0BodyTXBase::generateSecureOFrameRawForTX_total_scratch_usage_OTAESGCM_2p0;
+
+      constexpr size_t workspaceSize = OTRadioLink::SimpleSecureFrame32or0BodyTXBase::generateSecureOFrameRawForTX_total_scratch_usage_OTAESGCM_2p0;
       uint8_t workspace[workspaceSize];
-      OTV0P2BASE::ScratchSpace sW(workspace, workspaceSize);
-      const uint8_t txIDLen = OTRadioLink::ENC_BODY_DEFAULT_ID_BYTES;
+      OTV0P2BASE::ScratchSpaceL sW(workspace, workspaceSize);
+      constexpr uint8_t txIDLen = OTRadioLink::ENC_BODY_DEFAULT_ID_BYTES;
       // When sending on a channel with framing, do not explicitly send the frame length byte.
       const uint8_t offset = framed ? 1 : 0;
       // Assumed to be at least one free writeable byte ahead of bptr.
 #if defined(ENABLE_NOMINAL_RAD_VALVE)
       // Get current modelled valve position.
       const uint8_t valvePC = NominalRadValve.get();
-#else
+#else  // defined(ENABLE_NOMINAL_RAD_VALVE)
       // Distinguished 'invalid' valve position; never mistaken for a real valve.
-      const uint8_t valvePC = 0x7f;
+      constexpr uint8_t valvePC = 0x7f;
 #endif // defined(ENABLE_NOMINAL_RAD_VALVE)
       const uint8_t bodylen = OTRadioLink::SimpleSecureFrame32or0BodyTXV0p2::getInstance().generateSecureOFrameRawForTX(
-            realTXFrameStart - offset, sizeof(buf) - (realTXFrameStart-buf) + offset,
+            (realTXFrameStart - offset), (sizeof(buf) - (realTXFrameStart-buf) + offset),
             txIDLen, valvePC, (const char *)bufJSON, eW, sW, key);
       sendingJSONFailed = (0 == bodylen);
       wrote = bodylen - offset;
-#else
+#else  // defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
       sendingJSONFailed = true; // Crypto support may not be available.
 #endif // defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
       }
@@ -443,7 +447,9 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
 #endif // ENABLE_RADIO_SECONDARY_MODULE
 
 #ifdef ENABLE_RADIO_RX
+#if 0  // XXX Reduce stack usage of bareStatsTX.
     messageQueue.handle(false, PrimaryRadio); // Serial must already be running!
+#endif // 0
 #endif
 
     if(!sendingJSONFailed)
