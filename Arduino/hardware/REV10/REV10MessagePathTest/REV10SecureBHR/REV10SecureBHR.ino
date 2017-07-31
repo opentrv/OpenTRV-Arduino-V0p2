@@ -393,6 +393,84 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
     if(neededWaking) { OTV0P2BASE::flushSerialProductive(); OTV0P2BASE::powerDownSerial(); }
 }
 
+
+// Used to poll user side for CLI input until specified sub-cycle time.
+// Commands should be sent terminated by CR *or* LF; both may prevent 'E' (exit) from working properly.
+// A period of less than (say) 500ms will be difficult for direct human response on a raw terminal.
+// A period of less than (say) 100ms is not recommended to avoid possibility of overrun on long interactions.
+// Times itself out after at least a minute or two of inactivity.
+// NOT RENTRANT (eg uses static state for speed and code space).
+static constexpr uint8_t MAXIMUM_CLI_RESPONSE_CHARS = 1 + OTV0P2BASE::CLI::MAX_TYPICAL_CLI_BUFFER;
+static constexpr uint8_t BUFSIZ_pollUI = 1 + MAXIMUM_CLI_RESPONSE_CHARS;
+void pollCLI(const uint8_t maxSCT, const bool startOfMinute, const OTV0P2BASE::ScratchSpace &s)
+{
+    // Perform any once-per-minute operations.
+    if(startOfMinute) { OTV0P2BASE::CLI::countDownCLI(); }
+
+    const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled<V0P2_UART_BAUD>();
+
+    // Wait for input command line from the user (received characters may already have been queued)...
+    // Read a line up to a terminating CR, either on its own or as part of CRLF.
+    // (Note that command content and timing may be useful to fold into PRNG entropy pool.)
+    // A static buffer generates better code but permanently consumes previous SRAM.
+    const uint8_t n = OTV0P2BASE::CLI::promptAndReadCommandLine(maxSCT, s, [](){pollIO();});
+    char *buf = (char *)s.buf;
+    if(n > 0)
+    {
+        // Got plausible input so keep the CLI awake a little longer.
+        OTV0P2BASE::CLI::resetCLIActiveTimer();
+        // Process the input received, with action based on the first char...
+        bool showStatus = true; // Default to showing status.
+        switch(buf[0])
+        {
+            // Explicit request for help, or unrecognised first character.
+            // Not implemented so indicate unrecognised input.
+            default: case '?': { OTV0P2BASE::CLI::InvalidIgnored(); Serial.println(); showStatus = false; break; }
+            // Exit/deactivate CLI immediately.
+            // This should be followed by JUST CR ('\r') OR LF ('\n')
+            // else the second will wake the CLI up again.
+            case 'E': { OTV0P2BASE::CLI::makeCLIInactive(); break; }
+            // Reset or display ID.
+            case 'I': { showStatus = OTV0P2BASE::CLI::NodeID().doCommand(buf, n); break; }
+            // Status line stats print and TX.
+            case 'S':
+            {
+                Serial.print(F("Resets: "));
+                const uint8_t resetCount = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_RESET_COUNT);
+                Serial.print(resetCount);
+                Serial.println();
+                // Show stack headroom.
+                OTV0P2BASE::serialPrintAndFlush(F("SH ")); OTV0P2BASE::serialPrintAndFlush(OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd()); OTV0P2BASE::serialPrintlnAndFlush();
+                // Default light-weight print and TX of stats.
+                bareStatsTX();
+                break; // Note that status is by default printed after processing input line.
+            }
+            // Set new node association (nodes to accept frames from).
+            // Only needed if able to RX and/or some sort of hub.
+            case 'A': { showStatus = OTV0P2BASE::CLI::SetNodeAssoc().doCommand(buf, n); break; }
+            /**
+            * @brief Set secret key.
+            * @note  The OTRadioLink::SimpleSecureFrame32or0BodyTXV0p2::resetRaw3BytePersistentTXRestartCounterCond
+            *        function pointer MUST be passed here to ensure safe handling of the key and the Tx message
+            *        counter.
+            */
+            case 'K': { showStatus = OTV0P2BASE::CLI::SetSecretKey(OTRadioLink::SimpleSecureFrame32or0BodyTXV0p2::resetRaw3BytePersistentTXRestartCounterCond).doCommand(buf, n); break; }
+        }
+
+        // Almost always show status line afterwards as feedback of command received and new state.
+//        if(showStatus) { serialStatusReport(); } // FIXME
+        // Else show ack of command received.
+//        else {
+            Serial.println(F("OK"));
+//          }
+    }
+    else { Serial.println(); } // Terminate empty/partial CLI input line after timeout.
+
+    // Force any pending output before return / possible UART power-down.
+    OTV0P2BASE::flushSerialSCTSensitive();
+    if(neededWaking) { OTV0P2BASE::powerDownSerial(); }
+}
+
 //========================================
 // SETUP
 //========================================
@@ -545,7 +623,9 @@ void loop()
 {
     stackCheck();
 
-        // Sensor readings are taken late in each minute (where they are taken)
+    // Set up some variables before sleeping to minimise delay/jitter after the RTC tick.
+    bool showStatus = false; // Show status at end of loop?
+    // Sensor readings are taken late in each minute (where they are taken)
     // and if possible noise and heat and light should be minimised in this part of each minute to improve readings.
     // Sensor readings and (stats transmissions) are nominally on a 4-minute cycle.
     const uint8_t minuteFrom4 = (minuteCount & 3);
@@ -556,6 +636,10 @@ void loop()
     const bool minute0From4ForSensors = (0 == minuteFrom4);
     // True if this is the minute after all sensors should have been sampled.
     const bool minute1From4AfterSensors = (1 == minuteFrom4);
+
+    // Try if very near to end of cycle and thus causing an overrun.
+    // Conversely, if not true, should have time to safely log outputs, etc.
+    const uint8_t nearOverrunThreshold = OTV0P2BASE::GSCT_MAX - 8; // ~64ms/~32 serial TX chars of grace time...
 
     // Sleep in low-power mode (waiting for interrupts) until seconds roll.
     // NOTE: sleep at the top of the loop to minimise timing jitter/delay from Arduino background activity after loop() returns.
@@ -610,23 +694,21 @@ void loop()
 
     switch(TIME_LSD) // With V0P2BASE_TWO_S_TICK_RTC_SUPPORT only even seconds are available.
     {
-    case 0:
+        case 0:
         {
             // Tasks that must be run every minute.
             ++minuteCount; // Note simple roll-over to 0 at max value.
             break;
         }
-
-    // Churn/reseed PRNG(s) a little to improve unpredictability in use: should be lightweight.
-    case 2: { if(runAll) { OTV0P2BASE::seedRNG8(minuteCount ^ OTV0P2BASE::getCPUCycleCount() ^ (uint8_t)Supply_cV.get(), OTV0P2BASE::_getSubCycleTime() ^ AmbLight.get(), (uint8_t)TemperatureC16.get()); } break; }
-    // Force read of supply/battery voltage; measure and recompute status (etc) less often when already thought to be low, eg when conserving.
-    case 4: { if(runAll) { Supply_cV.read(); } break; }
-
-    // Periodic transmission of stats if NOT driving a local valve (else stats can be piggybacked onto that).
-    // Randomised somewhat between slots and also within the slot to help avoid collisions.
-    static uint8_t txTick;
-    case 6: { txTick = OTV0P2BASE::randRNG8() & 7; break; } // Pick which of the 8 slots to use.
-    case 8: case 10: case 12: case 14: case 16: case 18: case 20: case 22:
+        // Churn/reseed PRNG(s) a little to improve unpredictability in use: should be lightweight.
+        case 2: { if(runAll) { OTV0P2BASE::seedRNG8(minuteCount ^ OTV0P2BASE::getCPUCycleCount() ^ (uint8_t)Supply_cV.get(), OTV0P2BASE::_getSubCycleTime() ^ AmbLight.get(), (uint8_t)TemperatureC16.get()); } break; }
+        // Force read of supply/battery voltage; measure and recompute status (etc) less often when already thought to be low, eg when conserving.
+        case 4: { if(runAll) { Supply_cV.read(); } break; }
+        // Periodic transmission of stats if NOT driving a local valve (else stats can be piggybacked onto that).
+        // Randomised somewhat between slots and also within the slot to help avoid collisions.
+        static uint8_t txTick;
+        case 6: { txTick = OTV0P2BASE::randRNG8() & 7; break; } // Pick which of the 8 slots to use.
+        case 8: case 10: case 12: case 14: case 16: case 18: case 20: case 22:
         {
             // Only the slot where txTick is zero is used.
             if(0 != txTick--) { break; }
@@ -648,7 +730,7 @@ void loop()
                 pollIO();
                 // Sleep a little.
                 OTV0P2BASE::nap(WDTO_15MS, true);
-              }
+            }
 
             // Send stats!
             // Try for double TX for extra robustness unless:
@@ -663,32 +745,69 @@ void loop()
             break;
         }
 
-  // SENSOR READ AND STATS
-  //
-  // All external sensor reads should be in the second half of the minute (>32) if possible.
-  // This is to have them as close to stats collection at the end of the minute as possible,
-  // and to allow randomisation of the start-up cycle position in the first 32s to help avoid inter-unit collisions.
-  // Also all sources of noise, self-heating, etc, may be turned off for the 'sensor read minute'
-  // and thus will have diminished by this point.
+        // SENSOR READ AND STATS
+        //
+        // All external sensor reads should be in the second half of the minute (>32) if possible.
+        // This is to have them as close to stats collection at the end of the minute as possible,
+        // and to allow randomisation of the start-up cycle position in the first 32s to help avoid inter-unit collisions.
+        // Also all sources of noise, self-heating, etc, may be turned off for the 'sensor read minute'
+        // and thus will have diminished by this point.
 
-      // At a hub, sample temperature regularly as late as possible in the minute just before recomputing valve position.
-      // Force a regular read to make stats such as rate-of-change simple and to minimise lag.
-      // TODO: optimise to reduce power consumption when not calling for heat.
-      // TODO: optimise to reduce self-heating jitter when in hub/listen/RX mode.
-      case 54: { TemperatureC16.read(); break; }
+        // At a hub, sample temperature regularly as late as possible in the minute just before recomputing valve position.
+        // Force a regular read to make stats such as rate-of-change simple and to minimise lag.
+        // TODO: optimise to reduce power consumption when not calling for heat.
+        // TODO: optimise to reduce self-heating jitter when in hub/listen/RX mode.
+        case 54: { TemperatureC16.read(); break; }
 
-      // Compute targets and heat demand based on environmental inputs and occupancy.
-      // This should happen as soon after the latest readings as possible (temperature especially).
-      case 56:
-          {
-              // Age errors/warnings.
-              OTV0P2BASE::ErrorReporter.read();
-              break;
-          }
+        // Compute targets and heat demand based on environmental inputs and occupancy.
+        // This should happen as soon after the latest readings as possible (temperature especially).
+        case 56:
+        {
+#if 1 && defined(DEBUG) && defined(ENABLE_BOILER_HUB) && !defined(ENABLE_TRIMMED_MEMORY)
+            // Track how long since remote call for heat last heard.
+            if(BoilerHub.isBoilerOn()) {
+                DEBUG_SERIAL_PRINT_FLASHSTRING("Boiler on, s: ");
+                DEBUG_SERIAL_PRINT(boilerCountdownTicks * OTV0P2BASE::MAIN_TICK_S);
+                DEBUG_SERIAL_PRINTLN();
+            }
+#endif
+            // Show current status if appropriate.
+//            if(runAll) { showStatus = true; }  // TODO
+            // Age errors/warnings.
+            OTV0P2BASE::ErrorReporter.read();
+            break;
+        }
+////         Stats samples; should never be missed. // XXX
+//        case 58:
+//        {
+//            // Update non-volatile stats.
+//            // Make the final update as near the end of the hour as possible to reduce glitches (TODO-1086),
+//            // and with other optional non-full samples evenly spaced throughout the hour.
+//            // Race-free.
+//            const uint_least16_t msm = OTV0P2BASE::getMinutesSinceMidnightLT();
+//            const uint8_t mm = msm % 60;
+//            if(59 == mm) { statsU.sampleStats(true, uint8_t(msm / 60)); }
+//            else if((statsU.maxSamplesPerHour > 1) && (29 == mm)) { statsU.sampleStats(false, uint8_t(msm / 60)); }
+//            break;
+//        }
     }
 
     // End-of-loop processing, that may be slow.
     // Ensure progress on queued messages ahead of slow work.  (TODO-867)
     pollIO();; // Deal with any pending I/O.
     messageQueue.handle(true, PrimaryRadio); // Deal with any pending I/O.
+
+    // Command-Line Interface (CLI) polling.
+    // If a reasonable chunk of the minor cycle remains after all other work is done
+    // AND the CLI is / should be active OR a status line has just been output
+    // then poll/prompt the user for input
+    // using a timeout which should safely avoid overrun, ie missing the next basic tick,
+    // and which should also allow some energy-saving sleep.
+//    if(showStatus) { serialStatusReport(); }
+    if(OTV0P2BASE::CLI::isCLIActive()) {
+        const uint8_t stopBy = nearOverrunThreshold - 1;
+        char buf[BUFSIZ_pollUI];
+        OTV0P2BASE::ScratchSpace s((uint8_t*)buf, sizeof(buf));
+        pollCLI(stopBy, 0 == TIME_LSD, s);
+    }
 }
