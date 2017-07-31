@@ -75,14 +75,8 @@ static const OTRadioLink::OTRadioChannelConfig SecondaryRadioConfig(&SIM900Confi
 static constexpr uint8_t RFM23B_RX_QUEUE_SIZE = OTRFM23BLink::DEFAULT_RFM23B_RX_QUEUE_CAPACITY;
 static constexpr int8_t RFM23B_IRQ_PIN = PIN_RFM_NIRQ;
 static constexpr bool RFM23B_allowRX = true;
-OTRFM23BLink::OTRFM23BLink<OTV0P2BASE::V0p2_PIN_SPI_nSS, RFM23B_IRQ_PIN, RFM23B_RX_QUEUE_SIZE, RFM23B_allowRX> RFM23B;
-OTSIM900Link::OTSIM900Link<8, 5, RADIO_POWER_PIN, OTV0P2BASE::getSecondsLT> SIM900; // (REGULATOR_POWERUP, RADIO_POWER_PIN);
-
-// Assigns radio to PrimaryRadio alias
-OTRadioLink::OTRadioLink &PrimaryRadio = RFM23B;
-
-// Assign radio to SecondaryRadio alias.
-OTRadioLink::OTRadioLink &SecondaryRadio = SIM900;
+OTRFM23BLink::OTRFM23BLink<OTV0P2BASE::V0p2_PIN_SPI_nSS, RFM23B_IRQ_PIN, RFM23B_RX_QUEUE_SIZE, RFM23B_allowRX> PrimaryRadio;
+OTSIM900Link::OTSIM900Link<8, 5, RADIO_POWER_PIN, OTV0P2BASE::getSecondsLT> SecondaryRadio; // (REGULATOR_POWERUP, RADIO_POWER_PIN);
 
 /////// SENSORS
 
@@ -209,7 +203,7 @@ inline bool decodeAndHandleSecureFrame(volatile const uint8_t * const msg)
     return (OTRadioLink::decodeAndHandleOTSecureOFrameWithWorkspace<OTRadioLink::SimpleSecureFrame32or0BodyRXV0p2,
                                                     OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_WITH_LWORKSPACE,
                                                    OTV0P2BASE::getPrimaryBuilding16ByteSecretKey,
-                                                   OTRadioLink::relayFrameOperation<decltype(SIM900), SIM900>,
+                                                   OTRadioLink::relayFrameOperation<decltype(SecondaryRadio), SecondaryRadio>,
                                                    OTRadioLink::boilerFrameOperation<decltype(BoilerHub), BoilerHub, minuteCount>
                                                   >(msg, sW));
 }
@@ -234,7 +228,7 @@ ISR(PCINT0_vect)
     // Handler routine not required/expected to 'clear' this interrupt.
     // TODO: try to ensure that OTRFM23BLink.handleInterruptSimple() is inlineable to minimise ISR prologue/epilogue time and space.
     if((changes & RFM23B_INT_MASK) && !(pins & RFM23B_INT_MASK))
-        { PrimaryRadio.handleInterruptSimple(); }
+        { PrimaryRadio._handleInterruptNonVirtual(); }
 }
 
 // Previous state of port D pins to help detect changes.
