@@ -114,6 +114,22 @@ uint8_t minuteCount;
 static constexpr uint8_t PP_OFF_MS = 250;
 // Mask for Port B input change interrupts.
 static constexpr uint8_t RFM23B_INT_MASK = (1 << (PIN_RFM_NIRQ&7));
+// Mask for Port D input change interrupts.
+static constexpr uint8_t SERIALRX_INT_MASK = (1 << 0); // Serial RX
+/////// STATS  // TODO
+// Singleton non-volatile stats store instance.
+//OTV0P2BASE::EEPROMByHourByteStats eeStats;
+//// Singleton stats-updater object.
+//typedef
+//    OTV0P2BASE::ByHourSimpleStatsUpdaterSampleStats <
+//      decltype(eeStats), &eeStats,
+//      OTV0P2BASE::SimpleTSUint8Sensor, static_cast<OTV0P2BASE::SimpleTSUint8Sensor*>(NULL), // Save code space when no occupancy tracking.
+//      decltype(AmbLight), &AmbLight,
+//      decltype(TemperatureC16), &TemperatureC16,
+//      decltype(RelHumidity), &RelHumidity,
+//      2
+//      > StatsU_t;
+//StatsU_t statsU;
 
 //========================================
 // LOCAL FUNCTIONS
@@ -219,6 +235,24 @@ ISR(PCINT0_vect)
     // TODO: try to ensure that OTRFM23BLink.handleInterruptSimple() is inlineable to minimise ISR prologue/epilogue time and space.
     if((changes & RFM23B_INT_MASK) && !(pins & RFM23B_INT_MASK))
         { PrimaryRadio.handleInterruptSimple(); }
+}
+
+// Previous state of port D pins to help detect changes.
+static volatile uint8_t prevStatePD;
+// Interrupt service routine for PD I/O port transition changes (including RX).
+ISR(PCINT2_vect)
+{
+    const uint8_t pins = PIND;
+    const uint8_t changes = pins ^ prevStatePD;
+    prevStatePD = pins;
+
+    // If an interrupt arrived from the serial RX then wake up the CLI.
+    // Use a nominally rising edge to avoid spurious trigger when other interrupts are handled.
+    // The will ensure that it is possible to wake the CLI subsystem with an extra CR or LF.
+    // It is OK to trigger this from other things such as button presses.
+    // TODO: ensure that resetCLIActiveTimer() is inlineable to minimise ISR prologue/epilogue time and space.
+    if((changes & SERIALRX_INT_MASK) && !(pins & SERIALRX_INT_MASK))
+    { OTV0P2BASE::CLI::resetCLIActiveTimer(); }
 }
 
 
@@ -420,18 +454,17 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute, const OTV0P2BASE::S
         // Got plausible input so keep the CLI awake a little longer.
         OTV0P2BASE::CLI::resetCLIActiveTimer();
         // Process the input received, with action based on the first char...
-        bool showStatus = true; // Default to showing status.
         switch(buf[0])
         {
             // Explicit request for help, or unrecognised first character.
             // Not implemented so indicate unrecognised input.
-            default: case '?': { OTV0P2BASE::CLI::InvalidIgnored(); Serial.println(); showStatus = false; break; }
+            default: case '?': { OTV0P2BASE::CLI::InvalidIgnored(); Serial.println(); break; }
             // Exit/deactivate CLI immediately.
             // This should be followed by JUST CR ('\r') OR LF ('\n')
             // else the second will wake the CLI up again.
             case 'E': { OTV0P2BASE::CLI::makeCLIInactive(); break; }
             // Reset or display ID.
-            case 'I': { showStatus = OTV0P2BASE::CLI::NodeID().doCommand(buf, n); break; }
+            case 'I': { OTV0P2BASE::CLI::NodeID().doCommand(buf, n); break; }
             // Status line stats print and TX.
             case 'S':
             {
@@ -447,24 +480,17 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute, const OTV0P2BASE::S
             }
             // Set new node association (nodes to accept frames from).
             // Only needed if able to RX and/or some sort of hub.
-            case 'A': { showStatus = OTV0P2BASE::CLI::SetNodeAssoc().doCommand(buf, n); break; }
+            case 'A': { OTV0P2BASE::CLI::SetNodeAssoc().doCommand(buf, n); break; }
             /**
             * @brief Set secret key.
             * @note  The OTRadioLink::SimpleSecureFrame32or0BodyTXV0p2::resetRaw3BytePersistentTXRestartCounterCond
             *        function pointer MUST be passed here to ensure safe handling of the key and the Tx message
             *        counter.
             */
-            case 'K': { showStatus = OTV0P2BASE::CLI::SetSecretKey(OTRadioLink::SimpleSecureFrame32or0BodyTXV0p2::resetRaw3BytePersistentTXRestartCounterCond).doCommand(buf, n); break; }
+            case 'K': { OTV0P2BASE::CLI::SetSecretKey(OTRadioLink::SimpleSecureFrame32or0BodyTXV0p2::resetRaw3BytePersistentTXRestartCounterCond).doCommand(buf, n); break; }
         }
-
-        // Almost always show status line afterwards as feedback of command received and new state.
-//        if(showStatus) { serialStatusReport(); } // FIXME
-        // Else show ack of command received.
-//        else {
-            Serial.println(F("OK"));
-//          }
-    }
-    else { Serial.println(); } // Terminate empty/partial CLI input line after timeout.
+        Serial.println(F("OK"));
+    } else { Serial.println(); } // Terminate empty/partial CLI input line after timeout.
 
     // Force any pending output before return / possible UART power-down.
     OTV0P2BASE::flushSerialSCTSensitive();
@@ -550,8 +576,9 @@ void setup()
     // Set up async edge interrupts.
     ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
     {
-        PCICR = 1 ;//| 4;  // 0x1 enables PB/PCMSK0. 0x4 enables PD/PCMSK2.
+        PCICR = 1 | 4;  // 0x1 enables PB/PCMSK0. 0x4 enables PD/PCMSK2.
         PCMSK0 = RFM23B_INT_MASK;
+        PCMSK2 = SERIALRX_INT_MASK;
     }
 
 
@@ -624,7 +651,6 @@ void loop()
     stackCheck();
 
     // Set up some variables before sleeping to minimise delay/jitter after the RTC tick.
-    bool showStatus = false; // Show status at end of loop?
     // Sensor readings are taken late in each minute (where they are taken)
     // and if possible noise and heat and light should be minimised in this part of each minute to improve readings.
     // Sensor readings and (stats transmissions) are nominally on a 4-minute cycle.
@@ -771,8 +797,6 @@ void loop()
                 DEBUG_SERIAL_PRINTLN();
             }
 #endif
-            // Show current status if appropriate.
-//            if(runAll) { showStatus = true; }  // TODO
             // Age errors/warnings.
             OTV0P2BASE::ErrorReporter.read();
             break;
@@ -803,7 +827,6 @@ void loop()
     // then poll/prompt the user for input
     // using a timeout which should safely avoid overrun, ie missing the next basic tick,
     // and which should also allow some energy-saving sleep.
-//    if(showStatus) { serialStatusReport(); }
     if(OTV0P2BASE::CLI::isCLIActive()) {
         const uint8_t stopBy = nearOverrunThreshold - 1;
         char buf[BUFSIZ_pollUI];
