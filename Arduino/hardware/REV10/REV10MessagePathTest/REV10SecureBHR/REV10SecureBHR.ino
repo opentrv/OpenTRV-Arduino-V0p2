@@ -51,6 +51,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 #include <Arduino.h>
 #include <OTV0p2Base.h>
 #include <OTRadioLink.h>
+
+#define RFM23B_IRQ_CONTROL  // Enable RFM23B IRQ control code.
 #include <OTRFM23BLink.h>
 #include <OTSIM900Link.h>
 #include <OTAESGCM.h>
@@ -200,12 +202,20 @@ inline bool decodeAndHandleSecureFrame(volatile const uint8_t * const msg)
 //    constexpr size_t workspaceSize = OTAESGCM::OTAES128GCMGenericWithWorkspace<>::workspaceRequiredDec + 74;
     uint8_t workspace[RX_WorkspaceSize];
     OTV0P2BASE::ScratchSpaceL sW(workspace, sizeof(workspace));
-    return (OTRadioLink::decodeAndHandleOTSecureOFrameWithWorkspace<OTRadioLink::SimpleSecureFrame32or0BodyRXV0p2,
+    // Temporarily suspend PrimaryRadio interrupts to avoid stack collisions.
+    PrimaryRadio.suspendInterrupts();
+//    PCICR &= ~(1 << 0);
+//    ATOMIC_BLOCK(ATOMIC_RESTORESTATE) { PCICR &= ~(1 << 0); }
+    const bool success = OTRadioLink::decodeAndHandleOTSecureOFrameWithWorkspace<OTRadioLink::SimpleSecureFrame32or0BodyRXV0p2,
                                                     OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_WITH_LWORKSPACE,
                                                    OTV0P2BASE::getPrimaryBuilding16ByteSecretKey,
                                                    OTRadioLink::relayFrameOperation<decltype(SecondaryRadio), SecondaryRadio>,
                                                    OTRadioLink::boilerFrameOperation<decltype(BoilerHub), BoilerHub, minuteCount>
-                                                  >(msg, sW));
+                                                  >(msg, sW);
+    PrimaryRadio.enableInterrupts();
+//    PCICR |= (1 << 0);
+//    ATOMIC_BLOCK(ATOMIC_RESTORESTATE) { PCICR |= (1 << 0); }
+    return (success);
 }
 OTRadioLink::OTMessageQueueHandler< pollIO, V0P2_UART_BAUD,
                                     decodeAndHandleSecureFrame, OTRadioLink::decodeAndHandleDummyFrame
@@ -570,7 +580,7 @@ void setup()
     // Set up async edge interrupts.
     ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
     {
-        PCICR = 1 | 4;  // 0x1 enables PB/PCMSK0. 0x4 enables PD/PCMSK2.
+        PCICR = (1 << 0) | (1 << 2);  // 0x1 enables PB/PCMSK0. 0x4 enables PD/PCMSK2.
         PCMSK0 = RFM23B_INT_MASK;
         PCMSK2 = SERIALRX_INT_MASK;
     }
