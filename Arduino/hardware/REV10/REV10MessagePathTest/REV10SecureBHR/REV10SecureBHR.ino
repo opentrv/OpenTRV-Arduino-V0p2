@@ -203,18 +203,15 @@ inline bool decodeAndHandleSecureFrame(volatile const uint8_t * const msg)
     uint8_t workspace[RX_WorkspaceSize];
     OTV0P2BASE::ScratchSpaceL sW(workspace, sizeof(workspace));
     // Temporarily suspend PrimaryRadio interrupts to avoid stack collisions.
-    PrimaryRadio.suspendInterrupts();
-//    PCICR &= ~(1 << 0);
-//    ATOMIC_BLOCK(ATOMIC_RESTORESTATE) { PCICR &= ~(1 << 0); }
+    PrimaryRadio.pauseInterrupts(true);
     const bool success = OTRadioLink::decodeAndHandleOTSecureOFrameWithWorkspace<OTRadioLink::SimpleSecureFrame32or0BodyRXV0p2,
                                                     OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_WITH_LWORKSPACE,
                                                    OTV0P2BASE::getPrimaryBuilding16ByteSecretKey,
                                                    OTRadioLink::relayFrameOperation<decltype(SecondaryRadio), SecondaryRadio>,
                                                    OTRadioLink::boilerFrameOperation<decltype(BoilerHub), BoilerHub, minuteCount>
                                                   >(msg, sW);
-    PrimaryRadio.enableInterrupts();
-//    PCICR |= (1 << 0);
-//    ATOMIC_BLOCK(ATOMIC_RESTORESTATE) { PCICR |= (1 << 0); }
+    // Reenable interrupt line.
+    PrimaryRadio.pauseInterrupts(false);
     return (success);
 }
 OTRadioLink::OTMessageQueueHandler< pollIO, V0P2_UART_BAUD,
