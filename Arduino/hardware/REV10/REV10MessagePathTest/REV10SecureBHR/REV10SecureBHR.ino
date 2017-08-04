@@ -152,7 +152,7 @@ static void panic(const __FlashStringHelper *s)
 inline void stackCheck()
 {
     const int16_t minsp = OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd();
-#if 0 && defined(DEBUG)
+#if 0 //&& defined(DEBUG)
     const uint8_t location = OTV0P2BASE::MemoryChecks::getLocation();
     OTV0P2BASE::serialPrintAndFlush(F("minsp: "));
     OTV0P2BASE::serialPrintAndFlush(minsp);
@@ -162,7 +162,7 @@ inline void stackCheck()
     OTV0P2BASE::MemoryChecks::forceResetIfStackOverflow();
     OTV0P2BASE::MemoryChecks::resetMinSP();
 #else
-    if(128 < minsp) { OTV0P2BASE::serialPrintAndFlush(F("!SP")); }
+    if(128 > minsp) { OTV0P2BASE::serialPrintlnAndFlush(F("!SP")); }
     OTV0P2BASE::MemoryChecks::forceResetIfStackOverflow();
 #endif
 }
@@ -520,7 +520,7 @@ void setup()
     const uint8_t oldResetCount = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_RESET_COUNT);
     eeprom_write_byte((uint8_t *)V0P2BASE_EE_START_RESET_COUNT, 1 + oldResetCount);
 
-#if 0  // Print reset count. Intended for testing purposes.
+#if 1  // Print reset count. Intended for testing purposes.
     OTV0P2BASE::serialPrintAndFlush(F("\rResets: "));
     OTV0P2BASE::serialPrintAndFlush(oldResetCount);
     OTV0P2BASE::serialPrintlnAndFlush();
