@@ -522,7 +522,8 @@ void setup()
 
 #if 0  // Print reset count. Intended for testing purposes.
     OTV0P2BASE::serialPrintAndFlush(F("\rResets: "));
-    OTV0P2BASE::serialPrintlnAndFlush(oldResetCount);
+    OTV0P2BASE::serialPrintAndFlush(oldResetCount);
+    OTV0P2BASE::serialPrintlnAndFlush();
 #endif
 
     // Have 32678Hz clock at least running before going any further.
