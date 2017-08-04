@@ -520,6 +520,11 @@ void setup()
     const uint8_t oldResetCount = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_RESET_COUNT);
     eeprom_write_byte((uint8_t *)V0P2BASE_EE_START_RESET_COUNT, 1 + oldResetCount);
 
+#if 0  // Print reset count. Intended for testing purposes.
+    OTV0P2BASE::serialPrintAndFlush(F("\rResets: "));
+    OTV0P2BASE::serialPrintlnAndFlush(oldResetCount);
+#endif
+
     // Have 32678Hz clock at least running before going any further.
     // Check that the slow clock is running reasonably OK, and tune the fast one to it.
     if(!::OTV0P2BASE::HWTEST::calibrateInternalOscWithExtOsc()) { panic(F("Xtal")); } // Async clock not running or can't tune.
