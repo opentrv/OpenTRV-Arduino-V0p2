@@ -527,7 +527,7 @@ OTRadioLink::OTRadioLink &SecondaryRadio = NullRadio;
 
 
 // Setup frame RX handlers
-#if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) && defined(ENABLE_RADIO_RX)
+#if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT) && defined(ENABLE_RADIO_RX) && 0 // XXX
 // Define queue handler
 // Currently 4 possible cases for RXing secure frames:
 // - Both relay and boiler hub present (e.g. CONFIG_REV10_AS_BHR)
@@ -765,7 +765,7 @@ void setup()
 //========================================
 // MAIN LOOP
 //========================================
-#if 0
+#if 1
 // More detailed stack usage output
 inline void stackCheck()
 {

@@ -164,13 +164,13 @@ void bareStatsTX(const bool allowDoubleTX, const bool doBinary)
   // Add RFM23B preamble and a trailing CRC to the frame IFF channel is unframed.
   const bool RFM23BFramed = !framed;
 #else
-  const bool RFM23BFramed = false; // Never use this raw framing unless enabled explicitly.
+  constexpr bool RFM23BFramed = false; // Never use this raw framing unless enabled explicitly.
 #endif
 
 #if defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
-  const bool doEnc = true;
+  constexpr bool doEnc = true;
 #else
-  const bool doEnc = false;
+  constexpr bool doEnc = false;
 #endif
 
   const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled<>();
@@ -178,14 +178,22 @@ void bareStatsTX(const bool allowDoubleTX, const bool doBinary)
 static_assert(OTV0P2BASE::FullStatsMessageCore_MAX_BYTES_ON_WIRE <= STATS_MSG_MAX_LEN, "FullStatsMessageCore_MAX_BYTES_ON_WIRE too big");
 static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_MAX_LENGTH too big"); // Allow 1 for trailing CRC.
 
+    // Create scratch space for secure stats TX // FIXME
+    // Buffer need be no larger than leading length byte + typical 64-byte radio module TX buffer limit + optional terminator.
+    constexpr uint8_t MSG_BUF_SIZE = 1 + 64 + 1;
+    constexpr uint8_t bufEncJSONlen = OTRadioLink::ENC_BODY_SMALL_FIXED_PTEXT_MAX_SIZE + 1;  // 3 = '}' + 0x0 + ? FIXME whuut?
+    constexpr uint8_t ptextBuflen = bufEncJSONlen + 2;  // 2 = valvePC + hasStats
+    static_assert(ptextBuflen == 34, "ptextBuflen wrong");  // TODO make sure this is correct!
+    constexpr uint8_t scratchSpaceNeeded = MSG_BUF_SIZE + ptextBuflen;
+    constexpr size_t WorkspaceSize = OTRadioLink::SimpleSecureFrame32or0BodyTXBase::generateSecureOFrameRawForTX_total_scratch_usage_OTAESGCM_2p0 + scratchSpaceNeeded;
+    uint8_t workspace[WorkspaceSize];
+    OTV0P2BASE::ScratchSpaceL sW(workspace, sizeof(workspace));
+
   // Allow space in buffer for:
   //   * buffer offset/preamble
   //   * max binary length, or max JSON length + 1 for CRC + 1 to allow detection of oversize message
   //   * terminating 0xff
-//  uint8_t buf[STATS_MSG_START_OFFSET + max(FullStatsMessageCore_MAX_BYTES_ON_WIRE,  MSG_JSON_MAX_LENGTH+1) + 1];
-  // Buffer need be no larger than leading length byte + typical 64-byte radio module TX buffer limit + optional terminator.
-  const uint8_t MSG_BUF_SIZE = 1 + 64 + 1;
-  uint8_t buf[MSG_BUF_SIZE];
+  uint8_t * const buf = sW.buf;
 
 #if defined(ENABLE_JSON_OUTPUT)
   if(doBinary && !doEnc) // Note that binary form is not secure, so not permitted for secure systems.
@@ -213,9 +221,6 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
     RFM22RawStatsTXFFTerminated(buf, allowDoubleTX);
     // Record stats as if remote, and treat channel as secure.
     outputCoreStats(&Serial, true, &content);
-#if 0  // XXX Reduce stack usage of bareStatsTX.
-    messageQueue.handle(false, PrimaryRadio); // Serial must already be running!
-#endif // 0
 #endif // defined(ENABLE_BINARY_STATS_TX) ...
     }
 
@@ -266,12 +271,12 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
     // Managed JSON stats.
 #if defined(ENABLE_JSON_FRAME_MINIMISED)
     // Minimise frame size (eg for noisy radio links)...
-    const bool maximise = false;
+    constexpr bool maximise = false;
     // Suppress "+" count field, accepting loss of diagnostics.
     ss1.enableCount(false); 
 #else
     // Make best use of available bandwidth...
-    const bool maximise = true;
+    constexpr bool maximise = true;
     // Enable "+" count field for diagnostic purposes, eg while TX is lossy,
     // if the primary radio channel does not include a sequence number itself.
     // Assume that an encrypted channel will provide its own (visible) sequence counter.
@@ -326,12 +331,12 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
     const uint8_t privacyLevel = OTV0P2BASE::getStatsTXLevel();
 #endif
 
-    // Buffer to write JSON to before encryption.
-    // Size for JSON in 'O' frame is:
-    //    ENC_BODY_SMALL_FIXED_PTEXT_MAX_SIZE - 2 leading body bytes + for trailing '}' not sent.
-    constexpr uint8_t maxSecureJSONSize = OTRadioLink::ENC_BODY_SMALL_FIXED_PTEXT_MAX_SIZE - 2 + 1;
-    // writeJSON() requires two further bytes including one for the trailing '\0'.
-    uint8_t ptextBuf[maxSecureJSONSize + 2];
+    // Redirect JSON output appropriately.
+    // Part of sW, directly after the message buffer.
+    // |    0    |     1    | 2 |  3:n | n+1 | n+2 | n is the end of the stats message. n+2 <= 34
+    // | valvePC | hasStats | { | json | '}' | 0x0 |
+    // ptextBuf is the entire frame
+    uint8_t * const ptextBuf = sW.buf + MSG_BUF_SIZE;
 
     // Allow for a cap on JSON TX size, eg where TX is lossy for near-maximum sizes.
     // This can only reduce the maximum size, and it should not try to make it silly small.
@@ -342,8 +347,8 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("Bin gen err!");
 #endif
 
     // Redirect JSON output appropriately.
-    uint8_t *const bufJSON = doEnc ? ptextBuf : bptr;
-    const uint8_t bufJSONlen = doEnc ? sizeof(ptextBuf) : min(max_plaintext_JSON_len+2, sizeof(buf) - (bptr-buf));
+    uint8_t *const bufJSON = doEnc ? (ptextBuf + 2) : bptr;
+    const uint8_t bufJSONlen = doEnc ? bufEncJSONlen : min(max_plaintext_JSON_len+2, MSG_BUF_SIZE - (bptr-buf));  // XXX
 
     // Number of bytes written for body.
     // For non-secure, this is the size of the JSON text.
@@ -408,9 +413,8 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
       // Explicit-workspace version of encryption.
       const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEncWithLWorkspace_ptr_t eW = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_WITH_LWORKSPACE;
 
-      constexpr size_t workspaceSize = OTRadioLink::SimpleSecureFrame32or0BodyTXBase::generateSecureOFrameRawForTX_total_scratch_usage_OTAESGCM_2p0;
-      uint8_t workspace[workspaceSize];
-      OTV0P2BASE::ScratchSpaceL sW(workspace, workspaceSize);
+      // Create subscratch space for encryption functions
+      OTV0P2BASE::ScratchSpaceL subScratch(sW, scratchSpaceNeeded);
       constexpr uint8_t txIDLen = OTRadioLink::ENC_BODY_DEFAULT_ID_BYTES;
       // When sending on a channel with framing, do not explicitly send the frame length byte.
       const uint8_t offset = framed ? 1 : 0;
@@ -423,8 +427,8 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
       constexpr uint8_t valvePC = 0x7f;
 #endif // defined(ENABLE_NOMINAL_RAD_VALVE)
       const uint8_t bodylen = OTRadioLink::SimpleSecureFrame32or0BodyTXV0p2::getInstance().generateSecureOFrameRawForTX(
-            (realTXFrameStart - offset), (sizeof(buf) - (realTXFrameStart-buf) + offset),
-            txIDLen, valvePC, (const char *)bufJSON, eW, sW, key);
+            (realTXFrameStart - offset), (MSG_BUF_SIZE - (realTXFrameStart-buf) + offset),
+            txIDLen, valvePC, ptextBuf, eW, subScratch, key);
       sendingJSONFailed = (0 == bodylen);
       wrote = bodylen - offset;
 #else  // defined(ENABLE_OTSECUREFRAME_ENCODING_SUPPORT)
@@ -445,12 +449,6 @@ DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
       SecondaryRadio.queueToSend(realTXFrameStart, wrote);
       }
 #endif // ENABLE_RADIO_SECONDARY_MODULE
-
-#ifdef ENABLE_RADIO_RX
-#if 0  // XXX Reduce stack usage of bareStatsTX.
-    messageQueue.handle(false, PrimaryRadio); // Serial must already be running!
-#endif // 0
-#endif
 
     if(!sendingJSONFailed)
       {
@@ -677,7 +675,7 @@ void setupOpenTRV()
     // Attempt to maximise chance of reception with a double TX.
     // Assume not in hub mode (yet).
     // Send all possible formats, binary first (assumed complete in one message).
-    bareStatsTX(true, true);
+    bareStatsTX(true, true);  // XXX
     // Send JSON stats repeatedly (typically once or twice)
     // until all values pushed out (no 'changed' values unsent)
     // or limit reached.
@@ -687,7 +685,7 @@ void setupOpenTRV()
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING(" TX...");
 #endif
-      bareStatsTX(true, false);
+      bareStatsTX(true, false);  // XXX
       if(!ss1.changedValue()) { break; }
       }
     }
