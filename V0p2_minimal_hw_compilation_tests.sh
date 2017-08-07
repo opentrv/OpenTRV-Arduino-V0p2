@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/sh
 #
 # Set up OpenTRV Arduino IDE environment and verify compilation.
 # Exits 0 on success.
@@ -31,6 +31,7 @@ PARTPATHS="
     V0p2_Main_PCB_REV7_DORM1_and_REV8/REV8HardwareTest/REV8HardwareTest.ino
     REV10/REV10HardwareTest/REV10HardwareTest.ino
     REV10/REV10RadioTest/REV10RadioTest.ino 
+    REV10/REV10MessagePathTest/REV10SecureBHR/REV10SecureBHR.ino
     REV11/REV11HardwareTest/REV11HardwareTest.ino
     "
 
