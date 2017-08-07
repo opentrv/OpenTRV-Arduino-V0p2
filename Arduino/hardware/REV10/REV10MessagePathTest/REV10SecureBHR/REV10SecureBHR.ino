@@ -351,7 +351,8 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
         ss1.enableCount(false);
         ss1.putOrRemove(OTV0P2BASE::ErrorReporter);
         ss1.put(TemperatureC16);
-
+        // Show boiler state for boiler hubs.
+        ss1.put(V0p2_SENSOR_TAG_F("b"), (int) BoilerHub.isBoilerOn());
         // OPTIONAL items
         constexpr uint8_t privacyLevel = OTV0P2BASE::stTXalwaysAll;
 
