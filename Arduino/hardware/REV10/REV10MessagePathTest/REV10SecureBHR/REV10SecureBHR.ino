@@ -59,6 +59,12 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 
 #include "secondaryRadioConfig.h"  // IP address in separate header to avoid accidentally committing.
 
+
+
+static volatile size_t oldPC;
+static volatile size_t oldSP;
+static volatile size_t oldLoc;
+
 /////// RADIOS
 // Pick an appropriate radio config for RFM23 (if it is the primary radio).
 // Nodes talking on fast GFSK channel 0.
@@ -152,12 +158,15 @@ static void panic(const __FlashStringHelper *s)
 inline void stackCheck()
 {
     const int16_t minsp = OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd();
-#if 0 //&& defined(DEBUG)
+#if 1 //&& defined(DEBUG)
     const uint8_t location = OTV0P2BASE::MemoryChecks::getLocation();
+    const uint16_t progCounter = OTV0P2BASE::MemoryChecks::getPC();  // not isr safe
     OTV0P2BASE::serialPrintAndFlush(F("minsp: "));
     OTV0P2BASE::serialPrintAndFlush(minsp);
-    OTV0P2BASE::serialPrintAndFlush(F(" loc:"));
+    OTV0P2BASE::serialPrintAndFlush(F(" loc: "));
     OTV0P2BASE::serialPrintAndFlush(location);
+    OTV0P2BASE::serialPrintAndFlush(F(" prog: "));
+    OTV0P2BASE::serialPrintAndFlush(progCounter, HEX);
     OTV0P2BASE::serialPrintlnAndFlush();
     OTV0P2BASE::MemoryChecks::forceResetIfStackOverflow();
     OTV0P2BASE::MemoryChecks::resetMinSP();
@@ -225,7 +234,6 @@ OTRadioLink::OTMessageQueueHandler< pollIO, V0P2_UART_BAUD,
                                     decodeAndHandleSecureFrame, OTRadioLink::decodeAndHandleDummyFrame  // only interested in single frame type.
                                    > messageQueue;
 
-
 //========================================
 // INTERRUPT SERVICE ROUTINES
 //========================================
@@ -238,9 +246,13 @@ static volatile uint8_t prevStatePB;
 // Interrupt service routine for PB I/O port transition changes.
 ISR(PCINT0_vect)
 {
+    // Basic profiling info
+    OTV0P2BASE::MemoryChecks::recordPC();
+
     const uint8_t pins = PINB;
     const uint8_t changes = pins ^ prevStatePB;
     prevStatePB = pins;
+
     // RFM23B nIRQ falling edge is of interest.
     // Handler routine not required/expected to 'clear' this interrupt.
     if((changes & RFM23B_INT_MASK) && !(pins & RFM23B_INT_MASK))
@@ -250,12 +262,13 @@ ISR(PCINT0_vect)
 // Previous state of port D pins to help detect changes.
 static volatile uint8_t prevStatePD;
 // Interrupt service routine for PD I/O port transition changes (including RX).
+// (DE20170810) Just does a store on an atomic_t. Low ram cost.
 ISR(PCINT2_vect)
 {
     const uint8_t pins = PIND;
     const uint8_t changes = pins ^ prevStatePD;
     prevStatePD = pins;
-
+    
     // If an interrupt arrived from the serial RX then wake up the CLI.
     // Use a nominally rising edge to avoid spurious trigger when other interrupts are handled.
     // The will ensure that it is possible to wake the CLI subsystem with an extra CR or LF.
@@ -282,7 +295,13 @@ static constexpr uint8_t RFM22_SYNC_MIN_BYTES = 3; // Minimum number of sync byt
 static constexpr uint8_t STATS_MSG_START_OFFSET = (RFM22_PREAMBLE_BYTES + RFM22_SYNC_MIN_BYTES);
 static constexpr uint8_t STATS_MSG_MAX_LEN = (64 - STATS_MSG_START_OFFSET);
 // Managed JSON stats.
-static OTV0P2BASE::SimpleStatsRotation<12> ss1; // Configured for maximum different stats.
+// Number of JSON stats to TX:
+// Note: each stat statically allocates 6 bytes to RAM.
+// - Internal temp
+// - Boiler state
+// TODO: Consider removing entirely.
+constexpr uint8_t nTXStats = 2;
+static OTV0P2BASE::SimpleStatsRotation<nTXStats> ss1; // Configured for maximum different stats.
 // Do bare stats transmission.
 // Output should be filtered for items appropriate
 // to current channel security and sensitivity level.
@@ -349,7 +368,7 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
         // if the primary radio channel does not include a sequence number itself.
         // Assume that an encrypted channel will provide its own (visible) sequence counter.
         ss1.enableCount(false);
-        ss1.putOrRemove(OTV0P2BASE::ErrorReporter);
+        // Show internal temperature of boiler hub.
         ss1.put(TemperatureC16);
         // Show boiler state for boiler hubs.
         ss1.put(V0p2_SENSOR_TAG_F("b"), (int) BoilerHub.isBoilerOn());
@@ -474,8 +493,17 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute, const OTV0P2BASE::S
                 const uint8_t resetCount = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_RESET_COUNT);
                 Serial.print(resetCount);
                 Serial.println();
+#if 1
                 // Show stack headroom.
                 OTV0P2BASE::serialPrintAndFlush(F("SH ")); OTV0P2BASE::serialPrintAndFlush(OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd()); OTV0P2BASE::serialPrintlnAndFlush();
+                OTV0P2BASE::serialPrintAndFlush(F("oldSP: "));
+                OTV0P2BASE::serialPrintAndFlush(oldSP);
+                OTV0P2BASE::serialPrintAndFlush(F(" oldLoc: "));
+                OTV0P2BASE::serialPrintAndFlush(oldLoc);
+                OTV0P2BASE::serialPrintAndFlush(F(" oldPC: "));
+                OTV0P2BASE::serialPrintAndFlush(oldPC, HEX);
+                OTV0P2BASE::serialPrintlnAndFlush();
+#endif
                 // Default light-weight print and TX of stats.
                 bareStatsTX();
                 break; // Note that status is by default printed after processing input line.
@@ -525,6 +553,17 @@ void setup()
     OTV0P2BASE::serialPrintAndFlush(F("\rResets: "));
     OTV0P2BASE::serialPrintAndFlush(oldResetCount);
     OTV0P2BASE::serialPrintlnAndFlush();
+    oldSP = OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd();
+    oldLoc = OTV0P2BASE::MemoryChecks::getLocation();
+    oldPC = OTV0P2BASE::MemoryChecks::getPC();  // not isr safe
+    OTV0P2BASE::serialPrintAndFlush(F("oldSP: "));
+    OTV0P2BASE::serialPrintAndFlush(oldSP);
+    OTV0P2BASE::serialPrintAndFlush(F(" oldLoc: "));
+    OTV0P2BASE::serialPrintAndFlush(oldLoc);
+    OTV0P2BASE::serialPrintAndFlush(F(" oldPC: "));
+    OTV0P2BASE::serialPrintAndFlush(oldPC, HEX);
+    OTV0P2BASE::serialPrintlnAndFlush();
+    OTV0P2BASE::MemoryChecks::resetMinSP();
 #endif
 
     // Have 32678Hz clock at least running before going any further.
