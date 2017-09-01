@@ -14,20 +14,28 @@ specific language governing permissions and limitations
 under the Licence.
 
 Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
-                           Deniz Erbilgin 2015--2016
+                           Deniz Erbilgin 2015--2017
 */
 
-/*
-  Test of minimum relay code path.
-
-  DHD20130417: hardware setup on bare board.
-    * 1MHz CPU clock (from 8MHz internal RC clock with /8 prescaler) ATmega328P running at 1.8V--5V (typically 2V--3.3V).
-    * Fuse set for BOD-managed additional clock settle time, ie as fast a restart from sleep as possible.
-    * All unused pins unconnected and nominally floating (though driven low as output where possible).
-    * 32768Hz xtal between pins XTAL1 and XTAL2, async timer 2, for accurate timekeeping and low-power sleep.
-    * All unused system modules turned off.
-
-  Basic AVR power consumption ticking an (empty) control loop at ~0.5Hz should be ~1uA.
+/**
+ *  DE20170901
+ * @brief   To test alternative methods for relay send over the SIM900,
+ *          def ONE of the following flags at a time, in OTSIM900Link_OTSIM900Link.h.
+ *
+ *          OTSIM900LINK_SPLIT_SEND_TEST seems to drops less frames
+ *          (hard to tell as both REV10s under test were relaying the same REV7s).
+ *
+// IF DEFINED:  Splits the send routine into two steps, rather than polling for a prompt.
+//              Should be avoided if possible, but may be necessary e.g. with the REV10 as
+//              the blocking poll may overrun a sub-cycle, triggering a WDT reset.
+//              This behaviour depends on the fact that the V0p2 cycle takes long enough
+//              between polls for the SIM900 to be ready to receive a packet, but not
+//              long enough to time out the send routine. // XXX
+#undef OTSIM900LINK_SPLIT_SEND_TEST
+// IF DEFINED:  Flush until a fixed point in the sub-cycle. Note that this requires
+//              OTV0P2BASE::getSubCycleTime or equivalent to be passed in as a template param.
+//              May perform poorer/send junk in some circumstances (needs more testing).
+#undef OTSIM900LINK_SUBCYCLE_SEND_TIMEOUT_TEST
  */
 
 // GLOBAL flags that alter system build and behaviour.
@@ -82,7 +90,7 @@ static constexpr uint8_t RFM23B_RX_QUEUE_SIZE = OTRFM23BLink::DEFAULT_RFM23B_RX_
 static constexpr int8_t RFM23B_IRQ_PIN = PIN_RFM_NIRQ;
 static constexpr bool RFM23B_allowRX = true;
 OTRFM23BLink::OTRFM23BLink<OTV0P2BASE::V0p2_PIN_SPI_nSS, RFM23B_IRQ_PIN, RFM23B_RX_QUEUE_SIZE, RFM23B_allowRX> PrimaryRadio;
-OTSIM900Link::OTSIM900Link<8, 5, RADIO_POWER_PIN, OTV0P2BASE::getSecondsLT> SecondaryRadio; // (REGULATOR_POWERUP, RADIO_POWER_PIN);
+OTSIM900Link::OTSIM900Link<8, 5, RADIO_POWER_PIN, OTV0P2BASE::getSecondsLT> SecondaryRadio;
 
 /////// SENSORS
 
