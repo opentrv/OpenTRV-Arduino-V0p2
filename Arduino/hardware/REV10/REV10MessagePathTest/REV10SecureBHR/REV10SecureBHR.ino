@@ -67,12 +67,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 
 #include "secondaryRadioConfig.h"  // IP address in separate header to avoid accidentally committing.
 
-
-
-static volatile size_t oldPC;
-static volatile size_t oldSP;
-static volatile size_t oldLoc;
-
 /////// RADIOS
 // Pick an appropriate radio config for RFM23 (if it is the primary radio).
 // Nodes talking on fast GFSK channel 0.
@@ -561,17 +555,6 @@ void setup()
     OTV0P2BASE::serialPrintAndFlush(F("\rResets: "));
     OTV0P2BASE::serialPrintAndFlush(oldResetCount);
     OTV0P2BASE::serialPrintlnAndFlush();
-    oldSP = OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd();
-    oldLoc = OTV0P2BASE::MemoryChecks::getLocation();
-    oldPC = OTV0P2BASE::MemoryChecks::getPC();  // not isr safe
-    OTV0P2BASE::serialPrintAndFlush(F("oldSP: "));
-    OTV0P2BASE::serialPrintAndFlush(oldSP);
-    OTV0P2BASE::serialPrintAndFlush(F(" oldLoc: "));
-    OTV0P2BASE::serialPrintAndFlush(oldLoc);
-    OTV0P2BASE::serialPrintAndFlush(F(" oldPC: "));
-    OTV0P2BASE::serialPrintAndFlush(oldPC, HEX);
-    OTV0P2BASE::serialPrintlnAndFlush();
-    OTV0P2BASE::MemoryChecks::resetMinSP();
 #endif
 
     // Have 32678Hz clock at least running before going any further.
