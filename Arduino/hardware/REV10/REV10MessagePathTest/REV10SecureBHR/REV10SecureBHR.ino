@@ -498,13 +498,6 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute, const OTV0P2BASE::S
 #if 1
                 // Show stack headroom.
                 OTV0P2BASE::serialPrintAndFlush(F("SH ")); OTV0P2BASE::serialPrintAndFlush(OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd()); OTV0P2BASE::serialPrintlnAndFlush();
-                OTV0P2BASE::serialPrintAndFlush(F("oldSP: "));
-                OTV0P2BASE::serialPrintAndFlush(oldSP);
-                OTV0P2BASE::serialPrintAndFlush(F(" oldLoc: "));
-                OTV0P2BASE::serialPrintAndFlush(oldLoc);
-                OTV0P2BASE::serialPrintAndFlush(F(" oldPC: "));
-                OTV0P2BASE::serialPrintAndFlush(oldPC, HEX);
-                OTV0P2BASE::serialPrintlnAndFlush();
 #endif
                 // Default light-weight print and TX of stats.
                 bareStatsTX();
