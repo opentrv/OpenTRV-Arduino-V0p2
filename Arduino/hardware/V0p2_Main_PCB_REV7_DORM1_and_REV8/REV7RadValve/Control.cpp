@@ -23,30 +23,6 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 
 #include "V0p2_Main.h"
 #include <OTAESGCM.h>
-// Call this to do an I/O poll if needed; returns true if something useful definitely happened.
-// This call should typically take << 1ms at 1MHz CPU.
-// Does not change CPU clock speeds, mess with interrupts (other than possible brief blocking), or sleep.
-// Should also do nothing that interacts with Serial.
-// Limits actual poll rate to something like once every 8ms, unless force is true.
-//   * force if true then force full poll on every call (ie do not internally rate-limit)
-// Note that radio poll() can be for TX as well as RX activity.
-// Not thread-safe, eg not to be called from within an ISR.
-// FIXME trying to move into utils (for the time being.)
-bool pollIO(const bool force) {
-    static volatile uint8_t _pO_lastPoll;
-    // Poll RX at most about every ~8ms.
-    const uint8_t sct = OTV0P2BASE::getSubCycleTime();
-    if(force || (sct != _pO_lastPoll)) {
-        _pO_lastPoll = sct;
-        // Poll for inbound frames.
-        // If RX is not interrupt-driven then
-        // there will usually be little time to do this
-        // before getting an RX overrun or dropped frame.
-        PrimaryRadio.poll();
-    }
-    return(false);
-}
-
 
 // Managed JSON stats.
 static OTV0P2BASE::SimpleStatsRotation<12> ss1; // Configured for maximum different stats.	// FIXME increased for voice & for setback lockout
@@ -55,26 +31,15 @@ static OTV0P2BASE::SimpleStatsRotation<12> ss1; // Configured for maximum differ
 // to current channel security and sensitivity level.
 // This may be binary or JSON format.
 //   * allowDoubleTX  allow double TX to increase chance of successful reception
-//   * doBinary  send binary form if supported, else JSON form if supported
 // Sends stats on primary radio channel 0 with possible duplicate to secondary channel.
 // If sending encrypted then ID/counter fields (eg @ and + for JSON) are omitted
 // as assumed supplied by security layer to remote recipent.
-void bareStatsTX(const bool doBinary)
-  {
-  // Capture heavy stack usage from local allocations here.
-  OTV0P2BASE::MemoryChecks::recordIfMinSP(2);
-
-  // Note if radio/comms channel is itself framed.
-  const bool framed = !PrimaryRadio.getChannelConfig()->isUnframed;
-  constexpr bool RFM23BFramed = false; // Never use this raw framing unless enabled explicitly.
-
-  constexpr bool doEnc = true;
-
-  const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled<>();
-  
-static_assert(OTV0P2BASE::FullStatsMessageCore_MAX_BYTES_ON_WIRE <= STATS_MSG_MAX_LEN, "FullStatsMessageCore_MAX_BYTES_ON_WIRE too big");
-static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_MAX_LENGTH too big"); // Allow 1 for trailing CRC.
-
+void bareStatsTX() {
+    // Capture heavy stack usage from local allocations here.
+    OTV0P2BASE::MemoryChecks::recordIfMinSP();
+    const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled<>();
+    static_assert(OTV0P2BASE::FullStatsMessageCore_MAX_BYTES_ON_WIRE <= STATS_MSG_MAX_LEN, "FullStatsMessageCore_MAX_BYTES_ON_WIRE too big");
+    static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_MAX_LENGTH too big"); // Allow 1 for trailing CRC.
     // Create scratch space for secure stats TX // FIXME
     // Buffer need be no larger than leading length byte + typical 64-byte radio module TX buffer limit + optional terminator.
     constexpr uint8_t MSG_BUF_SIZE = 1 + 64 + 1;
@@ -85,44 +50,29 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
     constexpr size_t WorkspaceSize = OTRadioLink::SimpleSecureFrame32or0BodyTXBase::generateSecureOFrameRawForTX_total_scratch_usage_OTAESGCM_2p0 + scratchSpaceNeeded;
     uint8_t workspace[WorkspaceSize];
     OTV0P2BASE::ScratchSpaceL sW(workspace, sizeof(workspace));
-
-  // Allow space in buffer for:
-  //   * buffer offset/preamble
-  //   * max binary length, or max JSON length + 1 for CRC + 1 to allow detection of oversize message
-  //   * terminating 0xff
-  uint8_t * const buf = sW.buf;
-
-  if(doBinary && !doEnc) // Note that binary form is not secure, so not permitted for secure systems.
-    {} else // Send binary *or* JSON on each attempt so as not to overwhelm the receiver.
-    {
+    // Allow space in buffer for:
+    //   * buffer offset/preamble
+    //   * max binary length, or max JSON length + 1 for CRC + 1 to allow detection of oversize message
+    //   * terminating 0xff
+    uint8_t * const buf = sW.buf;
+    // Send binary *or* JSON on each attempt so as not to overwhelm the receiver.
     // Send JSON message.
     bool sendingJSONFailed = false; // Set true and stop attempting JSON send in case of error.
-
     // Set pointer location based on whether start of message will have preamble TODO move to OTRFM23BLink queueToSend?
     uint8_t *bptr = buf;
-    if(RFM23BFramed) { bptr += STATS_MSG_START_OFFSET; }
     // Leave space for possible leading frame-length byte, eg for encrypted frame.
-    else { ++bptr; }
+    ++bptr;
     // Where to write the real frame content.
     uint8_t *const realTXFrameStart = bptr;
-
     // If forcing encryption or if unconditionally suppressed
     // then suppress the "@" ID field entirely,
     // assuming that the encrypted commands will carry the ID, ie in the 'envelope'.
-    if(doEnc)
-        { ss1.setID(V0p2_SENSOR_TAG_F("")); }
-
+    ss1.setID(V0p2_SENSOR_TAG_F(""));
     // Managed JSON stats.
-    // Make best use of available bandwidth...
-    constexpr bool maximise = true;
     // Enable "+" count field for diagnostic purposes, eg while TX is lossy,
     // if the primary radio channel does not include a sequence number itself.
     // Assume that an encrypted channel will provide its own (visible) sequence counter.
-    ss1.enableCount(!doEnc); 
-//    if(ss1.isEmpty())
-//      {
-//      // Perform run-once operations...
-//      }
+    ss1.enableCount(false);  // Always encrypted
 #ifdef OTV0P2BASE_ErrorReport_DEFINED
     ss1.putOrRemove(OTV0P2BASE::ErrorReporter);
 #endif
@@ -142,169 +92,106 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
     // Show state of setback lockout.
     ss1.put(V0p2_SENSOR_TAG_F("gE"), OTRadValve::getSetbackLockout(), true);
     const uint8_t privacyLevel = OTV0P2BASE::stTXalwaysAll;
-
     // Redirect JSON output appropriately.
     // Part of sW, directly after the message buffer.
     // |    0    |     1    | 2 |  3:n | n+1 | n+2 | n is the end of the stats message. n+2 <= 34
     // | valvePC | hasStats | { | json | '}' | 0x0 |
     // ptextBuf is the entire frame
     uint8_t * const ptextBuf = sW.buf + MSG_BUF_SIZE;
-
-    // Allow for a cap on JSON TX size, eg where TX is lossy for near-maximum sizes.
-    // This can only reduce the maximum size, and it should not try to make it silly small.
-    constexpr uint8_t max_plaintext_JSON_len = OTV0P2BASE::MSG_JSON_MAX_LENGTH;
-
     // Redirect JSON output appropriately.
-    uint8_t *const bufJSON = doEnc ? (ptextBuf + 2) : bptr;
-    const uint8_t bufJSONlen = doEnc ? bufEncJSONlen : min(max_plaintext_JSON_len+2, MSG_BUF_SIZE - (bptr-buf));  // XXX
-
+    uint8_t *const bufJSON = ptextBuf + 2;
+    const uint8_t bufJSONlen = bufEncJSONlen;
     // Number of bytes written for body.
     // For non-secure, this is the size of the JSON text.
     // For secure this is overridden with the secure frame size.
     int8_t wrote = 0;
-
     // Generate JSON text.
-    if(!sendingJSONFailed)
-      {
-      // Generate JSON and write to appropriate buffer:
-      // direct to TX buffer if not encrypting, else to separate buffer.
-      wrote = ss1.writeJSON(bufJSON, bufJSONlen, privacyLevel, maximise); //!allowDoubleTX && randRNG8NextBoolean());
-      if(0 == wrote)
-        {
+    if(!sendingJSONFailed) {
+        // Generate JSON and write to appropriate buffer:
+        // direct to TX buffer if not encrypting, else to separate buffer.
+        wrote = ss1.writeJSON(bufJSON, bufJSONlen, privacyLevel, true); // make best use of JSON stats;
+        if(0 == wrote) {
 #if 0 && defined(DEBUG)
-DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
+            DEBUG_SERIAL_PRINTLN_FLASHSTRING("JSON gen err!");
 #endif
-        sendingJSONFailed = true;
+            sendingJSONFailed = true;
         }
-      }
-
+    }
     // Push the JSON output to Serial.
-    if(!sendingJSONFailed)
-      {
-      if(doEnc)
-        {
+    if(!sendingJSONFailed) {
         // Insert synthetic full ID/@ field for local stats, but no sequence number for now.
         Serial.print(F("{\"@\":\""));
         for(int i = 0; i < OTV0P2BASE::OpenTRV_Node_ID_Bytes; ++i) { Serial.print(eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_ID+i), HEX); }
         Serial.print(F("\","));
         Serial.write(bufJSON+1, wrote-1);
         Serial.println();
-        }
-      else
-        { OTV0P2BASE::outputJSONStats(&Serial, true, bufJSON, bufJSONlen); } // Serial must already be running!
-      OTV0P2BASE::flushSerialSCTSensitive(); // Ensure all flushed since system clock may be messed with...
-      }
-
+        OTV0P2BASE::flushSerialSCTSensitive(); // Ensure all flushed since system clock may be messed with...
+    }
     // Get the 'building' key for stats sending.
     uint8_t key[16];
-    if(!sendingJSONFailed && doEnc)
-      {
-      if(!OTV0P2BASE::getPrimaryBuilding16ByteSecretKey(key))
-        {
-        sendingJSONFailed = true;
-        OTV0P2BASE::serialPrintlnAndFlush(F("!TX key")); // Know why TX failed.
+    if(!sendingJSONFailed) {
+        if(!OTV0P2BASE::getPrimaryBuilding16ByteSecretKey(key)) {
+            sendingJSONFailed = true;
+            OTV0P2BASE::serialPrintlnAndFlush(F("!TX key")); // Know why TX failed.
         }
-      }
-
+    }
     // If doing encryption
     // then build encrypted frame from raw JSON.
-    if(!sendingJSONFailed && doEnc)
-      {
-      // TODO Fold JSON
-      // Explicit-workspace version of encryption.
-      const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEncWithLWorkspace_ptr_t eW = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_WITH_LWORKSPACE;
-
-      // Create subscratch space for encryption functions
-      OTV0P2BASE::ScratchSpaceL subScratch(sW, scratchSpaceNeeded);
-      constexpr uint8_t txIDLen = OTRadioLink::ENC_BODY_DEFAULT_ID_BYTES;
-      // When sending on a channel with framing, do not explicitly send the frame length byte.
-      const uint8_t offset = framed ? 1 : 0;
-      // Assumed to be at least one free writeable byte ahead of bptr.
-      // Get current modelled valve position.
-      const uint8_t valvePC = NominalRadValve.get();
-      const uint8_t bodylen = OTRadioLink::SimpleSecureFrame32or0BodyTXV0p2::getInstance().generateSecureOFrameRawForTX(
-            (realTXFrameStart - offset), (MSG_BUF_SIZE - (realTXFrameStart-buf) + offset),
-            txIDLen, valvePC, ptextBuf, eW, subScratch, key);
-      sendingJSONFailed = (0 == bodylen);
-      wrote = bodylen - offset;
-      }
-
-#if 0 && defined(DEBUG)
-    if(sendingJSONFailed) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("!failed JSON enc"); }
-#endif
-    if(!sendingJSONFailed)
-      {
-      // If not encrypting, adjust the JSON for transmission and add a CRC.
-      // (Set high-bit on final closing brace to make it unique, and compute (non-0xff) CRC.)
-      if(!doEnc)
-          {
-          const uint8_t crc = OTV0P2BASE::adjustJSONMsgForTXAndComputeCRC((char *)bptr);
-          if(0xff == crc) { sendingJSONFailed = true; }
-          else
-            {
-            bptr += wrote;
-            *bptr++ = crc; // Add 7-bit CRC for on-the-wire check.
-            ++wrote;
-            }
-          }
-        {
-        // Send directly to the primary radio...
-        if(!PrimaryRadio.queueToSend(realTXFrameStart, wrote)) { sendingJSONFailed = true; }
-        }
-      }
-
+    if(!sendingJSONFailed) {
+        // TODO Fold JSON
+        // Explicit-workspace version of encryption.
+        const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEncWithLWorkspace_ptr_t eW = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_WITH_LWORKSPACE;
+        // Create subscratch space for encryption functions
+        OTV0P2BASE::ScratchSpaceL subScratch(sW, scratchSpaceNeeded);
+        constexpr uint8_t txIDLen = OTRadioLink::ENC_BODY_DEFAULT_ID_BYTES;
+        // When sending on a channel with framing, do not explicitly send the frame length byte.
+        constexpr uint8_t offset = 1;
+        // Assumed to be at least one free writeable byte ahead of bptr.
+        // Get current modelled valve position.
+        const uint8_t valvePC = NominalRadValve.get();
+        const uint8_t bodylen = OTRadioLink::SimpleSecureFrame32or0BodyTXV0p2::getInstance().generateSecureOFrameRawForTX(
+        (realTXFrameStart - offset), (MSG_BUF_SIZE - (realTXFrameStart-buf) + offset),
+        txIDLen, valvePC, ptextBuf, eW, subScratch, key);
+        sendingJSONFailed = (0 == bodylen);
+        wrote = bodylen - offset;
+    }
+    // Send directly to the primary radio...
+    if((!sendingJSONFailed) && (!PrimaryRadio.queueToSend(realTXFrameStart, wrote))) { sendingJSONFailed = true; }
 #if 1 && defined(DEBUG)
     if(sendingJSONFailed) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("!failed JSON TX"); }
 #endif
-    }
+    if(neededWaking) { OTV0P2BASE::flushSerialProductive(); OTV0P2BASE::powerDownSerial(); }
+}
 
-//DEBUG_SERIAL_PRINTLN_FLASHSTRING("Stats TX");
-  if(neededWaking) { OTV0P2BASE::flushSerialProductive(); OTV0P2BASE::powerDownSerial(); }
-  }
-
-// Wire components together, eg for occupancy sensing.
-static void wireComponentsTogether()
-  {
-
-  AmbLight.setOccCallbackOpt([](bool prob){if(prob){Occupancy.markAsPossiblyOccupied();}else{Occupancy.markAsJustPossiblyOccupied();}});
-
-  // Callbacks to set various mode combinations.
-  // Typically at most one call would be made on any appropriate pot adjustment.
-  TempPot.setWFBCallbacks([](bool x){valveUI.setWarmModeFromManualUI(x);},
-                          [](bool x){valveUI.setBakeModeFromManualUI(x);});
-  }
-
+// Wire components together, eg. for occupancy sensing.
+static void wireComponentsTogether() {
+    AmbLight.setOccCallbackOpt([](bool prob){if(prob){Occupancy.markAsPossiblyOccupied();}else{Occupancy.markAsJustPossiblyOccupied();}});
+    // Callbacks to set various mode combinations.
+    // Typically at most one call would be made on any appropriate pot adjustment.
+    TempPot.setWFBCallbacks([](bool x){valveUI.setWarmModeFromManualUI(x);},
+                            [](bool x){valveUI.setBakeModeFromManualUI(x);});
+}
 
 // Update sensors with historic/trailing statistics information where needed.
 // Should be called at least hourly after all stats have been updated,
 // but can also be called whenever the user adjusts settings for example.
-static void updateSensorsFromStats()
-  {
-  // Update with rolling stats to adapt to sensors and local environment...
-  // ...and prevailing bias, so may take a while to adjust.
-  AmbLight.setTypMinMax(
+static void updateSensorsFromStats() {
+    // Update with rolling stats to adapt to sensors and local environment...
+    // ...and prevailing bias, so may take a while to adjust.
+    AmbLight.setTypMinMax(
           eeStats.getByHourStatRTC(OTV0P2BASE::NVByHourByteStatsBase::STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED),
           eeStats.getMinByHourStat(OTV0P2BASE::NVByHourByteStatsBase::STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED),
           eeStats.getMaxByHourStat(OTV0P2BASE::NVByHourByteStatsBase::STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED),
           !tempControl.hasEcoBias());
-  }
-
-// Run tasks needed at the end of each hour.
-// Should be run once at a fixed slot in the last minute of each hour.
-// Will be run after all stats for the current hour have been updated.
-static void endOfHourTasks()
-  {
-  }
+}
 
 // Run tasks needed at the end of each day (nominal midnight).
 // Should be run once at a fixed slot in the last minute of the last hour of each day.
 // Will be run after all stats for the current hour have been updated.
-static void endOfDayTasks()
-  {
+static void endOfDayTasks() {
     // Count down the setback lockout if not finished...  (TODO-786, TODO-906)
     OTRadValve::countDownSetbackLockout();
-  }
-
+}
 
 // Controller's view of Least Significant Digits of the current (local) time, in this case whole seconds.
 // TIME_LSD ranges from 0 to TIME_CYCLE_S-1, also major cycle length.
@@ -356,22 +243,20 @@ void setupOpenTRV()
     // Do early 'wake-up' stats transmission if possible
     // when everything else is set up and ready and allowed (TODO-636)
     // including all set-up and inter-wiring of sensors/actuators.
-    if(enableTrailingStatsPayload()) {
-        // Attempt to maximise chance of reception with a double TX.
-        // Assume not in hub mode (yet).
-        // Send all possible formats, binary first (assumed complete in one message).
-        bareStatsTX(true);  // XXX
-        // Send JSON stats repeatedly (typically once or twice)
-        // until all values pushed out (no 'changed' values unsent)
-        // or limit reached.
-        for(uint8_t i = 5; --i > 0; ) {
-            ::OTV0P2BASE::nap(WDTO_120MS, false); // Sleep long enough for receiver to have a chance to process previous TX.
+    // Attempt to maximise chance of reception with a double TX.
+    // Assume not in hub mode (yet).
+    // Send all possible formats, binary first (assumed complete in one message).
+    bareStatsTX();  // XXX
+    // Send JSON stats repeatedly (typically once or twice)
+    // until all values pushed out (no 'changed' values unsent)
+    // or limit reached.
+    for(uint8_t i = 5; --i > 0; ) {
+        ::OTV0P2BASE::nap(WDTO_120MS, false); // Sleep long enough for receiver to have a chance to process previous TX.
 #if 0 && defined(DEBUG)
-            DEBUG_SERIAL_PRINTLN_FLASHSTRING(" TX...");
+        DEBUG_SERIAL_PRINTLN_FLASHSTRING(" TX...");
 #endif
-            bareStatsTX(false);  // XXX
-            if(!ss1.changedValue()) { break; }
-        }
+        bareStatsTX();  // XXX
+        if(!ss1.changedValue()) { break; }
     }
     #if 0 && defined(DEBUG)
     DEBUG_SERIAL_PRINTLN_FLASHSTRING("setup stats sent");
@@ -493,7 +378,6 @@ void loopOpenTRV()
     // Run the OpenTRV button/LED UI if required.
     if(0 != valveUI.read()) { recompute = true; }
     // Handling the UI may have taken a little while, so process I/O a little.
-    messageQueue.handle(true, PrimaryRadio); // Deal with any pending I/O.
     if(recompute || valveUI.veryRecentUIControlUse()) {
         // Force immediate recompute of target temperature for (UI) responsiveness.
         NominalRadValve.computeTargetTemperature();
@@ -519,12 +403,7 @@ void loopOpenTRV()
             // Ensure that the RTC has been persisted promptly when necessary.
             OTV0P2BASE::persistRTC();
             // Run hourly tasks at the end of the hour.
-            if(59 == OTV0P2BASE::getMinutesLT())
-            {
-            endOfHourTasks();
-            if(23 == OTV0P2BASE::getHoursLT())
-            { endOfDayTasks(); }
-            }
+            if((59 == OTV0P2BASE::getMinutesLT() ) && (23 == OTV0P2BASE::getHoursLT() )) { endOfDayTasks(); }
             break;
         }
         // Churn/reseed PRNG(s) a little to improve unpredictability in use: should be lightweight.
@@ -548,19 +427,11 @@ void loopOpenTRV()
             // DHD20170113: was once every 4 minutes, but can make boiler response too slow.
             if(0 == (minuteFrom4 & 1)) { break; }
 #endif
-            // Abort if not allowed to send stats at all.
-            // FIXME: fix this to send bare calls for heat / valve % instead from valves for secure non-FHT8V comms.
-            if(!enableTrailingStatsPayload()) { break; }
             // Sleep randomly up to ~25% of the minor cycle
             // to spread transmissions and thus help avoid collisions.
             // (Longer than 25%/0.5s could interfere with other ops such as FHT8V TXes.)
             const uint8_t stopBy = 1 + (((OTV0P2BASE::GSCT_MAX >> 2) | 7) & OTV0P2BASE::randRNG8());
-            while(OTV0P2BASE::getSubCycleTime() <= stopBy) {
-                // Handle any pending I/O while waiting.
-                if(messageQueue.handle(true, PrimaryRadio)) { continue; }
-                // Sleep a little.
-                OTV0P2BASE::nap(WDTO_15MS, true);
-            }
+            while(OTV0P2BASE::getSubCycleTime() <= stopBy) { OTV0P2BASE::nap(WDTO_15MS, true); } // Sleep a little.
             // Send stats!
             // Try for double TX for extra robustness unless:
             //   * this is a speculative 'extra' TX
@@ -570,8 +441,7 @@ void loopOpenTRV()
             // if this is controlling a local FHT8V on which the binary stats can be piggybacked.
             // Ie, if doesn't have a local TRV then it must send binary some of the time.
             // Any recently-changed stats value is a hint that a strong transmission might be a good idea.
-            const bool doBinary = false;
-            bareStatsTX(doBinary);
+            bareStatsTX();
             break;
         }
         // SENSOR READ AND STATS
@@ -625,8 +495,6 @@ void loopOpenTRV()
         }
     }
     // End-of-loop processing, that may be slow.
-    // Ensure progress on queued messages ahead of slow work.  (TODO-867)
-    messageQueue.handle(true, PrimaryRadio); // Deal with any pending I/O.
     // Handle local direct-drive valve, eg DORM1.
     // If waiting for for verification that the valve has been fitted
     // then accept any manual interaction with controls as that signal.

@@ -37,30 +37,27 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 // DOES NOT RETURN.
 // Tries to turn off most stuff safely that will benefit from doing so, but nothing too complex.
 // Tries not to use lots of energy so as to keep distress beacon running for a while.
-void panic()
-  {
-  // Reset radio and go into low-power mode.
-  PrimaryRadio.panicShutdown();
-  // Power down almost everything else...
-  OTV0P2BASE::minimisePowerWithoutSleep();
-  pinMode(OTV0P2BASE::LED_HEATCALL_L, OUTPUT);
-  for( ; ; )
-    {
-    OTV0P2BASE::LED_HEATCALL_ON();
-    OTV0P2BASE::nap(WDTO_15MS);
-    OTV0P2BASE::LED_HEATCALL_OFF();
-    OTV0P2BASE::nap(WDTO_120MS);
+void panic() {
+    // Reset radio and go into low-power mode.
+    PrimaryRadio.panicShutdown();
+    // Power down almost everything else...
+    OTV0P2BASE::minimisePowerWithoutSleep();
+    pinMode(OTV0P2BASE::LED_HEATCALL_L, OUTPUT);
+    for( ; ; ) {
+        OTV0P2BASE::LED_HEATCALL_ON();
+        OTV0P2BASE::nap(WDTO_15MS);
+        OTV0P2BASE::LED_HEATCALL_OFF();
+        OTV0P2BASE::nap(WDTO_120MS);
     }
-  }
+}
 
 // Panic with fixed message.
-void panic(const __FlashStringHelper *s)
-  {
-  OTV0P2BASE::serialPrintlnAndFlush(); // Start new line to highlight error.  // May fail.
-  OTV0P2BASE::serialPrintAndFlush('!'); // Indicate error with leading '!' // May fail.
-  OTV0P2BASE::serialPrintlnAndFlush(s); // Print supplied detail text. // May fail.
-  panic();
-  }
+void panic(const __FlashStringHelper *s) {
+    OTV0P2BASE::serialPrintlnAndFlush(); // Start new line to highlight error.  // May fail.
+    OTV0P2BASE::serialPrintAndFlush('!'); // Indicate error with leading '!' // May fail.
+    OTV0P2BASE::serialPrintlnAndFlush(s); // Print supplied detail text. // May fail.
+    panic();
+}
 
 // Signal position in basic POST sequence as a small positive integer, or zero for done/none.
 // Simple count of position in ON flashes.
@@ -71,58 +68,32 @@ void panic(const __FlashStringHelper *s)
 //   * Each of the 5 main sections of Power On Self Test is 1 second LED on, 0.5 second off, n short flashes separated by 0.25s off, then 0.5s off, then 1s on.
 //     The value of n is 1, 2, 3, 4, 5.
 //   * The LED should then go off except for optional faint flickers as the radio is being driven if set up to do so.
-#define PP_OFF_MS 250
+static constexpr uint8_t PP_OFF_MS = 250;
 static void posPOST(const uint8_t position, const __FlashStringHelper *s = NULL)
-  {
-  OTV0P2BASE::sleepLowPowerMs(1000);
-#if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("posPOST: "); // Can only be used once serial is set up.
-  DEBUG_SERIAL_PRINT(position);
-  if(NULL != s)
-    {
-    DEBUG_SERIAL_PRINT_FLASHSTRING(": ");
-    DEBUG_SERIAL_PRINT(s);
+{
+    OTV0P2BASE::sleepLowPowerMs(1000);
+    OTV0P2BASE::LED_HEATCALL_OFF();
+    // Skip much of lightshow if '0'/end/none position.
+    if(position > 0) {
+        OTV0P2BASE::sleepLowPowerMs(2*PP_OFF_MS); // TODO: use this time to gather entropy.
+        for(int i = position; --i >= 0; ) {
+            OTV0P2BASE::LED_HEATCALL_ON();
+            OTV0P2BASE::nap(WDTO_15MS);
+            OTV0P2BASE::LED_HEATCALL_OFF();
+            OTV0P2BASE::sleepLowPowerMs(PP_OFF_MS); // TODO: use this time to gather entropy.
+        }
     }
-  DEBUG_SERIAL_PRINTLN();
-//#else
-//  OTV0P2BASE::serialPrintlnAndFlush(s);
-#endif
-//  pinMode(LED_HEATCALL, OUTPUT);
-  OTV0P2BASE::LED_HEATCALL_OFF();
-
-  // Skip much of lightshow if '0'/end/none position.
-  if(position > 0)
-    {
-    OTV0P2BASE::sleepLowPowerMs(2*PP_OFF_MS); // TODO: use this time to gather entropy.
-    for(int i = position; --i >= 0; )
-      {
-      OTV0P2BASE::LED_HEATCALL_ON();
-      OTV0P2BASE::nap(WDTO_15MS);
-      OTV0P2BASE::LED_HEATCALL_OFF();
-      OTV0P2BASE::sleepLowPowerMs(PP_OFF_MS); // TODO: use this time to gather entropy.
-      }
-    }
-
-  OTV0P2BASE::sleepLowPowerMs(PP_OFF_MS); // TODO: use this time to gather entropy.
-  OTV0P2BASE::LED_HEATCALL_ON();
-  OTV0P2BASE::sleepLowPowerMs(1000); // TODO: use this time to gather entropy.
-  }
+    OTV0P2BASE::sleepLowPowerMs(PP_OFF_MS); // TODO: use this time to gather entropy.
+    OTV0P2BASE::LED_HEATCALL_ON();
+    OTV0P2BASE::sleepLowPowerMs(1000); // TODO: use this time to gather entropy.
+}
 
 
-// Pick an appropriate radio config for RFM23 (if it is the primary radio).
-// OTRadioChannelConfig(const void *_config, bool _isFull, bool _isRX, bool _isTX, bool _isAuth = false, bool _isEnc = false, bool _isUnframed = false)
-#define RADIO_CONFIG_NAME "GFSK"
 // Nodes talking on fast GFSK channel 0.
 static constexpr uint8_t nPrimaryRadioChannels = 1;
-static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChannels] =
-  {
-  // GFSK channel 0 full config, RX/TX, not in itself secure.
-  OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsGFSK57600, true),
-  };
-
-// NO RADIO RX FILTERING BY DEFAULT
-#define NO_RX_FILTER
-#define FilterRXISR NULL
+static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChannels] = {
+    // GFSK channel 0 full config, RX/TX, not in itself secure.
+    OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsGFSK57600, true), };
 
 void optionalPOST()
   {
@@ -264,6 +235,32 @@ valveUI_t valveUI(
 //========================================
 // FUNCTIONS
 //========================================
+//  CONTROL
+
+// Call this to do an I/O poll if needed; returns true if something useful definitely happened.
+// This call should typically take << 1ms at 1MHz CPU.
+// Does not change CPU clock speeds, mess with interrupts (other than possible brief blocking), or sleep.
+// Should also do nothing that interacts with Serial.
+// Limits actual poll rate to something like once every 8ms, unless force is true.
+//   * force if true then force full poll on every call (ie do not internally rate-limit)
+// Note that radio poll() can be for TX as well as RX activity.
+// Not thread-safe, eg not to be called from within an ISR.
+// FIXME trying to move into utils (for the time being.)
+bool pollIO(const bool force) {
+    static volatile uint8_t _pO_lastPoll;
+    // Poll RX at most about every ~8ms.
+    const uint8_t sct = OTV0P2BASE::getSubCycleTime();
+    if(force || (sct != _pO_lastPoll)) {
+        _pO_lastPoll = sct;
+        // Poll for inbound frames.
+        // If RX is not interrupt-driven then
+        // there will usually be little time to do this
+        // before getting an RX overrun or dropped frame.
+        PrimaryRadio.poll();
+    }
+    return(false);
+}
+
 
 // CLI
 
@@ -359,127 +356,45 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute, const OTV0P2BASE::S
 // Setup routine: runs once after reset.
 // Does some limited board self-test and will panic() if anything is obviously broken.
 void setup()
-  {
-  // Set appropriate low-power states, interrupts, etc, ASAP.
-  OTV0P2BASE::powerSetup();
+{
+    // Set appropriate low-power states, interrupts, etc, ASAP.
+    OTV0P2BASE::powerSetup();
+    // IO setup for safety, and to avoid pins floating.
+    OTV0P2BASE::IOSetup();
+    // Restore previous RTC state if available.
+    OTV0P2BASE::restoreRTC();
+    OTV0P2BASE::serialPrintAndFlush(F("\r\nOpenTRV: ")); // Leading CRLF to clear leading junk, eg from bootloader.
+    V0p2Base_serialPrintlnBuildVersion();
+    // Count resets to detect unexpected crashes/restarts.
+    const uint8_t oldResetCount = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_RESET_COUNT);
+    eeprom_write_byte((uint8_t *)V0P2BASE_EE_START_RESET_COUNT, 1 + oldResetCount);
 
-//#if defined(ENABLE_MIN_ENERGY_BOOT)
-//  nap(WDTO_120MS); // Sleep to let power supply recover a little.
-//#endif
+    optionalPOST();
 
-  // IO setup for safety, and to avoid pins floating.
-  OTV0P2BASE::IOSetup();
-
-
-  // Restore previous RTC state if available.
-  OTV0P2BASE::restoreRTC();
-
-  OTV0P2BASE::serialPrintAndFlush(F("\r\nOpenTRV: ")); // Leading CRLF to clear leading junk, eg from bootloader.
-  V0p2Base_serialPrintlnBuildVersion();
-
-  // Count resets to detect unexpected crashes/restarts.
-  const uint8_t oldResetCount = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_RESET_COUNT);
-  eeprom_write_byte((uint8_t *)V0P2BASE_EE_START_RESET_COUNT, 1 + oldResetCount);
-
-#if defined(DEBUG) && !defined(ENABLE_MIN_ENERGY_BOOT)
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("DEBUG");
-#endif
-
-#if defined(DEBUG) && !defined(ENABLE_MIN_ENERGY_BOOT)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("Resets: ");
-  DEBUG_SERIAL_PRINT(oldResetCount);
-  DEBUG_SERIAL_PRINTLN();
-  const uint8_t overruns = (~eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_OVERRUN_COUNTER)) & 0xff;
-  if(0 != overruns)
-    {
-    DEBUG_SERIAL_PRINT_FLASHSTRING("Overruns: ");
-    DEBUG_SERIAL_PRINT(overruns);
-    DEBUG_SERIAL_PRINTLN();
+    // Collect full set of environmental values before entering loop() in normal mode.
+    // This should also help ensure that sensors are properly initialised.
+    TemperatureC16.read();
+    AmbLight.read();
+    RelHumidity.read();
+    TempPot.read();
+    Supply_cV.read();
+    OTV0P2BASE::seedPRNGs();
+    #if 0 && defined(DEBUG)
+    DEBUG_SERIAL_PRINTLN_FLASHSTRING("Computing initial target/demand...");
+    #endif
+    // Update targets, output to TRV and boiler, etc, to be sensible before main loop starts.
+    NominalRadValve.read();
+    // Ensure that the unique node ID is set up (mainly on first use).
+    // Have one attempt (don't want to stress an already failing EEPROM) to force-reset if not good, then panic.
+    // Needs to have had entropy gathered, etc.
+    if(!OTV0P2BASE::ensureIDCreated()) {
+        if(!OTV0P2BASE::ensureIDCreated(true)) { panic(F("ID")); } // Force reset.
     }
-#if 0 && defined(DEBUG)
-  // Compute approx free RAM: see http://jeelabs.org/2011/05/22/atmega-memory-use/
-  DEBUG_SERIAL_PRINT_FLASHSTRING("Free RAM: ");
-  extern int __heap_start, *__brkval;
-  int x;
-  DEBUG_SERIAL_PRINT((int) &x - (__brkval == 0 ? (int) &__heap_start : (int) __brkval));
-  DEBUG_SERIAL_PRINTLN();
-#endif
-#endif
-
-  optionalPOST();
-
-  // Collect full set of environmental values before entering loop() in normal mode.
-  // This should also help ensure that sensors are properly initialised.
-
-  // No external sensors are *assumed* present if running alt main loop.
-  // This may mean that the alt loop/POST will have to initialise them explicitly,
-  // and the initial seed entropy may be marginally reduced also.
-  const int heat = TemperatureC16.read();
-#if 0 && defined(DEBUG) && !defined(ENABLE_TRIMMED_MEMORY)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("T: ");
-  DEBUG_SERIAL_PRINT(heat);
-  DEBUG_SERIAL_PRINTLN();
-#endif
-  const int light = AmbLight.read();
-#if 0 && defined(DEBUG) && !defined(ENABLE_TRIMMED_MEMORY)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("L: ");
-  DEBUG_SERIAL_PRINT(light);
-  DEBUG_SERIAL_PRINTLN();
-#endif
-  const uint8_t rh = RelHumidity.read();
-#if 0 && defined(DEBUG) && !defined(ENABLE_TRIMMED_MEMORY)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("RH%: ");
-  DEBUG_SERIAL_PRINT(rh);
-  DEBUG_SERIAL_PRINTLN();
-#endif
-#if defined(TEMP_POT_AVAILABLE)
-  const int tempPot = TempPot.read();
-#if 0 && defined(DEBUG) && !defined(ENABLE_TRIMMED_MEMORY)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("temp pot: ");
-  DEBUG_SERIAL_PRINT(tempPot);
-  DEBUG_SERIAL_PRINTLN();
-#endif
-#endif
-
-  const uint16_t Vcc = Supply_cV.read();
-#if 1 && defined(DEBUG) && !defined(ENABLE_TRIMMED_MEMORY)
-  // Get current power supply voltage (internal sensor).
-  DEBUG_SERIAL_PRINT_FLASHSTRING("Vcc: ");
-  DEBUG_SERIAL_PRINT(Vcc);
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("cV");
-#endif
-#if 0 && defined(DEBUG)
-  // Get internal temperature measurement (internal sensor).
-  const int intTempC16 = OTV0P2BASE::readInternalTemperatureC16();
-  DEBUG_SERIAL_PRINT_FLASHSTRING("Int temp: ");
-  DEBUG_SERIAL_PRINT((intTempC16 + 8) >> 4);
-  DEBUG_SERIAL_PRINT_FLASHSTRING("C / ");
-  DEBUG_SERIAL_PRINT(intTempC16);
-  DEBUG_SERIAL_PRINTLN();
-#endif
-  OTV0P2BASE::seedPRNGs();
-
-#if 0 && defined(DEBUG)
-  DEBUG_SERIAL_PRINTLN_FLASHSTRING("Computing initial target/demand...");
-#endif
-  // Update targets, output to TRV and boiler, etc, to be sensible before main loop starts.
-  NominalRadValve.read();
-
-  // Ensure that the unique node ID is set up (mainly on first use).
-  // Have one attempt (don't want to stress an already failing EEPROM) to force-reset if not good, then panic.
-  // Needs to have had entropy gathered, etc.
-  if(!OTV0P2BASE::ensureIDCreated())
-    {
-    if(!OTV0P2BASE::ensureIDCreated(true)) // Force reset.
-      { panic(F("ID")); }
-    }
-
-  // Initialised: turn main/heatcall UI LED off.
-  OTV0P2BASE::LED_HEATCALL_OFF();
-
-  // Do OpenTRV-specific (late) setup.
-  setupOpenTRV();
-  }
+    // Initialised: turn main/heatcall UI LED off.
+    OTV0P2BASE::LED_HEATCALL_OFF();
+    // Do OpenTRV-specific (late) setup.
+    setupOpenTRV();
+}
 
 //========================================
 // MAIN LOOP
@@ -505,38 +420,36 @@ inline void stackCheck()
 #endif
 
 void loop()
-  {
+{
 #if defined(EST_CPU_DUTYCYCLE)
-  const unsigned long usStart = micros();
+    const unsigned long usStart = micros();
 #endif
-
 #if 1
-  // Force restart if SPAM/heap/stack likely corrupt.
-  OTV0P2BASE::MemoryChecks::forceResetIfStackOverflow();
-
-  // Complain and keep complaining when getting near stack overflow.
-  // TODO: make DEBUG-only when confident all configs OK.
-  const int16_t minsp = OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd();
-  if(minsp < 64) { OTV0P2BASE::serialPrintlnAndFlush(F("!SH")); }
+    // Force restart if SPAM/heap/stack likely corrupt.
+    OTV0P2BASE::MemoryChecks::forceResetIfStackOverflow();
+    // Complain and keep complaining when getting near stack overflow.
+    // TODO: make DEBUG-only when confident all configs OK.
+    const int16_t minsp = OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd();
+    if(minsp < 64) { OTV0P2BASE::serialPrintlnAndFlush(F("!SH")); }
 #else
-  stackCheck();
+    stackCheck();
 #endif
 
-  loopOpenTRV();
+    loopOpenTRV();
 
 #if defined(EST_CPU_DUTYCYCLE)
-  const unsigned long usEnd = micros();
-  // Nominal loop time should be 2s x 1MHz clock, ie 2,000,000 if CPU running all the time.
-  // Should generally be <2000 (us) (<0.1%) for leaf, <20000 (<1%) for hub.
-  // Example output.
-//us apparent: 4544
-//us apparent: 25280
-//us apparent: 9280
-  const unsigned long usApparentTaken = usEnd - usStart;
+    const unsigned long usEnd = micros();
+    // Nominal loop time should be 2s x 1MHz clock, ie 2,000,000 if CPU running all the time.
+    // Should generally be <2000 (us) (<0.1%) for leaf, <20000 (<1%) for hub.
+    // Example output.
+    //us apparent: 4544
+    //us apparent: 25280
+    //us apparent: 9280
+    const unsigned long usApparentTaken = usEnd - usStart;
 #if 1 && defined(DEBUG)
-  DEBUG_SERIAL_PRINT_FLASHSTRING("us apparent: ");
-  DEBUG_SERIAL_PRINT(usApparentTaken);
-  DEBUG_SERIAL_PRINTLN();
+    DEBUG_SERIAL_PRINT_FLASHSTRING("us apparent: ");
+    DEBUG_SERIAL_PRINT(usApparentTaken);
+    DEBUG_SERIAL_PRINTLN();
 #endif
 #endif
-  }
+}
