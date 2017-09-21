@@ -267,23 +267,15 @@ extern OccupancyTracker Occupancy;
 // Singleton implementation/instance.
 extern OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
 
-#ifdef ENABLE_TEMP_POT_IF_PRESENT
-#if (V0p2_REV >= 2) && defined(TEMP_POT_AIN) // Only supported in REV2/3/4/7.
 #define TEMP_POT_AVAILABLE
 // Sensor for temperature potentiometer/dial UI control.
 typedef OTV0P2BASE::SensorTemperaturePot
     <
     decltype(Occupancy), &Occupancy,
-#if (V0p2_REV == 7)
     48, 296, // Correct for DORM1/TRV1 with embedded REV7.
     false // REV7 does not drive pot from IO_POWER_UP.
-#elif defined(TEMP_POT_REVERSE)
-    1023, 0
-#endif
     > TempPot_t;
 extern TempPot_t TempPot;
-#endif
-#endif // ENABLE_TEMP_POT_IF_PRESENT
 
 // Sensor for ambient light level; 0 is dark, 255 is bright.
 typedef OTV0P2BASE::SensorAmbientLight AmbientLight;
@@ -315,14 +307,7 @@ void loopOpenTRV();
 typedef OTRadValve::DEFAULT_ValveControlParameters PARAMS;
 
 // Choose which subtype to use depending on enabled settings and board type.
-#if defined(TEMP_POT_AVAILABLE) // Eg REV2/REV7.
 typedef OTRadValve::TempControlTempPot<decltype(TempPot), &TempPot, PARAMS, decltype(RelHumidity), &RelHumidity> TempControl_t;
-#elif defined(ENABLE_SETTABLE_TARGET_TEMPERATURES) // Eg REV1.
-typedef OTRadValve::TempControlSimpleEEPROMBacked<PARAMS> TempControl_t;
-#else
-// Dummy temperature control.
-typedef OTRadValve::NULLTempControl TempControl_t;
-#endif
 #define TempControl_DEFINED
 extern TempControl_t tempControl;
 
@@ -338,23 +323,8 @@ extern OTRadValve::OTHubManager<enableDefaultAlwaysRX, enableRadioRX, allowGetMi
 // Defaults to twice LEARNED_ON_PERIOD_M.
 // Should be no shorter/less than LEARNED_ON_PERIOD_M to avoid confusion.
 #define LEARNED_ON_PERIOD_COMFORT_M (min(2*(LEARNED_ON_PERIOD_M),255))
-#if defined(ENABLE_SINGLETON_SCHEDULE)
-#define SCHEDULER_AVAILABLE
-// Singleton scheduler instance.
-typedef OTRadValve::SimpleValveSchedule
-    <
-    LEARNED_ON_PERIOD_M, LEARNED_ON_PERIOD_COMFORT_M,
-    decltype(tempControl), &tempControl,
-#if defined(ENABLE_OCCUPANCY_SUPPORT)
-    decltype(Occupancy), &Occupancy
-#else
-    OTRadValve::SimpleValveSchedule_PseudoSensorOccupancyTracker, (OTRadValve::SimpleValveSchedule_PseudoSensorOccupancyTracker*)NULL
-#endif
-    > Scheduler_t;
-#else
 // Dummy scheduler to simplify coding.
 typedef OTRadValve::NULLValveSchedule Scheduler_t;
-#endif // defined(ENABLE_SINGLETON_SCHEDULE)
 extern Scheduler_t Scheduler;
 
 #define ENABLE_MODELLED_RAD_VALVE
@@ -378,47 +348,6 @@ typedef
       2
       > StatsU_t;
 extern StatsU_t statsU;
-
-
-// Mechanism to generate '=' stats line, if enabled.
-#if defined(ENABLE_SERIAL_STATUS_REPORT)
-typedef OTV0P2BASE::SystemStatsLine<
-      decltype(valveMode), &valveMode,
-#if defined(ENABLE_LOCAL_TRV)
-      decltype(NominalRadValve), &NominalRadValve,
-#else
-      OTRadValve::AbstractRadValve, (OTRadValve::AbstractRadValve *)NULL,
-#endif // defined(ENABLE_LOCAL_TRV)
-      decltype(TemperatureC16), &TemperatureC16,
-#if defined(HUMIDITY_SENSOR_SUPPORT)
-      decltype(RelHumidity), &RelHumidity,
-#else
-      OTV0P2BASE::HumiditySensorBase, (OTV0P2BASE::HumiditySensorBase *)NULL,
-#endif // defined(HUMIDITY_SENSOR_SUPPORT)
-#ifdef ENABLE_AMBLIGHT_SENSOR
-      decltype(AmbLight), &AmbLight,
-#else
-      OTV0P2BASE::SensorAmbientLight, (OTV0P2BASE::SensorAmbientLight *)NULL,
-#endif
-#ifdef ENABLE_OCCUPANCY_SUPPORT
-      decltype(Occupancy), &Occupancy,
-#else
-      OTV0P2BASE::PseudoSensorOccupancyTracker, (OTV0P2BASE::PseudoSensorOccupancyTracker*)NULL,
-#endif
-      decltype(Scheduler), &Scheduler,
-#if defined(ENABLE_JSON_OUTPUT) && !defined(ENABLE_TRIMMED_MEMORY)
-      true // Enable JSON stats.
-#else
-      true // Disable JSON stats.
-#endif
-      > StatsLine_t;
-extern StatsLine_t statsLine;
-// Send a short 1-line CRLF-terminated status report on the serial connection (at 'standard' baud).
-// Should be similar to PICAXE V0.1 output to allow the same parser to handle either.
-inline void serialStatusReport() { statsLine.serialStatusReport(); }
-#else
-#define serialStatusReport() { }
-#endif // defined(ENABLE_SERIAL_STATUS_REPORT)
 
 // Do bare stats transmission.
 // Output should be filtered for items appModelledRadValveComputeTargetTempBasicropriate
