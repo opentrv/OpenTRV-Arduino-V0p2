@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/sh
 #
 # Set up OpenTRV Arduino IDE environment and verify compilation.
 # Exits 0 on success.
@@ -32,6 +32,8 @@ PARTPATHS="
     REV10/REV10HardwareTest/REV10HardwareTest.ino
     REV10/REV10RadioTest/REV10RadioTest.ino 
     REV11/REV11HardwareTest/REV11HardwareTest.ino
+    REV10/REV10SecureBHR/REV10SecureBHR.ino
+    V0p2_Main_PCB_REV7_DORM1_and_REV8/REV7RadValve/REV7RadValve.ino
     "
 
 # Loop through and test each configuration.
