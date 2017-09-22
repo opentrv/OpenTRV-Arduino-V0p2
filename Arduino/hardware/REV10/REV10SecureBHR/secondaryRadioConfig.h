@@ -23,13 +23,12 @@
 
 // APN Configs - Uncomment based on what SIM you are using
 //  static const char SIM900_APN[] PROGMEM      = "\"everywhere\",\"eesecure\",\"secure\""; // EE
-//static const char SIM900_APN[] PROGMEM      = "\"arkessa.net\",\"arkessa\",\"arkessa\""; // Arkessa
 static const char SIM900_APN[] PROGMEM      = "\"mobiledata\""; // GeoSIM
 
 // UDP Configs - Edit SIM900_UDP_ADDR for relevant server. NOTE: The server IP address should never be committed to GitHub.
 // IP adress in seperate header to avoid accidentally committing.
 static const char SIM900_UDP_ADDR[16] PROGMEM = ""; // Of form "1.2.3.4".
-static const char SIM900_UDP_PORT[5] PROGMEM = "9999";             // Standard port for OpenTRV servers
+static const char SIM900_UDP_PORT[5] PROGMEM = "";             // Standard port for OpenTRV servers
 const OTSIM900Link::OTSIM900LinkConfig_t SIM900Config(
                                                 false,
                                                 SIM900_PIN,
