@@ -50,6 +50,19 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 #include <OTRN2483Link.h>
 #include <OTAESGCM.h>
 
+///////// CONSTANTS
+// Mask for Port D input change interrupts.
+constexpr uint8_t SERIALRX_INT_MASK = 0b00000001; // Serial RX
+constexpr uint8_t MASK_PD_BASIC = SERIALRX_INT_MASK; // Serial RX by default.
+constexpr uint8_t MASK_PD1 = MASK_PD_BASIC; // Just serial RX, no voice.
+#if BUTTON_MODE_L > 7
+  #error BUTTON_MODE_L expected to be on port D
+#endif
+constexpr uint8_t MODE_INT_MASK = (1 << (BUTTON_MODE_L&7));
+constexpr uint8_t MASK_PD = (MASK_PD1 | MODE_INT_MASK); // MODE button interrupt (et al).
+
+
+
 // Indicate that the system is broken in an obvious way (distress flashing of the main UI LED).
 // DOES NOT RETURN.
 // Tries to turn off most stuff safely that will benefit from doing so, but nothing too complex.
@@ -104,7 +117,13 @@ typedef OTV0P2BASE::PseudoSensorOccupancyTracker OccupancyTracker;
 extern OccupancyTracker Occupancy;
 
 
+// Controller's view of Least Significant Digits of the current (local) time, in this case whole seconds.
+// TIME_LSD ranges from 0 to TIME_CYCLE_S-1, also major cycle length.
+constexpr uint_fast8_t TIME_CYCLE_S = 60;
+
 ////// SENSORS
+
+void updateSensorsFromStats();
 
 // Sensor for supply (eg battery) voltage in millivolts.
 // Singleton implementation/instance.
@@ -133,12 +152,6 @@ extern RelHumidity_t RelHumidity;
 
 
 /////// CONTROL
-
-// Special setup for OpenTRV beyond generic hardware setup.
-void setupOpenTRV();
-// Main loop for OpenTRV radiator control.
-void loopOpenTRV();
-
 // Settings for room TRV.
 typedef OTRadValve::DEFAULT_ValveControlParameters PARAMS;
 
@@ -184,6 +197,7 @@ typedef
       2
       > StatsU_t;
 extern StatsU_t statsU;
+
 
 // Do bare stats transmission.
 // Output should be filtered for items appModelledRadValveComputeTargetTempBasicropriate
