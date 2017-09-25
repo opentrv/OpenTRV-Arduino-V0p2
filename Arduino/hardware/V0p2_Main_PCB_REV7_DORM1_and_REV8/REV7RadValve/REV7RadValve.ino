@@ -91,6 +91,16 @@ static uint_fast8_t TIME_LSD;
 // Wraps at its maximum (0xff) value.
 static uint8_t minuteCount;
 
+// Controller's view of Least Significant Digits of the current (local) time, in this case whole seconds.
+// TIME_LSD ranges from 0 to TIME_CYCLE_S-1, also major cycle length.
+constexpr uint_fast8_t TIME_CYCLE_S = 60;
+
+// Period in minutes for simple learned on-time; strictly positive (and less than 256).
+static constexpr uint8_t LEARNED_ON_PERIOD_M = 60;
+// Period in minutes for simple learned on-time with comfort bias; strictly positive (and less than 256).
+// Defaults to twice LEARNED_ON_PERIOD_M.
+// Should be no shorter/less than LEARNED_ON_PERIOD_M to avoid confusion.
+static constexpr uint8_t LEARNED_ON_PERIOD_COMFORT_M = (OTV0P2BASE::fnmin(2*(LEARNED_ON_PERIOD_M),255));
 
 /******************************************************************************
  * PERIPHERALS
@@ -124,10 +134,21 @@ OTRadioLink::OTMessageQueueHandlerNull messageQueue;  // fixme delete
 // Sensor for supply (eg battery) voltage in millivolts.
 OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
 
+// Sensor for temperature potentiometer/dial UI control.
+typedef OTV0P2BASE::SensorTemperaturePot
+    <
+    decltype(Occupancy), &Occupancy,
+    48, 296, // Correct for DORM1/TRV1 with embedded REV7.
+    false // REV7 does not drive pot from IO_POWER_UP.
+    > TempPot_t;
 TempPot_t TempPot;
 
+// Sensor for ambient light level; 0 is dark, 255 is bright.
+typedef OTV0P2BASE::SensorAmbientLight AmbientLight;
 AmbientLight AmbLight;
 
+// Singleton implementation/instance.
+typedef OTV0P2BASE::HumiditySensorSHT21 RelHumidity_t;
 // Singleton implementation/instance.
 OTV0P2BASE::HumiditySensorSHT21 RelHumidity;
 
@@ -137,6 +158,11 @@ OTV0P2BASE::RoomTemperatureC16_SHT21 TemperatureC16; // SHT21 impl.
 
 ////// ACTUATORS
 
+// DORM1/REV7 direct drive motor actuator.
+static constexpr bool binaryOnlyValveControl = false;
+static constexpr uint8_t m1 = MOTOR_DRIVE_ML;
+static constexpr uint8_t m2 = MOTOR_DRIVE_MR;
+typedef OTRadValve::ValveMotorDirectV1<OTRadValve::ValveMotorDirectV1HardwareDriver, m1, m2, MOTOR_DRIVE_MI_AIN, MOTOR_DRIVE_MC_AIN, OTRadValve::MOTOR_DRIVE_NSLEEP_UNUSED, decltype(Supply_cV), &Supply_cV> ValveDirect_t;
 // DORM1/REV7 direct drive actuator.
 // Singleton implementation/instance.
 // Suppress unnecessary activity when room dark, eg to avoid disturbance if device crashes/restarts,
@@ -149,29 +175,49 @@ ValveDirect_t ValveDirect([](){return((!valveUI.veryRecentUIControlUse()) && Amb
 // Singleton non-volatile stats store instance.
 OTV0P2BASE::EEPROMByHourByteStats eeStats;
 
+// Singleton stats-updater object.
+typedef
+    OTV0P2BASE::ByHourSimpleStatsUpdaterSampleStats <
+      decltype(eeStats), &eeStats,
+      decltype(Occupancy), &Occupancy,
+      decltype(AmbLight), &AmbLight,
+      decltype(TemperatureC16), &TemperatureC16,
+      decltype(RelHumidity), &RelHumidity,
+      2
+      > StatsU_t;
 // Stats updater singleton.
 StatsU_t statsU;
 
 // Singleton scheduler instance.
+// Dummy scheduler to simplify coding.
+typedef OTRadValve::NULLValveSchedule Scheduler_t;
+extern Scheduler_t Scheduler;
 Scheduler_t Scheduler;
 
 // Radiator valve mode (FROST, WARM, BAKE).
 OTRadValve::ValveMode valveMode;
 
+// Settings for room TRV.
+typedef OTRadValve::DEFAULT_ValveControlParameters PARAMS;
+// Choose which subtype to use depending on enabled settings and board type.
+typedef OTRadValve::TempControlTempPot<decltype(TempPot), &TempPot, PARAMS, decltype(RelHumidity), &RelHumidity> TempControl_t;
+#define TempControl_DEFINED
+extern TempControl_t tempControl;
 // Temperature control object.
 TempControl_t tempControl;
 
-// Manage EEPROM access for hub mode and boiler control.
-OTRadValve::OTHubManager<enableDefaultAlwaysRX, enableRadioRX, allowGetMinBoilerOnMFromEEPROM> hubManager;
-
+// Support for general timed and multi-input occupancy detection / use.
+typedef OTV0P2BASE::PseudoSensorOccupancyTracker OccupancyTracker;
 // Singleton implementation for entire node.
 OccupancyTracker Occupancy;
 
 static OTV0P2BASE::EEPROMByHourByteStats ebhs;
+
 // Create setback lockout if needed.
 typedef bool(*setbackLockout_t)();
 // If allowing setback lockout, eg for testing, then inject suitable lambda.
 static bool setbackLockout() { return(0 != OTRadValve::getSetbackLockout()); }
+
 // Algorithm for computing target temperature.
 constexpr OTRadValve::ModelledRadValveComputeTargetTempBasic<
   PARAMS,
@@ -186,6 +232,9 @@ constexpr OTRadValve::ModelledRadValveComputeTargetTempBasic<
   decltype(RelHumidity),      &RelHumidity,
   setbackLockout>
   cttBasic;
+
+#define ENABLE_MODELLED_RAD_VALVE
+#define ENABLE_NOMINAL_RAD_VALVE
 // Internal model of controlled radiator valve position.
 OTRadValve::ModelledRadValve NominalRadValve(
   &cttBasic,
@@ -195,6 +244,8 @@ OTRadValve::ModelledRadValve NominalRadValve(
     false,
     100);
 
+// Valve physical UI controller.
+typedef OTRadValve::ModeButtonAndPotActuatorPhysicalUI valveUI_t;
 // Valve physical UI controller.
 valveUI_t valveUI(
   &valveMode,
@@ -319,7 +370,7 @@ void updateSensorsFromStats() {
 // Note that radio poll() can be for TX as well as RX activity.
 // Not thread-safe, eg not to be called from within an ISR.
 // FIXME trying to move into utils (for the time being.)
-bool pollIO(const bool force) {
+bool pollIO(const bool force = false) {
     static volatile uint8_t _pO_lastPoll;
     // Poll RX at most about every ~8ms.
     const uint8_t sct = OTV0P2BASE::getSubCycleTime();
@@ -482,12 +533,16 @@ static void dumpCLIUsage()
     Serial.println();
 }
 
+// Suggested minimum buffer size for pollUI() to ensure maximum-sized commands can be received.
+static constexpr uint8_t MAXIMUM_CLI_RESPONSE_CHARS = 1 + OTV0P2BASE::CLI::MAX_TYPICAL_CLI_BUFFER;
+static constexpr uint8_t BUFSIZ_pollUI = 1 + MAXIMUM_CLI_RESPONSE_CHARS;
 // Used to poll user side for CLI input until specified sub-cycle time.
 // Commands should be sent terminated by CR *or* LF; both may prevent 'E' (exit) from working properly.
 // A period of less than (say) 500ms will be difficult for direct human response on a raw terminal.
 // A period of less than (say) 100ms is not recommended to avoid possibility of overrun on long interactions.
 // Times itself out after at least a minute or two of inactivity.
 // NOT RENTRANT (eg uses static state for speed and code space).
+
 void pollCLI(const uint8_t maxSCT, const bool startOfMinute, const OTV0P2BASE::ScratchSpace &s)
 {
     // Perform any once-per-minute operations.
