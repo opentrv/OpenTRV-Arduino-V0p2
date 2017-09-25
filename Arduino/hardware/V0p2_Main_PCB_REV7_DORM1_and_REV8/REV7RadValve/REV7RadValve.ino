@@ -17,6 +17,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
                            Deniz Erbilgin 2015--2017
 */
 
+/******************************************************************************
+ * NOTES
+ *****************************************************************************/
 /*
   V0p2 (V0.2) core.
 
@@ -30,42 +33,93 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
   Basic AVR power consumption ticking an (empty) control loop at ~0.5Hz should be ~1uA.
  */
 
-#include "V0p2_Main.h"
-#include <OTAESGCM.h>
 
-// Indicate that the system is broken in an obvious way (distress flashing the main LED).
-// DOES NOT RETURN.
-// Tries to turn off most stuff safely that will benefit from doing so, but nothing too complex.
-// Tries not to use lots of energy so as to keep distress beacon running for a while.
-void panic() {
-    // Reset radio and go into low-power mode.
-    PrimaryRadio.panicShutdown();
-    // Power down almost everything else...
-    OTV0P2BASE::minimisePowerWithoutSleep();
-    pinMode(OTV0P2BASE::LED_HEATCALL_L, OUTPUT);
-    for( ; ; ) {
-        OTV0P2BASE::LED_HEATCALL_ON();
-        OTV0P2BASE::nap(WDTO_15MS);
-        OTV0P2BASE::LED_HEATCALL_OFF();
-        OTV0P2BASE::nap(WDTO_120MS);
-    }
-}
+/******************************************************************************
+ * INCLUDES
+ *****************************************************************************/
+// FIXME once V0p2_Main.h removed
+//////// GLOBAL flags that alter system build and behaviour.
+//
+//// If defined, do extra checks and serial logging.  Will take more code space and power.
+//#undef DEBUG
+//// Ensure that OpenTRV 'standard' UART speed is set unless explicitly overridden.
+//#define BAUD 4800
+//
+//// *** Global flag for REVx configuration here *** //
+//// e.g.
+//// #define CONFIG_REV10_SECURE_BHR // REV10: secure stats relay and boiler hub.
+//
+//// Get defaults for valve applications.
+//#include <OTV0p2_valve_ENABLE_defaults.h>
+//
+//// *** Main board config imported here *** //
+//
+//// --------------------------------------------
+//// Fixups to apply after loading the target config.
+//#include <OTV0p2_valve_ENABLE_fixups.h>
+//// I/O pin allocation and setup: include ahead of I/O module headers.
+//#include <OTV0p2_Board_IO_Config.h>
+//
+//
+//////// MAIN LIBRARIES
+//
+//#include <Arduino.h>
+//#include <OTV0p2Base.h>
+//#include <OTRadioLink.h>
 
-// Panic with fixed message.
-void panic(const __FlashStringHelper *s) {
-    OTV0P2BASE::serialPrintlnAndFlush(); // Start new line to highlight error.  // May fail.
-    OTV0P2BASE::serialPrintAndFlush('!'); // Indicate error with leading '!' // May fail.
-    OTV0P2BASE::serialPrintlnAndFlush(s); // Print supplied detail text. // May fail.
-    panic();
-}
 
+////// ADDITIONAL LIBRARIES/PERIPHERALS
+
+#include "V0p2_Main.h"  // FIXME remove dependency
+// #define RFM23B_IRQ_CONTROL  // Enable RFM23B IRQ control code.
+// #include <OTRFM23BLink.h>
+ #include <OTAESGCM.h>
+
+
+////// ADDITIONAL USER HEADERS
+
+
+/******************************************************************************
+ * GENERAL CONSTANTS AND VARIABLES
+ * Core constants and variables required for V0p2 loop.
+ *****************************************************************************/
+// Controller's notion/cache of seconds within major cycle.
+static uint_fast8_t TIME_LSD;
+
+// 'Elapsed minutes' count of minute/major cycles; cheaper than accessing RTC and not tied to real time.
+// Starts at or just above zero (within the first 4-minute cycle) to help avoid collisions between units after mass power-up.
+// Wraps at its maximum (0xff) value.
+static uint8_t minuteCount;
+
+
+/******************************************************************************
+ * PERIPHERALS
+ * Peripheral drivers and config
+ *****************************************************************************/
+
+////// RADIOS
+
+// Config
 // Nodes talking on fast GFSK channel 0.
 static constexpr uint8_t nPrimaryRadioChannels = 1;
 static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChannels] = {
     // GFSK channel 0 full config, RX/TX, not in itself secure.
     OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsGFSK57600, true), };
 
-/////// SENSORS
+// Brings in necessary radio libs.
+static constexpr uint8_t RFM23B_RX_QUEUE_SIZE = OTV0P2BASE::fnmax(uint8_t(2), uint8_t(OTRFM23BLink::DEFAULT_RFM23B_RX_QUEUE_CAPACITY)) - 1;
+static constexpr int8_t RFM23B_IRQ_PIN = PIN_RFM_NIRQ;
+static constexpr bool RFM23B_allowRX = false;
+OTRFM23BLink::OTRFM23BLink<OTV0P2BASE::V0p2_PIN_SPI_nSS, RFM23B_IRQ_PIN, RFM23B_RX_QUEUE_SIZE, RFM23B_allowRX> RFM23B;
+
+// Assigns radio to PrimaryRadio alias
+OTRadioLink::OTRadioLink &PrimaryRadio = RFM23B;
+
+// When RX not enabled, switch in dummy version (base class implements stubs)
+OTRadioLink::OTMessageQueueHandlerNull messageQueue;  // fixme delete
+
+
+////// SENSORS
 
 // Sensor for supply (eg battery) voltage in millivolts.
 OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
@@ -80,7 +134,8 @@ OTV0P2BASE::HumiditySensorSHT21 RelHumidity;
 // Ambient/room temperature sensor, usually on main board.
 OTV0P2BASE::RoomTemperatureC16_SHT21 TemperatureC16; // SHT21 impl.
 
-////////////////////////// Actuators
+
+////// ACTUATORS
 
 // DORM1/REV7 direct drive actuator.
 // Singleton implementation/instance.
@@ -88,7 +143,8 @@ OTV0P2BASE::RoomTemperatureC16_SHT21 TemperatureC16; // SHT21 impl.
 // unless recent UI use because value is being fitted/adjusted.
 ValveDirect_t ValveDirect([](){return((!valveUI.veryRecentUIControlUse()) && AmbLight.isRoomDark());});
 
-////////////////////////// CONTROL
+
+////// CONTROL
 
 // Singleton non-volatile stats store instance.
 OTV0P2BASE::EEPROMByHourByteStats eeStats;
@@ -110,25 +166,7 @@ OTRadValve::OTHubManager<enableDefaultAlwaysRX, enableRadioRX, allowGetMinBoiler
 
 // Singleton implementation for entire node.
 OccupancyTracker Occupancy;
-/////// RADIOS
 
-// Brings in necessary radio libs.
-static constexpr uint8_t RFM23B_RX_QUEUE_SIZE = OTV0P2BASE::fnmax(uint8_t(2), uint8_t(OTRFM23BLink::DEFAULT_RFM23B_RX_QUEUE_CAPACITY)) - 1;
-static constexpr int8_t RFM23B_IRQ_PIN = PIN_RFM_NIRQ;
-static constexpr bool RFM23B_allowRX = false;
-OTRFM23BLink::OTRFM23BLink<OTV0P2BASE::V0p2_PIN_SPI_nSS, RFM23B_IRQ_PIN, RFM23B_RX_QUEUE_SIZE, RFM23B_allowRX> RFM23B;
-
-// Assigns radio to PrimaryRadio alias
-OTRadioLink::OTRadioLink &PrimaryRadio = RFM23B;
-
-// RFM22 is apparently SPI mode 0 for Arduino library pov.
-
-// When RX not enabled, switch in dummy version (base class implements stubs)
-OTRadioLink::OTMessageQueueHandlerNull messageQueue;
-
-//========================================
-// STUFF
-//========================================
 static OTV0P2BASE::EEPROMByHourByteStats ebhs;
 // Create setback lockout if needed.
 typedef bool(*setbackLockout_t)();
@@ -170,18 +208,15 @@ valveUI_t valveUI(
   OTV0P2BASE::LED_HEATCALL_OFF,
   OTV0P2BASE::LED_HEATCALL_ON_ISR_SAFE);
 
-
-// Controller's notion/cache of seconds within major cycle.
-static uint_fast8_t TIME_LSD;
-
-// 'Elapsed minutes' count of minute/major cycles; cheaper than accessing RTC and not tied to real time.
-// Starts at or just above zero (within the first 4-minute cycle) to help avoid collisions between units after mass power-up.
-// Wraps at its maximum (0xff) value.
-static uint8_t minuteCount;
+////// MESSAGING
 
 // Managed JSON stats.
 OTV0P2BASE::SimpleStatsRotation<12> ss1; // Configured for maximum different stats.  // FIXME REDUCE AS MUCH AS POSSIBLE
 
+
+/******************************************************************************
+ * INTERRUPT SERVICE ROUTINES
+ *****************************************************************************/
 
 // Previous state of port D pins to help detect changes.
 static volatile uint8_t prevStatePD;
@@ -201,6 +236,114 @@ ISR(PCINT2_vect)
     if((changes & SERIALRX_INT_MASK) && !(pins & SERIALRX_INT_MASK)) { OTV0P2BASE::CLI::resetCLIActiveTimer(); }
 }
 
+
+/******************************************************************************
+ * LOCAL FUNCTIONS
+ *****************************************************************************/
+
+////// PANIC
+
+// Indicate that the system is broken in an obvious way (distress flashing the main LED).
+// DOES NOT RETURN.
+// Tries to turn off most stuff safely that will benefit from doing so, but nothing too complex.
+// Tries not to use lots of energy so as to keep distress beacon running for a while.
+void panic() {
+    // Reset radio and go into low-power mode.
+    PrimaryRadio.panicShutdown();
+    // Power down almost everything else...
+    OTV0P2BASE::minimisePowerWithoutSleep();
+    pinMode(OTV0P2BASE::LED_HEATCALL_L, OUTPUT);
+    for( ; ; ) {
+        OTV0P2BASE::LED_HEATCALL_ON();
+        OTV0P2BASE::nap(WDTO_15MS);
+        OTV0P2BASE::LED_HEATCALL_OFF();
+        OTV0P2BASE::nap(WDTO_120MS);
+    }
+}
+
+// Panic with fixed message.
+void panic(const __FlashStringHelper *s) {
+    OTV0P2BASE::serialPrintlnAndFlush(); // Start new line to highlight error.  // May fail.
+    OTV0P2BASE::serialPrintAndFlush('!'); // Indicate error with leading '!' // May fail.
+    OTV0P2BASE::serialPrintlnAndFlush(s); // Print supplied detail text. // May fail.
+    panic();
+}
+
+
+////// DIAGNOSTICS
+
+#if 1
+// More detailed stack usage output
+inline void stackCheck()
+{
+    // Force restart if SPAM/heap/stack likely corrupt.
+    OTV0P2BASE::MemoryChecks::forceResetIfStackOverflow();
+
+    // Print max stack usage each cycle
+    const int16_t minsp = OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd();
+    const uint8_t location = OTV0P2BASE::MemoryChecks::getLocation();
+    OTV0P2BASE::serialPrintAndFlush(F("minsp: "));
+    OTV0P2BASE::serialPrintAndFlush(minsp, HEX);
+    OTV0P2BASE::serialPrintAndFlush(F(" loc:"));
+    OTV0P2BASE::serialPrintAndFlush(location);
+    OTV0P2BASE::serialPrintlnAndFlush();
+
+    OTV0P2BASE::MemoryChecks::resetMinSP();
+}
+#endif
+
+////// SENSORS
+
+// Update sensors with historic/trailing statistics information where needed.
+// Should be called at least hourly after all stats have been updated,
+// but can also be called whenever the user adjusts settings for example.
+void updateSensorsFromStats() {
+    // Update with rolling stats to adapt to sensors and local environment...
+    // ...and prevailing bias, so may take a while to adjust.
+    AmbLight.setTypMinMax(
+          eeStats.getByHourStatRTC(OTV0P2BASE::NVByHourByteStatsBase::STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED),
+          eeStats.getMinByHourStat(OTV0P2BASE::NVByHourByteStatsBase::STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED),
+          eeStats.getMaxByHourStat(OTV0P2BASE::NVByHourByteStatsBase::STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED),
+          !tempControl.hasEcoBias());
+}
+
+
+////// CONTROL
+
+// Call this to do an I/O poll if needed; returns true if something useful definitely happened.
+// This call should typically take << 1ms at 1MHz CPU.
+// Does not change CPU clock speeds, mess with interrupts (other than possible brief blocking), or sleep.
+// Should also do nothing that interacts with Serial.
+// Limits actual poll rate to something like once every 8ms, unless force is true.
+//   * force if true then force full poll on every call (ie do not internally rate-limit)
+// Note that radio poll() can be for TX as well as RX activity.
+// Not thread-safe, eg not to be called from within an ISR.
+// FIXME trying to move into utils (for the time being.)
+bool pollIO(const bool force) {
+    static volatile uint8_t _pO_lastPoll;
+    // Poll RX at most about every ~8ms.
+    const uint8_t sct = OTV0P2BASE::getSubCycleTime();
+    if(force || (sct != _pO_lastPoll)) {
+        _pO_lastPoll = sct;
+        // Poll for inbound frames.
+        // If RX is not interrupt-driven then
+        // there will usually be little time to do this
+        // before getting an RX overrun or dropped frame.
+        PrimaryRadio.poll();
+    }
+    return(false);
+}
+
+// Run tasks needed at the end of each day (nominal midnight).
+// Should be run once at a fixed slot in the last minute of the last hour of each day.
+// Will be run after all stats for the current hour have been updated.
+static void endOfDayTasks() {
+    // Count down the setback lockout if not finished...  (TODO-786, TODO-906)
+    OTRadValve::countDownSetbackLockout();
+}
+
+
+////// MESSAGING
 
 // Do bare stats transmission.
 // Output should be filtered for items appropriate
@@ -329,62 +472,7 @@ void bareStatsTX() {
 }
 
 
-
-//========================================
-// FUNCTIONS
-//========================================
-/////////  CONTROL
-
-// Call this to do an I/O poll if needed; returns true if something useful definitely happened.
-// This call should typically take << 1ms at 1MHz CPU.
-// Does not change CPU clock speeds, mess with interrupts (other than possible brief blocking), or sleep.
-// Should also do nothing that interacts with Serial.
-// Limits actual poll rate to something like once every 8ms, unless force is true.
-//   * force if true then force full poll on every call (ie do not internally rate-limit)
-// Note that radio poll() can be for TX as well as RX activity.
-// Not thread-safe, eg not to be called from within an ISR.
-// FIXME trying to move into utils (for the time being.)
-bool pollIO(const bool force) {
-    static volatile uint8_t _pO_lastPoll;
-    // Poll RX at most about every ~8ms.
-    const uint8_t sct = OTV0P2BASE::getSubCycleTime();
-    if(force || (sct != _pO_lastPoll)) {
-        _pO_lastPoll = sct;
-        // Poll for inbound frames.
-        // If RX is not interrupt-driven then
-        // there will usually be little time to do this
-        // before getting an RX overrun or dropped frame.
-        PrimaryRadio.poll();
-    }
-    return(false);
-}
-
-// Run tasks needed at the end of each day (nominal midnight).
-// Should be run once at a fixed slot in the last minute of the last hour of each day.
-// Will be run after all stats for the current hour have been updated.
-static void endOfDayTasks() {
-    // Count down the setback lockout if not finished...  (TODO-786, TODO-906)
-    OTRadValve::countDownSetbackLockout();
-}
-
-////////// SENSORS
-
-// Update sensors with historic/trailing statistics information where needed.
-// Should be called at least hourly after all stats have been updated,
-// but can also be called whenever the user adjusts settings for example.
-void updateSensorsFromStats() {
-    // Update with rolling stats to adapt to sensors and local environment...
-    // ...and prevailing bias, so may take a while to adjust.
-    AmbLight.setTypMinMax(
-          eeStats.getByHourStatRTC(OTV0P2BASE::NVByHourByteStatsBase::STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED),
-          eeStats.getMinByHourStat(OTV0P2BASE::NVByHourByteStatsBase::STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED),
-          eeStats.getMaxByHourStat(OTV0P2BASE::NVByHourByteStatsBase::STATS_SET_AMBLIGHT_BY_HOUR_SMOOTHED),
-          !tempControl.hasEcoBias());
-}
-
-
-
-///////// CLI
+////// UI
 
 // Dump some brief CLI usage instructions to serial TX, which must be up and running.
 // If this gets too big there is a risk of overrunning and missing the next tick...
@@ -470,10 +558,9 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute, const OTV0P2BASE::S
 }
 
 
-
-//========================================
-// SETUP
-//========================================
+/******************************************************************************
+ * SETUP
+ *****************************************************************************/
 
 // Setup routine: runs once after reset.
 // Does some limited board self-test and will panic() if anything is obviously broken.
@@ -577,28 +664,10 @@ void setup()
     TIME_LSD = OTV0P2BASE::getSecondsLT();
 }
 
-//========================================
-// MAIN LOOP
-//========================================
-#if 1
-// More detailed stack usage output
-inline void stackCheck()
-{
-	// Force restart if SPAM/heap/stack likely corrupt.
-    OTV0P2BASE::MemoryChecks::forceResetIfStackOverflow();
-    
-    // Print max stack usage each cycle
-    const int16_t minsp = OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd();
-    const uint8_t location = OTV0P2BASE::MemoryChecks::getLocation();
-    OTV0P2BASE::serialPrintAndFlush(F("minsp: "));
-    OTV0P2BASE::serialPrintAndFlush(minsp, HEX);
-    OTV0P2BASE::serialPrintAndFlush(F(" loc:"));
-    OTV0P2BASE::serialPrintAndFlush(location);
-    OTV0P2BASE::serialPrintlnAndFlush();
 
-    OTV0P2BASE::MemoryChecks::resetMinSP();
-}
-#endif
+/******************************************************************************
+ * MAIN LOOP
+ *****************************************************************************/
 
 void loop()
 {
@@ -840,3 +909,4 @@ void loop()
 #endif
 #endif
 }
+
