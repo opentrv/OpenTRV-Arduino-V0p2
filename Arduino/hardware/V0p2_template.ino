@@ -93,6 +93,12 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 ////// ACTUATORS
 
 
+////// CONTROL
+
+
+////// MESSAGING
+
+
 /******************************************************************************
  * INTERRUPT SERVICE ROUTINES
  *****************************************************************************/
@@ -161,6 +167,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 
 ////// DIAGNOSTICS
 // e.g. stack check
+
+
+////// SENSORS
+
 
 
 ////// CONTROL
