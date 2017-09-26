@@ -37,43 +37,31 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 /******************************************************************************
  * INCLUDES
  *****************************************************************************/
-// FIXME once V0p2_Main.h removed
-//////// GLOBAL flags that alter system build and behaviour.
-//
+////// GLOBAL flags that alter system build and behaviour.
+
 //// If defined, do extra checks and serial logging.  Will take more code space and power.
 //#undef DEBUG
-//// Ensure that OpenTRV 'standard' UART speed is set unless explicitly overridden.
-//#define BAUD 4800
-//
-//// *** Global flag for REVx configuration here *** //
-//// e.g.
-//// #define CONFIG_REV10_SECURE_BHR // REV10: secure stats relay and boiler hub.
-//
-//// Get defaults for valve applications.
-//#include <OTV0p2_valve_ENABLE_defaults.h>
-//
-//// *** Main board config imported here *** //
-//
-//// --------------------------------------------
-//// Fixups to apply after loading the target config.
-//#include <OTV0p2_valve_ENABLE_fixups.h>
-//// I/O pin allocation and setup: include ahead of I/O module headers.
-//#include <OTV0p2_Board_IO_Config.h>
-//
-//
-//////// MAIN LIBRARIES
-//
-//#include <Arduino.h>
-//#include <OTV0p2Base.h>
-//#include <OTRadioLink.h>
+
+// *** Global flag for REVx configuration here *** //
+#define V0p2_REV 7
+
+// --------------------------------------------
+// I/O pin allocation and setup: include ahead of I/O module headers.
+#include <OTV0p2_Board_IO_Config.h>
+
+
+////// MAIN LIBRARIES
+
+#include <Arduino.h>
+#include <OTV0p2Base.h>
+#include <OTRadioLink.h>
 
 
 ////// ADDITIONAL LIBRARIES/PERIPHERALS
 
-#include "V0p2_Main.h"  // FIXME remove dependency
-// #define RFM23B_IRQ_CONTROL  // Enable RFM23B IRQ control code.
-// #include <OTRFM23BLink.h>
- #include <OTAESGCM.h>
+#include <OTRadValve.h>
+#include <OTRFM23BLink.h>
+#include <OTAESGCM.h>
 
 
 ////// ADDITIONAL USER HEADERS
@@ -102,10 +90,41 @@ static constexpr uint8_t LEARNED_ON_PERIOD_M = 60;
 // Should be no shorter/less than LEARNED_ON_PERIOD_M to avoid confusion.
 static constexpr uint8_t LEARNED_ON_PERIOD_COMFORT_M = (OTV0P2BASE::fnmin(2*(LEARNED_ON_PERIOD_M),255));
 
+// Send the underlying stats binary/text 'whitened' message.
+// This must be terminated with an 0xff (which is not sent),
+// and no longer than STATS_MSG_MAX_LEN bytes long in total (excluding the terminating 0xff).
+// This must not contain any 0xff and should not contain long runs of 0x00 bytes.
+// The message to be sent must be written at an offset of STATS_MSG_START_OFFSET from the start of the buffer.
+// This routine will alter the content of the buffer for transmission,
+// and the buffer should not be re-used as is.
+//   * doubleTX  double TX to increase chance of successful reception
+//   * RFM23BfriendlyPremable  if true then add an extra preamble
+//     to allow RFM23B-based receiver to RX this
+// This will use whichever transmission medium/carrier/etc is available.
+static constexpr uint8_t RFM22_PREAMBLE_BYTES = 5; // Recommended number of preamble bytes for reliable reception.
+static constexpr uint8_t RFM22_SYNC_MIN_BYTES = 3; // Minimum number of sync bytes.
+static constexpr uint8_t STATS_MSG_START_OFFSET = (RFM22_PREAMBLE_BYTES + RFM22_SYNC_MIN_BYTES);
+static constexpr uint8_t STATS_MSG_MAX_LEN = (64 - STATS_MSG_START_OFFSET);
+
+// Mask for Port D input change interrupts.
+constexpr uint8_t SERIALRX_INT_MASK = 0b00000001; // Serial RX
+#if BUTTON_MODE_L > 7
+  #error BUTTON_MODE_L expected to be on port D
+#endif
+constexpr uint8_t MODE_INT_MASK = (1 << (BUTTON_MODE_L&7));
+constexpr uint8_t MASK_PD = (SERIALRX_INT_MASK | MODE_INT_MASK); // MODE button interrupt (et al).
+
 /******************************************************************************
  * PERIPHERALS
  * Peripheral drivers and config
  *****************************************************************************/
+
+////// FORWARD DECLARATIONS
+
+// Valve physical UI controller.
+typedef OTRadValve::ModeButtonAndPotActuatorPhysicalUI valveUI_t;
+extern valveUI_t valveUI;  // Extern as otherwise compiler attempts to instantiate.
+
 
 ////// RADIOS
 
@@ -133,6 +152,11 @@ OTRadioLink::OTMessageQueueHandlerNull messageQueue;  // fixme delete
 
 // Sensor for supply (eg battery) voltage in millivolts.
 OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
+
+// Support for general timed and multi-input occupancy detection / use.
+typedef OTV0P2BASE::PseudoSensorOccupancyTracker OccupancyTracker;
+// Singleton implementation for entire node.
+OccupancyTracker Occupancy;
 
 // Sensor for temperature potentiometer/dial UI control.
 typedef OTV0P2BASE::SensorTemperaturePot
@@ -202,14 +226,8 @@ typedef OTRadValve::DEFAULT_ValveControlParameters PARAMS;
 // Choose which subtype to use depending on enabled settings and board type.
 typedef OTRadValve::TempControlTempPot<decltype(TempPot), &TempPot, PARAMS, decltype(RelHumidity), &RelHumidity> TempControl_t;
 #define TempControl_DEFINED
-extern TempControl_t tempControl;
 // Temperature control object.
 TempControl_t tempControl;
-
-// Support for general timed and multi-input occupancy detection / use.
-typedef OTV0P2BASE::PseudoSensorOccupancyTracker OccupancyTracker;
-// Singleton implementation for entire node.
-OccupancyTracker Occupancy;
 
 static OTV0P2BASE::EEPROMByHourByteStats ebhs;
 
@@ -244,8 +262,6 @@ OTRadValve::ModelledRadValve NominalRadValve(
     false,
     100);
 
-// Valve physical UI controller.
-typedef OTRadValve::ModeButtonAndPotActuatorPhysicalUI valveUI_t;
 // Valve physical UI controller.
 valveUI_t valveUI(
   &valveMode,
@@ -323,25 +339,32 @@ void panic(const __FlashStringHelper *s) {
 
 ////// DIAGNOSTICS
 
-#if 1
-// More detailed stack usage output
+/**
+ * @brief   Force restart if SPAM/heap/stack likely corrupt.
+ *          Complain and keep complaining when getting near stack overflow.
+ *          TODO: make DEBUG-only when confident all configs OK.
+ *          Optionally reports max stack usage and location, per loop.
+ */
 inline void stackCheck()
 {
-    // Force restart if SPAM/heap/stack likely corrupt.
-    OTV0P2BASE::MemoryChecks::forceResetIfStackOverflow();
-
-    // Print max stack usage each cycle
     const int16_t minsp = OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd();
+#if 1 //&& defined(DEBUG)
     const uint8_t location = OTV0P2BASE::MemoryChecks::getLocation();
+    const uint16_t progCounter = OTV0P2BASE::MemoryChecks::getPC();  // not isr safe
     OTV0P2BASE::serialPrintAndFlush(F("minsp: "));
-    OTV0P2BASE::serialPrintAndFlush(minsp, HEX);
-    OTV0P2BASE::serialPrintAndFlush(F(" loc:"));
+    OTV0P2BASE::serialPrintAndFlush(minsp);
+    OTV0P2BASE::serialPrintAndFlush(F(" loc: "));
     OTV0P2BASE::serialPrintAndFlush(location);
+    OTV0P2BASE::serialPrintAndFlush(F(" prog: "));
+    OTV0P2BASE::serialPrintAndFlush(progCounter, HEX);
     OTV0P2BASE::serialPrintlnAndFlush();
-
+//    OTV0P2BASE::MemoryChecks::forceResetIfStackOverflow();  // XXX
     OTV0P2BASE::MemoryChecks::resetMinSP();
-}
+#else
+    if(128 > minsp) { OTV0P2BASE::serialPrintlnAndFlush(F("!SP")); }
+    OTV0P2BASE::MemoryChecks::forceResetIfStackOverflow();
 #endif
+}
 
 ////// SENSORS
 
@@ -545,7 +568,7 @@ static constexpr uint8_t BUFSIZ_pollUI = 1 + MAXIMUM_CLI_RESPONSE_CHARS;
 
 void pollCLI(const uint8_t maxSCT, const bool startOfMinute, const OTV0P2BASE::ScratchSpace &s)
 {
-    // Perform any once-per-minute operations.
+    // Perform any once-per-minute operations. // XXX
     if(startOfMinute) { OTV0P2BASE::CLI::countDownCLI(); }
     const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled<V0P2_UART_BAUD>();
     // Wait for input command line from the user (received characters may already have been queued)...
@@ -579,7 +602,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute, const OTV0P2BASE::S
                 // Show stack headroom.
                 OTV0P2BASE::serialPrintAndFlush(F("SH ")); OTV0P2BASE::serialPrintAndFlush(OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd()); OTV0P2BASE::serialPrintlnAndFlush();
                 // Default light-weight print and TX of stats.
-                bareStatsTX();
+//                bareStatsTX();  // FIXME No way this won't overflow!
                 break; // Note that status is by default printed after processing input line.
             }
             // Switch to FROST mode OR set FROST/setback temperature (even with temp pot available).
@@ -683,6 +706,7 @@ void setup()
         PCICR = 4 | 0; // 0x4 enables PD/PCMSK2.
         PCMSK2 = MASK_PD;
     }
+
     // Wire components together, eg. for occupancy sensing.
     AmbLight.setOccCallbackOpt([](bool prob){if(prob){Occupancy.markAsPossiblyOccupied();}else{Occupancy.markAsJustPossiblyOccupied();}});
     // Callbacks to set various mode combinations.
@@ -691,21 +715,26 @@ void setup()
                             [](bool x){valveUI.setBakeModeFromManualUI(x);});
     // Initialise sensors with stats info where needed.
     updateSensorsFromStats();
-    // Do early 'wake-up' stats transmission if possible
+
+    OTV0P2BASE::MemoryChecks::resetMinSP();
+    OTV0P2BASE::MemoryChecks::recordIfMinSP();
+    stackCheck();
+
+    // Do early 'wake-up' stats transmission if possible // XXX
     // when everything else is set up and ready and allowed (TODO-636)
     // including all set-up and inter-wiring of sensors/actuators.
     // Attempt to maximise chance of reception with a double TX.
     // Assume not in hub mode (yet).
     // Send all possible formats, binary first (assumed complete in one message).
-    bareStatsTX();  // XXX
+//    bareStatsTX();  // XXX
     // Send JSON stats repeatedly (typically once or twice)
     // until all values pushed out (no 'changed' values unsent)
     // or limit reached.
-    for(uint8_t i = 5; --i > 0; ) {
-        ::OTV0P2BASE::nap(WDTO_120MS, false); // Sleep long enough for receiver to have a chance to process previous TX.
-        bareStatsTX();  // XXX
-        if(!ss1.changedValue()) { break; }
-    }
+//    for(uint8_t i = 5; --i > 0; ) {
+//        ::OTV0P2BASE::nap(WDTO_120MS, false); // Sleep long enough for receiver to have a chance to process previous TX.
+//        bareStatsTX();  // XXX
+//        if(!ss1.changedValue()) { break; }
+//    }
     // Start local counters in randomised positions to help avoid inter-unit collisions,
     // eg for mains-powered units starting up together after a power cut,
     // but without (eg) breaking any of the logic about what order things will be run first time through.
@@ -729,16 +758,9 @@ void loop()
 #if defined(EST_CPU_DUTYCYCLE)
     const unsigned long usStart = micros();
 #endif
-#if 1
-    // Force restart if SPAM/heap/stack likely corrupt.
-    OTV0P2BASE::MemoryChecks::forceResetIfStackOverflow();
-    // Complain and keep complaining when getting near stack overflow.
-    // TODO: make DEBUG-only when confident all configs OK.
-    const int16_t minsp = OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd();
-    if(minsp < 64) { OTV0P2BASE::serialPrintlnAndFlush(F("!SH")); }
-#else
+    OTV0P2BASE::MemoryChecks::resetMinSP();
+    OTV0P2BASE::MemoryChecks::recordIfMinSP();
     stackCheck();
-#endif
 
     // Main loop for OpenTRV radiator control.
     // Note: exiting and re-entering can take a little while, handling Arduino background tasks such as serial.
@@ -944,7 +966,7 @@ void loop()
     // and which should also allow some energy-saving sleep.
     if(OTV0P2BASE::CLI::isCLIActive()) {
         const uint8_t stopBy = nearOverrunThreshold - 1;
-        char buf[BUFSIZ_pollUI];
+        char buf[BUFSIZ_pollUI]; // XXX
         OTV0P2BASE::ScratchSpace s((uint8_t*)buf, sizeof(buf));
         pollCLI(stopBy, 0 == TIME_LSD, s);
     }
