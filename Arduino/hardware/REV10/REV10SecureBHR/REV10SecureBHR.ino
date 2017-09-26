@@ -170,8 +170,8 @@ inline void stackCheck()
     OTV0P2BASE::serialPrintAndFlush(F(" prog: "));
     OTV0P2BASE::serialPrintAndFlush(progCounter, HEX);
     OTV0P2BASE::serialPrintlnAndFlush();
-    OTV0P2BASE::MemoryChecks::forceResetIfStackOverflow();
-    OTV0P2BASE::MemoryChecks::resetMinSP();
+//    OTV0P2BASE::MemoryChecks::forceResetIfStackOverflow();  // XXX
+//    OTV0P2BASE::MemoryChecks::resetMinSP();
 #else
     if(128 > minsp) { OTV0P2BASE::serialPrintlnAndFlush(F("!SP")); }
     OTV0P2BASE::MemoryChecks::forceResetIfStackOverflow();
@@ -613,6 +613,10 @@ void setup()
     }
 
     PrimaryRadio.listen(true);
+
+    // DE20170926: Disabled as this is causing problems in REV7RadValve.ino,
+    // and is not TXed over GSM in REV10.
+#if 0
     // Do early 'wake-up' stats transmission if possible
     // when everything else is set up and ready and allowed (TODO-636)
     // including all set-up and inter-wiring of sensors/actuators.
@@ -628,6 +632,7 @@ void setup()
         bareStatsTX();
         if(!ss1.changedValue()) { break; }
     }
+#endif
 
     // Start local counters in randomised positions to help avoid inter-unit collisions,
     // eg for mains-powered units starting up together after a power cut,
