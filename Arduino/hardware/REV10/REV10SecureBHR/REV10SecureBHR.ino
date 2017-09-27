@@ -135,7 +135,18 @@ static void panic()
     // Power down almost everything else...
     OTV0P2BASE::minimisePowerWithoutSleep();
     pinMode(OTV0P2BASE::LED_HEATCALL_L, OUTPUT);
+
+    const int16_t minsp = OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd();
+    const uint8_t location = OTV0P2BASE::MemoryChecks::getLocation();
+    const uint16_t progCounter = OTV0P2BASE::MemoryChecks::getPC();  // not isr safe
     for( ; ; ) {
+        OTV0P2BASE::serialPrintAndFlush(F("minsp: "));
+        OTV0P2BASE::serialPrintAndFlush(minsp);
+        OTV0P2BASE::serialPrintAndFlush(F(" loc: "));
+        OTV0P2BASE::serialPrintAndFlush(location);
+        OTV0P2BASE::serialPrintAndFlush(F(" prog: "));
+        OTV0P2BASE::serialPrintAndFlush(progCounter, HEX);
+        OTV0P2BASE::serialPrintlnAndFlush();
         OTV0P2BASE::LED_HEATCALL_ON();
         OTV0P2BASE::nap(WDTO_15MS);
         OTV0P2BASE::LED_HEATCALL_OFF();
@@ -170,8 +181,9 @@ inline void stackCheck()
     OTV0P2BASE::serialPrintAndFlush(F(" prog: "));
     OTV0P2BASE::serialPrintAndFlush(progCounter, HEX);
     OTV0P2BASE::serialPrintlnAndFlush();
+    if (128 > minsp) panic(F("SH"));
 //    OTV0P2BASE::MemoryChecks::forceResetIfStackOverflow();  // XXX
-//    OTV0P2BASE::MemoryChecks::resetMinSP();
+    OTV0P2BASE::MemoryChecks::resetMinSP();
 #else
     if(128 > minsp) { OTV0P2BASE::serialPrintlnAndFlush(F("!SP")); }
     OTV0P2BASE::MemoryChecks::forceResetIfStackOverflow();
@@ -313,7 +325,7 @@ static OTV0P2BASE::SimpleStatsRotation<nTXStats> ss1; // Configured for maximum 
 // Sends stats on primary radio channel 0 with possible duplicate to secondary channel.
 // If sending encrypted then ID/counter fields (eg @ and + for JSON) are omitted
 // as assumed supplied by security layer to remote recipent.
-static void bareStatsTX()
+__attribute__((noinline)) void bareStatsTX()
 {
     // Note if radio/comms channel is itself framed.
     const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled<>();
