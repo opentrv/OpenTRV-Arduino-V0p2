@@ -139,14 +139,7 @@ static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChanne
 static constexpr uint8_t RFM23B_RX_QUEUE_SIZE = OTV0P2BASE::fnmax(uint8_t(2), uint8_t(OTRFM23BLink::DEFAULT_RFM23B_RX_QUEUE_CAPACITY)) - 1;
 static constexpr int8_t RFM23B_IRQ_PIN = PIN_RFM_NIRQ;
 static constexpr bool RFM23B_allowRX = false;
-OTRFM23BLink::OTRFM23BLink<OTV0P2BASE::V0p2_PIN_SPI_nSS, RFM23B_IRQ_PIN, RFM23B_RX_QUEUE_SIZE, RFM23B_allowRX> RFM23B;
-
-// Assigns radio to PrimaryRadio alias
-OTRadioLink::OTRadioLink &PrimaryRadio = RFM23B;
-
-// When RX not enabled, switch in dummy version (base class implements stubs)
-OTRadioLink::OTMessageQueueHandlerNull messageQueue;  // fixme delete
-
+OTRFM23BLink::OTRFM23BLink<OTV0P2BASE::V0p2_PIN_SPI_nSS, RFM23B_IRQ_PIN, RFM23B_RX_QUEUE_SIZE, RFM23B_allowRX> PrimaryRadio;
 
 ////// SENSORS
 
@@ -215,7 +208,6 @@ StatsU_t statsU;
 // Singleton scheduler instance.
 // Dummy scheduler to simplify coding.
 typedef OTRadValve::NULLValveSchedule Scheduler_t;
-extern Scheduler_t Scheduler;
 Scheduler_t Scheduler;
 
 // Radiator valve mode (FROST, WARM, BAKE).
@@ -225,7 +217,6 @@ OTRadValve::ValveMode valveMode;
 typedef OTRadValve::DEFAULT_ValveControlParameters PARAMS;
 // Choose which subtype to use depending on enabled settings and board type.
 typedef OTRadValve::TempControlTempPot<decltype(TempPot), &TempPot, PARAMS, decltype(RelHumidity), &RelHumidity> TempControl_t;
-#define TempControl_DEFINED
 // Temperature control object.
 TempControl_t tempControl;
 
@@ -251,8 +242,6 @@ constexpr OTRadValve::ModelledRadValveComputeTargetTempBasic<
   setbackLockout>
   cttBasic;
 
-#define ENABLE_MODELLED_RAD_VALVE
-#define ENABLE_NOMINAL_RAD_VALVE
 // Internal model of controlled radiator valve position.
 OTRadValve::ModelledRadValve NominalRadValve(
   &cttBasic,
@@ -413,7 +402,7 @@ bool pollIO(const bool force = false) {
 // Will be run after all stats for the current hour have been updated.
 static void endOfDayTasks() {
     // Count down the setback lockout if not finished...  (TODO-786, TODO-906)
-    OTRadValve::countDownSetbackLockout();
+//    OTRadValve::countDownSetbackLockout();
 }
 
 
@@ -428,8 +417,10 @@ static void endOfDayTasks() {
 // If sending encrypted then ID/counter fields (eg @ and + for JSON) are omitted
 // as assumed supplied by security layer to remote recipent.
 void bareStatsTX() {
-    // Capture heavy stack usage from local allocations here.
-    OTV0P2BASE::MemoryChecks::recordIfMinSP();
+
+    OTV0P2BASE::MemoryChecks::resetMinSP();
+//    // Capture heavy stack usage from local allocations here.
+//    OTV0P2BASE::MemoryChecks::recordIfMinSP();
     const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled<>();
     static_assert(OTV0P2BASE::FullStatsMessageCore_MAX_BYTES_ON_WIRE <= STATS_MSG_MAX_LEN, "FullStatsMessageCore_MAX_BYTES_ON_WIRE too big");
     static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_MAX_LENGTH too big"); // Allow 1 for trailing CRC.
@@ -543,6 +534,7 @@ void bareStatsTX() {
     // Send directly to the primary radio...
     if((!sendingJSONFailed) && (!PrimaryRadio.queueToSend(realTXFrameStart, wrote))) { sendingJSONFailed = true; }
     if(neededWaking) { OTV0P2BASE::flushSerialProductive(); OTV0P2BASE::powerDownSerial(); }
+    stackCheck();
 }
 
 
@@ -568,7 +560,7 @@ static constexpr uint8_t BUFSIZ_pollUI = 1 + MAXIMUM_CLI_RESPONSE_CHARS;
 
 void pollCLI(const uint8_t maxSCT, const bool startOfMinute, const OTV0P2BASE::ScratchSpace &s)
 {
-    // Perform any once-per-minute operations. // XXX
+    // Perform any once-per-minute operations.
     if(startOfMinute) { OTV0P2BASE::CLI::countDownCLI(); }
     const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled<V0P2_UART_BAUD>();
     // Wait for input command line from the user (received characters may already have been queued)...
@@ -582,50 +574,50 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute, const OTV0P2BASE::S
         OTV0P2BASE::CLI::resetCLIActiveTimer();
         // Process the input received, with action based on the first char...
         switch(buf[0]) {
-            // Explicit request for help, or unrecognised first character.
-            // Avoid showing status as may already be rather a lot of output.
-            default: case '?': { dumpCLIUsage(); break; }
-            // Exit/deactivate CLI immediately.
-            // This should be followed by JUST CR ('\r') OR LF ('\n')
-            // else the second will wake the CLI up again.
-            case 'E': { OTV0P2BASE::CLI::makeCLIInactive(); break; }
-            // Show/set generic parameter values (eg "G N [M]").
-            case 'G': { OTV0P2BASE::CLI::GenericParam().doCommand(buf, n); break; }
-            // Reset or display ID.
-            case 'I': { OTV0P2BASE::CLI::NodeIDWithSet().doCommand(buf, n); break; }
-            // Status line stats print and TX.
-            case 'S': {
-                Serial.print(F("Resets: "));
-                const uint8_t resetCount = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_RESET_COUNT);
-                Serial.print(resetCount);
-                Serial.println();
-                // Show stack headroom.
-                OTV0P2BASE::serialPrintAndFlush(F("SH ")); OTV0P2BASE::serialPrintAndFlush(OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd()); OTV0P2BASE::serialPrintlnAndFlush();
-                // Default light-weight print and TX of stats.
-//                bareStatsTX();  // FIXME No way this won't overflow!
-                break; // Note that status is by default printed after processing input line.
-            }
-            // Switch to FROST mode OR set FROST/setback temperature (even with temp pot available).
-            // With F! force to frost and holiday (long-vacant) mode.  Useful for testing and for remote CLI use.
-            case 'F': {
-                valveMode.setWarmModeDebounced(false); // No parameter supplied; switch to FROST mode.
-                break;
-            }
-            /**
-            * Set secret key.
-            * @note  The OTRadioLink::SimpleSecureFrame32or0BodyTXV0p2::resetRaw3BytePersistentTXRestartCounterCond
-            *        function pointer MUST be passed here to ensure safe handling of the key and the Tx message
-            *        counter.
-            */
-            case 'K': { OTV0P2BASE::CLI::SetSecretKey(OTRadioLink::SimpleSecureFrame32or0BodyTXV0p2::resetRaw3BytePersistentTXRestartCounterCond).doCommand(buf, n); break; }
-            // Switch to WARM (not BAKE) mode OR set WARM temperature.
-            case 'W':{
-                valveMode.cancelBakeDebounced(); // Ensure BAKE mode not entered.
-                valveMode.setWarmModeDebounced(true); // No parameter supplied; switch to WARM mode.
-                break;
-            }
-            // Zap/erase learned statistics.
-            case 'Z': { OTV0P2BASE::CLI::ZapStats().doCommand(buf, n); break; }
+//            // Explicit request for help, or unrecognised first character.
+//            // Avoid showing status as may already be rather a lot of output.
+//            default: case '?': { dumpCLIUsage(); break; }
+//            // Exit/deactivate CLI immediately.
+//            // This should be followed by JUST CR ('\r') OR LF ('\n')
+//            // else the second will wake the CLI up again.
+//            case 'E': { OTV0P2BASE::CLI::makeCLIInactive(); break; }
+//            // Show/set generic parameter values (eg "G N [M]").
+//            case 'G': { OTV0P2BASE::CLI::GenericParam().doCommand(buf, n); break; }
+//            // Reset or display ID.
+//            case 'I': { OTV0P2BASE::CLI::NodeIDWithSet().doCommand(buf, n); break; } // XXX
+//            // Status line stats print and TX.
+//            case 'S': {
+//                Serial.print(F("Resets: "));
+//                const uint8_t resetCount = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_RESET_COUNT);
+//                Serial.print(resetCount);
+//                Serial.println();
+//                // Show stack headroom.
+//                OTV0P2BASE::serialPrintAndFlush(F("SH ")); OTV0P2BASE::serialPrintAndFlush(OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd()); OTV0P2BASE::serialPrintlnAndFlush();
+//                // Default light-weight print and TX of stats.
+////                bareStatsTX();  // FIXME No way this won't overflow!
+//                break; // Note that status is by default printed after processing input line.
+//            }
+//            // Switch to FROST mode OR set FROST/setback temperature (even with temp pot available).
+//            // With F! force to frost and holiday (long-vacant) mode.  Useful for testing and for remote CLI use.
+//            case 'F': {
+//                valveMode.setWarmModeDebounced(false); // No parameter supplied; switch to FROST mode.
+//                break;
+//            }
+//            /**
+//            * Set secret key.
+//            * @note  The OTRadioLink::SimpleSecureFrame32or0BodyTXV0p2::resetRaw3BytePersistentTXRestartCounterCond
+//            *        function pointer MUST be passed here to ensure safe handling of the key and the Tx message
+//            *        counter.
+//            */
+//            case 'K': { OTV0P2BASE::CLI::SetSecretKey(OTRadioLink::SimpleSecureFrame32or0BodyTXV0p2::resetRaw3BytePersistentTXRestartCounterCond).doCommand(buf, n); break; }  // XXX
+//            // Switch to WARM (not BAKE) mode OR set WARM temperature.
+//            case 'W':{
+//                valveMode.cancelBakeDebounced(); // Ensure BAKE mode not entered.
+//                valveMode.setWarmModeDebounced(true); // No parameter supplied; switch to WARM mode.
+//                break;
+//            }
+//            // Zap/erase learned statistics.
+//            case 'Z': { OTV0P2BASE::CLI::ZapStats().doCommand(buf, n); break; } // XXX
         }
         // Else show ack of command received.
         Serial.println(F("OK"));
@@ -717,7 +709,7 @@ void setup()
     updateSensorsFromStats();
 
     OTV0P2BASE::MemoryChecks::resetMinSP();
-    OTV0P2BASE::MemoryChecks::recordIfMinSP();
+    OTV0P2BASE::MemoryChecks::recordIfMinSP(1);
     stackCheck();
 
     // Do early 'wake-up' stats transmission if possible // XXX
@@ -726,15 +718,15 @@ void setup()
     // Attempt to maximise chance of reception with a double TX.
     // Assume not in hub mode (yet).
     // Send all possible formats, binary first (assumed complete in one message).
-//    bareStatsTX();  // XXX
+    bareStatsTX();  // XXX
     // Send JSON stats repeatedly (typically once or twice)
     // until all values pushed out (no 'changed' values unsent)
     // or limit reached.
-//    for(uint8_t i = 5; --i > 0; ) {
-//        ::OTV0P2BASE::nap(WDTO_120MS, false); // Sleep long enough for receiver to have a chance to process previous TX.
-//        bareStatsTX();  // XXX
-//        if(!ss1.changedValue()) { break; }
-//    }
+    for(uint8_t i = 5; --i > 0; ) {
+        ::OTV0P2BASE::nap(WDTO_120MS, false); // Sleep long enough for receiver to have a chance to process previous TX.
+        bareStatsTX();  // XXX
+        if(!ss1.changedValue()) { break; }
+    }
     // Start local counters in randomised positions to help avoid inter-unit collisions,
     // eg for mains-powered units starting up together after a power cut,
     // but without (eg) breaking any of the logic about what order things will be run first time through.
@@ -759,7 +751,7 @@ void loop()
     const unsigned long usStart = micros();
 #endif
     OTV0P2BASE::MemoryChecks::resetMinSP();
-    OTV0P2BASE::MemoryChecks::recordIfMinSP();
+    OTV0P2BASE::MemoryChecks::recordIfMinSP(2);
     stackCheck();
 
     // Main loop for OpenTRV radiator control.
@@ -810,7 +802,7 @@ void loop()
     TIME_LSD = newTLSD;
     // Reset and immediately re-prime the RTC-based watchdog.
     OTV0P2BASE::resetRTCWatchDog();
-    OTV0P2BASE::enableRTCWatchdog(true);
+    OTV0P2BASE::enableRTCWatchdog(false);
 
     // START LOOP BODY
     // ===============
@@ -842,7 +834,7 @@ void loop()
             // Tasks that must be run every minute.
             ++minuteCount; // Note simple roll-over to 0 at max value.
             // Force to user's programmed schedule(s), if any, at the correct time.
-            Scheduler.applyUserSchedule(&valveMode, OTV0P2BASE::getMinutesSinceMidnightLT());
+//            Scheduler.applyUserSchedule(&valveMode, OTV0P2BASE::getMinutesSinceMidnightLT());  // XXX
             // Ensure that the RTC has been persisted promptly when necessary.
             OTV0P2BASE::persistRTC();
             // Run hourly tasks at the end of the hour.
@@ -926,8 +918,8 @@ void loop()
             // Race-free.
             const uint_least16_t msm = OTV0P2BASE::getMinutesSinceMidnightLT();
             const uint8_t mm = msm % 60;
-            if(59 == mm) { statsU.sampleStats(true, uint8_t(msm / 60)); }
-            else if((statsU.maxSamplesPerHour > 1) && (29 == mm)) { statsU.sampleStats(false, uint8_t(msm / 60)); }
+//            if(59 == mm) { statsU.sampleStats(true, uint8_t(msm / 60)); }
+//            else if((statsU.maxSamplesPerHour > 1) && (29 == mm)) { statsU.sampleStats(false, uint8_t(msm / 60)); }
             break;
         }
     }
@@ -966,10 +958,12 @@ void loop()
     // and which should also allow some energy-saving sleep.
     if(OTV0P2BASE::CLI::isCLIActive()) {
         const uint8_t stopBy = nearOverrunThreshold - 1;
-        char buf[BUFSIZ_pollUI]; // XXX
+        char buf[BUFSIZ_pollUI];
         OTV0P2BASE::ScratchSpace s((uint8_t*)buf, sizeof(buf));
         pollCLI(stopBy, 0 == TIME_LSD, s);
     }
+
+    panic();
 #if defined(EST_CPU_DUTYCYCLE)
     const unsigned long usEnd = micros();
     // Nominal loop time should be 2s x 1MHz clock, ie 2,000,000 if CPU running all the time.
