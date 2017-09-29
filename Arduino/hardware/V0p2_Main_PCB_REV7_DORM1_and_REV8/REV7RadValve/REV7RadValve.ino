@@ -420,7 +420,7 @@ void bareStatsTX() {
 
     OTV0P2BASE::MemoryChecks::resetMinSP();
 //    // Capture heavy stack usage from local allocations here.
-//    OTV0P2BASE::MemoryChecks::recordIfMinSP();
+    OTV0P2BASE::MemoryChecks::recordIfMinSP();
     const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled<>();
     static_assert(OTV0P2BASE::FullStatsMessageCore_MAX_BYTES_ON_WIRE <= STATS_MSG_MAX_LEN, "FullStatsMessageCore_MAX_BYTES_ON_WIRE too big");
     static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_MAX_LENGTH too big"); // Allow 1 for trailing CRC.
@@ -567,13 +567,13 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute, const OTV0P2BASE::S
     // Read a line up to a terminating CR, either on its own or as part of CRLF.
     // (Note that command content and timing may be useful to fold into PRNG entropy pool.)
     // A static buffer generates better code but permanently consumes previous SRAM.
-    const uint8_t n = OTV0P2BASE::CLI::promptAndReadCommandLine(maxSCT, s, [](){pollIO();});
-    char *buf = (char *)s.buf;
-    if(n > 0) {
-        // Got plausible input so keep the CLI awake a little longer.
-        OTV0P2BASE::CLI::resetCLIActiveTimer();
-        // Process the input received, with action based on the first char...
-        switch(buf[0]) {
+//    const uint8_t n = OTV0P2BASE::CLI::promptAndReadCommandLine(maxSCT, s, [](){pollIO();});
+//    char *buf = (char *)s.buf;
+//    if(n > 0) {
+//        // Got plausible input so keep the CLI awake a little longer.
+//        OTV0P2BASE::CLI::resetCLIActiveTimer();
+//        // Process the input received, with action based on the first char...
+//        switch(buf[0]) {
 //            // Explicit request for help, or unrecognised first character.
 //            // Avoid showing status as may already be rather a lot of output.
 //            default: case '?': { dumpCLIUsage(); break; }
@@ -618,10 +618,10 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute, const OTV0P2BASE::S
 //            }
 //            // Zap/erase learned statistics.
 //            case 'Z': { OTV0P2BASE::CLI::ZapStats().doCommand(buf, n); break; } // XXX
-        }
-        // Else show ack of command received.
-        Serial.println(F("OK"));
-    } else { Serial.println(); } // Terminate empty/partial CLI input line after timeout.
+//        }
+//        // Else show ack of command received.
+//        Serial.println(F("OK"));
+//    } else { Serial.println(); } // Terminate empty/partial CLI input line after timeout.
     // Force any pending output before return / possible UART power-down.
     OTV0P2BASE::flushSerialSCTSensitive();
     if(neededWaking) { OTV0P2BASE::powerDownSerial(); }
@@ -834,7 +834,7 @@ void loop()
             // Tasks that must be run every minute.
             ++minuteCount; // Note simple roll-over to 0 at max value.
             // Force to user's programmed schedule(s), if any, at the correct time.
-//            Scheduler.applyUserSchedule(&valveMode, OTV0P2BASE::getMinutesSinceMidnightLT());  // XXX
+            Scheduler.applyUserSchedule(&valveMode, OTV0P2BASE::getMinutesSinceMidnightLT());  // XXX
             // Ensure that the RTC has been persisted promptly when necessary.
             OTV0P2BASE::persistRTC();
             // Run hourly tasks at the end of the hour.
@@ -918,8 +918,8 @@ void loop()
             // Race-free.
             const uint_least16_t msm = OTV0P2BASE::getMinutesSinceMidnightLT();
             const uint8_t mm = msm % 60;
-//            if(59 == mm) { statsU.sampleStats(true, uint8_t(msm / 60)); }
-//            else if((statsU.maxSamplesPerHour > 1) && (29 == mm)) { statsU.sampleStats(false, uint8_t(msm / 60)); }
+            if(59 == mm) { statsU.sampleStats(true, uint8_t(msm / 60)); }
+            else if((statsU.maxSamplesPerHour > 1) && (29 == mm)) { statsU.sampleStats(false, uint8_t(msm / 60)); }
             break;
         }
     }
