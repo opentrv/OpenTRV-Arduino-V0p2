@@ -17,6 +17,17 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
                            Deniz Erbilgin 2015--2017
 */
 
+/******************************************************************************
+ * NOTES
+ *****************************************************************************/
+/**
+ * @brief   Template for building a V0p2 app.
+ * @TODO    Figure out how detailed this should be, e.g.
+ *          - Do we want a template for setup and loop functions?
+ *          - What generic functions should be included/assumed necessary?
+ *            e.g. pollIO, CLI stuff etc.
+ */
+
 /**
  *  DE20170901
  * @brief   To test alternative methods for relay send over the SIM900,
@@ -38,75 +49,68 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 #undef OTSIM900LINK_SUBCYCLE_SEND_TIMEOUT_TEST
  */
 
-// GLOBAL flags that alter system build and behaviour.
-//#define DEBUG // If defined, do extra checks and serial logging.  Will take more code space and power.
+/******************************************************************************
+ * INCLUDES
+ *****************************************************************************/
 
-// Ensure that OpenTRV 'standard' UART speed is set unless explicitly overridden.
-#define BAUD 4800
-// Global flag for REV10 secure BHR
-#define CONFIG_REV10_SECURE_BHR // REV10: secure stats relay and boiler hub.
+////// GLOBAL flags that alter system build and behaviour.
 
-// Get defaults for valve applications.
-#include <OTV0p2_valve_ENABLE_defaults.h>
-// REV8 + GSM Arduino shield + I2CEXT, see TODO-551.
-#include <OTV0p2_CONFIG_REV10.h>
+// If defined, do extra checks and serial logging.  Will take more code space and power.
+#undef DEBUG
+
+// *** Global flag for REVx configuration here *** //
+// e.g.
+#define V0p2_REV 10
+
 // --------------------------------------------
-// Fixups to apply after loading the target config.
-#include <OTV0p2_valve_ENABLE_fixups.h>
+// I/O pin allocation and setup: include ahead of I/O module headers.
+#include <OTV0p2_Board_IO_Config.h>
 
-#include <OTV0p2_Board_IO_Config.h> // I/O pin allocation and setup: include ahead of I/O module headers.
+
+////// MAIN LIBRARIES
 
 #include <Arduino.h>
 #include <OTV0p2Base.h>
 #include <OTRadioLink.h>
+
+
+////// ADDITIONAL LIBRARIES/PERIPHERALS
 
 #define RFM23B_IRQ_CONTROL  // Enable RFM23B IRQ control code.
 #include <OTRFM23BLink.h>
 #include <OTSIM900Link.h>
 #include <OTAESGCM.h>
 
+
+////// ADDITIONAL USER HEADERS
+
 #include "secondaryRadioConfig.h"  // IP address in separate header to avoid accidentally committing.
 
-/////// RADIOS
-// Pick an appropriate radio config for RFM23 (if it is the primary radio).
-// Nodes talking on fast GFSK channel 0.
-static constexpr uint8_t nPrimaryRadioChannels = 1;
-static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChannels] =
-  {
-  // GFSK channel 0 full config, RX/TX, not in itself secure.
-  OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsGFSK57600, true),
-  };
-
-static const OTRadioLink::OTRadioChannelConfig SecondaryRadioConfig(&SIM900Config, true);
-
-// Brings in necessary radio libs.
-static constexpr uint8_t RFM23B_RX_QUEUE_SIZE = OTRFM23BLink::DEFAULT_RFM23B_RX_QUEUE_CAPACITY;
-static constexpr int8_t RFM23B_IRQ_PIN = PIN_RFM_NIRQ;
-static constexpr bool RFM23B_allowRX = true;
-OTRFM23BLink::OTRFM23BLink<OTV0P2BASE::V0p2_PIN_SPI_nSS, RFM23B_IRQ_PIN, RFM23B_RX_QUEUE_SIZE, RFM23B_allowRX> PrimaryRadio;
-OTSIM900Link::OTSIM900Link<8, 5, RADIO_POWER_PIN, OTV0P2BASE::getSecondsLT> SecondaryRadio;
-
-/////// SENSORS
-
-// Sensor for supply (eg battery) voltage in millivolts.
-OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
-OTV0P2BASE::RoomTemperatureC16_TMP112 TemperatureC16;
-// Sense ambient lighting level.
-OTV0P2BASE::SensorAmbientLight AmbLight;
-
-/////// ACTUATORS
-static constexpr bool enableDefaultAlwaysRX = true;
-static constexpr bool enableRadioRX = true;
-static constexpr bool allowGetMinBoilerOnMFromEEPROM = false;
-OTRadValve::OTHubManager<enableDefaultAlwaysRX, enableRadioRX, allowGetMinBoilerOnMFromEEPROM> hubManager;
-OTRadValve::BoilerLogic::OnOffBoilerDriverLogic<decltype(hubManager), hubManager, OUT_HEATCALL> BoilerHub;
-
-//////// Constants and variables
+/******************************************************************************
+ * GENERAL CONSTANTS AND VARIABLES
+ * Core constants and variables required for V0p2 loop.
+ *****************************************************************************/
 // Controller's view of Least Significant Digits of the current (local) time, in this case whole seconds.
 // TIME_LSD ranges from 0 to TIME_CYCLE_S-1, also major cycle length.
 static constexpr uint_fast8_t TIME_CYCLE_S = 60;
 // Controller's notion/cache of seconds within major cycle.
 static uint_fast8_t TIME_LSD;
+
+// Send the underlying stats binary/text 'whitened' message.
+// This must be terminated with an 0xff (which is not sent),
+// and no longer than STATS_MSG_MAX_LEN bytes long in total (excluding the terminating 0xff).
+// This must not contain any 0xff and should not contain long runs of 0x00 bytes.
+// The message to be sent must be written at an offset of STATS_MSG_START_OFFSET from the start of the buffer.
+// This routine will alter the content of the buffer for transmission,
+// and the buffer should not be re-used as is.
+//   * doubleTX  double TX to increase chance of successful reception
+//   * RFM23BfriendlyPremable  if true then add an extra preamble
+//     to allow RFM23B-based receiver to RX this
+// This will use whichever transmission medium/carrier/etc is available.
+static constexpr uint8_t RFM22_PREAMBLE_BYTES = 5; // Recommended number of preamble bytes for reliable reception.
+static constexpr uint8_t RFM22_SYNC_MIN_BYTES = 3; // Minimum number of sync bytes.
+static constexpr uint8_t STATS_MSG_START_OFFSET = (RFM22_PREAMBLE_BYTES + RFM22_SYNC_MIN_BYTES);
+static constexpr uint8_t STATS_MSG_MAX_LEN = (64 - STATS_MSG_START_OFFSET);
 
 // 'Elapsed minutes' count of minute/major cycles; cheaper than accessing RTC and not tied to real time.
 // Starts at or just above zero (within the first 4-minute cycle) to help avoid collisions between units after mass power-up.
@@ -119,9 +123,154 @@ static constexpr uint8_t RFM23B_INT_MASK = (1 << (PIN_RFM_NIRQ&7));
 // Mask for Port D input change interrupts.
 static constexpr uint8_t SERIALRX_INT_MASK = (1 << 0); // Serial RX
 
-//========================================
-// LOCAL FUNCTIONS
-//========================================
+////// SCRATCHSPACE
+
+// decode workspace
+constexpr size_t Decode_WorkspaceSize = OTAESGCM::OTAES128GCMGenericWithWorkspace<>::workspaceRequiredDec + 16 + 58;
+
+// Stats TX workspace
+/**
+ * The workspace consists of:
+ *   - Buffer to construct final message, size MSG_BUF_SIZE.
+ *     - buffer offset/preamble
+ *     - max binary length, or max JSON length + 1 for CRC + 1 to allow
+ *       detection of oversize message
+ *     - terminating 0xff
+ *     - Buffer need be no larger than leading length byte + typical
+ *       64-byte radio module TX buffer limit + optional terminator.
+ *   - Buffer for holding the JSON frame/plain text, size ptextBuflen.
+ *      - The plaintext buffer must hold the JSON frame plus the valvePC
+ *        and the "hasStats" indicator. As the plaintext must hold a copy
+ *        of the JSON frame, the JSON frame is constructed within it to
+ *        save on stack space and copying.
+ *   - Scratch space for the AESGCM decode function.
+ */
+constexpr uint8_t MSG_BUF_SIZE = 1 + 64 + 1;
+constexpr uint8_t bufJSONlen = OTRadioLink::ENC_BODY_SMALL_FIXED_PTEXT_MAX_SIZE + 1;  // 3 = '}' + 0x0 + ? FIXME whuut?
+constexpr uint8_t ptextBuflen = bufJSONlen + 2;  // 2 = valvePC + hasStats
+static_assert(ptextBuflen == 34, "ptextBuflen wrong");
+constexpr uint8_t scratchSpaceNeededHere = MSG_BUF_SIZE + ptextBuflen;  // This is the scratch space needed locally by bareStatsTX, excluding called functions.
+constexpr size_t StatsTX_WorkspaceSize = OTRadioLink::SimpleSecureFrame32or0BodyTXBase::generateSecureOFrameRawForTX_total_scratch_usage_OTAESGCM_2p0 + scratchSpaceNeededHere;
+static_assert(StatsTX_WorkspaceSize == 384, "StatsTX workspace size wrong!");  // Correct as of 20170704
+
+// CLI scratchspace
+static constexpr uint8_t MAXIMUM_CLI_RESPONSE_CHARS = 1 + OTV0P2BASE::CLI::MAX_TYPICAL_CLI_BUFFER;
+static constexpr uint8_t PollUI_WorkspaceSize = 1 + MAXIMUM_CLI_RESPONSE_CHARS;
+
+// Create workspace
+union GlobalWorkSpace {
+    uint8_t decode[Decode_WorkspaceSize];
+    uint8_t statsTX[StatsTX_WorkspaceSize];
+    uint8_t cli[PollUI_WorkspaceSize];
+};
+static GlobalWorkSpace globalWorkSpace;
+
+
+/******************************************************************************
+ * PERIPHERALS
+ * Peripheral drivers and config
+ *****************************************************************************/
+
+////// RADIOS
+
+// Pick an appropriate radio config for RFM23 (if it is the primary radio).
+// Nodes talking on fast GFSK channel 0.
+static constexpr uint8_t nPrimaryRadioChannels = 1;
+static const OTRadioLink::OTRadioChannelConfig RFM23BConfigs[nPrimaryRadioChannels] =
+  {
+  // GFSK channel 0 full config, RX/TX, not in itself secure.
+  OTRadioLink::OTRadioChannelConfig(OTRFM23BLink::StandardRegSettingsGFSK57600, true),
+  };
+static const OTRadioLink::OTRadioChannelConfig SecondaryRadioConfig(&SIM900Config, true);
+// Brings in necessary radio libs.
+static constexpr uint8_t RFM23B_RX_QUEUE_SIZE = OTRFM23BLink::DEFAULT_RFM23B_RX_QUEUE_CAPACITY;
+static constexpr int8_t RFM23B_IRQ_PIN = PIN_RFM_NIRQ;
+static constexpr bool RFM23B_allowRX = true;
+OTRFM23BLink::OTRFM23BLink<OTV0P2BASE::V0p2_PIN_SPI_nSS, RFM23B_IRQ_PIN, RFM23B_RX_QUEUE_SIZE, RFM23B_allowRX> PrimaryRadio;
+OTSIM900Link::OTSIM900Link<8, 5, RADIO_POWER_PIN, OTV0P2BASE::getSecondsLT> SecondaryRadio;
+
+////// SENSORS
+
+// Sensor for supply (eg battery) voltage in millivolts.
+OTV0P2BASE::SupplyVoltageCentiVolts Supply_cV;
+OTV0P2BASE::RoomTemperatureC16_TMP112 TemperatureC16;
+// Sense ambient lighting level.
+OTV0P2BASE::SensorAmbientLight AmbLight;
+
+////// ACTUATORS
+
+static constexpr bool enableDefaultAlwaysRX = true;
+static constexpr bool enableRadioRX = true;
+static constexpr bool allowGetMinBoilerOnMFromEEPROM = false;
+OTRadValve::OTHubManager<enableDefaultAlwaysRX, enableRadioRX, allowGetMinBoilerOnMFromEEPROM> hubManager;
+OTRadValve::BoilerLogic::OnOffBoilerDriverLogic<decltype(hubManager), hubManager, OUT_HEATCALL> BoilerHub;
+
+////// CONTROL
+
+
+////// MESSAGING
+// Managed JSON stats.
+// Number of JSON stats to TX:
+// Note: each stat statically allocates 6 bytes to RAM.
+// - Internal temp
+// - Boiler state
+// TODO: Consider removing entirely.
+constexpr uint8_t nTXStats = 2;
+static OTV0P2BASE::SimpleStatsRotation<nTXStats> ss1; // Configured for maximum different stats.
+
+
+/******************************************************************************
+ * INTERRUPT SERVICE ROUTINES
+ *****************************************************************************/
+
+// Controller's view of Least Significant Digits of the current (local) time, in this case whole seconds.
+// Previous state of port B pins to help detect changes.
+//
+// NOTE: PrimaryRadio may switch PCINT0 on and off during operation! This pin bank should not be relied
+//       upon for pin change interrupts!
+static volatile uint8_t prevStatePB;
+// Interrupt service routine for PB I/O port transition changes.
+ISR(PCINT0_vect)
+{
+    // Basic profiling info
+    OTV0P2BASE::MemoryChecks::recordPC();
+
+    const uint8_t pins = PINB;
+    const uint8_t changes = pins ^ prevStatePB;
+    prevStatePB = pins;
+
+    // RFM23B nIRQ falling edge is of interest.
+    // Handler routine not required/expected to 'clear' this interrupt.
+    if((changes & RFM23B_INT_MASK) && !(pins & RFM23B_INT_MASK))
+        { PrimaryRadio._handleInterruptNonVirtual(); }
+}
+
+// Previous state of port D pins to help detect changes.
+static volatile uint8_t prevStatePD;
+// Interrupt service routine for PD I/O port transition changes (including RX).
+// (DE20170810) Just does a store on an atomic_t. Low ram cost.
+ISR(PCINT2_vect)
+{
+    const uint8_t pins = PIND;
+    const uint8_t changes = pins ^ prevStatePD;
+    prevStatePD = pins;
+
+    // If an interrupt arrived from the serial RX then wake up the CLI.
+    // Use a nominally rising edge to avoid spurious trigger when other interrupts are handled.
+    // The will ensure that it is possible to wake the CLI subsystem with an extra CR or LF.
+    // It is OK to trigger this from other things such as button presses.
+    // TODO: ensure that resetCLIActiveTimer() is inlineable to minimise ISR prologue/epilogue time and space.
+    if((changes & SERIALRX_INT_MASK) && !(pins & SERIALRX_INT_MASK))
+    { OTV0P2BASE::CLI::resetCLIActiveTimer(); }
+}
+
+
+/******************************************************************************
+ * LOCAL FUNCTIONS
+ *****************************************************************************/
+
+////// PANIC
+
 // Indicate that the system is broken in an obvious way (distress flashing the main LED).
 // DOES NOT RETURN.
 // Tries to turn off most stuff safely that will benefit from doing so, but nothing too complex.
@@ -162,6 +311,9 @@ static void panic(const __FlashStringHelper *s)
     panic();
 }
 
+
+////// DIAGNOSTICS
+
 /**
  * @brief   Force restart if SPAM/heap/stack likely corrupt.
  *          Complain and keep complaining when getting near stack overflow.
@@ -181,7 +333,7 @@ inline void stackCheck()
     OTV0P2BASE::serialPrintAndFlush(F(" prog: "));
     OTV0P2BASE::serialPrintAndFlush(progCounter, HEX);
     OTV0P2BASE::serialPrintlnAndFlush();
-    if (128 > minsp) panic(F("SH"));
+    if (64 > minsp) panic(F("SH"));
 //    OTV0P2BASE::MemoryChecks::forceResetIfStackOverflow();  // XXX
     OTV0P2BASE::MemoryChecks::resetMinSP();
 #else
@@ -189,6 +341,13 @@ inline void stackCheck()
     OTV0P2BASE::MemoryChecks::forceResetIfStackOverflow();
 #endif
 }
+
+
+////// SENSORS
+
+
+
+////// CONTROL
 
 // Call this to do an I/O poll if needed; returns true if something useful definitely happened.
 // This call should typically take << 1ms at 1MHz CPU.
@@ -218,6 +377,7 @@ bool pollIO(const bool force = false)
   }
 
 
+////// MESSAGING
 /**
  * @brief   Wrapper function for secure frame decode/handle callback.
  * @param   msg: Raw RXed message. msgLen should be stored in the byte before
@@ -228,9 +388,7 @@ bool pollIO(const bool force = false)
 inline bool decodeAndHandleSecureFrame(volatile const uint8_t * const msg)
 {
     // Create a workspace for large stack consuming items ahead of time, in order to improve stack usage visibility.
-    constexpr size_t workspaceSize = OTAESGCM::OTAES128GCMGenericWithWorkspace<>::workspaceRequiredDec + 16 + 58;
-    uint8_t workspace[workspaceSize];
-    OTV0P2BASE::ScratchSpaceL sW(workspace, sizeof(workspace));
+    OTV0P2BASE::ScratchSpaceL sW(globalWorkSpace.decode, sizeof(globalWorkSpace.decode));
     // Temporarily suspend PrimaryRadio interrupts to avoid stack collisions.
     PrimaryRadio.pauseInterrupts(true);
     const bool success = OTRadioLink::decodeAndHandleOTSecureOFrameWithWorkspace<
@@ -248,74 +406,7 @@ OTRadioLink::OTMessageQueueHandler< pollIO, V0P2_UART_BAUD,
                                     decodeAndHandleSecureFrame, OTRadioLink::decodeAndHandleDummyFrame  // only interested in single frame type.
                                    > messageQueue;
 
-//========================================
-// INTERRUPT SERVICE ROUTINES
-//========================================
-// Controller's view of Least Significant Digits of the current (local) time, in this case whole seconds.
-// Previous state of port B pins to help detect changes.
-//
-// NOTE: PrimaryRadio may switch PCINT0 on and off during operation! This pin bank should not be relied
-//       upon for pin change interrupts!
-static volatile uint8_t prevStatePB;
-// Interrupt service routine for PB I/O port transition changes.
-ISR(PCINT0_vect)
-{
-    // Basic profiling info
-    OTV0P2BASE::MemoryChecks::recordPC();
 
-    const uint8_t pins = PINB;
-    const uint8_t changes = pins ^ prevStatePB;
-    prevStatePB = pins;
-
-    // RFM23B nIRQ falling edge is of interest.
-    // Handler routine not required/expected to 'clear' this interrupt.
-    if((changes & RFM23B_INT_MASK) && !(pins & RFM23B_INT_MASK))
-        { PrimaryRadio._handleInterruptNonVirtual(); }
-}
-
-// Previous state of port D pins to help detect changes.
-static volatile uint8_t prevStatePD;
-// Interrupt service routine for PD I/O port transition changes (including RX).
-// (DE20170810) Just does a store on an atomic_t. Low ram cost.
-ISR(PCINT2_vect)
-{
-    const uint8_t pins = PIND;
-    const uint8_t changes = pins ^ prevStatePD;
-    prevStatePD = pins;
-    
-    // If an interrupt arrived from the serial RX then wake up the CLI.
-    // Use a nominally rising edge to avoid spurious trigger when other interrupts are handled.
-    // The will ensure that it is possible to wake the CLI subsystem with an extra CR or LF.
-    // It is OK to trigger this from other things such as button presses.
-    // TODO: ensure that resetCLIActiveTimer() is inlineable to minimise ISR prologue/epilogue time and space.
-    if((changes & SERIALRX_INT_MASK) && !(pins & SERIALRX_INT_MASK))
-    { OTV0P2BASE::CLI::resetCLIActiveTimer(); }
-}
-
-
-// Send the underlying stats binary/text 'whitened' message.
-// This must be terminated with an 0xff (which is not sent),
-// and no longer than STATS_MSG_MAX_LEN bytes long in total (excluding the terminating 0xff).
-// This must not contain any 0xff and should not contain long runs of 0x00 bytes.
-// The message to be sent must be written at an offset of STATS_MSG_START_OFFSET from the start of the buffer.
-// This routine will alter the content of the buffer for transmission,
-// and the buffer should not be re-used as is.
-//   * doubleTX  double TX to increase chance of successful reception
-//   * RFM23BfriendlyPremable  if true then add an extra preamble
-//     to allow RFM23B-based receiver to RX this
-// This will use whichever transmission medium/carrier/etc is available.
-static constexpr uint8_t RFM22_PREAMBLE_BYTES = 5; // Recommended number of preamble bytes for reliable reception.
-static constexpr uint8_t RFM22_SYNC_MIN_BYTES = 3; // Minimum number of sync bytes.
-static constexpr uint8_t STATS_MSG_START_OFFSET = (RFM22_PREAMBLE_BYTES + RFM22_SYNC_MIN_BYTES);
-static constexpr uint8_t STATS_MSG_MAX_LEN = (64 - STATS_MSG_START_OFFSET);
-// Managed JSON stats.
-// Number of JSON stats to TX:
-// Note: each stat statically allocates 6 bytes to RAM.
-// - Internal temp
-// - Boiler state
-// TODO: Consider removing entirely.
-constexpr uint8_t nTXStats = 2;
-static OTV0P2BASE::SimpleStatsRotation<nTXStats> ss1; // Configured for maximum different stats.
 // Do bare stats transmission.
 // Output should be filtered for items appropriate
 // to current channel security and sensitivity level.
@@ -325,7 +416,7 @@ static OTV0P2BASE::SimpleStatsRotation<nTXStats> ss1; // Configured for maximum 
 // Sends stats on primary radio channel 0 with possible duplicate to secondary channel.
 // If sending encrypted then ID/counter fields (eg @ and + for JSON) are omitted
 // as assumed supplied by security layer to remote recipent.
-__attribute__((noinline)) void bareStatsTX()
+void bareStatsTX()
 {
     // Note if radio/comms channel is itself framed.
     const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled<>();
@@ -333,31 +424,7 @@ __attribute__((noinline)) void bareStatsTX()
 static_assert(OTV0P2BASE::FullStatsMessageCore_MAX_BYTES_ON_WIRE <= STATS_MSG_MAX_LEN, "FullStatsMessageCore_MAX_BYTES_ON_WIRE too big");
 static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_MAX_LENGTH too big"); // Allow 1 for trailing CRC.
 
-    /**
-     * The workspace consists of:
-     *   - Buffer to construct final message, size MSG_BUF_SIZE.
-     *     - buffer offset/preamble
-     *     - max binary length, or max JSON length + 1 for CRC + 1 to allow
-     *       detection of oversize message
-     *     - terminating 0xff
-     *     - Buffer need be no larger than leading length byte + typical
-     *       64-byte radio module TX buffer limit + optional terminator.
-     *   - Buffer for holding the JSON frame/plain text, size ptextBuflen.
-     *      - The plaintext buffer must hold the JSON frame plus the valvePC
-     *        and the "hasStats" indicator. As the plaintext must hold a copy
-     *        of the JSON frame, the JSON frame is constructed within it to
-     *        save on stack space and copying.
-     *   - Scratch space for the AESGCM decode function.
-     */
-    constexpr uint8_t MSG_BUF_SIZE = 1 + 64 + 1;
-    constexpr uint8_t bufJSONlen = OTRadioLink::ENC_BODY_SMALL_FIXED_PTEXT_MAX_SIZE + 1;  // 3 = '}' + 0x0 + ? FIXME whuut?
-    constexpr uint8_t ptextBuflen = bufJSONlen + 2;  // 2 = valvePC + hasStats
-    static_assert(ptextBuflen == 34, "ptextBuflen wrong");
-    constexpr uint8_t scratchSpaceNeededHere = MSG_BUF_SIZE + ptextBuflen;  // This is the scratch space needed locally by bareStatsTX, excluding called functions.
-    constexpr size_t workspaceSize = OTRadioLink::SimpleSecureFrame32or0BodyTXBase::generateSecureOFrameRawForTX_total_scratch_usage_OTAESGCM_2p0 + scratchSpaceNeededHere;
-    uint8_t workspace[workspaceSize];
-    static_assert(sizeof(workspace) == 384, "TX workspace size wrong!");  // Correct as of 20170704
-    OTV0P2BASE::ScratchSpaceL sW(workspace, sizeof(workspace));
+    OTV0P2BASE::ScratchSpaceL sW(globalWorkSpace.statsTX, sizeof(globalWorkSpace.statsTX));
 
     // Send binary *or* JSON on each attempt so as not to overwhelm the receiver.
     {
@@ -463,14 +530,14 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
 }
 
 
+////// UI
+
 // Used to poll user side for CLI input until specified sub-cycle time.
 // Commands should be sent terminated by CR *or* LF; both may prevent 'E' (exit) from working properly.
 // A period of less than (say) 500ms will be difficult for direct human response on a raw terminal.
 // A period of less than (say) 100ms is not recommended to avoid possibility of overrun on long interactions.
 // Times itself out after at least a minute or two of inactivity.
 // NOT RENTRANT (eg uses static state for speed and code space).
-static constexpr uint8_t MAXIMUM_CLI_RESPONSE_CHARS = 1 + OTV0P2BASE::CLI::MAX_TYPICAL_CLI_BUFFER;
-static constexpr uint8_t BUFSIZ_pollUI = 1 + MAXIMUM_CLI_RESPONSE_CHARS;
 void pollCLI(const uint8_t maxSCT, const bool startOfMinute, const OTV0P2BASE::ScratchSpace &s)
 {
     // Perform any once-per-minute operations.
@@ -534,9 +601,10 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute, const OTV0P2BASE::S
     if(neededWaking) { OTV0P2BASE::powerDownSerial(); }
 }
 
-//========================================
-// SETUP
-//========================================
+
+/******************************************************************************
+ * SETUP
+ *****************************************************************************/
 
 // Setup routine: runs once after reset.
 // Does some limited board self-test and will panic() if anything is obviously broken.
@@ -659,9 +727,11 @@ void setup()
     TIME_LSD = OTV0P2BASE::getSecondsLT();
 }
 
-//========================================
-// MAIN LOOP
-//========================================
+
+/******************************************************************************
+ * MAIN LOOP
+ *****************************************************************************/
+
 void loop()
 {
     stackCheck();
@@ -832,8 +902,8 @@ void loop()
     // and which should also allow some energy-saving sleep.
     if(OTV0P2BASE::CLI::isCLIActive()) {
         const uint8_t stopBy = nearOverrunThreshold - 1;
-        char buf[BUFSIZ_pollUI];
-        OTV0P2BASE::ScratchSpace s((uint8_t*)buf, sizeof(buf));
+        OTV0P2BASE::ScratchSpace s(globalWorkSpace.cli, sizeof(globalWorkSpace.cli));
         pollCLI(stopBy, 0 == TIME_LSD, s);
     }
 }
+
