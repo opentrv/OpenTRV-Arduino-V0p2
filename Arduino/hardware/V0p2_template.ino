@@ -79,6 +79,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 
 
 
+////// SCRATCHSPACE
+
+
 /******************************************************************************
  * PERIPHERALS
  * Peripheral drivers and config
@@ -91,6 +94,12 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 
 
 ////// ACTUATORS
+
+
+////// CONTROL
+
+
+////// MESSAGING
 
 
 /******************************************************************************
@@ -161,6 +170,10 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 
 ////// DIAGNOSTICS
 // e.g. stack check
+
+
+////// SENSORS
+
 
 
 ////// CONTROL

@@ -606,6 +606,7 @@ OTRadioLink::OTMessageQueueHandlerNull messageQueue;
 
 // Setup routine: runs once after reset.
 // Does some limited board self-test and will panic() if anything is obviously broken.
+// DE20170926: FIXME Possible high stack usage issues. May trigger a crash when bareStatsTX is called.
 void setup()
   {
   // Set appropriate low-power states, interrupts, etc, ASAP.
@@ -758,6 +759,12 @@ void setup()
   // Report initial status.
   serialStatusReport();
 #endif
+
+  Report current stack usage.
+  OTV0P2BASE::MemoryChecks::resetMinSP();
+  OTV0P2BASE::MemoryChecks::recordIfMinSP();
+  stackCheck();
+
   // Do OpenTRV-specific (late) setup.
   setupOpenTRV();
   }
