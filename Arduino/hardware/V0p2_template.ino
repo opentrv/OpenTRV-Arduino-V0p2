@@ -79,6 +79,9 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 
 
 
+////// SCRATCHSPACE
+
+
 /******************************************************************************
  * PERIPHERALS
  * Peripheral drivers and config
