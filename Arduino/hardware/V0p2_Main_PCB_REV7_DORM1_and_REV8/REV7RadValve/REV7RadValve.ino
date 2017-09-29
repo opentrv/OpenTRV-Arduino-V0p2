@@ -124,19 +124,19 @@ constexpr uint8_t ptextBuflen = bufEncJSONlen + 2;  // 2 = valvePC + hasStats
 static_assert(ptextBuflen == 34, "ptextBuflen wrong");  // TODO make sure this is correct!
 constexpr uint8_t scratchSpaceNeeded = MSG_BUF_SIZE + ptextBuflen;
 constexpr size_t StatsTX_WorkspaceSize = OTRadioLink::SimpleSecureFrame32or0BodyTXBase::generateSecureOFrameRawForTX_total_scratch_usage_OTAESGCM_2p0 + scratchSpaceNeeded;
+static_assert(sizeof(StatsTX_WorkspaceSize) == 384, "StatsTX workspace size wrong!");  // Correct as of 20170704
 
 // Create a scratchspace for CLI
 // Suggested minimum buffer size for pollUI() to ensure maximum-sized commands can be received.
 static constexpr uint8_t MAXIMUM_CLI_RESPONSE_CHARS = 1 + OTV0P2BASE::CLI::MAX_TYPICAL_CLI_BUFFER;
-static constexpr uint8_t BUFSIZ_pollUI = 1 + MAXIMUM_CLI_RESPONSE_CHARS;
+static constexpr uint8_t PollUI_WorkspaceSize = 1 + MAXIMUM_CLI_RESPONSE_CHARS;
 
 // Create workspace
 union GlobalWorkSpace {
     uint8_t statsTX[StatsTX_WorkspaceSize];
-    uint8_t cli[BUFSIZ_pollUI];
+    uint8_t cli[PollUI_WorkspaceSize];
 };
-GlobalWorkSpace globalWorkSpace;
-
+static GlobalWorkSpace globalWorkSpace;
 
 
 /******************************************************************************
