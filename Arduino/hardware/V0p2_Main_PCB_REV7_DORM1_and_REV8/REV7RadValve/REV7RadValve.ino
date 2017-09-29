@@ -114,6 +114,31 @@ constexpr uint8_t SERIALRX_INT_MASK = 0b00000001; // Serial RX
 constexpr uint8_t MODE_INT_MASK = (1 << (BUTTON_MODE_L&7));
 constexpr uint8_t MASK_PD = (SERIALRX_INT_MASK | MODE_INT_MASK); // MODE button interrupt (et al).
 
+////// SCRATCHSPACE
+
+// Create scratch space for secure stats TX // FIXME
+// Buffer need be no larger than leading length byte + typical 64-byte radio module TX buffer limit + optional terminator.
+constexpr uint8_t MSG_BUF_SIZE = 1 + 64 + 1;
+constexpr uint8_t bufEncJSONlen = OTRadioLink::ENC_BODY_SMALL_FIXED_PTEXT_MAX_SIZE + 1;  // 3 = '}' + 0x0 + ? FIXME whuut?
+constexpr uint8_t ptextBuflen = bufEncJSONlen + 2;  // 2 = valvePC + hasStats
+static_assert(ptextBuflen == 34, "ptextBuflen wrong");  // TODO make sure this is correct!
+constexpr uint8_t scratchSpaceNeeded = MSG_BUF_SIZE + ptextBuflen;
+constexpr size_t StatsTX_WorkspaceSize = OTRadioLink::SimpleSecureFrame32or0BodyTXBase::generateSecureOFrameRawForTX_total_scratch_usage_OTAESGCM_2p0 + scratchSpaceNeeded;
+
+// Create a scratchspace for CLI
+// Suggested minimum buffer size for pollUI() to ensure maximum-sized commands can be received.
+static constexpr uint8_t MAXIMUM_CLI_RESPONSE_CHARS = 1 + OTV0P2BASE::CLI::MAX_TYPICAL_CLI_BUFFER;
+static constexpr uint8_t BUFSIZ_pollUI = 1 + MAXIMUM_CLI_RESPONSE_CHARS;
+
+// Create workspace
+union GlobalWorkSpace {
+    uint8_t statsTX[StatsTX_WorkspaceSize];
+    uint8_t cli[BUFSIZ_pollUI];
+};
+GlobalWorkSpace globalWorkSpace;
+
+
+
 /******************************************************************************
  * PERIPHERALS
  * Peripheral drivers and config
@@ -424,16 +449,7 @@ void bareStatsTX() {
     const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled<>();
     static_assert(OTV0P2BASE::FullStatsMessageCore_MAX_BYTES_ON_WIRE <= STATS_MSG_MAX_LEN, "FullStatsMessageCore_MAX_BYTES_ON_WIRE too big");
     static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_MAX_LENGTH too big"); // Allow 1 for trailing CRC.
-    // Create scratch space for secure stats TX // FIXME
-    // Buffer need be no larger than leading length byte + typical 64-byte radio module TX buffer limit + optional terminator.
-    constexpr uint8_t MSG_BUF_SIZE = 1 + 64 + 1;
-    constexpr uint8_t bufEncJSONlen = OTRadioLink::ENC_BODY_SMALL_FIXED_PTEXT_MAX_SIZE + 1;  // 3 = '}' + 0x0 + ? FIXME whuut?
-    constexpr uint8_t ptextBuflen = bufEncJSONlen + 2;  // 2 = valvePC + hasStats
-    static_assert(ptextBuflen == 34, "ptextBuflen wrong");  // TODO make sure this is correct!
-    constexpr uint8_t scratchSpaceNeeded = MSG_BUF_SIZE + ptextBuflen;
-    constexpr size_t WorkspaceSize = OTRadioLink::SimpleSecureFrame32or0BodyTXBase::generateSecureOFrameRawForTX_total_scratch_usage_OTAESGCM_2p0 + scratchSpaceNeeded;
-    uint8_t workspace[WorkspaceSize];
-    OTV0P2BASE::ScratchSpaceL sW(workspace, sizeof(workspace));
+    OTV0P2BASE::ScratchSpaceL sW(globalWorkSpace.statsTX, sizeof(globalWorkSpace.statsTX));
     // Allow space in buffer for:
     //   * buffer offset/preamble
     //   * max binary length, or max JSON length + 1 for CRC + 1 to allow detection of oversize message
@@ -548,9 +564,6 @@ static void dumpCLIUsage()
     Serial.println();
 }
 
-// Suggested minimum buffer size for pollUI() to ensure maximum-sized commands can be received.
-static constexpr uint8_t MAXIMUM_CLI_RESPONSE_CHARS = 1 + OTV0P2BASE::CLI::MAX_TYPICAL_CLI_BUFFER;
-static constexpr uint8_t BUFSIZ_pollUI = 1 + MAXIMUM_CLI_RESPONSE_CHARS;
 // Used to poll user side for CLI input until specified sub-cycle time.
 // Commands should be sent terminated by CR *or* LF; both may prevent 'E' (exit) from working properly.
 // A period of less than (say) 500ms will be difficult for direct human response on a raw terminal.
@@ -567,61 +580,61 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute, const OTV0P2BASE::S
     // Read a line up to a terminating CR, either on its own or as part of CRLF.
     // (Note that command content and timing may be useful to fold into PRNG entropy pool.)
     // A static buffer generates better code but permanently consumes previous SRAM.
-//    const uint8_t n = OTV0P2BASE::CLI::promptAndReadCommandLine(maxSCT, s, [](){pollIO();});
-//    char *buf = (char *)s.buf;
-//    if(n > 0) {
-//        // Got plausible input so keep the CLI awake a little longer.
-//        OTV0P2BASE::CLI::resetCLIActiveTimer();
-//        // Process the input received, with action based on the first char...
-//        switch(buf[0]) {
-//            // Explicit request for help, or unrecognised first character.
-//            // Avoid showing status as may already be rather a lot of output.
-//            default: case '?': { dumpCLIUsage(); break; }
-//            // Exit/deactivate CLI immediately.
-//            // This should be followed by JUST CR ('\r') OR LF ('\n')
-//            // else the second will wake the CLI up again.
-//            case 'E': { OTV0P2BASE::CLI::makeCLIInactive(); break; }
-//            // Show/set generic parameter values (eg "G N [M]").
-//            case 'G': { OTV0P2BASE::CLI::GenericParam().doCommand(buf, n); break; }
-//            // Reset or display ID.
-//            case 'I': { OTV0P2BASE::CLI::NodeIDWithSet().doCommand(buf, n); break; } // XXX
-//            // Status line stats print and TX.
-//            case 'S': {
-//                Serial.print(F("Resets: "));
-//                const uint8_t resetCount = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_RESET_COUNT);
-//                Serial.print(resetCount);
-//                Serial.println();
-//                // Show stack headroom.
-//                OTV0P2BASE::serialPrintAndFlush(F("SH ")); OTV0P2BASE::serialPrintAndFlush(OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd()); OTV0P2BASE::serialPrintlnAndFlush();
-//                // Default light-weight print and TX of stats.
-////                bareStatsTX();  // FIXME No way this won't overflow!
-//                break; // Note that status is by default printed after processing input line.
-//            }
-//            // Switch to FROST mode OR set FROST/setback temperature (even with temp pot available).
-//            // With F! force to frost and holiday (long-vacant) mode.  Useful for testing and for remote CLI use.
-//            case 'F': {
-//                valveMode.setWarmModeDebounced(false); // No parameter supplied; switch to FROST mode.
-//                break;
-//            }
-//            /**
-//            * Set secret key.
-//            * @note  The OTRadioLink::SimpleSecureFrame32or0BodyTXV0p2::resetRaw3BytePersistentTXRestartCounterCond
-//            *        function pointer MUST be passed here to ensure safe handling of the key and the Tx message
-//            *        counter.
-//            */
-//            case 'K': { OTV0P2BASE::CLI::SetSecretKey(OTRadioLink::SimpleSecureFrame32or0BodyTXV0p2::resetRaw3BytePersistentTXRestartCounterCond).doCommand(buf, n); break; }  // XXX
-//            // Switch to WARM (not BAKE) mode OR set WARM temperature.
-//            case 'W':{
-//                valveMode.cancelBakeDebounced(); // Ensure BAKE mode not entered.
-//                valveMode.setWarmModeDebounced(true); // No parameter supplied; switch to WARM mode.
-//                break;
-//            }
-//            // Zap/erase learned statistics.
-//            case 'Z': { OTV0P2BASE::CLI::ZapStats().doCommand(buf, n); break; } // XXX
-//        }
-//        // Else show ack of command received.
-//        Serial.println(F("OK"));
-//    } else { Serial.println(); } // Terminate empty/partial CLI input line after timeout.
+    const uint8_t n = OTV0P2BASE::CLI::promptAndReadCommandLine(maxSCT, s, [](){pollIO();});
+    char *buf = (char *)s.buf;
+    if(n > 0) {
+        // Got plausible input so keep the CLI awake a little longer.
+        OTV0P2BASE::CLI::resetCLIActiveTimer();
+        // Process the input received, with action based on the first char...
+        switch(buf[0]) {
+            // Explicit request for help, or unrecognised first character.
+            // Avoid showing status as may already be rather a lot of output.
+            default: case '?': { dumpCLIUsage(); break; }
+            // Exit/deactivate CLI immediately.
+            // This should be followed by JUST CR ('\r') OR LF ('\n')
+            // else the second will wake the CLI up again.
+            case 'E': { OTV0P2BASE::CLI::makeCLIInactive(); break; }
+            // Show/set generic parameter values (eg "G N [M]").
+            case 'G': { OTV0P2BASE::CLI::GenericParam().doCommand(buf, n); break; }
+            // Reset or display ID.
+            case 'I': { OTV0P2BASE::CLI::NodeIDWithSet().doCommand(buf, n); break; } // XXX
+            // Status line stats print and TX.
+            case 'S': {
+                Serial.print(F("Resets: "));
+                const uint8_t resetCount = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_RESET_COUNT);
+                Serial.print(resetCount);
+                Serial.println();
+                // Show stack headroom.
+                OTV0P2BASE::serialPrintAndFlush(F("SH ")); OTV0P2BASE::serialPrintAndFlush(OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd()); OTV0P2BASE::serialPrintlnAndFlush();
+                // Default light-weight print and TX of stats.
+//                bareStatsTX();  // FIXME No way this won't overflow!
+                break; // Note that status is by default printed after processing input line.
+            }
+            // Switch to FROST mode OR set FROST/setback temperature (even with temp pot available).
+            // With F! force to frost and holiday (long-vacant) mode.  Useful for testing and for remote CLI use.
+            case 'F': {
+                valveMode.setWarmModeDebounced(false); // No parameter supplied; switch to FROST mode.
+                break;
+            }
+            /**
+            * Set secret key.
+            * @note  The OTRadioLink::SimpleSecureFrame32or0BodyTXV0p2::resetRaw3BytePersistentTXRestartCounterCond
+            *        function pointer MUST be passed here to ensure safe handling of the key and the Tx message
+            *        counter.
+            */
+            case 'K': { OTV0P2BASE::CLI::SetSecretKey(OTRadioLink::SimpleSecureFrame32or0BodyTXV0p2::resetRaw3BytePersistentTXRestartCounterCond).doCommand(buf, n); break; }  // XXX
+            // Switch to WARM (not BAKE) mode OR set WARM temperature.
+            case 'W':{
+                valveMode.cancelBakeDebounced(); // Ensure BAKE mode not entered.
+                valveMode.setWarmModeDebounced(true); // No parameter supplied; switch to WARM mode.
+                break;
+            }
+            // Zap/erase learned statistics.
+            case 'Z': { OTV0P2BASE::CLI::ZapStats().doCommand(buf, n); break; } // XXX
+        }
+        // Else show ack of command received.
+        Serial.println(F("OK"));
+    } else { Serial.println(); } // Terminate empty/partial CLI input line after timeout.
     // Force any pending output before return / possible UART power-down.
     OTV0P2BASE::flushSerialSCTSensitive();
     if(neededWaking) { OTV0P2BASE::powerDownSerial(); }
@@ -958,12 +971,9 @@ void loop()
     // and which should also allow some energy-saving sleep.
     if(OTV0P2BASE::CLI::isCLIActive()) {
         const uint8_t stopBy = nearOverrunThreshold - 1;
-        char buf[BUFSIZ_pollUI];
-        OTV0P2BASE::ScratchSpace s((uint8_t*)buf, sizeof(buf));
+        OTV0P2BASE::ScratchSpace s((uint8_t*)globalWorkSpace.cli, sizeof(globalWorkSpace.cli));
         pollCLI(stopBy, 0 == TIME_LSD, s);
     }
-
-    panic();
 #if defined(EST_CPU_DUTYCYCLE)
     const unsigned long usEnd = micros();
     // Nominal loop time should be 2s x 1MHz clock, ie 2,000,000 if CPU running all the time.
