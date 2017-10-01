@@ -760,7 +760,7 @@ void setup()
   serialStatusReport();
 #endif
 
-  Report current stack usage.
+  // Report current stack usage.
   OTV0P2BASE::MemoryChecks::resetMinSP();
   OTV0P2BASE::MemoryChecks::recordIfMinSP();
   stackCheck();
