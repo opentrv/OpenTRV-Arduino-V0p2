@@ -324,15 +324,15 @@ inline void stackCheck()
 {
     const int16_t minsp = OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd();
 #if 1 //&& defined(DEBUG)
-    const uint8_t location = OTV0P2BASE::MemoryChecks::getLocation();
-    const uint16_t progCounter = OTV0P2BASE::MemoryChecks::getPC();  // not isr safe
-    OTV0P2BASE::serialPrintAndFlush(F("minsp: "));
-    OTV0P2BASE::serialPrintAndFlush(minsp);
-    OTV0P2BASE::serialPrintAndFlush(F(" loc: "));
-    OTV0P2BASE::serialPrintAndFlush(location);
-    OTV0P2BASE::serialPrintAndFlush(F(" prog: "));
-    OTV0P2BASE::serialPrintAndFlush(progCounter, HEX);
-    OTV0P2BASE::serialPrintlnAndFlush();
+//    const uint8_t location = OTV0P2BASE::MemoryChecks::getLocation();
+//    const uint16_t progCounter = OTV0P2BASE::MemoryChecks::getPC();  // not isr safe
+//    OTV0P2BASE::serialPrintAndFlush(F("minsp: "));
+//    OTV0P2BASE::serialPrintAndFlush(minsp);
+//    OTV0P2BASE::serialPrintAndFlush(F(" loc: "));
+//    OTV0P2BASE::serialPrintAndFlush(location);
+//    OTV0P2BASE::serialPrintAndFlush(F(" prog: "));
+//    OTV0P2BASE::serialPrintAndFlush(progCounter, HEX);
+//    OTV0P2BASE::serialPrintlnAndFlush();
     if (64 > minsp) panic(F("SH"));
 //    OTV0P2BASE::MemoryChecks::forceResetIfStackOverflow();  // XXX
     OTV0P2BASE::MemoryChecks::resetMinSP();
@@ -769,7 +769,13 @@ void loop()
         // May generate output to host on Serial.
         // Come back and have another go immediately until no work remaining.
         pollIO();
-        if(messageQueue.handle(true, PrimaryRadio)) { continue; }
+//        const uint8_t startTime = OTV0P2BASE::getSubCycleTime();  // FIXME debug stuff
+        if(messageQueue.handle(true, PrimaryRadio)) {
+//            OTV0P2BASE::serialPrintAndFlush(startTime);
+//            OTV0P2BASE::serialPrintAndFlush("\t");
+//            OTV0P2BASE::serialPrintAndFlush(OTV0P2BASE::getSubCycleTime());
+//            OTV0P2BASE::serialPrintlnAndFlush();
+            continue; }
         // Normal long minimal-power sleep until wake-up interrupt.
         // Rely on interrupt to force quick loop round to I/O poll.
         OTV0P2BASE::sleepUntilInt();
