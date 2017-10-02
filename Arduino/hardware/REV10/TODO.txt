@@ -6,6 +6,9 @@ DHD will provide sign-off by removing them.
 This list does not necessarily reflect the ORDER in which tasks should be tackled.
 
 
+20170922: insert flyback protection diode for relay driver transistor!
+
+
 
 
 
