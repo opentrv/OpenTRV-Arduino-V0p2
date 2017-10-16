@@ -588,7 +588,6 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute, const OTV0P2BASE::S
             case 'S':
             {
                 Serial.print(F("Resets: "));
-                resetCount = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_RESET_COUNT);
                 Serial.print(resetCount);
                 Serial.println();
 #if 1
@@ -639,8 +638,8 @@ void setup()
 
     // Count resets to detect unexpected crashes/restarts.
     const uint8_t oldResetCount = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_RESET_COUNT);
+    resetCount = oldResetCount + 1;
     eeprom_write_byte((uint8_t *)V0P2BASE_EE_START_RESET_COUNT, 1 + oldResetCount);
-
 #if 1  // Print reset count. Intended for testing purposes.
     OTV0P2BASE::serialPrintAndFlush(F("\rResets: "));
     OTV0P2BASE::serialPrintAndFlush(oldResetCount);
