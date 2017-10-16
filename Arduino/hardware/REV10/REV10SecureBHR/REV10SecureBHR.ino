@@ -123,6 +123,9 @@ static constexpr uint8_t RFM23B_INT_MASK = (1 << (PIN_RFM_NIRQ&7));
 // Mask for Port D input change interrupts.
 static constexpr uint8_t SERIALRX_INT_MASK = (1 << 0); // Serial RX
 
+// Counter containing current no. of resets.
+static uint8_t resetCount;
+
 ////// SCRATCHSPACE
 
 // decode workspace
@@ -164,7 +167,6 @@ union GlobalWorkSpace {
     uint8_t cli[PollUI_WorkspaceSize];
 };
 static GlobalWorkSpace globalWorkSpace;
-
 
 /******************************************************************************
  * PERIPHERALS
@@ -215,7 +217,7 @@ OTRadValve::BoilerLogic::OnOffBoilerDriverLogic<decltype(hubManager), hubManager
 // - Internal temp
 // - Boiler state
 // TODO: Consider removing entirely.
-constexpr uint8_t nTXStats = 2;
+constexpr uint8_t nTXStats = 4;
 static OTV0P2BASE::SimpleStatsRotation<nTXStats> ss1; // Configured for maximum different stats.
 
 
@@ -243,6 +245,7 @@ ISR(PCINT0_vect)
     // Handler routine not required/expected to 'clear' this interrupt.
     if((changes & RFM23B_INT_MASK) && !(pins & RFM23B_INT_MASK))
         { PrimaryRadio._handleInterruptNonVirtual(); }
+    OTV0P2BASE::MemoryChecks::fnCalled(1U);
 }
 
 // Previous state of port D pins to help detect changes.
@@ -324,15 +327,15 @@ inline void stackCheck()
 {
     const int16_t minsp = OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd();
 #if 1 //&& defined(DEBUG)
-    const uint8_t location = OTV0P2BASE::MemoryChecks::getLocation();
-    const uint16_t progCounter = OTV0P2BASE::MemoryChecks::getPC();  // not isr safe
-    OTV0P2BASE::serialPrintAndFlush(F("minsp: "));
-    OTV0P2BASE::serialPrintAndFlush(minsp);
-    OTV0P2BASE::serialPrintAndFlush(F(" loc: "));
-    OTV0P2BASE::serialPrintAndFlush(location);
-    OTV0P2BASE::serialPrintAndFlush(F(" prog: "));
-    OTV0P2BASE::serialPrintAndFlush(progCounter, HEX);
-    OTV0P2BASE::serialPrintlnAndFlush();
+//    const uint8_t location = OTV0P2BASE::MemoryChecks::getLocation();
+//    const uint16_t progCounter = OTV0P2BASE::MemoryChecks::getPC();  // not isr safe
+//    OTV0P2BASE::serialPrintAndFlush(F("minsp: "));
+//    OTV0P2BASE::serialPrintAndFlush(minsp);
+//    OTV0P2BASE::serialPrintAndFlush(F(" loc: "));
+//    OTV0P2BASE::serialPrintAndFlush(location);
+//    OTV0P2BASE::serialPrintAndFlush(F(" prog: "));
+//    OTV0P2BASE::serialPrintAndFlush(progCounter, HEX);
+//    OTV0P2BASE::serialPrintlnAndFlush();
     if (64 > minsp) panic(F("SH"));
 //    OTV0P2BASE::MemoryChecks::forceResetIfStackOverflow();  // XXX
     OTV0P2BASE::MemoryChecks::resetMinSP();
@@ -373,6 +376,7 @@ bool pollIO(const bool force = false)
     PrimaryRadio.poll();
     SecondaryRadio.poll();
     }
+  OTV0P2BASE::MemoryChecks::fnCalled(2U);
   return(false);
   }
 
@@ -400,6 +404,7 @@ inline bool decodeAndHandleSecureFrame(volatile const uint8_t * const msg)
         >(msg, sW);
     // Reenable interrupt line.
     PrimaryRadio.pauseInterrupts(false);
+    OTV0P2BASE::MemoryChecks::fnCalled(3U);
     return (success);
 }
 OTRadioLink::OTMessageQueueHandler< pollIO, V0P2_UART_BAUD,
@@ -453,6 +458,17 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
         ss1.put(TemperatureC16);
         // Show boiler state for boiler hubs.
         ss1.put(V0p2_SENSOR_TAG_F("b"), (int) BoilerHub.isBoilerOn());
+        // Show reset counter. Low priority.
+        ss1.put(V0p2_SENSOR_TAG_F("R"), resetCount, true);
+//        // Send current stack, divided by 4 (). Low priority.
+//        // FIXME How would stack recording behaviour work? Do we want max stack:
+//        // - this minor cycle  (interesting things may happen outside this tx cycle)
+//        // - this tx cycle  (max stack usage may be missed, will need to change stack capture behaviour)
+//        // - ever  (redundant after it's been received once)
+//        // FIXME How do we deal with case where max stack > 255?
+        const size_t curMinSP = OTV0P2BASE::MemoryChecks::getMinSP();
+        const uint8_t txMinSP = (255 >= curMinSP) ? (uint8_t) curMinSP : 255U;
+        ss1.put(V0p2_SENSOR_TAG_F("SP"), txMinSP, true);
         // OPTIONAL items
         constexpr uint8_t privacyLevel = OTV0P2BASE::stTXalwaysAll;
 
@@ -527,6 +543,7 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
         }
     }
     if(neededWaking) { OTV0P2BASE::flushSerialProductive(); OTV0P2BASE::powerDownSerial(); }
+    OTV0P2BASE::MemoryChecks::fnCalled(4U);
 }
 
 
@@ -571,7 +588,6 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute, const OTV0P2BASE::S
             case 'S':
             {
                 Serial.print(F("Resets: "));
-                const uint8_t resetCount = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_RESET_COUNT);
                 Serial.print(resetCount);
                 Serial.println();
 #if 1
@@ -622,8 +638,8 @@ void setup()
 
     // Count resets to detect unexpected crashes/restarts.
     const uint8_t oldResetCount = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_RESET_COUNT);
+    resetCount = oldResetCount + 1;
     eeprom_write_byte((uint8_t *)V0P2BASE_EE_START_RESET_COUNT, 1 + oldResetCount);
-
 #if 1  // Print reset count. Intended for testing purposes.
     OTV0P2BASE::serialPrintAndFlush(F("\rResets: "));
     OTV0P2BASE::serialPrintAndFlush(oldResetCount);
@@ -769,7 +785,8 @@ void loop()
         // May generate output to host on Serial.
         // Come back and have another go immediately until no work remaining.
         pollIO();
-        if(messageQueue.handle(true, PrimaryRadio)) { continue; }
+        if(messageQueue.handle(true, PrimaryRadio)) {
+            continue; }
         // Normal long minimal-power sleep until wake-up interrupt.
         // Rely on interrupt to force quick loop round to I/O poll.
         OTV0P2BASE::sleepUntilInt();
@@ -778,6 +795,8 @@ void loop()
     // Reset and immediately re-prime the RTC-based watchdog.
     OTV0P2BASE::resetRTCWatchDog();
     OTV0P2BASE::enableRTCWatchdog(true);
+    // Capture loop call in profiler
+    OTV0P2BASE::MemoryChecks::fnCalled(0U);
 
 
     // START LOOP BODY
@@ -889,10 +908,10 @@ void loop()
         }
     }
 
-    // End-of-loop processing, that may be slow.
-    // Ensure progress on queued messages ahead of slow work.  (TODO-867)
-    pollIO();; // Deal with any pending I/O.
-    messageQueue.handle(true, PrimaryRadio); // Deal with any pending I/O.
+//    // End-of-loop processing, that may be slow. XXX
+//    // Ensure progress on queued messages ahead of slow work.  (TODO-867)
+//    pollIO();; // Deal with any pending I/O.
+//    messageQueue.handle(true, PrimaryRadio); // Deal with any pending I/O.
 
     // Command-Line Interface (CLI) polling.
     // If a reasonable chunk of the minor cycle remains after all other work is done
