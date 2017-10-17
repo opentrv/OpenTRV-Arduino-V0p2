@@ -235,6 +235,7 @@ static volatile uint8_t prevStatePB;
 ISR(PCINT0_vect)
 {
     // Basic profiling info
+    OTV0P2BASE::MemoryChecks::fnStart(1U);
     OTV0P2BASE::MemoryChecks::recordPC();
 
     const uint8_t pins = PINB;
@@ -245,7 +246,7 @@ ISR(PCINT0_vect)
     // Handler routine not required/expected to 'clear' this interrupt.
     if((changes & RFM23B_INT_MASK) && !(pins & RFM23B_INT_MASK))
         { PrimaryRadio._handleInterruptNonVirtual(); }
-    OTV0P2BASE::MemoryChecks::fnCalled(1U);
+    OTV0P2BASE::MemoryChecks::fnExit(1U);
 }
 
 // Previous state of port D pins to help detect changes.
@@ -363,6 +364,7 @@ inline void stackCheck()
 // FIXME trying to move into utils (for the time being.)
 bool pollIO(const bool force = false)
   {
+    OTV0P2BASE::MemoryChecks::fnStart(2U);
   static volatile uint8_t _pO_lastPoll;
   // Poll RX at most about every ~8ms.
   const uint8_t sct = OTV0P2BASE::getSubCycleTime();
@@ -376,7 +378,7 @@ bool pollIO(const bool force = false)
     PrimaryRadio.poll();
     SecondaryRadio.poll();
     }
-  OTV0P2BASE::MemoryChecks::fnCalled(2U);
+  OTV0P2BASE::MemoryChecks::fnExit(2U);
   return(false);
   }
 
@@ -391,6 +393,7 @@ bool pollIO(const bool force = false)
  */
 inline bool decodeAndHandleSecureFrame(volatile const uint8_t * const msg)
 {
+    OTV0P2BASE::MemoryChecks::fnStart(3U);
     // Create a workspace for large stack consuming items ahead of time, in order to improve stack usage visibility.
     OTV0P2BASE::ScratchSpaceL sW(globalWorkSpace.decode, sizeof(globalWorkSpace.decode));
     // Temporarily suspend PrimaryRadio interrupts to avoid stack collisions.
@@ -404,7 +407,7 @@ inline bool decodeAndHandleSecureFrame(volatile const uint8_t * const msg)
         >(msg, sW);
     // Reenable interrupt line.
     PrimaryRadio.pauseInterrupts(false);
-    OTV0P2BASE::MemoryChecks::fnCalled(3U);
+    OTV0P2BASE::MemoryChecks::fnExit(3U);
     return (success);
 }
 OTRadioLink::OTMessageQueueHandler< pollIO, V0P2_UART_BAUD,
@@ -433,6 +436,7 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
 
     // Send binary *or* JSON on each attempt so as not to overwhelm the receiver.
     {
+        OTV0P2BASE::MemoryChecks::fnStart(4U);
         // Send JSON message.
         bool sendingJSONFailed = false; // Set true and stop attempting JSON send in case of error.
 
@@ -543,7 +547,7 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
         }
     }
     if(neededWaking) { OTV0P2BASE::flushSerialProductive(); OTV0P2BASE::powerDownSerial(); }
-    OTV0P2BASE::MemoryChecks::fnCalled(4U);
+    OTV0P2BASE::MemoryChecks::fnExit(4U);
 }
 
 
@@ -769,6 +773,8 @@ void loop()
     // Conversely, if not true, should have time to safely log outputs, etc.
     const uint8_t nearOverrunThreshold = OTV0P2BASE::GSCT_MAX - 8; // ~64ms/~32 serial TX chars of grace time...
 
+    OTV0P2BASE::MemoryChecks::fnExit(0U);
+
     // Sleep in low-power mode (waiting for interrupts) until seconds roll.
     // NOTE: sleep at the top of the loop to minimise timing jitter/delay from Arduino background activity after loop() returns.
     // DHD20130425: waking up from sleep and getting to start processing below this block may take >10ms.
@@ -796,7 +802,7 @@ void loop()
     OTV0P2BASE::resetRTCWatchDog();
     OTV0P2BASE::enableRTCWatchdog(true);
     // Capture loop call in profiler
-    OTV0P2BASE::MemoryChecks::fnCalled(0U);
+    OTV0P2BASE::MemoryChecks::fnStart(0U);
 
 
     // START LOOP BODY
@@ -822,7 +828,7 @@ void loop()
     // Note: ensure only take ambient light reading at times when all LEDs are off (or turn them off).
     // TODO: coordinate temperature reading with time when radio and other heat-generating items are off for more accurate readings.
     const bool runAll = minute0From4ForSensors || (minuteCount < 4);
-
+    OTV0P2BASE::MemoryChecks::fnStart(5U);
     switch(TIME_LSD) // With V0P2BASE_TWO_S_TICK_RTC_SUPPORT only even seconds are available.
     {
         case 0:
@@ -907,7 +913,7 @@ void loop()
             break;
         }
     }
-
+    OTV0P2BASE::MemoryChecks::fnExit(5U);
 //    // End-of-loop processing, that may be slow. XXX
 //    // Ensure progress on queued messages ahead of slow work.  (TODO-867)
 //    pollIO();; // Deal with any pending I/O.
