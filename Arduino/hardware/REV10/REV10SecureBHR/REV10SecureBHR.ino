@@ -57,6 +57,13 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 
 // If defined, do extra checks and serial logging.  Will take more code space and power.
 #undef DEBUG
+// If defined, disable all RX message handling.
+#undef V0P2_DEBUG_NO_MESSAGE_QUEUE
+// If defined, disable own stats tx
+#undef V0P2_DEBUG_NO_STATSTX
+// If defined, disable own stats encryption and tx.
+#undef V0P2_DEBUG_NO_STATSENC
+
 
 // *** Global flag for REVx configuration here *** //
 // e.g.
@@ -149,7 +156,7 @@ constexpr size_t Decode_WorkspaceSize = OTAESGCM::OTAES128GCMGenericWithWorkspac
  *   - Scratch space for the AESGCM decode function.
  */
 constexpr uint8_t MSG_BUF_SIZE = 1 + 64 + 1;
-constexpr uint8_t bufJSONlen = OTRadioLink::ENC_BODY_SMALL_FIXED_PTEXT_MAX_SIZE + 1;  // 3 = '}' + 0x0 + ? FIXME whuut?
+constexpr uint8_t bufJSONlen = OTRadioLink::ENC_BODY_SMALL_FIXED_PTEXT_MAX_SIZE + 1;
 constexpr uint8_t ptextBuflen = bufJSONlen + 2;  // 2 = valvePC + hasStats
 static_assert(ptextBuflen == 34, "ptextBuflen wrong");
 constexpr uint8_t scratchSpaceNeededHere = MSG_BUF_SIZE + ptextBuflen;  // This is the scratch space needed locally by bareStatsTX, excluding called functions.
@@ -216,7 +223,6 @@ OTRadValve::BoilerLogic::OnOffBoilerDriverLogic<decltype(hubManager), hubManager
 // Note: each stat statically allocates 6 bytes to RAM.
 // - Internal temp
 // - Boiler state
-// TODO: Consider removing entirely.
 constexpr uint8_t nTXStats = 4;
 static OTV0P2BASE::SimpleStatsRotation<nTXStats> ss1; // Configured for maximum different stats.
 
@@ -245,7 +251,6 @@ ISR(PCINT0_vect)
     // Handler routine not required/expected to 'clear' this interrupt.
     if((changes & RFM23B_INT_MASK) && !(pins & RFM23B_INT_MASK))
         { PrimaryRadio._handleInterruptNonVirtual(); }
-    OTV0P2BASE::MemoryChecks::fnCalled(1U);
 }
 
 // Previous state of port D pins to help detect changes.
@@ -326,7 +331,7 @@ static void panic(const __FlashStringHelper *s)
 inline void stackCheck()
 {
     const int16_t minsp = OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd();
-#if 1 //&& defined(DEBUG)
+#if 1 && defined(DEBUG)
 //    const uint8_t location = OTV0P2BASE::MemoryChecks::getLocation();
 //    const uint16_t progCounter = OTV0P2BASE::MemoryChecks::getPC();  // not isr safe
 //    OTV0P2BASE::serialPrintAndFlush(F("minsp: "));
@@ -340,7 +345,7 @@ inline void stackCheck()
 //    OTV0P2BASE::MemoryChecks::forceResetIfStackOverflow();  // XXX
     OTV0P2BASE::MemoryChecks::resetMinSP();
 #else
-    if(128 > minsp) { OTV0P2BASE::serialPrintlnAndFlush(F("!SP")); }
+    if(64 > minsp) { OTV0P2BASE::serialPrintlnAndFlush(F("!SP")); }
     OTV0P2BASE::MemoryChecks::forceResetIfStackOverflow();
 #endif
 }
@@ -376,7 +381,6 @@ bool pollIO(const bool force = false)
     PrimaryRadio.poll();
     SecondaryRadio.poll();
     }
-  OTV0P2BASE::MemoryChecks::fnCalled(2U);
   return(false);
   }
 
@@ -404,12 +408,15 @@ inline bool decodeAndHandleSecureFrame(volatile const uint8_t * const msg)
         >(msg, sW);
     // Reenable interrupt line.
     PrimaryRadio.pauseInterrupts(false);
-    OTV0P2BASE::MemoryChecks::fnCalled(3U);
     return (success);
 }
+#ifndef V0P2_DEBUG_NO_MESSAGE_QUEUE
 OTRadioLink::OTMessageQueueHandler< pollIO, V0P2_UART_BAUD,
                                     decodeAndHandleSecureFrame, OTRadioLink::decodeAndHandleDummyFrame  // only interested in single frame type.
                                    > messageQueue;
+#else
+OTRadioLink::OTMessageQueueHandlerNull messageQueue;
+#endif
 
 
 // Do bare stats transmission.
@@ -436,13 +443,9 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
         // Send JSON message.
         bool sendingJSONFailed = false; // Set true and stop attempting JSON send in case of error.
 
-
-        // Set pointer location based on whether start of message will have preamble TODO move to OTRFM23BLink queueToSend?
-        uint8_t *bptr = sW.buf;
-        // Leave space for possible leading frame-length byte, eg for encrypted frame.
-        ++bptr;
-        // Where to write the real frame content.
-        uint8_t *const realTXFrameStart = bptr;
+        // Where to write the real frame content, leaving space for leading
+        // frame-length byte for encrypted frame.
+        uint8_t *const realTXFrameStart = sW.buf + 1;
 
         // If forcing encryption or if unconditionally suppressed
         // then suppress the "@" ID field entirely,
@@ -460,14 +463,9 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
         ss1.put(V0p2_SENSOR_TAG_F("b"), (int) BoilerHub.isBoilerOn());
         // Show reset counter. Low priority.
         ss1.put(V0p2_SENSOR_TAG_F("R"), resetCount, true);
-//        // Send current stack, divided by 4 (). Low priority.
-//        // FIXME How would stack recording behaviour work? Do we want max stack:
-//        // - this minor cycle  (interesting things may happen outside this tx cycle)
-//        // - this tx cycle  (max stack usage may be missed, will need to change stack capture behaviour)
-//        // - ever  (redundant after it's been received once)
-//        // FIXME How do we deal with case where max stack > 255?
+        // Send minimum stack left, saturating at 255 bytes.
         const size_t curMinSP = OTV0P2BASE::MemoryChecks::getMinSP();
-        const uint8_t txMinSP = (255 >= curMinSP) ? (uint8_t) curMinSP : 255U;
+        const uint8_t txMinSP = (255U >= curMinSP) ? (uint8_t) curMinSP : 255U;
         ss1.put(V0p2_SENSOR_TAG_F("SP"), txMinSP, true);
         // OPTIONAL items
         constexpr uint8_t privacyLevel = OTV0P2BASE::stTXalwaysAll;
@@ -514,8 +512,10 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
                 OTV0P2BASE::serialPrintlnAndFlush(F("!TX key")); // Know why TX failed.
             }
         }
+
         // If doing encryption then build encrypted frame from raw JSON.
         if(!sendingJSONFailed) {
+#ifndef V0P2_DEBUG_NO_STATSENC
             // Explicit-workspace version of encryption.
             OTV0P2BASE::ScratchSpaceL subScratch(sW, scratchSpaceNeededHere);
             const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEncWithLWorkspace_ptr_t eW = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_WITH_LWORKSPACE;
@@ -532,18 +532,21 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
             sendingJSONFailed = (0 == bodylen);
             wrote = bodylen - offset;
             if (sendingJSONFailed) OTV0P2BASE::serialPrintlnAndFlush(F("!TX Enc")); // Know why TX failed.
+#endif
         }
 
         if(!sendingJSONFailed) {
+#if !defined(V0P2_DEBUG_NO_STATSTX) || !defined(V0P2_DEBUG_NO_STATSENC)
             // Write out unadjusted JSON or encrypted frame on secondary radio.
             // Assumes that framing (or not) of primary and secondary radios is the same (usually: both framed).
             SecondaryRadio.queueToSend(realTXFrameStart, wrote);
             // Send directly to the primary radio...
             PrimaryRadio.queueToSend(realTXFrameStart, wrote);
+#endif  // V0P2_DEBUG_NO_STATSTX
+
         }
     }
     if(neededWaking) { OTV0P2BASE::flushSerialProductive(); OTV0P2BASE::powerDownSerial(); }
-    OTV0P2BASE::MemoryChecks::fnCalled(4U);
 }
 
 
@@ -590,7 +593,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute, const OTV0P2BASE::S
                 Serial.print(F("Resets: "));
                 Serial.print(resetCount);
                 Serial.println();
-#if 1
+#if 0
                 // Show stack headroom.
                 OTV0P2BASE::serialPrintAndFlush(F("SH ")); OTV0P2BASE::serialPrintAndFlush(OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd()); OTV0P2BASE::serialPrintlnAndFlush();
 #endif
@@ -640,7 +643,7 @@ void setup()
     const uint8_t oldResetCount = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_RESET_COUNT);
     resetCount = oldResetCount + 1;
     eeprom_write_byte((uint8_t *)V0P2BASE_EE_START_RESET_COUNT, 1 + oldResetCount);
-#if 1  // Print reset count. Intended for testing purposes.
+#if 0  // Print reset count. Intended for testing purposes.
     OTV0P2BASE::serialPrintAndFlush(F("\rResets: "));
     OTV0P2BASE::serialPrintAndFlush(oldResetCount);
     OTV0P2BASE::serialPrintlnAndFlush();
@@ -795,9 +798,6 @@ void loop()
     // Reset and immediately re-prime the RTC-based watchdog.
     OTV0P2BASE::resetRTCWatchDog();
     OTV0P2BASE::enableRTCWatchdog(true);
-    // Capture loop call in profiler
-    OTV0P2BASE::MemoryChecks::fnCalled(0U);
-
 
     // START LOOP BODY
     // ===============
@@ -822,7 +822,6 @@ void loop()
     // Note: ensure only take ambient light reading at times when all LEDs are off (or turn them off).
     // TODO: coordinate temperature reading with time when radio and other heat-generating items are off for more accurate readings.
     const bool runAll = minute0From4ForSensors || (minuteCount < 4);
-
     switch(TIME_LSD) // With V0P2BASE_TWO_S_TICK_RTC_SUPPORT only even seconds are available.
     {
         case 0:
@@ -907,11 +906,10 @@ void loop()
             break;
         }
     }
-
-//    // End-of-loop processing, that may be slow. XXX
-//    // Ensure progress on queued messages ahead of slow work.  (TODO-867)
-//    pollIO();; // Deal with any pending I/O.
-//    messageQueue.handle(true, PrimaryRadio); // Deal with any pending I/O.
+    // End-of-loop processing, that may be slow.
+    // Ensure progress on queued messages ahead of slow work.  (TODO-867)
+    pollIO();; // Deal with any pending I/O.
+    messageQueue.handle(true, PrimaryRadio); // Deal with any pending I/O.
 
     // Command-Line Interface (CLI) polling.
     // If a reasonable chunk of the minor cycle remains after all other work is done
