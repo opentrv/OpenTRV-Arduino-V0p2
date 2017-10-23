@@ -114,6 +114,9 @@ constexpr uint8_t SERIALRX_INT_MASK = 0b00000001; // Serial RX
 constexpr uint8_t MODE_INT_MASK = (1 << (BUTTON_MODE_L&7));
 constexpr uint8_t MASK_PD = (SERIALRX_INT_MASK | MODE_INT_MASK); // MODE button interrupt (et al).
 
+// Counter containing current no. of resets.
+static uint8_t resetCount;
+
 ////// SCRATCHSPACE
 
 // Create scratch space for secure stats TX
@@ -292,7 +295,7 @@ valveUI_t valveUI(
 ////// MESSAGING
 
 // Managed JSON stats.
-OTV0P2BASE::SimpleStatsRotation<12> ss1; // Configured for maximum different stats.
+OTV0P2BASE::SimpleStatsRotation<13> ss1; // Configured for maximum different stats.
 
 
 /******************************************************************************
@@ -362,7 +365,7 @@ void panic(const __FlashStringHelper *s) {
 inline void stackCheck()
 {
     const int16_t minsp = OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd();
-#if 1 // && defined(DEBUG)
+#if 1  && defined(DEBUG)
     const uint8_t location = OTV0P2BASE::MemoryChecks::getLocation();
     const uint16_t progCounter = OTV0P2BASE::MemoryChecks::getPC();  // not isr safe
     OTV0P2BASE::serialPrintAndFlush(F("minsp: "));
@@ -426,7 +429,7 @@ bool pollIO(const bool force = false) {
 // Will be run after all stats for the current hour have been updated.
 static void endOfDayTasks() {
     // Count down the setback lockout if not finished...  (TODO-786, TODO-906)
-//    OTRadValve::countDownSetbackLockout();  // XXX
+    OTRadValve::countDownSetbackLockout();
 }
 
 
@@ -442,17 +445,19 @@ static void endOfDayTasks() {
 // as assumed supplied by security layer to remote recipent.
 void bareStatsTX() {
 
-    OTV0P2BASE::MemoryChecks::resetMinSP();
-//    // Capture heavy stack usage from local allocations here.
+    // Capture heavy stack usage from local allocations here.
     OTV0P2BASE::MemoryChecks::recordIfMinSP();
     const bool neededWaking = OTV0P2BASE::powerUpSerialIfDisabled<>();
     static_assert(OTV0P2BASE::FullStatsMessageCore_MAX_BYTES_ON_WIRE <= STATS_MSG_MAX_LEN, "FullStatsMessageCore_MAX_BYTES_ON_WIRE too big");
     static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_MAX_LENGTH too big"); // Allow 1 for trailing CRC.
     OTV0P2BASE::ScratchSpaceL sW(globalWorkSpace.statsTX, sizeof(globalWorkSpace.statsTX));
 
+    bool sendingJSONFailed = false; // Set true and stop attempting JSON send in case of error.
+
+    uint8_t *const buf = sW.buf;
     // Where to write the real frame content, leaving space for leading
     // frame-length byte for encrypted frame.
-    uint8_t *const realTXFrameStart = sW.buf + 1;
+    uint8_t *const realTXFrameStart = buf + 1;
     // If forcing encryption or if unconditionally suppressed
     // then suppress the "@" ID field entirely,
     // assuming that the encrypted commands will carry the ID, ie in the 'envelope'.
@@ -477,6 +482,15 @@ void bareStatsTX() {
     ss1.put(NominalRadValve.cumulativeMovementSubSensor);
     // Show state of setback lockout.
     ss1.put(V0p2_SENSOR_TAG_F("gE"), OTRadValve::getSetbackLockout(), true);
+
+    // Show reset counter. Low priority.
+    ss1.put(V0p2_SENSOR_TAG_F("R"), resetCount, true);
+    // Send minimum stack left, saturating at 255 bytes.
+    const size_t curMinSP = OTV0P2BASE::MemoryChecks::getMinSP();
+    const uint8_t txMinSP = (255U >= curMinSP) ? (uint8_t) curMinSP : 255U;
+    ss1.put(V0p2_SENSOR_TAG_F("SP"), txMinSP, true);
+
+
     const uint8_t privacyLevel = OTV0P2BASE::stTXalwaysAll;
     // Redirect JSON output appropriately.
     // Part of sW, directly after the message buffer.
@@ -587,17 +601,17 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute, const OTV0P2BASE::S
             // Reset or display ID.
             case 'I': { OTV0P2BASE::CLI::NodeIDWithSet().doCommand(buf, n); break; }
             // Status line stats print and TX.
-            case 'S': {
-                Serial.print(F("Resets: "));
-                const uint8_t resetCount = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_RESET_COUNT);
-                Serial.print(resetCount);
-                Serial.println();
-                // Show stack headroom.
-                OTV0P2BASE::serialPrintAndFlush(F("SH ")); OTV0P2BASE::serialPrintAndFlush(OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd()); OTV0P2BASE::serialPrintlnAndFlush();
-                // Default light-weight print and TX of stats.
-//                bareStatsTX();  // FIXME No way this won't overflow!
-                break; // Note that status is by default printed after processing input line.
-            }
+//            case 'S': {
+//                Serial.print(F("Resets: "));
+//                const uint8_t resetCount = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_RESET_COUNT);
+//                Serial.print(resetCount);
+//                Serial.println();
+//                // Show stack headroom.
+//                OTV0P2BASE::serialPrintAndFlush(F("SH ")); OTV0P2BASE::serialPrintAndFlush(OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd()); OTV0P2BASE::serialPrintlnAndFlush();
+//                // Default light-weight print and TX of stats.
+////                bareStatsTX();  // FIXME No way this won't overflow!
+//                break; // Note that status is by default printed after processing input line.
+//            }
             // Switch to FROST mode OR set FROST/setback temperature (even with temp pot available).
             // With F! force to frost and holiday (long-vacant) mode.  Useful for testing and for remote CLI use.
             case 'F': {
@@ -647,7 +661,13 @@ void setup()
     V0p2Base_serialPrintlnBuildVersion();
     // Count resets to detect unexpected crashes/restarts.
     const uint8_t oldResetCount = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_RESET_COUNT);
+    resetCount = oldResetCount + 1;
     eeprom_write_byte((uint8_t *)V0P2BASE_EE_START_RESET_COUNT, 1 + oldResetCount);
+#if 0  // Print reset count. Intended for testing purposes.
+    OTV0P2BASE::serialPrintAndFlush(F("\rResets: "));
+    OTV0P2BASE::serialPrintAndFlush(oldResetCount);
+    OTV0P2BASE::serialPrintlnAndFlush();
+#endif
 
     // Have 32678Hz clock at least running before going any further.
     // Check that the slow clock is running reasonably OK, and tune the fast one to it.
@@ -709,10 +729,6 @@ void setup()
     // Initialise sensors with stats info where needed.
     updateSensorsFromStats();
 
-    OTV0P2BASE::MemoryChecks::resetMinSP();  // XXX
-    OTV0P2BASE::MemoryChecks::recordIfMinSP(1);
-    stackCheck();
-
     // Do early 'wake-up' stats transmission if possible // XXX
     // when everything else is set up and ready and allowed (TODO-636)
     // including all set-up and inter-wiring of sensors/actuators.
@@ -748,8 +764,6 @@ void setup()
 
 void loop()
 {
-    OTV0P2BASE::MemoryChecks::resetMinSP();  // XXX
-    OTV0P2BASE::MemoryChecks::recordIfMinSP(2);
     stackCheck();
 
     // Main loop for OpenTRV radiator control.
@@ -832,7 +846,7 @@ void loop()
             // Tasks that must be run every minute.
             ++minuteCount; // Note simple roll-over to 0 at max value.
             // Force to user's programmed schedule(s), if any, at the correct time.
-            Scheduler.applyUserSchedule(&valveMode, OTV0P2BASE::getMinutesSinceMidnightLT());  // XXX
+            Scheduler.applyUserSchedule(&valveMode, OTV0P2BASE::getMinutesSinceMidnightLT());
             // Ensure that the RTC has been persisted promptly when necessary.
             OTV0P2BASE::persistRTC();
             // Run hourly tasks at the end of the hour.
