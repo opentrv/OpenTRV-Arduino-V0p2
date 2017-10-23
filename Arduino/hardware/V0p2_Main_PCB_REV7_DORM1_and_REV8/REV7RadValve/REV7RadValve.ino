@@ -39,8 +39,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
  *****************************************************************************/
 ////// GLOBAL flags that alter system build and behaviour.
 
-//// If defined, do extra checks and serial logging.  Will take more code space and power.
-//#undef DEBUG
+// If defined, do extra checks and serial logging.  Will take more code space and power.
+#undef DEBUG
 
 // *** Global flag for REVx configuration here *** //
 #define V0p2_REV 7
@@ -116,12 +116,12 @@ constexpr uint8_t MASK_PD = (SERIALRX_INT_MASK | MODE_INT_MASK); // MODE button 
 
 ////// SCRATCHSPACE
 
-// Create scratch space for secure stats TX // FIXME
+// Create scratch space for secure stats TX
 // Buffer need be no larger than leading length byte + typical 64-byte radio module TX buffer limit + optional terminator.
 constexpr uint8_t MSG_BUF_SIZE = 1 + 64 + 1;
-constexpr uint8_t bufEncJSONlen = OTRadioLink::ENC_BODY_SMALL_FIXED_PTEXT_MAX_SIZE + 1;  // 3 = '}' + 0x0 + ? FIXME whuut?
-constexpr uint8_t ptextBuflen = bufEncJSONlen + 2;  // 2 = valvePC + hasStats
-static_assert(ptextBuflen == 34, "ptextBuflen wrong");  // TODO make sure this is correct!
+constexpr uint8_t bufEncJSONlen = OTRadioLink::ENC_BODY_SMALL_FIXED_PTEXT_MAX_SIZE + 1;
+constexpr uint8_t ptextBuflen = bufEncJSONlen + 2;
+static_assert(ptextBuflen == 34, "ptextBuflen wrong");
 constexpr uint8_t scratchSpaceNeeded = MSG_BUF_SIZE + ptextBuflen;
 constexpr size_t StatsTX_WorkspaceSize = OTRadioLink::SimpleSecureFrame32or0BodyTXBase::generateSecureOFrameRawForTX_total_scratch_usage_OTAESGCM_2p0 + scratchSpaceNeeded;
 static_assert(StatsTX_WorkspaceSize == 384, "StatsTX workspace size wrong!");  // Correct as of 20170704
@@ -292,7 +292,7 @@ valveUI_t valveUI(
 ////// MESSAGING
 
 // Managed JSON stats.
-OTV0P2BASE::SimpleStatsRotation<12> ss1; // Configured for maximum different stats.  // FIXME REDUCE AS MUCH AS POSSIBLE
+OTV0P2BASE::SimpleStatsRotation<12> ss1; // Configured for maximum different stats.
 
 
 /******************************************************************************
@@ -362,7 +362,7 @@ void panic(const __FlashStringHelper *s) {
 inline void stackCheck()
 {
     const int16_t minsp = OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd();
-#if 1 //&& defined(DEBUG)
+#if 1 // && defined(DEBUG)
     const uint8_t location = OTV0P2BASE::MemoryChecks::getLocation();
     const uint16_t progCounter = OTV0P2BASE::MemoryChecks::getPC();  // not isr safe
     OTV0P2BASE::serialPrintAndFlush(F("minsp: "));
@@ -375,7 +375,7 @@ inline void stackCheck()
 //    OTV0P2BASE::MemoryChecks::forceResetIfStackOverflow();  // XXX
     OTV0P2BASE::MemoryChecks::resetMinSP();
 #else
-    if(128 > minsp) { OTV0P2BASE::serialPrintlnAndFlush(F("!SP")); }
+    if(64 > minsp) { OTV0P2BASE::serialPrintlnAndFlush(F("!SP")); }
     OTV0P2BASE::MemoryChecks::forceResetIfStackOverflow();
 #endif
 }
@@ -406,7 +406,6 @@ void updateSensorsFromStats() {
 //   * force if true then force full poll on every call (ie do not internally rate-limit)
 // Note that radio poll() can be for TX as well as RX activity.
 // Not thread-safe, eg not to be called from within an ISR.
-// FIXME trying to move into utils (for the time being.)
 bool pollIO(const bool force = false) {
     static volatile uint8_t _pO_lastPoll;
     // Poll RX at most about every ~8ms.
@@ -427,7 +426,7 @@ bool pollIO(const bool force = false) {
 // Will be run after all stats for the current hour have been updated.
 static void endOfDayTasks() {
     // Count down the setback lockout if not finished...  (TODO-786, TODO-906)
-//    OTRadValve::countDownSetbackLockout();
+//    OTRadValve::countDownSetbackLockout();  // XXX
 }
 
 
@@ -450,20 +449,10 @@ void bareStatsTX() {
     static_assert(OTV0P2BASE::FullStatsMessageCore_MAX_BYTES_ON_WIRE <= STATS_MSG_MAX_LEN, "FullStatsMessageCore_MAX_BYTES_ON_WIRE too big");
     static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_MAX_LENGTH too big"); // Allow 1 for trailing CRC.
     OTV0P2BASE::ScratchSpaceL sW(globalWorkSpace.statsTX, sizeof(globalWorkSpace.statsTX));
-    // Allow space in buffer for:
-    //   * buffer offset/preamble
-    //   * max binary length, or max JSON length + 1 for CRC + 1 to allow detection of oversize message
-    //   * terminating 0xff
-    uint8_t * const buf = sW.buf;
-    // Send binary *or* JSON on each attempt so as not to overwhelm the receiver.
-    // Send JSON message.
-    bool sendingJSONFailed = false; // Set true and stop attempting JSON send in case of error.
-    // Set pointer location based on whether start of message will have preamble TODO move to OTRFM23BLink queueToSend?
-    uint8_t *bptr = buf;
-    // Leave space for possible leading frame-length byte, eg for encrypted frame.
-    ++bptr;
-    // Where to write the real frame content.
-    uint8_t *const realTXFrameStart = bptr;
+
+    // Where to write the real frame content, leaving space for leading
+    // frame-length byte for encrypted frame.
+    uint8_t *const realTXFrameStart = sW.buf + 1;
     // If forcing encryption or if unconditionally suppressed
     // then suppress the "@" ID field entirely,
     // assuming that the encrypted commands will carry the ID, ie in the 'envelope'.
@@ -530,7 +519,6 @@ void bareStatsTX() {
     // If doing encryption
     // then build encrypted frame from raw JSON.
     if(!sendingJSONFailed) {
-        // TODO Fold JSON
         // Explicit-workspace version of encryption.
         const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEncWithLWorkspace_ptr_t eW = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_WITH_LWORKSPACE;
         // Create subscratch space for encryption functions
@@ -597,7 +585,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute, const OTV0P2BASE::S
             // Show/set generic parameter values (eg "G N [M]").
             case 'G': { OTV0P2BASE::CLI::GenericParam().doCommand(buf, n); break; }
             // Reset or display ID.
-            case 'I': { OTV0P2BASE::CLI::NodeIDWithSet().doCommand(buf, n); break; } // XXX
+            case 'I': { OTV0P2BASE::CLI::NodeIDWithSet().doCommand(buf, n); break; }
             // Status line stats print and TX.
             case 'S': {
                 Serial.print(F("Resets: "));
@@ -622,7 +610,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute, const OTV0P2BASE::S
             *        function pointer MUST be passed here to ensure safe handling of the key and the Tx message
             *        counter.
             */
-            case 'K': { OTV0P2BASE::CLI::SetSecretKey(OTRadioLink::SimpleSecureFrame32or0BodyTXV0p2::resetRaw3BytePersistentTXRestartCounterCond).doCommand(buf, n); break; }  // XXX
+            case 'K': { OTV0P2BASE::CLI::SetSecretKey(OTRadioLink::SimpleSecureFrame32or0BodyTXV0p2::resetRaw3BytePersistentTXRestartCounterCond).doCommand(buf, n); break; }
             // Switch to WARM (not BAKE) mode OR set WARM temperature.
             case 'W':{
                 valveMode.cancelBakeDebounced(); // Ensure BAKE mode not entered.
@@ -630,7 +618,7 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute, const OTV0P2BASE::S
                 break;
             }
             // Zap/erase learned statistics.
-            case 'Z': { OTV0P2BASE::CLI::ZapStats().doCommand(buf, n); break; } // XXX
+            case 'Z': { OTV0P2BASE::CLI::ZapStats().doCommand(buf, n); break; }
         }
         // Else show ack of command received.
         Serial.println(F("OK"));
@@ -721,7 +709,7 @@ void setup()
     // Initialise sensors with stats info where needed.
     updateSensorsFromStats();
 
-    OTV0P2BASE::MemoryChecks::resetMinSP();
+    OTV0P2BASE::MemoryChecks::resetMinSP();  // XXX
     OTV0P2BASE::MemoryChecks::recordIfMinSP(1);
     stackCheck();
 
@@ -731,13 +719,13 @@ void setup()
     // Attempt to maximise chance of reception with a double TX.
     // Assume not in hub mode (yet).
     // Send all possible formats, binary first (assumed complete in one message).
-    bareStatsTX();  // XXX
+    bareStatsTX();
     // Send JSON stats repeatedly (typically once or twice)
     // until all values pushed out (no 'changed' values unsent)
     // or limit reached.
     for(uint8_t i = 5; --i > 0; ) {
         ::OTV0P2BASE::nap(WDTO_120MS, false); // Sleep long enough for receiver to have a chance to process previous TX.
-        bareStatsTX();  // XXX
+        bareStatsTX();
         if(!ss1.changedValue()) { break; }
     }
     // Start local counters in randomised positions to help avoid inter-unit collisions,
@@ -760,10 +748,7 @@ void setup()
 
 void loop()
 {
-#if defined(EST_CPU_DUTYCYCLE)
-    const unsigned long usStart = micros();
-#endif
-    OTV0P2BASE::MemoryChecks::resetMinSP();
+    OTV0P2BASE::MemoryChecks::resetMinSP();  // XXX
     OTV0P2BASE::MemoryChecks::recordIfMinSP(2);
     stackCheck();
 
@@ -974,20 +959,5 @@ void loop()
         OTV0P2BASE::ScratchSpace s((uint8_t*)globalWorkSpace.cli, sizeof(globalWorkSpace.cli));
         pollCLI(stopBy, 0 == TIME_LSD, s);
     }
-#if defined(EST_CPU_DUTYCYCLE)
-    const unsigned long usEnd = micros();
-    // Nominal loop time should be 2s x 1MHz clock, ie 2,000,000 if CPU running all the time.
-    // Should generally be <2000 (us) (<0.1%) for leaf, <20000 (<1%) for hub.
-    // Example output.
-    //us apparent: 4544
-    //us apparent: 25280
-    //us apparent: 9280
-    const unsigned long usApparentTaken = usEnd - usStart;
-#if 1 && defined(DEBUG)
-    DEBUG_SERIAL_PRINT_FLASHSTRING("us apparent: ");
-    DEBUG_SERIAL_PRINT(usApparentTaken);
-    DEBUG_SERIAL_PRINTLN();
-#endif
-#endif
 }
 
