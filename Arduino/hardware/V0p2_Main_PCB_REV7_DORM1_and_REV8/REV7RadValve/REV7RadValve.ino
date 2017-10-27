@@ -757,20 +757,10 @@ void loop()
     // Try if very near to end of cycle and thus causing an overrun.
     // Conversely, if not true, should have time to safely log outputs, etc.
     const uint8_t nearOverrunThreshold = OTV0P2BASE::GSCT_MAX - 8; // ~64ms/~32 serial TX chars of grace time...
-    // Sleep in low-power mode (waiting for interrupts) until seconds roll.
-    // NOTE: sleep at the top of the loop to minimise timing jitter/delay from Arduino background activity after loop() returns.
-    // DHD20130425: waking up from sleep and getting to start processing below this block may take >10ms.
-    // Ensure that serial I/O is off while sleeping.
-    OTV0P2BASE::powerDownSerial();
-    // Power down most stuff (except radio for hub RX).
-    OTV0P2BASE::minimisePowerWithoutSleep();
-    uint_fast8_t newTLSD;
-    while(TIME_LSD == (newTLSD = OTV0P2BASE::getSecondsLT())) {
-        // Normal long minimal-power sleep until wake-up interrupt.
-        // Rely on interrupt to force quick loop round to I/O poll.
-        OTV0P2BASE::sleepUntilInt();
-    }
-    TIME_LSD = newTLSD;
+
+    // Go to sleep until the start of the next cycle.
+    TIME_LSD = OTV0P2BASE::sleepUntilNewCycle<>(TIME_LSD);
+
     // Reset and immediately re-prime the RTC-based watchdog.
     OTV0P2BASE::resetRTCWatchDog();
     OTV0P2BASE::enableRTCWatchdog(false);
