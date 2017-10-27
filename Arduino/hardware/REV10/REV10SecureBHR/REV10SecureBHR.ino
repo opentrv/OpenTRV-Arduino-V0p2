@@ -388,6 +388,19 @@ OTRadioLink::OTMessageQueueHandlerNull messageQueue;
 #endif
 
 
+// Poll I/O and process message incrementally (in this otherwise idle time)
+// before sleep and on wakeup in case some IO needs further processing now,
+// eg work was accrued during the previous major slow/outer loop
+// or the in a previous orbit of this loop sleep or nap was terminated by an I/O interrupt.
+// May generate output to host on Serial.
+// Come back and have another go immediately until no work remaining.
+bool preSleepIO()
+{
+    pollIO();
+    return (messageQueue.handle(true, PrimaryRadio));
+}
+
+
 // Do bare stats transmission.
 // Output should be filtered for items appropriate
 // to current channel security and sensitivity level.
@@ -745,25 +758,8 @@ void loop()
     // NOTE: sleep at the top of the loop to minimise timing jitter/delay from Arduino background activity after loop() returns.
     // DHD20130425: waking up from sleep and getting to start processing below this block may take >10ms.
     // Ensure that serial I/O is off while sleeping.
-    OTV0P2BASE::powerDownSerial();
-    // Power down most stuff (except radio for hub RX).
-    OTV0P2BASE::minimisePowerWithoutSleep();
-    uint_fast8_t newTLSD;
-    while(TIME_LSD == (newTLSD = OTV0P2BASE::getSecondsLT())) {
-        // Poll I/O and process message incrementally (in this otherwise idle time)
-        // before sleep and on wakeup in case some IO needs further processing now,
-        // eg work was accrued during the previous major slow/outer loop
-        // or the in a previous orbit of this loop sleep or nap was terminated by an I/O interrupt.
-        // May generate output to host on Serial.
-        // Come back and have another go immediately until no work remaining.
-        pollIO();
-        if(messageQueue.handle(true, PrimaryRadio)) {
-            continue; }
-        // Normal long minimal-power sleep until wake-up interrupt.
-        // Rely on interrupt to force quick loop round to I/O poll.
-        OTV0P2BASE::sleepUntilInt();
-    }
-    TIME_LSD = newTLSD;
+    TIME_LSD = OTV0P2BASE::sleepUntilNewCycle<preSleepIO>(TIME_LSD);
+
     // Reset and immediately re-prime the RTC-based watchdog.
     OTV0P2BASE::resetRTCWatchDog();
     OTV0P2BASE::enableRTCWatchdog(true);
