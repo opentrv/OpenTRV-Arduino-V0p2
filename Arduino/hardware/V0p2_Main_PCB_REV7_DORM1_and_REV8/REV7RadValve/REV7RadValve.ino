@@ -353,36 +353,6 @@ void panic(const __FlashStringHelper *s) {
     panic();
 }
 
-
-////// DIAGNOSTICS
-
-/**
- * @brief   Force restart if SPAM/heap/stack likely corrupt.
- *          Complain and keep complaining when getting near stack overflow.
- *          TODO: make DEBUG-only when confident all configs OK.
- *          Optionally reports max stack usage and location, per loop.
- */
-inline void stackCheck()
-{
-    const int16_t minsp = OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd();
-#if 1  && defined(DEBUG)
-    const uint8_t location = OTV0P2BASE::MemoryChecks::getLocation();
-    const uint16_t progCounter = OTV0P2BASE::MemoryChecks::getPC();  // not isr safe
-    OTV0P2BASE::serialPrintAndFlush(F("minsp: "));
-    OTV0P2BASE::serialPrintAndFlush(minsp);
-    OTV0P2BASE::serialPrintAndFlush(F(" loc: "));
-    OTV0P2BASE::serialPrintAndFlush(location);
-    OTV0P2BASE::serialPrintAndFlush(F(" prog: "));
-    OTV0P2BASE::serialPrintAndFlush(progCounter, HEX);
-    OTV0P2BASE::serialPrintlnAndFlush();
-//    OTV0P2BASE::MemoryChecks::forceResetIfStackOverflow();  // XXX
-    OTV0P2BASE::MemoryChecks::resetMinSP();
-#else
-    if(64 > minsp) { OTV0P2BASE::serialPrintlnAndFlush(F("!SP")); }
-    OTV0P2BASE::MemoryChecks::forceResetIfStackOverflow();
-#endif
-}
-
 ////// SENSORS
 
 // Update sensors with historic/trailing statistics information where needed.
@@ -552,7 +522,6 @@ void bareStatsTX() {
     // Send directly to the primary radio...
     if((!sendingJSONFailed) && (!PrimaryRadio.queueToSend(realTXFrameStart, wrote))) { sendingJSONFailed = true; }
     if(neededWaking) { OTV0P2BASE::flushSerialProductive(); OTV0P2BASE::powerDownSerial(); }
-    stackCheck();
 }
 
 
@@ -764,7 +733,7 @@ void setup()
 
 void loop()
 {
-    stackCheck();
+    OTV0P2BASE::stackCheck();
 
     // Main loop for OpenTRV radiator control.
     // Note: exiting and re-entering can take a little while, handling Arduino background tasks such as serial.
@@ -797,19 +766,9 @@ void loop()
     OTV0P2BASE::minimisePowerWithoutSleep();
     uint_fast8_t newTLSD;
     while(TIME_LSD == (newTLSD = OTV0P2BASE::getSecondsLT())) {
-        // If missing h/w interrupts for anything that needs rapid response
-        // then AVOID the lowest-power long sleep.
-        if(false) {
-            // If there is not hardware interrupt wakeup on receipt of a frame,
-            // then this can only sleep for a short time between explicit poll()s,
-            // though in any case allow wake on interrupt to minimise loop timing jitter
-            // when the slow RTC 'end of sleep' tick arrives.
-            OTV0P2BASE::nap(WDTO_15MS, true);
-        } else {
-            // Normal long minimal-power sleep until wake-up interrupt.
-            // Rely on interrupt to force quick loop round to I/O poll.
-            OTV0P2BASE::sleepUntilInt();
-        }
+        // Normal long minimal-power sleep until wake-up interrupt.
+        // Rely on interrupt to force quick loop round to I/O poll.
+        OTV0P2BASE::sleepUntilInt();
     }
     TIME_LSD = newTLSD;
     // Reset and immediately re-prime the RTC-based watchdog.
