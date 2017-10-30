@@ -885,6 +885,15 @@ static bool setUpContinuousRX()
   }
 #endif // defined(ENABLE_RADIO_RX)
 
+// Radio handling function to pass into sleep loop.
+// Passing nullptr/nothing would be more satisfying solution, but due to other
+// macro flags, this is slightly less horrible.
+#if defined(ENABLE_RADIO_RX)
+bool preSleepFn() { return (messageQueue.handle(true, PrimaryRadio)); }
+#else
+bool preSleepFn() { return false; }
+#endif // ENABLE_RADIO_RX
+
 
 // Main loop for OpenTRV radiator control.
 // Note: exiting and re-entering can take a little while, handling Arduino background tasks such as serial.
@@ -955,48 +964,17 @@ void loopOpenTRV()
 #if 0 && defined(DEBUG)
   DEBUG_SERIAL_PRINTLN_FLASHSTRING("*E"); // End-of-cycle sleep.
 #endif
-//  // Ensure that serial I/O is off while sleeping, unless listening with radio.
-//  if(!needsToListen) { powerDownSerial(); } else { powerUpSerialIfDisabled<V0P2_UART_BAUD>(); }
-  // Ensure that serial I/O is off while sleeping.
-  OTV0P2BASE::powerDownSerial();
-  // Power down most stuff (except radio for hub RX).
-  OTV0P2BASE::minimisePowerWithoutSleep();
-  uint_fast8_t newTLSD;
-  while(TIME_LSD == (newTLSD = OTV0P2BASE::getSecondsLT()))
-    {
-#ifdef ENABLE_RADIO_RX
-    // Poll I/O and process message incrementally (in this otherwise idle time)
-    // before sleep and on wakeup in case some IO needs further processing now,
-    // eg work was accrued during the previous major slow/outer loop
-    // or the in a previous orbit of this loop sleep or nap was terminated by an I/O interrupt.
-    // May generate output to host on Serial.
-    // Come back and have another go immediately until no work remaining.
-    if(messageQueue.handle(true, PrimaryRadio)) { continue; }
-#endif
-
-// If missing h/w interrupts for anything that needs rapid response
-// then AVOID the lowest-power long sleep.
+  //// If missing h/w interrupts for anything that needs rapid response
+  //// then AVOID the lowest-power long sleep.
+  //
+  TIME_LSD = OTV0P2BASE::sleepUntilNewCycle<preSleepFn>(TIME_LSD,
 #if defined(ENABLE_CONTINUOUS_RX) && !defined(PIN_RFM_NIRQ)
-    if(needsToListen)
-#else
-    if(false)
-#endif
-      {
-      // If there is not hardware interrupt wakeup on receipt of a frame,
-      // then this can only sleep for a short time between explicit poll()s,
-      // though in any case allow wake on interrupt to minimise loop timing jitter
-      // when the slow RTC 'end of sleep' tick arrives.
-      OTV0P2BASE::nap(WDTO_15MS, true);
-      }
-    else
-      {
-      // Normal long minimal-power sleep until wake-up interrupt.
-      // Rely on interrupt to force quick loop round to I/O poll.
-      OTV0P2BASE::sleepUntilInt();
-      }
-//    DEBUG_SERIAL_PRINTLN_FLASHSTRING("w"); // Wakeup.
-    }
-  TIME_LSD = newTLSD;
+            needsToListen
+#else  // defined(ENABLE_CONTINUOUS_RX) && !defined(PIN_RFM_NIRQ)
+            false
+#endif  // defined(ENABLE_CONTINUOUS_RX) && !defined(PIN_RFM_NIRQ)
+          );
+
 #if defined(ENABLE_WATCHDOG_SLOW)
   // Reset and immediately re-prime the RTC-based watchdog.
   OTV0P2BASE::resetRTCWatchDog();
