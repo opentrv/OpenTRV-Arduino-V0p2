@@ -320,37 +320,6 @@ static void panic(const __FlashStringHelper *s)
 }
 
 
-////// DIAGNOSTICS
-
-/**
- * @brief   Force restart if SPAM/heap/stack likely corrupt.
- *          Complain and keep complaining when getting near stack overflow.
- *          TODO: make DEBUG-only when confident all configs OK.
- *          Optionally reports max stack usage and location, per loop.
- */
-inline void stackCheck()
-{
-    const int16_t minsp = OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd();
-#if 1 && defined(DEBUG)
-//    const uint8_t location = OTV0P2BASE::MemoryChecks::getLocation();
-//    const uint16_t progCounter = OTV0P2BASE::MemoryChecks::getPC();  // not isr safe
-//    OTV0P2BASE::serialPrintAndFlush(F("minsp: "));
-//    OTV0P2BASE::serialPrintAndFlush(minsp);
-//    OTV0P2BASE::serialPrintAndFlush(F(" loc: "));
-//    OTV0P2BASE::serialPrintAndFlush(location);
-//    OTV0P2BASE::serialPrintAndFlush(F(" prog: "));
-//    OTV0P2BASE::serialPrintAndFlush(progCounter, HEX);
-//    OTV0P2BASE::serialPrintlnAndFlush();
-    if (64 > minsp) panic(F("SH"));
-//    OTV0P2BASE::MemoryChecks::forceResetIfStackOverflow();  // XXX
-    OTV0P2BASE::MemoryChecks::resetMinSP();
-#else
-    if(64 > minsp) { OTV0P2BASE::serialPrintlnAndFlush(F("!SP")); }
-    OTV0P2BASE::MemoryChecks::forceResetIfStackOverflow();
-#endif
-}
-
-
 ////// SENSORS
 
 
@@ -417,6 +386,19 @@ OTRadioLink::OTMessageQueueHandler< pollIO, V0P2_UART_BAUD,
 #else
 OTRadioLink::OTMessageQueueHandlerNull messageQueue;
 #endif
+
+
+// Poll I/O and process message incrementally (in this otherwise idle time)
+// before sleep and on wakeup in case some IO needs further processing now,
+// eg work was accrued during the previous major slow/outer loop
+// or the in a previous orbit of this loop sleep or nap was terminated by an I/O interrupt.
+// May generate output to host on Serial.
+// Come back and have another go immediately until no work remaining.
+bool preSleepIO()
+{
+    pollIO();
+    return (messageQueue.handle(true, PrimaryRadio));
+}
 
 
 // Do bare stats transmission.
@@ -753,7 +735,7 @@ void setup()
 
 void loop()
 {
-    stackCheck();
+    OTV0P2BASE::stackCheck();
 
     // Set up some variables before sleeping to minimise delay/jitter after the RTC tick.
     // Sensor readings are taken late in each minute (where they are taken)
@@ -776,25 +758,8 @@ void loop()
     // NOTE: sleep at the top of the loop to minimise timing jitter/delay from Arduino background activity after loop() returns.
     // DHD20130425: waking up from sleep and getting to start processing below this block may take >10ms.
     // Ensure that serial I/O is off while sleeping.
-    OTV0P2BASE::powerDownSerial();
-    // Power down most stuff (except radio for hub RX).
-    OTV0P2BASE::minimisePowerWithoutSleep();
-    uint_fast8_t newTLSD;
-    while(TIME_LSD == (newTLSD = OTV0P2BASE::getSecondsLT())) {
-        // Poll I/O and process message incrementally (in this otherwise idle time)
-        // before sleep and on wakeup in case some IO needs further processing now,
-        // eg work was accrued during the previous major slow/outer loop
-        // or the in a previous orbit of this loop sleep or nap was terminated by an I/O interrupt.
-        // May generate output to host on Serial.
-        // Come back and have another go immediately until no work remaining.
-        pollIO();
-        if(messageQueue.handle(true, PrimaryRadio)) {
-            continue; }
-        // Normal long minimal-power sleep until wake-up interrupt.
-        // Rely on interrupt to force quick loop round to I/O poll.
-        OTV0P2BASE::sleepUntilInt();
-    }
-    TIME_LSD = newTLSD;
+    TIME_LSD = OTV0P2BASE::sleepUntilNewCycle<preSleepIO>(TIME_LSD);
+
     // Reset and immediately re-prime the RTC-based watchdog.
     OTV0P2BASE::resetRTCWatchDog();
     OTV0P2BASE::enableRTCWatchdog(true);

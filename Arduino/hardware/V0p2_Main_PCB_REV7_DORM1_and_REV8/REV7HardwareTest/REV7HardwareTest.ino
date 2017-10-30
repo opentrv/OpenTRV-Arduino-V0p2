@@ -288,6 +288,7 @@ void loop()
  * Date/commit:         Device: Wake (Sleep) @ Voltage
  * 20161111/0e6ec96     REV7:   1.5 (1.1) @ 2.5 V       REV11:  0.45 (0.03) @ 2.5 V
  * 20161111/f2eed5e     REV7:   0.46 (0.04) @ 2.5 V
+ * 20171027/            REV7:   ???? (0.06) @ 2.5 v
  */
 
 /**
