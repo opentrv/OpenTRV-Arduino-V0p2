@@ -117,6 +117,9 @@ constexpr uint8_t MASK_PD = (SERIALRX_INT_MASK | MODE_INT_MASK); // MODE button 
 // Counter containing current no. of resets.
 static uint8_t resetCount;
 
+// XXX
+static constexpr uint8_t _FHT8V_MAX_EXTRA_TRAILER_BYTES = (1 + max(OTV0P2BASE::MESSAGING_TRAILING_MINIMAL_STATS_PAYLOAD_BYTES, OTV0P2BASE::FullStatsMessageCore_MAX_BYTES_ON_WIRE));
+
 ////// SCRATCHSPACE
 
 // Create scratch space for secure stats TX
@@ -152,7 +155,10 @@ static GlobalWorkSpace globalWorkSpace;
 // Valve physical UI controller.
 typedef OTRadValve::ModeButtonAndPotActuatorPhysicalUI valveUI_t;
 extern valveUI_t valveUI;  // Extern as otherwise compiler attempts to instantiate.
-
+// XXX
+extern OTRadValve::FHT8VRadValve<_FHT8V_MAX_EXTRA_TRAILER_BYTES,
+                                 OTRadValve::FHT8VRadValveBase::RFM23_PREAMBLE_BYTES,
+                                 OTRadValve::FHT8VRadValveBase::RFM23_PREAMBLE_BYTE> FHT8V;
 
 ////// RADIOS
 
@@ -214,6 +220,44 @@ typedef OTRadValve::ValveMotorDirectV1<OTRadValve::ValveMotorDirectV1HardwareDri
 // unless recent UI use because value is being fitted/adjusted.
 ValveDirect_t ValveDirect([](){return((!valveUI.veryRecentUIControlUse()) && AmbLight.isRoomDark());});
 
+// XXX
+// FHT8V radio-controlled actuator.
+// Function to append stats trailer (and 0xff) to FHT8V/FS20 TX buffer.
+// Assume enough space in buffer for largest possible stats message.
+// XXX What does this actuall do?
+uint8_t *appendStatsToTXBufferWithFF(uint8_t *bptr, const uint8_t bufSize)
+{
+  OTV0P2BASE::FullStatsMessageCore_t trailer;
+  OTRadValve::populateCoreStats(&trailer,
+                    &FHT8V,         // FIXME Does this need a separate NominalRadValve?
+                    TemperatureC16.get(),
+                    Supply_cV.isSupplyVoltageLow(),
+                    AmbLight.get(),
+                    Occupancy.twoBitOccupancyValue());
+  // Ensure that no ID is encoded in the message sent on the air since it would be a repeat from the FHT8V frame.
+  trailer.containsID = false;
+
+#if defined(ENABLE_MINIMAL_STATS_TXRX)
+  // As bandwidth optimisation just write minimal trailer if only temp&power available.
+  if (trailer.containsTempAndPower &&
+      !trailer.containsID && !trailer.containsAmbL)
+  {
+    writeTrailingMinimalStatsPayload(bptr, &(trailer.tempAndPower));
+    bptr += 3;
+    *bptr = (uint8_t)0xff; // Terminate TX bytes.
+  }
+  else
+#endif
+  {
+    // Assume enough space in buffer for largest possible stats message.
+    bptr = OTV0P2BASE::encodeFullStatsMessageCore(bptr, bufSize, OTV0P2BASE::getStatsTXLevel(), false, &trailer);
+  }
+  return (bptr);
+}
+
+OTRadValve::FHT8VRadValve<_FHT8V_MAX_EXTRA_TRAILER_BYTES,
+                          OTRadValve::FHT8VRadValveBase::RFM23_PREAMBLE_BYTES,
+                          OTRadValve::FHT8VRadValveBase::RFM23_PREAMBLE_BYTE> FHT8V(appendStatsToTXBufferWithFF);
 
 ////// CONTROL
 
@@ -302,6 +346,7 @@ OTV0P2BASE::SimpleStatsRotation<13> ss1; // Configured for maximum different sta
  * INTERRUPT SERVICE ROUTINES
  *****************************************************************************/
 
+#if 1 // FIXME Disabled to save space
 // Previous state of port D pins to help detect changes.
 static volatile uint8_t prevStatePD;
 // Interrupt service routine for PD I/O port transition changes (including RX).
@@ -319,7 +364,7 @@ ISR(PCINT2_vect)
     // TODO: ensure that resetCLIActiveTimer() is inlineable to minimise ISR prologue/epilogue time and space.
     if((changes & SERIALRX_INT_MASK) && !(pins & SERIALRX_INT_MASK)) { OTV0P2BASE::CLI::resetCLIActiveTimer(); }
 }
-
+#endif // Disabled to save space.
 
 /******************************************************************************
  * LOCAL FUNCTIONS
@@ -527,6 +572,7 @@ void bareStatsTX() {
 
 ////// UI
 
+#if 1 // FIXME Disabled to save space.
 // Dump some brief CLI usage instructions to serial TX, which must be up and running.
 // If this gets too big there is a risk of overrunning and missing the next tick...
 static void dumpCLIUsage()
@@ -610,7 +656,9 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute, const OTV0P2BASE::S
     OTV0P2BASE::flushSerialSCTSensitive();
     if(neededWaking) { OTV0P2BASE::powerDownSerial(); }
 }
-
+#else // Disabled to save space.
+void pollCLI(const uint8_t, const bool, const OTV0P2BASE::ScratchSpace &) {}
+#endif // Disabled to save space.
 
 /******************************************************************************
  * SETUP
@@ -689,6 +737,12 @@ void setup()
         PCMSK2 = MASK_PD;
     }
 
+    // XXX
+    // Set up radio with FHT8V.
+    FHT8V.setRadio(&PrimaryRadio);
+    // Load EEPROM house codes into primary FHT8V instance at start.
+    FHT8V.nvLoadHC();
+
     // Wire components together, eg. for occupancy sensing.
     AmbLight.setOccCallbackOpt([](bool prob){if(prob){Occupancy.markAsPossiblyOccupied();}else{Occupancy.markAsJustPossiblyOccupied();}});
     // Callbacks to set various mode combinations.
@@ -698,7 +752,7 @@ void setup()
     // Initialise sensors with stats info where needed.
     updateSensorsFromStats();
 
-    // Do early 'wake-up' stats transmission if possible // XXX
+    // Do early 'wake-up' stats transmission if possible.
     // when everything else is set up and ready and allowed (TODO-636)
     // including all set-up and inter-wiring of sensors/actuators.
     // Attempt to maximise chance of reception with a double TX.
@@ -747,6 +801,8 @@ void loop()
     // to give the best possible readings.
     // True if this is the first (0th) minute in each group of four.
     const bool minute0From4ForSensors = (0 == minuteFrom4);
+    const bool minute1From4AfterSensors = (1 == minuteFrom4);
+
     // Note last-measured battery status.
     const bool batteryLow = Supply_cV.isSupplyVoltageLow();
     // Run some tasks less often when not demanding heat (at the valve or boiler), so as to conserve battery/energy.
@@ -767,6 +823,25 @@ void loop()
 
     // START LOOP BODY
     // ===============
+
+    // XXX
+  // Try for double TX for more robust conversation with valve unless:
+  //   * battery is low
+  //   * the valve is not required to be wide open (ie a reasonable temperature is currently being maintained).
+  //   * this is a hub and has to listen as much as possible
+  // to conserve battery and bandwidth.
+  #ifdef ENABLE_NOMINAL_RAD_VALVE
+  const bool doubleTXForFTH8V = !conserveBattery && !hubManager.inHubMode() && (NominalRadValve.get() >= 50);
+  #else
+  const bool doubleTXForFTH8V = false;
+  #endif
+  // FHT8V is highest priority and runs first.
+  // ---------- HALF SECOND #0 -----------
+  bool useExtraFHT8VTXSlots = FHT8V.FHT8VPollSyncAndTX_First(doubleTXForFTH8V); // Time for extra TX before UI.
+//  if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@0"); }
+
+
+
     // High-priority UI handing, every other/even second.
     // Show status if the user changed something significant.
     // Must take ~300ms or less so as not to run over into next half second if two TXs are done.
@@ -780,6 +855,17 @@ void loop()
         // Keep dynamic adjustment of sensors up to date.
         updateSensorsFromStats();
     }
+
+
+    // XXX
+    if(useExtraFHT8VTXSlots)
+      {
+      // Time for extra TX before other actions, but don't bother if minimising power in frost mode.
+      // ---------- HALF SECOND #1 -----------
+      useExtraFHT8VTXSlots = FHT8V.FHT8VPollSyncAndTX_Next(doubleTXForFTH8V);
+  //    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@1"); }
+      }
+
 
     // DO SCHEDULING
 
@@ -813,6 +899,11 @@ void loop()
         case 8: case 10: case 12: case 14: case 16: case 18: case 20: case 22: {
             // Only the slot where txTick is zero is used.
             if(0 != txTick--) { break; }
+
+            // Avoid transmit conflict with FS20; just drop the slot. // XXX
+            // We should possibly choose between this and piggybacking stats to avoid busting duty-cycle rules.
+            if(useExtraFHT8VTXSlots) { break; }
+
             // Stats TX in the minute (#1) after all sensors should have been polled
             // (so that readings are fresh) and evenly between.
             // Usually send one frame every 4 minutes, 2 if this is a valve.
@@ -869,6 +960,14 @@ void loop()
             // Recompute target, valve position and call for heat, etc.
             // Should be called once per minute to work correctly.
             NominalRadValve.read();
+
+
+      // If there was a change in target valve position,
+      // or periodically in the minute after all sensors should have been read,
+      // precompute some or all of any outgoing frame/stats/etc ready for the next transmission.
+      if(NominalRadValve.isValveMoved() || (minute1From4AfterSensors)) { FHT8V.set(NominalRadValve.get()); }
+
+
             break;
         }
         // Stats samples; should never be missed.
@@ -884,6 +983,19 @@ void loop()
             break;
         }
     }
+
+        // XXX
+  if(useExtraFHT8VTXSlots) {
+    // ---------- HALF SECOND #2 -----------
+    useExtraFHT8VTXSlots = FHT8V.FHT8VPollSyncAndTX_Next(doubleTXForFTH8V);
+//    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@2"); }
+    }
+  if(useExtraFHT8VTXSlots) {
+    // ---------- HALF SECOND #3 -----------
+    useExtraFHT8VTXSlots = FHT8V.FHT8VPollSyncAndTX_Next(doubleTXForFTH8V);
+//    if(useExtraFHT8VTXSlots) { DEBUG_SERIAL_PRINTLN_FLASHSTRING("ES@3"); }
+    }
+
     // End-of-loop processing, that may be slow.
     // Handle local direct-drive valve, eg DORM1.
     // If waiting for for verification that the valve has been fitted
