@@ -231,7 +231,6 @@ static OTV0P2BASE::SimpleStatsRotation<nTXStats> ss1; // Configured for maximum 
  * INTERRUPT SERVICE ROUTINES
  *****************************************************************************/
 
-// Controller's view of Least Significant Digits of the current (local) time, in this case whole seconds.
 // Previous state of port B pins to help detect changes.
 //
 // NOTE: PrimaryRadio may switch PCINT0 on and off during operation! This pin bank should not be relied
@@ -447,16 +446,12 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
         // frame-length byte for encrypted frame.
         uint8_t *const realTXFrameStart = sW.buf + 1;
 
-        // If forcing encryption or if unconditionally suppressed
-        // then suppress the "@" ID field entirely,
-        // assuming that the encrypted commands will carry the ID, ie in the 'envelope'.
+        // Forcing encryption so suppress the "@" and "+" ID fields,
+        // assuming that the encrypted commands will carry these in the 'envelope'.
         ss1.setID(V0p2_SENSOR_TAG_F(""));
+        ss1.enableCount(false);
 
         // Managed JSON stats.
-        // Enable "+" count field for diagnostic purposes, eg while TX is lossy,
-        // if the primary radio channel does not include a sequence number itself.
-        // Assume that an encrypted channel will provide its own (visible) sequence counter.
-        ss1.enableCount(false);
         // Show internal temperature of boiler hub.
         ss1.put(TemperatureC16);
         // Show boiler state for boiler hubs.
@@ -467,7 +462,8 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
         const size_t curMinSP = OTV0P2BASE::MemoryChecks::getMinSP();
         const uint8_t txMinSP = (255U >= curMinSP) ? (uint8_t) curMinSP : 255U;
         ss1.put(V0p2_SENSOR_TAG_F("SP"), txMinSP, true);
-        // OPTIONAL items
+
+        // Always TX in this case, as channel is secure.
         constexpr uint8_t privacyLevel = OTV0P2BASE::stTXalwaysAll;
 
         // Redirect JSON output appropriately.
