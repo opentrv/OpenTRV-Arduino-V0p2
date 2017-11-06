@@ -66,11 +66,11 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 //#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as plain boiler hub.
 //#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
 //#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
-////#define CONFIG_DORM1 // REV7 / DORM1 / TRV1.x all-in-one valve unit, secure TX.  // FIXME DE20171030: test disabled until DHD has time to discuss future of configs that are now primarily supported in separate .inos
-//#define CONFIG_DORM1_BOILER // REV8 / DORM1 boiler-control unit.
+////#define CONFIG_DORM1 // REV7 / DORM1 / TRV1.x all-in-one valve unit, secure TX. DEPRECATED: Use Arduino/hardware/V0p2_Main_PCB_REV7_DORM1_and_REV8/REV7RadValve
+#define CONFIG_DORM1_BOILER // REV8 / DORM1 boiler-control unit.
 //#define CONFIG_REV8_SECURE_BHR // REV8 secure boiler controller and stats hub.
 //#define CONFIG_REV10_AS_GSM_RELAY_ONLY // REV10: stats relay only.
-#define CONFIG_REV10_SECURE_BHR // REV10: secure stats relay and boiler hub.
+////#define CONFIG_REV10_SECURE_BHR // REV10: secure stats relay and boiler hub. DEPRECATED: Use Arduino/hardware/REV10/REV10SecureBHR
 //#define CONFIG_REV11_SECURE_STATSHUB // REV11 as secure stats hub.
 
 // One-offs and special cases
