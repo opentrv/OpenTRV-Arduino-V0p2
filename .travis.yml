@@ -40,8 +40,8 @@ install:
   - ./arduino --pref "boardsmanager.additional.urls=https://raw.githubusercontent.com/opentrv/OpenTRV-Config/master/Arduino/package_opentrv_index.json" --save-prefs
   - ./arduino --install-boards "opentrv:avr"
   - ./arduino --pref "boardsmanager.additional.urls=" --save-prefs
-  - ln -s $PWD/OTAESGCM-master/content/OTAESGCM arduino-1.8.1/arduino/libraries/OTAESGCM
-  - ln -s $PWD/OTRadioLink-master/content/OTRadioLink arduino-1.8.1/arduino/libraries/OTRadioLink
+  - ln -s $PWD/OTAESGCM-master/content/OTAESGCM Arduino/libraries/OTAESGCM
+  - ln -s $PWD/OTRadioLink-master/content/OTRadioLink Arduino/libraries/OTRadioLink
 
 script:
   - ./arduino --verify --board opentrv:avr:opentrv_v0p2 $PWD/Arduino/V0p2_Main/V0p2_Main.ino
