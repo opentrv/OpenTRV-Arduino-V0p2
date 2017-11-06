@@ -19,6 +19,7 @@
 # Author(s) / Copyright (s): Mark Hill 2017
 #                            Deniz Erbilgin 2017
 #                            Damon Hart-Davis 2017
+dist: trusty
 sudo: false
 language: cpp
 env: PATH=$PWD/arduino-1.8.1:$PATH
@@ -39,9 +40,10 @@ install:
   - arduino --pref "boardsmanager.additional.urls=https://raw.githubusercontent.com/opentrv/OpenTRV-Config/master/Arduino/package_opentrv_index.json" --save-prefs
   - arduino --install-boards "opentrv:avr"
   - arduino --pref "boardsmanager.additional.urls=" --save-prefs
-  - ln -s $PWD/OTAESGCM-master/content/OTAESGCM $PWD/Arduino/libraries/OTAESGCM
-  - ln -s $PWD/OTRadioLink-master/content/OTRadioLink $PWD/Arduino/libraries/OTRadioLink
+  - ln -s $PWD/OTAESGCM-master/content/OTAESGCM $PWD/arduino-1.8.1/libraries/OTAESGCM
+  - ln -s $PWD/OTRadioLink-master/content/OTRadioLink $PWD/arduino-1.8.1/libraries/OTRadioLink
   - ls -al Arduino/libraries
+  - ls -al arduino-1.8.1/libraries
   - sudo mv arduino-1.8.1 /usr/local/share/arduino  # Test sudo disabled
 
 script:
