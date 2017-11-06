@@ -750,6 +750,9 @@ void loop()
     // Conversely, if not true, should have time to safely log outputs, etc.
     const uint8_t nearOverrunThreshold = OTV0P2BASE::GSCT_MAX - 8; // ~64ms/~32 serial TX chars of grace time...
 
+    // Update internal boiler hub state and
+    BoilerHub.processCallsForHeat((0 == TIME_LSD), hubManager.inHubMode());
+  
     // Sleep in low-power mode (waiting for interrupts) until seconds roll.
     // NOTE: sleep at the top of the loop to minimise timing jitter/delay from Arduino background activity after loop() returns.
     // DHD20130425: waking up from sleep and getting to start processing below this block may take >10ms.
