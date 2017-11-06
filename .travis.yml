@@ -41,7 +41,8 @@ install:
   - arduino --pref "boardsmanager.additional.urls=" --save-prefs
   - ln -s $PWD/OTAESGCM-master/content/OTAESGCM $PWD/Arduino/libraries/OTAESGCM
   - ln -s $PWD/OTRadioLink-master/content/OTRadioLink $PWD/Arduino/libraries/OTRadioLink
-  - ls -al Arduino
+  - ls -al Arduino/libraries
+  - sudo mv arduino-1.8.1 /usr/local/share/arduino  # Test sudo disabled
 
 script:
   - arduino --verify --board opentrv:avr:opentrv_v0p2 $PWD/Arduino/V0p2_Main/V0p2_Main.ino
