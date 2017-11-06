@@ -19,10 +19,7 @@
 # Author(s) / Copyright (s): Mark Hill 2017
 #                            Deniz Erbilgin 2017
 #                            Damon Hart-Davis 2017
-<<<<<<< HEAD
 
-=======
->>>>>>> branch 'master' of https://github.com/Denzo77/OpenTRV-Arduino-V0p2.git
 dist: trusty
 sudo: false
 language: cpp
@@ -37,11 +34,6 @@ before_install:
   - tar xf arduino-1.8.1-linux64.tar.xz
   - unzip master.zip
   - unzip master.zip.1
-<<<<<<< HEAD
-=======
-#  - sudo mv arduino-1.8.1 /usr/local/share/arduino
-#  - sudo ln -s /usr/local/share/arduino/arduino /usr/local/bin/arduino
->>>>>>> branch 'master' of https://github.com/Denzo77/OpenTRV-Arduino-V0p2.git
 install:
   - ls -al
   - arduino --pref "boardsmanager.additional.urls=https://raw.githubusercontent.com/opentrv/OpenTRV-Config/master/Arduino/package_opentrv_index.json" --save-prefs
@@ -64,4 +56,4 @@ notifications:
   irc:
     channels: "irc.z.je#opentrv"
     on_success: change
-on_failure: change
+    on_failure: change
