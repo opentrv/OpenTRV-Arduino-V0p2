@@ -20,7 +20,10 @@
 #                            Deniz Erbilgin 2017
 #                            Damon Hart-Davis 2017
 
+dist: trusty
+sudo: false
 language: cpp
+env: PATH=$PWD/arduino-1.8.1:$PATH
 before_install:
   - "/sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_1.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :1 -ac -screen 0 1280x1024x16 -extension RANDR"
   - sleep 3
@@ -31,16 +34,15 @@ before_install:
   - tar xf arduino-1.8.1-linux64.tar.xz
   - unzip master.zip
   - unzip master.zip.1
-  - sudo mv arduino-1.8.1 /usr/local/share/arduino
-  - sudo ln -s /usr/local/share/arduino/arduino /usr/local/bin/arduino
 install:
+  - ls -al
   - arduino --pref "boardsmanager.additional.urls=https://raw.githubusercontent.com/opentrv/OpenTRV-Config/master/Arduino/package_opentrv_index.json" --save-prefs
   - arduino --install-boards "opentrv:avr"
   - arduino --pref "boardsmanager.additional.urls=" --save-prefs
-  - ls -al
-  - ln -s $PWD/OTAESGCM-master/content/OTAESGCM /usr/local/share/arduino/libraries/OTAESGCM
-  - ln -s $PWD/OTRadioLink-master/content/OTRadioLink /usr/local/share/arduino/libraries/OTRadioLink
-
+  - ln -s $PWD/OTAESGCM-master/content/OTAESGCM $PWD/arduino-1.8.1/libraries/OTAESGCM
+  - ln -s $PWD/OTRadioLink-master/content/OTRadioLink $PWD/arduino-1.8.1/libraries/OTRadioLink
+  - ls -al Arduino/libraries
+  - ls -al arduino-1.8.1/libraries
 script:
   - arduino --verify --board opentrv:avr:opentrv_v0p2 $PWD/Arduino/V0p2_Main/V0p2_Main.ino
   - ./V0p2_primary_CONFIGs_compile_tests.sh
@@ -54,4 +56,4 @@ notifications:
   irc:
     channels: "irc.z.je#opentrv"
     on_success: change
-    on_failure: change
+on_failure: change
