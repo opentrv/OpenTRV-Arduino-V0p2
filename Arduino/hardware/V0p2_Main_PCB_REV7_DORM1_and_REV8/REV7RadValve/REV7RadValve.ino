@@ -297,6 +297,9 @@ valveUI_t valveUI(
 // Managed JSON stats.
 OTV0P2BASE::SimpleStatsRotation<13> ss1; // Configured for maximum different stats.
 
+// Error reporting
+OTV0P2BASE::ErrorReport ErrorReporter;
+
 
 /******************************************************************************
  * INTERRUPT SERVICE ROUTINES
@@ -485,11 +488,8 @@ void bareStatsTX() {
 
     // Show reset counter. Low priority.
     ss1.put(V0p2_SENSOR_TAG_F("R"), resetCount, true);
-    // Send minimum stack left, saturating at 255 bytes.
-    const size_t curMinSP = OTV0P2BASE::MemoryChecks::getMinSP();
-    const uint8_t txMinSP = (255U >= curMinSP) ? (uint8_t) curMinSP : 255U;
-    ss1.put(V0p2_SENSOR_TAG_F("SP"), txMinSP, true);
-
+    // Send error reports.
+    ss1.put(ErrorReporter, true);
 
     const uint8_t privacyLevel = OTV0P2BASE::stTXalwaysAll;
     // Redirect JSON output appropriately.
@@ -920,6 +920,8 @@ void loop()
             // Recompute target, valve position and call for heat, etc.
             // Should be called once per minute to work correctly.
             NominalRadValve.read();
+            // Update/age errors and warnings.
+            ErrorReporter.read();
             break;
         }
         // Stats samples; should never be missed.
