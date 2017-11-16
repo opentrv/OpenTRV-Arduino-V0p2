@@ -298,7 +298,7 @@ valveUI_t valveUI(
 OTV0P2BASE::SimpleStatsRotation<13> ss1; // Configured for maximum different stats.
 
 // Error reporting
-OTV0P2BASE::ErrorReport ErrorReporter;
+extern OTV0P2BASE::ErrorReport OTV0P2BASE::ErrorReporter;
 
 
 /******************************************************************************
@@ -459,7 +459,7 @@ void bareStatsTX() {
     // Show reset counter. Low priority.
     ss1.put(V0p2_SENSOR_TAG_F("R"), resetCount, true);
     // Send error reports.
-    ss1.put(ErrorReporter, true);
+    ss1.put(OTV0P2BASE::ErrorReporter, true);
 
     const uint8_t privacyLevel = OTV0P2BASE::stTXalwaysAll;
     // Redirect JSON output appropriately.
@@ -870,7 +870,7 @@ void loop()
             // Should be called once per minute to work correctly.
             NominalRadValve.read();
             // Update/age errors and warnings.
-            ErrorReporter.read();
+            OTV0P2BASE::ErrorReporter.read();
             break;
         }
         // Stats samples; should never be missed.
