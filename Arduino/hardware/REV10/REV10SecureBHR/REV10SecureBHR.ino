@@ -526,12 +526,11 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
                     (realTXFrameStart - offset),
                     (MSG_BUF_SIZE - (realTXFrameStart-sW.buf) + offset));
 
-            // Assumed to be at least one free writeable byte ahead of bptr.
-            // Get current modelled valve position.
+            // Assumed to be at least one free writable byte ahead of bptr.
             const uint8_t bodylen = OTRadioLink::SimpleSecureFrame32or0BodyTXV0p2::getInstance().encodeValveFrame(
                                         fd,
                                         txIDLen,
-                                        0x7f,
+                                        0x7f, // As no valve present.
                                         eW,
                                         subScratch,
                                         key);
