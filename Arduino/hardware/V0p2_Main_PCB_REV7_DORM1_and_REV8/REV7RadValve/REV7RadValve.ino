@@ -126,7 +126,7 @@ constexpr uint8_t bufEncJSONlen = OTRadioLink::ENC_BODY_SMALL_FIXED_PTEXT_MAX_SI
 constexpr uint8_t ptextBuflen = bufEncJSONlen + 2;
 static_assert(ptextBuflen == 34, "ptextBuflen wrong");
 constexpr uint8_t scratchSpaceNeeded = MSG_BUF_SIZE + ptextBuflen;
-constexpr size_t StatsTX_WorkspaceSize = OTRadioLink::SimpleSecureFrame32or0BodyTXBase::generateSecureOFrameRawForTX_total_scratch_usage_OTAESGCM_2p0 + scratchSpaceNeeded;
+constexpr size_t StatsTX_WorkspaceSize = OTRadioLink::SimpleSecureFrame32or0BodyTXBase::encodeValveFrame_total_scratch_usage_OTAESGCM_2p0 + scratchSpaceNeeded;
 static_assert(StatsTX_WorkspaceSize == 384, "StatsTX workspace size wrong!");  // Correct as of 20170704
 
 // Create a scratchspace for CLI
@@ -534,18 +534,30 @@ void bareStatsTX() {
     // then build encrypted frame from raw JSON.
     if(!sendingJSONFailed) {
         // Explicit-workspace version of encryption.
-        const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEncWithLWorkspace_ptr_t eW = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_WITH_LWORKSPACE;
+        const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEnc_fn_t &eW = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_WITH_LWORKSPACE;
         // Create subscratch space for encryption functions
         OTV0P2BASE::ScratchSpaceL subScratch(sW, scratchSpaceNeeded);
         constexpr uint8_t txIDLen = OTRadioLink::ENC_BODY_DEFAULT_ID_BYTES;
         // When sending on a channel with framing, do not explicitly send the frame length byte.
         constexpr uint8_t offset = 1;
+
+        // Struct to pass data into encode function.
+        OTRadioLink::OTEncodeData_T fd(
+                ptextBuf,
+                ptextBuflen,
+                (realTXFrameStart - offset),
+                (MSG_BUF_SIZE - (realTXFrameStart-buf) + offset));
+
         // Assumed to be at least one free writeable byte ahead of bptr.
         // Get current modelled valve position.
         const uint8_t valvePC = NominalRadValve.get();
-        const uint8_t bodylen = OTRadioLink::SimpleSecureFrame32or0BodyTXV0p2::getInstance().generateSecureOFrameRawForTX(
-            (realTXFrameStart - offset), (MSG_BUF_SIZE - (realTXFrameStart-buf) + offset),
-            txIDLen, valvePC, ptextBuf, eW, subScratch, key);
+        const uint8_t bodylen = OTRadioLink::SimpleSecureFrame32or0BodyTXV0p2::getInstance().encodeValveFrame(
+                                    fd,
+                                    txIDLen,
+                                    valvePC,
+                                    eW,
+                                    subScratch,
+                                    key);
         sendingJSONFailed = (0 == bodylen);
         wrote = bodylen - offset;
     }

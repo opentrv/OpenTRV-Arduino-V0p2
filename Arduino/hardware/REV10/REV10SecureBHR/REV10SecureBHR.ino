@@ -160,7 +160,7 @@ constexpr uint8_t bufJSONlen = OTRadioLink::ENC_BODY_SMALL_FIXED_PTEXT_MAX_SIZE 
 constexpr uint8_t ptextBuflen = bufJSONlen + 2;  // 2 = valvePC + hasStats
 static_assert(ptextBuflen == 34, "ptextBuflen wrong");
 constexpr uint8_t scratchSpaceNeededHere = MSG_BUF_SIZE + ptextBuflen;  // This is the scratch space needed locally by bareStatsTX, excluding called functions.
-constexpr size_t StatsTX_WorkspaceSize = OTRadioLink::SimpleSecureFrame32or0BodyTXBase::generateSecureOFrameRawForTX_total_scratch_usage_OTAESGCM_2p0 + scratchSpaceNeededHere;
+constexpr size_t StatsTX_WorkspaceSize = OTRadioLink::SimpleSecureFrame32or0BodyTXBase::encodeValveFrame_total_scratch_usage_OTAESGCM_2p0 + scratchSpaceNeededHere;
 static_assert(StatsTX_WorkspaceSize == 384, "StatsTX workspace size wrong!");  // Correct as of 20170704
 
 // CLI scratchspace
@@ -398,7 +398,7 @@ inline bool decodeAndHandleSecureFrame(volatile const uint8_t * const msg)
     OTV0P2BASE::ScratchSpaceL sW(globalWorkSpace.decode, sizeof(globalWorkSpace.decode));
     // Temporarily suspend PrimaryRadio interrupts to avoid stack collisions.
     PrimaryRadio.pauseInterrupts(true);
-    const bool success = OTRadioLink::decodeAndHandleOTSecureOFrameWithWorkspace<
+    const bool success = OTRadioLink::decodeAndHandleOTSecureOFrame<
             OTRadioLink::SimpleSecureFrame32or0BodyRXV0p2,                                  // Simple secure frame type.
             OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleDec_DEFAULT_WITH_LWORKSPACE,      // auth/decrypt with AES128GCM fixed frame size, using the workspace.
             OTV0P2BASE::getPrimaryBuilding16ByteSecretKey,                                  // Decode with the primary building secret key.
@@ -514,17 +514,27 @@ static_assert(OTV0P2BASE::MSG_JSON_MAX_LENGTH+1 <= STATS_MSG_MAX_LEN, "MSG_JSON_
 #ifndef V0P2_DEBUG_NO_STATSENC
             // Explicit-workspace version of encryption.
             OTV0P2BASE::ScratchSpaceL subScratch(sW, scratchSpaceNeededHere);
-            const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEncWithLWorkspace_ptr_t eW = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_WITH_LWORKSPACE;
+            const OTRadioLink::SimpleSecureFrame32or0BodyTXBase::fixed32BTextSize12BNonce16BTagSimpleEnc_fn_t &eW = OTAESGCM::fixed32BTextSize12BNonce16BTagSimpleEnc_DEFAULT_WITH_LWORKSPACE;
             constexpr uint8_t txIDLen = OTRadioLink::ENC_BODY_DEFAULT_ID_BYTES;
             // When sending on a channel with framing, do not explicitly send the frame length byte.
             constexpr uint8_t offset = 1;
 
+            // Struct to pass data into encode function.
+            OTRadioLink::OTEncodeData_T fd(
+                    ptextBuf,
+                    ptextBuflen,
+                    (realTXFrameStart - offset),
+                    (MSG_BUF_SIZE - (realTXFrameStart-sW.buf) + offset));
+
             // Assumed to be at least one free writeable byte ahead of bptr.
-            // Distinguished 'invalid' valve position; never mistaken for a real valve.
-            constexpr uint8_t valvePC = 0x7f;
-            const uint8_t bodylen = OTRadioLink::SimpleSecureFrame32or0BodyTXV0p2::getInstance().generateSecureOFrameRawForTX(
-                  realTXFrameStart - offset, MSG_BUF_SIZE - (realTXFrameStart-sW.buf) + offset,
-                  txIDLen, valvePC, ptextBuf, eW, subScratch, key);
+            // Get current modelled valve position.
+            const uint8_t bodylen = OTRadioLink::SimpleSecureFrame32or0BodyTXV0p2::getInstance().encodeValveFrame(
+                                        fd,
+                                        txIDLen,
+                                        0x7f,
+                                        eW,
+                                        subScratch,
+                                        key);
             sendingJSONFailed = (0 == bodylen);
             wrote = bodylen - offset;
             if (sendingJSONFailed) OTV0P2BASE::serialPrintlnAndFlush(F("!TX Enc")); // Know why TX failed.
