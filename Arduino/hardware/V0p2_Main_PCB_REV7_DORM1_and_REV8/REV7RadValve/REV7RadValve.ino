@@ -458,9 +458,12 @@ void bareStatsTX() {
     bool sendingJSONFailed = false; // Set true and stop attempting JSON send in case of error.
 
     uint8_t *const buf = sW.buf;
+    // Leading length offset in bytes
+    // When sending on a channel with framing, do not explicitly send the frame length byte.
+    constexpr uint8_t offset = 1;
     // Where to write the real frame content, leaving space for leading
     // frame-length byte for encrypted frame.
-    uint8_t *const realTXFrameStart = buf + 1;
+    uint8_t *const realTXFrameStart = buf + offset;
     // If forcing encryption or if unconditionally suppressed
     // then suppress the "@" ID field entirely,
     // assuming that the encrypted commands will carry the ID, ie in the 'envelope'.
@@ -538,15 +541,13 @@ void bareStatsTX() {
         // Create subscratch space for encryption functions
         OTV0P2BASE::ScratchSpaceL subScratch(sW, scratchSpaceNeeded);
         constexpr uint8_t txIDLen = OTRadioLink::ENC_BODY_DEFAULT_ID_BYTES;
-        // When sending on a channel with framing, do not explicitly send the frame length byte.
-        constexpr uint8_t offset = 1;
 
         // Struct to pass data into encode function.
         OTRadioLink::OTEncodeData_T fd(
-                ptextBuf,
-                ptextBuflen,
-                (realTXFrameStart - offset),
-                (MSG_BUF_SIZE - (realTXFrameStart-buf) + offset));
+            ptextBuf,
+            ptextBuflen,
+            buf,            // (realTXFrameStart - offset),
+            MSG_BUF_SIZE);  // (MSG_BUF_SIZE - (realTXFrameStart-buf) + offset));
 
         // Assumed to be at least one free writeable byte ahead of bptr.
         // Get current modelled valve position.
@@ -560,6 +561,10 @@ void bareStatsTX() {
                                     key);
         sendingJSONFailed = (0 == bodylen);
         wrote = bodylen - offset;
+        Serial.println(wrote);
+        for(auto ip = fd.outbuf; ip != fd.outbuf+fd.outbufSize; ++ip) { Serial.print(*ip, HEX); Serial.print(F(" "));}
+        Serial.println();
+
     }
     // Send directly to the primary radio...
     if((!sendingJSONFailed) && (!PrimaryRadio.queueToSend(realTXFrameStart, wrote))) { sendingJSONFailed = true; }
