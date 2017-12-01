@@ -56,4 +56,4 @@ notifications:
   irc:
     channels: "irc.z.je#opentrv"
     on_success: change
-on_failure: change
+    on_failure: change

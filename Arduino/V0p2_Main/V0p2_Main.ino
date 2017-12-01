@@ -760,11 +760,6 @@ void setup()
   serialStatusReport();
 #endif
 
-  // Report current stack usage.
-  OTV0P2BASE::MemoryChecks::resetMinSP();
-  OTV0P2BASE::MemoryChecks::recordIfMinSP();
-  stackCheck();
-
   // Do OpenTRV-specific (late) setup.
   setupOpenTRV();
   }
@@ -772,43 +767,15 @@ void setup()
 //========================================
 // MAIN LOOP
 //========================================
-#if 1
-// More detailed stack usage output
-inline void stackCheck()
-{
-	// Force restart if SPAM/heap/stack likely corrupt.
-    OTV0P2BASE::MemoryChecks::forceResetIfStackOverflow();
-    
-    // Print max stack usage each cycle
-    const int16_t minsp = OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd();
-    const uint8_t location = OTV0P2BASE::MemoryChecks::getLocation();
-    OTV0P2BASE::serialPrintAndFlush(F("minsp: "));
-    OTV0P2BASE::serialPrintAndFlush(minsp, HEX);
-    OTV0P2BASE::serialPrintAndFlush(F(" loc:"));
-    OTV0P2BASE::serialPrintAndFlush(location);
-    OTV0P2BASE::serialPrintlnAndFlush();
-
-    OTV0P2BASE::MemoryChecks::resetMinSP();
-}
-#endif
-
 void loop()
   {
 #if defined(EST_CPU_DUTYCYCLE)
   const unsigned long usStart = micros();
 #endif
 
-#if 1
-  // Force restart if SPAM/heap/stack likely corrupt.
-  OTV0P2BASE::MemoryChecks::forceResetIfStackOverflow();
-
   // Complain and keep complaining when getting near stack overflow.
   // TODO: make DEBUG-only when confident all configs OK.
-  const int16_t minsp = OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd();
-  if(minsp < 64) { OTV0P2BASE::serialPrintlnAndFlush(F("!SH")); }
-#else
-  stackCheck();
-#endif
+  OTV0P2BASE::stackCheck();
 
   loopOpenTRV();
 
