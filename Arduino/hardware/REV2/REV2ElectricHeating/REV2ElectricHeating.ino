@@ -22,6 +22,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
  *****************************************************************************/
 /*
     WARNING! PRELIMINARY INO! DO NOT LOAD ON BOARD! DE20171201
+    WILL NOT EVEN COMPILE!
 
   V0p2 (V0.2) core.
 
@@ -45,7 +46,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 #undef DEBUG
 
 // *** Global flag for REVx configuration here *** //
-#define V0p2_REV 7
+#define V0p2_REV 2
 
 // --------------------------------------------
 // I/O pin allocation and setup: include ahead of I/O module headers.
@@ -194,10 +195,11 @@ TempPot_t TempPot;
 typedef OTV0P2BASE::SensorAmbientLight AmbientLight;
 AmbientLight AmbLight;
 
-// Singleton implementation/instance.
+// Singleton implementation/instance.   FIXME what is correct temp sensor type for REV2?
 typedef OTV0P2BASE::HumiditySensorSHT21 RelHumidity_t;
 // Singleton implementation/instance.
 OTV0P2BASE::HumiditySensorSHT21 RelHumidity;
+
 
 // Ambient/room temperature sensor, usually on main board.
 OTV0P2BASE::RoomTemperatureC16_SHT21 TemperatureC16; // SHT21 impl.
@@ -205,16 +207,17 @@ OTV0P2BASE::RoomTemperatureC16_SHT21 TemperatureC16; // SHT21 impl.
 
 ////// ACTUATORS
 
-// DORM1/REV7 direct drive motor actuator.
-static constexpr bool binaryOnlyValveControl = false;
-static constexpr uint8_t m1 = MOTOR_DRIVE_ML;
-static constexpr uint8_t m2 = MOTOR_DRIVE_MR;
-typedef OTRadValve::ValveMotorDirectV1<OTRadValve::ValveMotorDirectV1HardwareDriver, m1, m2, MOTOR_DRIVE_MI_AIN, MOTOR_DRIVE_MC_AIN, OTRadValve::MOTOR_DRIVE_NSLEEP_UNUSED, decltype(Supply_cV), &Supply_cV> ValveDirect_t;
-// DORM1/REV7 direct drive actuator.
-// Singleton implementation/instance.
-// Suppress unnecessary activity when room dark, eg to avoid disturbance if device crashes/restarts,
-// unless recent UI use because value is being fitted/adjusted.
-ValveDirect_t ValveDirect([](){return((!valveUI.veryRecentUIControlUse()) && AmbLight.isRoomDark());});
+//// TODO Replace this with a new actuator driver for electric heating.
+// // DORM1/REV7 direct drive motor actuator.
+// static constexpr bool binaryOnlyValveControl = false;
+// static constexpr uint8_t m1 = MOTOR_DRIVE_ML;
+// static constexpr uint8_t m2 = MOTOR_DRIVE_MR;
+// typedef OTRadValve::ValveMotorDirectV1<OTRadValve::ValveMotorDirectV1HardwareDriver, m1, m2, MOTOR_DRIVE_MI_AIN, MOTOR_DRIVE_MC_AIN, OTRadValve::MOTOR_DRIVE_NSLEEP_UNUSED, decltype(Supply_cV), &Supply_cV> ValveDirect_t;
+// // DORM1/REV7 direct drive actuator.
+// // Singleton implementation/instance.
+// // Suppress unnecessary activity when room dark, eg to avoid disturbance if device crashes/restarts,
+// // unless recent UI use because value is being fitted/adjusted.
+// ValveDirect_t ValveDirect([](){return((!valveUI.veryRecentUIControlUse()) && AmbLight.isRoomDark());});
 
 
 ////// CONTROL
@@ -243,7 +246,7 @@ Scheduler_t Scheduler;
 // Radiator valve mode (FROST, WARM, BAKE).
 OTRadValve::ValveMode valveMode;
 
-// Settings for room TRV.
+// Settings for room TRV. TODO Make sure these are relevant to electric heating/REV2
 typedef OTRadValve::DEFAULT_ValveControlParameters PARAMS;
 // Choose which subtype to use depending on enabled settings and board type.
 typedef OTRadValve::TempControlTempPot<decltype(TempPot), &TempPot, PARAMS, decltype(RelHumidity), &RelHumidity> TempControl_t;
@@ -272,14 +275,15 @@ constexpr OTRadValve::ModelledRadValveComputeTargetTempBasic<
   setbackLockout>
   cttBasic;
 
-// Internal model of controlled radiator valve position.
-OTRadValve::ModelledRadValve NominalRadValve(
-  &cttBasic,
-  &valveMode,
-  &tempControl,
-  &ValveDirect,
-    false,
-    100);
+//// FIXME  Shouldn't be relevant to electric heating but may need dummy/SSR version.
+// // Internal model of controlled radiator valve position.
+// OTRadValve::ModelledRadValve NominalRadValve(
+//   &cttBasic,
+//   &valveMode,
+//   &tempControl,
+//   &ValveDirect,
+//     false,
+//     100);
 
 // Valve physical UI controller.
 valveUI_t valveUI(
@@ -444,6 +448,7 @@ void bareStatsTX() {
     // Enable "+" count field for diagnostic purposes, eg while TX is lossy,
     // if the primary radio channel does not include a sequence number itself.
     // Assume that an encrypted channel will provide its own (visible) sequence counter.
+    // TODO Stats need updating (valvePC replaced with on off? or just send 0 or 100).
     ss1.enableCount(false);  // Always encrypted
     ss1.put(TemperatureC16);
     ss1.put(RelHumidity);
@@ -588,18 +593,6 @@ void pollCLI(const uint8_t maxSCT, const bool startOfMinute, const OTV0P2BASE::S
             case 'G': { OTV0P2BASE::CLI::GenericParam().doCommand(buf, n); break; }
             // Reset or display ID.
             case 'I': { OTV0P2BASE::CLI::NodeIDWithSet().doCommand(buf, n); break; }
-            // Status line stats print and TX.
-//            case 'S': {
-//                Serial.print(F("Resets: "));
-//                const uint8_t resetCount = eeprom_read_byte((uint8_t *)V0P2BASE_EE_START_RESET_COUNT);
-//                Serial.print(resetCount);
-//                Serial.println();
-//                // Show stack headroom.
-//                OTV0P2BASE::serialPrintAndFlush(F("SH ")); OTV0P2BASE::serialPrintAndFlush(OTV0P2BASE::MemoryChecks::getMinSPSpaceBelowStackToEnd()); OTV0P2BASE::serialPrintlnAndFlush();
-//                // Default light-weight print and TX of stats.
-////                bareStatsTX();  // FIXME No way this won't overflow!
-//                break; // Note that status is by default printed after processing input line.
-//            }
             // Switch to FROST mode OR set FROST/setback temperature (even with temp pot available).
             // With F! force to frost and holiday (long-vacant) mode.  Useful for testing and for remote CLI use.
             case 'F': {
@@ -904,23 +897,6 @@ void loop()
             else if((statsU.maxSamplesPerHour > 1) && (29 == mm)) { statsU.sampleStats(false, uint8_t(msm / 60)); }
             break;
         }
-    }
-    // End-of-loop processing, that may be slow.
-    // Handle local direct-drive valve, eg DORM1.
-    // If waiting for for verification that the valve has been fitted
-    // then accept any manual interaction with controls as that signal.
-    // Also have a backup timeout of at least ~10m from startup
-    // for automatic recovery after a crash and restart,
-    // or where fitter simply forgets to initiate cablibration.
-    if(ValveDirect.isWaitingForValveToBeFitted()) {
-        // Defer automatic recovery when battery low or in dark in case crashing/restarting
-        // to try to avoid disturbing/waking occupants and/or entering battery death spiral.  (TODO-1037, TODO-963)
-        // The initial minuteCount value can be anywhere in the range [0,3];
-        // pick threshold to give user at least a couple of minutes to fit the device
-        // if they do so with the battery in place.
-        const bool delayRecalibration = batteryLow || AmbLight.isRoomDark();
-        if(valveUI.veryRecentUIControlUse() || (minuteCount >= (delayRecalibration ? 240 : 5)))
-            { ValveDirect.signalValveFitted(); }
     }
     // Provide regular poll to motor driver.
     // May take significant time to run
