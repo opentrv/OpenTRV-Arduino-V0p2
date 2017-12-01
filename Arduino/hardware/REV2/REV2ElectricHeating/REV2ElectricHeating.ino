@@ -195,14 +195,10 @@ TempPot_t TempPot;
 typedef OTV0P2BASE::SensorAmbientLight AmbientLight;
 AmbientLight AmbLight;
 
-// Singleton implementation/instance.   FIXME what is correct temp sensor type for REV2?
-typedef OTV0P2BASE::HumiditySensorSHT21 RelHumidity_t;
-// Singleton implementation/instance.
-OTV0P2BASE::HumiditySensorSHT21 RelHumidity;
-
+// FIXME Dummy humidity sensor
 
 // Ambient/room temperature sensor, usually on main board.
-OTV0P2BASE::RoomTemperatureC16_SHT21 TemperatureC16; // SHT21 impl.
+OTV0P2BASE::RoomTemperatureC16_SHT21 TemperatureC16; // SHT21 impl. // FIXME this should be TMP112
 
 
 ////// ACTUATORS
