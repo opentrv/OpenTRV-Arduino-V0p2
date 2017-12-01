@@ -58,20 +58,20 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 //-------------------------------------
 // Keep exactly of the form //#define CONFIG_ or without // for current live config.
 // Configs TEMPORARILY pending fixes can be doubly commented out with ////.
-//#define CONFIG_Trial2013Winter_Round1 // REV1 default config.
-//#define CONFIG_Trial2013Winter_Round1_BOILERHUB // REV1 as plain boiler node.
-//#define CONFIG_Trial2013Winter_Round1_NOHUB // REV1 as TX-only leaf node.
-//#define CONFIG_Trial2013Winter_Round2 // REV2 cut4 default config.
-//#define CONFIG_Trial2013Winter_Round2_LVBH // REV2 cut4 local valve control and boiler hub.
-//#define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as plain boiler hub.
-//#define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
-//#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
+// #define CONFIG_Trial2013Winter_Round1 // REV1 default config.
+// #define CONFIG_Trial2013Winter_Round1_BOILERHUB // REV1 as plain boiler node.
+// #define CONFIG_Trial2013Winter_Round1_NOHUB // REV1 as TX-only leaf node.
+// #define CONFIG_Trial2013Winter_Round2 // REV2 cut4 default config.
+// #define CONFIG_Trial2013Winter_Round2_LVBH // REV2 cut4 local valve control and boiler hub.
+// #define CONFIG_Trial2013Winter_Round2_BOILERHUB // REV2 cut4 as plain boiler hub.
+// #define CONFIG_Trial2013Winter_Round2_STATSHUB // REV2 cut4 as stats hub.
+#define CONFIG_Trial2013Winter_Round2_NOHUB // REV2 cut4 as TX-only leaf node.
 ////#define CONFIG_DORM1 // REV7 / DORM1 / TRV1.x all-in-one valve unit, secure TX. DEPRECATED: Use Arduino/hardware/V0p2_Main_PCB_REV7_DORM1_and_REV8/REV7RadValve
-#define CONFIG_DORM1_BOILER // REV8 / DORM1 boiler-control unit.
-//#define CONFIG_REV8_SECURE_BHR // REV8 secure boiler controller and stats hub.
-//#define CONFIG_REV10_AS_GSM_RELAY_ONLY // REV10: stats relay only.
-////#define CONFIG_REV10_SECURE_BHR // REV10: secure stats relay and boiler hub. DEPRECATED: Use Arduino/hardware/REV10/REV10SecureBHR
-//#define CONFIG_REV11_SECURE_STATSHUB // REV11 as secure stats hub.
+// #define CONFIG_DORM1_BOILER // REV8 / DORM1 boiler-control unit.
+// #define CONFIG_REV8_SECURE_BHR // REV8 secure boiler controller and stats hub.
+// #define CONFIG_REV10_AS_GSM_RELAY_ONLY // REV10: stats relay only.
+//// #define CONFIG_REV10_SECURE_BHR // REV10: secure stats relay and boiler hub. DEPRECATED: Use Arduino/hardware/REV10/REV10SecureBHR
+// #define CONFIG_REV11_SECURE_STATSHUB // REV11 as secure stats hub.
 
 // One-offs and special cases
 //---------------------------
