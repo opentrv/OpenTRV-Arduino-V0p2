@@ -195,15 +195,17 @@ TempPot_t TempPot;
 typedef OTV0P2BASE::SensorAmbientLight AmbientLight;
 AmbientLight AmbLight;
 
-// FIXME Dummy humidity sensor
+// Dummy humidity sensor TODO Check it works without this.
+OTV0P2BASE::DummyHumiditySensor RelHumidity;
 
 // Ambient/room temperature sensor, usually on main board.
-OTV0P2BASE::RoomTemperatureC16_SHT21 TemperatureC16; // SHT21 impl. // FIXME this should be TMP112
+OTV0P2BASE::RoomTemperatureC16_TMP112 TemperatureC16;
 
 
 ////// ACTUATORS
 
-//// TODO Replace this with a new actuator driver for electric heating.
+// XXX
+// // TODO Replace this with a new actuator driver for electric heating.
 // // DORM1/REV7 direct drive motor actuator.
 // static constexpr bool binaryOnlyValveControl = false;
 // static constexpr uint8_t m1 = MOTOR_DRIVE_ML;
@@ -271,7 +273,9 @@ constexpr OTRadValve::ModelledRadValveComputeTargetTempBasic<
   setbackLockout>
   cttBasic;
 
-//// FIXME  Shouldn't be relevant to electric heating but may need dummy/SSR version.
+// XXX
+OTRadValve::NULLRadValve NominalRadValve;
+// // FIXME  Shouldn't be relevant to electric heating but may need dummy/SSR version.
 // // Internal model of controlled radiator valve position.
 // OTRadValve::ModelledRadValve NominalRadValve(
 //   &cttBasic,
@@ -297,7 +301,7 @@ valveUI_t valveUI(
 ////// MESSAGING
 
 // Managed JSON stats.
-OTV0P2BASE::SimpleStatsRotation<13> ss1; // Configured for maximum different stats.
+OTV0P2BASE::SimpleStatsRotation<12> ss1; // Configured for maximum different stats.
 
 // Error reporting
 extern OTV0P2BASE::ErrorReport OTV0P2BASE::ErrorReporter;
@@ -447,7 +451,6 @@ void bareStatsTX() {
     // TODO Stats need updating (valvePC replaced with on off? or just send 0 or 100).
     ss1.enableCount(false);  // Always encrypted
     ss1.put(TemperatureC16);
-    ss1.put(RelHumidity);
     ss1.put(Occupancy.twoBitTag(), Occupancy.twoBitOccupancyValue()); // Reduce spurious TX cf percentage.
     ss1.put(Occupancy.vacHSubSensor);
     // OPTIONAL items
@@ -456,9 +459,8 @@ void bareStatsTX() {
     ss1.put(AmbLight); // Always send ambient light level (assuming sensor is present).
     // Show TRV-related stats since enabled.
     ss1.put(NominalRadValve); // Show modelled value to be able to deduce call-for-heat.
-    ss1.put(NominalRadValve.targetTemperatureSubSensor);
-    ss1.put(NominalRadValve.setbackSubSensor);
-    ss1.put(NominalRadValve.cumulativeMovementSubSensor);
+    // ss1.put(NominalRadValve.targetTemperatureSubSensor); XXX
+    // ss1.put(NominalRadValve.setbackSubSensor); XXX
     // Show state of setback lockout.
     ss1.put(V0p2_SENSOR_TAG_F("gE"), OTRadValve::getSetbackLockout(), true);
 
@@ -653,9 +655,9 @@ void setup()
     // Signal that xtal is running AND give it time to settle.
     OTV0P2BASE::sleepLowPowerMs(1000);
     OTV0P2BASE::LED_HEATCALL_OFF();
-    OTV0P2BASE::sleepLowPowerMs(250); // TODO: use this time to gather entropy.
+    OTV0P2BASE::sleepLowPowerMs(250);
     OTV0P2BASE::LED_HEATCALL_ON();
-    OTV0P2BASE::sleepLowPowerMs(1000); // TODO: use this time to gather entropy.
+    OTV0P2BASE::sleepLowPowerMs(1000);
 
     // Initialise the radio, if configured, ASAP because it can suck a lot of power until properly initialised.
     PrimaryRadio.preinit(NULL);
@@ -670,7 +672,6 @@ void setup()
     // This should also help ensure that sensors are properly initialised.
     TemperatureC16.read();
     AmbLight.read();
-    RelHumidity.read();
     TempPot.read();
     Supply_cV.read();
     OTV0P2BASE::seedPRNGs();
@@ -706,7 +707,7 @@ void setup()
     // Initialise sensors with stats info where needed.
     updateSensorsFromStats();
 
-    // Do early 'wake-up' stats transmission if possible // XXX
+    // Do early 'wake-up' stats transmission if possible.
     // when everything else is set up and ready and allowed (TODO-636)
     // including all set-up and inter-wiring of sensors/actuators.
     // Attempt to maximise chance of reception with a double TX.
@@ -784,7 +785,7 @@ void loop()
     // Handling the UI may have taken a little while, so process I/O a little.
     if(recompute || valveUI.veryRecentUIControlUse()) {
         // Force immediate recompute of target temperature for (UI) responsiveness.
-        NominalRadValve.computeTargetTemperature();
+        // NominalRadValve.computeTargetTemperature(); XXX
         // Keep dynamic adjustment of sensors up to date.
         updateSensorsFromStats();
     }
@@ -858,8 +859,6 @@ void loop()
         // This allows the unit to stay reasonably responsive to adjusting the temperature dial.
         case 48: { TempPot.read(); break; }
         // Read all environmental inputs, late in the cycle.
-        // Sample humidity.
-        case 50: { if(runAll) { RelHumidity.read(); } break; }
         // Poll ambient light level at a fixed rate.
         // This allows the unit to respond consistently to (eg) switching lights on (eg TODO-388).
         // Force all UI lights off before sampling ambient light level.
@@ -894,16 +893,18 @@ void loop()
             break;
         }
     }
-    // Provide regular poll to motor driver.
-    // May take significant time to run
-    // so don't call when timing is critical
-    // nor when not much time left this cycle,
-    // nor some of the time during startup if possible,
-    // so as (for example) to allow the CLI to be operable.
-    // Only calling this after most other heavy-lifting work is likely done.
-    // Note that FHT8V sync will take up at least the first 1s of a 2s subcycle.
-    if(OTV0P2BASE::getSubCycleTime() < ((OTV0P2BASE::GSCT_MAX/4)*3))
-        { ValveDirect.read(); }
+    // XXX
+    // // Provide regular poll to motor driver.
+    // // May take significant time to run
+    // // so don't call when timing is critical
+    // // nor when not much time left this cycle,
+    // // nor some of the time during startup if possible,
+    // // so as (for example) to allow the CLI to be operable.
+    // // Only calling this after most other heavy-lifting work is likely done.
+    // // Note that FHT8V sync will take up at least the first 1s of a 2s subcycle.
+    // if(OTV0P2BASE::getSubCycleTime() < ((OTV0P2BASE::GSCT_MAX/4)*3))
+    //     { ValveDirect.read(); }
+
     // Command-Line Interface (CLI) polling.
     // If a reasonable chunk of the minor cycle remains after all other work is done
     // AND the CLI is / should be active OR a status line has just been output
