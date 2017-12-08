@@ -623,6 +623,9 @@ void setup()
     OTV0P2BASE::powerSetup();
     // IO setup for safety, and to avoid pins floating.
     OTV0P2BASE::IOSetup();
+    // Init the relay to the off position before anything can panic.
+    ValveDirect.setup();
+
     // Restore previous RTC state if available.
     OTV0P2BASE::restoreRTC();
     OTV0P2BASE::serialPrintAndFlush(F("\r\nOpenTRV: ")); // Leading CRLF to clear leading junk, eg from bootloader.
