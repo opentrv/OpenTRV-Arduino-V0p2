@@ -195,7 +195,7 @@ TempPot_t TempPot;
 typedef OTV0P2BASE::SensorAmbientLight AmbientLight;
 AmbientLight AmbLight;
 
-// Dummy humidity sensor TODO Check it works without this.
+// Dummy humidity sensor
 OTV0P2BASE::DummyHumiditySensor RelHumidity;
 
 // Ambient/room temperature sensor, usually on main board.
@@ -204,19 +204,14 @@ OTV0P2BASE::RoomTemperatureC16_TMP112 TemperatureC16;
 
 ////// ACTUATORS
 
-// XXX
-// // TODO Replace this with a new actuator driver for electric heating.
-// // DORM1/REV7 direct drive motor actuator.
-// static constexpr bool binaryOnlyValveControl = false;
-// static constexpr uint8_t m1 = MOTOR_DRIVE_ML;
-// static constexpr uint8_t m2 = MOTOR_DRIVE_MR;
-// typedef OTRadValve::ValveMotorDirectV1<OTRadValve::ValveMotorDirectV1HardwareDriver, m1, m2, MOTOR_DRIVE_MI_AIN, MOTOR_DRIVE_MC_AIN, OTRadValve::MOTOR_DRIVE_NSLEEP_UNUSED, decltype(Supply_cV), &Supply_cV> ValveDirect_t;
-// // DORM1/REV7 direct drive actuator.
-// // Singleton implementation/instance.
-// // Suppress unnecessary activity when room dark, eg to avoid disturbance if device crashes/restarts,
-// // unless recent UI use because value is being fitted/adjusted.
-// ValveDirect_t ValveDirect([](){return((!valveUI.veryRecentUIControlUse()) && AmbLight.isRoomDark());});
-
+// Electric heating
+static constexpr uint8_t relayPin = OUT_HEATCALL;
+static constexpr bool isActiveHigh = false;
+// Driver for controlling electric heating with an SSR or a relay.
+// Provides binary control (no PWM).
+// NOTE: The output polarity can be set by changing isActiveHigh.
+//       Defaults to assuming heating will activate when the ouput pin is low.
+OTRadValve::BinaryRelayDirect<relayPin, isActiveHigh> ValveDirect;
 
 ////// CONTROL
 
@@ -273,17 +268,14 @@ constexpr OTRadValve::ModelledRadValveComputeTargetTempBasic<
   setbackLockout>
   cttBasic;
 
-// XXX
-OTRadValve::NULLRadValve NominalRadValve;
-// // FIXME  Shouldn't be relevant to electric heating but may need dummy/SSR version.
-// // Internal model of controlled radiator valve position.
-// OTRadValve::ModelledRadValve NominalRadValve(
-//   &cttBasic,
-//   &valveMode,
-//   &tempControl,
-//   &ValveDirect,
-//     false,
-//     100);
+// Internal model of controlled radiator valve position.
+OTRadValve::ModelledRadValve NominalRadValve(
+  &cttBasic,
+  &valveMode,
+  &tempControl,
+  &ValveDirect,
+    false,
+    100);
 
 // Valve physical UI controller.
 valveUI_t valveUI(
@@ -325,7 +317,6 @@ ISR(PCINT2_vect)
     // Use a nominally rising edge to avoid spurious trigger when other interrupts are handled.
     // The will ensure that it is possible to wake the CLI subsystem with an extra CR or LF.
     // It is OK to trigger this from other things such as button presses.
-    // TODO: ensure that resetCLIActiveTimer() is inlineable to minimise ISR prologue/epilogue time and space.
     if((changes & SERIALRX_INT_MASK) && !(pins & SERIALRX_INT_MASK)) { OTV0P2BASE::CLI::resetCLIActiveTimer(); }
 }
 
@@ -407,7 +398,6 @@ bool pollIO(const bool force = false) {
 // Should be run once at a fixed slot in the last minute of the last hour of each day.
 // Will be run after all stats for the current hour have been updated.
 static void endOfDayTasks() {
-    // Count down the setback lockout if not finished...  (TODO-786, TODO-906)
     OTRadValve::countDownSetbackLockout();
 }
 
@@ -448,7 +438,6 @@ void bareStatsTX() {
     // Enable "+" count field for diagnostic purposes, eg while TX is lossy,
     // if the primary radio channel does not include a sequence number itself.
     // Assume that an encrypted channel will provide its own (visible) sequence counter.
-    // TODO Stats need updating (valvePC replaced with on off? or just send 0 or 100).
     ss1.enableCount(false);  // Always encrypted
     ss1.put(TemperatureC16);
     ss1.put(Occupancy.twoBitTag(), Occupancy.twoBitOccupancyValue()); // Reduce spurious TX cf percentage.
@@ -459,8 +448,8 @@ void bareStatsTX() {
     ss1.put(AmbLight); // Always send ambient light level (assuming sensor is present).
     // Show TRV-related stats since enabled.
     ss1.put(NominalRadValve); // Show modelled value to be able to deduce call-for-heat.
-    // ss1.put(NominalRadValve.targetTemperatureSubSensor); XXX
-    // ss1.put(NominalRadValve.setbackSubSensor); XXX
+    ss1.put(NominalRadValve.targetTemperatureSubSensor);
+    ss1.put(NominalRadValve.setbackSubSensor);
     // Show state of setback lockout.
     ss1.put(V0p2_SENSOR_TAG_F("gE"), OTRadValve::getSetbackLockout(), true);
 
@@ -785,7 +774,7 @@ void loop()
     // Handling the UI may have taken a little while, so process I/O a little.
     if(recompute || valveUI.veryRecentUIControlUse()) {
         // Force immediate recompute of target temperature for (UI) responsiveness.
-        // NominalRadValve.computeTargetTemperature(); XXX
+        NominalRadValve.computeTargetTemperature();
         // Keep dynamic adjustment of sensors up to date.
         updateSensorsFromStats();
     }
@@ -893,17 +882,6 @@ void loop()
             break;
         }
     }
-    // XXX
-    // // Provide regular poll to motor driver.
-    // // May take significant time to run
-    // // so don't call when timing is critical
-    // // nor when not much time left this cycle,
-    // // nor some of the time during startup if possible,
-    // // so as (for example) to allow the CLI to be operable.
-    // // Only calling this after most other heavy-lifting work is likely done.
-    // // Note that FHT8V sync will take up at least the first 1s of a 2s subcycle.
-    // if(OTV0P2BASE::getSubCycleTime() < ((OTV0P2BASE::GSCT_MAX/4)*3))
-    //     { ValveDirect.read(); }
 
     // Command-Line Interface (CLI) polling.
     // If a reasonable chunk of the minor cycle remains after all other work is done
