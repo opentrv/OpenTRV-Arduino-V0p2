@@ -32,6 +32,8 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
 #ifndef V0P2_GENERIC_CONFIG_H
 #define V0P2_GENERIC_CONFIG_H
 
+#define V0p2_REV 8
+
 // Defaults for V0p2 / V0.2; should be '#undef'ined if not required.
 //
 // Use sleep wakeup (2Hz by default) from external 32768Hz xtal and timer 2.
