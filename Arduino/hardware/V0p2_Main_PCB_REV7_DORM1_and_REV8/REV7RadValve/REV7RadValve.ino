@@ -773,7 +773,7 @@ void loop()
     const bool conserveBattery = (batteryLow || !valveMode.inWarmMode() || Occupancy.longVacant()) && (!NominalRadValve.isCallingForHeat());
     // Try if very near to end of cycle and thus causing an overrun.
     // Conversely, if not true, should have time to safely log outputs, etc.
-    const uint8_t nearOverrunThreshold = OTV0P2BASE::GSCT_MAX - 8; // ~64ms/~32 serial TX chars of grace time...
+    constexpr uint8_t nearOverrunThreshold = OTV0P2BASE::GSCT_MAX - 8; // ~64ms/~32 serial TX chars of grace time...
 
     // Go to sleep until the start of the next cycle.
     TIME_LSD = OTV0P2BASE::sleepUntilNewCycle<>(TIME_LSD);

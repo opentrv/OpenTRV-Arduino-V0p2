@@ -1,0 +1,35 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "/usr/lib/gcc/x86_64-redhat-linux/7/../../../../include/c++/7",
+                "/usr/lib/gcc/x86_64-redhat-linux/7/../../../../include/c++/7/x86_64-redhat-linux",
+                "/usr/lib/gcc/x86_64-redhat-linux/7/../../../../include/c++/7/backward",
+                "/usr/lib/gcc/x86_64-redhat-linux/7/include",
+                "/usr/local/include",
+                "/usr/include",
+                "${workspaceRoot}"
+            ],
+            "defines": [],
+            "intelliSenseMode": "clang-x64",
+            "browse": {
+                "path": [
+                    "/usr/lib/gcc/x86_64-redhat-linux/7/../../../../include/c++/7",
+                    "/usr/lib/gcc/x86_64-redhat-linux/7/../../../../include/c++/7/x86_64-redhat-linux",
+                    "/usr/lib/gcc/x86_64-redhat-linux/7/../../../../include/c++/7/backward",
+                    "/usr/lib/gcc/x86_64-redhat-linux/7/include",
+                    "/usr/local/include",
+                    "/usr/include",
+                    "${workspaceRoot}"
+                ],
+                "limitSymbolsToIncludedHeaders": true,
+                "databaseFilename": ""
+            },
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "c11",
+            "cppStandard": "c++17"
+        }
+    ],
+    "version": 4
+}
