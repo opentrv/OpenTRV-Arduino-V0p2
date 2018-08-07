@@ -531,10 +531,6 @@ void bareStatsTX() {
                                     key);
         sendingJSONFailed = (0 == bodylen);
         wrote = bodylen - offset;
-        Serial.println(wrote);
-        for(auto ip = fd.outbuf; ip != fd.outbuf+fd.outbufSize; ++ip) { Serial.print(*ip, HEX); Serial.print(F(" "));}
-        Serial.println();
-
     }
     // Send directly to the primary radio...
     if((!sendingJSONFailed) && (!PrimaryRadio.queueToSend(realTXFrameStart, wrote))) { sendingJSONFailed = true; }
