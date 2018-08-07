@@ -21,7 +21,7 @@ Author(s) / Copyright (s): Damon Hart-Davis 2013--2017
  * NOTES
  *****************************************************************************/
 /*
-  V0p2 (V0.2) core.
+  V0p2 (V0.2) with frequent (every 2 secs) TX.
 
   DHD20130417: hardware setup on bare board.
     * 1MHz CPU clock (from 8MHz internal RC clock with /8 prescaler) ATmega328P running at 1.8V--5V (typically 2V--3.3V).
@@ -531,6 +531,10 @@ void bareStatsTX() {
                                     key);
         sendingJSONFailed = (0 == bodylen);
         wrote = bodylen - offset;
+        // Serial.println(wrote);
+        // for(auto ip = fd.outbuf; ip != fd.outbuf+fd.outbufSize; ++ip) { Serial.print(*ip, HEX); Serial.print(F(" "));}
+        // Serial.println();
+
     }
     // Send directly to the primary radio...
     if((!sendingJSONFailed) && (!PrimaryRadio.queueToSend(realTXFrameStart, wrote))) { sendingJSONFailed = true; }
@@ -794,6 +798,8 @@ void loop()
         updateSensorsFromStats();
     }
 
+    bareStatsTX();
+
     // DO SCHEDULING
 
     // Once-per-minute tasks: all must take << 0.3s unless particular care is taken.
@@ -821,34 +827,8 @@ void loop()
         case 4: { if(runAll) { Supply_cV.read(); } break; }
         // Periodic transmission of stats if NOT driving a local valve (else stats can be piggybacked onto that).
         // Randomised somewhat between slots and also within the slot to help avoid collisions.
-        static uint8_t txTick;
-        case 6: { txTick = OTV0P2BASE::randRNG8() & 7; break; } // Pick which of the 8 slots to use.
-        case 8: case 10: case 12: case 14: case 16: case 18: case 20: case 22: {
-            // Only the slot where txTick is zero is used.
-            if(0 != txTick--) { break; }
-            // Stats TX in the minute (#1) after all sensors should have been polled
-            // (so that readings are fresh) and evenly between.
-            // Usually send one frame every 4 minutes, 2 if this is a valve.
-            // No extra stats TX for changed data to reduce information/activity leakage.
-            // Note that all O frames contain the current valve percentage,
-            // which implies that any extra stats TX also speeds response to call-for-heat changes.
-            // DHD20170113: was once every 4 minutes, but can make boiler response too slow.
-            if(0 == (minuteFrom4 & 1)) { break; }
-            // Sleep randomly up to ~25% of the minor cycle
-            // to spread transmissions and thus help avoid collisions.
-            // (Longer than 25%/0.5s could interfere with other ops such as FHT8V TXes.)
-            const uint8_t stopBy = 1 + (((OTV0P2BASE::GSCT_MAX >> 2) | 7) & OTV0P2BASE::randRNG8());
-            while(OTV0P2BASE::getSubCycleTime() <= stopBy) { OTV0P2BASE::nap(WDTO_15MS, true); } // Sleep a little.
-            // Send stats!
-            // Try for double TX for extra robustness unless:
-            //   * this is a speculative 'extra' TX
-            //   * battery is low
-            //   * this node is a hub so needs to listen as much as possible
-            // This doesn't generally/always need to send binary/both formats
-            // if this is controlling a local FHT8V on which the binary stats can be piggybacked.
-            // Ie, if doesn't have a local TRV then it must send binary some of the time.
-            // Any recently-changed stats value is a hint that a strong transmission might be a good idea.
-            bareStatsTX();
+        // Disabled due to frequent TX.
+        case 6: case 8: case 10: case 12: case 14: case 16: case 18: case 20: case 22: {
             break;
         }
         // SENSOR READ AND STATS
