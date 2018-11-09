@@ -3,6 +3,7 @@
         {
             "name": "Linux",
             "includePath": [
+                "/home/denzo/.arduino15/packages/opentrv/hardware/avr/0.0.5/**",
                 "/usr/lib/gcc/x86_64-redhat-linux/7/../../../../include/c++/7",
                 "/usr/lib/gcc/x86_64-redhat-linux/7/../../../../include/c++/7/x86_64-redhat-linux",
                 "/usr/lib/gcc/x86_64-redhat-linux/7/../../../../include/c++/7/backward",
@@ -28,7 +29,8 @@
             },
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "c11",
-            "cppStandard": "c++17"
+            "cppStandard": "c++17",
+            "forcedInclude": []
         }
     ],
     "version": 4
