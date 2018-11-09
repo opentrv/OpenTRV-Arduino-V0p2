@@ -1,3 +1,4 @@
 (sym_lib_table
   (lib (name RRAT_consolidated)(type Legacy)(uri ${KIPRJMOD}/RRAT_consolidated.lib)(options "")(descr ""))
+  (lib (name RRAT-rescue)(type Legacy)(uri ${KIPRJMOD}/RRAT-rescue.lib)(options "")(descr ""))
 )
