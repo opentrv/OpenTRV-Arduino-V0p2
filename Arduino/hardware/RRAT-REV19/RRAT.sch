@@ -225,7 +225,7 @@ Text Notes 8875 975  0    59   ~ 0
 Wire Notes Line
 	2700 700  2700 2900
 Text Notes 1200 11000 0    59   ~ 0
-Copyright: Bo Herrmannsen 2018
+Copyright: Bo Herrmannsen 2018, Deniz Erbilgin 2019
 $Comp
 L RRAT_consolidated:Conn_02x03_Odd_Even J2
 U 1 1 5BA40FB2
