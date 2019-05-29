@@ -1,6 +1,6 @@
 EESchema Schematic File Version 4
 LIBS:RRAT-cache
-EELAYER 29 0
+EELAYER 26 0
 EELAYER END
 $Descr User 17018 11968
 encoding utf-8
@@ -14,8 +14,6 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
-Wire Wire Line
-	10900 5600 11625 5600
 Wire Wire Line
 	10900 6400 11625 6400
 Text Label 11625 6400 0    70   ~ 0
@@ -70,9 +68,7 @@ Wire Wire Line
 	10900 5100 11625 5100
 Text Label 11625 5100 0    70   ~ 0
 RX
-Wire Wire Line
-	10900 6000 11625 6000
-Text Label 11625 6000 0    70   ~ 0
+Text Label 11650 6000 0    70   ~ 0
 RFM_IRQ
 Text Label 12600 750  2    70   ~ 0
 RFM_IRQ
@@ -309,12 +305,12 @@ SDN
 $Comp
 L RRAT_consolidated:R R4
 U 1 1 5BBBC122
-P 7300 1300
-F 0 "R4" V 7200 1300 50  0000 C CNN
-F 1 "1K" V 7300 1300 50  0000 C CNN
-F 2 "RRAT Consolidated:R0603" V 7230 1300 50  0001 C CNN
-F 3 "~" H 7300 1300 50  0001 C CNN
-	1    7300 1300
+P 11250 6000
+F 0 "R4" V 11150 6000 50  0000 C CNN
+F 1 "1K" V 11250 6000 50  0000 C CNN
+F 2 "RRAT Consolidated:R0603" V 11180 6000 50  0001 C CNN
+F 3 "~" H 11250 6000 50  0001 C CNN
+	1    11250 6000
 	0    1    1    0   
 $EndComp
 $Comp
@@ -418,17 +414,17 @@ F 3 "" H 5300 2200 50  0001 C CNN
 	1    5300 2200
 	1    0    0    -1  
 $EndComp
-Text Label 11625 5600 0    70   ~ 0
+Text Label 11650 5600 0    70   ~ 0
 SDN
 $Comp
 L RRAT_consolidated:R R9
 U 1 1 5BBE9C11
-P 7300 1900
-F 0 "R9" V 7325 1750 50  0000 C CNN
-F 1 "1K" V 7300 1875 50  0000 C CNN
-F 2 "RRAT Consolidated:R0603" V 7230 1900 50  0001 C CNN
-F 3 "~" H 7300 1900 50  0001 C CNN
-	1    7300 1900
+P 11250 5600
+F 0 "R9" V 11275 5450 50  0000 C CNN
+F 1 "1K" V 11250 5575 50  0000 C CNN
+F 2 "RRAT Consolidated:R0603" V 11180 5600 50  0001 C CNN
+F 3 "~" H 11250 5600 50  0001 C CNN
+	1    11250 5600
 	0    1    1    0   
 $EndComp
 $Comp
@@ -804,10 +800,6 @@ Wire Wire Line
 Wire Wire Line
 	7500 1100 7600 1100
 Wire Wire Line
-	7000 1300 7150 1300
-Wire Wire Line
-	7450 1300 7600 1300
-Wire Wire Line
 	7000 1400 7600 1400
 Wire Wire Line
 	7000 1500 7600 1500
@@ -826,10 +818,6 @@ F 3 "" H 8100 1600 50  0001 C CNN
 	1    8100 1600
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	7000 1900 7150 1900
-Wire Wire Line
-	7450 1900 7600 1900
 Wire Wire Line
 	7600 2000 7500 2000
 Wire Wire Line
@@ -1387,4 +1375,18 @@ F 3 "~" H 12700 1900 50  0001 C CNN
 $EndComp
 Text Notes 4650 2800 0    50   ~ 0
 NOTE:\nSpecial considerations on placement\nand keepouts.\n\nSee existing designs.
+Wire Wire Line
+	7000 1300 7600 1300
+Wire Wire Line
+	11650 6000 11400 6000
+Wire Wire Line
+	11100 6000 10900 6000
+Text Notes 12150 6000 0    50   ~ 0
+Not sure R4 or R9 are necessary.\n1) They are on board connections\n2) The rest of the RFM26 pins do not have resistors.
+Wire Wire Line
+	10900 5600 11100 5600
+Wire Wire Line
+	11400 5600 11650 5600
+Wire Wire Line
+	7600 1900 7000 1900
 $EndSCHEMATC
