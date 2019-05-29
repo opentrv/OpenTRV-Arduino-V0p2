@@ -1,3 +1,4 @@
 (fp_lib_table
   (lib (name sc-70-6)(type KiCad)(uri "${KIPRJMOD}/RRAT Consolidated/sc-70-6.pretty")(options "")(descr ""))
+  (lib (name "RRAT Consolidated")(type KiCad)(uri "${KIPRJMOD}/RRAT Consolidated")(options "")(descr ""))
 )
