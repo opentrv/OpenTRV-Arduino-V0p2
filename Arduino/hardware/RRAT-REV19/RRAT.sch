@@ -1,14 +1,14 @@
 EESchema Schematic File Version 4
 LIBS:RRAT-cache
-EELAYER 26 0
+EELAYER 29 0
 EELAYER END
 $Descr User 17018 11968
 encoding utf-8
 Sheet 1 1
-Title ""
-Date ""
-Rev ""
-Comp ""
+Title "RRAT"
+Date "2019-05-30"
+Rev "A"
+Comp "OpenTRV"
 Comment1 ""
 Comment2 ""
 Comment3 ""
@@ -221,7 +221,7 @@ Text Notes 8875 975  0    59   ~ 0
 Wire Notes Line
 	2700 700  2700 2900
 Text Notes 1200 11000 0    59   ~ 0
-Copyright: Bo Herrmannsen 2018, Deniz Erbilgin 2019
+Copyright: Bo Herrmannsen 2018, Deniz Erbilgin + Damon Hart-Davis 2019
 $Comp
 L RRAT_consolidated:Conn_02x03_Odd_Even J2
 U 1 1 5BA40FB2
