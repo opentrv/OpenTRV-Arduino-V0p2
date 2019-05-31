@@ -1,6 +1,6 @@
 EESchema Schematic File Version 4
 LIBS:RRAT-cache
-EELAYER 29 0
+EELAYER 26 0
 EELAYER END
 $Descr User 17018 11968
 encoding utf-8
@@ -160,6 +160,8 @@ F 0 "Q1" H 5150 1050 59  0000 L BNN
 F 1 "32768Hz" H 5150 950 59  0000 L BNN
 F 2 "RRAT Consolidated:Crystal" H 5300 1200 50  0001 C CNN
 F 3 "" H 5300 1200 50  0001 C CNN
+F 4 "QTC332.76812B2R" H 0   0   50  0001 C CNN "Part-No"
+F 5 "20ppm" H 0   0   50  0001 C CNN "Tolerance"
 	1    5300 1200
 	1    0    0    -1  
 $EndComp
@@ -179,9 +181,11 @@ L RRAT_consolidated:ATMEGA168-AU IC1
 U 1 1 BC34DC86
 P 9700 5200
 F 0 "IC1" H 8700 6500 59  0000 L TNN
-F 1 "ATMEGA168-AU" H 8700 3800 59  0000 L BNN
+F 1 "ATmega328P-AU" H 8700 3800 59  0000 L BNN
 F 2 "RRAT Consolidated:TQFP32-08" H 9700 5200 50  0001 C CNN
 F 3 "" H 9700 5200 50  0001 C CNN
+F 4 "ATmega328P-AU" H 0   0   50  0001 C CNN "Part-No"
+F 5 "N/A" H 0   0   50  0001 C CNN "Tolerance"
 	1    9700 5200
 	1    0    0    -1  
 $EndComp
@@ -193,6 +197,8 @@ F 0 "ANT1" H 8950 1050 59  0000 L BNN
 F 1 "SMD2" H 9205 970 59  0001 L BNN
 F 2 "RRAT Consolidated:SMD1,27-2,54" H 9250 1100 50  0001 C CNN
 F 3 "" H 9250 1100 50  0001 C CNN
+F 4 "N/A" H 0   0   50  0001 C CNN "Part-No"
+F 5 "N/A" H 0   0   50  0001 C CNN "Tolerance"
 	1    9250 1100
 	-1   0    0    1   
 $EndComp
@@ -230,6 +236,7 @@ F 0 "J2" H 3650 2017 50  0000 C CNN
 F 1 "Conn_02x03_Odd_Even" H 3650 1926 50  0001 C CNN
 F 2 "RRAT Consolidated:Pin_Header_Straight_2x03_Pitch2.54mm" H 3600 1700 50  0001 C CNN
 F 3 "~" H 3600 1700 50  0001 C CNN
+F 4 "N/A" H 0   0   50  0001 C CNN "Tolerance"
 	1    3600 1700
 	1    0    0    -1  
 $EndComp
@@ -257,6 +264,8 @@ F 0 "J4" H 14930 4592 50  0000 L CNN
 F 1 "Conn_01x12" H 14930 4501 50  0000 L CNN
 F 2 "RRAT Consolidated:Pin_Header_Straight_1x12_Pitch2.54mm" H 14850 4600 50  0001 C CNN
 F 3 "~" H 14850 4600 50  0001 C CNN
+F 4 "W81136T3816RC" H 0   0   50  0001 C CNN "Part-No"
+F 5 "N/A" H 0   0   50  0001 C CNN "Tolerance"
 	1    14850 4600
 	1    0    0    -1  
 $EndComp
@@ -279,17 +288,6 @@ SPI_NSS
 Text Label 1800 1800 0    70   ~ 0
 RX
 $Comp
-L RRAT_consolidated:R R5
-U 1 1 5BB830D2
-P 1700 1250
-F 0 "R5" V 1493 1250 50  0000 C CNN
-F 1 "4.7K" V 1584 1250 50  0000 C CNN
-F 2 "RRAT Consolidated:R0603" V 1630 1250 50  0001 C CNN
-F 3 "~" H 1700 1250 50  0001 C CNN
-	1    1700 1250
-	-1   0    0    1   
-$EndComp
-$Comp
 L RRAT_consolidated:C C4
 U 1 1 5BBAA711
 P 8250 5850
@@ -297,6 +295,8 @@ F 0 "C4" H 8365 5896 50  0000 L CNN
 F 1 "100nF" H 8365 5805 50  0000 L CNN
 F 2 "RRAT Consolidated:C0603" H 8288 5700 50  0001 C CNN
 F 3 "~" H 8250 5850 50  0001 C CNN
+F 4 "C0603C104K4RAC" H 0   0   50  0001 C CNN "Part-No"
+F 5 "10%" H 0   0   50  0001 C CNN "Tolerance"
 	1    8250 5850
 	1    0    0    -1  
 $EndComp
@@ -310,6 +310,8 @@ F 0 "R4" V 11150 6000 50  0000 C CNN
 F 1 "1K" V 11250 6000 50  0000 C CNN
 F 2 "RRAT Consolidated:R0603" V 11180 6000 50  0001 C CNN
 F 3 "~" H 11250 6000 50  0001 C CNN
+F 4 "CRG0603F1K0" H 0   0   50  0001 C CNN "Part-No"
+F 5 "1%" H 0   0   50  0001 C CNN "Tolerance"
 	1    11250 6000
 	0    1    1    0   
 $EndComp
@@ -321,18 +323,9 @@ F 0 "C5" H 10165 1471 50  0000 L CNN
 F 1 "100nF" H 10165 1380 50  0000 L CNN
 F 2 "RRAT Consolidated:C0603" H 10088 1275 50  0001 C CNN
 F 3 "~" H 10050 1425 50  0001 C CNN
+F 4 "C0603C104K4RAC" H 0   0   50  0001 C CNN "Part-No"
+F 5 "10%" H 0   0   50  0001 C CNN "Tolerance"
 	1    10050 1425
-	1    0    0    -1  
-$EndComp
-$Comp
-L RRAT_consolidated:CP C6
-U 1 1 5BB8BB13
-P 10550 1425
-F 0 "C6" H 10668 1471 50  0000 L CNN
-F 1 "10uF" H 10668 1380 50  0000 L CNN
-F 2 "RRAT Consolidated:EIA3216" H 10588 1275 50  0001 C CNN
-F 3 "~" H 10550 1425 50  0001 C CNN
-	1    10550 1425
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -343,6 +336,8 @@ F 0 "C1" V 1198 1550 50  0000 C CNN
 F 1 "100nF" V 1289 1550 50  0000 C CNN
 F 2 "RRAT Consolidated:C0603" H 1488 1400 50  0001 C CNN
 F 3 "~" H 1450 1550 50  0001 C CNN
+F 4 "C0603C104K4RAC" H 0   0   50  0001 C CNN "Part-No"
+F 5 "10%" H 0   0   50  0001 C CNN "Tolerance"
 	1    1450 1550
 	0    1    1    0   
 $EndComp
@@ -354,18 +349,9 @@ F 0 "R1" V 1400 1950 50  0000 C CNN
 F 1 "4.7K" V 1450 1800 50  0000 C CNN
 F 2 "RRAT Consolidated:R0603" V 1380 1800 50  0001 C CNN
 F 3 "~" H 1450 1800 50  0001 C CNN
+F 4 "1%" V 1450 1800 50  0001 C CNN "Tolerance"
+F 5 "CRG0603F4K7" V 1450 1800 50  0001 C CNN "Part-No"
 	1    1450 1800
-	0    1    1    0   
-$EndComp
-$Comp
-L RRAT_consolidated:R R2
-U 1 1 5BB941B8
-P 1450 1900
-F 0 "R2" V 1400 2050 50  0000 C CNN
-F 1 "4.7K" V 1450 1900 50  0000 C CNN
-F 2 "RRAT Consolidated:R0603" V 1380 1900 50  0001 C CNN
-F 3 "~" H 1450 1900 50  0001 C CNN
-	1    1450 1900
 	0    1    1    0   
 $EndComp
 $Comp
@@ -376,6 +362,8 @@ F 0 "C7" H 11565 1046 50  0000 L CNN
 F 1 "47pF" H 11565 955 50  0000 L CNN
 F 2 "RRAT Consolidated:C0603" H 11488 850 50  0001 C CNN
 F 3 "~" H 11450 1000 50  0001 C CNN
+F 4 "0603N470J500NT" H 0   0   50  0001 C CNN "Part-No"
+F 5 "5%" H 0   0   50  0001 C CNN "Tolerance"
 	1    11450 1000
 	1    0    0    -1  
 $EndComp
@@ -389,6 +377,8 @@ F 0 "C12" H 5715 1896 50  0000 L CNN
 F 1 "0nF" H 5715 1805 50  0000 L CNN
 F 2 "RRAT Consolidated:C0603" H 5638 1700 50  0001 C CNN
 F 3 "~" H 5600 1850 50  0001 C CNN
+F 4 "DNF" H 0   0   50  0001 C CNN "Part-No"
+F 5 "N/A" H 0   0   50  0001 C CNN "Tolerance"
 	1    5600 1850
 	1    0    0    -1  
 $EndComp
@@ -400,6 +390,8 @@ F 0 "C11" H 5115 1896 50  0000 L CNN
 F 1 "0nF" H 5115 1805 50  0000 L CNN
 F 2 "RRAT Consolidated:C0603" H 5038 1700 50  0001 C CNN
 F 3 "~" H 5000 1850 50  0001 C CNN
+F 4 "DNF" H 0   0   50  0001 C CNN "Part-No"
+F 5 "N/A" H 0   0   50  0001 C CNN "Tolerance"
 	1    5000 1850
 	1    0    0    -1  
 $EndComp
@@ -424,6 +416,8 @@ F 0 "R9" V 11275 5450 50  0000 C CNN
 F 1 "1K" V 11250 5575 50  0000 C CNN
 F 2 "RRAT Consolidated:R0603" V 11180 5600 50  0001 C CNN
 F 3 "~" H 11250 5600 50  0001 C CNN
+F 4 "CRG0603F1K0" H 0   0   50  0001 C CNN "Part-No"
+F 5 "1%" H 0   0   50  0001 C CNN "Tolerance"
 	1    11250 5600
 	0    1    1    0   
 $EndComp
@@ -435,6 +429,8 @@ F 0 "R12" V 2975 3550 50  0000 C CNN
 F 1 "1K" V 2950 3700 50  0000 C CNN
 F 2 "RRAT Consolidated:R0603" V 2880 3700 50  0001 C CNN
 F 3 "~" H 2950 3700 50  0001 C CNN
+F 4 "CRG0603F1K0" H 0   0   50  0001 C CNN "Part-No"
+F 5 "1%" H 0   0   50  0001 C CNN "Tolerance"
 	1    2950 3700
 	0    -1   -1   0   
 $EndComp
@@ -446,6 +442,8 @@ F 0 "R15" V 2925 4345 50  0000 C CNN
 F 1 "1K" V 2950 4200 50  0000 C CNN
 F 2 "RRAT Consolidated:R0603" V 2880 4200 50  0001 C CNN
 F 3 "~" H 2950 4200 50  0001 C CNN
+F 4 "CRG0603F1K0" H 0   0   50  0001 C CNN "Part-No"
+F 5 "1%" H 0   0   50  0001 C CNN "Tolerance"
 	1    2950 4200
 	0    1    1    0   
 $EndComp
@@ -457,6 +455,8 @@ F 0 "R14" V 2915 4560 50  0000 C CNN
 F 1 "1K" V 2950 4400 50  0000 C CNN
 F 2 "RRAT Consolidated:R0603" V 2880 4400 50  0001 C CNN
 F 3 "~" H 2950 4400 50  0001 C CNN
+F 4 "CRG0603F1K0" H 0   0   50  0001 C CNN "Part-No"
+F 5 "1%" H 0   0   50  0001 C CNN "Tolerance"
 	1    2950 4400
 	0    1    1    0   
 $EndComp
@@ -468,6 +468,8 @@ F 0 "R13" V 2905 4250 50  0000 C CNN
 F 1 "1K" V 2950 4100 50  0000 C CNN
 F 2 "RRAT Consolidated:R0603" V 2880 4100 50  0001 C CNN
 F 3 "~" H 2950 4100 50  0001 C CNN
+F 4 "CRG0603F1K0" H 0   0   50  0001 C CNN "Part-No"
+F 5 "1%" H 0   0   50  0001 C CNN "Tolerance"
 	1    2950 4100
 	0    1    1    0   
 $EndComp
@@ -481,6 +483,8 @@ F 0 "R10" V 2975 3650 50  0000 C CNN
 F 1 "1K" V 2950 3800 50  0000 C CNN
 F 2 "RRAT Consolidated:R0603" V 2880 3800 50  0001 C CNN
 F 3 "~" H 2950 3800 50  0001 C CNN
+F 4 "CRG0603F1K0" H 0   0   50  0001 C CNN "Part-No"
+F 5 "1%" H 0   0   50  0001 C CNN "Tolerance"
 	1    2950 3800
 	0    -1   -1   0   
 $EndComp
@@ -492,6 +496,8 @@ F 0 "R18" V 7542 5456 50  0000 C CNN
 F 1 "1R" V 7450 5500 50  0000 C CNN
 F 2 "RRAT Consolidated:R0603" V 7380 5500 50  0001 C CNN
 F 3 "~" H 7450 5500 50  0001 C CNN
+F 4 "RC0603FR-071RL" H 0   0   50  0001 C CNN "Part-No"
+F 5 "1%" H 0   0   50  0001 C CNN "Tolerance"
 	1    7450 5500
 	0    -1   -1   0   
 $EndComp
@@ -503,6 +509,8 @@ F 0 "R16" V 2675 5200 50  0000 C CNN
 F 1 "1K" V 2650 5350 50  0000 C CNN
 F 2 "RRAT Consolidated:R0603" V 2580 5350 50  0001 C CNN
 F 3 "~" H 2650 5350 50  0001 C CNN
+F 4 "CRG0603F1K0" H 0   0   50  0001 C CNN "Part-No"
+F 5 "1%" H 0   0   50  0001 C CNN "Tolerance"
 	1    2650 5350
 	0    -1   -1   0   
 $EndComp
@@ -514,6 +522,8 @@ F 0 "R17" V 1175 5050 50  0000 C CNN
 F 1 "1K" V 1150 5200 50  0000 C CNN
 F 2 "RRAT Consolidated:R0603" V 1080 5200 50  0001 C CNN
 F 3 "~" H 1150 5200 50  0001 C CNN
+F 4 "CRG0603F1K0" H 0   0   50  0001 C CNN "Part-No"
+F 5 "1%" H 0   0   50  0001 C CNN "Tolerance"
 	1    1150 5200
 	0    1    1    0   
 $EndComp
@@ -524,17 +534,6 @@ Wire Wire Line
 Text Label 12925 4800 0    70   ~ 0
 LED_HEATCALL_L
 $Comp
-L RRAT_consolidated:R R3
-U 1 1 5BC58475
-P 1450 2100
-F 0 "R3" V 1475 1950 50  0000 C CNN
-F 1 "1K" V 1450 2100 50  0000 C CNN
-F 2 "RRAT Consolidated:R0603" V 1380 2100 50  0001 C CNN
-F 3 "~" H 1450 2100 50  0001 C CNN
-	1    1450 2100
-	0    -1   -1   0   
-$EndComp
-$Comp
 L Jumper:SolderJumper_2_Open JP1
 U 1 1 5BC72BE1
 P 2050 2000
@@ -542,6 +541,8 @@ F 0 "JP1" H 2050 2113 50  0000 C CNN
 F 1 "SolderJumper_2_Open" H 2050 2114 50  0001 C CNN
 F 2 "RRAT Consolidated:JUMPER-SOLDER-SMD" H 2050 2000 50  0001 C CNN
 F 3 "~" H 2050 2000 50  0001 C CNN
+F 4 "N/A" H 0   0   50  0001 C CNN "Part-No"
+F 5 "N/A" H 0   0   50  0001 C CNN "Tolerance"
 	1    2050 2000
 	1    0    0    -1  
 $EndComp
@@ -607,6 +608,7 @@ F 0 "J3" H 2050 5417 50  0000 C CNN
 F 1 "Conn_02x20_Odd_Even" H 2050 5326 50  0001 C CNN
 F 2 "RRAT Consolidated:Pin_Header_Straight_2x20_Pitch2.54mm" H 2000 4300 50  0001 C CNN
 F 3 "~" H 2000 4300 50  0001 C CNN
+F 4 "N/A" H 0   0   50  0001 C CNN "Tolerance"
 	1    2000 4300
 	1    0    0    -1  
 $EndComp
@@ -672,6 +674,7 @@ F 0 "J1" V 866 1612 50  0000 R CNN
 F 1 "Conn_01x06" V 775 1612 50  0001 R CNN
 F 2 "RRAT Consolidated:Pin_Header_Straight_1x06_Pitch2.54mm" H 900 2000 50  0001 C CNN
 F 3 "~" H 900 2000 50  0001 C CNN
+F 4 "N/A" H 0   0   50  0001 C CNN "Tolerance"
 	1    900  2000
 	-1   0    0    1   
 $EndComp
@@ -812,9 +815,11 @@ L RRAT_consolidated:RFM26 U1
 U 1 1 5BA609EE
 P 8100 1600
 F 0 "U1" H 8100 2386 59  0000 C CNN
-F 1 "RFM26" H 8100 2281 59  0000 C CNN
+F 1 "RFM26W-868S2" H 8100 2281 59  0000 C CNN
 F 2 "RRAT Consolidated:RFM26" H 8100 1600 50  0001 C CNN
 F 3 "" H 8100 1600 50  0001 C CNN
+F 4 "RFM26W-868S2" H 0   0   50  0001 C CNN "Part-No"
+F 5 "N/A" H 0   0   50  0001 C CNN "Tolerance"
 	1    8100 1600
 	1    0    0    -1  
 $EndComp
@@ -976,6 +981,8 @@ F 0 "C3" H 7815 5896 50  0000 L CNN
 F 1 "100nF" H 7815 5805 50  0000 L CNN
 F 2 "RRAT Consolidated:C0603" H 7738 5700 50  0001 C CNN
 F 3 "~" H 7700 5850 50  0001 C CNN
+F 4 "C0603C104K4RAC" H 0   0   50  0001 C CNN "Part-No"
+F 5 "10%" H 0   0   50  0001 C CNN "Tolerance"
 	1    7700 5850
 	1    0    0    -1  
 $EndComp
@@ -987,6 +994,8 @@ F 0 "C2" H 7315 5896 50  0000 L CNN
 F 1 "100nF" H 7315 5805 50  0000 L CNN
 F 2 "RRAT Consolidated:C0603" H 7238 5700 50  0001 C CNN
 F 3 "~" H 7200 5850 50  0001 C CNN
+F 4 "C0603C104K4RAC" H 0   0   50  0001 C CNN "Part-No"
+F 5 "10%" H 0   0   50  0001 C CNN "Tolerance"
 	1    7200 5850
 	1    0    0    -1  
 $EndComp
@@ -1064,6 +1073,8 @@ F 0 "U2" H 2750 6965 50  0000 C CNN
 F 1 "MIC94092YC6" H 2750 6874 50  0000 C CNN
 F 2 "sc-70-6:SOT-363_SC-70-6" H 2950 5800 50  0001 C CNN
 F 3 "" H 2950 5800 50  0001 C CNN
+F 4 "MIC94092YC6" H 0   0   50  0001 C CNN "Part-No"
+F 5 "N/A" H 0   0   50  0001 C CNN "Tolerance"
 	1    2750 6550
 	1    0    0    -1  
 $EndComp
@@ -1272,6 +1283,8 @@ F 0 "C13" H 2165 7646 50  0000 L CNN
 F 1 "0nF" H 2165 7555 50  0000 L CNN
 F 2 "RRAT Consolidated:C0603" H 2088 7450 50  0001 C CNN
 F 3 "~" H 2050 7600 50  0001 C CNN
+F 4 "DNF" H 0   0   50  0001 C CNN "Part-No"
+F 5 "N/A" H 0   0   50  0001 C CNN "Tolerance"
 	1    2050 7600
 	1    0    0    -1  
 $EndComp
@@ -1309,6 +1322,8 @@ F 0 "C14" H 2915 7646 50  0000 L CNN
 F 1 "100nF" H 2915 7555 50  0000 L CNN
 F 2 "RRAT Consolidated:C0603" H 2838 7450 50  0001 C CNN
 F 3 "~" H 2800 7600 50  0001 C CNN
+F 4 "C0603C104K4RAC" H 0   0   50  0001 C CNN "Part-No"
+F 5 "10%" H 0   0   50  0001 C CNN "Tolerance"
 	1    2800 7600
 	1    0    0    -1  
 $EndComp
@@ -1348,6 +1363,8 @@ F 0 "C8" H 11565 1946 50  0000 L CNN
 F 1 "47pF" H 11565 1855 50  0000 L CNN
 F 2 "RRAT Consolidated:C0603" H 11488 1750 50  0001 C CNN
 F 3 "~" H 11450 1900 50  0001 C CNN
+F 4 "0603N470J500NT" H 0   0   50  0001 C CNN "Part-No"
+F 5 "5%" H 0   0   50  0001 C CNN "Tolerance"
 	1    11450 1900
 	1    0    0    -1  
 $EndComp
@@ -1359,6 +1376,8 @@ F 0 "C9" H 12815 1046 50  0000 L CNN
 F 1 "47pF" H 12815 955 50  0000 L CNN
 F 2 "RRAT Consolidated:C0603" H 12738 850 50  0001 C CNN
 F 3 "~" H 12700 1000 50  0001 C CNN
+F 4 "0603N470J500NT" H 0   0   50  0001 C CNN "Part-No"
+F 5 "5%" H 0   0   50  0001 C CNN "Tolerance"
 	1    12700 1000
 	1    0    0    -1  
 $EndComp
@@ -1370,6 +1389,8 @@ F 0 "C10" H 12815 1946 50  0000 L CNN
 F 1 "47pF" H 12815 1855 50  0000 L CNN
 F 2 "RRAT Consolidated:C0603" H 12738 1750 50  0001 C CNN
 F 3 "~" H 12700 1900 50  0001 C CNN
+F 4 "0603N470J500NT" H 0   0   50  0001 C CNN "Part-No"
+F 5 "5%" H 0   0   50  0001 C CNN "Tolerance"
 	1    12700 1900
 	1    0    0    -1  
 $EndComp
@@ -1389,4 +1410,56 @@ Wire Wire Line
 	11400 5600 11650 5600
 Wire Wire Line
 	7600 1900 7000 1900
+$Comp
+L RRAT_consolidated:R R2
+U 1 1 5CF1EF95
+P 1450 1900
+F 0 "R2" V 1400 2050 50  0000 C CNN
+F 1 "4.7K" V 1450 1900 50  0000 C CNN
+F 2 "RRAT Consolidated:R0603" V 1380 1900 50  0001 C CNN
+F 3 "~" H 1450 1900 50  0001 C CNN
+F 4 "1%" V 1450 1900 50  0001 C CNN "Tolerance"
+F 5 "CRG0603F4K7" V 1450 1900 50  0001 C CNN "Part-No"
+	1    1450 1900
+	0    1    1    0   
+$EndComp
+$Comp
+L RRAT_consolidated:R R3
+U 1 1 5CF2B51A
+P 1450 2100
+F 0 "R3" V 1400 2250 50  0000 C CNN
+F 1 "1K" V 1450 2100 50  0000 C CNN
+F 2 "RRAT Consolidated:R0603" V 1380 2100 50  0001 C CNN
+F 3 "~" H 1450 2100 50  0001 C CNN
+F 4 "1%" V 1450 2100 50  0001 C CNN "Tolerance"
+F 5 "CRG0603F1K0" V 1450 2100 50  0001 C CNN "Part-No"
+	1    1450 2100
+	0    1    1    0   
+$EndComp
+$Comp
+L RRAT_consolidated:R R5
+U 1 1 5CF37C34
+P 1700 1250
+F 0 "R5" V 1600 1250 50  0000 C CNN
+F 1 "4.7K" V 1700 1250 50  0000 C CNN
+F 2 "RRAT Consolidated:R0603" V 1630 1250 50  0001 C CNN
+F 3 "~" H 1700 1250 50  0001 C CNN
+F 4 "1%" V 1700 1250 50  0001 C CNN "Tolerance"
+F 5 "CRG0603F4K7" V 1700 1250 50  0001 C CNN "Part-No"
+	1    1700 1250
+	-1   0    0    1   
+$EndComp
+$Comp
+L RRAT_consolidated:C C6
+U 1 1 5CF51428
+P 10550 1425
+F 0 "C6" H 10665 1471 50  0000 L CNN
+F 1 "100uF" H 10665 1380 50  0000 L CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric" H 10588 1275 50  0001 C CNN
+F 3 "~" H 10550 1425 50  0001 C CNN
+F 4 "GRM31CR60G107ME39L" H 500 0   50  0001 C CNN "Part-No"
+F 5 "20%" H 500 0   50  0001 C CNN "Tolerance"
+	1    10550 1425
+	1    0    0    -1  
+$EndComp
 $EndSCHEMATC

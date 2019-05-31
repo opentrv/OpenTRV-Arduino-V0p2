@@ -1,0 +1,1066 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<export version="D">
+  <design>
+    <source>/home/denzo/git/OpenTRV-Arduino-V0p2/Arduino/hardware/RRAT-REV19/RRAT.sch</source>
+    <date>Fri 31 May 2019 14:34:03 BST</date>
+    <tool>Eeschema 5.0.0</tool>
+    <sheet number="1" name="/" tstamps="/">
+      <title_block>
+        <title>RRAT</title>
+        <company>OpenTRV</company>
+        <rev>A</rev>
+        <date>2019-05-30</date>
+        <source>RRAT.sch</source>
+        <comment number="1" value=""/>
+        <comment number="2" value=""/>
+        <comment number="3" value=""/>
+        <comment number="4" value=""/>
+      </title_block>
+    </sheet>
+  </design>
+  <components>
+    <comp ref="Q1">
+      <value>32768Hz</value>
+      <footprint>RRAT Consolidated:Crystal</footprint>
+      <fields>
+        <field name="Part-No">QTC332.76812B2R</field>
+        <field name="Tolerance">20ppm</field>
+      </fields>
+      <libsource lib="RRAT_consolidated" part="Crystal" description=""/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>89B80503</tstamp>
+    </comp>
+    <comp ref="IC1">
+      <value>ATmega328P-AU</value>
+      <footprint>RRAT Consolidated:TQFP32-08</footprint>
+      <fields>
+        <field name="Part-No">ATmega328P-AU</field>
+        <field name="Tolerance">N/A</field>
+      </fields>
+      <libsource lib="RRAT_consolidated" part="ATMEGA168-AU" description=""/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>BC34DC86</tstamp>
+    </comp>
+    <comp ref="ANT1">
+      <value>SMD2</value>
+      <footprint>RRAT Consolidated:SMD1,27-2,54</footprint>
+      <fields>
+        <field name="Part-No">N/A</field>
+        <field name="Tolerance">N/A</field>
+      </fields>
+      <libsource lib="RRAT_consolidated" part="SMD2" description=""/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>9927FDA6</tstamp>
+    </comp>
+    <comp ref="J2">
+      <value>Conn_02x03_Odd_Even</value>
+      <footprint>RRAT Consolidated:Pin_Header_Straight_2x03_Pitch2.54mm</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="Tolerance">N/A</field>
+      </fields>
+      <libsource lib="RRAT_consolidated" part="Conn_02x03_Odd_Even" description="Generic connector, double row, 02x03, odd/even pin numbering scheme (row 1 odd numbers, row 2 even numbers), script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5BA40FB2</tstamp>
+    </comp>
+    <comp ref="J4">
+      <value>Conn_01x12</value>
+      <footprint>RRAT Consolidated:Pin_Header_Straight_1x12_Pitch2.54mm</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="Part-No">W81136T3816RC</field>
+        <field name="Tolerance">N/A</field>
+      </fields>
+      <libsource lib="Connector_Generic" part="Conn_01x12" description="Generic connector, single row, 01x12, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5BC0BE7C</tstamp>
+    </comp>
+    <comp ref="C4">
+      <value>100nF</value>
+      <footprint>RRAT Consolidated:C0603</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="Part-No">C0603C104K4RAC</field>
+        <field name="Tolerance">10%</field>
+      </fields>
+      <libsource lib="RRAT_consolidated" part="C" description="Unpolarized capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5BBAA711</tstamp>
+    </comp>
+    <comp ref="R4">
+      <value>1K</value>
+      <footprint>RRAT Consolidated:R0603</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="Part-No">CRG0603F1K0</field>
+        <field name="Tolerance">1%</field>
+      </fields>
+      <libsource lib="RRAT_consolidated" part="R" description="Resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5BBBC122</tstamp>
+    </comp>
+    <comp ref="C5">
+      <value>100nF</value>
+      <footprint>RRAT Consolidated:C0603</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="Part-No">C0603C104K4RAC</field>
+        <field name="Tolerance">10%</field>
+      </fields>
+      <libsource lib="RRAT_consolidated" part="C" description="Unpolarized capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5BBBC50F</tstamp>
+    </comp>
+    <comp ref="C1">
+      <value>100nF</value>
+      <footprint>RRAT Consolidated:C0603</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="Part-No">C0603C104K4RAC</field>
+        <field name="Tolerance">10%</field>
+      </fields>
+      <libsource lib="RRAT_consolidated" part="C" description="Unpolarized capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5BB93A2E</tstamp>
+    </comp>
+    <comp ref="R1">
+      <value>4.7K</value>
+      <footprint>RRAT Consolidated:R0603</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="Part-No">CRG0603F4K7</field>
+        <field name="Tolerance">1%</field>
+      </fields>
+      <libsource lib="RRAT_consolidated" part="R" description="Resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5BB9403D</tstamp>
+    </comp>
+    <comp ref="C7">
+      <value>47pF</value>
+      <footprint>RRAT Consolidated:C0603</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="Part-No">0603N470J500NT</field>
+        <field name="Tolerance">5%</field>
+      </fields>
+      <libsource lib="RRAT_consolidated" part="C" description="Unpolarized capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5BB949D5</tstamp>
+    </comp>
+    <comp ref="C12">
+      <value>0nF</value>
+      <footprint>RRAT Consolidated:C0603</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="Part-No">DNF</field>
+        <field name="Tolerance">N/A</field>
+      </fields>
+      <libsource lib="RRAT_consolidated" part="C" description="Unpolarized capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5BBD039E</tstamp>
+    </comp>
+    <comp ref="C11">
+      <value>0nF</value>
+      <footprint>RRAT Consolidated:C0603</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="Part-No">DNF</field>
+        <field name="Tolerance">N/A</field>
+      </fields>
+      <libsource lib="RRAT_consolidated" part="C" description="Unpolarized capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5BBD0456</tstamp>
+    </comp>
+    <comp ref="R9">
+      <value>1K</value>
+      <footprint>RRAT Consolidated:R0603</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="Part-No">CRG0603F1K0</field>
+        <field name="Tolerance">1%</field>
+      </fields>
+      <libsource lib="RRAT_consolidated" part="R" description="Resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5BBE9C11</tstamp>
+    </comp>
+    <comp ref="R12">
+      <value>1K</value>
+      <footprint>RRAT Consolidated:R0603</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="Part-No">CRG0603F1K0</field>
+        <field name="Tolerance">1%</field>
+      </fields>
+      <libsource lib="RRAT_consolidated" part="R" description="Resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5BC30A50</tstamp>
+    </comp>
+    <comp ref="R15">
+      <value>1K</value>
+      <footprint>RRAT Consolidated:R0603</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="Part-No">CRG0603F1K0</field>
+        <field name="Tolerance">1%</field>
+      </fields>
+      <libsource lib="RRAT_consolidated" part="R" description="Resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5BC30D90</tstamp>
+    </comp>
+    <comp ref="R14">
+      <value>1K</value>
+      <footprint>RRAT Consolidated:R0603</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="Part-No">CRG0603F1K0</field>
+        <field name="Tolerance">1%</field>
+      </fields>
+      <libsource lib="RRAT_consolidated" part="R" description="Resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5BC30E7B</tstamp>
+    </comp>
+    <comp ref="R13">
+      <value>1K</value>
+      <footprint>RRAT Consolidated:R0603</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="Part-No">CRG0603F1K0</field>
+        <field name="Tolerance">1%</field>
+      </fields>
+      <libsource lib="RRAT_consolidated" part="R" description="Resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5BC30F0B</tstamp>
+    </comp>
+    <comp ref="R10">
+      <value>1K</value>
+      <footprint>RRAT Consolidated:R0603</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="Part-No">CRG0603F1K0</field>
+        <field name="Tolerance">1%</field>
+      </fields>
+      <libsource lib="RRAT_consolidated" part="R" description="Resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5BC5050C</tstamp>
+    </comp>
+    <comp ref="R18">
+      <value>1R</value>
+      <footprint>RRAT Consolidated:R0603</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="Part-No">RC0603FR-071RL</field>
+        <field name="Tolerance">1%</field>
+      </fields>
+      <libsource lib="RRAT_consolidated" part="R" description="Resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5BCD3F81</tstamp>
+    </comp>
+    <comp ref="R16">
+      <value>1K</value>
+      <footprint>RRAT Consolidated:R0603</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="Part-No">CRG0603F1K0</field>
+        <field name="Tolerance">1%</field>
+      </fields>
+      <libsource lib="RRAT_consolidated" part="R" description="Resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5BCE5187</tstamp>
+    </comp>
+    <comp ref="R17">
+      <value>1K</value>
+      <footprint>RRAT Consolidated:R0603</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="Part-No">CRG0603F1K0</field>
+        <field name="Tolerance">1%</field>
+      </fields>
+      <libsource lib="RRAT_consolidated" part="R" description="Resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5BCE524A</tstamp>
+    </comp>
+    <comp ref="JP1">
+      <value>SolderJumper_2_Open</value>
+      <footprint>RRAT Consolidated:JUMPER-SOLDER-SMD</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="Part-No">N/A</field>
+        <field name="Tolerance">N/A</field>
+      </fields>
+      <libsource lib="Jumper" part="SolderJumper_2_Open" description="Solder Jumper, 2-pole, open"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5BC72BE1</tstamp>
+    </comp>
+    <comp ref="J3">
+      <value>Conn_02x20_Odd_Even</value>
+      <footprint>RRAT Consolidated:Pin_Header_Straight_2x20_Pitch2.54mm</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="Tolerance">N/A</field>
+      </fields>
+      <libsource lib="RRAT_consolidated" part="Conn_02x20_Odd_Even" description="Generic connector, double row, 02x20, odd/even pin numbering scheme (row 1 odd numbers, row 2 even numbers), script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5BBF9168</tstamp>
+    </comp>
+    <comp ref="J1">
+      <value>Conn_01x06</value>
+      <footprint>RRAT Consolidated:Pin_Header_Straight_1x06_Pitch2.54mm</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="Tolerance">N/A</field>
+      </fields>
+      <libsource lib="RRAT_consolidated" part="Conn_01x06" description="Generic connector, single row, 01x06, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5BA41073</tstamp>
+    </comp>
+    <comp ref="U1">
+      <value>RFM26W-868S2</value>
+      <footprint>RRAT Consolidated:RFM26</footprint>
+      <fields>
+        <field name="Part-No">RFM26W-868S2</field>
+        <field name="Tolerance">N/A</field>
+      </fields>
+      <libsource lib="RRAT_consolidated" part="RFM26" description=""/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5BA609EE</tstamp>
+    </comp>
+    <comp ref="C3">
+      <value>100nF</value>
+      <footprint>RRAT Consolidated:C0603</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="Part-No">C0603C104K4RAC</field>
+        <field name="Tolerance">10%</field>
+      </fields>
+      <libsource lib="RRAT_consolidated" part="C" description="Unpolarized capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5D0DBC2B</tstamp>
+    </comp>
+    <comp ref="C2">
+      <value>100nF</value>
+      <footprint>RRAT Consolidated:C0603</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="Part-No">C0603C104K4RAC</field>
+        <field name="Tolerance">10%</field>
+      </fields>
+      <libsource lib="RRAT_consolidated" part="C" description="Unpolarized capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5D0E5FCA</tstamp>
+    </comp>
+    <comp ref="U2">
+      <value>MIC94092YC6</value>
+      <footprint>sc-70-6:SOT-363_SC-70-6</footprint>
+      <fields>
+        <field name="Part-No">MIC94092YC6</field>
+        <field name="Tolerance">N/A</field>
+      </fields>
+      <libsource lib="RRAT_consolidated" part="MIC9409x" description=""/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5D240996</tstamp>
+    </comp>
+    <comp ref="C13">
+      <value>0nF</value>
+      <footprint>RRAT Consolidated:C0603</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="Part-No">DNF</field>
+        <field name="Tolerance">N/A</field>
+      </fields>
+      <libsource lib="RRAT_consolidated" part="C" description="Unpolarized capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5D3EAEAB</tstamp>
+    </comp>
+    <comp ref="C14">
+      <value>100nF</value>
+      <footprint>RRAT Consolidated:C0603</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="Part-No">C0603C104K4RAC</field>
+        <field name="Tolerance">10%</field>
+      </fields>
+      <libsource lib="RRAT_consolidated" part="C" description="Unpolarized capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5D430695</tstamp>
+    </comp>
+    <comp ref="C8">
+      <value>47pF</value>
+      <footprint>RRAT Consolidated:C0603</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="Part-No">0603N470J500NT</field>
+        <field name="Tolerance">5%</field>
+      </fields>
+      <libsource lib="RRAT_consolidated" part="C" description="Unpolarized capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5D476DFB</tstamp>
+    </comp>
+    <comp ref="C9">
+      <value>47pF</value>
+      <footprint>RRAT Consolidated:C0603</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="Part-No">0603N470J500NT</field>
+        <field name="Tolerance">5%</field>
+      </fields>
+      <libsource lib="RRAT_consolidated" part="C" description="Unpolarized capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5D482968</tstamp>
+    </comp>
+    <comp ref="C10">
+      <value>47pF</value>
+      <footprint>RRAT Consolidated:C0603</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="Part-No">0603N470J500NT</field>
+        <field name="Tolerance">5%</field>
+      </fields>
+      <libsource lib="RRAT_consolidated" part="C" description="Unpolarized capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5D48E4D3</tstamp>
+    </comp>
+    <comp ref="R2">
+      <value>4.7K</value>
+      <footprint>RRAT Consolidated:R0603</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="Part-No">CRG0603F4K7</field>
+        <field name="Tolerance">1%</field>
+      </fields>
+      <libsource lib="RRAT_consolidated" part="R" description="Resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5CF1EF95</tstamp>
+    </comp>
+    <comp ref="R3">
+      <value>1K</value>
+      <footprint>RRAT Consolidated:R0603</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="Part-No">CRG0603F1K0</field>
+        <field name="Tolerance">1%</field>
+      </fields>
+      <libsource lib="RRAT_consolidated" part="R" description="Resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5CF2B51A</tstamp>
+    </comp>
+    <comp ref="R5">
+      <value>4.7K</value>
+      <footprint>RRAT Consolidated:R0603</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="Part-No">CRG0603F4K7</field>
+        <field name="Tolerance">1%</field>
+      </fields>
+      <libsource lib="RRAT_consolidated" part="R" description="Resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5CF37C34</tstamp>
+    </comp>
+    <comp ref="C6">
+      <value>100uF</value>
+      <footprint>Capacitor_SMD:C_1206_3216Metric</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="Part-No">GRM31CR60G107ME39L</field>
+        <field name="Tolerance">20%</field>
+      </fields>
+      <libsource lib="RRAT_consolidated" part="C" description="Unpolarized capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5CF51428</tstamp>
+    </comp>
+  </components>
+  <libparts>
+    <libpart lib="Connector_Generic" part="Conn_01x12">
+      <description>Generic connector, single row, 01x12, script generated (kicad-library-utils/schlib/autogen/connector/)</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>Connector*:*_1x??_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">J</field>
+        <field name="Value">Conn_01x12</field>
+      </fields>
+      <pins>
+        <pin num="1" name="Pin_1" type="passive"/>
+        <pin num="2" name="Pin_2" type="passive"/>
+        <pin num="3" name="Pin_3" type="passive"/>
+        <pin num="4" name="Pin_4" type="passive"/>
+        <pin num="5" name="Pin_5" type="passive"/>
+        <pin num="6" name="Pin_6" type="passive"/>
+        <pin num="7" name="Pin_7" type="passive"/>
+        <pin num="8" name="Pin_8" type="passive"/>
+        <pin num="9" name="Pin_9" type="passive"/>
+        <pin num="10" name="Pin_10" type="passive"/>
+        <pin num="11" name="Pin_11" type="passive"/>
+        <pin num="12" name="Pin_12" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Jumper" part="SolderJumper_2_Open">
+      <description>Solder Jumper, 2-pole, open</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>SolderJumper*Open*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">JP</field>
+        <field name="Value">SolderJumper_2_Open</field>
+      </fields>
+      <pins>
+        <pin num="1" name="A" type="passive"/>
+        <pin num="2" name="B" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="RRAT_consolidated" part="ATMEGA168-AU">
+      <fields>
+        <field name="Reference">IC</field>
+        <field name="Value">ATMEGA168-AU</field>
+      </fields>
+      <pins>
+        <pin num="1" name="DIGITAL_3(PWM)" type="BiDi"/>
+        <pin num="2" name="DIGITAL_4" type="output"/>
+        <pin num="3" name="GND1" type="power_in"/>
+        <pin num="4" name="VCC1" type="power_in"/>
+        <pin num="5" name="GND2" type="power_in"/>
+        <pin num="6" name="VCC2" type="power_in"/>
+        <pin num="7" name="CRYSTAL1" type="BiDi"/>
+        <pin num="8" name="CRYSTAL2" type="BiDi"/>
+        <pin num="9" name="DIGITAL_5(PWM)" type="BiDi"/>
+        <pin num="10" name="DIGITAL_6(PWM)" type="BiDi"/>
+        <pin num="11" name="DIGITAL_7" type="BiDi"/>
+        <pin num="12" name="DIGITAL_8" type="BiDi"/>
+        <pin num="13" name="DIGITAL_9(PWM)" type="input"/>
+        <pin num="14" name="DIGITAL_10(PWM)" type="output"/>
+        <pin num="15" name="DIGITAL_11(PWM)" type="output"/>
+        <pin num="16" name="DIGITAL_12" type="input"/>
+        <pin num="17" name="DIGITAL_13" type="output"/>
+        <pin num="18" name="VCC/ANALOG" type="passive"/>
+        <pin num="19" name="ANALOG_6" type="BiDi"/>
+        <pin num="20" name="ANALOG_REFERENCE" type="passive"/>
+        <pin num="21" name="GND/ANALOG" type="power_in"/>
+        <pin num="22" name="ANALOG_7" type="BiDi"/>
+        <pin num="23" name="ANALOG_0" type="input"/>
+        <pin num="24" name="ANALOG_1" type="BiDi"/>
+        <pin num="25" name="ANALOG_2" type="BiDi"/>
+        <pin num="26" name="ANALOG_3" type="BiDi"/>
+        <pin num="27" name="ANALOG_4" type="BiDi"/>
+        <pin num="28" name="ANALOG_5" type="BiDi"/>
+        <pin num="29" name="RESET" type="input"/>
+        <pin num="30" name="DIGITAL_0(RX)" type="input"/>
+        <pin num="31" name="DIGITAL_1(TX)" type="output"/>
+        <pin num="32" name="DIGITAL_2" type="BiDi"/>
+      </pins>
+    </libpart>
+    <libpart lib="RRAT_consolidated" part="C">
+      <description>Unpolarized capacitor</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>C_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">C</field>
+        <field name="Value">C</field>
+      </fields>
+      <pins>
+        <pin num="1" name="~" type="passive"/>
+        <pin num="2" name="~" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="RRAT_consolidated" part="Conn_01x06">
+      <description>Generic connector, single row, 01x06, script generated (kicad-library-utils/schlib/autogen/connector/)</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>Connector*:*_1x??_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">J</field>
+        <field name="Value">Conn_01x06</field>
+      </fields>
+      <pins>
+        <pin num="1" name="Pin_1" type="passive"/>
+        <pin num="2" name="Pin_2" type="passive"/>
+        <pin num="3" name="Pin_3" type="passive"/>
+        <pin num="4" name="Pin_4" type="passive"/>
+        <pin num="5" name="Pin_5" type="passive"/>
+        <pin num="6" name="Pin_6" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="RRAT_consolidated" part="Conn_02x03_Odd_Even">
+      <description>Generic connector, double row, 02x03, odd/even pin numbering scheme (row 1 odd numbers, row 2 even numbers), script generated (kicad-library-utils/schlib/autogen/connector/)</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>Connector*:*_2x??_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">J</field>
+        <field name="Value">Conn_02x03_Odd_Even</field>
+      </fields>
+      <pins>
+        <pin num="1" name="Pin_1" type="passive"/>
+        <pin num="2" name="Pin_2" type="passive"/>
+        <pin num="3" name="Pin_3" type="passive"/>
+        <pin num="4" name="Pin_4" type="passive"/>
+        <pin num="5" name="Pin_5" type="passive"/>
+        <pin num="6" name="Pin_6" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="RRAT_consolidated" part="Conn_02x20_Odd_Even">
+      <description>Generic connector, double row, 02x20, odd/even pin numbering scheme (row 1 odd numbers, row 2 even numbers), script generated (kicad-library-utils/schlib/autogen/connector/)</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>Connector*:*_2x??_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">J</field>
+        <field name="Value">Conn_02x20_Odd_Even</field>
+      </fields>
+      <pins>
+        <pin num="1" name="Pin_1" type="passive"/>
+        <pin num="2" name="Pin_2" type="passive"/>
+        <pin num="3" name="Pin_3" type="passive"/>
+        <pin num="4" name="Pin_4" type="passive"/>
+        <pin num="5" name="Pin_5" type="passive"/>
+        <pin num="6" name="Pin_6" type="passive"/>
+        <pin num="7" name="Pin_7" type="passive"/>
+        <pin num="8" name="Pin_8" type="passive"/>
+        <pin num="9" name="Pin_9" type="passive"/>
+        <pin num="10" name="Pin_10" type="passive"/>
+        <pin num="11" name="Pin_11" type="passive"/>
+        <pin num="12" name="Pin_12" type="passive"/>
+        <pin num="13" name="Pin_13" type="passive"/>
+        <pin num="14" name="Pin_14" type="passive"/>
+        <pin num="15" name="Pin_15" type="passive"/>
+        <pin num="16" name="Pin_16" type="passive"/>
+        <pin num="17" name="Pin_17" type="passive"/>
+        <pin num="18" name="Pin_18" type="passive"/>
+        <pin num="19" name="Pin_19" type="passive"/>
+        <pin num="20" name="Pin_20" type="passive"/>
+        <pin num="21" name="Pin_21" type="passive"/>
+        <pin num="22" name="Pin_22" type="passive"/>
+        <pin num="23" name="Pin_23" type="passive"/>
+        <pin num="24" name="Pin_24" type="passive"/>
+        <pin num="25" name="Pin_25" type="passive"/>
+        <pin num="26" name="Pin_26" type="passive"/>
+        <pin num="27" name="Pin_27" type="passive"/>
+        <pin num="28" name="Pin_28" type="passive"/>
+        <pin num="29" name="Pin_29" type="passive"/>
+        <pin num="30" name="Pin_30" type="passive"/>
+        <pin num="31" name="Pin_31" type="passive"/>
+        <pin num="32" name="Pin_32" type="passive"/>
+        <pin num="33" name="Pin_33" type="passive"/>
+        <pin num="34" name="Pin_34" type="passive"/>
+        <pin num="35" name="Pin_35" type="passive"/>
+        <pin num="36" name="Pin_36" type="passive"/>
+        <pin num="37" name="Pin_37" type="passive"/>
+        <pin num="38" name="Pin_38" type="passive"/>
+        <pin num="39" name="Pin_39" type="passive"/>
+        <pin num="40" name="Pin_40" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="RRAT_consolidated" part="Crystal">
+      <fields>
+        <field name="Reference">Q</field>
+        <field name="Value">Crystal</field>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="RRAT_consolidated" part="MIC9409x">
+      <fields>
+        <field name="Reference">U</field>
+        <field name="Value">MIC9409x</field>
+      </fields>
+      <pins>
+        <pin num="1" name="VOUT" type="power_out"/>
+        <pin num="2" name="GND" type="power_in"/>
+        <pin num="3" name="NC" type="NotConnected"/>
+        <pin num="4" name="VIN" type="power_in"/>
+        <pin num="5" name="GND" type="power_in"/>
+        <pin num="6" name="EN" type="input"/>
+      </pins>
+    </libpart>
+    <libpart lib="RRAT_consolidated" part="R">
+      <description>Resistor</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>R_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">R</field>
+        <field name="Value">R</field>
+      </fields>
+      <pins>
+        <pin num="1" name="~" type="passive"/>
+        <pin num="2" name="~" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="RRAT_consolidated" part="RFM26">
+      <fields>
+        <field name="Value">RFM26</field>
+      </fields>
+      <pins>
+        <pin num="1" name="ANT" type="BiDi"/>
+        <pin num="2" name="GND" type="power_in"/>
+        <pin num="3" name="RxEN" type="input"/>
+        <pin num="4" name="TxEN" type="input"/>
+        <pin num="5" name="VCC" type="power_in"/>
+        <pin num="6" name="GPIO0" type="output"/>
+        <pin num="7" name="GPIO1" type="output"/>
+        <pin num="8" name="GPIO2" type="passive"/>
+        <pin num="9" name="GPIO3" type="passive"/>
+        <pin num="10" name="SDO" type="output"/>
+        <pin num="11" name="SDI" type="input"/>
+        <pin num="12" name="SCK" type="input"/>
+        <pin num="13" name="NSEL" type="input"/>
+        <pin num="14" name="NIRQ" type="output"/>
+        <pin num="15" name="SDN" type="input"/>
+        <pin num="16" name="GND" type="power_in"/>
+      </pins>
+    </libpart>
+    <libpart lib="RRAT_consolidated" part="SMD2">
+      <fields>
+        <field name="Reference">PAD</field>
+        <field name="Value">SMD2</field>
+      </fields>
+      <pins>
+        <pin num="1" name="P" type="passive"/>
+      </pins>
+    </libpart>
+  </libparts>
+  <libraries>
+    <library logical="Connector_Generic">
+      <uri>/app/share/kicad/library/Connector_Generic.lib</uri>
+    </library>
+    <library logical="Jumper">
+      <uri>/app/share/kicad/library/Jumper.lib</uri>
+    </library>
+    <library logical="RRAT_consolidated">
+      <uri>/home/denzo/git/OpenTRV-Arduino-V0p2/Arduino/hardware/RRAT-REV19/RRAT_consolidated.lib</uri>
+    </library>
+  </libraries>
+  <nets>
+    <net code="1" name="Net-(U1-Pad8)">
+      <node ref="U1" pin="8"/>
+    </net>
+    <net code="2" name="Net-(U1-Pad3)">
+      <node ref="U1" pin="3"/>
+      <node ref="U1" pin="7"/>
+    </net>
+    <net code="3" name="Net-(U1-Pad4)">
+      <node ref="U1" pin="6"/>
+      <node ref="U1" pin="4"/>
+    </net>
+    <net code="4" name="Net-(U1-Pad9)">
+      <node ref="U1" pin="9"/>
+    </net>
+    <net code="5" name="Net-(ANT1-Pad1)">
+      <node ref="ANT1" pin="1"/>
+      <node ref="U1" pin="1"/>
+    </net>
+    <net code="6" name="/RFM_IRQ">
+      <node ref="C9" pin="1"/>
+      <node ref="R4" pin="1"/>
+      <node ref="U1" pin="14"/>
+    </net>
+    <net code="7" name="VCC">
+      <node ref="C13" pin="1"/>
+      <node ref="IC1" pin="6"/>
+      <node ref="IC1" pin="4"/>
+      <node ref="U2" pin="1"/>
+      <node ref="J2" pin="2"/>
+      <node ref="J4" pin="11"/>
+      <node ref="C6" pin="1"/>
+      <node ref="R5" pin="2"/>
+      <node ref="U1" pin="5"/>
+      <node ref="C5" pin="1"/>
+      <node ref="JP1" pin="2"/>
+      <node ref="C2" pin="1"/>
+      <node ref="R18" pin="1"/>
+    </net>
+    <net code="8" name="Net-(C4-Pad1)">
+      <node ref="IC1" pin="20"/>
+      <node ref="C4" pin="1"/>
+    </net>
+    <net code="9" name="/SDN">
+      <node ref="R9" pin="1"/>
+      <node ref="U1" pin="15"/>
+      <node ref="C10" pin="1"/>
+    </net>
+    <net code="10" name="/SPI_NSS">
+      <node ref="IC1" pin="14"/>
+      <node ref="U1" pin="13"/>
+      <node ref="C7" pin="1"/>
+    </net>
+    <net code="11" name="/SPI_SCK">
+      <node ref="J2" pin="3"/>
+      <node ref="C8" pin="1"/>
+      <node ref="R15" pin="1"/>
+      <node ref="IC1" pin="17"/>
+      <node ref="U1" pin="12"/>
+    </net>
+    <net code="12" name="GND">
+      <node ref="C14" pin="2"/>
+      <node ref="C12" pin="2"/>
+      <node ref="C11" pin="2"/>
+      <node ref="C7" pin="2"/>
+      <node ref="C8" pin="2"/>
+      <node ref="C5" pin="2"/>
+      <node ref="C3" pin="2"/>
+      <node ref="C4" pin="2"/>
+      <node ref="C2" pin="2"/>
+      <node ref="J3" pin="14"/>
+      <node ref="IC1" pin="21"/>
+      <node ref="IC1" pin="3"/>
+      <node ref="IC1" pin="5"/>
+      <node ref="J3" pin="20"/>
+      <node ref="U2" pin="5"/>
+      <node ref="J3" pin="39"/>
+      <node ref="J3" pin="34"/>
+      <node ref="J3" pin="25"/>
+      <node ref="J3" pin="30"/>
+      <node ref="J4" pin="12"/>
+      <node ref="J2" pin="6"/>
+      <node ref="J3" pin="6"/>
+      <node ref="J3" pin="9"/>
+      <node ref="U2" pin="2"/>
+      <node ref="J1" pin="1"/>
+      <node ref="C10" pin="2"/>
+      <node ref="C9" pin="2"/>
+      <node ref="R3" pin="1"/>
+      <node ref="C6" pin="2"/>
+      <node ref="C13" pin="2"/>
+      <node ref="U1" pin="16"/>
+      <node ref="U1" pin="2"/>
+    </net>
+    <net code="13" name="Net-(J1-Pad5)">
+      <node ref="R1" pin="2"/>
+      <node ref="J1" pin="5"/>
+    </net>
+    <net code="14" name="Net-(J1-Pad3)">
+      <node ref="J1" pin="3"/>
+      <node ref="JP1" pin="1"/>
+    </net>
+    <net code="15" name="Net-(J1-Pad4)">
+      <node ref="R2" pin="2"/>
+      <node ref="J1" pin="4"/>
+    </net>
+    <net code="16" name="Net-(J1-Pad2)">
+      <node ref="R3" pin="2"/>
+      <node ref="J1" pin="2"/>
+    </net>
+    <net code="17" name="/RX">
+      <node ref="IC1" pin="31"/>
+      <node ref="R1" pin="1"/>
+      <node ref="R10" pin="2"/>
+    </net>
+    <net code="18" name="Net-(C1-Pad2)">
+      <node ref="J1" pin="6"/>
+      <node ref="C1" pin="2"/>
+    </net>
+    <net code="19" name="Net-(J3-Pad4)">
+      <node ref="J3" pin="4"/>
+    </net>
+    <net code="20" name="Net-(J3-Pad31)">
+      <node ref="J3" pin="31"/>
+    </net>
+    <net code="21" name="Net-(J3-Pad33)">
+      <node ref="J3" pin="33"/>
+    </net>
+    <net code="22" name="Net-(J3-Pad35)">
+      <node ref="J3" pin="35"/>
+    </net>
+    <net code="23" name="Net-(J3-Pad40)">
+      <node ref="J3" pin="40"/>
+    </net>
+    <net code="24" name="Net-(J3-Pad38)">
+      <node ref="J3" pin="38"/>
+    </net>
+    <net code="25" name="Net-(J3-Pad28)">
+      <node ref="J3" pin="28"/>
+    </net>
+    <net code="26" name="Net-(J3-Pad26)">
+      <node ref="J3" pin="26"/>
+    </net>
+    <net code="27" name="Net-(J3-Pad24)">
+      <node ref="J3" pin="24"/>
+    </net>
+    <net code="28" name="Net-(J3-Pad2)">
+      <node ref="J3" pin="2"/>
+    </net>
+    <net code="29" name="/XTAL2">
+      <node ref="Q1" pin="2"/>
+      <node ref="IC1" pin="7"/>
+      <node ref="C12" pin="1"/>
+    </net>
+    <net code="30" name="/XTAL1">
+      <node ref="C11" pin="1"/>
+      <node ref="Q1" pin="1"/>
+      <node ref="IC1" pin="8"/>
+    </net>
+    <net code="31" name="/~SHUTDOWN">
+      <node ref="U2" pin="6"/>
+      <node ref="J3" pin="12"/>
+    </net>
+    <net code="32" name="Net-(IC1-Pad13)">
+      <node ref="R4" pin="2"/>
+      <node ref="IC1" pin="13"/>
+    </net>
+    <net code="33" name="Net-(IC1-Pad10)">
+      <node ref="R9" pin="2"/>
+      <node ref="IC1" pin="10"/>
+    </net>
+    <net code="34" name="+3V3">
+      <node ref="J3" pin="1"/>
+      <node ref="C14" pin="1"/>
+      <node ref="J3" pin="17"/>
+      <node ref="U2" pin="4"/>
+    </net>
+    <net code="35" name="Net-(IC1-Pad23)">
+      <node ref="IC1" pin="23"/>
+    </net>
+    <net code="36" name="Net-(IC1-Pad27)">
+      <node ref="IC1" pin="27"/>
+    </net>
+    <net code="37" name="Net-(C3-Pad1)">
+      <node ref="R18" pin="2"/>
+      <node ref="C3" pin="1"/>
+      <node ref="IC1" pin="18"/>
+    </net>
+    <net code="38" name="Net-(IC1-Pad28)">
+      <node ref="IC1" pin="28"/>
+    </net>
+    <net code="39" name="Net-(IC1-Pad12)">
+      <node ref="IC1" pin="12"/>
+    </net>
+    <net code="40" name="Net-(J3-Pad29)">
+      <node ref="J3" pin="29"/>
+    </net>
+    <net code="41" name="Net-(U2-Pad3)">
+      <node ref="U2" pin="3"/>
+    </net>
+    <net code="42" name="/D2">
+      <node ref="J4" pin="10"/>
+      <node ref="IC1" pin="32"/>
+      <node ref="R16" pin="2"/>
+    </net>
+    <net code="43" name="/RESET">
+      <node ref="IC1" pin="29"/>
+      <node ref="J3" pin="32"/>
+      <node ref="J2" pin="5"/>
+      <node ref="C1" pin="1"/>
+      <node ref="R5" pin="1"/>
+    </net>
+    <net code="44" name="/LED_HEATCALL_L">
+      <node ref="IC1" pin="2"/>
+      <node ref="J4" pin="8"/>
+    </net>
+    <net code="45" name="/A2">
+      <node ref="J4" pin="2"/>
+      <node ref="IC1" pin="25"/>
+    </net>
+    <net code="46" name="/D3">
+      <node ref="J4" pin="6"/>
+      <node ref="IC1" pin="1"/>
+    </net>
+    <net code="47" name="/A3">
+      <node ref="IC1" pin="26"/>
+      <node ref="J4" pin="3"/>
+    </net>
+    <net code="48" name="/A6">
+      <node ref="IC1" pin="19"/>
+      <node ref="J4" pin="4"/>
+    </net>
+    <net code="49" name="/A7">
+      <node ref="J4" pin="5"/>
+      <node ref="IC1" pin="22"/>
+    </net>
+    <net code="50" name="/D5">
+      <node ref="J4" pin="7"/>
+      <node ref="IC1" pin="9"/>
+    </net>
+    <net code="51" name="/D7">
+      <node ref="IC1" pin="11"/>
+      <node ref="J4" pin="9"/>
+      <node ref="R17" pin="2"/>
+    </net>
+    <net code="52" name="/A1">
+      <node ref="IC1" pin="24"/>
+      <node ref="J4" pin="1"/>
+    </net>
+    <net code="53" name="Net-(J3-Pad27)">
+      <node ref="J3" pin="27"/>
+    </net>
+    <net code="54" name="Net-(J3-Pad3)">
+      <node ref="J3" pin="3"/>
+    </net>
+    <net code="55" name="Net-(J3-Pad36)">
+      <node ref="R16" pin="1"/>
+      <node ref="J3" pin="36"/>
+    </net>
+    <net code="56" name="Net-(J3-Pad37)">
+      <node ref="J3" pin="37"/>
+      <node ref="R17" pin="1"/>
+    </net>
+    <net code="57" name="Net-(J3-Pad11)">
+      <node ref="J3" pin="11"/>
+    </net>
+    <net code="58" name="Net-(J3-Pad13)">
+      <node ref="J3" pin="13"/>
+    </net>
+    <net code="59" name="Net-(J3-Pad15)">
+      <node ref="J3" pin="15"/>
+    </net>
+    <net code="60" name="Net-(J3-Pad5)">
+      <node ref="J3" pin="5"/>
+    </net>
+    <net code="61" name="Net-(J3-Pad19)">
+      <node ref="J3" pin="19"/>
+    </net>
+    <net code="62" name="Net-(J3-Pad21)">
+      <node ref="J3" pin="21"/>
+    </net>
+    <net code="63" name="Net-(J3-Pad23)">
+      <node ref="J3" pin="23"/>
+    </net>
+    <net code="64" name="Net-(J3-Pad7)">
+      <node ref="J3" pin="7"/>
+    </net>
+    <net code="65" name="/SPI_MISO">
+      <node ref="J2" pin="1"/>
+      <node ref="U1" pin="10"/>
+      <node ref="R14" pin="1"/>
+      <node ref="IC1" pin="16"/>
+    </net>
+    <net code="66" name="Net-(J3-Pad8)">
+      <node ref="J3" pin="8"/>
+      <node ref="R12" pin="1"/>
+    </net>
+    <net code="67" name="/TX">
+      <node ref="R2" pin="1"/>
+      <node ref="R12" pin="2"/>
+      <node ref="IC1" pin="30"/>
+    </net>
+    <net code="68" name="Net-(J3-Pad18)">
+      <node ref="R15" pin="2"/>
+      <node ref="J3" pin="18"/>
+    </net>
+    <net code="69" name="Net-(J3-Pad22)">
+      <node ref="J3" pin="22"/>
+      <node ref="R14" pin="2"/>
+    </net>
+    <net code="70" name="/SPI_MOSI">
+      <node ref="U1" pin="11"/>
+      <node ref="J2" pin="4"/>
+      <node ref="IC1" pin="15"/>
+      <node ref="R13" pin="1"/>
+    </net>
+    <net code="71" name="Net-(J3-Pad16)">
+      <node ref="R13" pin="2"/>
+      <node ref="J3" pin="16"/>
+    </net>
+    <net code="72" name="Net-(J3-Pad10)">
+      <node ref="J3" pin="10"/>
+      <node ref="R10" pin="1"/>
+    </net>
+  </nets>
+</export>
