@@ -26,6 +26,23 @@ Author(s) / Copyright (s): Damon Hart-Davis 2019
  * Used at 16WW to collect outside temperatures from REV2 device in porch,
  * replacing earlier REV2 of which the radio TX apparently failed 2019-12.
  * 
+ * Will probably spit out all readings on serial somehow as well as TXing them.
+ * 
+ * 
+ * 
+ * 
+ * WILL LIKELY HAVE...
+ * 
+ * A simple compile-time toggle at the top to switch the device between RX and TX
+ * to allow a basic radio comms sanity check.
+ * 
+ * 
+ * 
+ * 
+ * 
+ * DEPENDENCIES:
+ *   * OTRadioLink 2019-12-30 or newer and matching OTAESGCM
+ *   * A shared building key to communicate with other devices on the network.
  */
 
 
